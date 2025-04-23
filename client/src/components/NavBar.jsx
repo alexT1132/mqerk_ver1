@@ -24,10 +24,15 @@ function Navbar() {
       }, []);
 
 
+  const [expandir, setExpandir] = useState(false);
+
+  const toggleSidebar = () => setExpandir(!expandir);
+
+
   return (
     <>
 
-    <header className='flex items-center justify-between bg-linear-to-r from-[#3d18c3] to-[#4816bf] fixed w-screen h-[13vh] max-sm:h-min'>
+    <header className='flex z-10 items-center justify-between bg-linear-to-r from-[#3d18c3] to-[#4816bf] fixed w-screen h-[13vh] max-sm:h-min'>
       
       <div className='flex items-center'>
       <BtnSideBar Sidebar={Sidebar} setSidebar={setSidebar} abrirSidebar={abrirSidebar}/>

@@ -20,6 +20,8 @@ export function Notificaciones(){
 
     }, []);
 
+    const Notificacion1=<p>Hola</p>
+
 
     return(
     <>
@@ -29,7 +31,7 @@ export function Notificaciones(){
     </button>
     {noti &&(
     
-    <AbrirNotificaciones Notificacion1='Esta' Notificacion2='es' Notificacion3='de prueba'/>
+    <AbrirNotificaciones Notificacion1={Notificacion1} Notificacion2='es' Notificacion3='de prueba'/>
     
     )
     }
