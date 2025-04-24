@@ -32,14 +32,14 @@ function Navbar() {
   return (
     <>
 
-    <header className='flex z-10 items-center justify-between bg-linear-to-r from-[#3d18c3] to-[#4816bf] fixed w-screen h-[13vh] max-sm:h-min'>
-      
-      <div className='flex items-center'>
+    <header className='flex items-center justify-between bg-linear-to-r from-[#3d18c3] to-[#4816bf] fixed w-screen h-[10vh] max-sm:h-min'>
+      {/* <div className='flex mx-2 w-full'> */}
+      <div className='flex items-center gap-x-30 mx-5'>
       <BtnSideBar Sidebar={Sidebar} setSidebar={setSidebar} abrirSidebar={abrirSidebar}/>
 
       
       
-      <a className='flex items-center w-fit max-sm:hidden'><img className='w-30' src={Logo} alt="Logo de MQerk Academy" /></a>
+      <a className='flex items-center w-fit max-sm:hidden'><img className='w-25' src={Logo} alt="Logo de MQerk Academy" /></a>
 
       </div>
     
@@ -47,7 +47,7 @@ function Navbar() {
 
       <h1 className='text-center max-sm:text-sm text-white font-bold text-2xl'>Asesores Especializados en la Enseñanza de las Ciencias y Tecnología </h1>
         
-      <div className='flex items-baseline justify-end sm:gap-x-10'>
+      <div className='flex items-baseline justify-end sm:gap-x-30 mx-5'>
       <Notificaciones/>
 
       <PerfilMenu/>
@@ -55,7 +55,7 @@ function Navbar() {
 
     
     
-
+      {/* </div> */}
     </header>
 
     
