@@ -5,6 +5,9 @@ import Login from "./pages/Login.jsx";
 import Asesor from "./pages/Asesor.jsx";
 import WelcomeAsesor from "./pages/Asesor/Bienvenida.jsx";
 import TestAsesor from "./pages/Asesor/Tests.jsx";
+import { DashboardAsesor } from './pages/Asesor/Dashboard.jsx';
+
+import { DatosPersonales } from './pages/Asesor/Dashboard.jsx';
 
 import RegistroEstudiante from './pages/Alumnos/RegistroEstudiante.jsx'
 
@@ -34,6 +37,9 @@ function App() {
         {/* Test de componente */}
         <Route path='/Componente' element={<Componente/>}/>
         <Route path='/Componente2' element={<Componente2/>}/>
+        <Route path='/Dashboard' element={<DashboardAsesor/>}/>
+        <Route path='/Pers' element={<DatosPersonales/>}/>
+
 
 
 

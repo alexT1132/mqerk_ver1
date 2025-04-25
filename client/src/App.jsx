@@ -7,7 +7,7 @@ import WelcomeAsesor from "./pages/Asesor/Bienvenida.jsx";
 import TestAsesor from "./pages/Asesor/Tests.jsx";
 import { DashboardAsesor } from './pages/Asesor/Dashboard.jsx';
 
-import { DatosPersonales } from './pages/Asesor/Dashboard.jsx';
+import { DatosAcademicos, DatosPersonales, DatosProfesionales, TarjetaPerfil, CardDescripcion } from './components/DashboardComp.jsx';
 
 import RegistroEstudiante from './pages/Alumnos/RegistroEstudiante.jsx'
 
@@ -38,7 +38,7 @@ function App() {
         <Route path='/Componente' element={<Componente/>}/>
         <Route path='/Componente2' element={<Componente2/>}/>
         <Route path='/Dashboard' element={<DashboardAsesor/>}/>
-        <Route path='/Pers' element={<DatosPersonales/>}/>
+        <Route path='/Pers' element={<TarjetaPerfil/>}/>
 
 
 

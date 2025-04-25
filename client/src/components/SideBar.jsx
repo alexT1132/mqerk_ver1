@@ -1,5 +1,27 @@
 import React from "react";
 
+function ElementoSideBarsm(){
+
+  const a = "flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group";
+  
+  const xmlns = "http://www.w3.org/2000/svg";
+
+  const span = "flex-1 ms-3 whitespace-nowrap";
+
+  return(
+    <>
+      <li className="relative group">
+        <a href="#" className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-indigo-100 group">
+          {Icono}
+        </a>
+        <div className="absolute left-14 top-1/2 -translate-y-1/2 bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap shadow-md z-10">
+          {NombreElemento}
+        </div>
+      </li>
+    </>
+  )
+}
+
 export function SideBarsm({ Sidebar, setSidebar}) {
 
   const a = "flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group";
@@ -126,6 +148,7 @@ export function SideBarsm({ Sidebar, setSidebar}) {
                 >
                   <path d="M280-280h80v-200h-80v200Zm320 0h80v-400h-80v400Zm-160 0h80v-120h-80v120Zm0-200h80v-80h-80v80ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z" />
                 </svg>
+                <span className={span}>Reportes</span>
               </a>
             </li>
             <li>
@@ -207,8 +230,6 @@ export function SideBarsm({ Sidebar, setSidebar}) {
 
 
 function ElementoSideBar({Icono, NombreElemento}){
-
-  const svgColor='#3818c3'
 
   return(
     <>
