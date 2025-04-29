@@ -4,7 +4,7 @@ import { BtnSideBar } from './SideBarComp';
 import { Notificaciones, PerfilMenu } from './NavBarComp';
 
 
-function Navbar() {
+function Navbar({Seccion}) {
 
   const [Sidebar, setSidebar]=useState(false);
   const abrirSidebar=useRef(null);
@@ -32,22 +32,23 @@ function Navbar() {
   return (
     <>
 
-    <header className='flex items-center justify-between bg-linear-to-r from-[#3d18c3] to-[#4816bf] fixed w-screen h-[10vh] max-sm:h-min'>
-      {/* <div className='flex mx-2 w-full'> */}
-      <div className='flex items-center gap-x-30 mx-5'>
-      <BtnSideBar Sidebar={Sidebar} setSidebar={setSidebar} abrirSidebar={abrirSidebar}/>
+    <header className='flex items-center justify-between z-3 bg-linear-to-r from-[#3d18c3] to-[#4816bf] sticky top-0 left-0 m-auto h-[10vh] max-sm:h-min'>
+      <div className='flex relative items-center gap-x-30 mx-5'>
+      <BtnSideBar className='z-2' Sidebar={Sidebar} setSidebar={setSidebar} abrirSidebar={abrirSidebar}/>
 
       
       
-      <a className='flex items-center w-fit max-sm:hidden'><img className='w-25' src={Logo} alt="Logo de MQerk Academy" /></a>
+      <a className='flex relative items-center w-fit max-sm:hidden'><img className='w-25' src={Logo} alt="Logo de MQerk Academy" /></a>
 
       </div>
     
 
-
-      <h1 className='text-center max-sm:text-sm text-white font-bold text-2xl'>Asesores Especializados en la Enseñanza de las Ciencias y Tecnología </h1>
+      <div>
+      <h1 className='text-center relative max-sm:text-sm text-white z-0 font-bold text-3xl'>Asesores Especializados en la Enseñanza de las Ciencias y Tecnología </h1>
+      <h2 className='text-center font-bold text-[#f4138a] text-2xl'>{Seccion}</h2>
+      </div>
         
-      <div className='flex items-baseline justify-end sm:gap-x-30 mx-5'>
+      <div className='flex relative items-baseline justify-end sm:gap-x-30 mx-5'>
       <Notificaciones/>
 
       <PerfilMenu/>

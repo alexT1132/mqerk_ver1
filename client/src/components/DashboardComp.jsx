@@ -2,7 +2,7 @@ import React from "react"
 
 function CardsInfo({Informacion}){
     return(
-    <div className="flex w-full justify-center">
+    <div className="flex w-full h-fit justify-center">
     <span className="mb-4 bg-white text-purple-700 font-bold uppercase border border-gray-300 rounded-lg px-6 py-2 shadow-[4px_6px_8px_rgba(0,0,0,0.5)]">
       {Informacion}
     </span>
@@ -17,8 +17,10 @@ function InfoContainer({Icono, TipoDeDato, Dato}){
                 <span className="w-6 h-fit">
                 {Icono}
                 </span>
-                <p className="w-fit">{TipoDeDato}:</p>
+                <div className="flex gap-1">
+                <p className="w-fit text-[#5115bc] font-bold">{TipoDeDato}:</p>
                 <p className="">{Dato}</p>
+                </div>
             </li>
         </>
     )
@@ -65,7 +67,7 @@ export function DatosPersonales({Correo, Direccion, Municipio, Numero, Nacimient
                         <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#cb1a84"><path d="M288-444v-72h384v72H288Z"/></svg>
                         )} TipoDeDato='Género' Dato={Genero}/>
             <InfoContainer Icono={i8} TipoDeDato='Estado Civil' Dato={EstadoCivil}/>
-            <InfoContainer Icono={i9} TipoDeDato='RFC' Dato={RFC}/>
+            <InfoContainer className='uppercase' Icono={i9} TipoDeDato='RFC' Dato={RFC}/>
         </ul>
 
         </div>
@@ -133,7 +135,7 @@ export function DatosProfesionales({Experiencia, ExperienciaAsesorias, Funcion, 
 
 export function CardDescripcion({cantidad, titulo}) {
     return (
-        <aside className="bg-white w-full flex items-center gap-x-4 px-3 py-1 rounded-lg shadow-md">
+        <aside className="bg-white box-border w-full flex items-center gap-x-4 px-3 py-1 rounded-lg shadow-md">
           <span className="text-pink-500 text-xl font-bold">{cantidad}</span>
           <span className="text-black text-lg font-bold tracking-wide uppercase">{titulo}</span>
         </aside>
@@ -141,25 +143,103 @@ export function CardDescripcion({cantidad, titulo}) {
   }
 
 
-export function TarjetaPerfil({img, TituloAsesor, Nombre, Ingreso}){
+export function TarjetaPerfil({src, TituloAsesor, Nombre, Ingreso, cantidadCursos, cantidadEstudiantes, cantidadCertificados, cantidadGeneraciones}){
     return(
-        <aside className="flex flex-col bg-linear-to-r from-[#3d18c3] to-[#4816bf] text-white rounded-2xl w-fit h-fit px-10 py-4">
-            <a className="w-full flex justify-center rounded-xl mb-2">
-                {img}dd
+        <aside className="flex flex-col box-border bg-linear-to-r from-[#3d18c3] to-[#4816bf] text-white rounded-2xl w-fit h-fit px-2 py-10">
+            <a className="w-full h-[200px] flex justify-center mb-2">
+                <img className="rounded-xl" src={src} alt="Imagen de perfil del asesor" />
             </a>
-            <h1 className="w-full text-center">{TituloAsesor}{Nombre}Ing. Darian Reyes Romero</h1>
-            <span className="w-full text-center">Asesor desde {Ingreso}</span>
+            <h1 className="w-full text-center font-extrabold">{TituloAsesor}{Nombre}Ing. Darian Reyes Romero</h1>
+            <span className="w-full text-center font-light">Asesor desde {Ingreso}</span>
 
             <div className="grid grid-flow-col grid-rows-2 gap-4 mt-5">
-                <CardDescripcion titulo='Cursos'/>
-                <CardDescripcion titulo='Estudiantes'/>
-                <CardDescripcion titulo='Certificados'/>
-                <CardDescripcion titulo='Generaciones'/>
+                <CardDescripcion titulo='Cursos' cantidad={cantidadCursos}/>
+                <CardDescripcion titulo='Estudiantes' cantidad={cantidadEstudiantes}/>
+                <CardDescripcion titulo='Certificados' cantidad={cantidadCertificados}/>
+                <CardDescripcion titulo='Generaciones' cantidad={cantidadGeneraciones}/>
             </div>
 
 
             
         
         </aside>
+    )
+};
+
+export function BtnFuncion({funcion}){
+    return(
+    <button className="bg-purple-700 h-fit hover:bg-purple-800 text-white font-bold cursor-pointer py-2 px-4 rounded-lg transition-colors duration-300">
+      {funcion}
+    </button>
+    )
+};
+
+function BtnSubirDocumento({NombreDocumento}){
+    return(
+    <button className="bg-purple-700 hover:bg-purple-800 text-white cursor-pointer font-bold rounded-full flex h-[50px] box-border text-center items-center gap-3 transition-colors duration-300 w-[200px]">
+        <div className="bg-white rounded-full p-2 flex w-fit h-fit">
+            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#cb1a84"><path d="M444-336v-342L339-573l-51-51 192-192 192 192-51 51-105-105v342h-72ZM263.72-192Q234-192 213-213.15T192-264v-72h72v72h432v-72h72v72q0 29.7-21.16 50.85Q725.68-192 695.96-192H263.72Z"/></svg>
+        </div>
+        <span className="break-normal whitespace-break-spaces mr-4 text-start">{NombreDocumento}</span> 
+    </button>
+    )
+};
+
+function BtnDescargarDocumento({NombreDocumento}){
+    return(
+    <button className="bg-purple-700 hover:bg-purple-800 text-white cursor-pointer font-bold rounded-full flex h-[50px] box-border text-center items-center gap-3 transition-colors duration-300 w-[250px]">
+        <div className="bg-white rounded-full p-2 flex w-fit h-fit">
+            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#cb1a84"><path d="M480-336 288-528l51-51 105 105v-342h72v342l105-105 51 51-192 192ZM263.72-192Q234-192 213-213.15T192-264v-72h72v72h432v-72h72v72q0 29.7-21.16 50.85Q725.68-192 695.96-192H263.72Z"/></svg>
+        </div>
+        <span className="break-normal whitespace-break-spaces mr-4 text-start">{NombreDocumento}</span> 
+    </button>
+    )
+};
+
+export function Documentacion(){
+    return(
+        <>
+        <CardsInfo Informacion='Documentación' />
+
+
+        <div className="flex flex-wrap gap-7 justify-center">
+        <BtnSubirDocumento NombreDocumento='INE (Ambos Lados)'/>
+        <BtnSubirDocumento NombreDocumento='Comprobante de domicilio'/>
+        <BtnSubirDocumento NombreDocumento='CIF SAT'/>
+        <BtnSubirDocumento NombreDocumento='Título académico'/>
+        <BtnSubirDocumento NombreDocumento='Cédula profesional'/>
+        <BtnSubirDocumento NombreDocumento='Certificaciones'/>
+        <BtnSubirDocumento NombreDocumento='CV actualizado'/>
+        <BtnSubirDocumento NombreDocumento='Fotografía profesional'/>
+        <BtnSubirDocumento NombreDocumento='Carta de recomendación'/>
+        </div>
+        </>
+    )
+}
+
+export function Lineamientos(){
+    return(
+        <>
+            <CardsInfo Informacion='Lineamientos'/>
+
+            <div className="flex flex-wrap gap-7 justify-center">
+            <BtnDescargarDocumento NombreDocumento='Reglamento Interno'/>
+            <BtnDescargarDocumento NombreDocumento='Políticas de privacidad'/>
+            <BtnDescargarDocumento NombreDocumento='Normativa'/>
+            <BtnDescargarDocumento NombreDocumento='Terminos y condiciones'/>
+            <BtnDescargarDocumento NombreDocumento='Modelo educativo'/>
+            </div>
+        </>
+    )
+}
+
+export function Contrato(){
+    return(
+        <>
+            <CardsInfo Informacion='Contrato(s) laboral(es)'/>
+            <div className="flex flex-wrap gap-7 justify-center">
+            <BtnDescargarDocumento NombreDocumento='Contrato de prestación de servicios'/>
+            </div>
+        </>
     )
 }
