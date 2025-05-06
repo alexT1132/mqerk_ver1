@@ -1,7 +1,7 @@
 import React from 'react'
-import Navbar from "../components/NavLogin.jsx";
+import Navbar from "../../components/NavLogin.jsx";
 
-function Asesor() {
+export function PreRegAsesor() {
   return (
     <div className='h-screen'>
         <Navbar />
@@ -232,5 +232,3 @@ function Asesor() {
     </div>
   )
 }
-
-export default Asesor

@@ -1,12 +1,12 @@
 import React from "react";
-import { DatosPersonales, DatosAcademicos, DatosProfesionales, TarjetaPerfil, BtnFuncion, Documentacion, Lineamientos, Contrato } from "../../components/InicioComp";
+import { DatosPersonales, DatosAcademicos, DatosProfesionales, TarjetaPerfil, BtnFuncion, Documentacion, Lineamientos, Contrato } from "../../components/DashboradComp.jsx";
 import Persona from '../../assets/Persona.jpg'
 
 
 export function Dashboard(){
     return(
         <>
-        
+        <TarjetaPerfil/>
         </>
     )
 }
@@ -87,16 +87,4 @@ export function MiPerfil(){
 
             </>
     )
-}
-
-
-export function MisCursos(){
-
-    return(
-        <>
-        <h1>Hola mundo</h1>
-        </>
-    )
-
-
 }

@@ -1,8 +1,8 @@
 import React from 'react';
-import CardRegistroEstudiante from '../../components/EstudianteRegistroCard'
+import {CardRegistroEstudiante} from '../../components/RegistroEstudianteComp.jsx'
 import Topbar from '../../components/NavLogin'
 
-function RegistroEstudiante(){
+export function RegistroEstudiante(){
 
     return(
         <div className='bg-linear-to-br from-[#3f33c7] to-[#3b32c9] h-full'>
@@ -16,5 +16,3 @@ function RegistroEstudiante(){
     );
 
 }
-
-export default RegistroEstudiante;

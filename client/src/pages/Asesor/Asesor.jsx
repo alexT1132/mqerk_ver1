@@ -1,9 +1,9 @@
 import Navbar from "../../components/NavBar";
 import { SideBarDesktop, SideBarsm } from "../../components/sidebar";
 import React from "react";
-import { MiPerfil, MisCursos } from "./Paginas";
+import { MiPerfil } from "./Paginas";
 
-export default function MiPefilAsesor(){
+export function PerfilAsesor(){
     return(
     <>
         <Navbar/>

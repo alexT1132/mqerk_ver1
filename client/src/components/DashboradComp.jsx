@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 function CardsInfo({Informacion}){
     return(
@@ -147,7 +147,7 @@ export function TarjetaPerfil({src, TituloAsesor, Nombre, Ingreso, cantidadCurso
     return(
         <aside className="flex flex-col box-border bg-linear-to-r from-[#3d18c3] to-[#4816bf] text-white rounded-2xl w-fit h-fit px-2 py-10">
             <a className="w-full h-[200px] flex justify-center mb-2">
-                <img className="aspect-square rounded-xl" src={src} alt="Imagen de perfil del asesor" />
+                <img className="rounded-xl" src={src} alt="Imagen de perfil del asesor" />
             </a>
             <h1 className="w-full text-center font-extrabold">{TituloAsesor}{Nombre}Ing. Darian Reyes Romero</h1>
             <span className="w-full text-center font-light">Asesor desde {Ingreso}</span>
@@ -245,16 +245,74 @@ export function Contrato(){
 }
 
 
-export default function BtnCursoActivo(src, NombreCurso){
+export function BtnCursoActivo({src, NombreCurso}){
 
 
     return(
 
-        <div className="bg-[#1f1f1f] w-full h-full flex justify-center items-center">
-        <button className="p-3 gap-x-6 cursor-pointer flex border-2 border-[#483dc7] rounded-2xl">
+        
+        <button className="p-3 gap-x-6 cursor-pointer flex border-2 w-fit border-[#483dc7] rounded-2xl">
             <img className="aspect-square w-15 text-white" src={src} alt="Logo del curso"/>
-            <h2 className="text-[#f4138a] font-black w-35 text-start break-all">{NombreCurso}</h2>
+            <h2 className="text-[#f4138a] font-black w-35 text-start">{NombreCurso}</h2>
         </button>
-        </div>
     );
+}
+
+
+export default function Componente(){
+    return(
+        <div className="bg-[#1f1f1f] w-full h-full flex justify-center items-center">
+            <ContainerCursos/>
+
+        </div>
+    )
+}
+
+function ContainerCursos({SeccionDashboard}){
+    return(
+    <aside className="flex flex-col w-full border-1">
+    <div className="pb-4 flex items-center gap-x-1">
+    <h2 className="text-2xl text-[#f4138a] font-bold">
+        {SeccionDashboard}Cursos
+    </h2>
+    <ModalCursos/>
+
+    </div>
+
+    <BtnCursoActivo NombreCurso='Este es el curso numero 1'/>
+    </aside>
+    );
+}
+
+
+export function ModalCursos(){
+    const [modal, setModal]=useState(false);
+
+    const [helpertext, setHelpertext]=useState(false);
+
+    const ShowHelperText = () => {
+        setHelpertext(true);
+      };
+    
+      const NoHelperText = () => {
+        setHelpertext(false);
+      };
+
+    return(
+
+        <>
+        <button className="flex items-center justify-center rounded-full hover:bg-blue-100 active:bg-blue-200 transition-all duration-50 shadow-sm active:shadow-inner" onMouseEnter={ShowHelperText} onMouseLeave={NoHelperText}>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#7a7a7a"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
+        
+
+        
+        
+        </button>
+
+        {helpertext &&(
+            <p className=' w-fit h-fit cursor-default bg-white px-2 rounded-xl shadow-md text-xl transition-shadow'>Crea una clase</p>
+        )}
+        </>
+    )
 }

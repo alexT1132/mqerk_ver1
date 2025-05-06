@@ -4,15 +4,16 @@ import React from 'react'
 import Index from './App';
 import Login from './pages/Login';
 
-import Asesor from './pages/Asesor.jsx';
-import Bienvenida from './pages/Asesor/Bienvenida.jsx';
-import TestAsesor from './pages/Asesor/Tests.jsx';
-import MiPerfilAsesor from './pages/Asesor/Asesor.jsx'
+import {PreRegAsesor} from './pages/Asesor/PreRegAsesor.jsx';
+import {Bienvenida} from './pages/Asesor/Bienvenida.jsx';
+import {Test} from './pages/Asesor/Test.jsx';
+import {PerfilAsesor} from './pages/Asesor/Asesor.jsx'
 
-import RegistroEstudiante from './pages/Alumnos/RegistroEstudiante.jsx';
+import {RegistroEstudiante} from './pages/Alumnos/RegistroEstudiante.jsx';
 
-import BtnCursoActivo from './components/InicioComp.jsx';
-import Componente2 from './components/EstudianteRegistroCard.jsx';
+import CursosContainer from './components/DashboradComp.jsx';
+
+// import CardEstudiante from './components/EstudianteRegistroCard.jsx';
 
 const router = createBrowserRouter([
   {
@@ -30,7 +31,7 @@ const router = createBrowserRouter([
 // Inicio Asesor
   {
     path: '/asesor',
-    element: <Asesor/>
+    element: <PreRegAsesor/>
   },
 
   {
@@ -40,7 +41,7 @@ const router = createBrowserRouter([
 
   {
     path: '/test-asesor',
-    element: <TestAsesor/>
+    element: <Test/>
   },
 
   // Final asesor
@@ -58,22 +59,13 @@ const router = createBrowserRouter([
   // Test componentes
   {
     path: '/Componente',
-    element: <BtnCursoActivo/>
+    element: <CursosContainer/>
   },
 
-  {
-    path: '/Componente2',
-    element: <Componente2/>
-  },
 
   {
     path: '/PerfilAsesor',
-    element: <MiPerfilAsesor/>
-  },
-
-  {
-    path: '/pers',
-    element: <MiPerfilAsesor/>
+    element: <PerfilAsesor/>
   },
 ])
 
