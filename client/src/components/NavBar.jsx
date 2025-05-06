@@ -32,7 +32,7 @@ function Navbar({Seccion}) {
   return (
     <>
 
-    <header className='flex items-center justify-between z-3 bg-linear-to-r from-[#3d18c3] to-[#4816bf] sticky top-0 left-0 m-auto h-[10vh] max-sm:h-min'>
+    <header className='flex items-center justify-between bg-linear-to-r from-[#3d18c3] to-[#4816bf] sticky top-0 left-0 m-auto h-[10vh] max-sm:h-min'>
       <div className='flex relative items-center gap-x-30 mx-5'>
       <BtnSideBar className='z-2' Sidebar={Sidebar} setSidebar={setSidebar} abrirSidebar={abrirSidebar}/>
 

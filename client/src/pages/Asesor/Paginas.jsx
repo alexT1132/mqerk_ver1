@@ -1,21 +1,21 @@
-import Navbar from "../../components/NavBar";
-import { SideBarDesktop, SideBarsm } from "../../components/sidebar";
 import React from "react";
-import { DatosPersonales, DatosAcademicos, DatosProfesionales, TarjetaPerfil, BtnFuncion, Documentacion, Lineamientos, Contrato } from "../../components/DashboardComp";
-
+import { DatosPersonales, DatosAcademicos, DatosProfesionales, TarjetaPerfil, BtnFuncion, Documentacion, Lineamientos, Contrato } from "../../components/InicioComp";
 import Persona from '../../assets/Persona.jpg'
 
-export function DashboardAsesor(){
-    return(
-<>
-        <Navbar
-        Seccion={'Mi Perfil'}
-        />
-        <div className="flex">
-        <SideBarDesktop/>
 
-            <div className="flex flex-col flex-wrap justify-center items-center gap-8 p-10 px-25">
-            
+export function Dashboard(){
+    return(
+        <>
+        
+        </>
+    )
+}
+
+
+export function MiPerfil(){
+    return(
+
+        <>
             <div className="flex w-full justify-center">
             <DatosPersonales
             Correo={'darianreyesromero@hotmail.com'}
@@ -73,25 +73,30 @@ export function DashboardAsesor(){
             <BtnFuncion funcion='Editar perfil'/>
 
             </aside>
-            </div>
 
+            
+
+            </div>
             <Documentacion/>
 
             <Lineamientos/>
 
             <Contrato/>
+            
 
-
-            </div>
-            </div>
 
             </>
-
     )
 }
 
 
+export function MisCursos(){
+
+    return(
+        <>
+        <h1>Hola mundo</h1>
+        </>
+    )
 
 
-
-
+}

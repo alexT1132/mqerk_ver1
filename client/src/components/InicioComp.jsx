@@ -1,9 +1,9 @@
-import React from "react"
+import React from "react";
 
 function CardsInfo({Informacion}){
     return(
-    <div className="flex w-full h-fit justify-center">
-    <span className="mb-4 bg-white text-purple-700 font-bold uppercase border border-gray-300 rounded-lg px-6 py-2 shadow-[4px_6px_8px_rgba(0,0,0,0.5)]">
+    <div className="flex w-full h-fit justify-center text-center mb-2">
+    <span className="bg-white text-purple-700 font-bold uppercase border border-gray-300 rounded-lg px-6 py-2 shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
       {Informacion}
     </span>
     </div>
@@ -147,7 +147,7 @@ export function TarjetaPerfil({src, TituloAsesor, Nombre, Ingreso, cantidadCurso
     return(
         <aside className="flex flex-col box-border bg-linear-to-r from-[#3d18c3] to-[#4816bf] text-white rounded-2xl w-fit h-fit px-2 py-10">
             <a className="w-full h-[200px] flex justify-center mb-2">
-                <img className="rounded-xl" src={src} alt="Imagen de perfil del asesor" />
+                <img className="aspect-square rounded-xl" src={src} alt="Imagen de perfil del asesor" />
             </a>
             <h1 className="w-full text-center font-extrabold">{TituloAsesor}{Nombre}Ing. Darian Reyes Romero</h1>
             <span className="w-full text-center font-light">Asesor desde {Ingreso}</span>
@@ -176,11 +176,11 @@ export function BtnFuncion({funcion}){
 
 function BtnSubirDocumento({NombreDocumento}){
     return(
-    <button className="bg-purple-700 hover:bg-purple-800 text-white cursor-pointer font-bold rounded-full flex h-[50px] box-border text-center items-center gap-3 transition-colors duration-300 w-[200px]">
-        <div className="bg-white rounded-full p-2 flex w-fit h-fit">
+    <button className="bg-purple-700 hover:bg-purple-800 text-white cursor-pointer font-bold rounded-full flex basis-60 h-[50px] box-border text-center items-center gap-3 transition-colors duration-300 w-fit">
+        <div className="bg-white rounded-full p-2  flex flex-wrap w-fit h-fit">
             <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#cb1a84"><path d="M444-336v-342L339-573l-51-51 192-192 192 192-51 51-105-105v342h-72ZM263.72-192Q234-192 213-213.15T192-264v-72h72v72h432v-72h72v72q0 29.7-21.16 50.85Q725.68-192 695.96-192H263.72Z"/></svg>
         </div>
-        <span className="break-normal whitespace-break-spaces mr-4 text-start">{NombreDocumento}</span> 
+        <span className="break-normal whitespace-break-spaces text-center">{NombreDocumento}</span> 
     </button>
     )
 };
@@ -191,7 +191,7 @@ function BtnDescargarDocumento({NombreDocumento}){
         <div className="bg-white rounded-full p-2 flex w-fit h-fit">
             <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#cb1a84"><path d="M480-336 288-528l51-51 105 105v-342h72v342l105-105 51 51-192 192ZM263.72-192Q234-192 213-213.15T192-264v-72h72v72h432v-72h72v72q0 29.7-21.16 50.85Q725.68-192 695.96-192H263.72Z"/></svg>
         </div>
-        <span className="break-normal whitespace-break-spaces mr-4 text-start">{NombreDocumento}</span> 
+        <span className="break-normal whitespace-break-spaces mr-4 text-center">{NombreDocumento}</span> 
     </button>
     )
 };
@@ -202,7 +202,7 @@ export function Documentacion(){
         <CardsInfo Informacion='Documentación' />
 
 
-        <div className="flex flex-wrap gap-7 justify-center">
+        <div className="mb-4 flex flex-wrap gap-7 justify-center">
         <BtnSubirDocumento NombreDocumento='INE (Ambos Lados)'/>
         <BtnSubirDocumento NombreDocumento='Comprobante de domicilio'/>
         <BtnSubirDocumento NombreDocumento='CIF SAT'/>
@@ -222,7 +222,7 @@ export function Lineamientos(){
         <>
             <CardsInfo Informacion='Lineamientos'/>
 
-            <div className="flex flex-wrap gap-7 justify-center">
+            <div className="mb-4 flex flex-wrap gap-7 justify-center">
             <BtnDescargarDocumento NombreDocumento='Reglamento Interno'/>
             <BtnDescargarDocumento NombreDocumento='Políticas de privacidad'/>
             <BtnDescargarDocumento NombreDocumento='Normativa'/>
@@ -237,9 +237,24 @@ export function Contrato(){
     return(
         <>
             <CardsInfo Informacion='Contrato(s) laboral(es)'/>
-            <div className="flex flex-wrap gap-7 justify-center">
+            <div className="mb-4 flex flex-wrap gap-7 justify-center">
             <BtnDescargarDocumento NombreDocumento='Contrato de prestación de servicios'/>
             </div>
         </>
     )
+}
+
+
+export default function BtnCursoActivo(src, NombreCurso){
+
+
+    return(
+
+        <div className="bg-[#1f1f1f] w-full h-full flex justify-center items-center">
+        <button className="p-3 gap-x-6 cursor-pointer flex border-2 border-[#483dc7] rounded-2xl">
+            <img className="aspect-square w-15 text-white" src={src} alt="Logo del curso"/>
+            <h2 className="text-[#f4138a] font-black w-35 text-start break-all">{NombreCurso}</h2>
+        </button>
+        </div>
+    );
 }

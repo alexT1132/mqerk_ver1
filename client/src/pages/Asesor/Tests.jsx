@@ -4092,4 +4092,4 @@ function Bienvenida() {
   )
 }
 
-export default Bienvenida
+export default Bienvenida;

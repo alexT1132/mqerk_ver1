@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 
 
@@ -209,14 +210,14 @@ export function SideBarsm({ Sidebar, setSidebar}) {
 }
 
 
-function ElementoSideBar({Icono, NombreElemento}){
+function ElementoSideBar({Icono, NombreElemento, to}){
 
   return(
     <>
       <li className="group flex justify-start items-center h-fit gap-1.5">
-        <a href="#" className="items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-indigo-100 group">
+        <Link to={to} className="items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-indigo-100 group">
           {Icono}
-        </a>
+        </Link>
         <div className="flex items-center h-fit bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap shadow-md z-10">
           {NombreElemento}
         </div>
@@ -225,7 +226,19 @@ function ElementoSideBar({Icono, NombreElemento}){
   )
 }
 
-export function SideBarDesktop() {
+export function SideBarDesktop({
+  toInicio,
+  toMiPerfil,
+  toMisCursos,
+  toAsesorias,
+  toCorreo,
+  toCalendario,
+  toReportes,
+  toRecursosEducativos,
+  toMisPagos,
+  toAutenticacion,
+  toConfiguracion,
+  toCerrarSesion}) {
 
   const svgColor='#3818c3';
   const svgColorLogout='#EA3323';
@@ -257,29 +270,29 @@ export function SideBarDesktop() {
 
           <ul className="p-4 pb-2 h-screen">
             
-            <ElementoSideBar Icono={LogoInicio} NombreElemento='Inicio'/>
+            <ElementoSideBar to={toInicio} Icono={LogoInicio} NombreElemento='Inicio'/>
 
-            <ElementoSideBar Icono={LogoPerfil} NombreElemento='Mi Perfil'/>
+            <ElementoSideBar to={toMiPerfil} Icono={LogoPerfil} NombreElemento='Mi Perfil'/>
 
-            <ElementoSideBar Icono={LogoCursos} NombreElemento='Mis cursos'/>
+            <ElementoSideBar to={toMisCursos} Icono={LogoCursos} NombreElemento='Mis cursos'/>
 
-            <ElementoSideBar Icono={LogoAsesorias} NombreElemento='Asesorías'/>
+            <ElementoSideBar to={toAsesorias} Icono={LogoAsesorias} NombreElemento='Asesorías'/>
 
-            <ElementoSideBar Icono={LogoCorreo} NombreElemento='Correo'/>
+            <ElementoSideBar to={toCorreo} Icono={LogoCorreo} NombreElemento='Correo'/>
 
-            <ElementoSideBar Icono={LogoCalendario} NombreElemento='Calendario'/>
+            <ElementoSideBar to={toCalendario} Icono={LogoCalendario} NombreElemento='Calendario'/>
 
-            <ElementoSideBar Icono={LogoReportes} NombreElemento='Reportes'/>
+            <ElementoSideBar to={toReportes} Icono={LogoReportes} NombreElemento='Reportes'/>
 
-            <ElementoSideBar Icono={LogoRecursos} NombreElemento='Recursos educativos'/>
+            <ElementoSideBar to={toRecursosEducativos} Icono={LogoRecursos} NombreElemento='Recursos educativos'/>
 
-            <ElementoSideBar Icono={LogoPagos} NombreElemento='Mis pagos'/>
+            <ElementoSideBar to={toMisPagos} Icono={LogoPagos} NombreElemento='Mis pagos'/>
 
-            <ElementoSideBar Icono={LogoAutenticacion} NombreElemento='Autenticación'/>
+            <ElementoSideBar to={toAutenticacion} Icono={LogoAutenticacion} NombreElemento='Autenticación'/>
 
-            <ElementoSideBar Icono={LogoConfig} NombreElemento='Configuración'/>
+            <ElementoSideBar to={toConfiguracion} Icono={LogoConfig} NombreElemento='Configuración'/>
 
-            <ElementoSideBar Icono={LogoLogOut} NombreElemento='Cerrar Sesión'/>
+            <ElementoSideBar to={toCerrarSesion} Icono={LogoLogOut} NombreElemento='Cerrar Sesión'/>
           </ul>
         </nav>
       </aside>
