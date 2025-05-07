@@ -1,7 +1,7 @@
 import Navbar from "../../components/NavBar";
 import { SideBarDesktop, SideBarsm } from "../../components/sidebar";
 import React from "react";
-import { MiPerfil, Dashboard } from "./Paginas";
+import { MiPerfil, Dashboard } from "./Secciones";
 
 // Esta pagina tiene como proposito armar la pagina completa, importando
 // los componentes ya armados en los archivos:

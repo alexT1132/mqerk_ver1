@@ -32,7 +32,7 @@ export function Dashboard(){
         <TarjetaPerfil/>
         </div>
 
-        <Container SeccionDashboard={'Analíticas'} Contenido={<Analiticas/>}/>
+        <Container SeccionDashboard={'Analíticas'} Contenido={<Analiticas TituloTabla1={'Rendimiento'} TituloTabla2={'Tareas entregadas'}/>}/>
         </div>
     )
 }

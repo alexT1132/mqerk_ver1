@@ -252,11 +252,61 @@ export function Contrato(){
 export default function Componente(){
     return(
         <div className="bg-[#1f1f1f] w-full h-full flex justify-center items-center">
-            {/* <DashboardAsesor/> */}
+
+
+        <div>
+            <BtnPanelAdmin Informacion={'Ingresos'}/>
+            <BtnPanelAdmin Informacion={'Egresos'}/>
+            <BtnPanelAdmin Informacion={'Usuarios'}/>
+            <BtnPanelAdmin Informacion={'Asesores'}/>
+            <BtnPanelAdmin Informacion={'Cursos activos'}/>
+            <BtnPanelAdmin Informacion={'Actividad diaria'}/>
+            <BtnPanelAdmin Informacion={'Nuevos usuarios'}/>
+            <BtnPanelAdmin Informacion={'Ingreso anual'}/>
+            <BtnPanelAdmin Informacion={'Tasa de retención'}/>
+            <BtnPanelAdmin Informacion={'Tasa de abandono'}/>
+            <BtnPanelAdmin Informacion={'Bajas'}/>
+            <BtnPanelAdmin Informacion={'Número de asesores'}/>
+            <BtnPanelAdmin Informacion={'Certificados emitidos'}/>
+            <BtnPanelAdmin Informacion={'% crecimiento mensual'}/>
+            <BtnPanelAdmin Informacion={'% crecimiento anual'}/>
+
+        </div>
+
+
 
         </div>
     )
 }
+
+function BtnPanelAdmin({Informacion}){
+    return(
+    <div className="flex w-full h-fit justify-center text-center pb-2">
+    <span className="bg-white flex flex-wrap text-purple-700 font-bold uppercase border border-gray-300 rounded-lg px-6 py-2 shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
+      {Informacion}
+    </span>
+    </div>
+    )
+}
+
+
+function DashboardAdmin(){
+    <>
+    
+
+
+
+    </>
+}
+
+
+
+
+
+
+
+
+
 
 // Pagina para le dashboard del asesor
 
@@ -265,11 +315,11 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 
 
-export function Analiticas(){
+export function Analiticas({TituloTabla1, TituloTabla2}){
     return(
         <div className="flex">
         <div className="w-full flex flex-col">
-        <h3 className="text-center">Rendimiento</h3>
+        <h3 className="text-center font-semibold text-[#5915bb] uppercase">{TituloTabla1}</h3>
         <BarChart
         xAxis={[
         {
@@ -287,7 +337,7 @@ export function Analiticas(){
         </div>
 
         <div className="w-full">
-        <h3 className="text-center pb-5">Tareas entregadas</h3>
+        <h3 className="text-center pb-5 font-semibold text-[#5915bb] uppercase">{TituloTabla2}</h3>
         <PieChart
         series={[
             {
