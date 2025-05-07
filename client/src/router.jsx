@@ -7,11 +7,11 @@ import Login from './pages/Login';
 import {PreRegAsesor} from './pages/Asesor/PreRegAsesor.jsx';
 import {Bienvenida} from './pages/Asesor/Bienvenida.jsx';
 import {Test} from './pages/Asesor/Test.jsx';
-import {PerfilAsesor} from './pages/Asesor/Asesor.jsx'
+import {DashboardAsesor, PerfilAsesor} from './pages/Asesor/Asesor.jsx'
 
 import {RegistroEstudiante} from './pages/Alumnos/RegistroEstudiante.jsx';
 
-import CursosContainer from './components/DashboradComp.jsx';
+import Componente from './components/DashboradComp.jsx';
 
 // import CardEstudiante from './components/EstudianteRegistroCard.jsx';
 
@@ -59,14 +59,19 @@ const router = createBrowserRouter([
   // Test componentes
   {
     path: '/Componente',
-    element: <CursosContainer/>
+    element: <Componente/>
   },
 
+  {
+    path: '/Inicio',
+    element: <DashboardAsesor/>
+  },
 
   {
     path: '/PerfilAsesor',
     element: <PerfilAsesor/>
   },
+  
 ])
 
 export default router;

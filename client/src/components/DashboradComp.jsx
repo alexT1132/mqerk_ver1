@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+
+
 function CardsInfo({Informacion}){
     return(
     <div className="flex w-full h-fit justify-center text-center mb-2">
@@ -245,41 +247,82 @@ export function Contrato(){
 }
 
 
-export function BtnCursoActivo({src, NombreCurso}){
-
-
-    return(
-
-        
-        <button className="p-3 gap-x-6 cursor-pointer flex border-2 w-fit border-[#483dc7] rounded-2xl">
-            <img className="aspect-square w-15 text-white" src={src} alt="Logo del curso"/>
-            <h2 className="text-[#f4138a] font-black w-35 text-start">{NombreCurso}</h2>
-        </button>
-    );
-}
-
+// Pagina para testear componentes
 
 export default function Componente(){
     return(
         <div className="bg-[#1f1f1f] w-full h-full flex justify-center items-center">
-            <ContainerCursos/>
+            {/* <DashboardAsesor/> */}
 
         </div>
     )
 }
 
-function ContainerCursos({SeccionDashboard}){
+// Pagina para le dashboard del asesor
+
+
+import { BarChart } from '@mui/x-charts/BarChart';
+import { PieChart } from '@mui/x-charts/PieChart';
+
+
+export function Analiticas(){
     return(
-    <aside className="flex flex-col w-full border-1">
+        <div className="flex">
+        <div className="w-full flex flex-col">
+        <h3 className="text-center">Rendimiento</h3>
+        <BarChart
+        xAxis={[
+        {
+        id: 'barCategories',
+        data: ['Clase A', 'Clase B', 'Clase C'],
+        },
+        ]}
+        series={[
+        {
+        data: [2, 5, 3],
+        },
+        ]}
+        height={300}
+        />
+        </div>
+
+        <div className="w-full">
+        <h3 className="text-center pb-5">Tareas entregadas</h3>
+        <PieChart
+        series={[
+            {
+            data: [
+                { id: 0, value: 10, color:'#483dc7',  label: 'Grupo A' },
+                { id: 1, value: 15, label: 'Grupo B' },
+                { id: 2, value: 20, label: 'Grupo C' },
+            ],
+            },
+        ]}
+        width={200}
+        height={200}
+        />
+        </div>
+
+
+
+        </div>
+    )
+}
+
+
+
+export function Container({SeccionDashboard, ModalCursos, Contenido}){
+    return(
+    <aside className="flex flex-col w-full">
     <div className="pb-4 flex items-center gap-x-1">
     <h2 className="text-2xl text-[#f4138a] font-bold">
-        {SeccionDashboard}Cursos
+        {SeccionDashboard}
     </h2>
-    <ModalCursos/>
+    {ModalCursos}
 
     </div>
 
-    <BtnCursoActivo NombreCurso='Este es el curso numero 1'/>
+    {Contenido}
     </aside>
     );
 }
@@ -300,8 +343,8 @@ export function ModalCursos(){
 
     return(
 
-        <>
-        <button className="flex items-center justify-center rounded-full hover:bg-blue-100 active:bg-blue-200 transition-all duration-50 shadow-sm active:shadow-inner" onMouseEnter={ShowHelperText} onMouseLeave={NoHelperText}>
+        <div>
+        <button className="flex cursor-pointer rounded-full hover:bg-blue-100 active:bg-blue-200 transition-all duration-50 active:shadow-inner" onMouseEnter={ShowHelperText} onMouseLeave={NoHelperText}>
         
         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#7a7a7a"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
         
@@ -310,9 +353,26 @@ export function ModalCursos(){
         
         </button>
 
+        <div className="absolute py-0.5">
         {helpertext &&(
-            <p className=' w-fit h-fit cursor-default bg-white px-2 rounded-xl shadow-md text-xl transition-shadow'>Crea una clase</p>
+            <p className='relative w-fit h-fit cursor-default bg-white px-2 rounded-xl shadow-md text-xl transition-shadow'>Crea una clase</p>
         )}
-        </>
+
+        </div>
+        </div>
     )
 }
+
+export function BtnCursoActivo({src, NombreCurso}){
+
+
+    return(
+
+        
+        <button className="p-3 gap-x-6 cursor-pointer flex border-2 w-fit border-[#483dc7] rounded-2xl">
+            <img className="aspect-square w-15 text-white" src={src} alt="Logo del curso"/>
+            <h2 className="text-[#f4138a] font-black w-35 text-start">{NombreCurso}</h2>
+        </button>
+    );
+}
+

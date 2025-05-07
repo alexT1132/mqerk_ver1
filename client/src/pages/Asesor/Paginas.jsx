@@ -1,13 +1,39 @@
 import React from "react";
-import { DatosPersonales, DatosAcademicos, DatosProfesionales, TarjetaPerfil, BtnFuncion, Documentacion, Lineamientos, Contrato } from "../../components/DashboradComp.jsx";
+import {
+    // Componentes para seccion mi perfil
+    DatosPersonales,
+    DatosAcademicos,
+    DatosProfesionales,
+    TarjetaPerfil,
+    BtnFuncion,
+    Documentacion,
+    Lineamientos,
+    Contrato,
+
+    // Componentes para el dashborar
+    Container,
+    ModalCursos,
+    // TarjetaPerfil,
+    BtnCursoActivo,
+    Analiticas
+    } from "../../components/DashboradComp.jsx";
 import Persona from '../../assets/Persona.jpg'
 
 
+// Este archivo tiene como objetivo armar las secciones, sin incluir
+// el topbar y/o el sidebar, la pagina completa se arma en el archivo
+// Asesor.jsx
+
 export function Dashboard(){
     return(
-        <>
+        <div className="flex flex-col gap-y-20 w-full p-10">
+        <div className="flex">
+        <Container SeccionDashboard={'Cursos Activos'} ModalCursos={<ModalCursos/>} Contenido={<BtnCursoActivo/>}/>
         <TarjetaPerfil/>
-        </>
+        </div>
+
+        <Container SeccionDashboard={'Analíticas'} Contenido={<Analiticas/>}/>
+        </div>
     )
 }
 
