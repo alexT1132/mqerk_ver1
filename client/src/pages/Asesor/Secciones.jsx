@@ -26,7 +26,7 @@ import Persona from '../../assets/Persona.jpg'
 
 export function Dashboard(){
     return(
-        <div className="flex flex-col gap-y-20 w-full p-10">
+        <div className="flex flex-col w-full gap-y-20 p-10">
         <div className="flex">
         <Container SeccionDashboard={'Cursos Activos'} ModalCursos={<ModalCursos/>} Contenido={<BtnCursoActivo/>}/>
         <TarjetaPerfil/>
@@ -42,7 +42,7 @@ export function MiPerfil(){
     return(
 
         <>
-            <div className="flex w-full justify-center">
+            <div className="flex justify-center max-sm:mb-10 w-full">
             <DatosPersonales
             Correo={'darianreyesromero@hotmail.com'}
             Direccion={'18 de marzo entre morelos y aldama'}
@@ -58,9 +58,9 @@ export function MiPerfil(){
             />
             </div>
 
-            <div className='flex w-full justify-evenly mb-20'>
+            <div className='flex max-sm:flex-col sm:w-full sm:justify-evenly max-sm:gap-y-10 max-sm:mb-10 sm:mb-20'>
 
-            <div className="flex items-baseline justify-evenly w-full pt-20">
+            <div className="flex max-sm:flex-col items-baseline md:justify-evenly w-full sm:pt-20 max-sm:gap-y-10">
             <DatosAcademicos
             NivelEstudios={'Universidad'}
             Titulo={'Ing. Sistemas Computacionales'}

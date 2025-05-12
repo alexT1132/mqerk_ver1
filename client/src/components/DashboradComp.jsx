@@ -54,7 +54,7 @@ export function DatosPersonales({Correo, Direccion, Municipio, Numero, Nacimient
     return(
         <div className="w-fit content-center">
         <CardsInfo Informacion='Datos personales'/>
-        <ul className="grid grid-flow-col grid-rows-5 gap-x-10">
+        <ul className="grid grid-flow-col grid-rows-5 max-sm:flex max-sm:flex-col gap-x-10">
             <InfoContainer Icono={i1} TipoDeDato='Correo Electrónico' Dato={Correo}/>
             <InfoContainer Icono={i2} TipoDeDato='Dirección' Dato={Direccion}/>
             <InfoContainer Icono={i3} TipoDeDato='Municipio' Dato={Municipio}/>
@@ -120,7 +120,7 @@ export function DatosProfesionales({Experiencia, ExperienciaAsesorias, Funcion, 
     return(
         <div className="w-fit content-center">
         <CardsInfo Informacion='Datos profesionales'/>
-        <ul className="grid grid-flow-col grid-rows-7">
+        <ul className="w-fit grid grid-flow-col grid-rows-7">
             <InfoContainer Icono={i1} TipoDeDato='Experiencia laboral' Dato={Experiencia}/>
             <InfoContainer Icono={i2} TipoDeDato='Experiencia previa en asesorias' Dato={ExperienciaAsesorias}/>
             <InfoContainer Icono={i3} TipoDeDato='Función' Dato={Funcion}/>
@@ -249,51 +249,99 @@ export function Contrato(){
 
 // Pagina para testear componentes
 
+import Select from "@mui/material";
+
 export default function Componente(){
     return(
-        <div className="bg-[#1f1f1f] w-full h-full flex justify-center items-center">
+        <div className="bg-[#1f1f1f] w-full h-full flex flex-col justify-center items-center">
+
+        <Grid className={`text-white border-4 border-amber-300`}>
+            <nav>Lista
+                <select>
+                    <option></option>
+                    <option></option>
+                    <option></option>
+                    <option></option>
+                    <option></option>
+                    <option></option>
+                </select>
+                <search></search>
+            </nav>
+            <div>ROW 1
 
 
-        <div>
-            <BtnPanelAdmin Informacion={'Ingresos'}/>
-            <BtnPanelAdmin Informacion={'Egresos'}/>
-            <BtnPanelAdmin Informacion={'Usuarios'}/>
-            <BtnPanelAdmin Informacion={'Asesores'}/>
-            <BtnPanelAdmin Informacion={'Cursos activos'}/>
-            <BtnPanelAdmin Informacion={'Actividad diaria'}/>
-            <BtnPanelAdmin Informacion={'Nuevos usuarios'}/>
-            <BtnPanelAdmin Informacion={'Ingreso anual'}/>
-            <BtnPanelAdmin Informacion={'Tasa de retención'}/>
-            <BtnPanelAdmin Informacion={'Tasa de abandono'}/>
-            <BtnPanelAdmin Informacion={'Bajas'}/>
-            <BtnPanelAdmin Informacion={'Número de asesores'}/>
-            <BtnPanelAdmin Informacion={'Certificados emitidos'}/>
-            <BtnPanelAdmin Informacion={'% crecimiento mensual'}/>
-            <BtnPanelAdmin Informacion={'% crecimiento anual'}/>
-
-        </div>
-
-
+            </div>
+        </Grid>
+        
 
         </div>
     )
 }
 
-function BtnPanelAdmin({Informacion}){
+
+
+
+
+
+// Panel principal del administrador
+
+function BtnPanelAdmin({Informacion, cantidad}){
+ 
+
+    const MostrarCantidad = cantidad != null && cantidad !== '';
+
+    const colorClass = cantidad < 0 ? `text-red-500` : `text-green-500`;
+
     return(
-    <div className="flex w-full h-fit justify-center text-center pb-2">
-    <span className="bg-white flex flex-wrap text-purple-700 font-bold uppercase border border-gray-300 rounded-lg px-6 py-2 shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
+    <button className="flex flex-col cursor-pointer h-22 p-4 bg-white w-50 items-center justify-center text-purple-700 border border-gray-300 rounded-lg shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
+    <span className="uppercase w-full text-xl">
       {Informacion}
+    
     </span>
-    </div>
+    {MostrarCantidad && (
+    <span className={`w-full text-end text-2xl ${colorClass} font-bold`}>{new Intl.NumberFormat('es-MX', {
+            style: 'currency',
+            currency: 'MXN',
+          }).format(cantidad)}</span>
+    )}
+    
+    
+    </button>
     )
 }
 
 
-function DashboardAdmin(){
+export function DashboardAdmin(){
     <>
     
+    <div className="flex flex-col gap-y-10">
+        <div className="flex justify-center p-10 gap-x-5">
+            <BtnPanelAdmin Informacion={'Reporte mensual'}/>
+            <BtnPanelAdmin Informacion={'Reporte anual'}/>
+        </div>
 
+        <div className="flex flex-wrap w-full justify-center gap-5">
+            <BtnPanelAdmin Informacion={'Ingresos'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'Egresos'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'Usuarios'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'Asesores'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'Cursos activos'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'Actividad diaria'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'Nuevos usuarios'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'Ingreso anual'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'Tasa de retención'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'Tasa de abandono'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'Bajas'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'Número de asesores'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'Certificados emitidos'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'crecimiento mensual'} cantidad={Math.random()}/>
+            <BtnPanelAdmin Informacion={'crecimiento anual'} cantidad={Math.random()}/>
+        </div>
+
+        <div className="flex w-full">
+            <Container SeccionDashboard={'Analíticas'} Contenido={<AnaliticasAdmin/>}/>
+        </div>
+        </div>
 
 
     </>
@@ -308,11 +356,86 @@ function DashboardAdmin(){
 
 
 
-// Pagina para le dashboard del asesor
+// Pagina para el dashboard del asesor
 
 
 import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
+import { LineChart } from '@mui/x-charts/LineChart';
+import { Grid } from "@mui/material";
+
+export function AnaliticasAdmin(){
+    return(
+        <div className="flex flex-wrap justify-center gap-8">
+            <div className="flex flex-col justify-center">
+            <h3 className="text-center">Ingresos/Egresos mensuales</h3>
+            <BarChart
+            xAxis={[{ data: ['group A', 'group B', 'group C'] }]}
+            series={[{ data: [4, 3, 5] }, { data: [1, 6, 3] }, { data: [2, 5, 6] }]}
+            height={300}
+            />
+            </div>
+
+            <div className="flex flex-col justify-center">
+            <h3 className="text-center">Cursos vendidos a usuarios</h3>
+            <LineChart
+            xAxis={[{ data: [1, 2, 3, 5, 8, 10] }]}
+            series={[
+                {
+                data: [2, 5.5, 2, 8.5, 1.5, 5],
+                },
+            ]}
+            height={300}
+            />
+            </div>
+
+            <div className="flex flex-col justify-center">
+            <h3 className="text-center">Meta de ventas mensuales</h3>
+            <PieChart
+            series={[
+                {
+                data: [
+                    { id: 0, value: 10, label: 'series A' },
+                    { id: 1, value: 15, label: 'series B' },
+                    { id: 2, value: 20, label: 'series C' },
+                ],
+                },
+            ]}
+            width={200}
+            height={200}
+            />
+            </div>
+
+            <div className="flex flex-col justify-center">
+            <h3 className="text-center">Usuarios</h3>
+            <BarChart
+            yAxis={[{ data: ['group A', 'group B', 'group C'] }]}
+            series={[{ data: [4, 3, 5] }, { data: [1, 6, 3] }, { data: [2, 5, 6] }]}
+            height={300}
+            layout="horizontal"
+            />
+            </div>
+
+            <div className="flex flex-col justify-center">
+            <h3 className="text-center">Meta de venta anual</h3>
+            <PieChart
+            series={[
+                {
+                data: [
+                    { id: 0, value: 10, label: 'series A' },
+                    { id: 1, value: 15, label: 'series B' },
+                    { id: 2, value: 20, label: 'series C' },
+                ],
+                },
+            ]}
+            width={200}
+            height={200}
+            />
+            </div>
+        
+        </div>
+    )
+}
 
 
 export function Analiticas({TituloTabla1, TituloTabla2}){

@@ -15,7 +15,7 @@ export function PerfilAsesor(){
         <SideBarDesktop toMiPerfil={'/PerfilAsesor'}/>
         
 
-        <div className="flex flex-col flex-wrap justify-center items-center gap-8 p-10 px-25">
+        <div className="flex flex-col flex-wrap justify-center items-center sm:gap-8 sm:p-10 sm:px-25">
         <MiPerfil />
             
         </div>
