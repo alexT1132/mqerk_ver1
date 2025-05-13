@@ -27,7 +27,7 @@ import R25_3 from "../../assets/25-R3.png";
 import R25_4 from "../../assets/25-R4.png";
 
 
-function Bienvenida() {
+export function Test() {
 
     const [step, setStep] = useState(1);
 
@@ -4091,5 +4091,3 @@ function Bienvenida() {
     </div>
   )
 }
-
-export default Bienvenida

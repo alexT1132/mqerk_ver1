@@ -39,7 +39,7 @@ const ResponsivePage = () => {
         </div>
   
         {/* Versión para móviles */}
-        <div className="flex md:hidden w-full bg-cover bg-[position:calc(50%+165px)_calc(50%-1px)] bg-no-repeat bg-fixed min-h-screen justify-center fondo">
+        <div className="sm: flex w-full bg-cover bg-[position:calc(50%+165px)_calc(50%-1px)] bg-no-repeat bg-fixed min-h-screen justify-center fondo">
             <div className="flex flex-col items-center">
                 <h1 className="text-white text-3xl font-bold mt-10">¡BIENVENIDOS!</h1>
                 <h1 className="text-white text-center text-3xl font-bold mt-68">Regístrate como:</h1>

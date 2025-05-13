@@ -1,7 +1,7 @@
 import React from 'react'
 import Navbar from "../../components/NavLogin.jsx";
 
-function Bienvenida() {
+export function Bienvenida() {
   return (
     <div>
         <Navbar />
@@ -49,5 +49,3 @@ function Bienvenida() {
     </div>
   )
 }
-
-export default Bienvenida
