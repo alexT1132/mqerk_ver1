@@ -1,7 +1,7 @@
 import React from "react";
 import Navbar from "../../components/NavBar";
 import { SideBarDesktop } from "../../components/sidebar";
-import { DashboardAdmin, BtnPanelAdmin, Container, AnaliticasAdmin} from "../../components/DashboradComp"
+import { BtnPanelAdmin, Container, AnaliticasAdmin} from "../../components/DashboradComp"
 
 
 

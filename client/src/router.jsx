@@ -39,7 +39,7 @@ const router = createBrowserRouter([
 
 // Inicio Asesor
   {
-    path: '/asesor',
+    path: '/RegistroAsesor',
     element: <PreRegAsesor/>
   },
 
@@ -72,7 +72,7 @@ const router = createBrowserRouter([
   },
 
   {
-    path: '/Inicio',
+    path: '/Asesor',
     element: <DashboardAsesor/>
   },
 
