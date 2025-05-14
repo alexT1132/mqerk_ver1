@@ -9,6 +9,8 @@ import {Bienvenida} from './pages/Asesor/Bienvenida.jsx';
 import {Test} from './pages/Asesor/Test.jsx';
 import {DashboardAsesor, PerfilAsesor} from './pages/Asesor/Asesor.jsx'
 
+import { DashboardAdm } from './pages/Admin/Panel.jsx';
+
 import {RegistroEstudiante} from './pages/Alumnos/RegistroEstudiante.jsx';
 
 import Componente from './components/DashboradComp.jsx';
@@ -26,6 +28,13 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login/>
+  },
+
+// Inicio Admin
+
+  {
+    path:`/Dashboard`,
+    element: <DashboardAdm/>
   },
 
 // Inicio Asesor

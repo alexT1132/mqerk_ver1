@@ -253,28 +253,48 @@ export function Contrato(){
 
 export default function Componente(){
 
-  const [desplegar, setDesplegar] = useState(false);
-  const [ordenActual, setOrdenActual] = useState(null);
-
-  const opciones = ["ID", "Nombre", "Cursos", "Correo"];
-
-  const LiAnchorClass =
-    'block px-4 py-2 cursor-pointer hover:bg-gray-100 transition text-gray-700 text-sm';
-
-  const manejarSeleccion = (opcion) => {
-    setOrdenActual(opcion);
-    setDesplegar(false);
-  };
+  
 
 
 
     return(
         <div className="bg-[#1f1f1f] w-full h-full flex flex-col justify-center items-center border-2 border-amber-400">
         
-        <div className="relative w-fit h-fit flex flex-col items-center border-2 border-amber-600">
+        <input type="text" />
+
+        </div>
+    )
+}
+
+
+
+function Buscador(){
+    return(
+        <>
+        <input type="text" />
+        </>
+    )
+}
+
+
+function OrdenarBtn(){
+    const [desplegar, setDesplegar] = useState(false);
+    const [ordenActual, setOrdenActual] = useState(null);
+
+    const opciones = ["ID", "Nombre", "Cursos", "Correo"];
+
+    const LiAnchorClass ='block px-4 py-2 cursor-pointer hover:bg-gray-100 transition text-gray-700 text-sm';
+
+    const manejarSeleccion = (opcion) => {
+    setOrdenActual(opcion);
+    setDesplegar(false);
+    };
+
+    return(
+    <div className="relative w-fit h-fit flex flex-col items-center">
       <button
         onClick={() => setDesplegar(!desplegar)}
-        className="inline-flex cursor-pointer items-center p-2 gap-x-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-b-sm shadow-sm hover:bg-gray-300 focus:outline-none transition"
+        className="inline-flex cursor-pointer items-center p-2 gap-x-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-b-sm shadow-sm hover:bg-gray-300 focus:outline-none transition"
       >
         Ordenar por: <span className="font-semibold text-blue-600">{ordenActual}</span>
         <svg
@@ -308,19 +328,14 @@ export default function Componente(){
         </ul>
       </div>
     </div>
-
-        </div>
     )
 }
 
 
 
-
-
-
 // Panel principal del administrador
 
-function BtnPanelAdmin({Informacion, cantidad}){
+export function BtnPanelAdmin({Informacion, cantidad}){
  
 
     const MostrarCantidad = cantidad != null && cantidad !== '';
@@ -347,7 +362,6 @@ function BtnPanelAdmin({Informacion, cantidad}){
 
 
 export function DashboardAdmin(){
-    <>
     
     <div className="flex flex-col gap-y-10">
         <div className="flex justify-center p-10 gap-x-5">
@@ -379,7 +393,6 @@ export function DashboardAdmin(){
         </div>
 
 
-    </>
 }
 
 
@@ -397,7 +410,6 @@ export function DashboardAdmin(){
 import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { LineChart } from '@mui/x-charts/LineChart';
-import { Grid } from "@mui/material";
 
 export function AnaliticasAdmin(){
     return(
