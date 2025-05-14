@@ -249,7 +249,7 @@ export function Contrato(){
 
 // Pagina para testear componentes
 
-import Select from "@mui/material";
+// import Select from "@mui/material";
 
 export default function Componente(){
     return(
