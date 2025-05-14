@@ -24,12 +24,12 @@ import Persona from '../../assets/Persona.jpg'
 // el topbar y/o el sidebar, la pagina completa se arma en el archivo
 // Asesor.jsx
 
-export function Dashboard(){
+export function Dashboard({src, TituloAsesor, Nombre, Ingreso, cantidadCursos, cantidadEstudiantes, cantidadCertificados, cantidadGeneraciones}){
     return(
         <div className="flex flex-col w-full gap-y-20 p-10">
         <div className="flex">
         <Container SeccionDashboard={'Cursos Activos'} ModalCursos={<ModalCursos/>} Contenido={<BtnCursoActivo/>}/>
-        <TarjetaPerfil/>
+        <TarjetaPerfil src={src} TituloAsesor={TituloAsesor} Nombre={Nombre} Ingreso={Ingreso} cantidadCursos={cantidadCursos} cantidadEstudiantes={cantidadEstudiantes} cantidadCertificados={cantidadCertificados} cantidadGeneraciones={cantidadGeneraciones}/>
         </div>
 
         <Container SeccionDashboard={'Analíticas'} Contenido={<Analiticas TituloTabla1={'Rendimiento'} TituloTabla2={'Tareas entregadas'}/>}/>

@@ -252,27 +252,15 @@ export function Contrato(){
 // import Select from "@mui/material";
 
 export default function Componente(){
+
+  
+
+
+
     return(
-        <div className="bg-[#1f1f1f] w-full h-full flex flex-col justify-center items-center">
-
-        <Grid className={`text-white border-4 border-amber-300`}>
-            <nav>Lista
-                <select>
-                    <option></option>
-                    <option></option>
-                    <option></option>
-                    <option></option>
-                    <option></option>
-                    <option></option>
-                </select>
-                <search></search>
-            </nav>
-            <div>ROW 1
-
-
-            </div>
-        </Grid>
+        <div className="bg-[#1f1f1f] w-full h-full flex flex-col justify-center items-center border-2 border-amber-400">
         
+        <input type="text" />
 
         </div>
     )
@@ -280,12 +268,74 @@ export default function Componente(){
 
 
 
+function Buscador(){
+    return(
+        <>
+        <input type="text" />
+        </>
+    )
+}
+
+
+function OrdenarBtn(){
+    const [desplegar, setDesplegar] = useState(false);
+    const [ordenActual, setOrdenActual] = useState(null);
+
+    const opciones = ["ID", "Nombre", "Cursos", "Correo"];
+
+    const LiAnchorClass ='block px-4 py-2 cursor-pointer hover:bg-gray-100 transition text-gray-700 text-sm';
+
+    const manejarSeleccion = (opcion) => {
+    setOrdenActual(opcion);
+    setDesplegar(false);
+    };
+
+    return(
+    <div className="relative w-fit h-fit flex flex-col items-center">
+      <button
+        onClick={() => setDesplegar(!desplegar)}
+        className="inline-flex cursor-pointer items-center p-2 gap-x-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-b-sm shadow-sm hover:bg-gray-300 focus:outline-none transition"
+      >
+        Ordenar por: <span className="font-semibold text-blue-600">{ordenActual}</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          height="24px"
+          viewBox="0 -960 960 960"
+          width="24px"
+          fill="#5985E1"
+        >
+          <path d="M120-240v-80h240v80H120Zm0-200v-80h480v80H120Zm0-200v-80h720v80H120Z" />
+        </svg>
+      </button>
+
+      {/* Menú desplegable */}
+      <div
+        className={`absolute top-full mt-2 z-10 w-48 origin-top rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 transition-all duration-200 ease-out transform ${
+          desplegar ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
+        }`}
+      >
+        <ul className="w-full flex flex-col text-start">
+          {opciones.map((opcion) => (
+            <li key={opcion}>
+              <a
+                className={LiAnchorClass}
+                onClick={() => manejarSeleccion(opcion)}
+              >
+                {opcion}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+    )
+}
 
 
 
 // Panel principal del administrador
 
-function BtnPanelAdmin({Informacion, cantidad}){
+export function BtnPanelAdmin({Informacion, cantidad}){
  
 
     const MostrarCantidad = cantidad != null && cantidad !== '';
@@ -312,7 +362,6 @@ function BtnPanelAdmin({Informacion, cantidad}){
 
 
 export function DashboardAdmin(){
-    <>
     
     <div className="flex flex-col gap-y-10">
         <div className="flex justify-center p-10 gap-x-5">
@@ -344,7 +393,6 @@ export function DashboardAdmin(){
         </div>
 
 
-    </>
 }
 
 
@@ -362,7 +410,6 @@ export function DashboardAdmin(){
 import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { LineChart } from '@mui/x-charts/LineChart';
-import { Grid } from "@mui/material";
 
 export function AnaliticasAdmin(){
     return(
