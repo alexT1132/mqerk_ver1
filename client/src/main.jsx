@@ -11,7 +11,7 @@ import {Bienvenida} from './pages/Asesor/Bienvenida.jsx';
 import {Test} from './pages/Asesor/Test.jsx';
 import {DashboardAsesor, PerfilAsesor} from './pages/Asesor/Asesor.jsx'
 
-import { DashboardAdm } from './pages/Admin/Panel.jsx';
+import { DashboardAdm, ListaAsesores, ListaColaboradores } from './pages/Admin/Panel.jsx';
 
 import {RegistroEstudiante} from './pages/Alumnos/RegistroEstudiante.jsx';
 
@@ -31,7 +31,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
           {/* Inicio administrador */}
 
-          <Route path='/Dashboard' element={<DashboardAdm/>}></Route>
+          <Route path={`/admin/dashboard`} element={<DashboardAdm/>}></Route>
+
+          <Route path={`/admin/lista-asesores`} element={<ListaAsesores/>}></Route>
+
+          <Route path={`/admin/lista-colaboradores`} element={<ListaColaboradores/>}/>
 
           {/* Inicio asesor */}
 

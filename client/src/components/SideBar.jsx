@@ -263,12 +263,12 @@ export function SideBarDesktop({
   return (
     <>
       <aside
-        className="max-sm:hidden flex flex-col h-fit fixed w-[80px] shadow-[4px_0_10px_-2px_rgba(0,0,0,0.3)] z-1"
+        className="max-sm:hidden flex flex-col fixed w-[80px] shadow-[4px_0_10px_-2px_rgba(0,0,0,0.3)] z-1"
         aria-label="Sidebar"
       >
-        <nav className="px- h-screen bg-gray-50">
+        <nav className="h-svh bg-gray-50">
 
-          <ul className="p-4 pb-2 h-screen">
+          <ul className="p-4 pb-2 h-full">
             
             <ElementoSideBar to={toInicio} Icono={LogoInicio} NombreElemento='Inicio'/>
 
@@ -292,7 +292,9 @@ export function SideBarDesktop({
 
             <ElementoSideBar to={toConfiguracion} Icono={LogoConfig} NombreElemento='Configuración'/>
 
+            <div className={`relative translate-y-full`}>
             <ElementoSideBar to={toCerrarSesion} Icono={LogoLogOut} NombreElemento='Cerrar Sesión'/>
+            </div>
           </ul>
         </nav>
       </aside>
