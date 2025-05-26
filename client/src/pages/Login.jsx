@@ -1,6 +1,5 @@
-import React from 'react';
-import NavLogin from "../components/NavLogin.jsx";
-import LoginBody from "../components/Login.jsx";
+import NavLogin from "../components/NavLogin";
+import LoginBody from "../components/Login";
 
 function Login() {
   return (
@@ -11,4 +10,4 @@ function Login() {
   )
 }
 
-export default Login;
+export default Login

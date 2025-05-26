@@ -1,7 +1,6 @@
-import React from "react";
 import Navbar from "../../components/NavBar";
 import { SideBarDesktop } from "../../components/sidebar";
-import { BtnPanelAdmin, Container, AnaliticasAdmin} from "../../components/DashboradComp"
+import { BtnPanelAdmin, Container, AnaliticasAdmin, Buscador, TablaAsesores, OrdenarBtn, TablaColaboradores} from "../../components/DashboardComp"
 
 
 
@@ -42,4 +41,59 @@ export function DashboardAdm(){
                 </div>
         </>
     );
+}
+
+
+export function ListaAsesores(){
+    return(
+        <>
+        <Navbar/>
+
+        <SideBarDesktop/>
+                <div className="flex flex-col pt-10 sm:gap-2 sm:px-25">
+    
+                <div className="flex justify-between">
+                    <div className={`flex items-center justify-start gap-4 mb-2`}>
+                        <h2 className={`font-semibold text-2xl`}>Lista de asesores</h2>
+                        <OrdenarBtn/>
+                    </div>
+    
+                
+                    <Buscador/>
+                </div>
+    
+                <TablaAsesores/>
+    
+                </div>
+    
+
+            </>
+        )
+}
+
+export function ListaColaboradores(){
+    return(
+        <>
+        <Navbar/>
+
+        <SideBarDesktop/>
+                <div className="flex flex-col pt-10 sm:gap-2 sm:px-25">
+    
+                <div className="flex justify-between">
+                    <div className={`flex items-center justify-start gap-4 mb-2`}>
+                        <h2 className={`font-semibold text-2xl`}>Lista de colaboradores</h2>
+                        <OrdenarBtn/>
+                    </div>
+    
+                
+                    <Buscador/>
+                </div>
+    
+                <TablaColaboradores/>
+    
+                </div>
+    
+
+            </>
+    )
 }

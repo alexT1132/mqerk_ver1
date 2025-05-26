@@ -1,11 +1,11 @@
 import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+
+// https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    tailwindcss(),
+    react(),
+    tailwindcss()
   ],
-  server: {
-    host: '192.168.0.18', // Permite acceso desde otras direcciones IP
-    port: 5000,      // Cambia el puerto si lo necesitas
-},
 })

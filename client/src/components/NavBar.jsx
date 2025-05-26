@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Logo from "../assets/MQerK_logo.png";
 import { BtnSideBar } from './SideBarComp';
 import { Notificaciones, PerfilMenu } from './NavBarComp';

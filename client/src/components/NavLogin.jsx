@@ -1,4 +1,3 @@
-import React from "react";
 import Logo from "../assets/MQerK_logo.png";
 import Guardianes from "../assets/guardianes.png";
 
