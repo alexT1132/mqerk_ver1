@@ -2,6 +2,7 @@ import NavIndex from './components/NavIndex'
 import { useState } from 'react';
 import { Link } from "react-router-dom";
 import React from 'react';
+import { BtnIndex } from './components/IndexComp.jsx';
 
 
 export default function Index() {
@@ -25,28 +26,11 @@ return(
                 <div className="flex justify-center w-full gap-x-2">
                     
                     <Link>
-                    <button className={MainBtn}>
-                        Estudiante
-                    </button>
+                    <BtnIndex TextoBtn={`Personal interno`}/>
                     </Link>
 
                     <Link>
-                    <button  onClick={toggleDropdown} className={MainBtn}>
-                        Colaborador
-                    </button>
-                    {isOpen && (
-                        <ul className='flex flex-col pt-3 items-end font-bold gap-2 w-full'>
-
-                            <Link className='flex w-full justify-end' to='/asesor'>
-                                <button className={DisplayedBtn}>Asesor</button>
-                            </Link>
-
-                            <Link className='flex w-full justify-end'>
-                                <button className={DisplayedBtn}>Personal Interno</button>
-                            </Link>
-                        </ul>
-
-                    )}
+                    <BtnIndex TextoBtn={`Colaborador`}/>
                     </Link>
                     
                 
