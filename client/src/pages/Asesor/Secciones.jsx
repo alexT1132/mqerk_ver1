@@ -114,3 +114,11 @@ export function MiPerfil(){
             </>
     )
 }
+
+export function MisCursos(){
+    return(
+        <>
+        
+        </>
+    )
+}

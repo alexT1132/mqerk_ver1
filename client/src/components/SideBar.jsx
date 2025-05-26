@@ -266,7 +266,7 @@ export function SideBarDesktop({
         className="max-sm:hidden flex flex-col fixed w-[80px] shadow-[4px_0_10px_-2px_rgba(0,0,0,0.3)] z-1"
         aria-label="Sidebar"
       >
-        <nav className="h-svh bg-gray-50">
+        <nav className="h-dvh bg-gray-50">
 
           <ul className="p-4 pb-2 h-full">
             

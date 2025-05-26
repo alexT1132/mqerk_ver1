@@ -251,14 +251,37 @@ export function Contrato(){
 
 
 
-export default function Componente(){
+export default function Componente({Seccion}){
+  const Menu=[
+    {
+    seccion:`Actividades`
+    },
+    {
+    seccion:`Quizt`
+    },
+    {
+    seccion:`Simuladores`
+    }
+  ]
+
+
+    
 
     return(
-        <div className="bg-[#1f1f1f] w-full h-full flex flex-col justify-center items-center border-2 border-amber-400">
-        
-        
+    <div className="bg-[#1f1f1f] w-full h-full flex flex-col justify-center items-center border-2 border-amber-400">
+      
+      
+      
+      <div>
+      <button className={`flex justify-center items-center gap-1`}>
+        {`${Menu}`}
+        <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#5115bc"><path d="M480-344 240-584l47.33-47.33L480-438.67l192.67-192.66L720-584 480-344Z"/></svg>
+      </button>
+      </div>
 
-        </div>
+
+
+    </div>
     )
 }
 
@@ -280,11 +303,11 @@ export function TablaColaboradores({}){
         "ingresos": 62000
     },
     {
-    "id": 3,
-    "nombre": "Diana López",
-    "rfc": "LOPD900311LMN",
-    "profesion": "Diseñadora Gráfica",
-    "ingresos": 39000
+        "id": 3,
+        "nombre": "Diana López",
+        "rfc": "LOPD900311LMN",
+        "profesion": "Diseñadora Gráfica",
+        "ingresos": 39000
     },
 
   ];

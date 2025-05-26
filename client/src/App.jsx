@@ -1,65 +1,71 @@
-import React from 'react'
-import NavIndex from './components/NavIndex'
-import { useState } from 'react';
-import { Link } from "react-router-dom";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
+import Index from './Index.jsx';
+import Login from './pages/Login';
 
-export default function Index() {
+import {PreRegAsesor} from './pages/Asesor/PreRegAsesor.jsx';
+import {Bienvenida} from './pages/Asesor/Bienvenida.jsx';
+import {Test} from './pages/Asesor/Test.jsx';
+import {DashboardAsesor, PerfilAsesor} from './pages/Asesor/Asesor.jsx'
 
-    const [isOpen, setIsOpen] = useState(false);
-    
-    const toggleDropdown = () => setIsOpen(!isOpen);
+import { DashboardAdm, ListaAsesores, ListaColaboradores } from './pages/Admin/Panel.jsx';
 
-    const MainBtn='max-sm:w-full py-2 w-60 text-2xl font-bold border-2 bg-gradient-to-r from-[#5115bc] to-[#E6007E] bg-[length:120%_100%] ease-in-out bg-right text-white rounded-3xl transition hover:bg-left duration-500 cursor-pointer';
-    const DisplayedBtn='text-white gap-4 w-[60%] rounded-full bg-gradient-to-r from-[#5115bc] to-[#E6007E] bg-[length:120%_100%] ease-in-out bg-right border-1 border-white hover:bg-left duration-500 cursor-pointer';
+import {RegistroEstudiante} from './pages/Alumnos/RegistroEstudiante.jsx';
 
-return(
-    <>
-    <NavIndex/>
-
-    <div className="flex-row bg-cover bg-center h-[100%] bg-no-repeat bg-fixed justify-center fondo">
-
-                <h1 className="text-white pt-10 text-center text-6xl font-bold max-sm:text-3xl">¡BIENVENIDOS!</h1>
-                <h1 className="text-white pt-[40vh] pb-[20px] text-center text-5xl font-bold max-sm:text-2xl">Regístrate como:</h1>
-                
-                <div className="flex justify-center w-full gap-x-2">
-                    
-                    <Link>
-                    <button className={MainBtn}>
-                        Estudiante
-                    </button>
-                    </Link>
-
-                    <Link>
-                    <button  onClick={toggleDropdown} className={MainBtn}>
-                        Colaborador
-                    </button>
-                    {isOpen && (
-                        <ul className='flex flex-col pt-3 items-end font-bold gap-2 w-full'>
-
-                            <Link className='flex w-full justify-end' to='/asesor'>
-                                <button className={DisplayedBtn}>Asesor</button>
-                            </Link>
-
-                            <Link className='flex w-full justify-end'>
-                                <button className={DisplayedBtn}>Personal Interno</button>
-                            </Link>
-                        </ul>
-
-                    )}
-                    </Link>
-                    
-                
-                
-                
-
-                </div>
-
-            </div>
-            </>
-  );
+import Componente from './components/DashboradComp.jsx';
 
 
 
+export default function App(){
+    return(
+
+      <BrowserRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+        <Routes>
+
+          {/* Index */}
+          <Route path='/' element={<Index/>}></Route>
+          <Route path='/login' element={<Login/>}></Route>
+
+          {/* Inicio administrador */}
+
+          <Route path={`/admin/dashboard`} element={<DashboardAdm/>}></Route>
+
+          <Route path={`/admin/lista-asesores`} element={<ListaAsesores/>}></Route>
+
+          <Route path={`/admin/lista-colaboradores`} element={<ListaColaboradores/>}></Route>
+
+          {/* Inicio asesor */}
+
+          <Route path='/RegistroAsesor' element={<PreRegAsesor/>}></Route>
+
+          <Route path='/bienvenida-asesor' element={<Bienvenida/>}></Route>
+
+          <Route path='/test-asesor' element={<Test/>}></Route>
+
+          {/* Final asesor */}
+
+          {/* Inicio estudiantes */}
+
+          <Route path='/RegEst' element={<RegistroEstudiante/>}></Route>
+
+          {/* Test de componentes */}
+
+          <Route path='/Componente' element={<Componente/>}></Route>
+
+          <Route path='/Asesor' element={<DashboardAsesor/>}></Route>
+
+          <Route path='/Componente' element={<Componente/>}></Route>
+
+          <Route path='/PerfilAsesor' element={<PerfilAsesor/>}></Route>
+
+          
+
+
+        </Routes>
+      </BrowserRouter>
+
+)
 }
-
