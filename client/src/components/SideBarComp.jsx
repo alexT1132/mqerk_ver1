@@ -1,5 +1,5 @@
 import React from "react";
-import { SideBarsm, SideBarDesktop } from "./sidebar";
+import { SideBarsm, SideBarDesktop } from "./SideBar.jsx";
 
 export function BtnSideBar({Sidebar, setSidebar, abrirSidebar}){
 

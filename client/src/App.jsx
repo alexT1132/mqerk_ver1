@@ -43,23 +43,23 @@ export default function App(){
 
           <Route path='/asesor/bienvenida' element={<Bienvenida/>}></Route>
 
-          <Route path='/test-asesor' element={<Test/>}></Route>
+          <Route path='/asesor/inicio' element={<DashboardAsesor/>}></Route>
+
+          <Route path='/asesor/test' element={<Test/>}></Route>
+
+          <Route path='/asesor/perfil' element={<PerfilAsesor/>}></Route>
 
           {/* Final asesor */}
 
           {/* Inicio estudiantes */}
 
-          <Route path='/RegEst' element={<RegistroEstudiante/>}></Route>
+          <Route path='/estudiante/registro' element={<RegistroEstudiante/>}></Route>
 
-          {/* Test de componentes */}
-
-          <Route path='/Componente' element={<Componente/>}></Route>
-
-          <Route path='/Asesor' element={<DashboardAsesor/>}></Route>
+          {/* Test de componentes */}          
 
           <Route path='/Componente' element={<Componente/>}></Route>
 
-          <Route path='/PerfilAsesor' element={<PerfilAsesor/>}></Route>
+          
 
           
 
