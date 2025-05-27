@@ -277,19 +277,22 @@ export default function Componente({Seccion}){
       
       
       <div>
-      <button className={`flex justify-center items-center gap-1`}>
-        {`${Menu}`}
+      <button className={`flex justify-center items-center gap-1`} onClick={()=>setSeccion(!seccion)}>
+        {`${Menu.id}`}
         <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#5115bc"><path d="M480-344 240-584l47.33-47.33L480-438.67l192.67-192.66L720-584 480-344Z"/></svg>
       </button>
-      </div>
-
-      <nav>
+      {seccion &&
+      <nav className={`bg-white w-full h-fit overflow-y-auto`}>
         <ul>
         {Menu.map((menu)=>(
           <li key={menu.id}>{menu.seccion}</li>
         ))}
         </ul>
       </nav>
+      }
+      </div>
+
+      
 
 
 
