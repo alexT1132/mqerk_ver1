@@ -39,9 +39,9 @@ export default function App(){
 
           {/* Inicio asesor */}
 
-          <Route path='/RegistroAsesor' element={<PreRegAsesor/>}></Route>
+          <Route path='/asesor/preregistro' element={<PreRegAsesor/>}></Route>
 
-          <Route path='/bienvenida-asesor' element={<Bienvenida/>}></Route>
+          <Route path='/asesor/bienvenida' element={<Bienvenida/>}></Route>
 
           <Route path='/test-asesor' element={<Test/>}></Route>
 

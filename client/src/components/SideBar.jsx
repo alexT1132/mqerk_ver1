@@ -370,7 +370,7 @@ export function SideBarDesktopAdmin({
             <ElementoSideBar to={toConfiguracion} Icono={LogoConfig} NombreElemento='Configuración'/>
 
             <div className={`relative translate-y-full`}>
-            <ElementoSideBar to={toCerrarSesion} Icono={LogoLogOut} NombreElemento='Cerrar Sesión'/>
+            <ElementoSideBar to={`/login`} Icono={LogoLogOut} NombreElemento='Cerrar Sesión'/>
             </div>
           </ul>
         </nav>
