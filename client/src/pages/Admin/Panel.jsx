@@ -51,24 +51,24 @@ export function ListaAsesores(){
         <Navbar/>
 
         <SideBarDesktopAdmin/>
-                <div className="flex flex-col pt-10 sm:gap-2 sm:px-25">
+        <div className="flex flex-col pt-10 sm:gap-2 sm:px-25">
     
-                <div className="flex justify-between">
-                    <div className={`flex items-center justify-start gap-4 mb-2`}>
-                        <h2 className={`font-semibold text-2xl`}>Lista de asesores</h2>
-                        <OrdenarBtn/>
-                    </div>
-    
-                
-                    <Buscador/>
+            <div className="flex justify-between">
+                <div className={`flex items-center justify-start gap-4 mb-2`}>
+                    <h2 className={`font-semibold text-2xl`}>Lista de asesores</h2>
+                    <OrdenarBtn/>
                 </div>
+
+            
+            <Buscador/>
+            </div>
+        
+            <TablaAsesores/>
     
-                <TablaAsesores/>
-    
-                </div>
+        </div>
     
 
-            </>
+        </>
         )
 }
 

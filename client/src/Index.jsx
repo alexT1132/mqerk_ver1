@@ -18,29 +18,28 @@ return(
     <>
     <NavIndex/>
 
-    <div className="flex-row bg-cover bg-center h-[100%] bg-no-repeat bg-fixed justify-center fondo">
+    <div className="flex flex-col bg-cover bg-center h-dvh justify-center bg-no-repeat bg-fixed fondo">
 
                 <h1 className="text-white pt-10 text-center text-6xl font-bold max-sm:text-3xl">¡BIENVENIDOS!</h1>
-                <h1 className="text-white pt-[40vh] pb-[20px] text-center text-5xl font-bold max-sm:text-2xl">Regístrate como:</h1>
-                
-                <div className="flex justify-center w-full gap-x-2">
-                    
-                    <Link>
-                    <BtnIndex TextoBtn={`Personal interno`}/>
-                    </Link>
 
-                    <Link>
-                    <BtnIndex TextoBtn={`Colaborador`}/>
-                    </Link>
+
+                <div className={`flex flex-col gap-4 items-center`}>
+                <h1 className="text-white text-center text-5xl font-bold max-sm:text-2xl">Regístrate como:</h1>
+                
+                <div className="flex flex-wrap justify-center w-fit items-center gap-x-2">
+                    
+                    <BtnIndex to={``} TextoBtn={`Personal interno`}/>
+
+                    <BtnIndex to={``} TextoBtn={`Colaborador`}/>
                     
                 
                 
                 
-
+                </div>
                 </div>
 
             </div>
-            </>
+    </>
   );
 
 

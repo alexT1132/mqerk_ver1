@@ -1,12 +1,8 @@
 import Navbar from "../../components/NavBar";
-import { SideBarDesktop, SideBarsm } from "../../components/sidebar";
+import { SideBarDesktop, SideBarsm } from "../../components/SideBar.jsx";
 import React from "react";
 import { MiPerfil, Dashboard } from "./Secciones";
 
-// Esta pagina tiene como proposito armar la pagina completa, importando
-// los componentes ya armados en los archivos:
-// Paginas.jsx
-// DashboardComp.jsx
 
 export function PerfilAsesor(){
     return(
@@ -20,7 +16,7 @@ export function PerfilAsesor(){
             
         </div>
 
-            </>
+    </>
 
     );
 }

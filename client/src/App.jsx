@@ -17,6 +17,8 @@ import {RegistroEstudiante} from './pages/Alumnos/RegistroEstudiante.jsx';
 
 import Componente from './components/DashboradComp.jsx';
 
+import { Error404 } from './pages/Error/ErrorPages.jsx';
+
 
 
 export default function App(){
@@ -57,7 +59,7 @@ export default function App(){
 
           {/* Test de componentes */}          
 
-          <Route path='/Componente' element={<Componente/>}></Route>
+          <Route path='/Componente' element={<Error404/>}></Route>
 
           
 
