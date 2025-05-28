@@ -1,15 +1,19 @@
-import Express from "express";
+import express from "express";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+import cors from "cors";
+import authRoutes from "./routes/auth.routes.js";
 
-import AuthRoutes from "./Routes/auth.routes.js";
+const app = express();
 
-const app = Express();
-
+app.use(cors({
+    origin: "http://192.168.0.7:5000",
+    credentials: true, 
+}));
 app.use(morgan("dev"));
-app.use(Express.json());
+app.use(express.json());
 app.use(cookieParser());
 
-app.use("/api", AuthRoutes);
+app.use('/api', authRoutes);
 
-export default app;
+export default app; 

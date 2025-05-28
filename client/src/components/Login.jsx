@@ -1,34 +1,64 @@
+import { useEffect } from "react";
 import { FaUser } from "react-icons/fa";
+import { useForm } from "react-hook-form";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useNavigate } from "react-router-dom";
 
 const ResponsivePage = () => {
+    const { register, handleSubmit } = useForm();
+
+    const { signin, errors: loginErrors, isAuthenticated, user } = useAuth();
+    const navigate = useNavigate();
+
+    const onSubmit = handleSubmit((data) => {
+      signin(data);
+    });
+
+    useEffect(() => {
+    if (isAuthenticated){
+      if (user.role === 'Administrador') {
+        navigate('/admin/dashboard');
+      } else if (user.role === 'Asesor') {
+        navigate('/asesor/dashboard');
+      }
+    }
+  }, [isAuthenticated]);
+
     return (
-        <div className="flex justify-center items-center h-screen" style={{ backgroundColor: "#3818c3" }}>
+        <div className="flex flex-col justify-center items-center h-screen" style={{ backgroundColor: "#3818c3" }}>
+
+        {
+          loginErrors.map((error, i) => (
+            <div className="absolute top-40 bg-red-500 text-white p-2 rounded w-85 font-bold text-center py-3" key={i}>
+              {error}
+            </div>
+          ))
+        }
+
         {/* <!-- Tarjeta para móviles --> */}
         <div className="w-80 bg-white p-8 rounded-3xl shadow-lg md:hidden mb-25">
             <div className="flex justify-center mb-0">
                 <FaUser className="text-5xl text-center mb-4 text-gray-400" />
             </div>
           <h2 className="text-2xl font-semibold text-center text-gray-400 mb-4">Iniciar sesión</h2>
-      
-          <form>
+
+          <form onSubmit={onSubmit}>
             <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-400">Correo electrónico</label>
+              <label className="block text-sm font-medium text-gray-400">Correo electrónico</label>
               <input
                 type="email"
-                id="email"
-                name="email"
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Introduce tu correo electrónico"
+                {...register("correo", { required: true })}
               />
             </div>
       
             <div className="mb-6">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-400">Contraseña</label>
+              <label className="block text-sm font-medium text-gray-400">Contraseña</label>
               <input
                 type="password"
-                id="password"
-                name="password"
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                {...register("contraseña", { required: true })}
                 placeholder="Introduce tu contraseña"
               />
             </div>
@@ -50,13 +80,12 @@ const ResponsivePage = () => {
             </div>
           <h2 className="text-3xl font-semibold text-center text-gray-400 mb-6">Iniciar sesión</h2>
       
-          <form>
+          <form onSubmit={onSubmit}>
             <div className="mb-4">
               <label htmlFor="email" className="block text-sm font-medium text-gray-400">Correo electrónico</label>
               <input
                 type="email"
-                id="email"
-                name="email"
+                {...register("correo", { required: true })}
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Introduce tu correo electrónico"
               />
@@ -66,8 +95,7 @@ const ResponsivePage = () => {
               <label htmlFor="password" className="block text-sm font-medium text-gray-400">Contraseña</label>
               <input
                 type="password"
-                id="password"
-                name="password"
+                {...register("contraseña", { required: true })}
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Introduce tu contraseña"
               />
@@ -75,7 +103,7 @@ const ResponsivePage = () => {
       
             <button
               type="submit"
-              className="w-full py-3 bg-blue-400 text-white rounded-lg hover:bg-blue-600 transition duration-300"
+              className="w-full py-3 bg-blue-400 text-white rounded-lg hover:bg-blue-600 transition duration-300 cursor-pointer"
             >
               Iniciar sesión
             </button>

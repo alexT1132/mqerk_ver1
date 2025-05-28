@@ -1,6 +1,6 @@
-import App from "./App.js";
-import { connectDB } from "./Db.js";
+import app from "./app.js";
+import { connectDB } from "./db.js";
 
 connectDB();
-App.listen(2000);
+app.listen(2000);
 console.log("Server is running on port", 2000);

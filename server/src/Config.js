@@ -1,1 +1,1 @@
-export const TOKEN_SECRET = 'mqerkAcademy1202'
+export const TOKEN_SECRET = '12345mqerk';

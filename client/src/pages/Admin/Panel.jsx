@@ -1,5 +1,5 @@
 import Navbar from "../../components/NavBar";
-import { SideBarDesktop } from "../../components/sidebar";
+import { SideBarDesktopAdmin } from "../../components/SideBar";
 import { BtnPanelAdmin, Container, AnaliticasAdmin, Buscador, TablaAsesores, OrdenarBtn, TablaColaboradores} from "../../components/DashboardComp"
 
 
@@ -9,7 +9,7 @@ export function DashboardAdm(){
         <>
         <Navbar/>
 
-        <SideBarDesktop/>
+        <SideBarDesktopAdmin/>
 
         <div className="flex flex-col gap-y-10 sm:gap-8 sm:px-25">
                 <div className="flex justify-center p-10 gap-x-5">
@@ -49,7 +49,7 @@ export function ListaAsesores(){
         <>
         <Navbar/>
 
-        <SideBarDesktop/>
+        <SideBarDesktopAdmin/>
                 <div className="flex flex-col pt-10 sm:gap-2 sm:px-25">
     
                 <div className="flex justify-between">
@@ -76,7 +76,7 @@ export function ListaColaboradores(){
         <>
         <Navbar/>
 
-        <SideBarDesktop/>
+        <SideBarDesktopAdmin/>
                 <div className="flex flex-col pt-10 sm:gap-2 sm:px-25">
     
                 <div className="flex justify-between">
