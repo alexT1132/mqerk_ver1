@@ -32,8 +32,8 @@ function Navbar({Seccion}) {
   return (
     <>
 
-    <header className='flex items-center justify-between bg-linear-to-r from-[#3d18c3] to-[#4816bf] sticky top-0 left-0 m-auto h-[10vh] max-sm:h-min'>
-      <div className='flex relative items-center gap-x-30 mx-5'>
+    <header className='flex items-center justify-between bg-linear-to-r p-4 h-fit from-[#3d18c3] to-[#4816bf] sticky top-0 left-0 m-auto max-sm:h-min'>
+      <div className='flex relative items-center gap-x-30 px-5'>
       <BtnSideBar className='z-2' Sidebar={Sidebar} setSidebar={setSidebar} abrirSidebar={abrirSidebar}/>
 
       
@@ -48,7 +48,7 @@ function Navbar({Seccion}) {
       <h2 className='text-center font-bold text-[#f4138a] text-2xl'>{Seccion}</h2>
       </div>
         
-      <div className='flex relative items-baseline justify-end sm:gap-x-30 mx-5'>
+      <div className='flex relative items-baseline justify-end sm:gap-x-30 px-5'>
       <Notificaciones/>
 
       <PerfilMenu/>

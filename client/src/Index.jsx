@@ -6,42 +6,29 @@ import { BtnIndex } from './components/IndexComp.jsx';
 
 
 export default function Index() {
+    return(
+        <>
+        <NavIndex/>
+        <div className={`flex flex-wrap bg-fixed fondo bg-no-repeat bg-cover bg-center h-[91.5%]`}>
+        
+        
+                <h1 className={`flex justify-center w-full text-white pt-5 text-6xl font-bold max-sm:text-3xl`}>¡BIENVENIDOS!</h1>
 
-    const [isOpen, setIsOpen] = useState(false);
-    
-    const toggleDropdown = () => setIsOpen(!isOpen);
-
-    const MainBtn='max-sm:w-full py-2 w-60 text-2xl font-bold border-2 bg-gradient-to-r from-[#5115bc] to-[#E6007E] bg-[length:120%_100%] ease-in-out bg-right text-white rounded-3xl transition hover:bg-left duration-500 cursor-pointer';
-    const DisplayedBtn='text-white gap-4 w-[60%] rounded-full bg-gradient-to-r from-[#5115bc] to-[#E6007E] bg-[length:120%_100%] ease-in-out bg-right border-1 border-white hover:bg-left duration-500 cursor-pointer';
-
-return(
-    <>
-    <NavIndex/>
-
-    <div className="flex flex-col bg-cover bg-center h-dvh justify-center bg-no-repeat bg-fixed fondo">
-
-                <h1 className="text-white pt-10 text-center text-6xl font-bold max-sm:text-3xl">¡BIENVENIDOS!</h1>
-
-
-                <div className={`flex flex-col gap-4 items-center`}>
-                <h1 className="text-white text-center text-5xl font-bold max-sm:text-2xl">Regístrate como:</h1>
-                
-                <div className="flex flex-wrap justify-center w-fit items-center gap-x-2">
+                <div className={`flex flex-col w-full gap-4`}>
+                    <h1 className="flex justify-center text-white text-5xl font-bold max-sm:text-2xl">Regístrate como:</h1>
                     
-                    <BtnIndex to={``} TextoBtn={`Personal interno`}/>
+                    <div className="flex flex-wrap w-full justify-center items-center gap-2">
+                        
+                        <BtnIndex to={``} TextoBtn={`Personal interno`}/>
 
-                    <BtnIndex to={``} TextoBtn={`Colaborador`}/>
-                    
-                
-                
-                
-                </div>
-                </div>
-
+                        <BtnIndex to={``} TextoBtn={`Colaborador`}/>
+                        
+                    </div>
             </div>
-    </>
-  );
+        </div>
+        </>
+    );
 
 
 
-}
+    }
