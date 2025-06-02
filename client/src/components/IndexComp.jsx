@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { GrLogin } from "react-icons/gr";
 
 
 export function BtnIndex({TextoBtn, to}){
@@ -9,8 +8,8 @@ export function BtnIndex({TextoBtn, to}){
     return(
         <>
         <Link to={to} className={`flex flex-wrap`}>
-            <button className={`py-1.5 border-2 w-52 border-white bg-gradient-to-r from-[#5115bc] to-[#E6007E] bg-[length:120%_100%] bg-right rounded-3xl transition hover:bg-left duration-500 cursor-pointer`}>
-                <p className={`text-2xl overflow-hidden whitespace-nowrap font-bold text-white`}>
+            <button className={`py-1.5 border-2 sm:w-52 w-40 border-white bg-gradient-to-r from-[#5115bc] to-[#E6007E] bg-[length:120%_100%] bg-right rounded-3xl transition hover:bg-left duration-500 cursor-pointer`}>
+                <p className={`sm:text-2xl overflow-hidden whitespace-nowrap font-bold text-white`}>
                     {TextoBtn}
                 </p>
                 
@@ -44,7 +43,9 @@ export const Logos=({src, alt})=>{
         <img
             src={src}
             alt={alt}
+            draggable={`false`}
             className="object-contain w-25 h-20"
+            onContextMenu={(e) => e.preventDefault()}
         />
     )
 }

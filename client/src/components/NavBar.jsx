@@ -56,7 +56,6 @@ function Navbar({Seccion}) {
 
     
     
-      {/* </div> */}
     </header>
 
     
