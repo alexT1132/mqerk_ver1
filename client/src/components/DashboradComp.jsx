@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { act, useState } from "react";
 import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { LineChart } from '@mui/x-charts/LineChart';
@@ -254,48 +254,41 @@ export function Contrato(){
 
 
 export default function Componente({Seccion}){
-  const Menu=[
-    {
-    id:1,
-    seccion:`Actividades`
-    },
-    {
-    id:2,
-    seccion:`Quizt`
-    },
-    {
-    id:3,
-    seccion:`Simuladores`
-    }
-  ]
+  const Menu=[`Actividades`, `Quizt`,`Simuladores`];
+  const [selectedOption, setSelectedOption]=useState(Menu[0]);
+  const [opciones, setOpciones]=useState(false);
 
-  const [seccion, setSeccion]=useState(null)
 
-    
+  const handleOption=(Menu)=>{
+    setSelectedOption(Menu);
+    setOpciones(null);
+  };
+
+  console.log(handleOption);
 
     return(
     <div className="bg-[#1f1f1f] w-full h-full flex flex-col justify-center items-center border-2 border-amber-400">
-      
-      
-      
+     
       <div>
-      <button className={`flex justify-center items-center gap-1`} onClick={()=>setSeccion(!seccion)}>
-        {`${Menu.id}`}
-        <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#5115bc"><path d="M480-344 240-584l47.33-47.33L480-438.67l192.67-192.66L720-584 480-344Z"/></svg>
+      <button className={`flex flex-row justify-around items-center gap-1 bg-white outline-2 w-33`} onClick={()=>setOpciones(!opciones)}>
+        {`${selectedOption}`}
+      <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5115bc"><path d="M480-344 240-584l47.33-47.33L480-438.67l192.67-192.66L720-584 480-344Z"/></svg>
       </button>
-      {seccion &&
+      {opciones && (
       <nav className={`bg-white w-full h-fit overflow-y-auto`}>
         <ul>
-        {Menu.map((menu)=>(
-          <li key={menu.id}>{menu.seccion}</li>
+        {Menu.map((menu, index)=>(
+          <li>
+            <button key={index} onClick={()=>handleOption(menu)} className={`cursor-pointer w-full text-start hover:bg-gray-400`}>
+              {menu}
+            </button>
+            </li>
         ))}
         </ul>
       </nav>
-      }
+      )}
       </div>
-
       
-
 
 
     </div>
@@ -592,7 +585,37 @@ export function DashboardAdmin(){
 }
 
 
+export const SelectorActividades=()=>{
 
+  const TipoActividades=[
+    {
+      id:0,
+      act:`Actividades`
+    },
+    {
+      id:1,
+      act:`Quizt`
+    },
+    {
+      id:2,
+      act:`Simuladores`
+    }
+  ]
+  return(
+    <>
+    <button className={`flex w-fit items-center gap-1`}>
+      <nav>
+        <ul>
+        {TipoActividades.map((Actividades)=>(
+          <li key={Actividades.id}>{Actividades.act}</li>
+        ))}
+        </ul>
+      </nav>
+      <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF"><path d="M480-333 240-573l51-51 189 189 189-189 51 51-240 240Z"/></svg>
+    </button>
+    </>
+  )
+}
 
 
 
@@ -789,4 +812,5 @@ export function BtnCursoActivo({src, NombreCurso}){
         </button>
     );
 }
+
 

@@ -59,7 +59,7 @@ export default function App(){
 
           {/* Test de componentes */}          
 
-          <Route path='/Componente' element={<Error404/>}></Route>
+          <Route path='/Componente' element={<Componente/>}></Route>
 
           
 
