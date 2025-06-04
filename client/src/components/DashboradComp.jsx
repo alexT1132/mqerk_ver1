@@ -1,4 +1,4 @@
-import React, { act, useState } from "react";
+import React, { useState } from "react";
 import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { LineChart } from '@mui/x-charts/LineChart';
@@ -253,9 +253,41 @@ export function Contrato(){
 
 
 
-export default function Componente({Seccion}){
+export default function Componente({}){
+const TableHeaders=[`Test/Prueba`, `Puntaje Obtenido`, `Evaluación`];
+const testRow=[`Test de personalidad`, `Test DASS-21`, `Test de Zavic`, `Test de Inteligencia Emocional`, `Test de WAIS`, `Prueba Académica`, `TOTAL DE PUNTOS`]
+
+const Evaluacion=[`Compatible con el perfil de asesor educativo`, `Dentro de rangos normales`, `Adecuada capacidad de gestión emocional`, `Inteligencia superior al promedio`, `Excelencia en habilidades técnicas y académicas`, `ACEPTADO/RECHAZADO`]
+
+
+  return(
+    <div className="bg-[#1f1f1f] w-full h-full flex flex-col justify-center items-center border-2 border-amber-400">
+      
+    <table>
+      <thead>
+      <tr>
+        <th></th>
+      </tr>
+      </thead>
+
+      <tbody>
+      <tr>
+        <td>
+
+        </td>
+      </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+  )
+  }
+
+export const SeleccionarActividad=()=>{
+
   const Menu=[`Actividades`, `Quizt`,`Simuladores`];
-  const [selectedOption, setSelectedOption]=useState(Menu[0]);
+  const [selectedOption, setSelectedOption]=useState(()=>Menu[0]);
   const [opciones, setOpciones]=useState(false);
 
 
@@ -264,35 +296,36 @@ export default function Componente({Seccion}){
     setOpciones(null);
   };
 
-  console.log(handleOption);
+  const opcionesDisponibles = Menu.filter(opt => opt !== selectedOption);
 
-    return(
-    <div className="bg-[#1f1f1f] w-full h-full flex flex-col justify-center items-center border-2 border-amber-400">
-     
-      <div>
-      <button className={`flex flex-row justify-around items-center gap-1 bg-white outline-2 w-33`} onClick={()=>setOpciones(!opciones)}>
-        {`${selectedOption}`}
-      <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5115bc"><path d="M480-344 240-584l47.33-47.33L480-438.67l192.67-192.66L720-584 480-344Z"/></svg>
+
+
+  const text=`text-4xl`
+  return(
+    <div>
+    
+    <button className={`flex flex-row justify-around items-center gap-1 bg-white w-fit bg-none cursor-pointer`} onClick={()=>setOpciones(prev=>!prev)}>
+        <p className={`flex justify-center ${text} text-center`}>
+          {`${selectedOption}`}
+        </p>
+       
+      <svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#5115bc"><path d="M480-344 240-584l47.33-47.33L480-438.67l192.67-192.66L720-584 480-344Z"/></svg>
       </button>
-      {opciones && (
-      <nav className={`bg-white w-full h-fit overflow-y-auto`}>
+      {opciones &&(
+      <nav className={`bg-white`}>
         <ul>
-        {Menu.map((menu, index)=>(
+        {opcionesDisponibles.map((opciones, index)=>(
           <li>
-            <button key={index} onClick={()=>handleOption(menu)} className={`cursor-pointer w-full text-start hover:bg-gray-400`}>
-              {menu}
+            <button key={index} onClick={()=>handleOption(opciones)} className={`cursor-pointer ${text} w-full text-start hover:bg-gray-400`}>
+              {opciones}
             </button>
-            </li>
+          </li>
         ))}
         </ul>
       </nav>
       )}
       </div>
-      
-
-
-    </div>
-    )
+  )
 }
 
 export function TablaColaboradores({}){
@@ -532,13 +565,14 @@ export function BtnPanelAdmin({Informacion, cantidad}){
     const colorClass = cantidad < 0 ? `text-red-500` : `text-green-500`;
 
     return(
-    <button className="flex flex-col cursor-pointer h-22 p-4 bg-white w-50 items-center justify-center text-purple-700 border border-gray-300 rounded-lg shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
-    <span className="uppercase w-full text-xl">
+    <div className="">
+    <button className="flex flex-col flex-wrap grow cursor-pointer p-2 w-70 bg-white text-purple-700 border-gray-300 rounded-lg shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
+    <span className="uppercase text-xl w-full rounded-b-full bg-gradient-to-r">
       {Informacion}
     
     </span>
     {MostrarCantidad && (
-    <span className={`w-full text-end text-2xl ${colorClass} font-bold`}>{new Intl.NumberFormat('es-MX', {
+    <span className={`text-2xl ${colorClass} font-bold`}>{new Intl.NumberFormat('es-MX', {
             style: 'currency',
             currency: 'MXN',
           }).format(cantidad)}</span>
@@ -546,6 +580,7 @@ export function BtnPanelAdmin({Informacion, cantidad}){
     
     
     </button>
+    </div>
     )
 }
 
