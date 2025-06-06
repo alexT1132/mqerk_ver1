@@ -254,35 +254,83 @@ export function Contrato(){
 
 
 export default function Componente({}){
-const TableHeaders=[`Test/Prueba`, `Puntaje Obtenido`, `Evaluación`];
-const testRow=[`Test de personalidad`, `Test DASS-21`, `Test de Zavic`, `Test de Inteligencia Emocional`, `Test de WAIS`, `Prueba Académica`, `TOTAL DE PUNTOS`]
-
-const Evaluacion=[`Compatible con el perfil de asesor educativo`, `Dentro de rangos normales`, `Adecuada capacidad de gestión emocional`, `Inteligencia superior al promedio`, `Excelencia en habilidades técnicas y académicas`, `ACEPTADO/RECHAZADO`]
-
 
   return(
     <div className="bg-[#1f1f1f] w-full h-full flex flex-col justify-center items-center border-2 border-amber-400">
       
-    <table>
-      <thead>
-      <tr>
-        <th></th>
-      </tr>
-      </thead>
-
-      <tbody>
-      <tr>
-        <td>
-
-        </td>
-      </tr>
-      </tbody>
-    </table>
+     
 
 
     </div>
   )
-  }
+  };
+
+
+
+
+export const TablaEvaluacion=({Personalidad, DASS21, Zavic, Emocional, WAIS, Academica, Total})=>{
+
+
+  const Test = [
+    {
+      prueba: "Test de Personalidad",
+      puntaje: Personalidad,
+      evaluacion: "Compatible con el perfil de asesor educativo",
+    },
+    {
+      prueba: "Test DASS-21",
+      puntaje: DASS21,
+      evaluacion: "Dentro de rangos normales",
+    },
+    {
+      prueba: "Test de Zavic",
+      puntaje: Zavic,
+      evaluacion: "Valores alineados con liderazgo y ética profesional",
+    },
+    {
+      prueba: "Test de Inteligencia Emocional",
+      puntaje: Emocional,
+      evaluacion: "Adecuada capacidad de gestión emocional",
+    },
+    {
+      prueba: "Test de WAIS",
+      puntaje: WAIS,
+      evaluacion: "Inteligencia superior al promedio",
+    },
+    {
+      prueba: "Prueba Académica",
+      puntaje: Academica,
+      evaluacion: "Excelencia en habilidades técnicas y académicas",
+    },
+  ];
+
+
+  return(
+    <table className="border border-gray-400 text-sm">
+        <thead className="bg-gray-200">
+          <tr>
+            <th className="border border-gray-400 px-4 py-2 text-center">Test/Prueba</th>
+            <th className="border border-gray-400 px-4 py-2 text-center">Puntaje Obtenido</th>
+            <th className="border border-gray-400 px-4 py-2 text-center">Evaluación</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Test.map((row, index) => (
+            <tr key={index}>
+              <td className="border border-gray-400 px-4 py-2">{row.prueba}</td>
+              <td className="border border-gray-400 px-4 py-2 text-center">{row.puntaje}</td>
+              <td className="border border-gray-400 px-4 py-2">{row.evaluacion}</td>
+            </tr>
+          ))}
+          <tr className="font-semibold">
+            <td className="border border-gray-400 px-4 py-2 text-center uppercase">TOTAL EN PUNTOS</td>
+            <td className="border border-gray-400 px-4 py-2 text-center">{Total}</td>
+            <td className="border border-gray-400 px-4 py-2 text-center uppercase">ACEPTADO / RECHAZADO</td>
+          </tr>
+        </tbody>
+      </table>
+  )
+}
 
 export const SeleccionarActividad=()=>{
 

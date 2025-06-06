@@ -38,7 +38,7 @@ function Navbar({Seccion}) {
 
       
       
-      <a className='flex relative items-center w-fit max-sm:hidden'><img className='w-25' src={Logo} alt="Logo de MQerk Academy" /></a>
+      <a className='flex relative items-center w-fit max-sm:hidden'><img draggable={false} className='w-25' src={Logo} alt="Logo de MQerk Academy" /></a>
 
       </div>
     

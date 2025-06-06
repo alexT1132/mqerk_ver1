@@ -17,6 +17,8 @@ import {RegistroEstudiante} from './pages/Alumnos/RegistroEstudiante.jsx';
 
 import Componente from './components/DashboradComp.jsx';
 
+import { ResultadoAsesor } from './pages/Asesor/Resultado.jsx';
+
 import { Error404 } from './pages/Error/ErrorPages.jsx';
 
 
@@ -50,6 +52,8 @@ export default function App(){
           <Route path='/asesor/test' element={<Test/>}></Route>
 
           <Route path='/asesor/perfil' element={<PerfilAsesor/>}></Route>
+
+          <Route path='/test/asesor/resultado' element={<ResultadoAsesor/>}/>
 
           {/* Final asesor */}
 
