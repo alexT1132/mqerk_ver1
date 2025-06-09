@@ -21,6 +21,8 @@ import { ResultadoAsesor } from './pages/Asesor/Resultado.jsx';
 
 import { Error404 } from './pages/Error/ErrorPages.jsx';
 
+import {TestComp} from './components/TestComp.jsx';
+
 
 
 export default function App(){
@@ -63,7 +65,7 @@ export default function App(){
 
           {/* Test de componentes */}          
 
-          <Route path='/Componente' element={<Componente/>}></Route>
+          <Route path='/Componente' element={<TestComp/>}></Route>
 
           
 
