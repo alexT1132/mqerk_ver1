@@ -17,7 +17,7 @@ export const SelectorPuntajes=({Inciso, id})=>{
                     className="p-3 border border-gray-300 rounded-lg focus:outdivne-none focus:ring-2 focus:ring-blue-500"
                 >
                     <option disabled value={`5`}>Selecciona un puntaje</option>
-                    <option value="0">0</option>
+                    <option value={`5`}>0</option>
                     <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>
@@ -33,7 +33,7 @@ export const SelectorPuntajes=({Inciso, id})=>{
 export const BtnInicio=({type, onClick})=>{
     return(
         <>
-        <button type={type} onClick={onClick} className="w-40 py-3 bg-blue-500 rounded-xl hover:bg-blue-700 transition duration-300">
+        <button type={type} onClick={onClick} className="w-40 py-3 cursor-pointer bg-blue-500 rounded-xl hover:bg-blue-700 transition duration-300">
             <p className={`text-white text-2xl font-bold`}>
             Iniciar
             </p>
@@ -44,7 +44,7 @@ export const BtnInicio=({type, onClick})=>{
 
 export const BtnTest=({TextoBtn, type, onClick})=>{
     return(
-        <button type={type} onClick={onClick} className="px-10 py-3 bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300">
+        <button type={type} onClick={onClick} className={`px-10 py-3 cursor-pointer bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300`}>
             <p className={`text-white break-normal`}>
                 {TextoBtn}
             </p>
