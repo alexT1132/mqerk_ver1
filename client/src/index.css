@@ -8,3 +8,6 @@ html, body, #root{
     padding: 0;
 }
 
+#root{
+    overflow: auto;
+}

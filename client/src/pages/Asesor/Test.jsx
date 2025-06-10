@@ -26,13 +26,13 @@ import R25_2 from "../../assets/25-R2.png";
 import R25_3 from "../../assets/25-R3.png";
 import R25_4 from "../../assets/25-R4.png";
 
-import { SelectorPuntajes, BtnTest, InstBigFive } from '../../components/TestComp.jsx';
+import { SelectorPuntajes, BtnTest, BtnInicio, InstBigFive, InstDass21 } from '../../components/TestComp.jsx';
 
 
 
 export function Test() {
 
-    const [step, setStep] = useState(2);
+    const [step, setStep] = useState(0);
 
     const nextStep = () => {
         setStep(step + 1);
@@ -49,25 +49,36 @@ export function Test() {
         <Navbar />
         <div className={`flex flex-col flex-wrap items-center px-6 md:px-8 `}>
         {step === 0 && (
-        <div className="flex flex-col justify-center items-center overflow-hidden">
-                <div className="p-8 rounded-3xl mb-5">
-                <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">MARIANA RODRIGUEZ PEREZ</h2>
-                <p className='text-justify mb-10'>Estamos muy emocionados de contar contigo como parte de nuestro proceso de selección. Tu talento y experiencia son clave para seguir construyendo una academia disruptiva y que prepare a los estudiantes para enfrentar los retos del futuro.</p>
-                    <div className='border-4 border-[#3818c3]'>
-                        <p className='text-justify mt-5 ml-3 mr-3 mb-6'>Una vez culminado la entrevista en Recursos Humanos, ahora necesitamos que completes algunos pasos importantes:</p>
-                        <p className='text-justify ml-3 mr-3 mb-6'>1. Test psicológicos y pruebas académicas: Estos nos ayudarán a conocer más sobre tus habilidades, conocimientos y áreas de especialidad.</p>
-                        <p className='text-justify ml-3 mr-3 mb-6'>2. Una vez hayas acreditados los test y pruebas,podrás subir tus documentos: Por favor, asegúrate de cargar los documentos requeridos en el formato indicado para agilizar tu proceso de contratación.</p>
-                        <p className='text-justify ml-3 mr-3'>En MQerKAcademy valoramos el compromiso, la pasión por la educación y la creatividad para transformar vidas. Estamos seguros de que juntos lograremos grandes cosas.</p>
-                        <p className='text-justify ml-3 mr-3'>Si tienes alguna pregunta o necesitas apoyo, no dudes en comunicarte con nuestro equipo.</p>
-                        <p className='text-justify ml-3 mr-3 mb-6'>¡Mucho éxito y bienvenido(a) a esta nueva etapa!</p>
-                        <p className='text-center mb-10 font-bold'>El equipo de MQerKAcademy</p>
+        <div className="flex flex-col items-center">
+
+            <div className={`flex flex-col items-center pb-6`}>
+                <h2 className="flex flex-wrap text-2xl font-semibold text-center m-6 text-gray-900">MARIANA RODRIGUEZ PEREZ</h2>
+                <p className='flex text-justify'>Estamos muy emocionados de contar contigo como parte de nuestro proceso de selección. Tu talento y experiencia son clave para seguir construyendo una academia disruptiva y que prepare a los estudiantes para enfrentar los retos del futuro.</p>
+            </div>
+                    <div className='flex flex-col border-4 border-[#3818c3] py-5 px-15 gap-10 box-sizing overflow-y-auto'>
+                        <p className='text-center'>Una vez culminado la entrevista en Recursos Humanos, ahora necesitamos que completes algunos pasos importantes:</p>
+
+                        <ol className={`flex flex-col list-decimal list-inside`}>
+                            <li className={``}>
+                            <strong>Test psicológicos y pruebas académicas:</strong> Estos nos ayudarán a conocer más sobre tus habilidades, conocimientos y áreas de especialidad.
+                            </li>
+                            
+                            <li>
+                            <strong>Una vez hayas acreditados los test y pruebas,podrás subir tus documentos:</strong> Por favor, asegúrate de cargar los documentos requeridos en el formato indicado para agilizar tu proceso de contratación.
+                            </li>
+                        </ol>
+
+                        <div className={`flex flex-col gap-2`}>
+                        <p className='text-center'>En MQerKAcademy valoramos el compromiso, la pasión por la educación y la creatividad para transformar vidas. Estamos seguros de que juntos lograremos grandes cosas.</p>
+                        <p className='text-center'>Si tienes alguna pregunta o necesitas apoyo, no dudes en comunicarte con nuestro equipo.</p>
+                        <p className='text-center'>¡Mucho éxito y bienvenido(a) a esta nueva etapa!</p>
+                        <p className='text-center font-bold'>El equipo de MQerKAcademy</p>
+                        </div>
+
                     </div>
-                    <div className='flex justify-center'>
-                        <button type="submit" className="font-bold text-2xl w-40 py-3 mt-5.5 bg-blue-500 text-white rounded-xl hover:bg-blue-700 transition duration-300">
-                            Iniciar
-                        </button>
+                    <div className='flex justify-center m-6'>
+                        <BtnInicio type={`submit`} onClick={nextStep}/>
                     </div>
-                </div>
                     
 
                     </div>
@@ -176,15 +187,15 @@ export function Test() {
                     )}
                     {step === 3 && (
 
-                    <>
-
+                    <div className={`flex flex-col`}>
+                    <h2 className="text-3xl font-semibold text-center text-gray-900 m-6">MARIANA RODRIGUEZ PEREZ</h2>
                     <div className={`pb-4`}>
                     <InstBigFive/>
                     </div>
 
                     <form onSubmit={nextStep}>
 
-                        <div className='flex flex-col border-4 border-[#3818c3] py-5 px-15 overflow-y-auto'>
+                        <div className={`flex flex-col border-4 border-[#3818c3] py-5 px-15 overflow-y-auto`}>
 
                         <ol start={15} className={`flex flex-col gap-8 list-decimal`}>
                             <li>
@@ -226,172 +237,52 @@ export function Test() {
                         </div>
 
                     </form>
-                    </>
+                    </div>
                     )}
                     {step === 4 && (
-                    <form onSubmit={nextStep}>
-                        <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DASS-21</h2>
-                        <p className='text-center text-xl mb-2'>Instrucciones:</p>
-                        <p className='text-center text-xl mb-3'>Responde a cada ítem considerando cómo te has sentido o comportado en la última semana, seleccionando una opción por cada afirmación:</p>
-                        <p className='text-center text-xl mb-3'>0 = Nunca | 1 = Casi nunca | 2 = A veces | 3 = Frecuentemente | 4 = Muy frecuentemente</p>
-                        <div className='border-4 border-[#3818c3]'>
-                        <div className="hidden md:flex space-x-20 mb-6 mt-6 ml-6 mr-6">
-                            <div className="flex-2 flex items-center">
-                                <p className='text-justify'>1. Me ha sido difícil relajarme después de un día de trabajo.</p>
-                            </div>
+                    <div>
+                    
+                        <InstDass21/>
+                        <form onSubmit={nextStep}>
+                            <div className={`flex flex-col border-4 border-[#3818c3] py-5 px-15 overflow-y-auto`}>
+                                <ol start={1} className={`flex flex-col gap-8 list-decimal`}>
+                                    <li>
+                                        <SelectorPuntajes Inciso={`Me ha sido difícil relajarme después de un día de trabajo.`}/>
+                                    </li>
 
-                            <div>
-                                <select
-                                    id="pais"
-                                    name="pais"
-                                    className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option selected value="">Selecciona un puntaje</option>
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div className="hidden md:flex space-x-20 mb-6 mt-6 ml-6 mr-6">
-                            <div className="flex-2 flex items-center">
-                                <p className='text-justify'>2. Me he sentido nervioso/a o alterado/a al enfrentar cambios importantes.</p>
-                            </div>
+                                    <li>
+                                        <SelectorPuntajes Inciso={`Me he sentido nervioso/a o alterado/a al enfrentar cambios importantes.`}/>
+                                    </li>
 
-                            <div>
-                                <select
-                                    id="pais"
-                                    name="pais"
-                                    className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option selected value="">Selecciona un puntaje</option>
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div className="hidden md:flex space-x-20 mb-6 mt-6 ml-6 mr-6">
-                            <div className="flex-2 flex items-center">
-                                <p className='text-justify'>3. He sentido que no puedo organizar mis tareas y responsabilidades de forma efectiva.</p>
-                            </div>
+                                    <li>
+                                        <SelectorPuntajes Inciso={`He sentido que no puedo organizar mis tareas y responsabilidades de forma efectiva.`}/>
+                                    </li>
 
-                            <div>
-                                <select
-                                    id="pais"
-                                    name="pais"
-                                    className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option selected value="">Selecciona un puntaje</option>
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div className="hidden md:flex space-x-20 mb-6 mt-6 ml-6 mr-6">
-                            <div className="flex-2 flex items-center">
-                                <p className='text-justify'>4. Me he sentido tenso/a o irritado/a sin motivo aparente.</p>
-                            </div>
+                                    <li>
+                                        <SelectorPuntajes Inciso={`Me he sentido tenso/a o irritado/a sin motivo aparente.`}/>
+                                    </li>
 
-                            <div>
-                                <select
-                                    id="pais"
-                                    name="pais"
-                                    className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option selected value="">Selecciona un puntaje</option>
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div className="hidden md:flex space-x-20 mb-6 mt-6 ml-6 mr-6">
-                            <div className="flex-2 flex items-center">
-                                <p className='text-justify'>5. Siento que mi carga de trabajo me resulta difícil de manejar.</p>
-                            </div>
+                                    <li>
+                                        <SelectorPuntajes Inciso={`Siento que mi carga de trabajo me resulta difícil de manejar.`}/>
+                                    </li>
 
-                            <div>
-                                <select
-                                    id="pais"
-                                    name="pais"
-                                    className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option selected value="">Selecciona un puntaje</option>
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div className="hidden md:flex space-x-20 mb-6 mt-6 ml-6 mr-6">
-                            <div className="flex-2 flex items-center">
-                                <p className='text-justify'>6. Me cuesta pensar con claridad cuando me encuentro bajo presión.</p>
-                            </div>
+                                    <li>
+                                        <SelectorPuntajes Inciso={`Me cuesta pensar con claridad cuando me encuentro bajo presión.`}/>
+                                    </li>
 
-                            <div>
-                                <select
-                                    id="pais"
-                                    name="pais"
-                                    className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option selected value="">Selecciona un puntaje</option>
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div className="hidden md:flex space-x-20 mb-6 mt-6 ml-6 mr-6">
-                            <div className="flex-2 flex items-center">
-                                <p className='text-justify'>7. Me frustro fácilmente cuando las cosas no salen como planeo.</p>
-                            </div>
+                                    <li>
+                                        <SelectorPuntajes Inciso={`Me frustro fácilmente cuando las cosas no salen como planeo.`}/>
+                                    </li>
+                                </ol>
 
-                            <div>
-                                <select
-                                    id="pais"
-                                    name="pais"
-                                    className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option selected value="">Selecciona un puntaje</option>
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
                             </div>
-                        </div>
-                        </div>
-                        <div className="hidden md:flex space-x-20 mb-6 mt-6 ml-6 mr-6">
-                            <div className="flex-1 flex items-center">
-                            
+                            <div className={`flex w-full justify-end items-center px-4 py-5`}>
+                            <BtnTest TextoBtn={`Siguiente`}/>
                             </div>
-
-                            <div className='flex justify-center items-center'>
-                                <button
-                                type="submit"
-                                className="w-full px-10 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300"
-                                >
-                                Siguiente
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                     )}
+                        
                     {step === 5 && (
                     <form onSubmit={nextStep}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DASS-21</h2>

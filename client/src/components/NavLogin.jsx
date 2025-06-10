@@ -14,7 +14,7 @@ const DesktopTopbar = () => {
         </Link>
   
         {/* Título en el centro */}
-        <div className={`flex justify-center`}>
+        <div className={`flex justify-center overflow-hidden`}>
         <h1 className="text-white sm:text-xl md:text-2xl lg:text-3xl font-semibold text-center">
             Asesores Especializados en la Enseñanza de las Ciencias y Tecnología 
         </h1>
