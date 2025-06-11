@@ -9,7 +9,11 @@ import { DateField, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 import {InputLabel, Select} from '@mui/material';      //Nuevo componente para listas
-import { TextField, FormControlLabel, FormControl, FormLabel, Radio, RadioGroup } from "@mui/material";
+import { TextField, FormControlLabel, FormControl, FormLabel, Radio, RadioGroup, Box, Autocomplete, Button, styled } from "@mui/material";
+
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+
+import { BtnForm, BtnSubirArchivo } from '../../components/FormRegistroComp';
 
 
 export const InfoPer=()=>{
@@ -62,6 +66,29 @@ event.preventDefault();
     }
 
     const {value, error, handleChange}=RFCInput();
+
+        const [step, setStep] = useState(1);
+    
+        const nextStep = () => {
+            setStep(step + 1);
+          };
+        
+          const prevStep = () => {
+            setStep(step - 1);
+          };
+    
+
+        const VisuallyHiddenInput = styled('input')({
+        clip: 'rect(0 0 0 0)',
+        clipPath: 'inset(50%)',
+        height: 0,
+        overflow: 'hidden',
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        whiteSpace: 'nowrap',
+        width: 0,
+      });
     
     return(
 
@@ -70,26 +97,27 @@ event.preventDefault();
            
             <NavLogin/>
             
+            {step===0 &&(
             <div className={`flex flex-col py-5 px-5 items-center`}>
 
-            <div>
-                <h1 className={`text-center font-bold uppercase text-[17px]`}>Bienvenid@: Nombre de usuario</h1>      {/*Falta agregar la constante del usuario*/}
+            <div className={`flex flex-col items-center justify-center`}>
+                <h1 className={`text-center font-bold uppercase text-[17px] sm:text-3xl`}>Bienvenid@: Nombre de usuario</h1>      {/*Falta agregar la constante del usuario*/}
             
 
 
             
-                <p className={`text-center m-2`}>
+                <p className={`flex flex-wrap text-justify p-2 sm:text-md md:w-200`}>
                 Como parte de nuestro proceso de reclutamiento de asesores, es fundamental llevar un registro detallado.
                 Por ello, te invitamos a completar cuidadosamente el formulario siguiendo las instrucciones proporcionadas.
                 </p>
             
 
             
-                <h2 className={`text-[#53289f] text-center font-bold uppercase text-[15px]`}>1. Información personal</h2>
+                <h2 className={`text-[#53289f] text-center font-bold uppercase text-[15px] sm:text-2xl`}>1. Información personal</h2>
             
 
             
-                <p className={`text-center m-2`}>
+                <p className={`text-justify p-2 sm:text-md md:w-200`}>
                 Por favor, completa cada campo de esta sección con tus datos personales de manera precisa y actualizada.
                 Asegúrate de verificar la información antes de enviarla.
                 </p>
@@ -98,9 +126,11 @@ event.preventDefault();
 
             <form onSubmit={handleSubmit} className={`flex flex-col items-center flex-wrap gap-8 p-4`}>
 
-                <div className={`flex gap-x-20 gap-y-5 flex-wrap w-full justify-center sm:justify-between`}>
+                <div className={`flex gap-x-20 gap-y-5 flex-wrap md:flex-nowrap w-full justify-center sm:justify-between`}>
                 {/* Direccion */}
-                <TextField 
+                <TextField
+                fullWidth
+                helperText={`Ingrese su dirección`}
                       id="outlined-basic" 
                       label="Dirección:" 
                       variant="outlined" 
@@ -111,7 +141,9 @@ event.preventDefault();
                   />
 
                 {/* Municipio */}
-                <TextField 
+                <TextField
+                fullWidth
+                helperText={`Municipio/Localidad`}
                     id="outlined-basic" 
                     label="Municipio:" 
                     variant="outlined" 
@@ -123,24 +155,22 @@ event.preventDefault();
                 </div>
 
 
-                <div className={`flex gap-x-20 gap-y-5 flex-wrap w-full justify-center sm:justify-between`}>
+                <div className={`flex flex-row gap-x-20 gap-y-5 flex-wrap md:flex-nowrap w-full justify-center sm:justify-between`}>
                 {/* Fecha de nacimiento */}
 
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DateField/>
+                <DateField
+                helperText={`Fecha de nacimiento`}
+                fullWidth
+                disableFuture
+                timezone={`system`}
+                format={`DD/MM/YYYY`}/>
                 </LocalizationProvider>
 
-                {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                format="DD - MM - YYYY"
-                timezone="system"
-                label="Fecha de nacimiento"
-                onChange={(e)=>setNac(e.target.value)}
-                required/>
-                </LocalizationProvider> */}
 
-                {/* Nacionalidad */}
-                <TextField 
+                <TextField
+                helperText={`Nacionalidad`}
+                    fullWidth
                     id="outlined-basic" 
                     label="Nacionalidad:" 
                     variant="outlined" 
@@ -152,10 +182,11 @@ event.preventDefault();
                 </div>
 
 
-                <div className={`flex gap-x-20 gap-y-5 flex-wrap w-full justify-center sm:justify-between`}>
+                <div className={`flex gap-x-20 gap-y-5 flex-wrap md:flex-nowrap w-full justify-center sm:justify-between`}>
 
                 {/* Genero */}
-                <FormControl>
+                <FormControl
+                fullWidth>
                     <FormLabel id="radio-buttons-group-label">Género</FormLabel>
                     <RadioGroup
                         row
@@ -167,14 +198,16 @@ event.preventDefault();
                 
                             <FormControlLabel value="f" control={<Radio />} label="Femenino" />
                             <FormControlLabel value="m" control={<Radio />} label="Masculino" />
-                            <FormControlLabel value="otro" control={<Radio />} label="Otro" />
+                            <FormControlLabel value="otro" control={<Radio onChange={()=>{<p>hola</p>}} />} label="Otro" />
                         
                     </RadioGroup>
                     </FormControl>
                 
 
                 {/* RFC */}
-                <TextField 
+                <TextField
+                fullWidth
+                helperText={`Ingrese su RFC`}
                     id="outlined-basic" 
                     label="RFC:" 
                     variant="outlined" 
@@ -186,14 +219,116 @@ event.preventDefault();
                 </div>
                 
             <div className={`flex w-full justify-end`}>
-            <button type='submit' className={`bg-[#0064fb] rounded-[10px] p-3`}>
-                <p className={`text-white`}>
-                Continuar
-                </p>
-            </button>
+
+                <BtnForm type={`submit`}/>
+
             </div>
             </form>
             </div>
+            )}
+
+            {step===1 &&(
+            <div className={`flex flex-col py-5 px-5 items-center`}>
+
+            <div className={`flex flex-col items-center`}>
+
+            <h1 className={`text-[#53289f] text-center font-bold uppercase text-[15px] sm:text-2xl`}>2. Información académica</h1>
+        
+
+        
+            <p className={`text-justify p-2 sm:text-md md:w-200`}>
+            Proporciona los detalles de tu formación académica y certificaciones adicionales.
+            Incluye información completa y específica sobre tu nivel de estudios, títulos obtenidos,
+            idiomas que dominas y cualquier curso relevante que respalde tu experiencia profesional.
+            </p>
+            </div>
+            
+            <form className={`flex items-center justify-around flex-wrap gap-8 p-4`}>
+
+            <div className={`flex w-full`}>
+            <FormControl
+            required>
+            <FormLabel id="radio-buttons-group-label">Nivel de estudios</FormLabel>
+            <RadioGroup
+            
+            aria-labelledby="radio-buttons-group-label"
+            name="radio-buttons-group"
+            >
+            <FormControlLabel value="n1" control={<Radio />} label="Secundaria" />
+            <FormControlLabel value="n2" control={<Radio />} label="Bachillerato" />
+            <FormControlLabel value="n3" control={<Radio />} label="Licenciatura" />
+            <FormControlLabel value="n4" control={<Radio />} label="Maestría" />
+            <FormControlLabel value="n5" control={<Radio />} label="Doctorado" />
+            {/* Falta agregar una manera de especificar el nivel de estudios */}
+            <FormControlLabel value="otro" control={<Radio />} label="Otro" />  
+            </RadioGroup>
+            </FormControl>
+            </div>
+            <div className='flex flex-col gap-5 w-full'>
+
+                <Autocomplete
+                    disablePortal
+                    options={``}
+                    renderInput={(params) => <TextField {...params} label="Institución" />}
+                    noOptionsText='Opción inválida'
+                    autoSelect
+                    />
+                <TextField
+                    required
+                    fullWidth
+                    margin="normal"
+                    id="oulined-basic"
+                    label='Titulo académico'
+                    helperText='Ejemplo: Ing. Sistemas Computacionales'
+                    />
+
+                <BtnSubirArchivo/>
+                
+
+                
+            </div>
+            
+            <div>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DateField
+                helperText={`Fecha de nacimiento`}
+                fullWidth
+                disableFuture
+                timezone={`system`}
+                format={`DD/MM/YYYY`}/>
+                </LocalizationProvider>
+            </div>
+            
+            
+
+            
+
+            {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                openTo="year"
+                format="YYYY"
+                minDate={new Date('21-01-1900')}
+                label="Año en que se graduó" />
+                </LocalizationProvider> */}
+
+            {/* Especialidad o area de estudios */}
+
+            {/* Certificaciones o cursos adicionales
+                la idea es que el colaborador pueda
+                subir su certificado */}
+
+            {/* Se va a añadir un checkbox para seleccionar el idioma
+                que dominen */}
+            
+                
+            </form>
+
+            <div className={`w-full flex justify-end`}>
+            <BtnForm TextoBtn={`Siguiente`}/>
+            </div>
+            </div>
+            )}
+            
         </>
 
 
