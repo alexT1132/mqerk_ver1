@@ -288,10 +288,10 @@ event.preventDefault();
                 
             </div>
             
-            <div>
+            <div className={`w-full`}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateField
-                helperText={`Fecha de nacimiento`}
+                helperText={`Año en que se graduó`}
                 fullWidth
                 disableFuture
                 timezone={`system`}
@@ -300,16 +300,6 @@ event.preventDefault();
             </div>
             
             
-
-            
-
-            {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                openTo="year"
-                format="YYYY"
-                minDate={new Date('21-01-1900')}
-                label="Año en que se graduó" />
-                </LocalizationProvider> */}
 
             {/* Especialidad o area de estudios */}
 
@@ -320,12 +310,12 @@ event.preventDefault();
             {/* Se va a añadir un checkbox para seleccionar el idioma
                 que dominen */}
             
-                
-            </form>
-
             <div className={`w-full flex justify-end`}>
             <BtnForm TextoBtn={`Siguiente`}/>
             </div>
+            </form>
+
+            
             </div>
             )}
             
