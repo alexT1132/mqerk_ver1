@@ -24,7 +24,7 @@ import { Error404 } from './pages/Error/ErrorPages.jsx';
 
 import { TestComp } from './components/FormRegistroComp.jsx';
 
-import { InfoPer } from './pages/Asesor/FormRegistro.jsx';
+import { FormularioAsesor } from './pages/Asesor/FormRegistro.jsx';
 
 
 
@@ -68,7 +68,7 @@ export default function App(){
 
           {/* Test de componentes */}          
 
-          <Route path='/Componente' element={<InfoPer/>}></Route>
+          <Route path='/Componente' element={<FormularioAsesor/>}></Route>
 
           
 

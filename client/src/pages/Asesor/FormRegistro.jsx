@@ -3,44 +3,24 @@
 
 import NavLogin from '../../components/NavLogin'
 import React, {useState} from 'react';
-import { useNavigate } from "react-router-dom";       // .
 
 import { DateField, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
-import {InputLabel, Select} from '@mui/material';      //Nuevo componente para listas
+import { Checkbox, FormGroup } from '@mui/material';      //Nuevo componente para listas
 import { TextField, FormControlLabel, FormControl, FormLabel, Radio, RadioGroup, Box, Autocomplete, Button, styled } from "@mui/material";
 
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 import { BtnForm, BtnSubirArchivo } from '../../components/FormRegistroComp';
 
 
-export const InfoPer=()=>{
+export const FormularioAsesor=()=>{
 const [dir, setDir] = useState('');
 const [mun, setMun] = useState('');
 const [nac, setNac] = useState('');
 const [nacion, setNacion] = useState('');
 const [gen, setGen] = useState('');
 const [rfc, setRfc] = useState('');
-
-const navigate = useNavigate();
-
-const handleSubmit = (event) => {
-event.preventDefault();
-
-        const previo = {
-            dir,
-            mun,
-            nac,
-            nacion,
-            gen,
-            rfc
-        }
-
-        navigate('/colab-info-pers', { state: previo });
-
-}
 
     
     function RFCInput() {
@@ -67,7 +47,7 @@ event.preventDefault();
 
     const {value, error, handleChange}=RFCInput();
 
-        const [step, setStep] = useState(1);
+        const [step, setStep] = useState(2);
     
         const nextStep = () => {
             setStep(step + 1);
@@ -89,6 +69,23 @@ event.preventDefault();
         whiteSpace: 'nowrap',
         width: 0,
       });
+
+
+      const [inputsVisibility, setInputsVisibility] = useState({
+        departamento: false,
+        area: false,
+        crm: false,
+        softwarecontabilidad: false,
+        plataforma: false,
+      });
+
+      const handleChange2 = (event) => {
+        const { name, checked } = event.target;
+        setInputsVisibility((prev) => ({
+          ...prev,
+          [name]: checked,
+        }));
+      };
     
     return(
 
@@ -124,7 +121,7 @@ event.preventDefault();
                 
             </div>
 
-            <form onSubmit={handleSubmit} className={`flex flex-col items-center flex-wrap gap-8 p-4`}>
+            <form onSubmit={nextStep} className={`flex flex-col items-center flex-wrap gap-8 p-4`}>
 
                 <div className={`flex gap-x-20 gap-y-5 flex-wrap md:flex-nowrap w-full justify-center sm:justify-between`}>
                 {/* Direccion */}
@@ -220,7 +217,7 @@ event.preventDefault();
                 
             <div className={`flex w-full justify-end`}>
 
-                <BtnForm type={`submit`}/>
+                <BtnForm TextoBtn={`Continuar`} type={`submit`}/>
 
             </div>
             </form>
@@ -228,7 +225,7 @@ event.preventDefault();
             )}
 
             {step===1 &&(
-            <div className={`flex flex-col py-5 px-5 items-center`}>
+            <div className={`flex flex-col w-full flex-wrap py-5 px-5 items-center justify-center`}>
 
             <div className={`flex flex-col items-center`}>
 
@@ -236,17 +233,18 @@ event.preventDefault();
         
 
         
-            <p className={`text-justify p-2 sm:text-md md:w-200`}>
+            <p className={`text-justify p-2 w-fit sm:text-md sm:w-fit md:w-170 lg:w-200`}>
             Proporciona los detalles de tu formación académica y certificaciones adicionales.
             Incluye información completa y específica sobre tu nivel de estudios, títulos obtenidos,
             idiomas que dominas y cualquier curso relevante que respalde tu experiencia profesional.
             </p>
             </div>
             
-            <form className={`flex items-center justify-around flex-wrap gap-8 p-4`}>
-
-            <div className={`flex w-full`}>
+            <form className={`flex flex-col justify-around items-center w-full flex-wrap gap-8 p-4`}>
+            
+            <div className={`flex flex-col items-center gap-10 w-full sm:w-160 lg:w-200 lg:p-2`}>
             <FormControl
+            className={`w-full`}
             required>
             <FormLabel id="radio-buttons-group-label">Nivel de estudios</FormLabel>
             <RadioGroup
@@ -263,62 +261,248 @@ event.preventDefault();
             <FormControlLabel value="otro" control={<Radio />} label="Otro" />  
             </RadioGroup>
             </FormControl>
-            </div>
-            <div className='flex flex-col gap-5 w-full'>
-
-                <Autocomplete
-                    disablePortal
-                    options={``}
-                    renderInput={(params) => <TextField {...params} label="Institución" />}
-                    noOptionsText='Opción inválida'
-                    autoSelect
-                    />
-                <TextField
-                    required
-                    fullWidth
-                    margin="normal"
-                    id="oulined-basic"
-                    label='Titulo académico'
-                    helperText='Ejemplo: Ing. Sistemas Computacionales'
-                    />
-
-                <BtnSubirArchivo/>
-                
-
-                
-            </div>
             
-            <div className={`w-full`}>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Autocomplete
+                className={`flex flex-wrap w-full`}
+                disablePortal
+                options={``}
+                renderInput={(params) => <TextField {...params} label="Institución" />}
+                noOptionsText='Opción inválida'
+                autoSelect
+            />
+
+            <TextField
+            className={`w-full`}
+                required
+                margin="normal"
+                id="oulined-basic"
+                label='Titulo académico'
+                helperText='Ejemplo: Ing. Sistemas Computacionales'
+            />
+
+            <div className={`w-full flex flex-col items-center`}>
+                <BtnSubirArchivo/>
+            </div>
+
+            
+            <LocalizationProvider className={`w-full`} dateAdapter={AdapterDayjs}>
                 <DateField
+                className={`w-full`}
                 helperText={`Año en que se graduó`}
-                fullWidth
                 disableFuture
                 timezone={`system`}
                 format={`DD/MM/YYYY`}/>
-                </LocalizationProvider>
-            </div>
+            </LocalizationProvider>
             
-            
-
-            {/* Especialidad o area de estudios */}
-
             {/* Certificaciones o cursos adicionales
                 la idea es que el colaborador pueda
                 subir su certificado */}
+            <div>
+
+            </div>
+            
+
+            <div className={`w-full flex flex-col items-center`}>
+                <BtnSubirArchivo/>
+            </div>
+
+            
+            
+            
 
             {/* Se va a añadir un checkbox para seleccionar el idioma
                 que dominen */}
+
+            <TextField
+            required
+            className={`w-full`}
+            margin="normal"
+            id="oulined-basic"
+            label='Especialización o área de estudios'
+            helperText='Ejemplo: Ing. Sistemas Computacionales'
+            />
+
             
-            <div className={`w-full flex justify-end`}>
-            <BtnForm TextoBtn={`Siguiente`}/>
+            <div className={`flex flex-wrap w-full justify-end`}>
+                <BtnForm TextoBtn={`Siguiente`}/>
+            </div>
+            
             </div>
             </form>
 
             
             </div>
             )}
+
+            {step===2 &&(
+                <main className="vertical" id="responsive">
+            <article>          
+                <h1 className="instrucciones-reg">3. Información profesional</h1>
             
+
+            
+                <p className="parrafo-reg">
+                Ingresa la información relacionada con tu experiencia profesional, incluyendo roles previos,
+                instituciones donde has trabajado, y áreas de especialización.
+                Esta información nos ayudará a evaluar mejor tu perfil como colaborador.
+                </p>
+            </article>
+
+            <form
+                style={{
+                    display:'flex',
+                    flexDirection:'column',
+                    alignItems:'stretch'
+                    }}>
+                {/* Área de interés o departamento al que aplicas:
+                    */}
+
+                <FormControl style={{marginBlock:'5%'}}>
+                    <FormLabel
+                        id="radio-buttons-group-label">
+                    </FormLabel>
+                        <h2>Experiencia laboral</h2>
+                        <hr />
+                        <RadioGroup
+                            row
+                            aria-labelledby="radio-buttons-group-label"
+                            name="radio-buttons-group"
+                            required
+                            style={{display:'flex', flexDirection:'column'}}
+                            >
+                    
+                                <FormControlLabel value="xp1" control={<Radio />} label="Menos de 1 año" />
+                                <FormControlLabel value="xp2" control={<Radio />} label="1-2 años" />
+                                <FormControlLabel value="xp3" control={<Radio />} label="3-5 años" />
+                                <FormControlLabel value="xp4" control={<Radio />} label="Más de 5 años" />
+                                
+                        </RadioGroup>
+                </FormControl>
+
+                <FormGroup
+                style={{
+                    'textAlign':'justify',
+                    'fontFamily':"Roboto,Helvetica,Arial,sans-serif",
+                    marginBlock:'5%'
+                    
+                    }}>
+                        <h2>Áreas de especialización</h2>
+                        <hr />
+                        <FormControlLabel control={<Checkbox />} label="Ciencias exactas" />
+                        <FormControlLabel control={<Checkbox />} label="Ciencias sociales" />
+                        <FormControlLabel control={<Checkbox/>} label="Educación" />
+                        <FormControlLabel control={<Checkbox />} label="Ingeniería y tecnología" />
+                        <FormControlLabel control={<Checkbox/>} label="Medicina y salud" />
+                        <FormControlLabel control={<Checkbox/>} label="Arte y humanidades" />
+                        <FormControlLabel control={<Checkbox/>} label="Negocios y administración" />
+                        <FormControlLabel control={
+                            <Checkbox  
+                            name="area"
+                            checked={inputsVisibility.area}
+                            onChange={handleChange2}/>}
+                            label="Otra/s (especificar)" />
+                            {inputsVisibility.area && <TextField maxRows={5} multiline label="Especifique otra/s áreas de especialización" variant="outlined" />}
+                </FormGroup>
+
+                <FormControl style={{width:'100%'}}>
+                <FormLabel id="radio-buttons-group-label"></FormLabel>
+                    <h2>¿Ha tenido experiencia previa en asesorías o tutorías educativas?</h2>
+                    <hr />
+                <RadioGroup
+                    style={{display:'flex', flexDirection:'row', justifyContent:'space-around'}}
+                    aria-labelledby="radio-buttons-group-label"
+                    name="radio-buttons-group"
+                    required>
+                        <FormControlLabel value="y" control={<Radio />} label="Sí" />
+                        <FormControlLabel value="med" control={<Radio />} label="Medianamente" />
+                        <FormControlLabel value="n" control={<Radio />} label="No" />
+                        
+                    </RadioGroup>
+                </FormControl>          
+
+                
+                <fieldset style={{marginBlock:'5%'}}>
+                    <h2>Informacion sobre institución/empresa</h2>
+                    <hr />
+
+                    <TextField
+                        required
+                        label="Empresa"
+                        variant="outlined"
+                        helperText='ej. GEGSA, Login360.'
+                        multiline
+                        fullWidth
+                        style={{
+                            'marginBottom':'25px'
+                        }}
+                    />
+
+                    <TextField
+                        required
+                        label="Actual/último puesto de trabajo"
+                        variant="outlined"
+                        helperText='ej. Gerente general'
+                        multiline
+                        fullWidth
+                        style={{
+                            'marginTop':'15px',
+                            'marginBottom':'25px'
+                        }}
+                    />
+                    
+                    
+                    {/* Funciones y responsabilidades en el puesto anterior: */}
+                    <TextField
+                        required
+                        label="Funiones/responsabilidades"
+                        variant="outlined"
+                        helperText='Explica de forma detallada las funciones que realizabas en tu anterios puesto.'
+                        multiline
+                        rows={4}
+                        fullWidth
+                    />
+
+                </fieldset>
+
+                
+                
+                <FormGroup
+                    style={{
+                    'fontFamily':"Roboto,Helvetica,Arial,sans-serif", marginBlock:'5%'
+                    }}>
+                        <h2>Conocimientos en plataformas educativas digitales</h2>
+                        <hr />
+                        <FormControlLabel control={<Checkbox />} label="Google classroom" />
+                        <FormControlLabel control={<Checkbox />} label="Microsoft Teams" />
+                        <FormControlLabel control={<Checkbox />} label="Zoom" />
+                        <FormControlLabel control={<Checkbox />} label="Moodle" />
+                        <FormControlLabel control={<Checkbox />} label="Edmodo" />
+                        <FormControlLabel control={
+                        <Checkbox
+                        name="plataforma"
+                        checked={inputsVisibility.plataforma}
+                        onChange={handleChange}
+                        />} label="Otra (especificar)" />
+                        {inputsVisibility.plataforma && <TextField maxRows={5} multiline label="Especifique las plataformas" variant="outlined" />}
+                        
+                </FormGroup>
+                
+                <div style={{width:'100%', marginBottom:'15px'}}>
+                <button
+                className="btn-cont-reg">Siguiente</button>
+                </div>
+
+                </form>
+                </main>
+            )}
+            
+            {step===3 &&(
+                <></>
+            )}
+
+            {step===4 &&(
+                <></>
+            )}
         </>
 
 
