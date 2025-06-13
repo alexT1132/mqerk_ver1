@@ -36,7 +36,7 @@ export const Login=({to})=>{
     </Link>
     </>
   );
-}
+};
 
 export const Logos=({src, alt})=>{
     return(
@@ -47,5 +47,5 @@ export const Logos=({src, alt})=>{
             className="object-contain w-25 h-20"
             onContextMenu={(e) => e.preventDefault()}
         />
-    )
-}
+    );
+};

@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import Logo from "../assets/MQerK_logo.png";
 import { BtnSideBar } from './SideBarComp';
 import { Notificaciones, PerfilMenu } from './NavBarComp';
+import MQerkLogo from "../assets/MQerK_logo.png";
+import { Logos } from "./IndexComp.jsx";
+import { Link } from "react-router-dom";
 
 
 function Navbar({Seccion}) {
@@ -32,23 +35,25 @@ function Navbar({Seccion}) {
   return (
     <>
 
-    <header className='flex items-center justify-between bg-linear-to-r p-4 h-fit from-[#3d18c3] to-[#4816bf] sticky top-0 left-0 m-auto max-sm:h-min'>
-      <div className='flex relative items-center gap-x-30 px-5'>
+    <header className='flex items-center justify-between z-2 bg-linear-to-r py-2 h-fit from-[#3d18c3] to-[#4816bf] sticky top-0 left-0 m-auto max-sm:h-min'>
+      <div className='flex relative items-center lg:w-70 lg:justify-between px-3'>
       <BtnSideBar className='z-2' Sidebar={Sidebar} setSidebar={setSidebar} abrirSidebar={abrirSidebar}/>
 
       
       
-      <a className='flex relative items-center w-fit max-sm:hidden'><img draggable={false} className='w-25' src={Logo} alt="Logo de MQerk Academy" /></a>
+      <Link to={`/`} className={`lg:flex justify-center hidden px-5`}>
+        <Logos src={MQerkLogo}/>
+      </Link>
 
       </div>
     
 
-      <div>
-      <h1 className='text-center relative max-sm:text-sm text-white z-0 font-bold text-3xl'>Asesores Especializados en la Enseñanza de las Ciencias y Tecnología </h1>
+      <div className={`flex justify-center items-center`}>
+      <h1 className='text-center relative text-md sm:text-xl md:text-2xl text-white z-0 font-bold'>Asesores Especializados en la Enseñanza de las Ciencias y Tecnología </h1>
       <h2 className='text-center font-bold text-[#f4138a] text-2xl'>{Seccion}</h2>
       </div>
         
-      <div className='flex relative items-baseline justify-end sm:gap-x-30 px-5'>
+      <div className='flex relative items-baseline w-60 lg:justify-between justify-end px-2'>
       <Notificaciones/>
 
       <PerfilMenu/>
