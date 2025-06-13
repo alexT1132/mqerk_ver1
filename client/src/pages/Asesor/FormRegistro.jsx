@@ -13,6 +13,8 @@ import { TextField, FormControlLabel, FormControl, FormLabel, Radio, RadioGroup,
 
 import { BtnForm, BtnSubirArchivo } from '../../components/FormRegistroComp';
 
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'
+
 
 export const FormularioAsesor=()=>{
 const [dir, setDir] = useState('');
@@ -47,7 +49,7 @@ const [rfc, setRfc] = useState('');
 
     const {value, error, handleChange}=RFCInput();
 
-        const [step, setStep] = useState(2);
+        const [step, setStep] = useState(0);
     
         const nextStep = () => {
             setStep(step + 1);
@@ -79,7 +81,7 @@ const [rfc, setRfc] = useState('');
         plataforma: false,
       });
 
-      const handleChange2 = (event) => {
+      const mostrarCampoDeTexto = (event) => {
         const { name, checked } = event.target;
         setInputsVisibility((prev) => ({
           ...prev,
@@ -240,7 +242,7 @@ const [rfc, setRfc] = useState('');
             </p>
             </div>
             
-            <form className={`flex flex-col justify-around items-center w-full flex-wrap gap-8 p-4`}>
+            <form onSubmit={nextStep} className={`flex flex-col justify-around items-center w-full gap-8 p-4`}>
             
             <div className={`flex flex-col items-center gap-10 w-full sm:w-160 lg:w-200 lg:p-2`}>
             <FormControl
@@ -263,7 +265,7 @@ const [rfc, setRfc] = useState('');
             </FormControl>
             
             <Autocomplete
-                className={`flex flex-wrap w-full`}
+                className={`flex w-full`}
                 disablePortal
                 options={``}
                 renderInput={(params) => <TextField {...params} label="Institución" />}
@@ -323,8 +325,8 @@ const [rfc, setRfc] = useState('');
             />
 
             
-            <div className={`flex flex-wrap w-full justify-end`}>
-                <BtnForm TextoBtn={`Siguiente`}/>
+            <div className={`flex w-full justify-end`}>
+                <BtnForm type={`submit`} TextoBtn={`Siguiente`}/>
             </div>
             
             </div>
@@ -335,13 +337,13 @@ const [rfc, setRfc] = useState('');
             )}
 
             {step===2 &&(
-                <main className="vertical" id="responsive">
-            <article>          
-                <h1 className="instrucciones-reg">3. Información profesional</h1>
+                <div className={`flex flex-col w-full flex-wrap py-5 px-5 items-center justify-center`}>
+            <article className='flex flex-col items-center'>          
+                <h1 className={`text-[#53289f] text-center font-bold uppercase text-[15px] sm:text-2xl`}>3. Información profesional</h1>
             
 
             
-                <p className="parrafo-reg">
+                <p className={`text-justify p-2 w-fit sm:text-md sm:w-fit md:w-170 lg:w-200`}>
                 Ingresa la información relacionada con tu experiencia profesional, incluyendo roles previos,
                 instituciones donde has trabajado, y áreas de especialización.
                 Esta información nos ayudará a evaluar mejor tu perfil como colaborador.
@@ -349,26 +351,20 @@ const [rfc, setRfc] = useState('');
             </article>
 
             <form
-                style={{
-                    display:'flex',
-                    flexDirection:'column',
-                    alignItems:'stretch'
-                    }}>
+            onSubmit={nextStep}
+            className={`flex flex-col justify-around items-center w-full md:w-170 lg:w-200 gap-8 p-4`}>
                 {/* Área de interés o departamento al que aplicas:
                     */}
 
-                <FormControl style={{marginBlock:'5%'}}>
+                <FormControl className='w-full'>
                     <FormLabel
                         id="radio-buttons-group-label">
                     </FormLabel>
-                        <h2>Experiencia laboral</h2>
-                        <hr />
+                        <h2 className={`border-b-2 border-[#5215bb]/50 text-[#5215bb]`}>Experiencia laboral</h2>
                         <RadioGroup
-                            row
                             aria-labelledby="radio-buttons-group-label"
                             name="radio-buttons-group"
                             required
-                            style={{display:'flex', flexDirection:'column'}}
                             >
                     
                                 <FormControlLabel value="xp1" control={<Radio />} label="Menos de 1 año" />
@@ -379,15 +375,8 @@ const [rfc, setRfc] = useState('');
                         </RadioGroup>
                 </FormControl>
 
-                <FormGroup
-                style={{
-                    'textAlign':'justify',
-                    'fontFamily':"Roboto,Helvetica,Arial,sans-serif",
-                    marginBlock:'5%'
-                    
-                    }}>
-                        <h2>Áreas de especialización</h2>
-                        <hr />
+                <FormGroup className={`w-full`}>
+                        <h2 className={`border-b-2 border-[#5215bb]/50 text-[#5215bb]`}>Áreas de especialización</h2>
                         <FormControlLabel control={<Checkbox />} label="Ciencias exactas" />
                         <FormControlLabel control={<Checkbox />} label="Ciencias sociales" />
                         <FormControlLabel control={<Checkbox/>} label="Educación" />
@@ -399,17 +388,17 @@ const [rfc, setRfc] = useState('');
                             <Checkbox  
                             name="area"
                             checked={inputsVisibility.area}
-                            onChange={handleChange2}/>}
+                            onChange={mostrarCampoDeTexto}/>}
                             label="Otra/s (especificar)" />
                             {inputsVisibility.area && <TextField maxRows={5} multiline label="Especifique otra/s áreas de especialización" variant="outlined" />}
                 </FormGroup>
 
-                <FormControl style={{width:'100%'}}>
+                <FormControl className={`w-full`}>
                 <FormLabel id="radio-buttons-group-label"></FormLabel>
-                    <h2>¿Ha tenido experiencia previa en asesorías o tutorías educativas?</h2>
-                    <hr />
+                    <h2 className={`border-b-2 border-[#5215bb]/50 text-[#5215bb]`}>¿Ha tenido experiencia previa en asesorías o tutorías educativas?</h2>
                 <RadioGroup
-                    style={{display:'flex', flexDirection:'row', justifyContent:'space-around'}}
+                    className={`justify-around`}
+                    row
                     aria-labelledby="radio-buttons-group-label"
                     name="radio-buttons-group"
                     required>
@@ -421,10 +410,11 @@ const [rfc, setRfc] = useState('');
                 </FormControl>          
 
                 
-                <fieldset style={{marginBlock:'5%'}}>
-                    <h2>Informacion sobre institución/empresa</h2>
-                    <hr />
+                <fieldset className={`w-full flex flex-col gap-4`}>
+                    <h2 className={`border-b-2 border-[#5215bb]/50 text-[#5215bb]`}>Informacion sobre institución/empresa</h2>
 
+                    
+                    <div className={`flex flex-col gap-5`}>
                     <TextField
                         required
                         label="Empresa"
@@ -432,9 +422,6 @@ const [rfc, setRfc] = useState('');
                         helperText='ej. GEGSA, Login360.'
                         multiline
                         fullWidth
-                        style={{
-                            'marginBottom':'25px'
-                        }}
                     />
 
                     <TextField
@@ -444,10 +431,6 @@ const [rfc, setRfc] = useState('');
                         helperText='ej. Gerente general'
                         multiline
                         fullWidth
-                        style={{
-                            'marginTop':'15px',
-                            'marginBottom':'25px'
-                        }}
                     />
                     
                     
@@ -461,17 +444,14 @@ const [rfc, setRfc] = useState('');
                         rows={4}
                         fullWidth
                     />
+                    </div>
 
                 </fieldset>
 
                 
                 
-                <FormGroup
-                    style={{
-                    'fontFamily':"Roboto,Helvetica,Arial,sans-serif", marginBlock:'5%'
-                    }}>
-                        <h2>Conocimientos en plataformas educativas digitales</h2>
-                        <hr />
+                <FormGroup className={`w-full`}>
+                        <h2 className={`border-b-2 border-[#5215bb]/50 text-[#5215bb]`}>Conocimientos en plataformas educativas digitales</h2>
                         <FormControlLabel control={<Checkbox />} label="Google classroom" />
                         <FormControlLabel control={<Checkbox />} label="Microsoft Teams" />
                         <FormControlLabel control={<Checkbox />} label="Zoom" />
@@ -481,27 +461,206 @@ const [rfc, setRfc] = useState('');
                         <Checkbox
                         name="plataforma"
                         checked={inputsVisibility.plataforma}
-                        onChange={handleChange}
+                        onChange={mostrarCampoDeTexto}
                         />} label="Otra (especificar)" />
                         {inputsVisibility.plataforma && <TextField maxRows={5} multiline label="Especifique las plataformas" variant="outlined" />}
                         
                 </FormGroup>
                 
-                <div style={{width:'100%', marginBottom:'15px'}}>
-                <button
-                className="btn-cont-reg">Siguiente</button>
+                <div className='w-full flex justify-end'>
+                <BtnForm type={`submit`} TextoBtn={`Siguiente`}/>
                 </div>
 
                 </form>
-                </main>
+                </div>
             )}
             
             {step===3 &&(
-                <></>
+                <div className={`flex flex-col w-full flex-wrap py-5 px-5 items-center justify-center`}>
+            <article className='flex flex-col items-center'>            
+                <h1 className={`text-[#53289f] text-center font-bold uppercase text-[15px] sm:text-2xl`}>4. Documentos personales y oficiales</h1>
+            
+
+            
+                <p className={`text-justify p-2 w-fit sm:text-md sm:w-fit md:w-170 lg:w-200`}>
+                Adjunta en formato PDF los documentos personales y oficiales requeridos,  que respalde tu registro.
+                Asegúrate de que todos los archivos sean legibles y estén actualizados.
+                </p>
+            </article>
+
+            <form onSubmit={nextStep} className={`flex flex-col justify-around items-center w-full md:w-170 lg:w-200 gap-4 p-4`}>
+
+                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
+                    <p>Identificación oficial (INE, pasaporte, cartilla militar, etc.):</p>
+                    <BtnSubirArchivo/>
+                </label>
+                
+
+                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
+                    <p>Comprobante de domicilio reciente (no más de 3 meses de antiguedad):</p>
+                    <BtnSubirArchivo/>
+                </label>
+
+                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
+                    <p>
+                    Cédula de identificación fiscal SAT:
+                    </p>
+                    <BtnSubirArchivo helperText={``}/>
+                </label>
+
+                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
+                    <p>
+                    Título o cédula profesional (en caso de aplicar):
+                    </p>
+                    <BtnSubirArchivo/>
+                </label>
+
+                <label id='section2' className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
+                    <p>
+                    Comprobante de certificaciones adicionales: (OPCIONAL)
+                    </p>
+                    <BtnSubirArchivo/>
+                </label>
+
+                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
+                    <p>
+                    Carta de recomendación laboral: (OPCIONAL)
+                    </p>
+                    <BtnSubirArchivo/>
+                </label>
+
+                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
+                    <p>
+                    Currículum vitae actualizado:
+                    </p>
+                    <BtnSubirArchivo/>
+                </label>
+
+                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
+                    <p>
+                    Fotografía tamaño pasaporte FORMAL (PNG,JPG):
+                    </p>
+                    <BtnSubirArchivo/>
+                </label>
+
+                <div className='w-full flex justify-end'>
+                <BtnForm type={`submit`} TextoBtn={`Siguiente`}/>
+                </div>
+
+            </form>
+            </div>
             )}
 
             {step===4 &&(
-                <></>
+                <div className={`flex flex-col w-full flex-wrap py-5 px-5 items-center justify-center`}>
+                    <article className='flex flex-col items-center'>
+                        <h1 className={`text-[#53289f] text-center font-bold uppercase text-[15px] sm:text-2xl`}> 5. Información adicional </h1>      {/*Falta agregar la constante del usuario*/}
+                    
+                        <p className={`p-2 w-fit`}>
+                        Incluye lo que no se haya solicitado en las secciones anteriores.
+                        </p>
+                    </article>
+                
+                    <form className={`flex flex-col justify-around items-center w-full md:w-170 lg:w-200 gap-4 p-4`}>
+                        <FormGroup className='w-full'>
+                            <h2 className={`border-b-2 border-[#5215bb]/50 text-[#5215bb]`}>¿Cómo te enteraste de MQerKAcademy?</h2>
+                            <FormControlLabel control={<Checkbox />} label="Redes sociales (Facebook, Instagram, X, etc.)" />
+                            <FormControlLabel control={<Checkbox />} label="Recomendación de un amigo/colega" />
+                            <FormControlLabel control={<Checkbox />} label="Publicidad en línea" />
+                            <FormControlLabel control={<Checkbox />} label="Evento o feria educativa" />
+                            <FormControlLabel control={<Checkbox />} label="Página web" />
+                            <FormControlLabel control={
+                                <Checkbox 
+                                name="option1"
+                                checked={inputsVisibility.option1}
+                                onChange={handleChange}
+                                />} label="Otro (especificar)" />
+                                {inputsVisibility.option1 && <TextField multiline maxRows={5} label="¿Dónde escuchaste de nosotros?" variant="outlined" />}
+                        </FormGroup>
+
+                        <FormGroup className='w-full'>
+                            <h2 className={`border-b-2 border-[#5215bb]/50 text-[#5215bb]`}>¿Por qué te gustaría ser asesor en MQerKAcademy?</h2>
+                            <FormControlLabel control={<Checkbox />} label="Contribuir a la educación" />
+                            <FormControlLabel control={<Checkbox />} label="Desarrollo profesional" />
+                            <FormControlLabel control={<Checkbox />} label="Interés en ciencias y tecnología" />
+                            <FormControlLabel control={<Checkbox />} label="Flexibilidad horaria" />
+                            <FormControlLabel control={
+                            <Checkbox
+                            name="option2"
+                            checked={inputsVisibility.option2}
+                            onChange={handleChange}
+                            />} label="Otro (especificar)" />
+                            {inputsVisibility.option2 && <TextField maxRows={5} multiline label="Mencione una razon por la cual asesor con nosotros" variant="outlined" />}    
+                        </FormGroup>
+
+                        <FormControl className='w-full'>
+                            <FormLabel id="radio-buttons-group-label"></FormLabel>
+                                <h2 className={`border-b-2 border-[#5215bb]/50 text-[#5215bb]`}>¿Estarías dispuesto a participar en formaciones continuas o capacitaciones internas?</h2>
+                                <RadioGroup
+                                className='flex justify-around'
+                                row
+                                aria-labelledby="radio-buttons-group-label"
+                                name="radio-buttons-group"
+                                onChange={(e)=> setGen(e.target.value)}
+                                required>
+                                    <FormControlLabel value="y" control={<Radio />} label="Sí" />
+                                    <FormControlLabel value="n" control={<Radio />} label="No" />
+                                    
+                                </RadioGroup>
+                        </FormControl>
+                        
+
+                    
+                        
+                    <fieldset className='flex w-full flex-col items-center gap-10'>
+                    <article className={`flex flex-col gap-2`}>
+                
+                    <h1 className={`text-[#53289f] text-center font-bold uppercase text-[15px] sm:text-2xl`}>6. Confirmación y consentimiento</h1>
+                
+
+                
+                    <p className='text-justify'>
+                    Al completar este formulario, confirmas que la información proporcionada es verídica y autorizas a MQerKAcademy
+                    a utilizar estos datos únicamente para fines relacionados con el proceso de reclutamiento y contratación, conforme
+                    a la normativa de protección de datos aplicable. Por favor, firma digitalmente o marca la casilla de consentimiento
+                    para proceder
+                    </p>
+                    </article>
+                        
+                        <FormControl>
+                        <h2 className='text-center'>¿Autorizas a MQerKAcademy para almacenar y procesar tus datos personales de acuerdo con las políticas de privacidad?</h2>
+                            <FormLabel id="radio-buttons-group-label"></FormLabel>
+                                <RadioGroup
+                                className='flex justify-around'
+                                    row
+                                    aria-labelledby="radio-buttons-group-label"
+                                    name="radio-buttons-group"
+                                    onChange={(e)=> setGen(e.target.value)}
+                                    required
+                                    >
+                            
+                                        <FormControlLabel value="y" control={<Radio />} label="Sí, autorizo el uso de mis datos" />
+                                        <FormControlLabel className='text-red-500' value="n" control={<Radio />} label="No autorizo el uso de mis datos" />
+                                        
+                                </RadioGroup>
+                        </FormControl>
+                        <h2>Firma digital o nombre completo como confirmación de la veracidad de los datos proporcionados.</h2>
+                        
+                        <div>
+                            Espacio para la firma digital
+                        </div>
+
+                        <BtnForm TextoBtn={`Finalizar`}/>
+
+                        </fieldset>
+
+
+                    </form>
+                    
+                
+                
+                    
+            </div>
             )}
         </>
 
