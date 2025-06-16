@@ -6,6 +6,7 @@ import React, {useState} from 'react';
 
 import { DateField, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 
 import { Checkbox, FormGroup } from '@mui/material';      //Nuevo componente para listas
 import { TextField, FormControlLabel, FormControl, FormLabel, Radio, RadioGroup, Box, Autocomplete, Button, styled } from "@mui/material";
@@ -13,13 +14,11 @@ import { TextField, FormControlLabel, FormControl, FormLabel, Radio, RadioGroup,
 
 import { BtnForm, BtnSubirArchivo } from '../../components/FormRegistroComp';
 
-import CloudUploadIcon from '@mui/icons-material/CloudUpload'
-
 
 export const FormularioAsesor=()=>{
 const [dir, setDir] = useState('');
 const [mun, setMun] = useState('');
-const [nac, setNac] = useState('');
+const [nac, setNac] = useState(``);
 const [nacion, setNacion] = useState('');
 const [gen, setGen] = useState('');
 const [rfc, setRfc] = useState('');
@@ -159,6 +158,8 @@ const [rfc, setRfc] = useState('');
 
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateField
+                onChange={(e)=> setNac(e.format(`DD/MM/YYYY`))}
+                value={dayjs(nac, `DD/MM/YYYY`)}
                 helperText={`Fecha de nacimiento`}
                 fullWidth
                 disableFuture
