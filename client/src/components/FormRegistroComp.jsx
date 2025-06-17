@@ -8,9 +8,9 @@ export const TestComp=()=>{
     );
 };
 
-export const BtnForm=({type, TextoBtn})=>{
+export const BtnForm=({type, TextoBtn, onClick})=>{
     return(
-        <button type={type} className={`bg-[#0064fb] rounded-[10px] p-3`}>
+        <button onClick={onClick} type={type} className={`bg-[#0064fb] rounded-[10px] p-3`}>
             <p className={`text-white`}>
             {TextoBtn}
             </p>
@@ -41,3 +41,12 @@ export const BtnSubirArchivo=({helperText})=>{
         </div>
     );
 };
+
+export const LabelSubirArchivo=({Label, helperText})=>{
+    return(
+        <label className='flex flex-col text-center w-full h-30 sm:w-100 items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
+            <p>{Label}</p>
+            <BtnSubirArchivo helperText={helperText}/>
+        </label>
+    )
+}

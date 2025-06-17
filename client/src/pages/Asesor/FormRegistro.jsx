@@ -12,7 +12,9 @@ import { Checkbox, FormGroup } from '@mui/material';      //Nuevo componente par
 import { TextField, FormControlLabel, FormControl, FormLabel, Radio, RadioGroup, Box, Autocomplete, Button, styled } from "@mui/material";
 
 
-import { BtnForm, BtnSubirArchivo } from '../../components/FormRegistroComp';
+import { BtnForm, BtnSubirArchivo, LabelSubirArchivo } from '../../components/FormRegistroComp';
+
+import SignatureCanvas from `react-signature-canvas`
 
 
 export const FormularioAsesor=()=>{
@@ -48,7 +50,7 @@ const [rfc, setRfc] = useState('');
 
     const {value, error, handleChange}=RFCInput();
 
-        const [step, setStep] = useState(0);
+        const [step, setStep] = useState(4);
     
         const nextStep = () => {
             setStep(step + 1);
@@ -489,63 +491,44 @@ const [rfc, setRfc] = useState('');
                 </p>
             </article>
 
-            <form onSubmit={nextStep} className={`flex flex-col justify-around items-center w-full md:w-170 lg:w-200 gap-4 p-4`}>
+            <form className={`flex flex-col justify-around items-center w-full md:w-170 lg:w-200 gap-4 p-4`}>
 
-                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
-                    <p>Identificación oficial (INE, pasaporte, cartilla militar, etc.):</p>
-                    <BtnSubirArchivo/>
-                </label>
-                
 
-                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
-                    <p>Comprobante de domicilio reciente (no más de 3 meses de antiguedad):</p>
-                    <BtnSubirArchivo/>
-                </label>
+                <LabelSubirArchivo
+                Label={`Identificación oficial (INE, pasaporte, cartilla militar, etc.):`}
+                />
 
-                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
-                    <p>
-                    Cédula de identificación fiscal SAT:
-                    </p>
-                    <BtnSubirArchivo helperText={``}/>
-                </label>
 
-                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
-                    <p>
-                    Título o cédula profesional (en caso de aplicar):
-                    </p>
-                    <BtnSubirArchivo/>
-                </label>
+                <LabelSubirArchivo
+                Label={`Comprobante de domicilio reciente (no más de 3 meses de antiguedad):`}
+                />
 
-                <label id='section2' className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
-                    <p>
-                    Comprobante de certificaciones adicionales: (OPCIONAL)
-                    </p>
-                    <BtnSubirArchivo/>
-                </label>
+                <LabelSubirArchivo
+                Label={`Título o cédula profesional (en caso de aplicar):`}
+                />
 
-                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
-                    <p>
-                    Carta de recomendación laboral: (OPCIONAL)
-                    </p>
-                    <BtnSubirArchivo/>
-                </label>
+                <LabelSubirArchivo
+                Label={`Comprobante de certificaciones adicionales: (OPCIONAL)`}
+                />
 
-                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
-                    <p>
-                    Currículum vitae actualizado:
-                    </p>
-                    <BtnSubirArchivo/>
-                </label>
+                <LabelSubirArchivo
+                Label={`Carta de recomendación laboral: (OPCIONAL)`}
+                />
 
-                <label className='flex flex-col flex-wrap items-center justify-center border-2 border-[#5215bb] rounded-2xl gap-2 p-2'>
-                    <p>
-                    Fotografía tamaño pasaporte FORMAL (PNG,JPG):
-                    </p>
-                    <BtnSubirArchivo/>
-                </label>
+                <LabelSubirArchivo
+                Label={`Currículum vitae actualizado:`}
+                />
+
+                <LabelSubirArchivo
+                Label={`Fotografía tamaño pasaporte FORMAL (PNG,JPG):`}
+                />
+
+                <LabelSubirArchivo
+                Label={`Identificación oficial (INE, pasaporte, cartilla militar, etc.):`}
+                />
 
                 <div className='w-full flex justify-end'>
-                <BtnForm type={`submit`} TextoBtn={`Siguiente`}/>
+                <BtnForm onClick={nextStep} TextoBtn={`Siguiente`}/>
                 </div>
 
             </form>
@@ -645,10 +628,17 @@ const [rfc, setRfc] = useState('');
                                         
                                 </RadioGroup>
                         </FormControl>
-                        <h2>Firma digital o nombre completo como confirmación de la veracidad de los datos proporcionados.</h2>
                         
-                        <div>
-                            Espacio para la firma digital
+                        
+                        <div className={`flex flex-col gap-2`}>
+                            <h2 className={`text-center`}>Firma digital o nombre completo como confirmación de la veracidad de los datos proporcionados.</h2>
+                            <div className={`flex items-center justify-center w-full`}>
+                                <div className={`border-2 rounded-2xl`}>
+                            <SignatureCanvas
+                            fullWidth
+                            canvasProps={{ className: 'sigCanvas'}} />
+                            </div>
+                            </div>
                         </div>
 
                         <BtnForm TextoBtn={`Finalizar`}/>
