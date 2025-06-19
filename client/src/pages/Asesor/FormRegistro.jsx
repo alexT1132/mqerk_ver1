@@ -2,7 +2,7 @@
 //App.jsx line 49
 
 import NavLogin from '../../components/NavLogin'
-import React, {useState} from 'react';
+import React, {useState, useRef} from 'react';
 
 import { DateField, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -14,7 +14,8 @@ import { TextField, FormControlLabel, FormControl, FormLabel, Radio, RadioGroup,
 
 import { BtnForm, BtnSubirArchivo, LabelSubirArchivo } from '../../components/FormRegistroComp';
 
-import SignatureCanvas from `react-signature-canvas`
+
+import Signature from '@uiw/react-signature';
 
 
 export const FormularioAsesor=()=>{
@@ -50,7 +51,7 @@ const [rfc, setRfc] = useState('');
 
     const {value, error, handleChange}=RFCInput();
 
-        const [step, setStep] = useState(4);
+        const [step, setStep] = useState(1);
     
         const nextStep = () => {
             setStep(step + 1);
@@ -74,21 +75,25 @@ const [rfc, setRfc] = useState('');
       });
 
 
-      const [inputsVisibility, setInputsVisibility] = useState({
-        departamento: false,
-        area: false,
-        crm: false,
-        softwarecontabilidad: false,
-        plataforma: false,
-      });
+    const [inputsVisibility, setInputsVisibility] = useState({
+    departamento: false,
+    area: false,
+    idioma: false,
+    crm: false,
+    softwarecontabilidad: false,
+    plataforma: false,
+    });
 
-      const mostrarCampoDeTexto = (event) => {
-        const { name, checked } = event.target;
-        setInputsVisibility((prev) => ({
-          ...prev,
-          [name]: checked,
-        }));
-      };
+    const mostrarCampoDeTexto = (event) => {
+    const { name, checked } = event.target;
+    setInputsVisibility((prev) => ({
+        ...prev,
+        [name]: checked,
+    }));
+    };
+
+    const $svg = useRef(null);
+    const handle = () => $svg.current?.clear();
     
     return(
 
@@ -251,7 +256,7 @@ const [rfc, setRfc] = useState('');
             <FormControl
             className={`w-full`}
             required>
-            <FormLabel id="radio-buttons-group-label">Nivel de estudios</FormLabel>
+            <h2 className={`border-b-2 border-[#5215bb]/50 text-[#5215bb]`}>Nivel de estudios</h2>
             <RadioGroup
             
             aria-labelledby="radio-buttons-group-label"
@@ -262,7 +267,6 @@ const [rfc, setRfc] = useState('');
             <FormControlLabel value="n3" control={<Radio />} label="Licenciatura" />
             <FormControlLabel value="n4" control={<Radio />} label="Maestría" />
             <FormControlLabel value="n5" control={<Radio />} label="Doctorado" />
-            {/* Falta agregar una manera de especificar el nivel de estudios */}
             <FormControlLabel value="otro" control={<Radio />} label="Otro" />  
             </RadioGroup>
             </FormControl>
@@ -286,7 +290,7 @@ const [rfc, setRfc] = useState('');
             />
 
             <div className={`w-full flex flex-col items-center`}>
-                <BtnSubirArchivo/>
+                <BtnSubirArchivo helperText={`Adjunte su título académico`}/>
             </div>
 
             
@@ -298,37 +302,48 @@ const [rfc, setRfc] = useState('');
                 timezone={`system`}
                 format={`DD/MM/YYYY`}/>
             </LocalizationProvider>
-            
-            {/* Certificaciones o cursos adicionales
-                la idea es que el colaborador pueda
-                subir su certificado */}
-            <div>
 
+            <div className={`w-full`}>
+                <TextField
+                fullWidth
+                required
+                className={`w-full`}
+                margin="normal"
+                id="oulined-basic"
+                label='Certificación o curso(s) adicionales'
+                />
             </div>
             
 
             <div className={`w-full flex flex-col items-center`}>
-                <BtnSubirArchivo/>
+                <BtnSubirArchivo helperText={`Adjunte su(s) certificado(s)`}/>
             </div>
 
             
             
             
 
-            {/* Se va a añadir un checkbox para seleccionar el idioma
-                que dominen */}
-
-            <TextField
-            required
-            className={`w-full`}
-            margin="normal"
-            id="oulined-basic"
-            label='Especialización o área de estudios'
-            helperText='Ejemplo: Ing. Sistemas Computacionales'
-            />
+            <FormGroup className={`w-full`}>
+                        <h2 className={`border-b-2 border-[#5215bb]/50 text-[#5215bb]`}>Seleccione el/los idioma(s) los cuales conozca y/o domine</h2>
+                        <FormControlLabel control={<Checkbox />} label="Español" />
+                        <FormControlLabel control={<Checkbox />} label="Inglés" />
+                        <FormControlLabel control={<Checkbox/>} label="Francés" />
+                        <FormControlLabel control={<Checkbox />} label="Italiano" />
+                        <FormControlLabel control={<Checkbox/>} label="Alemán" />
+                        <FormControlLabel control={<Checkbox/>} label="Portugués" />
+                        <FormControlLabel control={<Checkbox/>} label="Catalán" />
+                        <FormControlLabel control={
+                            <Checkbox  
+                            name="idioma"
+                            checked={inputsVisibility.idioma}
+                            onChange={mostrarCampoDeTexto}/>}
+                            label="Otra/s (especificar)" />
+                            {inputsVisibility.idioma && <TextField maxRows={5} multiline label="Mencione cual(es)" variant="outlined" />}
+                </FormGroup>
 
             
-            <div className={`flex w-full justify-end`}>
+            <div className={`flex w-full justify-between`}>
+                <BtnForm onClick={prevStep} TextoBtn={`<-`}/>
                 <BtnForm type={`submit`} TextoBtn={`Siguiente`}/>
             </div>
             
@@ -470,7 +485,8 @@ const [rfc, setRfc] = useState('');
                         
                 </FormGroup>
                 
-                <div className='w-full flex justify-end'>
+                <div className={`flex w-full justify-between`}>
+                <BtnForm onClick={prevStep} TextoBtn={`<-`}/>
                 <BtnForm type={`submit`} TextoBtn={`Siguiente`}/>
                 </div>
 
@@ -527,8 +543,9 @@ const [rfc, setRfc] = useState('');
                 Label={`Identificación oficial (INE, pasaporte, cartilla militar, etc.):`}
                 />
 
-                <div className='w-full flex justify-end'>
-                <BtnForm onClick={nextStep} TextoBtn={`Siguiente`}/>
+                <div className={`flex w-full justify-between`}>
+                <BtnForm onClick={prevStep} TextoBtn={`<-`}/>
+                <BtnForm type={`submit`} TextoBtn={`Siguiente`}/>
                 </div>
 
             </form>
@@ -632,12 +649,16 @@ const [rfc, setRfc] = useState('');
                         
                         <div className={`flex flex-col gap-2`}>
                             <h2 className={`text-center`}>Firma digital o nombre completo como confirmación de la veracidad de los datos proporcionados.</h2>
-                            <div className={`flex items-center justify-center w-full`}>
-                                <div className={`border-2 rounded-2xl`}>
-                            <SignatureCanvas
-                            fullWidth
-                            canvasProps={{ className: 'sigCanvas'}} />
+                            <div className={`flex flex-col gap-y-1 items-center justify-center w-full`}>
+                                <div className={`border-2`}>
+                            <Signature ref={$svg}/>
+                            
                             </div>
+                            <button className={`bg-[#1f1f1f] rounded-2xl w-20`} onClick={handle}>
+                                <p className={`text-white`}>
+                                    Limpiar
+                                </p>
+                            </button>
                             </div>
                         </div>
 
