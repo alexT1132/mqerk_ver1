@@ -10,7 +10,7 @@ export const TestComp=()=>{
 
 export const BtnForm=({type, TextoBtn, onClick})=>{
     return(
-        <button onClick={onClick} type={type} className={`bg-[#0064fb] rounded-[10px] p-3`}>
+        <button onClick={onClick} type={type} className={`bg-[#0064fb] hover:bg-blue-700 rounded-[10px] p-3 cursor-pointer`}>
             <p className={`text-white`}>
             {TextoBtn}
             </p>

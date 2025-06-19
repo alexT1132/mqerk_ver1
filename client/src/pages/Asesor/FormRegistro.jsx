@@ -174,6 +174,8 @@ const [rfc, setRfc] = useState('');
                 format={`DD/MM/YYYY`}/>
                 </LocalizationProvider>
 
+                {console.log(dayjs)}
+
 
                 <TextField
                 helperText={`Nacionalidad`}
