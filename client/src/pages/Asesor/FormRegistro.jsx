@@ -51,7 +51,7 @@ const [rfc, setRfc] = useState('');
 
     const {value, error, handleChange}=RFCInput();
 
-        const [step, setStep] = useState(1);
+        const [step, setStep] = useState(3);
     
         const nextStep = () => {
             setStep(step + 1);
@@ -163,16 +163,18 @@ const [rfc, setRfc] = useState('');
                 <div className={`flex flex-row gap-x-20 gap-y-5 flex-wrap md:flex-nowrap w-full justify-center sm:justify-between`}>
                 {/* Fecha de nacimiento */}
 
+                <div className={`w-full`}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateField
-                onChange={(e)=> setNac(e.format(`DD/MM/YYYY`))}
-                value={dayjs(nac, `DD/MM/YYYY`)}
+                onChange={(e)=> setNac(e.target.value)}
+                // value={dayjs(nac, `DD/MM/YYYY`)}
                 helperText={`Fecha de nacimiento`}
                 fullWidth
                 disableFuture
                 timezone={`system`}
                 format={`DD/MM/YYYY`}/>
                 </LocalizationProvider>
+                </div>
 
                 {console.log(dayjs)}
 
@@ -276,7 +278,7 @@ const [rfc, setRfc] = useState('');
             <Autocomplete
                 className={`flex w-full`}
                 disablePortal
-                options={``}
+                options={["Insituto Tecnológico de Tuxtepec",""]}
                 renderInput={(params) => <TextField {...params} label="Institución" />}
                 noOptionsText='Opción inválida'
                 autoSelect
@@ -295,15 +297,16 @@ const [rfc, setRfc] = useState('');
                 <BtnSubirArchivo helperText={`Adjunte su título académico`}/>
             </div>
 
-            
+            <div className={`w-full`}>
             <LocalizationProvider className={`w-full`} dateAdapter={AdapterDayjs}>
                 <DateField
-                className={`w-full`}
+                fullWidth
                 helperText={`Año en que se graduó`}
                 disableFuture
                 timezone={`system`}
                 format={`DD/MM/YYYY`}/>
             </LocalizationProvider>
+            </div>
 
             <div className={`w-full`}>
                 <TextField
@@ -344,8 +347,8 @@ const [rfc, setRfc] = useState('');
                 </FormGroup>
 
             
-            <div className={`flex w-full justify-between`}>
-                <BtnForm onClick={prevStep} TextoBtn={`<-`}/>
+            <div className={`flex flex-wrap w-full gap-2 justify-between`}>
+                <BtnForm onClick={prevStep} TextoBtn={`Anterior`}/>
                 <BtnForm type={`submit`} TextoBtn={`Siguiente`}/>
             </div>
             
@@ -419,12 +422,10 @@ const [rfc, setRfc] = useState('');
                 <RadioGroup
                     className={`justify-around`}
                     row
-                    aria-labelledby="radio-buttons-group-label"
-                    name="radio-buttons-group"
                     required>
-                        <FormControlLabel value="y" control={<Radio />} label="Sí" />
-                        <FormControlLabel value="med" control={<Radio />} label="Medianamente" />
-                        <FormControlLabel value="n" control={<Radio />} label="No" />
+                        <FormControlLabel className={`flex content-center`} value="y" control={<Radio />} label="Sí" />
+                        <FormControlLabel className={`flex content-center`} value="med" control={<Radio />} label="Medianamente" />
+                        <FormControlLabel className={`flex content-center`} value="n" control={<Radio />} label="No" />
                         
                     </RadioGroup>
                 </FormControl>          
@@ -487,8 +488,8 @@ const [rfc, setRfc] = useState('');
                         
                 </FormGroup>
                 
-                <div className={`flex w-full justify-between`}>
-                <BtnForm onClick={prevStep} TextoBtn={`<-`}/>
+                <div className={`flex flex-wrap w-full gap-2 justify-between`}>
+                <BtnForm onClick={prevStep} TextoBtn={`Anterior`}/>
                 <BtnForm type={`submit`} TextoBtn={`Siguiente`}/>
                 </div>
 
@@ -545,9 +546,9 @@ const [rfc, setRfc] = useState('');
                 Label={`Identificación oficial (INE, pasaporte, cartilla militar, etc.):`}
                 />
 
-                <div className={`flex w-full justify-between`}>
-                <BtnForm onClick={prevStep} TextoBtn={`<-`}/>
-                <BtnForm type={`submit`} TextoBtn={`Siguiente`}/>
+                <div className={`flex flex-wrap w-full gap-2 justify-between`}>
+                <BtnForm onClick={prevStep} TextoBtn={`Anterior`}/>
+                <BtnForm onClick={nextStep} TextoBtn={`Siguiente`}/>
                 </div>
 
             </form>
