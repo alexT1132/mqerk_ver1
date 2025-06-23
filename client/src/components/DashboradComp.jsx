@@ -613,14 +613,14 @@ export function BtnPanelAdmin({Informacion, cantidad}){
     const colorClass = cantidad < 0 ? `text-red-500` : `text-green-500`;
 
     return(
-    <div className="">
-    <button className="flex flex-col flex-wrap grow cursor-pointer p-2 w-70 bg-white text-purple-700 border-gray-300 rounded-lg shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
-    <span className="uppercase text-xl w-full rounded-b-full bg-gradient-to-r">
+    // <div>
+    <button className="flex flex-col flex-wrap md:gap-1 justify-center items-center cursor-pointer w-30 h-25 md:w-70 md:h-fit bg-white hover:bg-gray-200 rounded-lg shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
+    <span className="uppercase text-purple-700 md:text-white md:text-xl md:bg-gradient-to-r md:from-[#B89CDC] md:to-[#E558A4] rounded-t-lg w-full">
       {Informacion}
     
     </span>
     {MostrarCantidad && (
-    <span className={`text-2xl ${colorClass} font-bold`}>{new Intl.NumberFormat('es-MX', {
+    <span className={`md:text-2xl ${colorClass} font-bold`}>{new Intl.NumberFormat('es-MX', {
             style: 'currency',
             currency: 'MXN',
           }).format(cantidad)}</span>
@@ -628,7 +628,7 @@ export function BtnPanelAdmin({Informacion, cantidad}){
     
     
     </button>
-    </div>
+    // </div>
     )
 }
 

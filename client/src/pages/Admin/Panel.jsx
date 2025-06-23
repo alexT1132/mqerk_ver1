@@ -13,7 +13,7 @@ export function DashboardAdm(){
         <SideBarDesktopAdmin/>
 
         <div className="flex flex-col gap-y-10 sm:gap-8 sm:px-25">
-                <div className="flex justify-center p-10 gap-x-5">
+                <div className="flex flex-wrap gap-y-2 justify-center p-10 gap-x-5">
                     <BtnPanelAdmin Informacion={'Reporte mensual'}/>
                     <BtnPanelAdmin Informacion={'Reporte anual'}/>
                 </div>
