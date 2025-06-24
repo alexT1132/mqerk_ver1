@@ -6,6 +6,7 @@ import { BtnPanelAdmin, Container, AnaliticasAdmin, Buscador, TablaAsesores, Ord
 
 
 export function DashboardAdm(){
+    const height=`h-full`
     return(
         <>
         <Navbar/>
@@ -14,8 +15,8 @@ export function DashboardAdm(){
 
         <div className="flex flex-col gap-y-10 sm:gap-8 sm:px-25">
                 <div className="flex flex-wrap gap-y-2 justify-center p-10 gap-x-5">
-                    <BtnPanelAdmin Informacion={'Reporte mensual'}/>
-                    <BtnPanelAdmin Informacion={'Reporte anual'}/>
+                    <BtnPanelAdmin customClass={`h-full rounded-lg items-center`} Informacion={'Reporte mensual'}/>
+                    <BtnPanelAdmin customClass={`h-full rounded-lg items-center`} Informacion={'Reporte anual'}/>
                 </div>
         
                 <div className="flex flex-wrap w-full justify-center gap-5">

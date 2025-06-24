@@ -605,7 +605,7 @@ export function OrdenarBtn(){
 
 // Panel principal del administrador
 
-export function BtnPanelAdmin({Informacion, cantidad}){
+export function BtnPanelAdmin({Informacion, cantidad, customClass}){
  
 
     const MostrarCantidad = cantidad != null && cantidad !== '';
@@ -614,8 +614,8 @@ export function BtnPanelAdmin({Informacion, cantidad}){
 
     return(
     // <div>
-    <button className="flex flex-col flex-wrap md:gap-1 justify-center items-center cursor-pointer w-30 h-25 md:w-70 md:h-fit bg-white hover:bg-gray-200 rounded-lg shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
-    <span className="uppercase text-purple-700 md:text-white md:text-xl md:bg-gradient-to-r md:from-[#B89CDC] md:to-[#E558A4] rounded-t-lg w-full">
+    <button className={`flex flex-col flex-wrap md:gap-1 md:justify-center justify-between items-center cursor-pointer w-30 h-20 md:w-70 md:h-fit bg-white hover:bg-gray-200 rounded-lg shadow-[4px_6px_5px_rgba(0,0,0,0.5)]`}>
+    <span className={`flex justify-center items-center text-center uppercase ${customClass} h-[60%] md:h-fit font-semibold text-white md:text-xl bg-gradient-to-r from-[#B89CDC] to-[#E558A4] rounded-t-lg w-full`}>
       {Informacion}
     
     </span>

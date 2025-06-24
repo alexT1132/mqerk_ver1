@@ -49,14 +49,14 @@ function Navbar({Seccion}) {
     
 
       <div className={`flex justify-center items-center`}>
-      <h1 className='text-center relative text-md sm:text-xl md:text-2xl text-white z-0 font-bold'>Asesores Especializados en la Enseñanza de las Ciencias y Tecnología </h1>
+      <h1 className='flex justify-center h-10 overflow-hidden sm:h-fit text-center text-sm sm:text-xl md:text-2xl text-white z-0 font-bold'>Asesores Especializados en la Enseñanza de las Ciencias y Tecnología </h1>
       <h2 className='text-center font-bold text-[#f4138a] text-2xl'>{Seccion}</h2>
       </div>
         
-      <div className='flex relative items-baseline w-60 lg:justify-between justify-end px-2'>
+      <div className='flex relative items-baseline md:w-60 md:justify-between justify-end px-2'>
       <Notificaciones/>
 
-      <PerfilMenu/>
+      <PerfilMenu navbar={`hidden sm:flex`}/>
       </div>
 
     
