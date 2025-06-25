@@ -51,7 +51,7 @@ const [rfc, setRfc] = useState('');
 
     const {value, error, handleChange}=RFCInput();
 
-        const [step, setStep] = useState(3);
+        const [step, setStep] = useState(0);
     
         const nextStep = () => {
             setStep(step + 1);

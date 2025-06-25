@@ -15,7 +15,7 @@ const Topbar = () => {
   
         {/* Título en el centro */}
         <div className={`flex justify-center overflow-hidden`}>
-        <h1 className="text-white sm:text-xl md:text-2xl lg:text-3xl font-semibold text-center">
+        <h1 className="text-white h-10 sm:h-fit text-sm sm:text-xl md:text-2xl lg:text-3xl font-semibold text-center">
             Asesores Especializados en la Enseñanza de las Ciencias y Tecnología 
         </h1>
         </div>
