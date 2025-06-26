@@ -1,14 +1,30 @@
-import React from 'react'
 import Navbar from "../../components/NavLogin.jsx";
+import { useNavigate } from "react-router-dom";
+import { usePreventPageReload } from "../../NoReload.jsx";
+import { useAsesor } from "../../context/AsesorContext.jsx";
+import { useEffect } from "react";
 
 export function Bienvenida() {
+
+    usePreventPageReload();
+
+    const navigate = useNavigate();
+
+    const {datos1} = useAsesor();
+
+    useEffect(() => {
+        if (datos1.length === 0) {
+            navigate('/pre_registro');
+        }
+    }, []);
+
   return (
     <div>
         <Navbar />
         <div className="flex justify-center items-center overflow-hidden">
                 {/* <!-- Tarjeta para móviles --> */}
                 <div className="p-8 rounded-3xl md:hidden mb-5">
-                <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">¡Bienvenido(a) MARIANA RODRIGUEZ PEREZ a MQerKAcademy!</h2>
+                <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">¡Bienvenido(a) {datos1.nombres} {datos1.apellidos} a MQerKAcademy!</h2>
                 <p className='text-justify mb-10'>Estamos muy emocionados de contar contigo como parte de nuestro proceso de selección. Tu talento y experiencia son clave para seguir construyendo una academia disruptiva y que prepare a los estudiantes para enfrentar los retos del futuro.</p>
                     <div className='border-4 border-[#3818c3]'>
                         <p className='text-justify mt-5 ml-3 mr-3 mb-6'>Una vez culminado la entrevista en Recursos Humanos, ahora necesitamos que completes algunos pasos importantes:</p>
@@ -20,7 +36,7 @@ export function Bienvenida() {
                         <p className='text-center mb-10 font-bold'>El equipo de MQerKAcademy</p>
                     </div>
                     <div className='flex justify-center'>
-                        <button type="submit" className="font-bold text-2xl w-40 py-3 mt-5.5 bg-blue-500 text-white rounded-xl hover:bg-blue-700 transition duration-300">
+                        <button type="submit" onClick={() => {navigate('/test')}} className="font-bold text-2xl w-40 py-3 mt-5.5 bg-blue-500 text-white rounded-xl hover:bg-blue-700 transition duration-300">
                             Iniciar
                         </button>
                     </div>
@@ -28,7 +44,7 @@ export function Bienvenida() {
               
                 {/* <!-- Tarjeta para computadoras --> */}
                 <div className="hidden md:flex p-8 d-flex w-330 flex-col">
-                    <h2 className="text-3xl font-semibold text-center text-gray-900 mb-10">¡Bienvenido(a) MARIANA RODRIGUEZ PEREZ a MQerKAcademy!</h2>
+                    <h2 className="text-3xl font-semibold text-center text-gray-900 mb-10">¡Bienvenido(a) {datos1.nombres} {datos1.apellidos} a MQerKAcademy!</h2>
                     <p className='text-center mb-10'>Estamos muy emocionados de contar contigo como parte de nuestro proceso de selección. Tu talento y experiencia son clave para seguir construyendo una academia disruptiva y que prepare a los estudiantes para enfrentar los retos del futuro.</p>
                     <div className='border-4 border-[#3818c3]'>
                         <p className='text-center mt-5'>Una vez culminado la entrevista en Recursos Humanos, ahora necesitamos que completes algunos pasos importantes:</p>
@@ -40,7 +56,7 @@ export function Bienvenida() {
                         <p className='text-center mb-10 font-bold'>El equipo de MQerKAcademy</p>
                     </div>
                     <div className='flex justify-center'>
-                        <button type="submit" className="font-bold text-2xl w-40 py-3 mt-5.5 bg-blue-500 text-white rounded-xl hover:bg-blue-700 transition duration-300">
+                        <button type="submit" onClick={() => {navigate('/test')}} className="font-bold text-2xl w-40 py-3 mt-5.5 bg-blue-500 text-white rounded-xl hover:bg-blue-700 transition duration-300">
                             Iniciar
                         </button>
                     </div>

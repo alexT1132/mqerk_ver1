@@ -8,6 +8,7 @@ import Dos from "./assets/mqerk/2.png";
 import Tres from "./assets/mqerk/3.png";
 import Cuatro from "./assets/mqerk/4.png";
 import Cinco from "./assets/mqerk/5.png";
+import Seis from "./assets/mqerk/6.png";
 import Uno1 from "./assets/1.png";
 import Dos2 from "./assets/2.png";
 import Tres3 from "./assets/3.png";
@@ -226,7 +227,7 @@ function Web() {
     <div className="min-h-screen flex flex-col" >
         <Navbar />
         {/* movil */}
-        <div className="block md:hidden mt-19">
+        <div className="block md:hidden">
             <div className="relative w-full h-110 overflow-hidden">
                 <video
                 autoPlay
@@ -282,10 +283,10 @@ function Web() {
               </div>
             </div>
             <div className='w-full flex justify-center items-center py-8'>
-              <button className='bg-[#3c24ba] w-60 py-2 flex justify-center items-center gap-2 rounded-2xl'>
+              <Link to='/entrenamiento_examen_admision_universidad' className='bg-[#3c24ba] w-60 py-2 flex justify-center items-center gap-2 rounded-2xl'>
                 <MdOutlineShoppingCart className='size-5 text-white' />
                 <div className="text-[13px] text-white font-bold">Empieza tu transformación</div>
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -434,7 +435,7 @@ function Web() {
 
           <div className="bg-white rounded-2xl shadow-2xl p-3 flex flex-col transition-transform transform hover:scale-105">
             <div className='flex justify-center items-center'>
-              <img src={Cinco} className='h-43 w-76 rounded-2xl' />
+              <img src={Seis} className='h-43 w-76 rounded-2xl' />
             </div>
             <div className="bg-[#3c24ba] w-50 mt-4 rounded-xl text-white text-center">
               Desarrollo Académico 
@@ -596,7 +597,7 @@ function Web() {
         </div>
 
         {/* desktop */}
-        <div className="hidden md:block mt-23">
+        <div className="hidden md:block">
             <div className="relative w-full h-135 overflow-hidden">
           <video
             autoPlay
@@ -656,11 +657,11 @@ function Web() {
                 <div className="text-[13px] text-[#00286e]">Presencial</div>
               </div>
             </div>
-            <div className='w-full flex justify-center items-center py-8'>
-              <button className='bg-[#3c24ba] w-60 py-2 flex justify-center items-center gap-2 rounded-2xl'>
+            <div className='w-full flex justify-center items-end h-20'>
+              <Link to='/entrenamiento_examen_admision_universidad' className='bg-[#3c24ba] w-60 py-2 flex justify-center items-center gap-2 rounded-2xl'>
                 <MdOutlineShoppingCart className='size-5 text-white' />
                 <div className="text-[13px] text-white font-bold">Empieza tu transformación</div>
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -691,11 +692,11 @@ function Web() {
                 <div className="text-[13px] text-[#00286e]">Presencial</div>
               </div>
             </div>
-            <div className='w-full flex justify-center items-center py-8'>
-              <button className='bg-[#3c24ba] w-60 py-2 flex justify-center items-center gap-2 rounded-2xl'>
+            <div className='w-full flex justify-center items-end h-20'>
+              <Link to='/entrenamiento_examen_admision_preparatoria' className='bg-[#3c24ba] w-60 py-2 flex justify-center items-center gap-2 rounded-2xl'>
                 <MdOutlineShoppingCart className='size-5 text-white' />
                 <div className="text-[13px] text-white font-bold">Empieza tu transformación</div>
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -707,10 +708,7 @@ function Web() {
               Digital / Formación TI
             </div>
             <div className="mt-2 rounded-xl text-[18px] text-[#00286e] font-bold text-center">
-              DIGI-START: desbloquea tu potencial
-            </div>
-            <div className="mt-1.4 rounded-xl text-[18px] text-[#00286e] font-bold text-center">
-              tecnológico
+              DIGI-START: desbloquea tu potencial tecnológico
             </div>
             <div className="mt-2 rounded-xl text-[18px] text-[#00286e] text-center">
               Por Alejandro Téllez 
@@ -729,7 +727,7 @@ function Web() {
                 <div className="text-[13px] text-[#00286e]">Presencial</div>
               </div>
             </div>
-            <div className='w-full flex justify-center items-center py-8'>
+            <div className='w-full flex justify-center items-end h-20'>
               <button className='bg-[#3c24ba] w-60 py-2 flex justify-center items-center gap-2 rounded-2xl'>
                 <MdOutlineShoppingCart className='size-5 text-white' />
                 <div className="text-[13px] text-white font-bold">Empieza tu transformación</div>
@@ -764,7 +762,7 @@ function Web() {
                 <div className="text-[13px] text-[#00286e]">Presencial</div>
               </div>
             </div>
-            <div className='w-full flex justify-center items-center py-8'>
+            <div className='w-full flex justify-center items-end h-20'>
               <button className='bg-[#3c24ba] w-60 py-2 flex justify-center items-center gap-2 rounded-2xl'>
                 <MdOutlineShoppingCart className='size-5 text-white' />
                 <div className="text-[13px] text-white font-bold">Empieza tu transformación</div>
@@ -775,11 +773,11 @@ function Web() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-6 mt-6">
-          <div className="bg-white  p-3 flex flex-col transition-transform transform hover:scale-105">
+          <div className="bg-white  p-3 flex flex-col">
             
           </div>
 
-          <div className="bg-white rounded-2xl shadow-2xl p-3 flex flex-col transition-transform transform hover:scale-105">
+          <div className="rounded-2xl shadow-2xl p-3 flex flex-col transition-transform transform hover:scale-105">
             <div className='flex justify-center items-center'>
               <img src={Cinco} className='h-43 w-76 rounded-2xl' />
             </div>
@@ -806,7 +804,7 @@ function Web() {
                 <div className="text-[13px] text-[#00286e]">Presencial</div>
               </div>
             </div>
-            <div className='w-full flex justify-center items-center py-8'>
+            <div className='w-full flex justify-center items-end h-20'>
               <button className='bg-[#3c24ba] w-60 py-2 flex justify-center items-center gap-2 rounded-2xl'>
                 <MdOutlineShoppingCart className='size-5 text-white' />
                 <div className="text-[13px] text-white font-bold">Empieza tu transformación</div>
@@ -816,7 +814,7 @@ function Web() {
 
           <div className="bg-white rounded-2xl shadow-2xl p-3 flex flex-col transition-transform transform hover:scale-105">
             <div className='flex justify-center items-center'>
-              <img src={Cinco} className='h-43 w-76 rounded-2xl' />
+              <img src={Seis} className='h-43 w-76 rounded-2xl' />
             </div>
             <div className="bg-[#3c24ba] w-50 mt-4 rounded-xl text-white text-center">
               Desarrollo Académico 
@@ -841,7 +839,7 @@ function Web() {
                 <div className="text-[13px] text-[#00286e]">Presencial</div>
               </div>
             </div>
-            <div className='w-full flex justify-center items-center py-8'>
+            <div className='w-full flex justify-center items-end h-20'>
               <button className='bg-[#3c24ba] w-60 py-2 flex justify-center items-center gap-2 rounded-2xl'>
                 <MdOutlineShoppingCart className='size-5 text-white' />
                 <div className="text-[13px] text-white font-bold">Empieza tu transformación</div>
@@ -849,7 +847,7 @@ function Web() {
             </div>
           </div>
 
-          <div className="bg-white p-3 flex flex-col transition-transform transform hover:scale-105">
+          <div className="p-3 flex flex-col">
             
           </div>
 

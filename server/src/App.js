@@ -7,7 +7,7 @@ import authRoutes from "./routes/auth.routes.js";
 const app = express();
 
 app.use(cors({
-    origin: "http://192.168.0.7:5000",
+    origin: "http://192.168.0.38:5000",
     credentials: true, 
 }));
 app.use(morgan("dev"));

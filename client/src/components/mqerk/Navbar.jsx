@@ -10,14 +10,13 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [submenu, setSubmenu] = useState(false);
   const [submenu2, setSubmenu2] = useState(false);
-  const [submenu3, setSubmenu3] = useState(false);
 
   const [movil, setMovil] = useState(false);
   const [movil2, setMovil2] = useState(false);
   const [movil3, setMovil3] = useState(false);
 
   return (
-    <nav className="w-full p-4 fixed top-0 left-0 border-b-3 border-[white] bg-[#3c24ba] shadow-md z-10">
+    <nav className="w-full p-4 sticky top-0 left-0 border-b-3 border-[white] bg-[#3c24ba] shadow-md z-10">
       {/* Desktop Navbar */}
       <div className="hidden md:block">
         <div className="flex justify-between sep">
@@ -49,7 +48,7 @@ const Navbar = () => {
               </Link>
 
               {submenu && (
-                <div className="absolute right-136 mt-38 w-40 bg-white shadow-lg rounded-md z-10 cursos-mqerk">
+                <div className="absolute right-99 mt-38 w-40 bg-white shadow-lg rounded-md z-10 cursos-mqerk">
                   <a
                   href="#"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
@@ -91,7 +90,7 @@ const Navbar = () => {
               </Link>
 
               {submenu2 && (
-                <div className="absolute right-104 mt-58 w-40 bg-white shadow-lg rounded-md z-10 eventos-mqerk">
+                <div className="absolute right-65 mt-58 w-40 bg-white shadow-lg rounded-md z-10 eventos-mqerk">
                   <Link
                   to="/mqerk/bootcamps"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
@@ -127,49 +126,10 @@ const Navbar = () => {
                   </div>
               )}
 
-              <Link tabIndex={0} onBlur={() => setSubmenu3(false)} onClick={() => setSubmenu3(!submenu3)} className="text-lg text-white gap-1 p-2 flex justify-center items-center rounded-2xl ">
+              <Link to='/blog' className="text-lg text-white gap-1 p-2 flex justify-center items-center rounded-2xl ">
                 Blog
-                <svg
-                  className={`w-4 h-4 mt-[2px] transition-transform ${
-                    submenu3 ? "rotate-180" : "rotate-0"
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
               </Link>
 
-              {submenu3 && (
-                <div className="absolute right-70 mt-38 w-40 bg-white shadow-lg rounded-md z-10 blog-mqerk">
-                  <a
-                  href="#"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  >
-                    Libros
-                  </a>
-                  <a
-                  href="#"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  >
-                    Guías
-                  </a>
-                  <a
-                  href="#"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  >
-                    Didácticos
-                  </a>
-                  </div>
-              )}
-
-              <a href="#" className="text-lg text-white p-2 rounded-2xl ">Asesores</a>
               <Link to='/login' className='text-white flex justify-center items-center hover:bg-white hover:text-[#3c24ba] gap-2 py-6 font-bold w-40 h-10 border rounded-lg login'>
                   <FaRegCircleUser className='text-2xl desaparecer' />
                   Iniciar sesión
@@ -319,49 +279,10 @@ const Navbar = () => {
                 </div>
               )}
 
-              <Link tabIndex={0} onBlur={() => setMovil3(false)} onClick={() => setMovil3(!movil3)} className="font-bold py-2 gap-2 flex rounded-2xl" style={{ color: '#401454' }}>
-              Blog
-              <svg
-                className={`w-4 h-4 mt-[5px] transition-transform ${
-                  movil3 ? "rotate-180" : "rotate-0"
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              <Link to='/blog' tabIndex={0} onBlur={() => setMovil3(false)} onClick={() => setMovil3(!movil3)} className="font-bold py-2 gap-2 flex rounded-2xl" style={{ color: '#401454' }}>
+                Blog
               </Link>
-
-              {movil3 && (
-              <div className="relative w-40 z-10">
-                <a
-                href="#"
-                className="block py-2 text-gray-700"
-                >
-                  Libros
-                </a>
-                <a
-                href="#"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Guías
-                </a>
-                <a
-                href="#"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Didácticos
-                </a>
-                </div>
-              )}
               
-              <li className="text-lg font-semibold py-2"><a href="#" style={{ color: '#401454' }}>Asesores</a></li>
             </ul>
           </div>
         </div>
@@ -510,49 +431,10 @@ const Navbar = () => {
                 </div>
               )}
 
-              <Link tabIndex={0} onBlur={() => setMovil3(false)} onClick={() => setMovil3(!movil3)} className="font-bold py-2 gap-2 flex rounded-2xl" style={{ color: '#401454' }}>
-              Blog
-              <svg
-                className={`w-4 h-4 mt-[5px] transition-transform ${
-                  movil3 ? "rotate-180" : "rotate-0"
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              <Link to='/blog' tabIndex={0} onBlur={() => setMovil3(false)} onClick={() => setMovil3(!movil3)} className="font-bold py-2 gap-2 flex rounded-2xl" style={{ color: '#401454' }}>
+                Blog
               </Link>
-
-              {movil3 && (
-              <div className="relative w-40 z-10">
-                <a
-                href="#"
-                className="block py-2 text-gray-700"
-                >
-                  Libros
-                </a>
-                <a
-                href="#"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Guías
-                </a>
-                <a
-                href="#"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Didácticos
-                </a>
-                </div>
-              )}
               
-              <li className="text-lg font-semibold py-2"><a href="#" style={{ color: '#401454' }}>Asesores</a></li>
             </ul>
           </div>
         </div>

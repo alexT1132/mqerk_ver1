@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 .fondo{
-    background-image: url('../src/assets/fondo_index.png');
+    background-image: url('../src/assets/fondo_index1.jpg');
 }
 
 html, body, #root{
@@ -313,6 +313,21 @@ html, body, #root{
   ry: 20;
 }
 
+.preview_fondo{
+  background-image: url('./assets/mqerk/preview_fondo1.png');
+  background-size: cover;         /* La imagen cubre todo el div */
+    background-position: center;    /* Centrada */
+    background-repeat: no-repeat;   /* No se repite */
+}
+
+.header-plan{
+  background-image: url('./assets/mqerk/preview/header.png');
+  background-size: cover;         /* La imagen cubre todo el div */
+  background-position: center;    /* Centrada */
+  background-repeat: no-repeat;   /* No se repite */
+}
+
+
 @keyframes draw-reverse {
   0% {
     stroke-dashoffset: 276;
@@ -395,7 +410,7 @@ html, body, #root{
 
 @media screen and (max-width: 860px){
   .cursos-mqerk{
-    right: 365px;
+    right: 250px;
   }
   .eventos-mqerk{
     right: 255px;

@@ -1,7 +1,21 @@
-import React from 'react'
 import Navbar from "../../components/NavLogin.jsx";
+import { useForm } from "react-hook-form";
+import { useAsesor } from "../../context/AsesorContext.jsx";
+import { useNavigate } from "react-router-dom";
 
 export function PreRegAsesor() {
+
+    const { register, handleSubmit } = useForm();
+
+    const {preSignup} = useAsesor();
+
+    const navigate = useNavigate();
+
+    const onSubmite = handleSubmit( async (values) => {
+        preSignup(values);
+        navigate('/comunicado');
+    })
+
   return (
     <div className='h-screen'>
         <Navbar />
@@ -11,11 +25,12 @@ export function PreRegAsesor() {
                 <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">Registro previo de los datos generales</h2>
                 <p className='mb-8 text-justify'>Este es un pre-registro del proceso de reclutamiento para dar espacio a que realices las pruebas y test psicológicos que MQerKAcademy aplica a sus futuros asesores.</p>
 
-                  <form>
+                  <form onSubmit={onSubmite}>
                     <div className="mb-6">
                         <label htmlFor="nombre" className="block text-sm font-medium text-gray-900">Nombre(s)</label>
                         <input
                         type="text"
+                        {...register("nombres", { required: true })}
                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Introduce tu nombre"
                         />
@@ -24,6 +39,7 @@ export function PreRegAsesor() {
                         <label htmlFor="apellidos" className="block text-sm font-medium text-gray-900">Apellidos</label>
                         <input
                         type="text"
+                        {...register("apellidos", { required: true })}
                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Introduce tus apellidos"
                         />
@@ -32,6 +48,7 @@ export function PreRegAsesor() {
                         <label htmlFor="correo" className="block text-sm font-medium text-gray-900">Correo</label>
                         <input
                         type="text"
+                        {...register("correo", { required: true })}
                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Introduce tu correo"
                         />
@@ -40,6 +57,7 @@ export function PreRegAsesor() {
                         <label htmlFor="telefono" className="block text-sm font-medium text-gray-900">Numero de telefono</label>
                         <input
                         type="text"
+                        {...register("telefono", { required: true })}
                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Introduce tu numero de telefono"
                         />
@@ -49,6 +67,7 @@ export function PreRegAsesor() {
                             Area de especialización
                         </label>
                         <select
+                        {...register("area", { required: true })}
                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option selected value="">Selecciona una opción</option>
@@ -66,8 +85,7 @@ export function PreRegAsesor() {
                             Grado de estudio
                         </label>
                         <select
-                        id="pais"
-                        name="pais"
+                        {...register("estudios", { required: true })}
                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option selected value="">Selecciona una opción</option>
@@ -81,8 +99,7 @@ export function PreRegAsesor() {
                         <label htmlFor="nombre" className="block text-sm font-medium text-gray-900">Introduce tu ID</label>
                         <input
                         type="text"
-                        id="nombre"
-                        name="nombre"
+                        {...register("identificador", { required: true })}
                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Introduce el ID que te fue proporcionado"
                         />
@@ -102,15 +119,14 @@ export function PreRegAsesor() {
                 <div className="hidden md:flex w-260 p-8 rounded-3xl d-flex flex-col">
                   <h2 className="text-3xl font-semibold text-center text-gray-900 mb-10">Registro previo de los datos generales</h2>
                     <p className='text-center mb-10'>Este es un pre-registro del proceso de reclutamiento para dar espacio a que realices las pruebas y test psicológicos que MQerKAcademy aplica a sus futuros asesores.</p>
-                  <form>
+                  <form onSubmit={onSubmite} >
                     <div className="hidden md:flex space-x-20 mb-6">
                         {/* Campo Nombre (izquierda) */}
                             <div className="flex-1">
                                 <label htmlFor="nombre" className="block text-sm font-medium text-gray-900">Nombre(s)</label>
                                 <input
                                 type="text"
-                                id="nombre"
-                                name="nombre"
+                                {...register("nombres", { required: true })}
                                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Introduce tu nombre"
                                 />
@@ -121,8 +137,7 @@ export function PreRegAsesor() {
                                 <label htmlFor="apellidos" className="block text-sm font-medium text-gray-600">Apellidos</label>
                                 <input
                                 type="text"
-                                id="apellidos"
-                                name="apellidos"
+                                {...register("apellidos", { required: true })}
                                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Introduce tus apellidos"
                                 />
@@ -134,8 +149,7 @@ export function PreRegAsesor() {
                                 <label htmlFor="correo" className="block text-sm font-medium text-gray-900">Correo</label>
                                 <input
                                 type="text"
-                                id="correo"
-                                name="correo"
+                                {...register("correo", { required: true })}
                                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Introduce tu correo"
                                 />
@@ -146,22 +160,19 @@ export function PreRegAsesor() {
                                 <label htmlFor="telefono" className="block text-sm font-medium text-gray-600">Numero de telefono</label>
                                 <input
                                 type="text"
-                                id="apellidos"
-                                name="apellidos"
+                                {...register("telefono", { required: true })}
                                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Introduce tu numero de telefono"
                                 />
                             </div>
                         </div>
                         <div className="hidden md:flex space-x-20 mb-6">
-                        {/* Campo Nombre (izquierda) */}
                             <div className="flex-1">
                                 <label htmlFor="pais" className="block text-sm font-medium text-gray-600">
                                     Area de especialización
                                 </label>
                                 <select
-                                    id="pais"
-                                    name="pais"
+                                    {...register("area", { required: true })}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option selected value="">Selecciona una opción</option>
@@ -175,14 +186,12 @@ export function PreRegAsesor() {
                                 </select>
                             </div>
 
-                            {/* Campo Apellidos (derecha) */}
                             <div className="flex-1">
                                 <label htmlFor="pais" className="block text-sm font-medium text-gray-600">
                                     Grado de estudio
                                 </label>
                                 <select
-                                    id="pais"
-                                    name="pais"
+                                    {...register("estudios", { required: true })}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option selected value="">Selecciona una opción</option>
@@ -194,13 +203,11 @@ export function PreRegAsesor() {
                             </div>
                         </div>
                         <div className="hidden md:flex space-x-20 mb-6">
-                        {/* Campo Nombre (izquierda) */}
                             <div className="flex-1">
                                 <label htmlFor="nombre" className="block text-sm font-medium text-gray-900">Introduce tu ID</label>
                                 <input
                                 type="text"
-                                id="nombre"
-                                name="nombre"
+                                {...register("identificador", { required: true })}
                                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Introduce el ID que te fue proporcionado"
                                 />

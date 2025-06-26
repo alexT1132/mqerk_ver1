@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-
+import { BarChart } from '@mui/x-charts/BarChart';
+import { PieChart } from '@mui/x-charts/PieChart';
+import { LineChart } from '@mui/x-charts/LineChart';
 
 
 function CardsInfo({Informacion}){
@@ -251,38 +253,64 @@ export function Contrato(){
 
 
 
-export default function Componente({Seccion}){
-  const Menu=[
-    {
-    seccion:`Actividades`
-    },
-    {
-    seccion:`Quizt`
-    },
-    {
-    seccion:`Simuladores`
-    }
-  ]
+export default function Componente({}){
 
-
-    
-
-    return(
+  return(
     <div className="bg-[#1f1f1f] w-full h-full flex flex-col justify-center items-center border-2 border-amber-400">
       
-      
-      
-      <div>
-      <button className={`flex justify-center items-center gap-1`}>
-        {`${Menu}`}
-        <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#5115bc"><path d="M480-344 240-584l47.33-47.33L480-438.67l192.67-192.66L720-584 480-344Z"/></svg>
-      </button>
-      </div>
-
+     
 
 
     </div>
-    )
+  )
+  };
+
+
+
+
+
+export const SeleccionarActividad=()=>{
+
+  const Menu=[`Actividades`, `Quizt`,`Simuladores`];
+  const [selectedOption, setSelectedOption]=useState(()=>Menu[0]);
+  const [opciones, setOpciones]=useState(false);
+
+
+  const handleOption=(Menu)=>{
+    setSelectedOption(Menu);
+    setOpciones(null);
+  };
+
+  const opcionesDisponibles = Menu.filter(opt => opt !== selectedOption);
+
+
+
+  const text=`text-4xl`
+  return(
+    <div>
+    
+    <button className={`flex flex-row justify-around items-center gap-1 bg-white w-fit bg-none cursor-pointer`} onClick={()=>setOpciones(prev=>!prev)}>
+        <p className={`flex justify-center ${text} text-center`}>
+          {`${selectedOption}`}
+        </p>
+       
+      <svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#5115bc"><path d="M480-344 240-584l47.33-47.33L480-438.67l192.67-192.66L720-584 480-344Z"/></svg>
+      </button>
+      {opciones &&(
+      <nav className={`bg-white`}>
+        <ul>
+        {opcionesDisponibles.map((opciones, index)=>(
+          <li>
+            <button key={index} onClick={()=>handleOption(opciones)} className={`cursor-pointer ${text} w-full text-start hover:bg-gray-400`}>
+              {opciones}
+            </button>
+          </li>
+        ))}
+        </ul>
+      </nav>
+      )}
+      </div>
+  )
 }
 
 export function TablaColaboradores({}){
@@ -348,6 +376,70 @@ export function TablaColaboradores({}){
     );
 }
 
+export const TablaEvaluacion=({Personalidad, DASS21, Zavic, Emocional, WAIS, Academica, Total})=>{
+
+
+  const Test = [
+    {
+      prueba: "Test de Personalidad",
+      puntaje: Personalidad,
+      evaluacion: "Compatible con el perfil de asesor educativo",
+    },
+    {
+      prueba: "Test DASS-21",
+      puntaje: DASS21,
+      evaluacion: "Dentro de rangos normales",
+    },
+    {
+      prueba: "Test de Zavic",
+      puntaje: Zavic,
+      evaluacion: "Valores alineados con liderazgo y ética profesional",
+    },
+    {
+      prueba: "Test de Inteligencia Emocional",
+      puntaje: Emocional,
+      evaluacion: "Adecuada capacidad de gestión emocional",
+    },
+    {
+      prueba: "Test de WAIS",
+      puntaje: WAIS,
+      evaluacion: "Inteligencia superior al promedio",
+    },
+    {
+      prueba: "Prueba Académica",
+      puntaje: Academica,
+      evaluacion: "Excelencia en habilidades técnicas y académicas",
+    },
+  ];
+
+
+  return(
+    <table className="border border-gray-400 text-sm">
+        <thead className="bg-gray-200">
+          <tr>
+            <th className="border border-gray-400 px-4 py-2 text-center">Test/Prueba</th>
+            <th className="border border-gray-400 px-4 py-2 text-center">Puntaje Obtenido</th>
+            <th className="border border-gray-400 px-4 py-2 text-center">Evaluación</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Test.map((row, index) => (
+            <tr key={index}>
+              <td className="border border-gray-400 px-4 py-2">{row.prueba}</td>
+              <td className="border border-gray-400 px-4 py-2 text-center">{row.puntaje}</td>
+              <td className="border border-gray-400 px-4 py-2">{row.evaluacion}</td>
+            </tr>
+          ))}
+          <tr className="font-semibold">
+            <td className="border border-gray-400 px-4 py-2 text-center uppercase">TOTAL EN PUNTOS</td>
+            <td className="border border-gray-400 px-4 py-2 text-center">{Total}</td>
+            <td className="border border-gray-400 px-4 py-2 text-center uppercase">ACEPTADO / RECHAZADO</td>
+          </tr>
+        </tbody>
+      </table>
+  )
+}
+
 export function TablaAsesores({}){
 
     const asesores = [
@@ -402,9 +494,24 @@ export function TablaAsesores({}){
               <td className="px-4 py-2 text-sm text-gray-800">{asesor.ingresos}</td>
               <td className="px-4 py-2 text-sm text-center">
                 <div className="flex justify-center gap-2">
-                  <button className="cursor-pointer px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z"/></svg></button>
-                  <button className="cursor-pointer px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg></button>
-                  <button className="cursor-pointer px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg></button>
+                  <button className="flex flex-col justify-center items-center cursor-pointer px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff">
+                      <path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z"/>
+                    </svg>
+                    <span>Visualizar</span>
+                  </button>
+                  <button className="flex flex-col justify-center items-center cursor-pointer px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff">
+                      <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+                    </svg>
+                    <span>Editar</span>
+                  </button>
+                  <button className="flex flex-col justify-center items-center cursor-pointer px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff">
+                    <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/>
+                    </svg>
+                    <span>Eliminar</span>  
+                  </button>
                 </div>
               </td>
             </tr>
@@ -507,13 +614,14 @@ export function BtnPanelAdmin({Informacion, cantidad}){
     const colorClass = cantidad < 0 ? `text-red-500` : `text-green-500`;
 
     return(
-    <button className="flex flex-col cursor-pointer h-22 p-4 bg-white w-50 items-center justify-center text-purple-700 border border-gray-300 rounded-lg shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
-    <span className="uppercase w-full text-xl">
+    <div className="">
+    <button className="flex flex-col flex-wrap grow cursor-pointer p-2 w-70 bg-white text-purple-700 border-gray-300 rounded-lg shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
+    <span className="uppercase text-xl w-full rounded-b-full bg-gradient-to-r">
       {Informacion}
     
     </span>
     {MostrarCantidad && (
-    <span className={`w-full text-end text-2xl ${colorClass} font-bold`}>{new Intl.NumberFormat('es-MX', {
+    <span className={`text-2xl ${colorClass} font-bold`}>{new Intl.NumberFormat('es-MX', {
             style: 'currency',
             currency: 'MXN',
           }).format(cantidad)}</span>
@@ -521,6 +629,7 @@ export function BtnPanelAdmin({Informacion, cantidad}){
     
     
     </button>
+    </div>
     )
 }
 
@@ -560,7 +669,37 @@ export function DashboardAdmin(){
 }
 
 
+export const SelectorActividades=()=>{
 
+  const TipoActividades=[
+    {
+      id:0,
+      act:`Actividades`
+    },
+    {
+      id:1,
+      act:`Quizt`
+    },
+    {
+      id:2,
+      act:`Simuladores`
+    }
+  ]
+  return(
+    <>
+    <button className={`flex w-fit items-center gap-1`}>
+      <nav>
+        <ul>
+        {TipoActividades.map((Actividades)=>(
+          <li key={Actividades.id}>{Actividades.act}</li>
+        ))}
+        </ul>
+      </nav>
+      <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF"><path d="M480-333 240-573l51-51 189 189 189-189 51 51-240 240Z"/></svg>
+    </button>
+    </>
+  )
+}
 
 
 
@@ -571,9 +710,7 @@ export function DashboardAdmin(){
 // Pagina para el dashboard del asesor
 
 
-import { BarChart } from '@mui/x-charts/BarChart';
-import { PieChart } from '@mui/x-charts/PieChart';
-import { LineChart } from '@mui/x-charts/LineChart';
+
 
 export function AnaliticasAdmin(){
     return(
