@@ -13,18 +13,15 @@ import {DashboardAsesor, PerfilAsesor} from './pages/Asesor/Asesor.jsx'
 
 import { DashboardAdm, ListaAsesores, ListaColaboradores } from './pages/Admin/Panel.jsx';
 
-import {RegistroEstudiante} from './pages/Alumnos/RegistroEstudiante.jsx';
-
-import Componente from './components/DashboradComp.jsx';
+import UsuarioEstudiante from './pages/Alumnos/UsuarioEstudiante.jsx';
 
 import { ResultadoAsesor } from './pages/Asesor/Resultado.jsx';
 
-import { Error404 } from './pages/Error/ErrorPages.jsx';
-
-
-import { TestComp } from './components/FormRegistroComp.jsx';
+import TestComp from './components/CursosComp.jsx';
 
 import { FormularioAsesor } from './pages/Asesor/FormRegistro.jsx';
+
+import RegistroEstudiante from './pages/Alumnos/RegistroEstudiante.jsx';
 
 
 
@@ -50,6 +47,8 @@ export default function App(){
 
           <Route path='/asesor/preregistro' element={<PreRegAsesor/>}></Route>
 
+          <Route path='/asesor/registro' element={<FormularioAsesor/>}></Route>
+
           <Route path='/asesor/bienvenida' element={<Bienvenida/>}></Route>
 
           <Route path='/asesor/inicio' element={<DashboardAsesor/>}></Route>
@@ -64,11 +63,13 @@ export default function App(){
 
           {/* Inicio estudiantes */}
 
+          <Route path='/estudiante/usuario' element={<UsuarioEstudiante/>}></Route>
+
           <Route path='/estudiante/registro' element={<RegistroEstudiante/>}></Route>
 
           {/* Test de componentes */}          
 
-          <Route path='/Componente' element={<FormularioAsesor/>}></Route>
+          <Route path='/Componente' element={<TestComp/>}></Route>
 
           
 

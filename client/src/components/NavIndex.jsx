@@ -4,7 +4,7 @@ import MQerkLogo from "../assets/MQerK_logo.png";
 import { Link } from "react-router-dom";
 import { Login } from "./IndexComp.jsx";
 
-const DesktopTopbar = () => {
+const NavIndex = () => {
     return (
       <header className="flex items-center justify-between border-b-2 overflow-hidden h-fit border-white bg-linear-to-r from-[#3d18c3] to-[#4816bf] shadow-md sticky w-full top-0 left-0 m-auto z-2">
         {/* Imagen a la izquierda */}
@@ -30,12 +30,6 @@ const DesktopTopbar = () => {
   };
   
 
-const Topbar = () => {
-  return (
-    <>
-        <DesktopTopbar />
-    </>
-  );
-};
 
-export default Topbar;
+
+export default NavIndex;

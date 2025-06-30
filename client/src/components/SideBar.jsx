@@ -218,7 +218,7 @@ function ElementoSideBar({Icono, NombreElemento, to}){
         <Link to={to} className="items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-indigo-100 group">
           {Icono}
         </Link>
-        <div className="flex items-center h-fit bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap shadow-md z-10">
+        <div className="flex select-none hover:opacity-0 hover:hidden items-center h-fit bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap shadow-md">
           {NombreElemento}
         </div>
       </li>

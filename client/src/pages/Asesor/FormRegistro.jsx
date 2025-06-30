@@ -257,23 +257,7 @@ const [rfc, setRfc] = useState('');
             <form onSubmit={nextStep} className={`flex flex-col justify-around items-center w-full gap-8 p-4`}>
             
             <div className={`flex flex-col items-center gap-10 w-full sm:w-160 lg:w-200 lg:p-2`}>
-            <FormControl
-            className={`w-full`}
-            required>
-            <h2 className={`border-b-2 border-[#5215bb]/50 text-[#5215bb]`}>Nivel de estudios</h2>
-            <RadioGroup
             
-            aria-labelledby="radio-buttons-group-label"
-            name="radio-buttons-group"
-            >
-            <FormControlLabel value="n1" control={<Radio />} label="Secundaria" />
-            <FormControlLabel value="n2" control={<Radio />} label="Bachillerato" />
-            <FormControlLabel value="n3" control={<Radio />} label="Licenciatura" />
-            <FormControlLabel value="n4" control={<Radio />} label="Maestría" />
-            <FormControlLabel value="n5" control={<Radio />} label="Doctorado" />
-            <FormControlLabel value="otro" control={<Radio />} label="Otro" />  
-            </RadioGroup>
-            </FormControl>
             
             <Autocomplete
                 className={`flex w-full`}
