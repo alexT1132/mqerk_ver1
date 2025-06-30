@@ -206,7 +206,6 @@ const RegistroEstudiante=()=>{
                         // No hacer nada o resetear si quieres
                         setAlergia(true);
                         }
-                        console.log(value)
                     }}
                     
                     >
@@ -252,7 +251,6 @@ const RegistroEstudiante=()=>{
                         // No hacer nada o resetear si quieres
                         setDesp(true);
                         }
-                        console.log(value)
                     }}
                     
                     >
@@ -294,7 +292,7 @@ const RegistroEstudiante=()=>{
             
             <div className={`flex flex-wrap w-full gap-2 justify-between`}>
                 <BtnForm onClick={prevStep} TextoBtn={`Anterior`}/>
-                <BtnForm type={nextStep} TextoBtn={`Siguiente`}/>
+                <BtnForm onClick={nextStep} TextoBtn={`Siguiente`}/>
             </div>
             
             
