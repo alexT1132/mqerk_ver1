@@ -7,7 +7,7 @@ export function BtnIndex({TextoBtn, to}){
 
     return(
         <>
-        <Link to={to} className={`flex flex-wrap`}>
+        <Link to={to} className={`flex select-none flex-wrap`}>
             <button className={`py-1.5 border-2 sm:w-52 w-40 border-white bg-gradient-to-r from-[#5115bc] to-[#E6007E] bg-[length:120%_100%] bg-right rounded-3xl transition hover:bg-left duration-500 cursor-pointer`}>
                 <p className={`sm:text-2xl overflow-hidden whitespace-nowrap font-bold text-white`}>
                     {TextoBtn}

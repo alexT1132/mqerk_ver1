@@ -46,7 +46,7 @@ const ResponsivePage = () => {
           <div className={`flex flex-col gap-4`}>
             <button
               type="submit"
-              className="w-full p-3 bg-blue-400 text-white rounded-lg hover:bg-blue-600 transition duration-300"
+              className="w-full p-3 select-none bg-blue-400 text-white rounded-lg hover:bg-blue-600 transition duration-300"
             >
               Iniciar sesión
             </button>
