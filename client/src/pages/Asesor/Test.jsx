@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react'
+import {useState, useEffect} from 'react'
 import Navbar from "../../components/NavLogin.jsx";
 import Veintiuno from "../../assets/21.png";
 import R21_1 from "../../assets/21-R1.png";

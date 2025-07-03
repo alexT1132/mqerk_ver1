@@ -1,7 +1,6 @@
 import { TablaEvaluacion } from "../../components/DashboradComp";
-import Topbar from `../../components/NavLogin.jsx`;
+import Topbar from "../../components/NavLogin.jsx";
 import { BtnFuncion } from "../../components/DashboradComp";
-import React from "react";
 
 
 export const ResultadoAsesor=({area})=>{

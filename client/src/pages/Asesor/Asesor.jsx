@@ -1,6 +1,5 @@
 import Navbar from "../../components/NavBar";
-import { SideBarDesktop, SideBarsm } from "../../components/SideBar.jsx";
-import React from "react";
+import { SideBarDesktop } from "../../components/SideBar.jsx";
 import { MiPerfil, Dashboard } from "./Secciones";
 
 

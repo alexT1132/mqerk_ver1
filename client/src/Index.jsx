@@ -1,5 +1,5 @@
 import NavIndex from './components/NavIndex.jsx'
-import React from 'react';
+// import React from 'react';
 import { BtnIndex } from './components/IndexComp.jsx';
 
 

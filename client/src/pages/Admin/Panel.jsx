@@ -1,4 +1,3 @@
-import React from "react";
 import Navbar from "../../components/NavBar";
 import { SideBarDesktopAdmin } from "../../components/SideBar.jsx";
 import { BtnPanelAdmin, Container, AnaliticasAdmin, Buscador, TablaAsesores, OrdenarBtn, TablaColaboradores} from "../../components/DashboradComp"

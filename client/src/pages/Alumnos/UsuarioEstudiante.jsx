@@ -1,4 +1,3 @@
-import React from 'react';
 import {CardRegistroEstudiante} from '../../components/RegistroEstudianteComp.jsx'
 import Topbar from '../../components/NavLogin.jsx'
 

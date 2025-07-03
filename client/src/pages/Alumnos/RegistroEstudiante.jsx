@@ -1,4 +1,3 @@
-import React from "react";
 import { useState, useEffect } from "react";
 import NavLogin from "../../components/NavLogin.jsx";
 import { BtnForm, BtnSubirArchivo } from "../../components/FormRegistroComp.jsx";
