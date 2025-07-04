@@ -19,13 +19,13 @@ const RegistroEstudiante=()=>{
         e.preventDefault();
         };
 
-        const Municipios=[`SAN JUAN BAUTISTA TUXTEPEC`,`SAN JOSÉ CHILTEPEC`,`SANTA MARÍA JACATEPEC`,`AYOTZINTEPEC`,`LOMA BONITA`,`SAN LUCAS OJITLÁN`,`SAN JUAN BAUTISTA VALLE NACIONAL`,`OTRA`];
+        const Municipios=[`SAN JUAN BAUTISTA TUXTEPEC`,`SAN JOSÉ CHILTEPEC`,`SANTA MARÍA JACATEPEC`,`AYOTZINTEPEC`,`LOMA BONITA`,`SAN LUCAS OJITLÁN`,`SAN JUAN BAUTISTA VALLE NACIONAL`];
 
-        const Preparatorias=[`CBTis`, `COBAO`, `CONALEP`, `CBTF`, `CBTA`,`CECYTE`, `IEBO`, `COLEGIO AMÉRICA`, `COLEGIO TUXTEPEC`, `OTRA`];
+        const Preparatorias=[`CBTis`, `COBAO`, `CONALEP`, `CBTF`, `CBTA`,`CECYTE`, `IEBO`, `COLEGIO AMÉRICA`, `COLEGIO TUXTEPEC`];
 
-        const Disc=[`TRASTORNOS DEL APRENDIZAJE (DISLEXIA)`, `TRASTORNO POR DÉFICIT DE ATENCIÓN E HIPERACTIVIDAD (TDAH)`, `TRASTORNOS DEL ESPECTRO AUTISTA (TEA)`, `TRASTORNOS DE ANSIEDAD`, `TRASTORNOS DEL ESTADO DE ÁNIMO`, `TRASTORNOS DE LA CONDUCTA`, `TRASTORNOS DEL PROCESAMIENTO SENSORIAL`, `DIFICULTADES DE COMUNICACIÓN`, `DISCAPACIDAD FÍSICA`, `OTRO`];
+        const Disc=[`TRASTORNOS DEL APRENDIZAJE (DISLEXIA)`, `TRASTORNO POR DÉFICIT DE ATENCIÓN E HIPERACTIVIDAD (TDAH)`, `TRASTORNOS DEL ESPECTRO AUTISTA (TEA)`, `TRASTORNOS DE ANSIEDAD`, `TRASTORNOS DEL ESTADO DE ÁNIMO`, `TRASTORNOS DE LA CONDUCTA`, `TRASTORNOS DEL PROCESAMIENTO SENSORIAL`, `DIFICULTADES DE COMUNICACIÓN`, `DISCAPACIDAD FÍSICA`];
 
-        const Universidades=[`UNAM`, `IPN`, `UV` ,`BUAP`, `NAVAL`, `UDG`, `UNPA`, `ITTUX`, `TECNM`, `ANAHUAC`, `UAQ`, `UDLAP`, `NORMAL SUPERIOR`, `OTRA`];
+        const Universidades=[`UNAM`, `IPN`, `UV` ,`BUAP`, `NAVAL`, `UDG`, `UNPA`, `ITTUX`, `TECNM`, `ANAHUAC`, `UAQ`, `UDLAP`, `NORMAL SUPERIOR`];
 
         const [desp, setDesp]=useState(null);
 
@@ -132,7 +132,7 @@ const RegistroEstudiante=()=>{
                     inputmode="email"
                     label="ejemplo@ejemplo.com" 
                     variant="outlined" 
-                    name='municipio'
+                    name='EMAIL'
                     
                 />
 
@@ -150,7 +150,7 @@ const RegistroEstudiante=()=>{
                 className={`flex w-full`}
                 disablePortal
                 options={Municipios}
-                defaultChecked={Municipios[0]}
+                defaultChecked={`Espec`}
                 renderInput={(params) => <TextField {...params} helperText={`Ingrese su municipio`} label="Municipio/Comunidad" />}
                 noOptionsText='Opción inválida'
                 autoSelect
@@ -159,9 +159,9 @@ const RegistroEstudiante=()=>{
 
                 <TextField
                 fullWidth
-                helperText={`Ingrese su número de telefono`}
+                helperText={`Ingrese su número de teléfono`}
                     id="outlined-basic" 
-                    label="Número de telefono:" 
+                    label="Número de teléfono:" 
                     variant="outlined" 
                     name='Telefono'
                     
@@ -187,9 +187,9 @@ const RegistroEstudiante=()=>{
 
                 <TextField
                 fullWidth
-                helperText={`Ingrese el número de telefono del tutor`}
+                helperText={`Ingrese el número de teléfono del tutor`}
                     id="outlined-basic" 
-                    label="Número de telefono del tutor" 
+                    label="Número de teléfono del tutor" 
                     variant="outlined" 
                     name='Telefono tutor'
                     
