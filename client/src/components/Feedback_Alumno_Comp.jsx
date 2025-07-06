@@ -2,48 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown } from 'lucide-react';
 
 const Feedback_Alumno_Comp = () => {
-  // Estado para gestionar la lista de tareas
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      name: 'Operaciones fundamentales',
-      dueDate: '2025-12-02T23:59:59', // Fecha actualizada al futuro
-      submittedPdf: null,
-      isSubmitted: false,
-      score: null,
-    },
-    {
-      id: 2,
-      name: 'Expresiones Algebraicas',
-      dueDate: '2025-12-02T23:59:59', // Fecha actualizada al futuro
-      submittedPdf: null,
-      isSubmitted: false,
-      score: null,
-    },
-    {
-      id: 3,
-      name: 'Geometría Básica',
-      dueDate: '2025-07-15T23:59:59', // Fecha actualizada al futuro (cercana para probar)
-      submittedPdf: null,
-      isSubmitted: false,
-      score: null,
-    },
-    {
-      id: 4,
-      name: 'Cálculo Diferencial',
-      dueDate: '2025-08-01T23:59:59', // Fecha actualizada al futuro
-      submittedPdf: null,
-      isSubmitted: false,
-      score: null,
-    },
-  ]);
+  // TODO: Lista de tareas será proporcionada por el backend
+  // Estructura esperada: { id, name, dueDate, submittedPdf, isSubmitted, score }
+  const [tasks, setTasks] = useState([]);
 
-  // Estados
+  // Estados para la gestión de modales y feedback
   const [showModal, setShowModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiScore, setConfettiScore] = useState(0);
-  // showMotivationalMessage state is not directly used for visual display in the confetti effect anymore
   const [showMotivationalMessage, setShowMotivationalMessage] = useState(false); 
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [showViewTaskModal, setShowViewTaskModal] = useState(false);
@@ -78,33 +45,31 @@ const Feedback_Alumno_Comp = () => {
     setTotalPoints(calculatedTotalPoints);
   }, [tasks]);
 
-  // Función para manejar la subida de archivos
+  // Función para manejar la subida de archivos - integración con backend
   const handleFileUpload = (taskId, file) => {
-    // TODO: Backend - Aquí tu compañero debe enviar el archivo al backend y guardar la URL recibida
-    // Simulación: usamos un objeto URL temporal para mostrar el PDF subido
+    // TODO: Enviar archivo al backend para procesamiento y calificación
     const fileUrl = file ? URL.createObjectURL(file) : null;
     setTasks(prevTasks =>
       prevTasks.map(task =>
         task.id === taskId
-          ? { ...task, submittedPdf: fileUrl, isSubmitted: true, score: 10 }
+          ? { ...task, submittedPdf: fileUrl, isSubmitted: true, score: null } // Score vendrá del backend
           : task
       )
     );
     setShowModal(false);
     setSelectedTask(null);
 
-    // Activar confeti y mensaje motivacional
+    // Efectos visuales de confirmación
     setConfettiScore(10);
-    // Elegir palabra motivacional aleatoria
     const randomWord = motivationalWords[Math.floor(Math.random() * motivationalWords.length)];
     setMotivationalWord(randomWord);
     setShowConfetti(true);
-    // Aumenta el tiempo del setTimeout para que coincida o supere la duración máxima de la animación del confeti (5s + 4s = 9s máximo)
-    setTimeout(() => setShowConfetti(false), 9500); // 9.5 segundos para asegurar que todas las partículas terminen
+    setTimeout(() => setShowConfetti(false), 9500);
   };
 
   // Función para cancelar entrega
   const handleCancelSubmission = (taskId) => {
+    // TODO: Notificar al backend sobre la cancelación
     setTasks(prevTasks =>
       prevTasks.map(task =>
         task.id === taskId

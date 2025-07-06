@@ -1,11 +1,16 @@
+// BACKEND: Componente principal del dashboard de inicio para estudiantes
+// Este componente maneja la pantalla de bienvenida y verificación de pago
+// Requiere integración con endpoints de subida de archivos y verificación de estudiantes
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Clock, BookOpen, TrendingUp, Upload, X, CheckCircle, Star, Calendar, GraduationCap, ChevronRight, AlertTriangle, Wifi, HelpCircle, Settings, ShieldCheck } from 'lucide-react';
 import { useStudent } from '../context/StudentContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import { AlumnoDashboardMetrics } from './Metrics_dash_alumnos_comp.jsx';
 
+// BACKEND: Frases motivacionales que se muestran de forma rotativa diariamente
+// Estas frases se pueden personalizar desde el backend o mantener como están
 const motivationalPhrases = [
-  "¡Hoy es un gran día para aprender algo nuevo, José Luis!",
+  "¡Hoy es un gran día para aprender algo nuevo!",
   "¡Sigue adelante, cada paso cuenta hacia tu éxito!",
   "¡Tu esfuerzo de hoy te acerca más a tus metas!",
   "¡Nunca dejes de intentarlo, eres más fuerte de lo que crees!",
@@ -24,9 +29,20 @@ const motivationalPhrases = [
   "¡Tu determinación es la clave de tu triunfo!",
   "¡Cada día eres mejor versión de ti mismo!",
   "¡El éxito está construido sobre pequeñas victorias diarias!",
-  "¡Cree en ti mismo, José Luis, porque nosotros creemos en ti!"
+  "¡Cree en ti mismo, porque nosotros creemos en ti!",
+  "¡Cada libro que lees te abre mil puertas nuevas!",
+  "¡El fracaso es solo el primer intento de algo extraordinario!",
+  "¡Tu mente es tu herramienta más poderosa, úsala sabiamente!",
+  "¡Aprende hoy lo que te ayudará a brillar mañana!",
+  "¡El aprendizaje nunca termina, siempre hay algo más que descubrir!",
+  "¡Tus metas están más cerca de lo que imaginas!",
+  "¡La constancia es el secreto de todos los grandes logros!",
+  "¡Cada pregunta que haces te hace más inteligente!",
+  "¡El camino del conocimiento es el más hermoso de todos!",
+  "¡Hoy decides ser imparable en tu crecimiento personal!"
 ];
 
+// BACKEND: Función para obtener el saludo según la hora del día
 const getGreeting = () => {
   const hour = new Date().getHours();
   if (hour < 12) return '¡Buenos días';
@@ -34,13 +50,15 @@ const getGreeting = () => {
   return '¡Buenas noches';
 };
 
+// BACKEND: Función para obtener la frase motivacional del día
+// Usa el día del año para rotar las frases de forma consistente
 const getDailyPhrase = () => {
   const today = new Date();
   const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
   return motivationalPhrases[dayOfYear % motivationalPhrases.length];
 };
 
-// Componente de partículas flotantes
+// BACKEND: Componente de partículas flotantes decorativas (sin integración requerida)
 const FloatingParticles = () => {
   const particles = Array.from({ length: 15 }, (_, i) => (
     <div
@@ -57,7 +75,7 @@ const FloatingParticles = () => {
   return <div className="absolute inset-0 overflow-hidden pointer-events-none">{particles}</div>;
 };
 
-// Componente de progreso de carga
+// BACKEND: Componente de progreso de carga para subida de archivos
 const UploadProgress = ({ show, progress }) => {
   if (!show) return null;
   
@@ -83,7 +101,8 @@ const UploadProgress = ({ show, progress }) => {
   );
 };
 
-// Componente para mostrar mensaje de sección en desarrollo
+// BACKEND: Componente para mostrar mensaje de sección en desarrollo
+// Se puede usar para secciones que aún no están implementadas
 const SectionPlaceholder = ({ sectionName }) => {
   return (
     <div className="max-w-4xl mx-auto text-center">
@@ -108,6 +127,22 @@ const SectionPlaceholder = ({ sectionName }) => {
   );
 };
 
+/**
+ * INTEGRACIÓN BACKEND: Componente principal del dashboard de inicio del alumno
+ * 
+ * Props esperadas del backend:
+ * - alumno: string (nombre completo del estudiante)
+ * - matricula: string (número de matrícula)
+ * - verificado: boolean (si el estudiante está verificado)
+ * - haPagado: boolean (si el estudiante ha realizado el pago)
+ * - onComprobanteSubido: function (callback cuando se sube un comprobante)
+ * 
+ * Contextos requeridos:
+ * - StudentContext: datos del estudiante, verificación, curso actual
+ * - Funciones del contexto que debe implementar el backend:
+ *   - isVerified, hasPaid, currentCourse, isFirstAccess, studentData
+ *   - simulateVerification(), resetStudentState(), clearCourse()
+ */
 const InicioAlumnoDashboard = ({ 
   alumno, 
   matricula, 
@@ -115,6 +150,7 @@ const InicioAlumnoDashboard = ({
   haPagado, 
   onComprobanteSubido 
 }) => {
+  // BACKEND: Obtener datos del contexto del estudiante
   const { 
     isVerified, 
     hasPaid, 
@@ -130,11 +166,12 @@ const InicioAlumnoDashboard = ({
   } = useStudent();
   const navigate = useNavigate();
   
-  // Usar el estado del context en lugar de las props
+  // BACKEND: Combinar datos de props con datos del contexto
+  // Priorizar props si existen, sino usar datos del contexto
   const finalVerificado = verificado !== undefined ? verificado : isVerified;
   const finalHaPagado = haPagado !== undefined ? haPagado : hasPaid;
-  const finalAlumno = alumno || studentData.name;
-  const finalMatricula = matricula || studentData.matricula;
+  const finalAlumno = alumno || studentData.name || "XXXX";
+  const finalMatricula = matricula || studentData.matricula || "XXXX";
 
   // Estados locales
   const [frase, setFrase] = useState("");
@@ -161,7 +198,8 @@ const InicioAlumnoDashboard = ({
   const circleSize = 48;
   const sliderWidth = 280;
 
-  // Redirigir automáticamente solo si se acaba de verificar (isFirstAccess es false pero no hay curso)
+  // BACKEND: Redirigir automáticamente solo si se acaba de verificar
+  // Esto ocurre cuando el estudiante está verificado y pagado, pero no es primer acceso
   useEffect(() => {
     const shouldRedirect = finalVerificado && 
                           finalHaPagado && 
@@ -217,21 +255,37 @@ const InicioAlumnoDashboard = ({
     };
   }, []);
 
-  // Contador de días hasta fecha límite
-  const diasLimite = () => {
-    const fechaLimite = new Date('2025-08-15');
-    const hoy = new Date();
-    const diferencia = Math.ceil((fechaLimite - hoy) / (1000 * 60 * 60 * 24));
-    return diferencia > 0 ? diferencia : 0;
-  };
-
+  // BACKEND: Función para manejar la subida de comprobantes de pago
+  // Esta función debe conectarse con el endpoint del backend para procesar archivos
   const handleSubirComprobante = async (e) => {
     const file = e.target.files[0];
     if (file) {
       setShowUploadProgress(true);
       setUploadProgress(0);
       
-      // Simular progreso de carga
+      // BACKEND: Aquí debe ir la llamada real a la API
+      // Ejemplo:
+      // try {
+      //   const formData = new FormData();
+      //   formData.append('comprobante', file);
+      //   formData.append('studentId', studentData.id);
+      //   
+      //   const response = await fetch('/api/student/upload-payment-proof', {
+      //     method: 'POST',
+      //     headers: {
+      //       'Authorization': `Bearer ${localStorage.getItem('token')}`
+      //     },
+      //     body: formData
+      //   });
+      //   
+      //   if (response.ok) {
+      //     // Procesar respuesta exitosa
+      //   }
+      // } catch (error) {
+      //   // Manejar errores
+      // }
+      
+      // Simulación temporal - ELIMINAR cuando se conecte el backend
       const interval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 100) {
@@ -242,12 +296,12 @@ const InicioAlumnoDashboard = ({
               setShowDestello(true);
               setMensajeVerificacion("¡Comprobante recibido! Tu verificación está en proceso. En un máximo de 24 horas podrás acceder a la plataforma completa.");
               
-              // Vibración en móviles
+              // Efectos de feedback
               if ('vibrate' in navigator) {
                 navigator.vibrate([200, 100, 200]);
               }
               
-              // Sonido de éxito
+              // Sonido de éxito (opcional)
               try {
                 const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjiS2PLNFCIF');
                 audio.volume = 0.3;
@@ -266,12 +320,24 @@ const InicioAlumnoDashboard = ({
     }
   };
 
-  // Solo mostrar elementos de pago si no está verificado Y es primer acceso
+  // BACKEND: Determinar si mostrar el bloqueo de pago
+  // Se muestra cuando el estudiante no ha pagado O no está verificado Y es primer acceso
   const mostrarBloqueo = (!finalHaPagado || !finalVerificado) && isFirstAccess;
+  
+  // BACKEND: Validar si hay un curso real (no placeholder)
+  // IMPORTANTE: Esta validación evita mostrar datos falsos del localStorage
+  // Si aparece información de curso cuando no debería, usar el botón "Limpiar Curso" 
+  // o "Resetear Estado" para limpiar los datos temporales del navegador
+  const tieneNumCursoValido = currentCourse && 
+                            currentCourse.title && 
+                            currentCourse.title !== "XXXX" && 
+                            currentCourse.title.trim() !== "";
+  
+  // BACKEND: Obtener el primer nombre del estudiante para personalización
   const firstName = finalAlumno.split(' ')[0];
   const isMobile = window.innerWidth < 640;
 
-  // Función para manejar la verificación simulada
+  // BACKEND: Función para manejar la verificación (SOLO PARA TESTING - ELIMINAR EN PRODUCCIÓN)
   const handleVerification = () => {
     simulateVerification();
     setTimeout(() => {
@@ -279,7 +345,7 @@ const InicioAlumnoDashboard = ({
     }, 1500);
   };
 
-  // Función para obtener el mensaje de bienvenida
+  // BACKEND: Función para obtener el mensaje de bienvenida personalizado
   const getWelcomeMessage = () => {
     return `${getGreeting()}, ${firstName}!`;
   };
@@ -322,55 +388,16 @@ const InicioAlumnoDashboard = ({
     forest: 'from-green-900 via-emerald-800 to-teal-900'
   };
 
-  // Debug info
-  console.log('InicioAlumnoDashboard Debug:', {
-    isVerified: finalVerificado,
-    hasPaid: finalHaPagado,
-    currentCourse: currentCourse ? currentCourse.title : 'None',
-    isFirstAccess,
-    activeSection: activeSection || 'None',
-    shouldShowPaymentElements: !finalVerificado && !finalHaPagado && isFirstAccess,
-    shouldShowMetrics: activeSection === 'inicio' && currentCourse,
-    shouldShowWelcome: !activeSection
-  });
-
   return (
     <div className="relative min-h-screen w-full">
       
-      {/* Estado de debugging para mostrar información actual */}
-      <div className="fixed top-4 right-4 bg-black/80 text-white p-4 rounded-lg text-sm z-50">
-        <div><strong>Estado Debug:</strong></div>
-        <div>Verificado: {finalVerificado ? '✅' : '❌'}</div>
-        <div>Pagado: {finalHaPagado ? '✅' : '❌'}</div>
-        <div>Primer acceso: {isFirstAccess ? '✅' : '❌'}</div>
-        <div>Curso actual: {currentCourse ? currentCourse.title : 'Ninguno'}</div>
-        <div>Sección activa: {activeSection || 'Ninguna'}</div>
-        <div>Mostrar elementos pago: {mostrarBloqueo ? '✅' : '❌'}</div>
-        <div>Mostrar métricas: {activeSection === 'inicio' && currentCourse ? '✅' : '❌'}</div>
-        <div>Mostrar bienvenida: {!activeSection ? '✅' : '❌'}</div>
-        <div>Sidebar visible: {currentCourse && !location.pathname.includes('/cursos') ? '✅' : '❌'}</div>
-      </div>
-
       {/* Progreso de carga */}
       <UploadProgress show={showUploadProgress} progress={uploadProgress} />
 
-      {/* Mostrar métricas del curso cuando activeSection sea "inicio" */}
-      {activeSection === 'inicio' && currentCourse && (
+      {/* Mostrar métricas del curso cuando activeSection sea "inicio" y hay un curso válido */}
+      {activeSection === 'inicio' && tieneNumCursoValido && (
         <div className={`transition-all duration-1000 ${elementsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          {console.log('🎯 Renderizando AlumnoDashboardMetrics...', { activeSection, currentCourse, elementsVisible })}
           <AlumnoDashboardMetrics />
-        </div>
-      )}
-
-      {/* Debug: Mostrar por qué no se muestran las métricas */}
-      {!(activeSection === 'inicio' && currentCourse) && (
-        <div className="fixed top-20 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg z-50">
-          <h3 className="font-bold mb-2">🚨 Métricas NO mostradas:</h3>
-          <div className="text-sm">
-            <div>activeSection: {activeSection || 'null'}</div>
-            <div>currentCourse: {currentCourse ? '✅' : '❌'}</div>
-            <div>Condición: {(activeSection === 'inicio' && currentCourse) ? '✅' : '❌'}</div>
-          </div>
         </div>
       )}
 
@@ -432,10 +459,10 @@ const InicioAlumnoDashboard = ({
             </div>
 
             {/* Grid principal - responsive mejorado */}
-            <div className={`max-w-7xl mx-auto ${mostrarBloqueo || (!mostrarBloqueo && currentCourse) ? 'grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 xl:gap-12' : 'flex justify-center'} items-start`}>
+            <div className={`max-w-7xl mx-auto ${mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido) ? 'grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 xl:gap-12' : 'flex justify-center'} items-start`}>
           
               {/* Columna izquierda - Área de comprobante O nombre del curso */}
-              {(mostrarBloqueo || (!mostrarBloqueo && currentCourse)) && (
+              {(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) && (
                 <div className={`space-y-6 md:order-1 transition-all duration-1000 delay-300 ${elementsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
                   <div className="w-full max-w-md mx-auto md:mx-0 sm:ml-8 md:ml-12 lg:ml-8 xl:ml-4 px-4 md:px-0">
                     
@@ -457,13 +484,11 @@ const InicioAlumnoDashboard = ({
                                 <p className="text-yellow-100 font-bold text-lg sm:text-xl md:text-lg lg:text-2xl xl:text-3xl leading-relaxed group-hover:text-yellow-50 transition-colors">
                                   Debes subir tu comprobante para acceder a la plataforma completa.
                                 </p>
-                                {diasLimite() > 0 && (
-                                  <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-lg px-3 py-2 sm:px-4 md:px-3 lg:px-4 mt-2">
-                                    <p className="text-yellow-200 font-semibold text-xs sm:text-sm md:text-xs lg:text-sm">
-                                      ⏰ {diasLimite()} días restantes
-                                    </p>
-                                  </div>
-                                )}
+                                <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-lg px-3 py-2 sm:px-4 md:px-3 lg:px-4 mt-2">
+                                  <p className="text-yellow-200 font-semibold text-xs sm:text-sm md:text-xs lg:text-sm">
+                                    📋 Sube tu comprobante de pago para continuar
+                                  </p>
+                                </div>
                               </div>
                             ) : (
                               <div className="bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-teal-500/20 backdrop-blur-lg rounded-2xl p-6 border border-green-300/30 shadow-xl animate-fadeIn">
@@ -490,8 +515,8 @@ const InicioAlumnoDashboard = ({
                           </>
                         )}
 
-                        {/* Contenido cuando está verificado y con curso seleccionado */}
-                        {!mostrarBloqueo && currentCourse && (
+                        {/* BACKEND: Contenido cuando está verificado y con curso seleccionado */}
+                        {!mostrarBloqueo && tieneNumCursoValido && (
                           <div className="flex flex-col items-center gap-6 py-4">
                             <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full p-4 animate-pulse group-hover:animate-bounce">
                               <GraduationCap size={48} className="text-white" />
@@ -500,10 +525,12 @@ const InicioAlumnoDashboard = ({
                               <p className="text-purple-100 font-semibold text-2xl mb-4">
                                 Curso Actual
                               </p>
+                              {/* BACKEND: Título del curso actual desde la API */}
                               <h3 className="text-white font-bold text-2xl sm:text-3xl md:text-2xl lg:text-4xl xl:text-5xl leading-relaxed group-hover:text-purple-100 transition-colors mb-3">
                                 {currentCourse.title}
                               </h3>
-                              {currentCourse.instructor && (
+                              {/* BACKEND: Instructor del curso actual */}
+                              {currentCourse.instructor && currentCourse.instructor !== "XXXX" && (
                                 <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
                                   <p className="text-purple-100 text-sm font-medium">
                                     Instructor: <span className="text-white font-semibold">{currentCourse.instructor}</span>
@@ -565,7 +592,7 @@ const InicioAlumnoDashboard = ({
                           </div>
                         )}
 
-                        {/* Botón de verificación para testing */}
+                        {/* BACKEND: Botón de verificación para testing - ELIMINAR EN PRODUCCIÓN */}
                         {mostrarBloqueo && isFirstAccess && (
                           <div className="group ml-0 sm:ml-8 md:ml-12 lg:ml-8 xl:ml-4 mt-4">
                             <button
@@ -589,19 +616,22 @@ const InicioAlumnoDashboard = ({
               )}
 
               {/* Columna derecha - Reloj y frase */}
-              <div className={`space-y-6 ${(mostrarBloqueo || (!mostrarBloqueo && currentCourse)) ? 'md:order-2' : ''} ${(!mostrarBloqueo && !currentCourse) ? 'w-full max-w-6xl' : ''} transition-all duration-1000 delay-500 ${elementsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}>
+              <div className={`space-y-6 ${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'md:order-2' : ''} ${(!mostrarBloqueo && !tieneNumCursoValido) ? 'w-full max-w-6xl' : ''} transition-all duration-1000 delay-500 ${elementsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}>
                 
-                {/* Reloj grande con efecto de respiración */}
+                {/* Reloj grande con efecto 3D grueso y sólido */}
                 <div className="text-center mb-8 group">
                   <div 
-                    className={`${(mostrarBloqueo || (!mostrarBloqueo && currentCourse)) ? 'text-7xl sm:text-8xl lg:text-9xl xl:text-[11rem] 2xl:text-[13rem]' : 'text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] 2xl:text-[11rem]'} font-bold text-white mb-4 leading-none transition-all duration-300 ${clockPulse ? 'scale-105' : 'scale-100'} group-hover:scale-105 cursor-pointer`} 
+                    className={`${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-7xl sm:text-8xl lg:text-9xl xl:text-[11rem] 2xl:text-[13rem]' : 'text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] 2xl:text-[11rem]'} font-bold text-white mb-4 leading-none transition-all duration-300 ${clockPulse ? 'scale-105' : 'scale-100'} group-hover:scale-105 cursor-pointer select-none`} 
                     style={{ 
                       fontFamily: 'system-ui, -apple-system, sans-serif',
                       fontWeight: '900',
                       textShadow: `
-                        ${(!mostrarBloqueo && !currentCourse) ? '4px 4px 0px rgba(139, 92, 246, 1), 8px 8px 0px rgba(139, 92, 246, 0.9), 12px 12px 0px rgba(139, 92, 246, 0.8), 16px 16px 0px rgba(139, 92, 246, 0.7), 20px 20px 0px rgba(139, 92, 246, 0.6), 24px 24px 0px rgba(139, 92, 246, 0.5), 28px 28px 40px rgba(0, 0, 0, 0.8), 0 0 80px rgba(139, 92, 246, 0.8)' : '2px 2px 0px rgba(139, 92, 246, 1), 4px 4px 0px rgba(139, 92, 246, 0.9), 6px 6px 0px rgba(139, 92, 246, 0.8), 8px 8px 0px rgba(139, 92, 246, 0.7), 10px 10px 0px rgba(139, 92, 246, 0.6), 12px 12px 0px rgba(139, 92, 246, 0.5), 14px 14px 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(139, 92, 246, 0.6)'}
+                        ${(!mostrarBloqueo && !tieneNumCursoValido) ? 
+                          '3px 3px 0px rgba(139, 92, 246, 1), 6px 6px 0px rgba(139, 92, 246, 0.9), 9px 9px 0px rgba(139, 92, 246, 0.8), 12px 12px 0px rgba(139, 92, 246, 0.7), 15px 15px 0px rgba(139, 92, 246, 0.6), 18px 18px 0px rgba(139, 92, 246, 0.5), 21px 21px 0px rgba(139, 92, 246, 0.4), 24px 24px 40px rgba(0, 0, 0, 0.8)' : 
+                          '2px 2px 0px rgba(139, 92, 246, 1), 4px 4px 0px rgba(139, 92, 246, 0.9), 6px 6px 0px rgba(139, 92, 246, 0.8), 8px 8px 0px rgba(139, 92, 246, 0.7), 10px 10px 0px rgba(139, 92, 246, 0.6), 12px 12px 0px rgba(139, 92, 246, 0.5), 14px 14px 0px rgba(139, 92, 246, 0.4), 16px 16px 25px rgba(0, 0, 0, 0.8)'
+                        }
                       `,
-                      WebkitTextStroke: `${(!mostrarBloqueo && !currentCourse) ? '4px' : '2px'} rgba(139, 92, 246, 0.3)`,
+                      WebkitTextStroke: `${(!mostrarBloqueo && !tieneNumCursoValido) ? '3px' : '2px'} rgba(139, 92, 246, 0.3)`,
                       animation: 'breathe 4s ease-in-out infinite'
                     }}
                   >
@@ -609,7 +639,7 @@ const InicioAlumnoDashboard = ({
                   </div>
                   
                   {/* Fecha pequeña con hover */}
-                  <span className={`text-purple-200 font-semibold bg-white/10 px-4 py-2 rounded-lg ${(mostrarBloqueo || (!mostrarBloqueo && currentCourse)) ? 'text-sm sm:text-base' : 'text-base sm:text-lg'} inline-block mx-auto hover:bg-white/20 transition-all duration-300 cursor-pointer`}>
+                  <span className={`text-purple-200 font-semibold bg-white/10 px-4 py-2 rounded-lg ${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-sm sm:text-base' : 'text-base sm:text-lg'} inline-block mx-auto hover:bg-white/20 transition-all duration-300 cursor-pointer`}>
                     {hora.toLocaleDateString('es-ES', { 
                       weekday: 'long', 
                       year: 'numeric', 
@@ -625,14 +655,14 @@ const InicioAlumnoDashboard = ({
                     <Calendar className="text-yellow-300 animate-pulse group-hover:animate-bounce" size={24} />
                     <span className="text-yellow-300 font-semibold text-lg group-hover:text-yellow-200 transition-colors">Frase del día</span>
                   </div>
-                  <p className={`${(mostrarBloqueo || (!mostrarBloqueo && currentCourse)) ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'} font-bold text-white leading-relaxed group-hover:text-yellow-100 transition-all duration-500 cursor-pointer`}>
+                  <p className={`${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'} font-bold text-white leading-relaxed group-hover:text-yellow-100 transition-all duration-500 cursor-pointer`}>
                     {frase}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Botones de navegación y testing */}
+            {/* BACKEND: Botones de navegación y testing */}
             <div className="text-center mt-12 relative z-10">
               <div className="flex flex-wrap justify-center gap-4">
                 <button
@@ -642,7 +672,7 @@ const InicioAlumnoDashboard = ({
                   Ver Mis Cursos
                 </button>
                 
-                {/* Botón de reseteo para testing */}
+                {/* BACKEND: Botón de reseteo para testing - ELIMINAR EN PRODUCCIÓN */}
                 <button
                   onClick={resetStudentState}
                   className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
@@ -650,8 +680,8 @@ const InicioAlumnoDashboard = ({
                   Resetear Estado (Testing)
                 </button>
                 
-                {/* Botón para limpiar curso seleccionado */}
-                {currentCourse && (
+                {/* BACKEND: Botón para limpiar curso seleccionado - ELIMINAR EN PRODUCCIÓN */}
+                {tieneNumCursoValido && (
                   <button
                     onClick={clearCourse}
                     className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"

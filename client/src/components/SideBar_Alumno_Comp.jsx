@@ -175,6 +175,12 @@ const LogoMisPagos = (
   </svg>
 );
 
+const LogoAsistencia = (
+  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+  </svg>
+);
+
 // Iconos que NO cambian (Configuración y Cerrar Sesión)
 const LogoConfigAlumno = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -198,6 +204,7 @@ const alumnoMenuItems = [
   { label: "Actividades", path: "/alumno/actividades", icon: LogoActividades },
   { label: "Simulaciones", path: "/alumno/simulaciones", icon: LogoSimulaciones },
   { label: "Feedback", path: "/alumno/feedback", icon: LogoFeedback },
+  { label: "Asistencia", path: "/alumno/asistencia", icon: LogoAsistencia },
   { label: "Calendario", path: "/alumno/calendario", icon: LogoCalendario },
   { label: "Mis Pagos", path: "/alumno/mis-pagos", icon: LogoMisPagos },
 ];

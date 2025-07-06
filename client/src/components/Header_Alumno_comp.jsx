@@ -27,7 +27,6 @@ export function Header_Alumno_comp({
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      console.log("Búsqueda:", searchQuery);
       // TODO: Conectar con API de búsqueda
       // searchAPI(searchQuery);
       // navigate(`/buscar?q=${encodeURIComponent(searchQuery)}`);

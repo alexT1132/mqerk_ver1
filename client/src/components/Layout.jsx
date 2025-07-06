@@ -2,40 +2,35 @@
 import React, { useState, useEffect } from 'react';
 
 /**
- * Componente de Layout general - SOLO CON TAILWIND
- * ❌ Sin CSS personalizado
- * ✅ Solo clases de Tailwind
+ * Layout principal de la aplicación
+ * Maneja la estructura base con header, sidebar y contenido principal
+ * Incluye gestión de notificaciones y navegación responsive
  */
 export function Layout({ children, HeaderComponent, SideBarDesktopComponent, SideBarSmComponent }) {
-  // Estado para controlar la apertura del menú móvil
+  // Control del menú móvil
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // Estado para controlar la apertura del sidebar de escritorio
+  // Control del sidebar en desktop
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(false);
 
-  // Función para forzar el cierre del overlay si se queda trabado
+  // Cierre forzado del overlay para evitar que se quede abierto
   const forceCloseOverlay = () => {
     setIsDesktopSidebarOpen(false);
   };
 
-  // Auto-cierre del overlay después de un tiempo si se queda trabado
+  // Timeout de seguridad para cerrar el overlay automáticamente
   useEffect(() => {
     if (isDesktopSidebarOpen) {
       const timeout = setTimeout(() => {
         setIsDesktopSidebarOpen(false);
-      }, 5000); // Forzar cierre después de 5 segundos
+      }, 5000);
       return () => clearTimeout(timeout);
     }
   }, [isDesktopSidebarOpen]);
 
-  // Estados y funciones para notificaciones
+  // Manejo de notificaciones
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, message: "Pago de Juan Pérez revisado", isRead: false },
-    { id: 2, message: "Pago de María García revisado", isRead: false },
-    { id: 3, message: "Nuevo estudiante registrado", isRead: false },
-    { id: 4, message: "Se ha agendado una asesoría", isRead: false },
-    { id: 5, message: "Recordatorio: Informe mensual", isRead: false },
-  ]);
+  // TODO: Conectar con API del backend para obtener notificaciones reales
+  const [notifications, setNotifications] = useState([]);
 
   const toggleNotifications = () => {
     setIsNotificationsOpen(!isNotificationsOpen);
@@ -69,9 +64,8 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
 
   return (
     <div className="min-h-screen bg-white relative">
-      {/* ✅ ELIMINADO TODO EL CSS - SOLO TAILWIND */}
       
-      {/* Renderiza el HeaderComponent */}
+      {/* Header principal */}
       {HeaderComponent && (
         <HeaderComponent
           isNotificationsOpen={isNotificationsOpen}
@@ -84,7 +78,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
         />
       )}
 
-      {/* Renderiza el SideBarDesktopComponent para escritorio */}
+      {/* Sidebar para pantallas grandes */}
       {SideBarDesktopComponent && (
         <div className="fixed left-0 top-0 h-full z-40 pt-20 hidden sm:block">
           <SideBarDesktopComponent
@@ -93,7 +87,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
         </div>
       )}
 
-      {/* Overlay para el efecto de desenfoque en MÓVIL */}
+      {/* Overlay con blur para móvil */}
       {isMenuOpen && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 sm:hidden transition-all duration-300 ease-in-out"
@@ -106,7 +100,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
         ></div>
       )}
 
-      {/* Overlay para el efecto de desenfoque en ESCRITORIO */}
+      {/* Overlay con blur para escritorio */}
       {isDesktopSidebarOpen && (
         <div
           className="fixed inset-0 bg-black/10 backdrop-blur-[1px] z-30 hidden md:block transition-all duration-300 ease-in-out"
@@ -119,12 +113,12 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
         ></div>
       )}
 
-      {/* Renderiza el SideBarSmComponent para móvil */}
+      {/* Sidebar para móvil */}
       {SideBarSmComponent && (
         <SideBarSmComponent isMenuOpen={isMenuOpen} closeMenu={closeMenu} />
       )}
 
-      {/* Botón para abrir/cerrar el menú móvil (visible solo en pantallas pequeñas) */}
+      {/* Botón hamburguesa flotante (solo móvil) */}
       <button
         onClick={toggleMenu}
         className="sm:hidden fixed bottom-4 right-4 w-10 h-10 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 z-50 flex items-center justify-center"
@@ -146,7 +140,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
         </svg>
       </button>
 
-      {/* Contenido principal de la aplicación */}
+      {/* Contenido principal de la página */}
       <main className="relative z-10 pt-4 pb-6 pl-5 pr-3 sm:px-6 lg:px-8 ml-0 sm:ml-20 transition-all duration-200">
         <div className="scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
           {children}

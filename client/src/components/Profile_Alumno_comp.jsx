@@ -1,21 +1,13 @@
 // src/components/Profile_Alumno_comp.jsx
 import React, { useState, useEffect } from 'react';
-import reeseProfilePic from '../assets/reese.jfif'; // Importa la imagen de perfil
 
 /**
- * Componente de la Modal para editar el perfil del alumno.
- *
- * @param {object} props - Las props del componente.
- * @param {boolean} props.isOpen - Si la modal está abierta.
- * @param {function} props.onClose - Función para cerrar la modal.
- * @param {object} props.initialData - Datos iniciales del perfil para editar.
- * @param {function} props.onSave - Función para guardar los cambios, recibe los nuevos datos.
+ * Modal para editar perfil del alumno
  */
 function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
-  // Estado para los datos que se están editando dentro de la modal
   const [formData, setFormData] = useState(initialData);
 
-  // Sincroniza formData con initialData cuando la modal se abre
+  // Sincronizar datos cuando se abre la modal
   useEffect(() => {
     setFormData(initialData);
   }, [initialData, isOpen]);
@@ -221,41 +213,51 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
  * @param {string|null} [props.error=null] - Mensaje de error si la carga falla.
  */
 export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = false, error = null }) {
-  // --- INTEGRACIÓN BACKEND: ---
-  // 1. Aquí puedes hacer el fetch de los datos del perfil desde el backend usando useEffect.
-  // 2. Usa el estado de carga y error para mostrar el UI adecuado.
-  // 3. Usa la función handleSaveProfile para actualizar el perfil en el backend.
-
-  // Datos mock para el perfil, usados si no se pasan datos iniciales por prop
-  const mockProfileData = {
-    name: "José Luis Rodríguez Marquez",
-    profilePic: reeseProfilePic,
+  
+  // Estructura base del perfil (vacía, lista para backend)
+  const defaultProfileData = {
+    name: "",
+    profilePic: null, // TODO: Implementar subida de imagen
     personal: {
-      email: "jose.luis@email.com",
-      municipio: "Ciudad de México",
-      tutorName: "María Fernández",
-      phoneNumber: "5512345678",
-      tutorPhoneNumber: "5587654321",
+      email: "",
+      municipio: "",
+      tutorName: "",
+      phoneNumber: "",
+      tutorPhoneNumber: "",
     },
     academic: {
-      academy: "MQerK Academy",
-      bachillerato: "Preparatoria Federal",
-      licenciaturaOption: "Ingeniería de Software",
-      universityOption: "Universidad Nacional",
+      academy: "",
+      bachillerato: "",
+      licenciaturaOption: "",
+      universityOption: "",
     },
     course: {
-      activeCourse: "Introducción a React",
-      advisor: "Dra. Jane Doe",
-      group: "A-101",
-      modality: "Online",
+      activeCourse: "",
+      advisor: "",
+      group: "",
+      modality: "",
     }
   };
 
-  // Estado para los datos del perfil que se muestran en la UI
-  const [currentProfileData, setCurrentProfileData] = useState(initialProfileDataProp || mockProfileData);
-  // Estado para controlar la visibilidad de la modal de edición
+  const [currentProfileData, setCurrentProfileData] = useState(initialProfileDataProp || defaultProfileData);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // Estado de carga y error para la petición al backend (opcional)
+
+  // TODO: Implementar carga de datos desde el backend
+  /*
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const response = await fetch('/api/student/profile');
+        const data = await response.json();
+        setCurrentProfileData(data);
+      } catch (error) {
+        console.error('Error al cargar perfil:', error);
+      }
+    };
+    
+    fetchProfileData();
+  }, []);
+  */
   // const [isLoading, setIsLoading] = useState(false);
   // const [error, setError] = useState(null);
 

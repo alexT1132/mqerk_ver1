@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStudent } from '../context/StudentContext.jsx';
 
-// Importa las imágenes locales
+// Imágenes en base64 para iconos de pago
 const tarjetaCreditoImg = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiNmZmYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjAgNEg0Yy0xLjExIDAtMiAuODktMiAydj twelveYzAgMS4xMS44OSAyIDIgMmgxNmMxLjExIDAgMi0uODktMi0yVjZjMC0xLjExLS44OS0yLTItMnptMCAMTRINFY2aDE2djZ6bTAtMTBINFY2aDE2djJ6Ii8+PC9zdmc+';
 const dineroImg = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiNmZmYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNywxNUg5QzksxTYuMDggMTAuMzcsMTcgMTIsMTdDMTMuNjMsMTcgMTUsMTYuMDggMTUsMTVDMTUsMTM5IDEzLjk2LDEzLjUgMTEuNzYsMTIuOTdDOTkuNjQsMTIuNDQgNywxMS43OCA3LDlDNyw3LjIxIDguNDcsNS42OSAxMC41LDUuMThWM0gxMy41VjUuMThDMTUuNTMsNS42OSAxNyw3LjIxIDE3LDlDMTcsNy45MiAxNS42Myw3IDE0LDdDMTIuMzcsNyAxMSw3LjkyIDExLDlDMTEsMTAuMSAxMi4wNCwxMC41IDE0LjI0LDExLjAzQzE2LjM2LDExLjU2IDE5LDEyLjIyIDE5LDE1QzE5LDE2Ljc5IDE3LjUzLDE4LjMxIDE1LjUsMTguODJWMjFIMTIuNVYxOC44MkMxMC40NywxOC4zMSA5LDE2Ljc5IDksMTVaIi8+PC9zdmc+';
 
-// --- Iconos SVG nativos ---
+// Iconos SVG para la interfaz
 const Upload = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -288,7 +288,7 @@ function CardPaymentModal({ onReceiptUpload }) {
             href="#" 
             className="block w-full text-center py-4 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-200 text-lg"
           >
-            💳 Pagar con Tarjeta - $5,000 MXN
+            💳 Pagar con Tarjeta - $XXX MXN
           </a>
           <p className="text-xs text-gray-500 text-center mt-2">
             Procesamiento inmediato • 100% Seguro
@@ -352,10 +352,10 @@ function TransferPaymentModal({ onReceiptUpload }) {
   const [copiedMessage, setCopiedMessage] = useState({ visible: false, target: '' });
 
   const bankInfo = {
-    bank: 'BANCOMER',
-    beneficiary: 'MQERK S.A. DE C.V.',
-    account: '1234567890',
-    clabe: '002180033600000000'
+    bank: 'BANCO XXXX', // TODO: Reemplazar con banco real
+    beneficiary: 'MQERK S.A. DE C.V.', // TODO: Verificar razón social correcta
+    account: 'XXXXXXXXXX', // TODO: Reemplazar con número de cuenta real
+    clabe: 'XXXXXXXXXXXXXXXXXX' // TODO: Reemplazar con CLABE real
   };
 
   const handleCopy = (text, fieldName) => {
@@ -525,9 +525,9 @@ function CashPaymentModal({ onReceiptUpload }) {
   const [isUploading, setIsUploading] = useState(false);
 
   const locationInfo = {
-    address: 'Calle Falsa 123, Colonia Inventada, Ciudad Ejemplo',
-    hours: 'Lunes a Viernes, 9:00 AM - 5:00 PM',
-    contact: 'Tel: 55-1234-5678'
+    address: 'Calle XXXX #XXX, Colonia XXXX, Ciudad XXXX', // TODO: Reemplazar con dirección real
+    hours: 'Lunes a Viernes, XX:XX AM - XX:XX PM', // TODO: Reemplazar con horarios reales
+    contact: 'Tel: XX-XXXX-XXXX' // TODO: Reemplazar con teléfono real
   };
 
   const handleFileUpload = async (file) => {
@@ -567,10 +567,33 @@ function CashPaymentModal({ onReceiptUpload }) {
               <p className="font-semibold">{locationInfo.contact}</p>
             </div>
           </div>
-          <div className="bg-white rounded-lg p-4 border border-green-200">
-            <h5 className="font-bold text-gray-800 mb-2">💰 Monto a Pagar</h5>
-            <p className="text-2xl font-bold text-green-600">$5,000.00 MXN</p>
-            <p className="text-sm text-gray-600 mt-1">Mes de {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</p>
+          
+          {/* Tarjeta decorativa con consejos */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-green-200 shadow-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center">
+                <span className="text-green-600 text-xl">💡</span>
+              </div>
+              <h5 className="font-bold text-green-800">Consejos Útiles</h5>
+            </div>
+            <div className="space-y-2 text-sm text-green-700">
+              <p className="flex items-start gap-2">
+                <span className="text-green-500 mt-1">•</span>
+                <span>Lleva identificación oficial</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="text-green-500 mt-1">•</span>
+                <span>Solicita tu recibo de pago</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="text-green-500 mt-1">•</span>
+                <span>Pregunta por descuentos disponibles</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="text-green-500 mt-1">•</span>
+                <span>Confirma tu pago en línea</span>
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -780,7 +803,8 @@ function PaymentHistory({ payments, onFilterChange }) {
 }
 
 /**
- * Componente principal para la página "Mis Pagos" del alumno.
+ * Componente principal de Mis Pagos
+ * Maneja el historial y opciones de pago del estudiante
  */
 export default function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
   const { studentData, hasPaid, currentCourse } = useStudent();
@@ -790,48 +814,8 @@ export default function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: 
   const [activeTab, setActiveTab] = useState('payment');
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  const [paymentHistory, setPaymentHistory] = useState([
-    {
-      id: 1,
-      month: 0,
-      year: 2025,
-      date: '2025-01-15',
-      method: 'Tarjeta de Crédito',
-      amount: 5000,
-      status: 'paid',
-      receipt: 'receipt_enero_2025.pdf'
-    },
-    {
-      id: 2,
-      month: 1,
-      year: 2025,
-      date: '2025-02-15',
-      method: 'Transferencia SPEI',
-      amount: 5000,
-      status: 'paid',
-      receipt: 'comprobante_febrero_2025.jpg'
-    },
-    {
-      id: 3,
-      month: 2,
-      year: 2025,
-      date: '2025-03-10',
-      method: 'Efectivo',
-      amount: 5000,
-      status: 'pending',
-      receipt: 'recibo_marzo_2025.pdf'
-    },
-    {
-      id: 4,
-      month: 3,
-      year: 2025,
-      date: '2025-04-08',
-      method: 'Transferencia SPEI',
-      amount: 5000,
-      status: 'rejected',
-      receipt: 'comprobante_abril_2025.jpg'
-    }
-  ]);
+  // TODO: Conectar con API del backend para obtener historial real
+  const [paymentHistory, setPaymentHistory] = useState([]);
 
   const paymentMethods = [
     { id: 'card', title: 'PAGO CON TARJETA DE CRÉDITO O DÉBITO', icon: <IconoTarjeta /> },
@@ -867,8 +851,6 @@ export default function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: 
   };
 
   const handleReceiptUpload = (methodId, file) => {
-    console.log(`Archivo subido para método ${methodId}:`, file);
-    
     const newPayment = {
       id: paymentHistory.length + 1,
       month: new Date().getMonth(),
@@ -1009,20 +991,18 @@ export default function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: 
               </div>
             </div>
 
-            {/* Información del próximo pago */}
+            {/* Información del próximo pago - TODO: Datos desde dashboard admin */}
             <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-4 md:p-6 text-white shadow-lg">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 <div>
                   <h3 className="text-lg font-bold mb-1">Próximo Pago</h3>
-                  <p className="text-blue-100 text-sm mb-2">Mes de {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</p>
-                  <p className="text-2xl font-bold">$5,000.00 MXN</p>
+                  <p className="text-blue-100 text-sm mb-2">Mes de XXXX de XXXX</p>
+                  <p className="text-2xl font-bold">$XXX.XX MXN</p>
                 </div>
                 <div className="mt-4 md:mt-0">
                   <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3">
                     <p className="text-xs text-blue-100 mb-1">Fecha límite de pago</p>
-                    <p className="font-semibold">
-                      {new Date(new Date().setDate(new Date().getDate() + 15)).toLocaleDateString('es-ES')}
-                    </p>
+                    <p className="font-semibold">XX/XX/XXXX</p>
                   </div>
                 </div>
               </div>
@@ -1046,7 +1026,7 @@ export default function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: 
           /* Tab de Historial */
           <PaymentHistory 
             payments={paymentHistory}
-            onFilterChange={(filters) => console.log('Filtros aplicados:', filters)}
+            onFilterChange={(filters) => {}}
           />
         )}
 
@@ -1066,8 +1046,8 @@ export default function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: 
               <h4 className="font-bold text-gray-800 mb-2">¿Necesitas ayuda?</h4>
               <div className="space-y-1 text-sm text-gray-600">
                 <p>📧 Email: pagos@mqerk.com</p>
-                <p>📞 Teléfono: 55-1234-5678</p>
-                <p>💬 Chat en vivo: Lunes a Viernes 9:00 AM - 6:00 PM</p>
+                <p>📞 Teléfono: XX-XXXX-XXXX</p>
+                <p>💬 Chat en vivo: Lunes a Viernes X:XX AM - X:XX PM</p>
               </div>
             </div>
             <div>

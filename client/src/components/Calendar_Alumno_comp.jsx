@@ -1,39 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom'; // Importa createPortal
+import { createPortal } from 'react-dom';
 
 /**
- * Componente de la Modal para mostrar opciones de pago.
+ * Modal para mostrar opciones de pago
  */
 function PaymentModal({ isOpen, onClose, paymentDetails, onConfirmPayment }) {
-  // Estado para controlar la visibilidad y el objetivo del mensaje de "copiado"
   const [copiedMessage, setCopiedMessage] = useState({ visible: false, target: '' });
 
-  // Si la modal no está abierta, no renderizamos nada
   if (!isOpen) return null;
 
-  // Función para manejar la copia de texto al portapapeles
-  const handleCopy = (text, targetId) => { // Ahora recibe un ID para saber qué botón fue presionado
-    // Intentar usar la API moderna del portapapeles
+  // Maneja la copia de texto al portapapeles
+  const handleCopy = (text, targetId) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopiedMessage({ visible: true, target: targetId });
-      // Ocultar el mensaje después de 3 segundos
       setTimeout(() => setCopiedMessage({ visible: false, target: '' }), 3000);
     }).catch(err => {
-      console.error('Error al copiar (API moderna): ', err);
-      // Fallback para navegadores más antiguos o si la API moderna falla
+      console.error('Error al copiar:', err);
+      // Fallback para navegadores antiguos
       const textarea = document.createElement('textarea');
       textarea.value = text;
       document.body.appendChild(textarea);
-      textarea.select(); // Seleccionar el texto en el textarea
+      textarea.select();
       try {
-        // Intentar copiar usando document.execCommand
         document.execCommand('copy');
         setCopiedMessage({ visible: true, target: targetId });
         setTimeout(() => setCopiedMessage({ visible: false, target: '' }), 3000);
       } catch (err) {
-        console.error('Error al copiar (execCommand): ', err);
+        console.error('Error al copiar con execCommand:', err);
       } finally {
-        // Asegurarse de remover el textarea creado
         document.body.removeChild(textarea);
       }
     });
@@ -77,11 +71,11 @@ function PaymentModal({ isOpen, onClose, paymentDetails, onConfirmPayment }) {
               <div className="grid grid-cols-1 gap-1 sm:gap-2 lg:gap-3">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-gray-600">Banco:</span>
-                  <span className="font-bold text-gray-800">BANCOMER</span>
+                  <span className="font-bold text-gray-800">XXXX</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-gray-600">Beneficiario:</span>
-                  <span className="font-bold text-gray-800 text-right text-xs sm:text-sm">MQERK S.A. DE C.V.</span>
+                  <span className="font-bold text-gray-800 text-right text-xs sm:text-sm">XXXX</span>
                 </div>
               </div>
 
@@ -90,11 +84,11 @@ function PaymentModal({ isOpen, onClose, paymentDetails, onConfirmPayment }) {
                 <div className="flex flex-col gap-2 bg-white rounded-md sm:rounded-lg lg:rounded-xl p-2 lg:p-3 border border-gray-200 shadow-sm relative">
                   <div className="flex-1">
                     <p className="font-semibold text-gray-600 text-xs mb-1">Número de Cuenta:</p>
-                    <p className="font-mono font-bold text-gray-900 text-xs sm:text-sm break-all">1234567890</p>
+                    <p className="font-mono font-bold text-gray-900 text-xs sm:text-sm break-all">XXXX</p>
                   </div>
                   <div className="relative w-full">
                     <button
-                      onClick={() => handleCopy('1234567890', 'account')}
+                      onClick={() => handleCopy('XXXX', 'account')}
                       className="w-full px-3 py-2 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
                     >
                       Copiar
@@ -116,11 +110,11 @@ function PaymentModal({ isOpen, onClose, paymentDetails, onConfirmPayment }) {
                 <div className="flex flex-col gap-2 bg-white rounded-md sm:rounded-lg lg:rounded-xl p-2 lg:p-3 border border-gray-200 shadow-sm relative">
                   <div className="flex-1">
                     <p className="font-semibold text-gray-600 text-xs mb-1">CLABE Interbancaria:</p>
-                    <p className="font-mono font-bold text-gray-900 text-xs sm:text-sm break-all">002180033600000000</p>
+                    <p className="font-mono font-bold text-gray-900 text-xs sm:text-sm break-all">XXXX</p>
                   </div>
                   <div className="relative w-full">
                     <button
-                      onClick={() => handleCopy('002180033600000000', 'clabe')}
+                      onClick={() => handleCopy('XXXX', 'clabe')}
                       className="w-full px-3 py-2 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
                     >
                       Copiar
@@ -158,7 +152,7 @@ function PaymentModal({ isOpen, onClose, paymentDetails, onConfirmPayment }) {
                   </svg>
                   Dirección:
                 </p>
-                <p className="text-gray-800 ml-4 lg:ml-5 text-xs">Calle Falsa 123, Colonia Inventada, Ciudad Ejemplo</p>
+                <p className="text-gray-800 ml-4 lg:ml-5 text-xs">XXXX</p>
               </div>
               <div>
                 <p className="font-semibold mb-1 lg:mb-2 text-gray-700 flex items-center">
@@ -167,7 +161,7 @@ function PaymentModal({ isOpen, onClose, paymentDetails, onConfirmPayment }) {
                   </svg>
                   Horario:
                 </p>
-                <p className="text-gray-800 ml-4 lg:ml-5 text-xs">Lunes a Viernes, 9:00 AM - 5:00 PM</p>
+                <p className="text-gray-800 ml-4 lg:ml-5 text-xs">XXXX</p>
               </div>
             </div>
           </div>
@@ -179,7 +173,7 @@ function PaymentModal({ isOpen, onClose, paymentDetails, onConfirmPayment }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
               </svg>
               <span>Envía tu comprobante a:</span>
-              <span className="font-bold ml-1 break-all text-xs">pagos@mqerk.com</span>
+              <span className="font-bold ml-1 break-all text-xs">XXXX</span>
             </p>
           </div>
         </div>
@@ -529,7 +523,11 @@ function MobileEventsModal({ isOpen, onClose, dayData, legendDotColors }) {
 
 /**
  * Componente para mostrar la Agenda/Calendario del alumno.
- * Muestra eventos, fechas de pago y una leyenda.
+ * Muestra eventos académicos, fechas de pago y recordatorios personales.
+ * 
+ * @param {Array} eventsData - Array de eventos desde el backend
+ * @param {boolean} isLoading - Estado de carga
+ * @param {string} error - Mensaje de error si hay algún problema
  */
 export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = null }) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -554,23 +552,9 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
     "Recordatorio": "bg-teal-500",
   };
 
-  const initialMockEvents = [
-    { id: 'e1', date: '2025-09-01', description: 'Inicio de nuevo módulo', type: 'Actividades / Tareas', isPayment: false, isReminder: false, dismissed: false },
-    { id: 'e2', date: '2025-09-05', description: 'Examen de Física I', type: 'Exámenes / Evaluaciones', isPayment: false, isReminder: false, dismissed: false },
-    { id: 'e3', date: '2025-09-10', description: 'Asesoría de Matemáticas', type: 'Asesorías', isPayment: false, isReminder: false, dismissed: false },
-    { id: 'e4', date: '2025-09-12', description: 'Conferencia sobre Programación', type: 'Conferencias / talleres', isPayment: false, isReminder: false, dismissed: false },
-    { id: 'e5', date: '2025-09-29', description: 'Fecha de pago mensual', type: 'Fecha de pago', isPayment: true, paid: false, amount: '500 MXN', isReminder: false, dismissed: false },
-    { id: 'e6', date: '2025-11-05', description: 'PAGO CORRESPONDIENTE DEL MES', type: 'Fecha de pago', isPayment: true, paid: false, amount: '1500 MXN', isReminder: false, dismissed: false },
-    { id: 'e7', date: '2025-11-01', description: 'Descripción de la actividad y horario', type: 'Actividades / Tareas', isPayment: false, isReminder: false, dismissed: false },
-    { id: 'e8', date: '2025-11-02', description: 'Simulador de Cálculo', type: 'Simuladores', isPayment: false, isReminder: false, dismissed: false },
-    { id: 'e9', date: '2025-11-15', description: 'Cuota de Noviembre', type: 'Fecha de pago', isPayment: true, paid: false, amount: '750 MXN', isReminder: false, dismissed: false },
-    // Recordatorios que aparecen en el calendario
-    { id: 'r1', date: '2025-06-30', name: 'Recordatorio de Prueba', description: 'Revisar documentación del proyecto.', type: 'Recordatorio', isPayment: false, isReminder: true, dismissed: false, priorityColor: 'bg-red-500', createdBy: 'student' },
-    { id: 'r2', date: '2025-06-29', name: 'Examen Final', description: 'Examen programado por administración.', type: 'Recordatorio', isPayment: false, isReminder: true, dismissed: false, priorityColor: 'bg-blue-500', createdBy: 'admin' },
-    { id: 'r3', date: '2025-09-15', name: 'Recordatorio Personal', description: 'Estudiar para examen.', type: 'Recordatorio', isPayment: false, isReminder: true, dismissed: false, priorityColor: 'bg-green-500', createdBy: 'student' },
-    { id: 'r4', date: '2025-09-20', name: 'Evaluación Oficial', description: 'Examen programado por administración.', type: 'Recordatorio', isPayment: false, isReminder: true, dismissed: false, priorityColor: 'bg-purple-500', createdBy: 'admin' },
-    { id: 'r5', date: '2025-09-23', name: 'Tarea Personal', description: 'Completar proyecto.', type: 'Recordatorio', isPayment: false, isReminder: true, dismissed: false, priorityColor: 'bg-pink-500', createdBy: 'student' },
-  ];
+  // TODO: Los datos de eventos serán proporcionados por el backend
+  // Estructura esperada: { id, date, description, type, isPayment, paid, amount, isReminder, dismissed, priorityColor, createdBy }
+  const initialMockEvents = [];
 
   const [currentEvents, setCurrentEvents] = useState(eventsData || initialMockEvents);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -601,7 +585,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
     };
   }, [isPaymentModalOpen, isConfirmationModalOpen, isReminderCreationModalOpen, isReminderNotificationModalOpen, isMobileEventsModalOpen]);
 
-  // CORREGIDO: Obtener la fecha de hoy en zona horaria local de manera más precisa
+  // Obtener fecha actual en formato local para comparaciones
   const getLocalDateString = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -613,6 +597,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
   const todayString = getLocalDateString();
 
   useEffect(() => {
+    // Buscar recordatorios que deben mostrarse al alumno
     const dueReminders = currentEvents.filter(event => {
       if (!event.isReminder || event.dismissed || dismissedReminderIds.has(event.id)) {
         return false;
@@ -620,36 +605,42 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
       return event.date <= todayString;
     });
 
-    // Show the first due reminder that hasn't been shown yet in this session
+    // Mostrar el primer recordatorio pendiente
     if (dueReminders.length > 0 && !isReminderNotificationModalOpen) {
       const reminderToShow = dueReminders[0];
       setActiveReminder(reminderToShow);
       setIsReminderNotificationModalOpen(true);
     }
-  }, [currentEvents, dismissedReminderIds, todayString]); // Removed isReminderNotificationModalOpen from dependencies
+  }, [currentEvents, dismissedReminderIds, todayString]);
 
+  // Filtrar eventos del mes actual para mostrar en calendario
   const currentMonthEvents = currentEvents.filter(event => {
     const eventDate = new Date(event.date + 'T00:00:00');
     return eventDate.getMonth() === currentDate.getMonth() &&
            eventDate.getFullYear() === currentDate.getFullYear();
   });
 
+  // Obtener eventos importantes para sidebar (pagos pendientes, recordatorios, etc.)
   const importantEvents = currentEvents
     .filter(event => (event.isPayment && !event.paid) || (event.isReminder && !event.dismissed) || event.date >= todayString)
     .sort((a, b) => {
+        // Priorizar pagos pendientes
         if (a.isPayment && !a.paid && (!b.isPayment || b.paid)) return -1;
         if ((!a.isPayment || a.paid) && b.isPayment && !b.paid) return 1;
         
+        // Luego recordatorios vencidos
         const isADueReminder = a.isReminder && !a.dismissed && a.date <= todayString;
         const isBDueReminder = b.isReminder && !b.dismissed && b.date <= todayString;
 
         if (isADueReminder && !isBDueReminder) return -1;
         if (!isADueReminder && isBDueReminder) return 1;
         
+        // Finalmente por fecha
         return a.date.localeCompare(b.date);
     })
     .slice(0, 5);
 
+  // Función para generar los días del calendario mensual
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -662,14 +653,17 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     const adjustedStartDay = startDay === 0 ? 6 : startDay - 1;
     
+    // Días del mes anterior
     for (let i = adjustedStartDay; i > 0; i--) {
       days.push({ date: prevMonthLastDay - i + 1, currentMonth: false });
     }
 
+    // Días del mes actual
     for (let i = 1; i <= numDays; i++) {
       days.push({ date: i, currentMonth: true });
     }
 
+    // Días del mes siguiente para completar la cuadrícula
     const totalCells = 42;
     let nextMonthDay = 1;
     while (days.length < totalCells) {
@@ -681,11 +675,13 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
 
   const days = getDaysInMonth(currentDate);
 
+  // Nombres de meses y configuración del calendario
   const monthNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
                       "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
   const currentMonthName = monthNames[currentDate.getMonth()];
   const currentYear = currentDate.getFullYear();
 
+  // Funciones de navegación del calendario
   const goToPrevMonth = () => {
     setCurrentDate(prevDate => new Date(prevDate.getFullYear(), prevDate.getMonth() - 1, 1));
   };
@@ -694,17 +690,20 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
     setCurrentDate(prevDate => new Date(prevDate.getFullYear(), prevDate.getMonth() + 1, 1));
   };
 
+  // Función para procesar pagos - integración con backend pendiente
   const handleMarkAsPaid = (eventId) => {
-    console.log(`Pago para el evento ID ${eventId} marcado como iniciado por el usuario.`);
     setIsPaymentModalOpen(false);
     setIsConfirmationModal(true);
+    // TODO: Enviar información de pago al backend
   };
 
+  // Función para abrir modal de opciones de pago
   const handleOpenPaymentModal = (event) => {
     setSelectedPaymentEvent(event);
     setIsPaymentModalOpen(true);
   };
 
+  // Función para crear recordatorios personales (funcionalidad local del alumno)
   const handleSaveReminder = ({ name, description, date, priorityColor }) => {
     const newReminder = {
       id: `r${Date.now()}`,
@@ -719,9 +718,10 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
       createdBy: 'student',
     };
     setCurrentEvents(prevEvents => [...prevEvents, newReminder]);
-    console.log('Recordatorio guardado:', newReminder);
+    // TODO: Enviar al backend para persistir el recordatorio del alumno
   };
 
+  // Función para marcar recordatorios como leídos/descartados
   const handleDismissReminder = (reminderId) => {
     setDismissedReminderIds(prevIds => new Set(prevIds).add(reminderId));
     setCurrentEvents(prevEvents => prevEvents.map(event =>
@@ -729,8 +729,10 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
     ));
     setActiveReminder(null);
     setIsReminderNotificationModalOpen(false);
+    // TODO: Enviar al backend para marcar recordatorio como leído
   };
 
+  // Función para manejar clic en días del calendario (solo móviles)
   const handleDayClick = (eventsOnDay, cellDateString) => {
     if (eventsOnDay.length > 0) {
       setSelectedDayEvents({
@@ -741,30 +743,12 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
     }
   };
 
+  // Detectar si es dispositivo móvil para mostrar interfaz adaptada
   const isMobile = () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
   };
 
-  useEffect(() => {
-    const hasAdminReminder = currentEvents.some(e => e.isReminder && e.createdBy === 'admin' && e.date.startsWith('2025-09'));
-    if (!hasAdminReminder) {
-      setCurrentEvents(prev => [
-        ...prev,
-        {
-          id: 'admin-test',
-          date: '2025-09-10',
-          name: 'Recordatorio Admin Prueba',
-          description: 'Este es un recordatorio de admin para depuración',
-          type: 'Recordatorio',
-          isPayment: false,
-          isReminder: true,
-          dismissed: false,
-          priorityColor: 'bg-yellow-500',
-          createdBy: 'admin',
-        }
-      ]);
-    }
-  }, []);
+  // Loading state handling
 
   if (isLoading) {
     return (
@@ -1102,7 +1086,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                                 <h3 className="font-semibold text-gray-900 text-sm leading-tight">
                                   {event.description || event.name}
                                 </h3>
-                                {/* Identificadores de origen - CORREGIDO: Todos los eventos no-recordatorios son de Admin */}
+                              {/* Etiquetas de identificación de origen */}
                                 {(event.isReminder && event.createdBy === 'admin') || (!event.isReminder) ? (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200 w-fit">
                                     <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -1139,7 +1123,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                                 </span>
                               </div>
 
-                              {/* Estados y información adicional con más color - responsive */}
+                              {/* Información adicional con estados coloridos */}
                               <div className="mt-2 flex flex-wrap gap-2">
                                 {event.isPayment && !event.paid && (
                                   <div className="flex items-center gap-1 px-2 py-1 bg-red-50 rounded-md border border-red-200">
@@ -1189,7 +1173,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                               </div>
                             </div>
 
-                            {/* Acciones con más color - responsive */}
+                            {/* Botones de acción para pagos */}
                             <div className="flex-shrink-0 mt-2 sm:mt-0">
                               {event.isPayment && !event.paid && (
                                 <button

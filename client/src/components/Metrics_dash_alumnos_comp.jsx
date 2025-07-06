@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCourse } from '../context/CourseContext.jsx';
 // Importaciones de Recharts para gráficos
 import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
@@ -13,77 +14,43 @@ import { BarChart as MUIBarChart } from '@mui/x-charts/BarChart';
 const reeseProfilePic = "https://placehold.co/128x128/A0AEC0/FFFFFF?text=Foto";
 
 // --- CONSTANTES ---
-// Datos de usuario por defecto
+// TODO: Datos de usuario serán proporcionados por el backend
 const DEFAULT_USER_DATA = {
-  name: "Mari Lu Rodríguez Marquez",
-  email: "XXXXXXXXXXXXX@gmail.com",
-  activeCourse: "XXXXXXXXX",
-  currentBachillerato: "XXXXXXXXXXXXX",
+  name: "XXXX", // TODO: Obtener desde backend
+  email: "XXXX", // TODO: Obtener desde backend
+  activeCourse: "XXXX", // TODO: Obtener desde backend
+  currentBachillerato: "XXXX", // TODO: Obtener desde backend
   academy: "MQerK Academy",
-  universityOption: "XXXXXXXXX",
-  licenciaturaOption: "XXXXXXXXX",
-  advisor: "L.C.Q Kelvin Valentin Gomez Ramirez",
-  group: "xXXXX",
-  folio: "MEEAU25-0001",
+  universityOption: "XXXX", // TODO: Obtener desde backend
+  licenciaturaOption: "XXXX", // TODO: Obtener desde backend
+  advisor: "XXXX", // TODO: Obtener desde backend
+  group: "XXXX", // TODO: Obtener desde backend
+  folio: "XXXX", // TODO: Obtener desde backend
   profilePic: reeseProfilePic,
 };
 
-// Datos de métricas por defecto - Más realistas y variados
+// TODO: Datos de métricas serán proporcionados por el backend
 const DEFAULT_METRICS_DATA = {
-  // Métricas de la fila superior - Datos más realistas
-  attendance: 78,
-  activities: { current: 18, total: 24 },
-  quiz: { current: 14, total: 18 },
-  monthlyAverage: 82,
-  academicStatus: { level: 'A', color: 'yellow', description: 'Activo' },
+  // Métricas principales - serán calculadas por el backend
+  attendance: 0, // TODO: Calcular desde backend
+  activities: { current: 0, total: 0 }, // TODO: Obtener desde backend
+  quiz: { current: 0, total: 0 }, // TODO: Obtener desde backend
+  monthlyAverage: 0, // TODO: Calcular desde backend
+  academicStatus: { level: '', color: 'gray', description: 'Pendiente' }, // TODO: Determinar desde backend
 
-  // Datos para el gráfico de Material UI - Promedio mensual de los últimos 12 meses
-  monthlyAverageData: [
-    { month: 'Ene', promedio: 75 },
-    { month: 'Feb', promedio: 78 },
-    { month: 'Mar', promedio: 72 },
-    { month: 'Abr', promedio: 80 },
-    { month: 'May', promedio: 85 },
-    { month: 'Jun', promedio: 88 },
-    { month: 'Jul', promedio: 82 },
-    { month: 'Ago', promedio: 79 },
-    { month: 'Sep', promedio: 83 },
-    { month: 'Oct', promedio: 86 },
-    { month: 'Nov', promedio: 90 },
-    { month: 'Dic', promedio: 87 }
-  ],
+  // TODO: Datos para gráficos serán proporcionados por el backend
+  monthlyAverageData: [], // TODO: Obtener histórico desde backend
 
-  // Datos para gráficos y otras métricas de la fila inferior
-  // Datos extendidos a 8 meses para el gráfico de Actividades/Quizts
-  activityProgress: [
-    { period: 'Ene', activities: 65, quizts: 58 },
-    { period: 'Feb', activities: 72, quizts: 68 },
-    { period: 'Mar', activities: 78, quizts: 71 },
-    { period: 'Abr', activities: 85, quizts: 79 },
-    { period: 'May', activities: 88, quizts: 82 },
-    { period: 'Jun', activities: 91, quizts: 85 },
-    { period: 'Jul', activities: 89, quizts: 87 },
-    { period: 'Ago', activities: 93, quizts: 89 },
-  ],
+  // TODO: Datos para gráficos y otras métricas
+  activityProgress: [], // TODO: Obtener progreso histórico desde backend
   subjectResults: {
-    total: 70, // Puntuación total del simulador como en la imagen
-    subjects: [
-      { code: 'E/R', percent: 18, color: '#8B5CF6', fullName: 'Español y redacción indirecta' },
-      { code: 'M/A', percent: 12, color: '#EC4899', fullName: 'Matemáticas y pensamiento analítico' },
-      { code: 'HT', percent: 15, color: '#F59E0B', fullName: 'Habilidades transversales' },
-      { code: 'LE', percent: 15, color: '#6366F1', fullName: 'Lengua extranjera' },
-      { code: 'ME', percent: 10, color: '#7C3AED', fullName: 'Módulos específicos' },
-    ]
+    total: 0, // TODO: Calcular total desde backend
+    subjects: [] // TODO: Obtener resultados por materia desde backend
   },
-  // Datos más realistas para las barras horizontales de resultados del simulador
-  simulatorGrades: [
-    { label: '1ero', score: 70, color: '#EC4899' }, // Rosa/Magenta
-    { label: '2do', score: 60, color: '#8B5CF6' }, // Púrpura
-    { label: '3ero', score: 40, color: '#6366F1' }, // Azul
-    { label: '4to', score: 30, color: '#A855F7' }, // Púrpura claro
-  ],
-  feedbackScore: 82,
-  // Mensajes motivacionales más variados y realistas
+  // TODO: Datos de calificaciones del simulador desde backend
+  simulatorGrades: [], // TODO: Obtener calificaciones históricas desde backend
+  feedbackScore: 0, // TODO: Calcular score de feedback desde backend
+  // Mensajes motivacionales
   motivationalMessages: [
     "¡EXCELENTE PROGRESO!",
     "¡VAS MUY BIEN!",
@@ -333,6 +300,12 @@ const ChartModal = ({ isOpen, onClose, title, children }) => {
  */
 export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = false, error = null }) {
   const { selectedCourse } = useCourse();
+  const navigate = useNavigate();
+
+  // Función para navegar a la página de asistencia
+  const handleAttendanceClick = () => {
+    navigate('/alumno/asistencia');
+  };
 
   // Fusionar los datos proporcionados con los datos por defecto
   const mergedMetricsData = { ...DEFAULT_METRICS_DATA, ...metricsData };
@@ -771,7 +744,11 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 md:gap-12 mb-16 max-w-8xl mx-auto">
 
         {/* Métrica de Asistencia - Mismo estilo que las otras tarjetas */}
-        <div className="flex flex-col items-center group cursor-pointer transition-all duration-150" title="Porcentaje de días asistidos en el mes actual">
+        <div 
+          className="flex flex-col items-center group cursor-pointer transition-all duration-150" 
+          title="Porcentaje de días asistidos en el mes actual - Clic para ver detalles"
+          onClick={handleAttendanceClick}
+        >
           <div className="relative mb-6 group-hover:scale-105 transition-transform duration-300">
             {/* Tarjeta principal con mismo estilo que las demás */}
             <div className="relative w-40 h-40 bg-gradient-to-br from-blue-50 via-cyan-100 to-blue-150 rounded-2xl flex flex-col items-center justify-center shadow-xl border-2 border-blue-200 p-4">
@@ -1303,7 +1280,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
 
         {/* Feedback - Sin Contenedor, Estilo Limpio y Preciso */}
         <div className="cursor-pointer transition-all duration-200 hover:scale-105">
-          {/* Título simple */}
+                   {/* Título simple */}
           <div className="text-center mb-6">
             <h3 className="text-lg font-bold text-purple-600 flex items-center justify-center">
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
