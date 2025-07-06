@@ -1,50 +1,24 @@
 import React, { createContext, useContext, useState } from 'react';
 
-// Datos simulados de cursos
-const mockCourses = [
-  {
-    id: 'curso1',
-    nombre: 'Matemáticas Avanzadas',
-    instructor: {
-      nombre: 'Dr. Ana García',
-      especialidad: 'Matemáticas Aplicadas',
-      experiencia: '15 años'
-    },
-    tareas: [
-      { id: 1, titulo: 'Tarea 1', estado: 'pendiente' },
-      { id: 2, titulo: 'Tarea 2', estado: 'entregada' },
-    ],
-    actividades: [
-      { id: 1, nombre: 'Foro de discusión', completada: true },
-      { id: 2, nombre: 'Quiz 1', completada: false },
-    ],
-    metricas: {
-      promedio: 9.1,
-      avance: '60%',
-    },
-  },
-  {
-    id: 'curso2',
-    nombre: 'Programación Web',
-    instructor: {
-      nombre: 'Ing. Carlos Mendoza',
-      especialidad: 'Desarrollo Full Stack',
-      experiencia: '10 años'
-    },
-    tareas: [
-      { id: 1, titulo: 'Proyecto HTML', estado: 'pendiente' },
-      { id: 2, titulo: 'Examen CSS', estado: 'pendiente' },
-    ],
-    actividades: [
-      { id: 1, nombre: 'Laboratorio', completada: false },
-      { id: 2, nombre: 'Quiz 2', completada: false },
-    ],
-    metricas: {
-      promedio: 8.7,
-      avance: '40%',
-    },
-  },
-];
+// TODO: Los datos de cursos serán proporcionados por el backend
+// Estructura esperada: { id, nombre, instructor: { nombre, especialidad, experiencia }, tareas: [], actividades: [], metricas: { promedio, avance } }
+// Curso de prueba para testing - ELIMINAR en producción
+const testCourse = {
+  id: 'test-course-001',
+  title: 'Curso de Prueba - Matemáticas Avanzadas',
+  instructor: 'Prof. Testing',
+  image: 'https://placehold.co/400x200/4f46e5/ffffff?text=Matematicas',
+  category: 'exactas',
+  type: 'curso',
+  isActive: true,
+  metadata: [
+    { icon: 'reloj', text: '12 semanas' },
+    { icon: 'libro', text: '24 lecciones' },
+    { icon: 'estudiante', text: '150 estudiantes' }
+  ]
+};
+
+const mockCourses = [testCourse]; // Incluir curso de prueba para testing
 
 const CourseContext = createContext();
 

@@ -17,68 +17,40 @@ export const StudentProvider = ({ children }) => {
   const [hasPaid, setHasPaid] = useState(false);
   const [currentCourse, setCurrentCourse] = useState(null);
   const [isFirstAccess, setIsFirstAccess] = useState(true);
-  const [activeSection, setActiveSection] = useState(null); // Nueva: controla qué sección está activa
+  const [activeSection, setActiveSection] = useState(null);
+  
+  // TODO: Datos del estudiante serán proporcionados por el backend
   const [studentData, setStudentData] = useState({
-    name: "José Luis Rodríguez Márquez",
-    matricula: "ISC20-001",
-    email: "jose.rodriguez@example.com"
+    name: "XXXX", // TODO: Obtener desde backend
+    matricula: "XXXX", // TODO: Obtener desde backend
+    email: "XXXX" // TODO: Obtener desde backend
   });
 
-  // Cursos disponibles del estudiante
-  const [availableCourses] = useState([
-    {
-      id: 'math-advanced',
-      title: 'Matemáticas Avanzadas',
-      instructor: 'Dr. María González',
-      image: '/assets/math-course.jpg',
-      category: 'exactas',
-      type: 'curso',
-      metadata: [
-        { icon: 'reloj', text: '12 semanas' },
-        { icon: 'libro', text: '24 lecciones' },
-        { icon: 'estudiante', text: '180 estudiantes' }
-      ],
-      progress: 65,
-      isActive: true
-    },
-    {
-      id: 'web-programming',
-      title: 'Programación Web',
-      instructor: 'Ing. Carlos Pérez',
-      image: '/assets/web-course.jpg',
-      category: 'programacion',
-      type: 'desarrollo',
-      metadata: [
-        { icon: 'reloj', text: '16 semanas' },
-        { icon: 'libro', text: '32 lecciones' },
-        { icon: 'estudiante', text: '220 estudiantes' }
-      ],
-      progress: 40,
-      isActive: true
-    },
-    {
-      id: 'english-intermediate',
-      title: 'Inglés Intermedio',
-      instructor: 'Prof. Sarah Johnson',
-      image: '/assets/english-course.jpg',
-      category: 'idiomas',
-      type: 'curso',
-      metadata: [
-        { icon: 'reloj', text: '20 semanas' },
-        { icon: 'libro', text: '40 lecciones' },
-        { icon: 'estudiante', text: '150 estudiantes' }
-      ],
-      progress: 80,
-      isActive: true
-    }
-  ]);
+  // TODO: Cursos disponibles serán proporcionados por el backend
+  // Curso de prueba para testing - ELIMINAR en producción
+  const testCourse = {
+    id: 'test-course-001',
+    title: 'Curso de Prueba - Matemáticas Avanzadas',
+    instructor: 'Prof. Testing',
+    image: 'https://placehold.co/400x200/4f46e5/ffffff?text=Matematicas',
+    category: 'exactas',
+    type: 'curso',
+    isActive: true,
+    metadata: [
+      { icon: 'reloj', text: '12 semanas' },
+      { icon: 'libro', text: '24 lecciones' },
+      { icon: 'estudiante', text: '150 estudiantes' }
+    ]
+  };
+  
+  const [availableCourses] = useState([testCourse]);
 
-  // Función para simular la verificación del estudiante
+  // Función para manejar la verificación del estudiante - integración con backend
   const simulateVerification = () => {
+    // TODO: Verificar con backend en lugar de solo cambiar estado local
     setIsVerified(true);
     setHasPaid(true);
-    setIsFirstAccess(false); // Ya no es primer acceso después de verificar
-    // Guardar en localStorage para persistir el estado
+    setIsFirstAccess(false);
     localStorage.setItem('studentVerified', 'true');
     localStorage.setItem('studentPaid', 'true');
     localStorage.setItem('isFirstAccess', 'false');
@@ -137,7 +109,6 @@ export const StudentProvider = ({ children }) => {
     localStorage.removeItem('isFirstAccess');
     localStorage.removeItem('currentCourse');
     localStorage.removeItem('activeSection');
-    console.log('Estado del estudiante reseteado completamente');
     // Forzar una recarga del estado
     setTimeout(() => {
       window.location.reload();
@@ -147,7 +118,6 @@ export const StudentProvider = ({ children }) => {
   // Función para forzar reseteo completo (eliminar TODO el localStorage)
   const forceCompleteReset = () => {
     localStorage.clear();
-    console.log('LocalStorage completamente limpiado');
     window.location.reload();
   };
 
@@ -165,14 +135,6 @@ export const StudentProvider = ({ children }) => {
     const storedCourse = localStorage.getItem('currentCourse');
     const storedActiveSection = localStorage.getItem('activeSection');
 
-    console.log('Cargando estado desde localStorage:', {
-      storedVerified,
-      storedPaid,
-      storedFirstAccess,
-      storedCourse: storedCourse ? 'Sí' : 'No',
-      storedActiveSection: storedActiveSection || 'Ninguna'
-    });
-
     setIsVerified(storedVerified);
     setHasPaid(storedPaid);
     setIsFirstAccess(storedFirstAccess);
@@ -182,7 +144,6 @@ export const StudentProvider = ({ children }) => {
       try {
         const parsedCourse = JSON.parse(storedCourse);
         setCurrentCourse(parsedCourse);
-        console.log('Curso cargado desde localStorage:', parsedCourse.title);
       } catch (error) {
         console.error('Error parsing stored course:', error);
       }
