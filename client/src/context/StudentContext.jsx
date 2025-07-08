@@ -18,6 +18,8 @@ export const StudentProvider = ({ children }) => {
   const [currentCourse, setCurrentCourse] = useState(null);
   const [isFirstAccess, setIsFirstAccess] = useState(true);
   const [activeSection, setActiveSection] = useState(null);
+  const [allowedAreas, setAllowedAreas] = useState([]); // Áreas permitidas
+  const [areaRequests, setAreaRequests] = useState([]); // Solicitudes de nuevas áreas
   
   // TODO: Datos del estudiante serán proporcionados por el backend
   const [studentData, setStudentData] = useState({
@@ -96,35 +98,37 @@ export const StudentProvider = ({ children }) => {
     localStorage.removeItem('activeSection');
   };
 
-  // Función para resetear el estado (útil para testing)
-  const resetStudentState = () => {
-    setIsVerified(false);
-    setHasPaid(false);
-    setCurrentCourse(null);
-    setIsFirstAccess(true);
-    setActiveSection(null); // Resetear sección activa
-    // Limpiar TODO el localStorage relacionado con el estudiante
-    localStorage.removeItem('studentVerified');
-    localStorage.removeItem('studentPaid');
-    localStorage.removeItem('isFirstAccess');
-    localStorage.removeItem('currentCourse');
-    localStorage.removeItem('activeSection');
-    // Forzar una recarga del estado
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
+  // --- Funciones para Manejo de Áreas de Simulación ---
+
+  // Seleccionar el área inicial o añadir una nueva área permitida
+  const addAllowedArea = (areaId) => {
+    if (!allowedAreas.includes(areaId)) {
+      const newAllowedAreas = [...allowedAreas, areaId];
+      setAllowedAreas(newAllowedAreas);
+      localStorage.setItem('allowedAreas', JSON.stringify(newAllowedAreas));
+    }
   };
 
-  // Función para forzar reseteo completo (eliminar TODO el localStorage)
-  const forceCompleteReset = () => {
-    localStorage.clear();
-    window.location.reload();
+  // Solicitar acceso a una nueva área
+  const requestNewAreaAccess = (areaId) => {
+    // Evitar solicitudes duplicadas
+    if (areaRequests.some(req => req.areaId === areaId)) return;
+
+    // TODO: Enviar solicitud al backend
+    console.log(`Enviando solicitud para el área: ${areaId}`);
+    
+    const newRequest = { areaId, status: 'pending', date: new Date() };
+    const newRequests = [...areaRequests, newRequest];
+    setAreaRequests(newRequests);
+    localStorage.setItem('areaRequests', JSON.stringify(newRequests));
   };
 
-  // Función para navegar al inicio sin redirección
-  const goToStart = () => {
-    setIsFirstAccess(true); // Temporalmente marcar como primer acceso
-    localStorage.setItem('isFirstAccess', 'true');
+  // Limpiar áreas (para testing)
+  const clearAreas = () => {
+    setAllowedAreas([]);
+    setAreaRequests([]);
+    localStorage.removeItem('allowedAreas');
+    localStorage.removeItem('areaRequests');
   };
 
   // Cargar estado persistente al inicializar
@@ -148,38 +152,71 @@ export const StudentProvider = ({ children }) => {
         console.error('Error parsing stored course:', error);
       }
     }
+
+    // Cargar áreas permitidas y solicitudes
+    const storedAllowedAreas = localStorage.getItem('allowedAreas');
+    if (storedAllowedAreas) setAllowedAreas(JSON.parse(storedAllowedAreas));
+
+    const storedAreaRequests = localStorage.getItem('areaRequests');
+    if (storedAreaRequests) setAreaRequests(JSON.parse(storedAreaRequests));
+
   }, []);
 
-  const contextValue = {
-    // Estados
+  // Función para resetear el estado (útil para testing)
+  const resetStudentState = () => {
+    setIsVerified(false);
+    setHasPaid(false);
+    setCurrentCourse(null);
+    setIsFirstAccess(true);
+    setActiveSection(null); // Resetear sección activa
+    // Limpiar TODO el localStorage relacionado con el estudiante
+    localStorage.removeItem('studentVerified');
+    localStorage.removeItem('studentPaid');
+    localStorage.removeItem('isFirstAccess');
+    localStorage.removeItem('currentCourse');
+    localStorage.removeItem('activeSection');
+    // También limpiar las áreas
+    clearAreas();
+    // Forzar una recarga del estado
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
+  };
+
+  // Función para forzar reseteo completo (eliminar TODO el localStorage)
+  const forceCompleteReset = () => {
+    localStorage.clear();
+    window.location.reload();
+  };
+
+  // Función para navegar al inicio sin redirección
+  const goToStart = () => {
+    setIsFirstAccess(true); // Temporalmente marcar como primer acceso
+    localStorage.setItem('isFirstAccess', 'true');
+  };
+
+  const value = {
     isVerified,
     hasPaid,
-    currentCourse,
-    isFirstAccess,
     studentData,
     availableCourses,
-    activeSection, // Nueva sección activa
-    
-    // Funciones
+    currentCourse,
+    isFirstAccess,
+    activeSection,
+    allowedAreas, // Exponer áreas permitidas
+    areaRequests, // Exponer solicitudes
     simulateVerification,
     selectCourse,
     clearCourse,
+    setActiveSectionHandler,
+    goToWelcome,
     resetStudentState,
-    forceCompleteReset,
-    goToStart,
-    setActiveSectionHandler, // Función para manejar navegación activa
-    goToWelcome, // Función para ir al mensaje de bienvenida
-    
-    // Setters directos (para casos específicos)
-    setIsVerified,
-    setHasPaid,
-    setCurrentCourse,
-    setIsFirstAccess,
-    setActiveSection // Setter para la sección activa
+    addAllowedArea, // Exponer función para añadir área
+    requestNewAreaAccess, // Exponer función para solicitar área
   };
 
   return (
-    <StudentContext.Provider value={contextValue}>
+    <StudentContext.Provider value={value}>
       {children}
     </StudentContext.Provider>
   );
