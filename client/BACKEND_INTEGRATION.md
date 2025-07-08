@@ -1,5 +1,27 @@
 # 🔧 GUÍA COMPLETA DE INTEGRACIÓN BACKEND - DASHBOARD ALUMNOS
 
+## 📋 RESUMEN EJECUTIVO
+
+✅ **Frontend 100% Terminado** - UI completa, responsive, funcional  
+🔧 **Backend Pendiente** - Solo faltan conexiones a APIs  
+📝 **TODOs Marcados** - Buscar "TODO: BACKEND" en el código  
+
+## 🎯 COMPONENTE DE ACTIVIDADES - LISTO
+
+**Archivo:** `src/components/Actividades_Alumno_comp.jsx`
+
+### 🔌 Puntos de Integración (buscar TODO en el código):
+
+1. **handleSelectType()** - Cargar actividades por materia y tipo
+2. **handleFileUpload()** - Subir archivos al servidor  
+3. **handleDownload()** - Descargar plantillas/archivos
+
+### 📋 APIs Necesarias:
+
+- **GET** `/api/students/{studentId}/activities?materiaId={id}&tipo={tipo}&mes={mes}`
+- **POST** `/api/students/{studentId}/activities/{activityId}/upload` (FormData)
+- **GET** `/api/activities/{activityId}/download` (Binary file)
+
 ## 📋 Descripción General
 
 Este documento contiene toda la información necesaria para que una AI implemente las conexiones backend del sistema de Dashboard de Alumnos. El frontend está **100% terminado** con diseños responsivos y funcionalidades de UI, pero necesita conexión con APIs.
@@ -1078,3 +1100,190 @@ Después de integrar correctamente tendrás:
 ✅ **Contextos globales** funcionando en toda la app
 
 **🚀 TU APP.JSX ESTARÁ COMPLETAMENTE INTEGRADO Y FUNCIONAL**
+
+# 📝 COMPONENTE DE ACTIVIDADES - NAVEGACIÓN MULTINIVEL
+
+## 🎯 Actividades_Alumno_comp.jsx
+
+**Ubicación:** `src/components/Actividades_Alumno_comp.jsx`
+
+### ✨ Funcionalidades Implementadas:
+
+#### 📊 Navegación Multinivel (4 Niveles):
+1. **Nivel 1:** Tarjetas de áreas/módulos/materias
+2. **Nivel 2:** Lista de materias específicas del área seleccionada
+3. **Nivel 3:** Botones de "Actividades" y "Quiz" por materia
+4. **Nivel 4:** Tabla completa de actividades con todas las funcionalidades
+
+#### 🎨 UI/UX Inspirada en Feedback_Alumno_Comp:
+- **Sistema de puntos totales** con visualización destacada
+- **Animaciones de confeti** al subir actividades
+- **Modales mejorados** con mejor UX
+- **Filtrado por mes** con dropdown elegante
+- **Vista responsive** (desktop y móvil)
+- **Vista previa de archivos** en modales
+
+#### 🔧 Funcionalidades de Gestión:
+- **Descargar actividades** (plantillas/instrucciones)
+- **Subir archivos** (PDF, DOC, DOCX)
+- **Editar actividades** (placeholder para futuro)
+- **Visualizar archivos subidos** con iframe/modal
+- **Estado de entrega** (pendiente/entregado/revisado)
+- **Sistema de calificaciones** con puntos
+- **Gestión de fechas límite**
+
+### 🔌 APIs Necesarias para Integración:
+
+#### 1. **GET /api/students/{studentId}/subjects**
+```json
+// Obtener áreas y materias del estudiante
+{
+  "areas": [
+    {
+      "id": 1,
+      "titulo": "Matemáticas",
+      "icono": "📊",
+      "color": "from-blue-400 to-blue-600",
+      "materias": [
+        {
+          "id": 11,
+          "nombre": "Álgebra básica",
+          "descripcion": "Fundamentos matemáticos",
+          "areaId": 1
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### 2. **GET /api/students/{studentId}/activities**
+```json
+// Obtener actividades por materia y tipo
+// Query params: ?materiaId=11&tipo=actividades&mes=all
+{
+  "activities": [
+    {
+      "id": 1,
+      "nombre": "Operaciones fundamentales",
+      "descripcion": "Ejercicios básicos de matemáticas",
+      "fechaEntrega": "2024-02-12",
+      "fechaSubida": "2024-02-10",
+      "archivo": "/uploads/student123/activity1.pdf",
+      "entregada": true,
+      "score": 85,
+      "maxScore": 100,
+      "estado": "revisada", // pendiente|entregada|revisada
+      "materiaId": 11,
+      "tipo": "actividades" // actividades|quiz
+    }
+  ],
+  "totalScore": 340,
+  "totalPossible": 400
+}
+```
+
+#### 3. **POST /api/students/{studentId}/activities/{activityId}/upload**
+```json
+// Subir archivo de actividad
+// Content-Type: multipart/form-data
+{
+  "file": "archivo.pdf",
+  "activityId": 1,
+  "studentId": 123
+}
+
+// Response:
+{
+  "success": true,
+  "fileUrl": "/uploads/student123/activity1.pdf",
+  "message": "Archivo subido exitosamente",
+  "uploadedAt": "2024-02-10T10:30:00Z"
+}
+```
+
+#### 4. **GET /api/activities/{activityId}/download**
+```json
+// Descargar plantilla/instrucciones de actividad
+// Response: Binary file download (PDF)
+```
+
+#### 5. **DELETE /api/students/{studentId}/activities/{activityId}/submission**
+```json
+// Cancelar entrega de actividad
+{
+  "success": true,
+  "message": "Entrega cancelada exitosamente"
+}
+```
+
+### 🎯 Puntos de Integración en el Código:
+
+#### Estados para Backend:
+```javascript
+// Estados que necesitan datos del backend
+const [areasData, setAreasData] = useState([]); // TODO: API /api/students/{id}/subjects
+const [actividades, setActividades] = useState([]); // TODO: API /api/students/{id}/activities
+const [totalScore, setTotalScore] = useState(0); // Calculado desde actividades
+```
+
+#### Funciones que Necesitan Backend:
+```javascript
+// 1. Cargar áreas y materias al montar componente
+useEffect(() => {
+  // TODO: Llamar API /api/students/{studentId}/subjects
+  // setAreasData(response.data.areas);
+}, []);
+
+// 2. Cargar actividades por materia y tipo
+const handleSelectType = (type) => {
+  // TODO: Llamar API /api/students/{studentId}/activities
+  // ?materiaId=${selectedMateria.id}&tipo=${type}&mes=${selectedMonth}
+};
+
+// 3. Subir archivo
+const handleFileUpload = (actividadId, file) => {
+  // TODO: POST /api/students/{studentId}/activities/${actividadId}/upload
+  // FormData con el archivo
+};
+
+// 4. Descargar actividad
+const handleDownload = (actividadId) => {
+  // TODO: GET /api/activities/${actividadId}/download
+  // Iniciar descarga del archivo
+};
+```
+
+### 🎨 Efectos Visuales Implementados:
+
+#### Animación de Confeti:
+- Se activa al subir actividades exitosamente
+- Muestra puntos ganados temporalmente
+- Mensaje motivacional incluido
+
+#### Tabla Responsive:
+- **Desktop:** Tabla completa con todas las columnas
+- **Móvil:** Cards en grid con información compacta
+- **Tablet:** Vista híbrida optimizada
+
+#### Modales Mejorados:
+- **Modal de Subida:** Gestión de archivos nuevos/existentes
+- **Modal de Vista:** Preview de archivos con iframe
+- **Modal de Edición:** Placeholder para funcionalidades futuras
+
+### 🔒 Validaciones Necesarias:
+
+#### Frontend (Ya Implementado):
+- ✅ Validación de tipos de archivo (.pdf, .doc, .docx)
+- ✅ Validación de fechas límite
+- ✅ Estados de carga y errores
+- ✅ Feedback visual de acciones
+
+#### Backend (Por Implementar):
+- 🔄 Autenticación de estudiante
+- 🔄 Autorización por materia
+- 🔄 Validación de tamaño de archivo
+- 🔄 Verificación de fecha límite
+- 🔄 Almacenamiento seguro de archivos
+
+---
