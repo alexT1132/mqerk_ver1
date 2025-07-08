@@ -211,8 +211,8 @@ function PaymentMethodCard({ method, onClick }) {
     <div
       onClick={handleClick}
       className={`relative cursor-pointer bg-gradient-to-br ${methodColors[method.id]} 
-      rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 ease-in-out
-      p-4 md:p-5 flex flex-col items-center justify-center text-center min-h-[160px] group`}
+      rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out
+      p-4 md:p-5 flex flex-col items-center justify-center text-center min-h-[160px] group border border-gray-100`}
     >
       <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-2xl"></div>
       {method.icon}
@@ -881,8 +881,8 @@ export default function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: 
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-blue-50">
-        <div className="bg-white rounded-2xl shadow-lg p-6 text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+        <div className="bg-white rounded-2xl shadow-xl p-6 text-center border border-gray-100">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
           <p className="text-gray-600">Cargando métodos de pago...</p>
         </div>
@@ -892,8 +892,8 @@ export default function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: 
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-red-50">
-        <div className="bg-white rounded-2xl shadow-lg p-6 text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+        <div className="bg-white rounded-2xl shadow-xl p-6 text-center border border-gray-100">
           <div className="text-4xl mb-4">💳</div>
           <p className="text-red-600">Error al cargar los métodos de pago: {error}</p>
         </div>
@@ -902,7 +902,7 @@ export default function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: 
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 p-3 md:p-6">
+    <div className="min-h-screen bg-white p-3 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Título principal y navegación por tabs */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -911,7 +911,7 @@ export default function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: 
           </h2>
           
           {/* Tabs de navegación */}
-          <div className="flex bg-white rounded-xl p-1 shadow-md border border-gray-200">
+          <div className="flex bg-white rounded-xl p-1 shadow-lg border border-gray-200">
             <button
               onClick={() => setActiveTab('payment')}
               className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
@@ -939,60 +939,10 @@ export default function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: 
         {/* Contenido condicional basado en el tab activo */}
         {activeTab === 'payment' ? (
           <div className="space-y-6">
-            {/* Resumen de estado de pagos mejorado */}
-            <div className="flex justify-center">
-              {/* Changed from flex-col to grid for 2 columns on mobile */}
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 sm:gap-4 w-full max-w-2xl">
-                {/* Pagos Realizados */}
-                {/* Removed flex-1 min-w-0 as grid handles sizing */}
-                <div className="bg-white rounded-xl shadow-md border border-gray-200 p-2 sm:p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Pagos Realizados</p>
-                      <p className="text-base sm:text-xl font-bold text-green-600">
-                        {paymentHistory.filter(p => p.status === 'paid').length}
-                      </p>
-                    </div>
-                    <div className="w-6 h-6 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                      <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Pagos Pendientes */}
-                <div className="bg-white rounded-xl shadow-md border border-gray-200 p-2 sm:p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Pagos Pendientes</p>
-                      <p className="text-base sm:text-xl font-bold text-yellow-600">
-                        {paymentHistory.filter(p => p.status === 'pending').length}
-                      </p>
-                    </div>
-                    <div className="w-6 h-6 sm:w-10 sm:h-10 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                      <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Pagos Rechazados */}
-                <div className="bg-white rounded-xl shadow-md border border-gray-200 p-2 sm:p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Pagos Rechazados</p>
-                      <p className="text-base sm:text-xl font-bold text-red-600">
-                        {paymentHistory.filter(p => p.status === 'rejected').length}
-                      </p>
-                    </div>
-                    <div className="w-6 h-6 sm:w-10 sm:h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                      <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          
 
             {/* Información del próximo pago - TODO: Datos desde dashboard admin */}
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-4 md:p-6 text-white shadow-lg">
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-4 md:p-6 text-white shadow-xl border border-gray-100">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 <div>
                   <h3 className="text-lg font-bold mb-1">Próximo Pago</h3>
@@ -1040,7 +990,7 @@ export default function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: 
         </Modal>
 
         {/* Footer con información adicional */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-md p-4 border border-gray-200">
+        <div className="bg-white rounded-2xl shadow-lg p-4 border border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <h4 className="font-bold text-gray-800 mb-2">¿Necesitas ayuda?</h4>

@@ -38,39 +38,39 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-gradient-to-br from-purple-900/60 via-blue-900/50 to-pink-900/60 backdrop-blur-[3px] animate-fade-in p-1 sm:p-0">
-      <div className="relative w-full max-w-md mx-auto rounded-3xl shadow-2xl border border-white/30 bg-white/80 bg-clip-padding backdrop-blur-xl p-0 overflow-hidden animate-pop-in flex flex-col max-h-[95vh]">
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-500 p-2 sm:p-4 md:p-6 lg:p-8">
+      <div className="relative w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto rounded-3xl shadow-2xl border border-gray-200 bg-white p-0 overflow-hidden animate-in zoom-in-95 duration-600 flex flex-col max-h-[90vh] sm:max-h-[85vh] md:max-h-[80vh]">
         {/* Header visual sticky y responsivo */}
-        <div className="sticky top-0 z-10 bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 px-3 py-4 sm:p-6 text-center border-b border-white/20">
-          <div className="flex justify-center mb-1 sm:mb-2">
-            <span className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/30 shadow-lg border-4 border-white/40 text-3xl sm:text-4xl animate-bounce-in">✏️</span>
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 text-center border-b border-gray-200">
+          <div className="flex justify-center mb-2 sm:mb-3 md:mb-4">
+            <span className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 rounded-full bg-white/30 shadow-lg border-4 border-white/50 text-2xl sm:text-3xl md:text-4xl animate-bounce">✏️</span>
           </div>
-          <h2 className="text-lg sm:text-xl font-extrabold text-white drop-shadow-lg tracking-wide">Editar Perfil</h2>
+          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-white drop-shadow-lg tracking-wide">Editar Perfil</h2>
         </div>
         {/* Formulario moderno y ultra responsivo */}
-        <form onSubmit={handleSubmit} className="flex-1 p-3 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto max-h-[60vh] sm:max-h-[65vh] scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-transparent">
+        <form onSubmit={handleSubmit} className="flex-1 p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-5 md:space-y-6 overflow-y-auto max-h-[50vh] sm:max-h-[55vh] md:max-h-[60vh] scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-transparent">
           {/* Datos Personales */}
           <div>
-            <h3 className="text-xs font-bold text-purple-700 mb-2 flex items-center gap-1 uppercase tracking-wider">
-              <span className="text-base">👤</span> Datos Personales
+            <h3 className="text-xs sm:text-sm md:text-base font-bold text-purple-700 mb-2 md:mb-3 flex items-center gap-1 uppercase tracking-wider">
+              <span className="text-sm sm:text-base md:text-lg">👤</span> Datos Personales
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-2 md:space-y-3">
               <input
                 type="email"
                 name="personal.email"
                 value={formData.personal.email}
                 onChange={handleChange}
                 placeholder="Correo electrónico"
-                className="w-full p-3 rounded-xl bg-white/60 border-2 border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-300 text-sm font-semibold placeholder-purple-400 shadow-inner transition-all duration-200 outline-none"
+                className="w-full p-3 md:p-4 rounded-xl bg-white border-2 border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-300 text-sm md:text-base font-semibold placeholder-purple-400 shadow-inner transition-all duration-200 outline-none"
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 md:gap-3">
                 <input
                   type="text"
                   name="personal.municipio"
                   value={formData.personal.municipio}
                   onChange={handleChange}
                   placeholder="Municipio"
-                  className="w-full p-3 rounded-xl bg-white/60 border-2 border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-300 text-sm font-semibold placeholder-purple-400 shadow-inner transition-all duration-200 outline-none"
+                  className="w-full p-3 md:p-4 rounded-xl bg-white border-2 border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-300 text-sm md:text-base font-semibold placeholder-purple-400 shadow-inner transition-all duration-200 outline-none"
                 />
                 <input
                   type="text"
@@ -78,17 +78,17 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                   value={formData.personal.tutorName}
                   onChange={handleChange}
                   placeholder="Tutor"
-                  className="w-full p-3 rounded-xl bg-white/60 border-2 border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-300 text-sm font-semibold placeholder-purple-400 shadow-inner transition-all duration-200 outline-none"
+                  className="w-full p-3 md:p-4 rounded-xl bg-white border-2 border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-300 text-sm md:text-base font-semibold placeholder-purple-400 shadow-inner transition-all duration-200 outline-none"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 md:gap-3">
                 <input
                   type="tel"
                   name="personal.phoneNumber"
                   value={formData.personal.phoneNumber}
                   onChange={handleChange}
                   placeholder="Mi teléfono"
-                  className="w-full p-3 rounded-xl bg-white/60 border-2 border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-300 text-sm font-semibold placeholder-purple-400 shadow-inner transition-all duration-200 outline-none"
+                  className="w-full p-3 md:p-4 rounded-xl bg-white border-2 border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-300 text-sm md:text-base font-semibold placeholder-purple-400 shadow-inner transition-all duration-200 outline-none"
                 />
                 <input
                   type="tel"
@@ -96,33 +96,33 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                   value={formData.personal.tutorPhoneNumber}
                   onChange={handleChange}
                   placeholder="Tel. tutor"
-                  className="w-full p-3 rounded-xl bg-white/60 border-2 border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-300 text-sm font-semibold placeholder-purple-400 shadow-inner transition-all duration-200 outline-none"
+                  className="w-full p-3 md:p-4 rounded-xl bg-white border-2 border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-300 text-sm md:text-base font-semibold placeholder-purple-400 shadow-inner transition-all duration-200 outline-none"
                 />
               </div>
             </div>
           </div>
           {/* Datos Académicos */}
           <div>
-            <h3 className="text-xs font-bold text-green-700 mb-2 flex items-center gap-1 uppercase tracking-wider">
-              <span className="text-base">🎓</span> Datos Académicos
+            <h3 className="text-xs sm:text-sm md:text-base font-bold text-green-700 mb-2 md:mb-3 flex items-center gap-1 uppercase tracking-wider">
+              <span className="text-sm sm:text-base md:text-lg">🎓</span> Datos Académicos
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-2 md:space-y-3">
               <input
                 type="text"
                 name="academic.bachillerato"
                 value={formData.academic.bachillerato}
                 onChange={handleChange}
                 placeholder="Bachillerato actual"
-                className="w-full p-3 rounded-xl bg-white/60 border-2 border-green-200 focus:border-green-500 focus:ring-2 focus:ring-green-300 text-sm font-semibold placeholder-green-400 shadow-inner transition-all duration-200 outline-none"
+                className="w-full p-3 md:p-4 rounded-xl bg-white border-2 border-green-200 focus:border-green-500 focus:ring-2 focus:ring-green-300 text-sm md:text-base font-semibold placeholder-green-400 shadow-inner transition-all duration-200 outline-none"
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 md:gap-3">
                 <input
                   type="text"
                   name="academic.licenciaturaOption"
                   value={formData.academic.licenciaturaOption}
                   onChange={handleChange}
                   placeholder="Licenciatura"
-                  className="w-full p-3 rounded-xl bg-white/60 border-2 border-green-200 focus:border-green-500 focus:ring-2 focus:ring-green-300 text-sm font-semibold placeholder-green-400 shadow-inner transition-all duration-200 outline-none"
+                  className="w-full p-3 md:p-4 rounded-xl bg-white border-2 border-green-200 focus:border-green-500 focus:ring-2 focus:ring-green-300 text-sm md:text-base font-semibold placeholder-green-400 shadow-inner transition-all duration-200 outline-none"
                 />
                 <input
                   type="text"
@@ -130,25 +130,25 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                   value={formData.academic.universityOption}
                   onChange={handleChange}
                   placeholder="Universidad"
-                  className="w-full p-3 rounded-xl bg-white/60 border-2 border-green-200 focus:border-green-500 focus:ring-2 focus:ring-green-300 text-sm font-semibold placeholder-green-400 shadow-inner transition-all duration-200 outline-none"
+                  className="w-full p-3 md:p-4 rounded-xl bg-white border-2 border-green-200 focus:border-green-500 focus:ring-2 focus:ring-green-300 text-sm md:text-base font-semibold placeholder-green-400 shadow-inner transition-all duration-200 outline-none"
                 />
               </div>
             </div>
           </div>
           {/* Datos del Curso */}
           <div>
-            <h3 className="text-xs font-bold text-orange-700 mb-2 flex items-center gap-1 uppercase tracking-wider">
-              <span className="text-base">📚</span> Datos del Curso
+            <h3 className="text-xs sm:text-sm md:text-base font-bold text-orange-700 mb-2 md:mb-3 flex items-center gap-1 uppercase tracking-wider">
+              <span className="text-sm sm:text-base md:text-lg">📚</span> Datos del Curso
             </h3>
-            <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2 md:space-y-3">
+              <div className="grid grid-cols-2 gap-2 md:gap-3">
                 <input
                   type="text"
                   name="course.advisor"
                   value={formData.course.advisor}
                   onChange={handleChange}
                   placeholder="Asesor"
-                  className="w-full p-3 rounded-xl bg-white/60 border-2 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-300 text-sm font-semibold placeholder-orange-400 shadow-inner transition-all duration-200 outline-none"
+                  className="w-full p-3 md:p-4 rounded-xl bg-white border-2 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-300 text-sm md:text-base font-semibold placeholder-orange-400 shadow-inner transition-all duration-200 outline-none"
                 />
                 <input
                   type="text"
@@ -156,7 +156,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                   value={formData.course.group}
                   onChange={handleChange}
                   placeholder="Grupo"
-                  className="w-full p-3 rounded-xl bg-white/60 border-2 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-300 text-sm font-semibold placeholder-orange-400 shadow-inner transition-all duration-200 outline-none"
+                  className="w-full p-3 md:p-4 rounded-xl bg-white border-2 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-300 text-sm md:text-base font-semibold placeholder-orange-400 shadow-inner transition-all duration-200 outline-none"
                 />
               </div>
               <input
@@ -165,36 +165,27 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                 value={formData.course.modality}
                 onChange={handleChange}
                 placeholder="Modalidad"
-                className="w-full p-3 rounded-xl bg-white/60 border-2 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-300 text-sm font-semibold placeholder-orange-400 shadow-inner transition-all duration-200 outline-none"
+                className="w-full p-3 md:p-4 rounded-xl bg-white border-2 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-300 text-sm md:text-base font-semibold placeholder-orange-400 shadow-inner transition-all duration-200 outline-none"
               />
             </div>
           </div>
           {/* Botones modernos sticky abajo en mobile */}
-          <div className="sticky bottom-0 z-10 bg-white/80 backdrop-blur-xl border-t border-white/20 flex gap-3 p-2 sm:p-4">
+          <div className="sticky bottom-0 z-10 bg-white border-t border-gray-200 flex gap-3 md:gap-4 p-4 sm:p-6 md:p-8">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-3 py-2 sm:px-4 sm:py-3 rounded-xl bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 font-bold shadow hover:from-gray-300 hover:to-gray-400 transition-all duration-200 active:scale-95 border border-gray-300 text-sm sm:text-base"
+              className="flex-1 px-4 py-3 md:px-6 md:py-4 rounded-xl bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 font-bold shadow hover:from-gray-300 hover:to-gray-400 transition-all duration-200 active:scale-95 border border-gray-300 text-sm md:text-base"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-3 py-2 sm:px-4 sm:py-3 rounded-xl bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 active:scale-95 border-0 text-sm sm:text-base"
+              className="flex-1 px-4 py-3 md:px-6 md:py-4 rounded-xl bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 active:scale-95 border-0 text-sm md:text-base"
             >
               Guardar
             </button>
           </div>
         </form>
-        {/* Animaciones keyframes para la modal */}
-        <style>{`
-          @keyframes fade-in { 0% { opacity: 0; } 100% { opacity: 1; } }
-          @keyframes pop-in { 0% { opacity: 0; transform: scale(0.85);} 100% { opacity: 1; transform: scale(1); } }
-          @keyframes bounce-in { 0% { opacity: 0; transform: scale(0.7);} 60% { opacity: 1; transform: scale(1.1);} 100% { transform: scale(1); } }
-          .animate-fade-in { animation: fade-in 0.5s cubic-bezier(.4,0,.2,1) both; }
-          .animate-pop-in { animation: pop-in 0.6s cubic-bezier(.4,0,.2,1) both; }
-          .animate-bounce-in { animation: bounce-in 0.8s cubic-bezier(.4,0,.2,1) both; }
-        `}</style>
       </div>
     </div>
   );
@@ -325,8 +316,8 @@ export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoa
   // --- LÓGICA DE CARGA Y ERRORES ---
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
           <p className="text-lg font-medium text-gray-700">Cargando perfil...</p>
         </div>
@@ -336,8 +327,8 @@ export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoa
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-red-50">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-red-200 text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-red-200 text-center">
           <div className="text-4xl mb-4">❌</div>
           <p className="text-lg font-medium text-red-600">Error al cargar el perfil: {error}</p>
         </div>
@@ -347,7 +338,7 @@ export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoa
   // ----------------------------------
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-100 p-3 xs:p-4 sm:p-6 lg:p-8 font-inter text-gray-800">
+    <div className="min-h-screen bg-white p-3 xs:p-4 sm:p-6 lg:p-8 font-inter text-gray-800">
       
       {/* Encabezado de la página de perfil mejorado */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-8 pb-6 border-b-2 border-gray-200">
@@ -364,7 +355,7 @@ export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoa
       </div>
 
       {/* MANTENER INTACTA - Sección de Información del Usuario con estilo mejorado */}
-      <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-200 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-8 hover:shadow-3xl transition-all duration-300">
+      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-200 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-8 hover:shadow-2xl transition-all duration-300">
         {/* Columna de la izquierda: Foto de Perfil y Nombre */}
         <div className="flex flex-col items-center justify-start lg:col-span-1 border-b lg:border-b-0 lg:border-r border-gray-200 pb-6 lg:pb-0 lg:pr-6">
           <div className="relative mb-4">
@@ -379,7 +370,7 @@ export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoa
               <span className="text-white text-sm font-bold">✓</span>
             </div>
           </div>
-          <div className="text-center bg-white rounded-xl px-4 py-3 shadow-lg border border-gray-100">
+          <div className="text-center bg-white rounded-xl px-4 py-3 shadow-2xl border border-gray-100">
             <p className="text-xl font-bold text-gray-900 mb-1">{currentProfileData.name}</p>
             <div className="flex items-center justify-center text-sm text-green-600 font-medium">
               <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
@@ -392,14 +383,14 @@ export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoa
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
           {/* Sección: DATOS PERSONALES */}
           <div className="md:col-span-2">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 mb-6 shadow-lg">
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 mb-6 shadow-2xl">
               <h3 className="text-lg font-bold text-white flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 13a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                 DATOS PERSONALES
               </h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="bg-white rounded-xl p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 13H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z"/></svg>
@@ -411,7 +402,7 @@ export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoa
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="bg-white rounded-xl p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
@@ -423,7 +414,7 @@ export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoa
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="bg-white rounded-xl p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -435,7 +426,7 @@ export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoa
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="bg-white rounded-xl p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
@@ -447,7 +438,7 @@ export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoa
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 sm:col-span-2">
+              <div className="bg-white rounded-xl p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 sm:col-span-2">
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 15v2m-2 2h4M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -467,7 +458,7 @@ export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoa
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xs:gap-8">
 
         {/* Sección: DATOS ACADÉMICOS - Mejorada */}
-        <div className="bg-white rounded-2xl shadow-xl border border-green-200 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 lg:col-span-1">
+        <div className="bg-white rounded-2xl shadow-2xl border border-green-200 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 lg:col-span-1">
           <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4 xs:p-5">
             <h3 className="text-lg xs:text-xl font-bold text-white flex items-center justify-center">
               <span className="mr-2 text-2xl">🎓</span>
@@ -518,7 +509,7 @@ export function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoa
         </div>
 
         {/* Sección: DATOS DEL CURSO - Mejorada */}
-        <div className="bg-white rounded-2xl shadow-xl border border-orange-200 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 lg:col-span-1">
+        <div className="bg-white rounded-2xl shadow-2xl border border-orange-200 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 lg:col-span-1">
           <div className="bg-gradient-to-r from-orange-500 to-red-500 p-4 xs:p-5">
             <h3 className="text-lg xs:text-xl font-bold text-white flex items-center justify-center">
               <span className="mr-2 text-2xl">📖</span>

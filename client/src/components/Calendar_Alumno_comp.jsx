@@ -752,8 +752,8 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-lg font-medium text-gray-700">Cargando calendario...</p>
         </div>
@@ -763,8 +763,8 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-red-50">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-red-200 text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-red-200 text-center">
           <div className="text-4xl mb-4">📅</div>
           <p className="text-lg font-medium text-red-600">Error al cargar el calendario: {error}</p>
         </div>
@@ -773,7 +773,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-100 p-4 sm:p-6 font-inter text-gray-800">
+    <div className="min-h-screen bg-white p-4 sm:p-6 font-inter text-gray-800">
       <div id="modal-root"></div>
       
       <div className="max-w-7xl mx-auto">
@@ -784,7 +784,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
               AGENDA / CALENDARIO
             </h2>
             
-            <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-visible">
+            <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl shadow-2xl hover:shadow-2xl transition-all duration-300 overflow-visible">
               <div className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
                 <button onClick={goToPrevMonth} className="p-2 rounded-full hover:bg-white/20 transition-colors duration-200">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -978,7 +978,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 w-fit hover:shadow-xl transition-shadow duration-300">
+            <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-fit hover:shadow-2xl transition-shadow duration-300">
               <h4 className="text-sm font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 Leyenda de Eventos
               </h4>
@@ -1016,7 +1016,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
             </div>
             
             {/* Lista de eventos con scroll y más color */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-2xl hover:shadow-2xl transition-shadow duration-300">
               {/* Estilos personalizados para el scroll */}
               <style dangerouslySetInnerHTML={{ __html: `
                 .events-scroll-container::-webkit-scrollbar {

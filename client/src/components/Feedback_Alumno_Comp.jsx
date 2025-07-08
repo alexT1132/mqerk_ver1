@@ -158,14 +158,14 @@ const Feedback_Alumno_Comp = () => {
   const isMobile = window.innerWidth < 768;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 p-3 sm:p-6 font-sans text-gray-800 flex flex-col items-center relative overflow-hidden">
+    <div className="min-h-screen bg-white p-3 sm:p-6 font-sans text-gray-800 flex flex-col items-center relative overflow-hidden">
       {/* Título responsivo */}
       <h1 className="text-3xl sm:text-5xl font-extrabold mb-4 sm:mb-8 text-purple-700 drop-shadow-lg text-center">
         FEEDBACK
       </h1>
 
       {/* Sección de Puntos Totales - Responsive */}
-      <div className="bg-gradient-to-r from-purple-100 to-indigo-100 border-2 border-purple-200 rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-8 flex items-center justify-center space-x-3 w-full max-w-sm">
+      <div className="bg-gradient-to-r from-purple-100 to-indigo-100 border-2 border-purple-200 rounded-xl shadow-2xl p-4 sm:p-6 mb-4 sm:mb-8 flex items-center justify-center space-x-3 w-full max-w-sm">
         <Star className="w-8 h-8 sm:w-12 sm:h-12 text-yellow-500 drop-shadow-lg" fill="currentColor" />
         <div className="text-center">
           <p className="text-base sm:text-xl font-semibold text-purple-700">Puntos Totales:</p>
@@ -251,14 +251,14 @@ const Feedback_Alumno_Comp = () => {
         <div className="relative w-full sm:w-auto">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full sm:min-w-[200px] p-3 pr-10 rounded-lg bg-white border-2 border-purple-200 text-purple-700 shadow-lg focus:ring-2 focus:ring-purple-400 focus:outline-none focus:border-purple-400 flex items-center justify-between"
+            className="w-full sm:min-w-[200px] p-3 pr-10 rounded-lg bg-white border-2 border-purple-200 text-purple-700 shadow-2xl focus:ring-2 focus:ring-purple-400 focus:outline-none focus:border-purple-400 flex items-center justify-between"
           >
             <span className="truncate">{getSelectedMonthName()}</span>
             <ChevronDown className={`w-5 h-5 text-purple-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
           
           {isDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-purple-200 rounded-lg shadow-xl z-30 max-h-48 overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-purple-200 rounded-lg shadow-2xl z-30 max-h-48 overflow-y-auto">
               <div
                 onClick={() => handleMonthSelect('all', 'Todos los meses')}
                 className="px-4 py-3 hover:bg-purple-50 cursor-pointer text-purple-700 border-b border-purple-100"
@@ -280,7 +280,7 @@ const Feedback_Alumno_Comp = () => {
       </div>
 
       {/* Vista de escritorio - Tabla */}
-      <div className="hidden lg:block bg-purple-100 bg-opacity-70 backdrop-blur-sm border-2 border-purple-300 rounded-2xl shadow-xl overflow-hidden w-full max-w-6xl">
+      <div className="hidden lg:block bg-purple-100 bg-opacity-70 backdrop-blur-sm border-2 border-purple-300 rounded-2xl shadow-2xl overflow-hidden w-full max-w-6xl">
         <table className="min-w-full">
           <thead className="bg-gradient-to-r from-purple-500 to-indigo-600">
             <tr>
@@ -450,7 +450,7 @@ const Feedback_Alumno_Comp = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white border-2 border-purple-200 rounded-xl shadow-lg p-8 text-center">
+          <div className="bg-white border-2 border-purple-200 rounded-xl shadow-2xl p-8 text-center">
             <p className="text-gray-600 text-base font-medium">
               No hay tareas para el mes seleccionado.
             </p>

@@ -67,7 +67,7 @@ function AttendanceStats({ attendanceData }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       {/* Asistencia General */}
-      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-blue-200">
+      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-2xl border border-blue-200">
         <div className="flex items-center justify-between mb-3">
           <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
             <IconoAsistencia className="text-white" />
@@ -79,7 +79,7 @@ function AttendanceStats({ attendanceData }) {
       </div>
       
       {/* Clases */}
-      <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-green-200">
+      <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-2xl border border-green-200">
         <div className="flex items-center justify-between mb-3">
           <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
             <IconoClase className="text-white" />
@@ -93,7 +93,7 @@ function AttendanceStats({ attendanceData }) {
       </div>
       
       {/* Tareas */}
-      <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-purple-200">
+      <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-2xl border border-purple-200">
         <div className="flex items-center justify-between mb-3">
           <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
             <IconoTarea className="text-white" />
@@ -107,7 +107,7 @@ function AttendanceStats({ attendanceData }) {
       </div>
       
       {/* Simulaciones */}
-      <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-orange-200">
+      <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-2xl border border-orange-200">
         <div className="flex items-center justify-between mb-3">
           <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
             <IconoSimulacion className="text-white" />
@@ -129,7 +129,7 @@ function AttendanceCalendar({ attendanceData }) {
   const monthName = currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
   
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-6">
         <h3 className="text-lg sm:text-xl font-bold text-white capitalize">
           Calendario de Asistencia - {monthName}
@@ -232,8 +232,8 @@ export function Asistencia_Alumno_comp() {
   
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
           <p className="text-lg font-medium text-gray-700">Cargando asistencia...</p>
         </div>
@@ -242,7 +242,7 @@ export function Asistencia_Alumno_comp() {
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-3 sm:p-4 lg:p-6 font-inter text-gray-800">
+    <div className="min-h-screen bg-white p-3 sm:p-4 lg:p-6 font-inter text-gray-800">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         
         {/* Header */}
@@ -286,7 +286,7 @@ export function Asistencia_Alumno_comp() {
         <AttendanceCalendar attendanceData={attendanceData} />
         
         {/* Lista detallada de actividades recientes */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
           <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-4 sm:p-6">
             <h3 className="text-lg sm:text-xl font-bold text-white">
               Actividades Recientes
