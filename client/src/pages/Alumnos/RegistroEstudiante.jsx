@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import NavLogin from "../../components/NavLogin.jsx";
-import { BtnForm, BtnSubirArchivo } from "../../components/FormRegistroComp.jsx";
+import { BtnForm, BtnSubirArchivo, LabelSubirArchivo } from "../../components/FormRegistroComp.jsx";
 import { TextField, FormControl, FormLabel, Radio, RadioGroup, FormControlLabel, Autocomplete } from "@mui/material";
 import { DateField, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";

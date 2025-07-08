@@ -17,7 +17,7 @@ import UsuarioEstudiante from './pages/Alumnos/UsuarioEstudiante.jsx';
 
 import { ResultadoAsesor } from './pages/Asesor/Resultado.jsx';
 
-import TestComp from './components/CursosComp.jsx';
+import TestComp, {TablaActividades} from './components/CursosComp.jsx';
 
 import { FormularioAsesor } from './pages/Asesor/FormRegistro.jsx';
 
@@ -69,7 +69,7 @@ export default function App(){
 
           {/* Test de componentes */}          
 
-          <Route path='/Componente' element={<TestComp/>}></Route>
+          <Route path='/Componente' element={<TablaActividades/>}></Route>
 
           
 

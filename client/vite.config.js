@@ -7,7 +7,7 @@ export default defineConfig({
     React()
   ],
   server: {
-    host: '192.168.0.9', // Permite acceso desde otras direcciones IP
+    host: '192.168.0.15', // Permite acceso desde otras direcciones IP
     port: 5000,      // Cambia el puerto si lo necesitas
 },
 })
