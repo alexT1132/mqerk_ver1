@@ -48,7 +48,7 @@ export const BtnDesplegable = ({ selected, setSelected }) => {
         >
             {Opciones.map((opcion, index) =>
                 <option
-                    className="font-semibold relative sm:font-bold"
+                    className="font-semibold cursor-pointer relative sm:font-bold"
                     key={index}
                     value={opcion}
                     disabled={opcion === selected}
@@ -64,8 +64,8 @@ export const BtnDesplegable = ({ selected, setSelected }) => {
 export const ModalCursos=({onClick})=>{
     return(
         <button onClick={onClick} className={`flex group rounded-full hover:bg-white relative cursor-pointer`}>
-            <svg className={`flex sm:hidden`} xmlns="http://www.w3.org/2000/svg" height="25px" viewBox="0 -960 960 960" width="25px" fill="#53289f"><path d="M446.67-446.67H200v-66.66h246.67V-760h66.66v246.67H760v66.66H513.33V-200h-66.66v-246.67Z"/></svg>
-            <svg className={`hidden sm:flex`} xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="http://www.w3.org/2000/svg" width="40px" fill="#53289f"><path d="M446.67-446.67H200v-66.66h246.67V-760h66.66v246.67H760v66.66H513.33V-200h-66.66v-246.67Z"/></svg>
+            <svg className={`flex sm:hidden`} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#53289f"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
+            <svg className={`hidden sm:flex`} xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#53289f"><path d="M446.67-446.67H200v-66.66h246.67V-760h66.66v246.67H760v66.66H513.33V-200h-66.66v-246.67Z"/></svg>
             <span className={`absolute opacity-0 hover:opacity-0 hover:bg- cursor-default group-hover:opacity-100 font-semibold transition-opacity duration-300 bg-amber-200 rounded-full pointer-events-none px-1 -top-6 -right-7 select-none`}>Crear</span>
         </button>
     )
@@ -510,6 +510,354 @@ export const ActivityModal = ({ isOpen, onClose }) => {
   );
 };
 
+
+// Grupos disponibles
+const ALL_GROUPS = ["M1", "M2", "M3", "V1", "V2", "V3"];
+
+// Datos de ejemplo
+const actividadesEjemplo = [
+  {
+    id: 1,
+    nombre: "Tarea de Álgebra",
+    fechaEntrega: "2025-07-15",
+    fechaLimite: "2025-07-16 18:00",
+    gruposAsignados: ["M1", "V2"],
+  },
+  {
+    id: 2,
+    nombre: "Proyecto de Física",
+    fechaEntrega: "2025-07-20",
+    fechaLimite: "2025-07-21 20:00",
+    gruposAsignados: ["M2", "M3", "V1"],
+  },
+  {
+    id: 3,
+    nombre: "Ensayo de Historia",
+    fechaEntrega: "2025-07-22",
+    fechaLimite: "2025-07-23 17:00",
+    gruposAsignados: [],
+  },
+];
+
+
+export const TablaAsignacionActividades = () => {
+  const [actividades, setActividades] = useState(actividadesEjemplo);
+
+  // Asignar grupo a actividad (una sola confirmación)
+  const asignarGrupo = (actividadId, grupo) => {
+    const confirmar = window.confirm(`¿Desea asignar la actividad al grupo ${grupo}?`);
+    if (!confirmar) return;
+
+    setActividades((prev) =>
+      prev.map((act) =>
+        act.id === actividadId
+          ? {
+              ...act,
+              gruposAsignados: [...act.gruposAsignados, grupo],
+            }
+          : act
+      )
+    );
+  };
+
+  // Quitar grupo de actividad (doble confirmación)
+  const quitarGrupo = (actividadId, grupo) => {
+    const confirmar = window.confirm(`¿Desea quitar la actividad del grupo ${grupo}?`);
+    if (!confirmar) return;
+    const confirmar2 = window.confirm(`¿Está seguro que desea quitar la actividad del grupo ${grupo}?`);
+    if (!confirmar2) return;
+
+    setActividades((prev) =>
+      prev.map((act) =>
+        act.id === actividadId
+          ? {
+              ...act,
+              gruposAsignados: act.gruposAsignados.filter((g) => g !== grupo),
+            }
+          : act
+      )
+    );
+  };
+
+  return (
+    <div className="overflow-x-auto w-full">
+      <table className="min-w-[800px] w-full border-collapse rounded-xl overflow-hidden shadow">
+        <thead className="bg-purple-600 text-white">
+          <tr>
+            <th className="py-2 px-4 text-center">Numero de actividad</th>
+            <th className="py-2 px-4 text-center">Nombre de la actividad</th>
+            <th className="py-2 px-4 text-center">Fecha límite (hora)</th>
+            <th className="py-2 px-4 text-center">Grupos asignados</th>
+            <th className="py-2 px-4 text-center">Por asignar</th>
+          </tr>
+        </thead>
+        <tbody className="text-center">
+          {actividades.map((act, idx) => {
+            // Grupos aún no asignados
+            const gruposPorAsignar = ALL_GROUPS.filter(
+              (g) => !act.gruposAsignados.includes(g)
+            );
+            return (
+              <tr
+                key={act.id}
+                className={`transition hover:bg-purple-50 ${
+                  idx % 2 === 0 ? "bg-gray-100" : "bg-white"
+                }`}
+              >
+                <td className="py-2 px-4">{act.id}</td>
+                <td className="py-2 px-4">{act.nombre}</td>
+                <td className="py-2 px-4">{act.fechaLimite}</td>
+                <td className="py-2 px-4">
+                  {act.gruposAsignados.length > 0 ? (
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {act.gruposAsignados.map((g) => (
+                        <span
+                          key={g}
+                          className="bg-green-200 text-green-800 px-2 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1"
+                        >
+                          {g}
+                          <button
+                            className="ml-1 text-red-600 hover:text-red-900 font-bold cursor-pointer"
+                            title={`Quitar grupo ${g}`}
+                            onClick={() => quitarGrupo(act.id, g)}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-xs">Ninguno</span>
+                  )}
+                </td>
+                <td className="py-2 px-4">
+                  <div className="flex flex-wrap gap-1 justify-center">
+                    {gruposPorAsignar.length > 0 ? (
+                      gruposPorAsignar.map((g) => (
+                        <button
+                          key={g}
+                          className="bg-purple-200 hover:bg-purple-400 text-purple-900 px-2 py-0.5 rounded-full text-xs font-semibold transition cursor-pointer"
+                          onClick={() => asignarGrupo(act.id, g)}
+                        >
+                          {g}
+                        </button>
+                      ))
+                    ) : (
+                      <span className="text-gray-400 text-xs">Todos asignados</span>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+
+const estudiantesEjemplo = [
+  {
+    folio: "A001",
+    nombre: "Juan Pérez",
+    entregado: true,
+    fechaLimite: "2025-07-15T18:00:00",
+    archivoUrl: "#",
+    calificacion: null,
+  },
+  {
+    folio: "A002",
+    nombre: "María García",
+    entregado: true,
+    fechaLimite: "2025-07-15T18:00:00",
+    archivoUrl: "#",
+    calificacion: null,
+  },
+  {
+    folio: "A003",
+    nombre: "Carlos Díaz",
+    entregado: true,
+    fechaLimite: "2025-07-10T18:00:00",
+    archivoUrl: "#",
+    calificacion: null,
+  },
+];
+
+// Función para determinar el estado de entrega
+function getEstadoEntrega(estudiante) {
+  if (estudiante.entregado) {
+    return { texto: "Sí", color: "text-green-600 bg-green-100" };
+  }
+  const ahora = new Date();
+  const fechaLimite = new Date(estudiante.fechaLimite);
+  if (ahora <= fechaLimite) {
+    return { texto: "Pendiente", color: "text-gray-600 bg-gray-100" };
+  }
+  return { texto: "No", color: "text-red-600 bg-red-100" };
+}
+
+const ModalCalificacion = ({ open, onClose, onConfirm, calificacionInicial }) => {
+  const [calificacion, setCalificacion] = useState(
+    calificacionInicial !== null && calificacionInicial !== undefined
+      ? calificacionInicial
+      : ""
+  );
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-xl shadow-lg p-6 min-w-[300px] flex flex-col gap-4">
+        <h2 className="text-lg font-bold text-purple-700 mb-2">
+          {calificacionInicial !== null && calificacionInicial !== undefined
+            ? "Editar calificación"
+            : "Asignar calificación"}
+        </h2>
+        <select
+          className="border rounded p-2 text-lg"
+          value={calificacion}
+          onChange={(e) => setCalificacion(Number(e.target.value))}
+        >
+          <option value="">Selecciona una calificación</option>
+          {[...Array(11).keys()].map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+        <div className="flex gap-2 justify-end">
+          <button
+            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
+            onClick={onClose}
+          >
+            Cancelar
+          </button>
+          <button
+            className="px-3 py-1 rounded bg-green-500 hover:bg-green-600 text-white font-semibold"
+            onClick={() => {
+              if (calificacion === "" || isNaN(calificacion)) return;
+              onConfirm(calificacion);
+            }}
+            disabled={calificacion === "" || isNaN(calificacion)}
+          >
+            {calificacionInicial !== null && calificacionInicial !== undefined
+              ? "Actualizar"
+              : "Confirmar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const TablaEstudiantes = () => {
+  const [estudiantes, setEstudiantes] = useState(estudiantesEjemplo);
+  const [modal, setModal] = useState({
+    open: false,
+    folio: null,
+    calificacionInicial: null,
+  });
+
+  const handleAsignar = (folio) => {
+    setModal({ open: true, folio, calificacionInicial: null });
+  };
+
+  const handleEditar = (folio, calificacion) => {
+    setModal({ open: true, folio, calificacionInicial: calificacion });
+  };
+
+  const handleConfirm = (calificacion) => {
+    setEstudiantes((prev) =>
+      prev.map((est) =>
+        est.folio === modal.folio
+          ? { ...est, calificacion }
+          : est
+      )
+    );
+    setModal({ open: false, folio: null, calificacionInicial: null });
+  };
+
+  const handleClose = () => {
+    setModal({ open: false, folio: null, calificacionInicial: null });
+  };
+
+  return (
+    <div className="overflow-x-auto w-full">
+      <ModalCalificacion
+        open={modal.open}
+        onClose={handleClose}
+        onConfirm={handleConfirm}
+        calificacionInicial={modal.calificacionInicial}
+      />
+      <table className="min-w-[700px] w-full border-collapse rounded-xl overflow-hidden shadow">
+        <thead className="bg-purple-600 text-white">
+          <tr>
+            <th className="py-2 px-4 text-center">Numero de folio</th>
+            <th className="py-2 px-4 text-center">Nombre del estudiante</th>
+            <th className="py-2 px-4 text-center">Entregado</th>
+            <th className="py-2 px-4 text-center">Asignar calificación</th>
+            <th className="py-2 px-4 text-center">Descargar tarea</th>
+          </tr>
+        </thead>
+        <tbody className="text-center">
+          {estudiantes.map((est, idx) => {
+            const estado = getEstadoEntrega(est);
+            return (
+              <tr
+                key={est.folio}
+                className={`transition hover:bg-purple-50 ${
+                  idx % 2 === 0 ? "bg-gray-100" : "bg-white"
+                }`}
+              >
+                <td className="py-2 px-4">{est.folio}</td>
+                <td className="py-2 px-4">{est.nombre}</td>
+                <td className="py-2 px-4">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${estado.color}`}>
+                    {estado.texto}
+                  </span>
+                </td>
+                <td className="py-2 px-4">
+                  {est.calificacion === null ? (
+                    <button
+                      className="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-semibold transition"
+                      disabled={!est.entregado}
+                      onClick={() => handleAsignar(est.folio)}
+                    >
+                      Asignar calificación
+                    </button>
+                  ) : (
+                    <div className="relative group inline-block">
+                      <span className="bg-green-200 text-green-800 px-3 py-1 rounded text-xs font-semibold cursor-default select-none">
+                        {est.calificacion}
+                      </span>
+                      <button
+                        className="absolute top-1/2 -translate-y-1/2 right-0 translate-x-full opacity-0 group-hover:opacity-100 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-2 py-1 rounded text-xs font-semibold ml-2 transition"
+                        style={{ pointerEvents: "auto" }}
+                        onClick={() => handleEditar(est.folio, est.calificacion)}
+                      >
+                        Editar
+                      </button>
+                    </div>
+                  )}
+                </td>
+                <td className="py-2 px-4">
+                  <a
+                    href={est.archivoUrl}
+                    className={`bg-green-500 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold transition ${!est.entregado ? "opacity-50 pointer-events-none" : ""}`}
+                    download
+                  >
+                    Descargar tarea
+                  </a>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 
 
