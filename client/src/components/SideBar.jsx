@@ -268,7 +268,7 @@ export function SideBarDesktop({
       >
         <nav className="h-dvh bg-gray-50">
 
-          <ul className="p-4 pb-2 h-full">
+          <ul className="relative p-4 pb-2 h-full">
             
             <ElementoSideBar to={toInicio} Icono={LogoInicio} NombreElemento='Inicio'/>
 
@@ -292,7 +292,7 @@ export function SideBarDesktop({
 
             <ElementoSideBar to={toConfiguracion} Icono={LogoConfig} NombreElemento='Configuración'/>
 
-            <div className={`relative translate-y-full`}>
+            <div className={`fixed bottom-3`}>
             <ElementoSideBar to={toCerrarSesion} Icono={LogoLogOut} NombreElemento='Cerrar Sesión'/>
             </div>
           </ul>

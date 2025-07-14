@@ -1,4 +1,3 @@
-import React from "react";
 
 export const SelectorPuntajes=({Inciso, id})=>{
     return(
@@ -123,5 +122,5 @@ export const TestComp=()=>{
         <div className={`bg-[#1f1f1f] w-full h-full`}>
         <BtnSiguiente/>
         </div>
-    )
-}
+    );
+};

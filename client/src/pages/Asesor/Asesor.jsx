@@ -18,19 +18,31 @@ export function PerfilAsesor(){
     </>
 
     );
-}
+};
 
 
-export function DashboardAsesor(){
+export const DashboardAsesor =() =>{
     return(
         <>
         <Navbar/>
+        <div className={`hidden sm:flex`}>
         <SideBarDesktop/>
+        </div>
 
-        <div className="flex flex-col flex-wrap justify-center items-center gap-8 p-10 px-25">
+        <div className="flex flex-col flex-wrap justify-center items-center w-full gap-8 sm:p-10 sm:px-25">
         <Dashboard/>
         </div>
 
+        </>
+    );
+};
+
+export const DashboardAsesorCalificaciones=() =>{
+
+    return(
+        <>
+        
+        
         </>
     )
 }

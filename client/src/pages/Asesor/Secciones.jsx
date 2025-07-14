@@ -26,8 +26,8 @@ import Persona from '../../assets/Persona.jpg'
 
 export function Dashboard({src, TituloAsesor, Nombre, Ingreso, cantidadCursos, cantidadEstudiantes, cantidadCertificados, cantidadGeneraciones}){
     return(
-        <div className="flex flex-col w-full gap-y-20 p-10">
-        <div className="flex">
+        <div className="flex flex-col w-full items-center md:items-stretch gap-y-20 p-10">
+        <div className="flex flex-col md:flex-row flex-wrap gap-3 sm:flex-nowrap">
         <Container SeccionDashboard={'Cursos Activos'} ModalCursos={<ModalCursos/>} Contenido={<BtnCursoActivo/>}/>
         <TarjetaPerfil src={src} TituloAsesor={TituloAsesor} Nombre={Nombre} Ingreso={Ingreso} cantidadCursos={cantidadCursos} cantidadEstudiantes={cantidadEstudiantes} cantidadCertificados={cantidadCertificados} cantidadGeneraciones={cantidadGeneraciones}/>
         </div>

@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { X, BookOpen, Calendar, Clock, Users, Upload, Image, ChevronDown, Plus, Check } from 'lucide-react';
 
 
@@ -669,7 +669,7 @@ const estudiantesEjemplo = [
   {
     folio: "A002",
     nombre: "María García",
-    entregado: true,
+    entregado: false,
     fechaLimite: "2025-07-15T18:00:00",
     archivoUrl: "#",
     calificacion: null,
@@ -697,12 +697,22 @@ function getEstadoEntrega(estudiante) {
   return { texto: "No", color: "text-red-600 bg-red-100" };
 }
 
+// Función para determinar el color de la calificación
+function getColorCalificacion(calificacion) {
+  if (calificacion >= 8) return "bg-green-200 text-green-800";
+  if (calificacion >= 6) return "bg-yellow-200 text-yellow-800";
+  return "bg-red-200 text-red-800";
+}
+
 const ModalCalificacion = ({ open, onClose, onConfirm, calificacionInicial }) => {
-  const [calificacion, setCalificacion] = useState(
-    calificacionInicial !== null && calificacionInicial !== undefined
-      ? calificacionInicial
-      : ""
-  );
+  const [calificacion, setCalificacion] = useState("");
+
+  // Resetear calificacion cada vez que el modal se abre
+  useEffect(() => {
+    if (open) {
+      setCalificacion("");
+    }
+  }, [open]);
 
   if (!open) return null;
 
@@ -719,7 +729,7 @@ const ModalCalificacion = ({ open, onClose, onConfirm, calificacionInicial }) =>
           value={calificacion}
           onChange={(e) => setCalificacion(Number(e.target.value))}
         >
-          <option value="">Selecciona una calificación</option>
+          <option disabled value="">Selecciona una calificación</option>
           {[...Array(11).keys()].map((n) => (
             <option key={n} value={n}>
               {n}
@@ -828,7 +838,9 @@ export const TablaEstudiantes = () => {
                     </button>
                   ) : (
                     <div className="relative group inline-block">
-                      <span className="bg-green-200 text-green-800 px-3 py-1 rounded text-xs font-semibold cursor-default select-none">
+                      <span
+                        className={`px-3 py-1 rounded text-xs font-semibold cursor-default select-none ${getColorCalificacion(est.calificacion)}`}
+                      >
                         {est.calificacion}
                       </span>
                       <button
@@ -849,6 +861,169 @@ export const TablaEstudiantes = () => {
                   >
                     Descargar tarea
                   </a>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+
+const quiztEjemplo = [
+  {
+    id: 1,
+    nombre: "Quizt de Álgebra",
+    fechaLimite: "2025-07-15",
+    horaLimite: "18:00",
+    gruposAsignados: ["M1", "V2"],
+  },
+  {
+    id: 2,
+    nombre: "Quizt de Física",
+    fechaLimite: "2025-07-20",
+    horaLimite: "20:00",
+    gruposAsignados: ["M2", "M3", "V1"],
+  },
+  {
+    id: 3,
+    nombre: "Quizt de Historia",
+    fechaLimite: "2025-07-22",
+    horaLimite: "17:00",
+    gruposAsignados: [],
+  },
+];
+
+export const TablaQuizt = () => {
+  const [quizts, setQuizts] = useState(quiztEjemplo);
+
+  // Asignar grupo a quizt
+  const asignarGrupo = (quiztId, grupo) => {
+    const confirmar = window.confirm(`¿Desea asignar el quizt al grupo ${grupo}?`);
+    if (!confirmar) return;
+    setQuizts((prev) =>
+      prev.map((q) =>
+        q.id === quiztId
+          ? { ...q, gruposAsignados: [...q.gruposAsignados, grupo] }
+          : q
+      )
+    );
+  };
+
+  // Quitar grupo de quizt
+  const quitarGrupo = (quiztId, grupo) => {
+    const confirmar = window.confirm(`¿Desea quitar el quizt del grupo ${grupo}?`);
+    if (!confirmar) return;
+    const confirmar2 = window.confirm(`¿Está seguro que desea quitar el quizt del grupo ${grupo}?`);
+    if (!confirmar2) return;
+    setQuizts((prev) =>
+      prev.map((q) =>
+        q.id === quiztId
+          ? { ...q, gruposAsignados: q.gruposAsignados.filter((g) => g !== grupo) }
+          : q
+      )
+    );
+  };
+
+  // Editar quizt (solo ejemplo)
+  const editarQuizt = (quiztId) => {
+    alert(`Editar quizt con ID: ${quiztId}`);
+  };
+
+  // Eliminar quizt (solo ejemplo)
+  const eliminarQuizt = (quiztId) => {
+    const confirmar = window.confirm("¿Desea eliminar este quizt?");
+    if (!confirmar) return;
+    setQuizts((prev) => prev.filter((q) => q.id !== quiztId));
+  };
+
+  return (
+    <div className="overflow-x-auto w-full">
+      <table className="min-w-[900px] w-full border-collapse rounded-xl overflow-hidden shadow">
+        <thead className="bg-purple-600 text-white">
+          <tr>
+            <th className="py-2 px-4 text-center">Numero de quizt</th>
+            <th className="py-2 px-4 text-center">Nombre de quizt</th>
+            <th className="py-2 px-4 text-center">Fecha límite</th>
+            <th className="py-2 px-4 text-center">Hora límite de entrega</th>
+            <th className="py-2 px-4 text-center">Grupo(s) asignado(s)</th>
+            <th className="py-2 px-4 text-center">Por asignar</th>
+            <th className="py-2 px-4 text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody className="text-center">
+          {quizts.map((q, idx) => {
+            const gruposPorAsignar = ALL_GROUPS.filter(
+              (g) => !q.gruposAsignados.includes(g)
+            );
+            return (
+              <tr
+                key={q.id}
+                className={`transition hover:bg-purple-50 ${
+                  idx % 2 === 0 ? "bg-gray-100" : "bg-white"
+                }`}
+              >
+                <td className="py-2 px-4">{q.id}</td>
+                <td className="py-2 px-4">{q.nombre}</td>
+                <td className="py-2 px-4">{q.fechaLimite}</td>
+                <td className="py-2 px-4">{q.horaLimite}</td>
+                <td className="py-2 px-4">
+                  {q.gruposAsignados.length > 0 ? (
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {q.gruposAsignados.map((g) => (
+                        <span
+                          key={g}
+                          className="bg-green-200 text-green-800 px-2 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1"
+                        >
+                          {g}
+                          <button
+                            className="ml-1 text-red-600 hover:text-red-900 font-bold cursor-pointer"
+                            title={`Quitar grupo ${g}`}
+                            onClick={() => quitarGrupo(q.id, g)}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-xs">Ninguno</span>
+                  )}
+                </td>
+                <td className="py-2 px-4">
+                  <div className="flex flex-wrap gap-1 justify-center">
+                    {gruposPorAsignar.length > 0 ? (
+                      gruposPorAsignar.map((g) => (
+                        <button
+                          key={g}
+                          className="bg-purple-200 hover:bg-purple-400 text-purple-900 px-2 py-0.5 rounded-full text-xs font-semibold transition cursor-pointer"
+                          onClick={() => asignarGrupo(q.id, g)}
+                        >
+                          {g}
+                        </button>
+                      ))
+                    ) : (
+                      <span className="text-gray-400 text-xs">Todos asignados</span>
+                    )}
+                  </div>
+                </td>
+                <td className="py-2 px-4">
+                  <div className="flex gap-2 justify-center">
+                    <button
+                      className="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-3 py-1 rounded text-xs font-semibold transition"
+                      onClick={() => editarQuizt(q.id)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      className="bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold transition"
+                      onClick={() => eliminarQuizt(q.id)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </td>
               </tr>
             );

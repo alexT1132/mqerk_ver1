@@ -149,18 +149,20 @@ export function CardDescripcion({cantidad, titulo}) {
 
 export function TarjetaPerfil({src, TituloAsesor, Nombre, Ingreso, cantidadCursos, cantidadEstudiantes, cantidadCertificados, cantidadGeneraciones}){
     return(
-        <aside className="flex flex-col box-border bg-linear-to-r from-[#3d18c3] to-[#4816bf] text-white rounded-2xl w-fit h-fit px-2 py-10">
+        <aside className="flex flex-col w-70 box-border bg-linear-to-r from-[#3d18c3] to-[#4816bf] text-white rounded-2xl md:w-fit h-fit px-2 py-10">
             <a className="w-full h-[200px] flex justify-center mb-2">
                 <img className="rounded-xl" src={src} alt="Imagen de perfil del asesor" />
             </a>
             <h1 className="w-full text-center font-extrabold">{TituloAsesor}{Nombre}Ing. Darian Reyes Romero</h1>
             <span className="w-full text-center font-light">Asesor desde {Ingreso}</span>
 
-            <div className="grid grid-flow-col grid-rows-2 gap-4 mt-5">
+            <div className="flex justify-center">
+            <div className="flex flex-col w-50 md:w-fit md:grid grid-flow-col grid-rows-2 gap-4 mt-5">
                 <CardDescripcion titulo='Cursos' cantidad={cantidadCursos}/>
                 <CardDescripcion titulo='Estudiantes' cantidad={cantidadEstudiantes}/>
                 <CardDescripcion titulo='Certificados' cantidad={cantidadCertificados}/>
                 <CardDescripcion titulo='Generaciones' cantidad={cantidadGeneraciones}/>
+            </div>
             </div>
 
 
@@ -787,7 +789,7 @@ export function AnaliticasAdmin(){
 
 export function Analiticas({TituloTabla1, TituloTabla2}){
     return(
-        <div className="flex">
+        <div className="flex md:flex-nowrap flex-wrap">
         <div className="w-full flex flex-col">
         <h3 className="text-center font-semibold text-[#5915bb] uppercase">{TituloTabla1}</h3>
         <BarChart
