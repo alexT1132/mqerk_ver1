@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { LineChart } from '@mui/x-charts/LineChart';
@@ -835,9 +835,9 @@ export function Analiticas({TituloTabla1, TituloTabla2}){
 
 export function Container({SeccionDashboard, ModalCursos, Contenido}){
     return(
-    <aside className="flex flex-col w-full">
+    <aside className="flex flex-col items-center md:items-stretch w-full">
     <div className="pb-4 flex items-center gap-x-1">
-    <h2 className="text-2xl text-[#f4138a] font-bold">
+    <h2 className="text-2xl text-[#f4138a] text-start font-bold">
         {SeccionDashboard}
     </h2>
     {ModalCursos}

@@ -1,4 +1,3 @@
-import React from "react";
 import { Logos } from "./IndexComp.jsx";
 import MQerkLogo from "../assets/MQerK_logo.png";
 import { Link } from "react-router-dom";

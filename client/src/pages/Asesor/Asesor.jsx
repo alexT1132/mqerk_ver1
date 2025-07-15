@@ -29,7 +29,7 @@ export const DashboardAsesor =() =>{
         <SideBarDesktop/>
         </div>
 
-        <div className="flex flex-col flex-wrap justify-center items-center w-full gap-8 sm:p-10 sm:px-25">
+        <div className="flex flex-col flex-wrap justify-center items-center w-full gap-8 sm:p-10 md:px-15">
         <Dashboard/>
         </div>
 

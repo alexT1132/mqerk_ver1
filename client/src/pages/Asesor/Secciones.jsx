@@ -1,4 +1,3 @@
-import React from "react";
 import {
     // Componentes para seccion mi perfil
     DatosPersonales,
