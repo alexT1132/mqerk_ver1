@@ -17,14 +17,15 @@ function CardsInfo({Informacion}){
 function InfoContainer({Icono, TipoDeDato, Dato}){
     return(
         <>
-            <li className="flex w-fit items-center">
-                <span className="w-6 h-fit">
+            <li className="flex justify-start max-w-fit items-center">
+              <div className="flex flex-col break-after-all w-full items-start md:flex-row md:items-center sm:justify-center gap-x-2">
+                <span className="flex gap-x-1 justify-center items-center">
                 {Icono}
-                </span>
-                <div className="flex gap-1">
                 <p className="w-fit text-[#5115bc] font-bold">{TipoDeDato}:</p>
+                </span>
+                
                 <p className="">{Dato}</p>
-                </div>
+              </div>
             </li>
         </>
     )
@@ -56,7 +57,7 @@ export function DatosPersonales({Correo, Direccion, Municipio, Numero, Nacimient
     return(
         <div className="w-fit content-center">
         <CardsInfo Informacion='Datos personales'/>
-        <ul className="grid grid-flow-col grid-rows-5 max-sm:flex max-sm:flex-col gap-x-10">
+        <ul className="sm:grid sm:grid-flow-col sm:grid-rows-5 flex flex-col w-full gap-x-2">
             <InfoContainer Icono={i1} TipoDeDato='Correo Electrónico' Dato={Correo}/>
             <InfoContainer Icono={i2} TipoDeDato='Dirección' Dato={Direccion}/>
             <InfoContainer Icono={i3} TipoDeDato='Municipio' Dato={Municipio}/>
@@ -94,7 +95,7 @@ export function DatosAcademicos({NivelEstudios, Titulo, Institucion, Graduacion,
     return(
         <div className="w-fit content-center">
         <CardsInfo Informacion='Datos academicos'/>
-        <ul className="grid grid-flow-col grid-rows-8">
+        <ul className="w-fit grid grid-flow-col grid-rows-8">
             <InfoContainer Icono={i1} TipoDeDato='Nivel máximo de estudios' Dato={NivelEstudios}/>
             <InfoContainer Icono={i2} TipoDeDato='Título académico' Dato={Titulo}/>
             <InfoContainer Icono={i3} TipoDeDato='Institución educativa' Dato={Institucion}/>
@@ -182,22 +183,22 @@ export function BtnFuncion({funcion}){
 
 function BtnSubirDocumento({NombreDocumento}){
     return(
-    <button className="bg-purple-700 hover:bg-purple-800 text-white cursor-pointer font-bold rounded-full flex basis-60 h-[50px] box-border text-center items-center gap-3 transition-colors duration-300 w-fit">
+    <button className="px-2 bg-purple-700 hover:bg-purple-800 text-white cursor-pointer font-bold rounded-full flex basis-60 h-[50px] box-border text-center items-center gap-3 transition-colors duration-300 w-fit">
         <div className="bg-white rounded-full p-2  flex flex-wrap w-fit h-fit">
             <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#cb1a84"><path d="M444-336v-342L339-573l-51-51 192-192 192 192-51 51-105-105v342h-72ZM263.72-192Q234-192 213-213.15T192-264v-72h72v72h432v-72h72v72q0 29.7-21.16 50.85Q725.68-192 695.96-192H263.72Z"/></svg>
         </div>
-        <span className="break-normal whitespace-break-spaces text-center">{NombreDocumento}</span> 
+        <span className="break-normal whitespace-break-spaces text-start">{NombreDocumento}</span> 
     </button>
     )
 };
 
 function BtnDescargarDocumento({NombreDocumento}){
     return(
-    <button className="bg-purple-700 hover:bg-purple-800 text-white cursor-pointer font-bold rounded-full flex h-[50px] box-border text-center items-center gap-3 transition-colors duration-300 w-[250px]">
+    <button className="px-2 bg-purple-700 hover:bg-purple-800 text-white cursor-pointer font-bold rounded-full flex h-[50px] box-border text-center items-center gap-3 transition-colors duration-300 w-[250px]">
         <div className="bg-white rounded-full p-2 flex w-fit h-fit">
             <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#cb1a84"><path d="M480-336 288-528l51-51 105 105v-342h72v342l105-105 51 51-192 192ZM263.72-192Q234-192 213-213.15T192-264v-72h72v72h432v-72h72v72q0 29.7-21.16 50.85Q725.68-192 695.96-192H263.72Z"/></svg>
         </div>
-        <span className="break-normal whitespace-break-spaces mr-4 text-center">{NombreDocumento}</span> 
+        <span className="break-normal whitespace-break-spaces text-start">{NombreDocumento}</span> 
     </button>
     )
 };

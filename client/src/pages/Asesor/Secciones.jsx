@@ -41,7 +41,7 @@ export function MiPerfil(){
     return(
 
         <>
-            <div className="flex justify-center max-sm:mb-10 w-full">
+        <div className={`flex flex-wrap justify-center`}>
             <DatosPersonales
             Correo={'darianreyesromero@hotmail.com'}
             Direccion={'18 de marzo entre morelos y aldama'}
@@ -55,11 +55,12 @@ export function MiPerfil(){
             
             
             />
-            </div>
 
-            <div className='flex max-sm:flex-col sm:w-full sm:justify-evenly max-sm:gap-y-10 max-sm:mb-10 sm:mb-20'>
+        </div>
 
-            <div className="flex max-sm:flex-col items-baseline md:justify-evenly w-full sm:pt-20 max-sm:gap-y-10">
+            <div className='flex flex-col gap-x-4 lg:flex-row sm:w-full sm:justify-evenly pb-10 sm:pb-8'>
+
+            <div className="flex flex-col gap-x-4 gap-y-10 md:flex-row items-center md:items-baseline md:justify-evenly py-8 md:py-10 max-sm:gap-y-10">
             <DatosAcademicos
             NivelEstudios={'Universidad'}
             Titulo={'Ing. Sistemas Computacionales'}
@@ -84,7 +85,7 @@ export function MiPerfil(){
             />
             </div>
 
-            <aside className="flex flex-col items-end gap-y-7">
+            <aside className="flex flex-col items-center lg:items-end gap-y-2 md:gap-y-7">
             <TarjetaPerfil
             src={Persona}
             Ingreso={'2023'}

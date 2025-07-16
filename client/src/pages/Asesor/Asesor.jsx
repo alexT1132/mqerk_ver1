@@ -7,10 +7,10 @@ export function PerfilAsesor(){
     return(
     <>
         <Navbar/>
-        <SideBarDesktop toMiPerfil={'/PerfilAsesor'}/>
+        <SideBarDesktop asesor/>
         
 
-        <div className="flex flex-col flex-wrap justify-center items-center sm:gap-8 sm:p-10 sm:px-25">
+        <div className="flex flex-col sm:mx-25 my-5 items-center">
         <MiPerfil />
             
         </div>
@@ -26,7 +26,7 @@ export const DashboardAsesor =() =>{
         <>
         <Navbar/>
         <div className={`hidden sm:flex`}>
-        <SideBarDesktop/>
+        <SideBarDesktop asesor/>
         </div>
 
         <div className="flex flex-col flex-wrap justify-center items-center w-full gap-8 sm:p-10 md:px-15">

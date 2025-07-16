@@ -213,8 +213,8 @@ function ElementoSideBar({Icono, NombreElemento, to}){
 
   return(
     <>
-      <li className="group flex justify-start items-center h-fit gap-1.5">
-        <Link to={to} className="items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-indigo-100 group">
+      <li className="group flex justify-start items-center pointer-events-none h-fit gap-1.5">
+        <Link to={to} className="items-center p-2 text-gray-900 rounded-lg pointer-events-auto dark:text-white hover:bg-indigo-100 group">
           {Icono}
         </Link>
         <div className="flex select-none hover:opacity-0 hover:hidden items-center h-fit bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap shadow-md">
@@ -225,19 +225,68 @@ function ElementoSideBar({Icono, NombreElemento, to}){
   )
 }
 
-export function SideBarDesktop({
-  toInicio,
-  toMiPerfil,
-  toMisCursos,
-  toAsesorias,
-  toCorreo,
-  toCalendario,
-  toReportes,
-  toRecursosEducativos,
-  toMisPagos,
-  toAutenticacion,
-  toConfiguracion,
-  toCerrarSesion}) {
+export function SideBarDesktop({estudiante, asesor, admin}) {
+
+
+const rutasEstudiante = {
+    toInicio: "/estudiante/inicio",
+    toMiPerfil: "/perfil",
+    toMisCursos: "/cursos",
+    toAsesorias: "/asesorias",
+    toCorreo: "/correo",
+    toCalendario: "/calendario",
+    toReportes: "/reportes",
+    toRecursosEducativos: "/recursos",
+    toMisPagos: "/pagos",
+    toAutenticacion: "/autenticacion",
+    toConfiguracion: "/configuracion",
+    toCerrarSesion: "/login"
+  };
+
+  const rutasAsesor = {
+    toInicio: "/asesor/inicio",
+    toMiPerfil: "/asesor/perfil",
+    toMisCursos: "/cursos-asesor",
+    toAsesorias: "/asesorias-asesor",
+    toCorreo: "/correo-asesor",
+    toCalendario: "/calendario-asesor",
+    toReportes: "/reportes-asesor",
+    toRecursosEducativos: "/recursos-asesor",
+    toMisPagos: "/pagos-asesor",
+    toAutenticacion: "/autenticacion-asesor",
+    toConfiguracion: "/configuracion-asesor",
+    toCerrarSesion: "/login"
+  };
+
+  const rutasAdmin = {
+    toInicio: "/inicio-admin",
+    toMiPerfil: "/perfil-admin",
+    toMisCursos: "/cursos-admin",
+    toAsesorias: "/asesorias-admin",
+    toCorreo: "/correo-admin",
+    toCalendario: "/calendario-admin",
+    toReportes: "/reportes-admin",
+    toRecursosEducativos: "/recursos-admin",
+    toMisPagos: "/pagos-admin",
+    toAutenticacion: "/autenticacion-admin",
+    toConfiguracion: "/configuracion-admin",
+    toCerrarSesion: "/login"
+  };
+
+  let rutas = {};
+  if (estudiante) rutas = rutasEstudiante;
+  if (asesor) rutas = rutasAsesor;
+  if (admin) rutas = rutasAdmin;
+
+  const roles = [estudiante, asesor, admin].filter(Boolean);
+  if (roles.length > 1) {
+    return (
+      <div className="p-4 text-red-600 font-bold">
+        Corregir propiedades del componente SideBarDesktop: solo se debe pasar una propiedad (estudiante, asesor o admin).
+      </div>
+    );
+  }
+
 
   const svgColor='#3818c3';
   const svgColorLogout='#EA3323';
@@ -255,7 +304,6 @@ export function SideBarDesktop({
   const LogoPagos=<svg xmlns={xmlns} height={width} viewBox="0 -960 960 960" width='30px' fill={svgColor}><path d="M560-440q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35ZM280-320q-33 0-56.5-23.5T200-400v-320q0-33 23.5-56.5T280-800h560q33 0 56.5 23.5T920-720v320q0 33-23.5 56.5T840-320H280Zm80-80h400q0-33 23.5-56.5T840-480v-160q-33 0-56.5-23.5T760-720H360q0 33-23.5 56.5T280-640v160q33 0 56.5 23.5T360-400Zm440 240H120q-33 0-56.5-23.5T40-240v-440h80v440h680v80ZM280-400v-320 320Z" /></svg>;
   const LogoAutenticacion=<svg xmlns={xmlns} height={width} viewBox="0 -960 960 960" width='30px' fill={svgColor}><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80ZM240-160v-400 400Z" /></svg>;
   const LogoConfig=<svg xmlns={xmlns} height={width} viewBox="0 -960 960 960" width='30px' fill={svgColor}><path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z" /></svg>;
-  
   const LogoLogOut=<svg xmlns={xmlns} height={width} viewBox="0 -960 960 960" width='30px' fill={svgColorLogout}><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z" /></svg>
   
 
@@ -269,37 +317,37 @@ export function SideBarDesktop({
 
           <ul className="relative p-4 pb-2 h-full">
             
-            <ElementoSideBar to={toInicio} Icono={LogoInicio} NombreElemento='Inicio'/>
+            <ElementoSideBar to={rutas.toInicio} Icono={LogoInicio} NombreElemento='Inicio'/>
 
-            <ElementoSideBar to={toMiPerfil} Icono={LogoPerfil} NombreElemento='Mi Perfil'/>
+            <ElementoSideBar to={rutas.toMiPerfil} Icono={LogoPerfil} NombreElemento='Mi Perfil'/>
 
-            <ElementoSideBar to={toMisCursos} Icono={LogoCursos} NombreElemento='Mis cursos'/>
+            <ElementoSideBar to={rutas.toMisCursos} Icono={LogoCursos} NombreElemento='Mis cursos'/>
 
-            <ElementoSideBar to={toAsesorias} Icono={LogoAsesorias} NombreElemento='Asesorías'/>
+            <ElementoSideBar to={rutas.toAsesorias} Icono={LogoAsesorias} NombreElemento='Asesorías'/>
 
-            <ElementoSideBar to={toCorreo} Icono={LogoCorreo} NombreElemento='Correo'/>
+            <ElementoSideBar to={rutas.toCorreo} Icono={LogoCorreo} NombreElemento='Correo'/>
 
-            <ElementoSideBar to={toCalendario} Icono={LogoCalendario} NombreElemento='Calendario'/>
+            <ElementoSideBar to={rutas.toCalendario} Icono={LogoCalendario} NombreElemento='Calendario'/>
 
-            <ElementoSideBar to={toReportes} Icono={LogoReportes} NombreElemento='Reportes'/>
+            <ElementoSideBar to={rutas.toReportes} Icono={LogoReportes} NombreElemento='Reportes'/>
 
-            <ElementoSideBar to={toRecursosEducativos} Icono={LogoRecursos} NombreElemento='Recursos educativos'/>
+            <ElementoSideBar to={rutas.toRecursosEducativos} Icono={LogoRecursos} NombreElemento='Recursos educativos'/>
 
-            <ElementoSideBar to={toMisPagos} Icono={LogoPagos} NombreElemento='Mis pagos'/>
+            <ElementoSideBar to={rutas.toMisPagos} Icono={LogoPagos} NombreElemento='Mis pagos'/>
 
-            <ElementoSideBar to={toAutenticacion} Icono={LogoAutenticacion} NombreElemento='Autenticación'/>
+            <ElementoSideBar to={rutas.toAutenticacion} Icono={LogoAutenticacion} NombreElemento='Autenticación'/>
 
-            <ElementoSideBar to={toConfiguracion} Icono={LogoConfig} NombreElemento='Configuración'/>
+            <ElementoSideBar to={rutas.toConfiguracion} Icono={LogoConfig} NombreElemento='Configuración'/>
 
             <div className={`fixed bottom-3`}>
-            <ElementoSideBar to={toCerrarSesion} Icono={LogoLogOut} NombreElemento='Cerrar Sesión'/>
+            <ElementoSideBar to={rutas.toCerrarSesion} Icono={LogoLogOut} NombreElemento='Cerrar Sesión'/>
             </div>
           </ul>
         </nav>
       </aside>
     </>
   );
-}
+};
 
 
 export function SideBarDesktopAdmin({
