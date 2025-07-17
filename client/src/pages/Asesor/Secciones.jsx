@@ -1,3 +1,4 @@
+import {useEffect, useState} from 'react';
 import {
     // Componentes para seccion mi perfil
     DatosPersonales,
@@ -9,14 +10,20 @@ import {
     Lineamientos,
     Contrato,
 
-    // Componentes para el dashborar
+    // Componentes para el dashboard
     Container,
     ModalCursos,
     // TarjetaPerfil,
     BtnCursoActivo,
     Analiticas
+
+
+
     } from "../../components/DashboradComp.jsx";
-import Persona from '../../assets/Persona.jpg'
+import Persona from '../../assets/Persona.jpg';
+
+import { BtnDesplegable, ActivityModal } from "../../components/CursosComp.jsx";
+
 
 
 // Este archivo tiene como objetivo armar las secciones, sin incluir
@@ -33,8 +40,8 @@ export function Dashboard({src, TituloAsesor, Nombre, Ingreso, cantidadCursos, c
 
         <Container SeccionDashboard={'Analíticas'} Contenido={<Analiticas TituloTabla1={'Rendimiento'} TituloTabla2={'Tareas entregadas'}/>}/>
         </div>
-    )
-}
+    );
+};
 
 
 export function MiPerfil(){
@@ -103,22 +110,27 @@ export function MiPerfil(){
             
 
             </div>
+
+            <div className="flex flex-col gap-4">
             <Documentacion/>
 
             <Lineamientos/>
 
             <Contrato/>
             
-
+            </div> 
 
             </>
-    )
-}
+    );
+};
 
 export function MisCursos(){
+    const [selected, setSelected] = useState(null);
+    
     return(
-        <>
+        <div className="flex flex-col">
         
-        </>
-    )
-}
+        <BtnDesplegable selected={selected} setSelected={setSelected}/>
+        </div>
+    );
+};

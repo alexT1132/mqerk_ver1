@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { X, BookOpen, Calendar, Clock, Users, Upload, Image, ChevronDown, Plus, Check } from 'lucide-react';
 
 
@@ -23,7 +23,7 @@ const TestComp = () => {
     )
 }
 
-export const BtnDesplegable = ({ selected, setSelected }) => {
+export const BtnDesplegable = ({selected, setSelected}) => {
     const Opciones = [`Actividades`, `Quizt`, `Simuladores`];
 
     useEffect(() => {

@@ -7,15 +7,13 @@ import Login from './pages/Login';
 import {PreRegAsesor} from './pages/Asesor/PreRegAsesor.jsx';
 import {Bienvenida} from './pages/Asesor/Bienvenida.jsx';
 import {Test} from './pages/Asesor/Test.jsx';
-import {DashboardAsesor, PerfilAsesor} from './pages/Asesor/Asesor.jsx'
+import {DashboardAsesor, PerfilAsesor, DashboardCurso} from './pages/Asesor/Asesor.jsx'
 
 import { DashboardAdm, ListaAsesores, ListaColaboradores } from './pages/Admin/Panel.jsx';
 
 import UsuarioEstudiante from './pages/Alumnos/UsuarioEstudiante.jsx';
 
 import { ResultadoAsesor } from './pages/Asesor/Resultado.jsx';
-
-import {TestComp} from './components/TestComp.jsx';
 
 import { FormularioAsesor } from './pages/Asesor/FormRegistro.jsx';
 
@@ -67,7 +65,7 @@ export default function App(){
 
           {/* Test de componentes */}          
 
-          <Route path='/Componente' element={<DashboardAsesor/>}></Route>
+          <Route path='/Componente' element={<DashboardCurso/>}></Route>
 
           <Route path='/Componente2' element={<></>}></Route>
 

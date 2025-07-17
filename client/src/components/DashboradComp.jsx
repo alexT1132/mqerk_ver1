@@ -55,7 +55,7 @@ export function DatosPersonales({Correo, Direccion, Municipio, Numero, Nacimient
     const i9=<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#cb1a84"><path d="M528-432h216v-72H528v72Zm0-120h216v-72H528v72ZM192-336h288v-45q0-29-44-52t-100.5-23q-56.5 0-100 22.5T192-381v45Zm144.21-144Q366-480 387-501.21t21-51Q408-582 386.79-603t-51-21Q306-624 285-602.79t-21 51Q264-522 285.21-501t51 21ZM168-192q-29.7 0-50.85-21.16Q96-234.32 96-264.04v-432.24Q96-726 117.15-747T168-768h624q29.7 0 50.85 21.16Q864-725.68 864-695.96v432.24Q864-234 842.85-213T792-192H168Zm0-72h624v-432H168v432Zm0 0v-432 432Z"/></svg>;
 
     return(
-        <div className="w-fit content-center">
+        <div className="w-fit flex flex-col gap-y-2 content-center">
         <CardsInfo Informacion='Datos personales'/>
         <ul className="sm:grid sm:grid-flow-col sm:grid-rows-5 flex flex-col w-full gap-x-2">
             <InfoContainer Icono={i1} TipoDeDato='Correo Electrónico' Dato={Correo}/>
@@ -93,7 +93,7 @@ export function DatosAcademicos({NivelEstudios, Titulo, Institucion, Graduacion,
     const i8=<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#cb1a84"><path d="M480-432q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35ZM263-48v-280q-43-37-69-99t-26-125q0-130 91-221t221-91q130 0 221 91t91 221q0 64-24 125.5t-72 99.43V-48L480-96 263-48Zm217-264q100 0 170-70t70-170q0-100-70-170t-170-70q-100 0-170 70t-70 170q0 100 70 170t170 70ZM335-138l145-32 144 32v-138q-33 18-69.5 27t-74.5 9q-38 0-75-8.5T335-276v138Zm145-70Z"/></svg>;
 
     return(
-        <div className="w-fit content-center">
+        <div className="w-fit flex flex-col gap-y-2 content-center">
         <CardsInfo Informacion='Datos academicos'/>
         <ul className="w-fit grid grid-flow-col grid-rows-8">
             <InfoContainer Icono={i1} TipoDeDato='Nivel máximo de estudios' Dato={NivelEstudios}/>
@@ -121,7 +121,7 @@ export function DatosProfesionales({Experiencia, ExperienciaAsesorias, Funcion, 
     const i7=<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#cb1a84"><path d="M168-144q-29.7 0-50.85-21.15Q96-186.3 96-216v-432q0-29.7 21.15-50.85Q138.3-720 168-720h168v-72.21Q336-822 357.18-843q21.17-21 50.91-21h144.17Q582-864 603-842.85q21 21.15 21 50.85v72h168q29.7 0 50.85 21.15Q864-677.7 864-648v432q0 29.7-21.15 50.85Q821.7-144 792-144H168Zm0-72h624v-432H168v432Zm240-504h144v-72H408v72ZM168-216v-432 432Z"/></svg>;
 
     return(
-        <div className="w-fit content-center">
+        <div className="w-fit flex flex-col gap-y-2 content-center">
         <CardsInfo Informacion='Datos profesionales'/>
         <ul className="w-fit grid grid-flow-col grid-rows-7">
             <InfoContainer Icono={i1} TipoDeDato='Experiencia laboral' Dato={Experiencia}/>
@@ -183,33 +183,33 @@ export function BtnFuncion({funcion}){
 
 function BtnSubirDocumento({NombreDocumento}){
     return(
-    <button className="px-2 bg-purple-700 hover:bg-purple-800 text-white cursor-pointer font-bold rounded-full flex basis-60 h-[50px] box-border text-center items-center gap-3 transition-colors duration-300 w-fit">
+    <button className="px-2 max-sm:px-1 max-sm:py-1 bg-purple-700 hover:bg-purple-800 text-white cursor-pointer font-bold rounded-full flex w-55 sm:w-60 sm:h-12.5 box-border text-center items-center gap-3 transition-colors duration-300">
         <div className="bg-white rounded-full p-2  flex flex-wrap w-fit h-fit">
             <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#cb1a84"><path d="M444-336v-342L339-573l-51-51 192-192 192 192-51 51-105-105v342h-72ZM263.72-192Q234-192 213-213.15T192-264v-72h72v72h432v-72h72v72q0 29.7-21.16 50.85Q725.68-192 695.96-192H263.72Z"/></svg>
         </div>
-        <span className="break-normal whitespace-break-spaces text-start">{NombreDocumento}</span> 
+        <span className="break-normal max-sm:text-sm whitespace-break-spaces text-start">{NombreDocumento}</span> 
     </button>
     )
 };
 
 function BtnDescargarDocumento({NombreDocumento}){
     return(
-    <button className="px-2 bg-purple-700 hover:bg-purple-800 text-white cursor-pointer font-bold rounded-full flex h-[50px] box-border text-center items-center gap-3 transition-colors duration-300 w-[250px]">
+    <button className="px-2 max-sm:px-1 max-sm:py-1 bg-purple-700 hover:bg-purple-800 text-white cursor-pointer font-bold rounded-full flex w-55 sm:w-60 sm:h-12.5 box-border text-center items-center gap-3 transition-colors duration-300 ">
         <div className="bg-white rounded-full p-2 flex w-fit h-fit">
             <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#cb1a84"><path d="M480-336 288-528l51-51 105 105v-342h72v342l105-105 51 51-192 192ZM263.72-192Q234-192 213-213.15T192-264v-72h72v72h432v-72h72v72q0 29.7-21.16 50.85Q725.68-192 695.96-192H263.72Z"/></svg>
         </div>
-        <span className="break-normal whitespace-break-spaces text-start">{NombreDocumento}</span> 
+        <span className="break-normal text-ellipsis max-sm:text-sm text-start">{NombreDocumento}</span> 
     </button>
     )
 };
 
 export function Documentacion(){
     return(
-        <>
+        <div className="flex flex-col w-full gap-y-2 justify-center items-center content-center">
         <CardsInfo Informacion='Documentación' />
 
 
-        <div className="mb-4 flex flex-wrap gap-7 justify-center">
+        <div className="mb-4 flex max-sm:flex-col flex-wrap gap-7 justify-center">
         <BtnSubirDocumento NombreDocumento='INE (Ambos Lados)'/>
         <BtnSubirDocumento NombreDocumento='Comprobante de domicilio'/>
         <BtnSubirDocumento NombreDocumento='CIF SAT'/>
@@ -220,34 +220,34 @@ export function Documentacion(){
         <BtnSubirDocumento NombreDocumento='Fotografía profesional'/>
         <BtnSubirDocumento NombreDocumento='Carta de recomendación'/>
         </div>
-        </>
+        </div>
     )
 }
 
 export function Lineamientos(){
     return(
-        <>
+        <div className="flex flex-col w-full gap-y-2 content-center">
             <CardsInfo Informacion='Lineamientos'/>
 
-            <div className="mb-4 flex flex-wrap gap-7 justify-center">
+            <div className="mb-4 flex max-sm:flex-col items-center flex-wrap gap-7 justify-center">
             <BtnDescargarDocumento NombreDocumento='Reglamento Interno'/>
             <BtnDescargarDocumento NombreDocumento='Políticas de privacidad'/>
             <BtnDescargarDocumento NombreDocumento='Normativa'/>
             <BtnDescargarDocumento NombreDocumento='Terminos y condiciones'/>
             <BtnDescargarDocumento NombreDocumento='Modelo educativo'/>
             </div>
-        </>
+        </div>
     )
 }
 
 export function Contrato(){
     return(
-        <>
+        <div className="flex flex-col w-full gap-y-2 items-center justify-center">
             <CardsInfo Informacion='Contrato(s) laboral(es)'/>
             <div className="mb-4 flex flex-wrap gap-7 justify-center">
             <BtnDescargarDocumento NombreDocumento='Contrato de prestación de servicios'/>
             </div>
-        </>
+        </div>
     )
 }
 
@@ -878,7 +878,7 @@ export function ModalCursos(){
 
         <div className="absolute py-0.5">
         {helpertext &&(
-            <p className='relative w-fit h-fit cursor-default bg-white px-2 rounded-xl shadow-md text-xl transition-shadow'>Crea una clase</p>
+            <p className='relative w-fit h-fit select-none cursor-default bg-white px-2 rounded-xl shadow-md text-xl transition-shadow'>Crea una clase</p>
         )}
 
         </div>
