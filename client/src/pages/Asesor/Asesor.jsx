@@ -1,6 +1,7 @@
 import Navbar from "../../components/NavBar";
 import { SideBar } from "../../components/SideBar.jsx";
 import { MiPerfil, Dashboard, MisCursos } from "./Secciones";
+import { BtnDesplegable } from "../../components/CursosComp.jsx";
 
 
 export function PerfilAsesor(){
@@ -46,7 +47,12 @@ export const DashboardCurso=() =>{
         <div>
         <SideBar asesor/>
 
+        <div className="flex flex-col w-full gap-8 p-2 sm:p-5 sm:px-21">
+
         <MisCursos/>
+        <BtnDesplegable/>
+
+        </div>
         </div>
         <div>
 

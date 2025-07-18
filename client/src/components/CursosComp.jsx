@@ -42,13 +42,13 @@ export const BtnDesplegable = ({selected, setSelected}) => {
 
     return (
         <select
-            className="flex bg-white uppercase font-semibold sm:font-bold rounded-xl p-1 cursor-pointer text-xs sm:text-xl md:text-2xl text-[#53289f] select-none"
+            className="flex bg-white uppercase w-30 max-sm:border-2 sm:w-50 font-semibold sm:font-bold rounded-xl p-1 cursor-pointer text-xs sm:text-xl md:text-2xl text-[#53289f] select-none"
             value={selected}
             onChange={handleChange}
         >
             {Opciones.map((opcion, index) =>
                 <option
-                    className="font-semibold cursor-pointer relative sm:font-bold"
+                    className="font-semibold cursor-pointer sm:font-bold"
                     key={index}
                     value={opcion}
                     disabled={opcion === selected}
