@@ -23,8 +23,10 @@ const TestComp = () => {
     )
 }
 
-export const BtnDesplegable = ({selected, setSelected}) => {
+export const BtnDesplegable = ({}) => {
     const Opciones = [`Actividades`, `Quizt`, `Simuladores`];
+
+    const [selected, setSelected] = useState(null);
 
     useEffect(() => {
         const saved = sessionStorage.getItem("opcionSeleccionada");

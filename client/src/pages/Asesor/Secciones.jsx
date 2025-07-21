@@ -124,13 +124,18 @@ export function MiPerfil(){
     );
 };
 
+
 export function MisCursos(){
-    const [selected, setSelected] = useState(null);
+    
     
     return(
         <div className="flex flex-col">
         
-        <BtnDesplegable selected={selected} setSelected={setSelected}/>
+        <BtnDesplegable/>
+        
+
+        <ActivityModal/>
+
         </div>
     );
 };
