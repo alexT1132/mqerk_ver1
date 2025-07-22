@@ -3,16 +3,10 @@ import { X, BookOpen, Calendar, Clock, Users, Upload, Image, ChevronDown, Plus, 
 
 
 const TestComp = () => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selected, setSelected] = useState("");
+    
+    
 
-    const handleOpenModal = () => {
-        if (selected === "Actividades") {
-            setIsModalOpen(true);
-        } else {
-            alert("Solo puedes crear actividades cuando 'Actividades' está seleccionado.");
-        }
-    };
+    
 
     return (
         <div className="bg-[#1f1f1f] h-dvh flex items-center justify-center">
@@ -23,10 +17,10 @@ const TestComp = () => {
     )
 }
 
-export const BtnDesplegable = ({}) => {
+export const BtnDesplegable = ({selected, setSelected}) => {
     const Opciones = [`Actividades`, `Quizt`, `Simuladores`];
 
-    const [selected, setSelected] = useState(null);
+    
 
     useEffect(() => {
         const saved = sessionStorage.getItem("opcionSeleccionada");
@@ -65,16 +59,16 @@ export const BtnDesplegable = ({}) => {
 
 export const ModalCursos=({onClick})=>{
     return(
-        <button onClick={onClick} className={`flex group rounded-full hover:bg-white relative cursor-pointer`}>
+        <button onClick={onClick} className={`relative flex group rounded-full hover:bg-gray-300 cursor-pointer`}>
             <svg className={`flex sm:hidden`} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#53289f"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
-            <svg className={`hidden sm:flex`} xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#53289f"><path d="M446.67-446.67H200v-66.66h246.67V-760h66.66v246.67H760v66.66H513.33V-200h-66.66v-246.67Z"/></svg>
-            <span className={`absolute opacity-0 hover:opacity-0 hover:bg- cursor-default group-hover:opacity-100 font-semibold transition-opacity duration-300 bg-amber-200 rounded-full pointer-events-none px-1 -top-6 -right-7 select-none`}>Crear</span>
+            <svg className={`hidden sm:flex`} xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#53289f"><path d="M446.67-446.67H200v-66.66h246.67V-760h66.66v246.67H760v66.66H513.33V-200h-66.66v-246.67Z"/></svg>
+            <span className={`absolute opacity-0 hover:opacity-0 cursor-default group-hover:opacity-100 font-semibold transition-opacity duration-300 bg-violet-600 border-1 border-gray-400 text-white rounded-full pointer-events-none px-2 -top-6.5 -right-7 select-none z-3`}>Crear</span>
         </button>
     )
 }
 
 
-export const ActivityModal = ({ isOpen, onClose }) => {
+export const ActivityModal = ({isOpen, onClose}) => {
   const [activityData, setActivityData] = useState({
     nombreMateria: '',
     fechaEntrega: '',
@@ -368,7 +362,7 @@ export const ActivityModal = ({ isOpen, onClose }) => {
               </span>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 max-h-[200px] sm:max-h-[300px] overflow-y-auto pr-2">
+            <div className="flex flex-col p- gap-2 sm:gap-3 max-h-[200px] sm:max-h-[300px]">
               {availableGroups.map((group) => {
                 const isSelected = activityData.gruposAsignados.includes(group.id);
                 return (

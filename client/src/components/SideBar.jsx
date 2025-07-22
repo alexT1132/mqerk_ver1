@@ -118,7 +118,7 @@ const rutasEstudiante = {
 
             <ElementoSideBar to={rutas.toMiPerfil} Icono={LogoPerfil} NombreElemento='Mi Perfil'/>
 
-            <ElementoSideBar to={rutas.toMisCursos} Icono={LogoCursos} NombreElemento='Mis cursos'/>
+            {/* <ElementoSideBar to={rutas.toMisCursos} Icono={LogoCursos} NombreElemento='Mis cursos'/> */}
 
             <ElementoSideBar to={rutas.toSimuladores} Icono={LogoSimuladores} NombreElemento='Simuladores'/>
 

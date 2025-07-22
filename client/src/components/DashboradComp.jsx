@@ -6,7 +6,7 @@ import { LineChart } from '@mui/x-charts/LineChart';
 
 function CardsInfo({Informacion}){
     return(
-    <div className="flex w-full h-fit justify-center text-center mb-2">
+    <div className="flex w-full h-fit select-none justify-center text-center mb-2">
     <span className="bg-white text-purple-700 font-bold uppercase border border-gray-300 rounded-lg px-6 py-2 shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
       {Informacion}
     </span>
@@ -150,9 +150,9 @@ export function CardDescripcion({cantidad, titulo}) {
 
 export function TarjetaPerfil({src, TituloAsesor, Nombre, Ingreso, cantidadCursos, cantidadEstudiantes, cantidadCertificados, cantidadGeneraciones}){
     return(
-        <aside className="flex flex-col w-70 box-border bg-linear-to-r from-[#3d18c3] to-[#4816bf] text-white rounded-2xl md:w-fit h-fit px-2 py-10">
+        <aside draggable={false} className="flex flex-col w-70 box-border bg-linear-to-r from-[#3d18c3] to-[#4816bf] text-white rounded-2xl md:w-fit h-fit px-2 py-10">
             <a className="w-full h-[200px] flex justify-center mb-2">
-                <img className="rounded-xl" src={src} alt="Imagen de perfil del asesor" />
+                <img className="rounded-xl aspect-auto" src={src} alt="Imagen de perfil del asesor" />
             </a>
             <h1 className="w-full text-center font-extrabold">{TituloAsesor}{Nombre}Ing. Darian Reyes Romero</h1>
             <span className="w-full text-center font-light">Asesor desde {Ingreso}</span>

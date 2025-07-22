@@ -12,7 +12,6 @@ import {
 
     // Componentes para el dashboard
     Container,
-    ModalCursos,
     // TarjetaPerfil,
     BtnCursoActivo,
     Analiticas
@@ -20,9 +19,11 @@ import {
 
 
     } from "../../components/DashboradComp.jsx";
+
+
 import Persona from '../../assets/Persona.jpg';
 
-import { BtnDesplegable, ActivityModal } from "../../components/CursosComp.jsx";
+import { BtnDesplegable, ActivityModal, ModalCursos, TablaAsignacionActividades, TablaEstudiantes } from "../../components/CursosComp.jsx";
 
 
 
@@ -126,15 +127,36 @@ export function MiPerfil(){
 
 
 export function MisCursos(){
+
+    const handleOpenModal = () => {
+        if (selected === "Actividades") {
+            setIsModalOpen(true);
+        } else if (selected === "Quizt") {
+            alert("Solo puedes crear actividades cuando 'Actividades' está seleccionado.");
+        } else if (selected === "Simuladores") {
+            alert("Solo puedes crear actividades cuando 'Actividades' está seleccionado.");
+        }else {
+            alert("Selecciona una opción válida.");
+        }
+    };
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const [selected, setSelected] = useState("");
     
     
     return(
-        <div className="flex flex-col">
+        <div className="flex flex-col justify-center items-center gap-y-15">
         
-        <BtnDesplegable/>
-        
+        <div className={`flex items-center justify-center gap-x-2 sm:justify-normal w-full`}>
+        <BtnDesplegable selected={selected} setSelected={setSelected}/>
+        <ModalCursos onClick={handleOpenModal}/>
 
-        <ActivityModal/>
+        <ActivityModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}/>
+        </div>
+
+        <TablaAsignacionActividades/>
+        <TablaEstudiantes/>
 
         </div>
     );
