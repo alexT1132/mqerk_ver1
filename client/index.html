@@ -1,14 +1,25 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/client/src/assets/MQerK_logo.png" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mqerk Academy</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Enlace a tu logo, usando la ruta y el tipo para el archivo .ico -->
+  <link rel="icon" type="image/x-icon" href="/client/src/assets/MQerK_logo.ico" />
+  <!-- Enlace para Material Symbols Outlined, según tu archivo -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <!-- Configuración de la vista para asegurar la responsividad -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Título de tu aplicación, manteniendo "Mqerk Academy" -->
+  <title>Mqerk Academy</title>
+  <!-- ¡ESTA ES LA LÍNEA CRUCIAL PARA TAILWIND CSS! -->
+  <!-- Asegura que tu archivo CSS principal (donde @import "tailwindcss" está) se cargue. -->
+  <link rel="stylesheet" href="/src/index.css">
+</head>
+<body>
+  <!-- El div con id="root" es donde se montará tu aplicación React principal -->
+  <div id="root"></div>
+  <!-- El div con id="modal-root" es útil para portales de React, especialmente para modales -->
+  <div id="modal-root"></div>
+  <!-- El script que carga tu archivo de entrada principal de React -->
+  <script type="module" src="/src/main.jsx"></script>
+</body>
 </html>
