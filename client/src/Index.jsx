@@ -1,6 +1,6 @@
-import NavIndex from './components/NavIndex.jsx'
+import NavIndex from './components/layouts/NavIndex.jsx'
 import React from 'react';
-import { BtnIndex } from './components/IndexComp.jsx';
+import { BtnIndex } from './pages/public/IndexComp.jsx';
 
 
 export default function Index() {

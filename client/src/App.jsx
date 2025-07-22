@@ -1,82 +1,51 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'; // Importamos Navigate
 
 import Index from './Index.jsx';
-import Login from './pages/Login';
+import Login from './pages/auth/Login.jsx';
 
-import {PreRegAsesor} from './pages/Asesor/PreRegAsesor.jsx';
-import {Bienvenida} from './pages/Asesor/Bienvenida.jsx';
-import {Test} from './pages/Asesor/Test.jsx';
-import {DashboardAsesor, PerfilAsesor} from './pages/Asesor/Asesor.jsx'
+// Importaciones de Asesor - REMOVIDAS (no se usan)
+// Importaciones de administrador VIEJAS - REMOVIDAS (se usa AdminDashboardBundle)
 
-import { DashboardAdm, ListaAsesores, ListaColaboradores } from './pages/Admin/Panel.jsx';
-
-import {RegistroEstudiante} from './pages/Alumnos/RegistroEstudiante.jsx';
-
-import Componente from './components/DashboradComp.jsx';
-
-import { ResultadoAsesor } from './pages/Asesor/Resultado.jsx';
+// ✅ IMPORTACIÓN DEL BUNDLE DEL DASHBOARD DE ADMINISTRADOR
+import { AdminDashboardBundle } from './components/admin/AdminDashboardBundle.jsx';
 
 import { Error404 } from './pages/Error/ErrorPages.jsx';
 
-
-import { TestComp } from './components/FormRegistroComp.jsx';
-
-import { FormularioAsesor } from './pages/Asesor/FormRegistro.jsx';
-
+// ✅ IMPORTACIÓN DEL BUNDLE DEL DASHBOARD DE ALUMNOS
+import { AlumnoDashboardBundle } from './components/student/AlumnoDashboardBundle.jsx'; 
 
 
 export default function App(){
     return(
-
       <BrowserRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
         <Routes>
 
-          {/* Index */}
-          <Route path='/' element={<Index/>}></Route>
+          {/* Ruta principal - Ahora muestra el Dashboard de Alumno directamente */}
+          <Route path='/' element={<Navigate to="/alumno/dashboard" replace />} /> {/* Redirige automáticamente */}
+          
           <Route path='/login' element={<Login/>}></Route>
 
-          {/* Inicio administrador */}
-
-          <Route path={`/admin/dashboard`} element={<DashboardAdm/>}></Route>
-
-          <Route path={`/admin/lista-asesores`} element={<ListaAsesores/>}></Route>
-
-          <Route path={`/admin/lista-colaboradores`} element={<ListaColaboradores/>}></Route>
-
-          {/* Inicio asesor */}
-
-          <Route path='/asesor/preregistro' element={<PreRegAsesor/>}></Route>
-
-          <Route path='/asesor/bienvenida' element={<Bienvenida/>}></Route>
-
-          <Route path='/asesor/inicio' element={<DashboardAsesor/>}></Route>
-
-          <Route path='/asesor/test' element={<Test/>}></Route>
-
-          <Route path='/asesor/perfil' element={<PerfilAsesor/>}></Route>
-
-          <Route path='/test/asesor/resultado' element={<ResultadoAsesor/>}/>
-
-          {/* Final asesor */}
-
-          {/* Inicio estudiantes */}
-
-          <Route path='/estudiante/registro' element={<RegistroEstudiante/>}></Route>
-
-          {/* Test de componentes */}          
-
-          <Route path='/Componente' element={<FormularioAsesor/>}></Route>
-
+          {/* RUTAS VIEJAS DE ADMIN REMOVIDAS - Se usa AdminDashboardBundle en /admin1/* */}
           
+          {/* ✅ RUTA DEL BUNDLE DEL DASHBOARD DE ADMINISTRADOR */}
+          {/* Esta ruta manejará todas las sub-rutas dentro de /admin1/ */}
+          <Route path="/admin1/*" element={<AdminDashboardBundle />} />
 
-          
+          {/* RUTAS DE ASESOR REMOVIDAS - No se usan */}
 
+          {/* Rutas de Estudiantes - REGISTRO REMOVIDO - no se usa por ahora */}
+
+          {/* ✅ RUTA DEL BUNDLE DEL DASHBOARD DE ALUMNOS */}
+          {/* Esta ruta manejará todas las sub-rutas dentro de /alumno/ */}
+          <Route path="/alumno/*" element={<AlumnoDashboardBundle />} />
+
+          {/* Ruta 404 para páginas no encontradas */}
+          <Route path='*' element={<Error404/>}></Route>
 
         </Routes>
       </BrowserRouter>
-
-)
+    )
 }
