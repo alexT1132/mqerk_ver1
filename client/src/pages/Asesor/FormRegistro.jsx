@@ -19,60 +19,41 @@ import Signature from '@uiw/react-signature';
 
 
 export const FormularioAsesor=()=>{
-const [dir, setDir] = useState('');
-const [mun, setMun] = useState('');
-const [nac, setNac] = useState(``);
-const [nacion, setNacion] = useState('');
-const [gen, setGen] = useState('');
-const [rfc, setRfc] = useState('');
+    const [dir, setDir] = useState('');
+    const [mun, setMun] = useState('');
+    const [nac, setNac] = useState(``);
+    const [nacion, setNacion] = useState('');
+    const [gen, setGen] = useState('');
+    const [rfc, setRfc] = useState('');
 
-    
-    function RFCInput() {
-    const [value, setValue] = useState('');
     const [error, setError] = useState(false);
-      
-        // Expresión regular para validar el RFC
-    const rfcRegex = /^[A-ZÑ&]{3,4}\d{6}[A-Z\d]{2}[A\d]$/i;
-    
-    const handleChange = (event) => {
-    const newValue = event.target.value.toUpperCase(); // Convertir a mayúsculas automáticamente
-    setValue(newValue);
-      
-        // Validar el valor actual con la expresión regular
-        if (!rfcRegex.test(newValue)) {
-        setError(true);
-        } else{
-        setError(false);
+
+    const RFC_LENGTH = 13;    
+    const rfcRegex = /^([A-ZÑ&]{3,4})\d{6}([A-Z\d]{3})$/i;
+
+    const handleRFCChange = (e) => {
+        const value = e.target.value.toUpperCase();
+        setRfc(value);
+
+        // Solo valida si ya se alcanzó la longitud permitida
+        if (value.length === RFC_LENGTH) {
+            setError(!rfcRegex.test(value));
+        } else {
+            setError(false);
         }
         };
 
-      return {value, error, handleChange};
-    }
 
-    const {value, error, handleChange}=RFCInput();
+    const [step, setStep] = useState(0);
 
-        const [step, setStep] = useState(0);
+    const nextStep = () => {
+        setStep(step + 1);
+        };
     
-        const nextStep = () => {
-            setStep(step + 1);
-          };
-        
-          const prevStep = () => {
-            setStep(step - 1);
-          };
-    
+        const prevStep = () => {
+        setStep(step - 1);
+        };
 
-        const VisuallyHiddenInput = styled('input')({
-        clip: 'rect(0 0 0 0)',
-        clipPath: 'inset(50%)',
-        height: 0,
-        overflow: 'hidden',
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        whiteSpace: 'nowrap',
-        width: 0,
-      });
 
 
     const [inputsVisibility, setInputsVisibility] = useState({
@@ -103,7 +84,7 @@ const [rfc, setRfc] = useState('');
             <NavLogin/>
             
             {step===0 &&(
-            <div className={`flex flex-col py-5 px-5 items-center`}>
+            <div className={`flex flex-col py-5 px-5 xl:px-50 items-center`}>
 
             <div className={`flex flex-col items-center justify-center`}>
                 <h1 className={`text-center font-bold uppercase text-[17px] sm:text-3xl`}>Bienvenid@: Nombre de usuario</h1>      {/*Falta agregar la constante del usuario*/}
@@ -111,7 +92,7 @@ const [rfc, setRfc] = useState('');
 
 
             
-                <p className={`flex flex-wrap text-justify p-2 sm:text-md md:w-200`}>
+                <p className={`flex flex-wrap text-justify p-2 sm:text-md`}>
                 Como parte de nuestro proceso de reclutamiento de asesores, es fundamental llevar un registro detallado.
                 Por ello, te invitamos a completar cuidadosamente el formulario siguiendo las instrucciones proporcionadas.
                 </p>
@@ -122,24 +103,23 @@ const [rfc, setRfc] = useState('');
             
 
             
-                <p className={`text-justify p-2 sm:text-md md:w-200`}>
+                <p className={`text-justify p-2 sm:text-md`}>
                 Por favor, completa cada campo de esta sección con tus datos personales de manera precisa y actualizada.
                 Asegúrate de verificar la información antes de enviarla.
                 </p>
                 
             </div>
 
-            <form onSubmit={nextStep} className={`flex flex-col items-center flex-wrap gap-8 p-4`}>
+            <form onSubmit={nextStep} className={`flex flex-col select-none w-full items-center flex-wrap gap-8 px-4 py-8`}>
 
                 <div className={`flex gap-x-20 gap-y-5 flex-wrap md:flex-nowrap w-full justify-center sm:justify-between`}>
                 {/* Direccion */}
                 <TextField
                 fullWidth
                 helperText={`Ingrese su dirección`}
-                      id="outlined-basic" 
-                      label="Dirección:" 
-                      variant="outlined" 
-                      name='direccion'
+                      id="adress"
+                      name='adress'
+                      label="Dirección:"
                       onChange={(e) => setDir(e.target.value)} 
                       value={dir}
                       required
@@ -149,10 +129,10 @@ const [rfc, setRfc] = useState('');
                 <TextField
                 fullWidth
                 helperText={`Municipio/Localidad`}
-                    id="outlined-basic" 
+                    id="city"
+                    name='city'
                     label="Municipio:" 
                     variant="outlined" 
-                    name='municipio'
                     onChange={(e) => setMun(e.target.value)} 
                     value={mun}
                     required
@@ -171,21 +151,20 @@ const [rfc, setRfc] = useState('');
                 helperText={`Fecha de nacimiento`}
                 fullWidth
                 disableFuture
+                name='birthdate'
                 timezone={`system`}
                 format={`DD/MM/YYYY`}/>
                 </LocalizationProvider>
                 </div>
 
-                {console.log(dayjs)}
 
 
                 <TextField
                 helperText={`Nacionalidad`}
                     fullWidth
-                    id="outlined-basic" 
-                    label="Nacionalidad:" 
-                    variant="outlined" 
-                    name='Nacion'
+                    id="Nacionality" 
+                    name='nacionality'
+                    label="Nacionalidad:"
                     onChange={(e) => setNacion(e.target.value)} 
                     value={nacion}
                     required
@@ -198,35 +177,44 @@ const [rfc, setRfc] = useState('');
                 {/* Genero */}
                 <FormControl
                 fullWidth>
-                    <FormLabel id="radio-buttons-group-label">Género</FormLabel>
+                    <FormLabel id="Gender">Género</FormLabel>
                     <RadioGroup
                         row
-                        aria-labelledby="radio-buttons-group-label"
-                        name="radio-buttons-group"
+                        aria-labelledby="Gender"
+                        name="Gender"
                         onChange={(e)=> setGen(e.target.value)}
                         required
                         >
                 
                             <FormControlLabel value="f" control={<Radio />} label="Femenino" />
                             <FormControlLabel value="m" control={<Radio />} label="Masculino" />
-                            <FormControlLabel value="otro" control={<Radio onChange={()=>{<p>hola</p>}} />} label="Otro" />
+                            <FormControlLabel value="otro" control={<Radio onChange={()=>{}} />} label="Otro" />
                         
                     </RadioGroup>
                     </FormControl>
                 
 
                 {/* RFC */}
+                <div className={`flex flex-col w-full relative`}>
                 <TextField
                 fullWidth
-                helperText={`Ingrese su RFC`}
-                    id="outlined-basic" 
-                    label="RFC:" 
-                    variant="outlined" 
-                    name='RFC'
-                    onChange={(e) => setRfc(e.target.value)} 
-                    value={rfc}
-                    required
+                helperText={error
+                ? "RFC inválido."
+                : `Ingrese su RFC (${RFC_LENGTH} caracteres)`}
+                id="RFC" 
+                label="RFC:" 
+                variant="outlined"
+                name='RFC'
+                onChange={handleRFCChange}
+                error={error}
+                value={rfc}
+                slotProps={{htmlInput: { maxLength: RFC_LENGTH }}}
+                required
                 />
+
+                <a target='_blank' rel='noopener noreferrer' className={`px-3 font-bold text-start underline text-blue-700 focus:text-blue-900`} href="https://www54.sat.gob.mx/curp/Consult">Consulte su RFC aquí</a>
+
+                </div>
                 </div>
                 
             <div className={`flex w-full justify-end`}>

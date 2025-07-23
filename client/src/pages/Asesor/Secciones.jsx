@@ -133,8 +133,6 @@ export function MisCursos(){
             setIsModalOpen(true);
         } else if (selected === "Quizt") {
             alert("Solo puedes crear actividades cuando 'Actividades' está seleccionado.");
-        } else if (selected === "Simuladores") {
-            alert("Solo puedes crear actividades cuando 'Actividades' está seleccionado.");
         }else {
             alert("Selecciona una opción válida.");
         }
@@ -154,9 +152,19 @@ export function MisCursos(){
 
         <ActivityModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}/>
         </div>
+        {selected === "Actividades" && 
+        <div className='flex flex-col w-full gap-8 px-5 md:px-3'>
+        <TablaAsignacionActividades/> <TablaEstudiantes/>
+        </div>
+        }
 
-        <TablaAsignacionActividades/>
-        <TablaEstudiantes/>
+        {selected === "Quizt" &&
+        <div>
+
+
+        </div>
+        }
+        
 
         </div>
     );
