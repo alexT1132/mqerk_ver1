@@ -23,7 +23,7 @@ import {
 
 import Persona from '../../assets/Persona.jpg';
 
-import { BtnDesplegable, ActivityModal, ModalCursos, TablaAsignacionActividades, TablaEstudiantes } from "../../components/CursosComp.jsx";
+import { BtnDesplegable, ActivityModal, ModalCursos, TablaAsignacionActividades, TablaAsignacionQuizt, TablaEstudiantes, TablaQuizt } from "../../components/CursosComp.jsx";
 
 
 
@@ -159,8 +159,9 @@ export function MisCursos(){
         }
 
         {selected === "Quizt" &&
-        <div>
-
+        <div className='flex flex-col w-full gap-8 px-5 md:px-3'>
+        <TablaQuizt/>
+        <TablaAsignacionQuizt/>
 
         </div>
         }

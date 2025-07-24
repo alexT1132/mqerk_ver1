@@ -44,7 +44,7 @@ export const BtnDesplegable = ({selected, setSelected}) => {
         >
             {Opciones.map((opcion, index) =>
                 <option
-                    className="font-semibold cursor-pointer sm:font-bold"
+                    className="font-semibold hover:bg-amber-600 cursor-pointer sm:font-bold"
                     key={index}
                     value={opcion}
                     disabled={opcion === selected}
@@ -652,6 +652,95 @@ export const TablaAsignacionActividades = () => {
   );
 };
 
+  const estudiantesQuiztEjemplo = [
+  {
+    folio: "A001",
+    nombre: "Juan Pérez",
+    entregado: true,
+    Contestado: true,
+    fechaLimite: "2025-07-15T18:00:00",
+    archivoUrl: "#",
+    calificacion: null,
+  },
+  {
+    folio: "A002",
+    nombre: "María García",
+    entregado: false,
+    Contestado: false,
+    fechaLimite: "2025-07-15T18:00:00",
+    archivoUrl: "#",
+    calificacion: null,
+  },
+  {
+    folio: "A003",
+    nombre: "Carlos Díaz",
+    entregado: true,
+    Contestado: true,
+    fechaLimite: "2025-07-10T18:00:00",
+    archivoUrl: "#",
+    calificacion: null,
+  },
+];
+
+
+export const TablaAsignacionQuizt = () => {
+  const [quizt, setQuizt] = useState(estudiantesQuiztEjemplo);
+
+
+
+  // Quitar grupo de actividad (doble confirmación)
+  const quitarGrupo = (quiztId, grupo) => {
+    const confirmar = window.confirm(`¿Desea quitar la actividad del grupo ${grupo}?`);
+    if (!confirmar) return;
+    const confirmar2 = window.confirm(`¿Está seguro que desea quitar la actividad del grupo ${grupo}?`);
+    if (!confirmar2) return;
+
+    setQuizt((prev) =>
+      prev.map((quizt) =>
+        quizt.id === quiztividadId
+          ? {
+              ...quizt,
+              gruposAsignados: quizt.gruposAsignados.filter((g) => g !== grupo),
+            }
+          : quizt
+      )
+    );
+  };
+
+  return (
+    <div className="overflow-x-auto w-full">
+      <table className="min-w-[800px] w-full border-collapse rounded-xl overflow-hidden shadow">
+        <thead className="bg-purple-600 text-white">
+          <tr>
+            <th className="py-2 px-4 text-center">Numero de folio</th>
+            <th className="py-2 px-4 text-center">Nombre del alumno</th>
+            <th className="py-2 px-4 text-center">Realizado</th>
+            <th className="py-2 px-4 text-center">Calificación</th>
+          </tr>
+        </thead>
+        <tbody className="text-center">
+          {quizt.map((quizt, idx) => {
+            return (
+              <tr
+                key={quizt.id}
+                className={`transition hover:bg-purple-50 ${
+                  idx % 2 === 0 ? "bg-gray-100" : "bg-white"
+                }`}
+              >
+                <td className="py-2 px-4">{quizt.folio}</td>
+                <td className="py-2 px-4">{quizt.nombre}</td>
+                <td className="py-2 px-4">{quizt.Contestado}</td>
+                <td className="py-2 px-4">{quizt.Resultado}</td>
+
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 
 const estudiantesEjemplo = [
   {
@@ -893,6 +982,8 @@ const quiztEjemplo = [
 ];
 
 export const TablaQuizt = () => {
+
+  
   const [quizts, setQuizts] = useState(quiztEjemplo);
 
   // Asignar grupo a quizt
