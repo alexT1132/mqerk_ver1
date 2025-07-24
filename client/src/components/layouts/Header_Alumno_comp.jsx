@@ -3,42 +3,74 @@ import React, { useRef, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import MQerkLogo from "../../assets/MQerK_logo.png";
 import { Logos } from "../../pages/public/IndexComp.jsx"; // Asegúrate de que la ruta a IndexComp.jsx sea correcta
+import { useStudent } from "../../context/StudentContext";
+import { useStudentNotifications } from "../../context/StudentNotificationContext";
 
 /**
  * Componente del encabezado de la aplicación para Alumnos.
  * Contiene el logo, la barra de búsqueda y los iconos de notificación y perfil.
- * Recibe el estado y las funciones de notificación como props desde Layout.
+ * Ahora usa contextos para obtener datos del estudiante y notificaciones.
+ * 
+ * FEATURES:
+ * - Integración completa con StudentContext para datos del estudiante
+ * - Integración completa con StudentNotificationContext para notificaciones
+ * - Búsqueda lista para backend
+ * - Avatar inteligente con imagen del backend o iniciales
+ * - Modal de confirmación para logout
+ * - Responsive design con Tailwind
  */
 export function Header_Alumno_comp({
-  isNotificationsOpen,
-  toggleNotifications,
-  markAllAsRead,
-  notifications,
-  unreadCount,
-  setIsNotificationsOpen,
-  // BACKEND: Props para datos del alumno
-  studentData = null, // Datos del estudiante desde el backend
-  profileImage = null, // URL de la imagen del perfil desde el backend
-  isOnline = true, // Estado de conexión del alumno
-  // BACKEND: Props para controlar la visibilidad del botón de salir
-  showLogoutButton = false, // Mostrar botón de salir solo en pantallas específicas
-  onLogout = null // Función para manejar el logout
+  // LEGACY: Props opcionales para compatibilidad (se pueden eliminar gradualmente)
+  isNotificationsOpen: legacyIsNotificationsOpen,
+  toggleNotifications: legacyToggleNotifications,
+  markAllAsRead: legacyMarkAllAsRead,
+  notifications: legacyNotifications,
+  unreadCount: legacyUnreadCount,
+  setIsNotificationsOpen: legacySetIsNotificationsOpen,
+  
+  // BACKEND: Props adicionales (opcionales, el contexto tiene prioridad)
+  profileImage: propProfileImage = null,
+  isOnline: propIsOnline = true,
+  showLogoutButton = false,
+  onLogout: propOnLogout = null
 }) {
+  // Usar contextos
+  const { studentData, isVerified, hasContentAccess } = useStudent();
+  const { 
+    notifications, 
+    unreadCount, 
+    markAllAsRead, 
+    markAsRead,
+    isConnected,
+    getNotificationIcon,
+    getPriorityColor
+  } = useStudentNotifications();
   const notificationRef = useRef(null);
 
-  // Estados para la funcionalidad de búsqueda
+  // Estados locales del componente
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  // Estado para el modal de confirmación de logout
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  // Determinar datos finales usando contexto con fallbacks
+  const finalStudentData = studentData || { name: "Estudiante", matricula: "0000", email: "estudiante@mqerk.com" };
+  const finalProfileImage = propProfileImage; // Imagen desde props tiene prioridad
+  const finalIsOnline = propIsOnline && isConnected; // Combinamos estado de props y contexto
+
+  // Función para alternar dropdown de notificaciones
+  const toggleNotifications = () => {
+    setIsNotificationsOpen(!isNotificationsOpen);
+  };
 
   // Función para manejar la búsqueda - Lista para conectar con backend
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // TODO: Conectar con API de búsqueda
-      // searchAPI(searchQuery);
-      // navigate(`/buscar?q=${encodeURIComponent(searchQuery)}`);
+      // TODO: Conectar con API de búsqueda del estudiante
+      // searchStudentContent(searchQuery);
+      // navigate(`/dashboard/buscar?q=${encodeURIComponent(searchQuery)}`);
+      console.log(`🔍 Buscando: ${searchQuery}`);
     }
   };
 
@@ -49,6 +81,38 @@ export function Header_Alumno_comp({
     // debounceSearch(e.target.value);
   };
 
+  // Función para obtener las iniciales del alumno
+  const getInitials = (name) => {
+    if (!name) return 'AL';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  // Función para manejar error en carga de imagen
+  const handleImageError = (e) => {
+    console.log('Error cargando imagen de perfil, usando avatar de respaldo');
+    e.target.style.display = 'none';
+    e.target.nextSibling.style.display = 'flex'; // Mostrar avatar de respaldo
+  };
+
+  // Función para mostrar modal de logout
+  const showLogoutConfirmation = () => {
+    setShowLogoutModal(true);
+  };
+
+  // Confirmar logout desde el modal
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
+    if (propOnLogout) {
+      propOnLogout();
+    } else {
+      // Fallback si no se proporciona función de logout
+      console.log('👋 Cerrando sesión...');
+      localStorage.clear();
+      window.location.href = '/login';
+    }
+  };
+
+  // Efecto para manejar clicks fuera del dropdown de notificaciones
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -63,42 +127,32 @@ export function Header_Alumno_comp({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [notificationRef, setIsNotificationsOpen]);
+  }, []);
 
+  // Filtrar notificaciones no leídas para mostrar
   const displayedNotifications = notifications.filter(notif => !notif.isRead);
 
-  // BACKEND: Función para obtener las iniciales del alumno
-  const getInitials = (name) => {
-    if (!name) return 'AL';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  // BACKEND: Función para manejar error en carga de imagen
-  const handleImageError = (e) => {
-    console.log('Error cargando imagen de perfil, usando avatar de respaldo');
-    e.target.style.display = 'none';
-    e.target.nextSibling.style.display = 'flex'; // Mostrar avatar de respaldo
-  };
-
-  // BACKEND: Función para manejar el logout
-  const handleLogout = () => {
-    setShowLogoutModal(true);
-  };
-
-  // BACKEND: Confirmar logout desde el modal
-  const confirmLogout = () => {
-    setShowLogoutModal(false);
-    if (onLogout) {
-      onLogout();
+  // Función para formatear tiempo transcurrido
+  const formatTimeAgo = (timestamp) => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - time) / 1000);
+    
+    if (diffInSeconds < 60) {
+      return 'Hace un momento';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `Hace ${minutes} min`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `Hace ${hours}h`;
     } else {
-      // Fallback si no se proporciona función de logout
-      console.log('Función de logout no proporcionada');
-      localStorage.clear();
-      window.location.href = '/login';
+      const days = Math.floor(diffInSeconds / 86400);
+      return `Hace ${days} día${days > 1 ? 's' : ''}`;
     }
   };
 
-  // BACKEND: Cancelar logout
+  // Cancelar logout
   const cancelLogout = () => {
     setShowLogoutModal(false);
   };
@@ -237,7 +291,7 @@ export function Header_Alumno_comp({
         {/* BACKEND: Botón de Salir - Solo visible en pantallas específicas */}
         {showLogoutButton && (
           <button
-            onClick={handleLogout}
+            onClick={showLogoutConfirmation}
             className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white hover:scale-105 hover:bg-red-600 hover:bg-opacity-30 rounded-full transition-all duration-200 relative group"
             aria-label="Cerrar sesión"
             title="Cerrar sesión"
@@ -294,14 +348,14 @@ export function Header_Alumno_comp({
 
           {/* Contenedor de Notificaciones Desplegable (se muestra condicionalmente) */}
           {isNotificationsOpen && (
-            <div className="absolute top-full mt-2 w-80 bg-white/50 border border-gray-200/50 rounded-lg shadow-xl z-50 overflow-hidden animate-pulse backdrop-blur-xl
+            <div className="absolute top-full mt-2 w-80 bg-white/60 border border-gray-200/60 rounded-lg shadow-xl z-50 overflow-hidden backdrop-blur-xl
                             max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:w-[calc(100vw-32px)] sm:right-0 sm:max-w-xs">
               {/* Header del dropdown */}
-              <div className="bg-gradient-to-r from-purple-600/50 to-purple-800/50 text-white px-4 py-3">
+              <div className="bg-gradient-to-r from-purple-600/60 to-purple-800/60 text-white px-4 py-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg">Notificaciones</h3>
                   {unreadCount > 0 && (
-                    <span className="bg-purple-500/50 text-white px-2 py-1 rounded-full text-xs font-medium">
+                    <span className="bg-purple-500/60 text-white px-2 py-1 rounded-full text-xs font-medium">
                       {unreadCount} nuevas
                     </span>
                   )}
@@ -310,7 +364,7 @@ export function Header_Alumno_comp({
 
               {/* Botón de marcar como leídas */}
               {unreadCount > 0 && (
-                <div className="px-4 py-2 bg-gray-50/50 border-b border-gray-200/50">
+                <div className="px-4 py-2 bg-gray-50/60 border-b border-gray-200/60">
                   <button
                     onClick={markAllAsRead}
                     className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150"
@@ -342,17 +396,46 @@ export function Header_Alumno_comp({
                     {displayedNotifications.map((notification) => (
                       <li
                         key={notification.id}
-                        className="px-4 py-3 text-sm text-gray-800 hover:bg-gray-100/50 transition-colors duration-150 border-l-4 border-l-blue-500 bg-blue-50/50"
+                        className="px-4 py-3 text-sm hover:bg-gray-100/60 transition-colors duration-150 border-l-4"
+                        style={{
+                          borderLeftColor: notification.priority === 'urgent' ? '#ef4444' : 
+                                          notification.priority === 'high' ? '#f97316' : 
+                                          notification.priority === 'medium' ? '#3b82f6' : '#6b7280'
+                        }}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                          <p className="text-gray-800 font-medium">{notification.message}</p>
+                          {/* Icono de tipo de notificación */}
+                          <div className="text-lg mt-0.5 flex-shrink-0">
+                            {getNotificationIcon(notification.type)}
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <p className={`font-medium text-sm truncate ${getPriorityColor(notification.priority)}`}>
+                                {notification.title}
+                              </p>
+                              {/* Indicador de prioridad */}
+                              {notification.priority === 'urgent' && (
+                                <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse flex-shrink-0"></span>
+                              )}
+                            </div>
+                            <p className="text-gray-600 text-xs leading-relaxed">
+                              {notification.message}
+                            </p>
+                            
+                            {/* Tiempo transcurrido */}
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-xs text-gray-400">
+                                {formatTimeAgo(notification.timestamp)}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <div className="px-4 py-8 text-center bg-gray-100/50">
+                  <div className="px-4 py-8 text-center bg-gray-100/60">
                     <div className="w-12 h-12 mx-auto mb-3 text-gray-400">
                       <svg fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
@@ -365,7 +448,7 @@ export function Header_Alumno_comp({
               </div>
 
               {/* Footer del dropdown */}
-              <div className="px-4 py-2 bg-gray-50/50 border-t border-gray-200/50">
+              <div className="px-4 py-2 bg-gray-50/60 border-t border-gray-200/60">
                 <button className="text-xs text-gray-600 hover:text-gray-800 transition-colors duration-150">
                   Ver todas las notificaciones
                 </button>
@@ -379,10 +462,10 @@ export function Header_Alumno_comp({
           <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden border-1 sm:border-2 border-white shadow-md sm:shadow-lg hover:scale-105 transition-transform duration-200 cursor-pointer">
             
             {/* BACKEND: Imagen real del alumno */}
-            {profileImage && (
+            {finalProfileImage && (
               <img
-                src={profileImage}
-                alt={`Foto de perfil de ${studentData?.name || 'Alumno'}`}
+                src={finalProfileImage}
+                alt={`Foto de perfil de ${finalStudentData.name}`}
                 className="w-full h-full object-cover object-center"
                 onError={handleImageError}
                 loading="lazy"
@@ -391,18 +474,18 @@ export function Header_Alumno_comp({
             
             {/* BACKEND: Avatar de respaldo cuando no hay imagen o falla la carga */}
             <div 
-              className={`${profileImage ? 'hidden' : 'flex'} w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center`}
-              style={{ display: profileImage ? 'none' : 'flex' }}
+              className={`${finalProfileImage ? 'hidden' : 'flex'} w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center`}
+              style={{ display: finalProfileImage ? 'none' : 'flex' }}
             >
               {/* Mostrar iniciales del alumno */}
               <span className="text-white font-bold text-xs sm:text-sm lg:text-base select-none">
-                {getInitials(studentData?.name)}
+                {getInitials(finalStudentData.name)}
               </span>
             </div>
           </div>
           
           {/* BACKEND: Indicador de estado online/offline */}
-          <div className={`absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 sm:w-2 sm:h-2 lg:w-2.5 lg:h-2.5 ${isOnline ? 'bg-green-400' : 'bg-gray-400'} border-1 border-white rounded-full ${isOnline ? 'animate-pulse' : ''}`}></div>
+          <div className={`absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 sm:w-2 sm:h-2 lg:w-2.5 lg:h-2.5 ${finalIsOnline ? 'bg-green-400' : 'bg-gray-400'} border-1 border-white rounded-full ${finalIsOnline ? 'animate-pulse' : ''}`}></div>
         </div>
       </div>
 
