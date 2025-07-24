@@ -232,7 +232,7 @@ async function fetchEnrolledCourses(studentId) {
  * 3. Se necesita endpoint para obtener cursos matriculados por estudiante ID
  * 4. Se necesita endpoint para marcar curso como "actual/en progreso"
  */
-export function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
+function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
   // BACKEND: Estos datos vienen del contexto StudentContext (NO CourseContext)
   // Solo se usan los cursos matriculados del estudiante
   const { 

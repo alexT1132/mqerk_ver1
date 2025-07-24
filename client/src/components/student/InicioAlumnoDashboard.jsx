@@ -217,6 +217,8 @@ const InicioAlumnoDashboard = ({
   // IMPORTANTE: Solo redirige si está verificado, pagado, NO es primer acceso, no tiene curso actual
   // y no es una visita directa (para evitar loops)
   useEffect(() => {
+    // BACKEND: Solo redirigir si está verificado, pagado, NO es primer acceso 
+    // y NO tiene curso seleccionado (para que vaya a seleccionar uno)
     const shouldRedirect = finalVerificado && 
                           finalHaPagado && 
                           !isFirstAccess && 
@@ -231,9 +233,11 @@ const InicioAlumnoDashboard = ({
       shouldRedirect
     });
     
+    // BACKEND: Si ya tiene curso seleccionado, NO redirigir
+    // La pantalla de inicio debe mostrarse como bienvenida al curso
     if (shouldRedirect) {
       const timer = setTimeout(() => {
-        console.log('🔄 Redirigiendo a /alumno/cursos');
+        console.log('🔄 Redirigiendo a /alumno/cursos para seleccionar curso');
         navigate('/alumno/cursos');
       }, 500);
       return () => clearTimeout(timer);
@@ -350,13 +354,13 @@ const InicioAlumnoDashboard = ({
   // IMPORTANTE: No depende de isFirstAccess para evitar bypasses de seguridad
   const mostrarBloqueo = !finalHaPagado || !finalVerificado;
   
-  console.log('🔒 Estado de bloqueo:', {
-    finalHaPagado,
-    finalVerificado, 
-    isFirstAccess,
-    mostrarBloqueo,
-    currentCourse: !!currentCourse
-  });
+  // console.log('🔒 Estado de bloqueo:', {
+  //   finalHaPagado,
+  //   finalVerificado, 
+  //   isFirstAccess,
+  //   mostrarBloqueo,
+  //   currentCourse: !!currentCourse
+  // });
   
   // BACKEND: Validar si hay un curso real (no placeholder)
   // IMPORTANTE: Esta validación evita mostrar datos falsos del localStorage

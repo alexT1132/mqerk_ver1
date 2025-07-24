@@ -4,12 +4,13 @@ import { Routes, Route } from 'react-router-dom';
 
 // Layout y contextos
 import { AlumnoLayout } from '../layouts/AlumnoLayout.jsx';
+import { Header_Alumno_comp } from '../layouts/Header_Alumno_comp.jsx';
 import { useStudent } from '../../context/StudentContext.jsx';
 
 // Componentes de páginas
-import { Profile_Alumno_comp } from './Profile_Alumno_comp.jsx';
+import Profile_Alumno_comp from './Profile_Alumno_comp.jsx';
 import { Calendar_Alumno_comp } from './Calendar_Alumno_comp.jsx';
-import { MisCursos_Alumno_comp } from './MisCursos_Alumno_comp.jsx';
+import MisCursos_Alumno_comp from './MisCursos_Alumno_comp.jsx';
 import MisPagos_Alumno_comp from './MisPagos_Alumno_comp.jsx';
 import { Configuracion_Alumno_comp } from './Configuracion_Alumno_comp.jsx';
 import Feedback_Alumno_Comp from './Feedback_Alumno_Comp.jsx';
@@ -22,7 +23,6 @@ import { Simulaciones_Alumno_comp } from './Simulaciones_Alumno_comp.jsx';
 import { CerrarSesion_Alumno_comp } from './CerrarSesion_Alumno_comp.jsx';
 
 import { CourseProvider } from '../../context/CourseContext.jsx';
-import { StudentProvider } from '../../context/StudentContext.jsx';
 
 /**
  * BACKEND: Contenedor principal del dashboard del alumno
@@ -32,11 +32,9 @@ import { StudentProvider } from '../../context/StudentContext.jsx';
  */
 export function AlumnoDashboardBundle() {
   return (
-    <StudentProvider>
-      <CourseProvider>
-        <StudentAwareLayout />
-      </CourseProvider>
-    </StudentProvider>
+    <CourseProvider>
+      <StudentAwareLayout />
+    </CourseProvider>
   );
 }
 
@@ -49,6 +47,42 @@ function StudentAwareLayout() {
     currentCourse &&     // Curso seleccionado
     isVerified &&        // Usuario verificado
     hasPaid              // Pago confirmado
+  );
+
+  // BACKEND: El botón de logout se muestra cuando NO hay sidebar
+  const showLogoutButton = !shouldShowSidebar;
+
+  // ✅ DEBUG: Logs para verificar estados
+  console.log('🔧 AlumnoDashboardBundle - Estados:', {
+    isVerified,
+    hasPaid, 
+    currentCourse: currentCourse ? currentCourse.title : null,
+    hasCurrentCourse: !!currentCourse,
+    shouldShowSidebar,
+    showLogoutButton,
+    isLoading
+  });
+
+  // BACKEND: Función para manejar el logout
+  const handleLogout = () => {
+    // TODO: Implementar llamada al API de logout
+    // logoutAPI();
+    
+    // Limpiar datos locales
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Redirigir al login
+    window.location.href = '/login';
+  };
+
+  // BACKEND: Header personalizado con la lógica del botón de logout
+  const CustomHeader = (props) => (
+    <Header_Alumno_comp
+      {...props}
+      showLogoutButton={showLogoutButton}
+      onLogout={handleLogout}
+    />
   );
 
   // BACKEND: Loading state para evitar parpadeos
@@ -68,6 +102,7 @@ function StudentAwareLayout() {
 
   // BACKEND: Estado para manejar la transición de carga
   const [isReady, setIsReady] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -76,14 +111,22 @@ function StudentAwareLayout() {
     return () => clearTimeout(timer);
   }, [currentCourse, isVerified, hasPaid]);
 
+  // ✅ FORZAR RE-RENDER cuando cambie currentCourse
+  useEffect(() => {
+    if (currentCourse) {
+      console.log('🔄 currentCourse cambió, forzando re-render:', currentCourse.title);
+      setForceUpdate(prev => prev + 1);
+    }
+  }, [currentCourse]);
+
   // BACKEND: Renderizado del layout principal
   // - Utiliza componentes de sidebar según el estado del estudiante
   return (
     <div className={`min-h-screen transition-opacity duration-300 ${isReady ? 'opacity-100' : 'opacity-0'}`}>
       <AlumnoLayout
-        HeaderComponent={undefined}
-        SideBarDesktopComponent={shouldShowSidebar ? (props => <SideBarDesktop_Alumno_comp {...props} />) : () => null}
-        SideBarSmComponent={shouldShowSidebar ? (props => <SideBarSm_Alumno_comp {...props} />) : () => null}
+        HeaderComponent={CustomHeader}
+        SideBarDesktopComponent={shouldShowSidebar ? (props => <SideBarDesktop_Alumno_comp {...props} onLogout={handleLogout} />) : () => null}
+        SideBarSmComponent={shouldShowSidebar ? (props => <SideBarSm_Alumno_comp {...props} onLogout={handleLogout} />) : () => null}
       >
         {/* BACKEND: Rutas del dashboard del alumno */}
         <Routes>
