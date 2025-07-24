@@ -13,7 +13,7 @@ import { FaTrophy, FaCertificate, FaUsers, FaBookOpen } from "react-icons/fa";
 import { CiHeart } from "react-icons/ci";
 import { FaShareAlt } from "react-icons/fa";
 import { SlOptions } from "react-icons/sl";
-import { FaCheckCircle } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import Icono1 from "../../../assets/mqerk/preview/curso1/22.png";
 import Icono2 from "../../../assets/mqerk/preview/curso1/23.png";
 import Icono3 from "../../../assets/mqerk/preview/curso1/24.png";
@@ -25,10 +25,15 @@ function Eeau() {
 
     const [mensaje, setMensaje] = useState("1");
     const [planes, setPlanes] = useState(false);
+    const [tipoPlan, setTipoPlan] = useState('');
 
     const handleClick = (texto) => {
         setMensaje(texto);
     };
+
+    const curso = 'Entrenamiento para el examen de admision a la universidad'
+
+    localStorage.setItem('roles', JSON.stringify({ role: 'estudiante' }));
 
     const habilidades = [
     "Dominar los fundamentos teóricos que necesitas, sin vueltas innecesarias.",
@@ -81,9 +86,9 @@ function Eeau() {
                     <div className="relative top-[27%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
                         <h1 className="text-[#3a14a9] font-bold text-5xl">Información del curso</h1>
                     </div>
-                    <div class="relative w-185 top-[31%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-wrap justify-center gap-4">
+                    <div className="relative w-185 top-[31%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-wrap justify-center gap-4">
                         {/* <!-- Tarjeta 1 --> */}
-                        <div class="w-33 border border-[#3a14a9] text-[#3a14a9] rounded-lg bg-white shadow-md flex items-center justify-center">
+                        <div className="w-33 border border-[#3a14a9] text-[#3a14a9] rounded-lg bg-white shadow-md flex items-center justify-center">
                             <div className="flex justify-center items-center gap-2 py-1">
                                 <img src={Dos} className="w-6" />
                                 <p>Presencial</p>
@@ -91,7 +96,7 @@ function Eeau() {
                         </div>
 
                         {/* <!-- Tarjeta 2 --> */}
-                        <div class="w-33 border border-[#3a14a9] text-[#3a14a9] rounded-lg bg-white shadow-md flex items-center justify-center">
+                        <div className="w-33 border border-[#3a14a9] text-[#3a14a9] rounded-lg bg-white shadow-md flex items-center justify-center">
                             <div className="flex justify-center items-center gap-2 py-1">
                                 <img src={Tres} className="w-6" />
                                 <p>+ 130 clases</p>
@@ -99,7 +104,7 @@ function Eeau() {
                         </div>
 
                         {/* <!-- Tarjeta 3 --> */}
-                        <div class="w-33 border border-[#3a14a9] text-[#3a14a9] rounded-lg bg-white shadow-md flex items-center justify-center">
+                        <div className="w-33 border border-[#3a14a9] text-[#3a14a9] rounded-lg bg-white shadow-md flex items-center justify-center">
                             <div className="flex justify-center items-center gap-2 py-1">
                                 <img src={Cuatro} className="w-6" />
                                 <p>2 h al día</p>
@@ -107,7 +112,7 @@ function Eeau() {
                         </div>
 
                         {/* <!-- Tarjeta 4 --> */}
-                        <div class="w-33 border border-[#3a14a9] text-[#3a14a9] rounded-lg bg-white shadow-md flex items-center justify-center">
+                        <div className="w-33 border border-[#3a14a9] text-[#3a14a9] rounded-lg bg-white shadow-md flex items-center justify-center">
                             <div className="flex justify-center items-center gap-2 py-1">
                                 <img src={Cinco} className="w-6" />
                                 <p>8 meses</p>
@@ -115,7 +120,7 @@ function Eeau() {
                         </div>
 
                         {/* <!-- Tarjeta 5 --> */}
-                        <div class="w-33 border border-[#3a14a9] text-[#3a14a9] rounded-lg bg-white shadow-md flex items-center justify-center">
+                        <div className="w-33 border border-[#3a14a9] text-[#3a14a9] rounded-lg bg-white shadow-md flex items-center justify-center">
                             <div className="flex justify-center items-center gap-2 py-1">
                                 <img src={Seis} className="w-6" />
                                 <p>Rendimiento</p>
@@ -313,7 +318,7 @@ function Eeau() {
                         <p className="text-sm font-semibold text-gray-700">4.5</p>
                         <div className="flex text-yellow-400">
                             {[...Array(5)].map((_, i) => (
-                            <FaStar key={i} className="h-4 w-4" />
+                                <FaStar key={i} className="h-4 w-4" />
                             ))}
                         </div>
                         <p className="text-xs text-purple-700 font-semibold">15 opiniones</p>
@@ -395,10 +400,18 @@ function Eeau() {
                                     </ul>
                                     </div>
                                     <div className="text-center mt-6">
-                                    <p className="text-2xl font-bold">$1,500</p>
-                                    <button className="mt-2 bg-white text-purple-700 font-bold px-5 py-2 rounded-lg">
+                                    <p className="text-2xl font-bold mb-4">$1,500</p>
+                                    <Link 
+                                    to='/registro_alumno'
+                                    onClick={() => {
+                                        localStorage.setItem(
+                                            'datos',
+                                            JSON.stringify({ curso, planMensual: 'Mensual' })
+                                        );
+                                    }} 
+                                    className="mt-2 bg-white text-purple-700 font-bold px-5 py-2 rounded-lg cursor-pointer">
                                         ADQUIRIR
-                                    </button>
+                                    </Link>
                                     </div>
                                 </div>
 
@@ -417,10 +430,18 @@ function Eeau() {
                                     </ul>
                                     </div>
                                     <div className="text-center mt-6">
-                                    <p className="text-2xl font-bold">2 PAGOS DE $5,500</p>
-                                    <button className="mt-2 bg-white text-purple-700 font-bold px-6 py-2 rounded-lg">
+                                    <p className="text-2xl font-bold mb-4">2 PAGOS DE $5,500</p>
+                                    <Link 
+                                    to='/registro_alumno'
+                                    onClick={() => {
+                                        localStorage.setItem(
+                                            'datos',
+                                            JSON.stringify({ curso, planMensual: 'Start' })
+                                        );
+                                    }} 
+                                    className="mt-2 bg-white text-purple-700 font-bold px-6 py-2 rounded-lg cursor-pointer">
                                         ADQUIRIR
-                                    </button>
+                                    </Link>
                                     </div>
                                 </div>
 
@@ -437,10 +458,18 @@ function Eeau() {
                                     </ul>
                                     </div>
                                     <div className="text-center mt-6">
-                                    <p className="text-2xl font-bold">$10,500</p>
-                                    <button className="mt-2 bg-white text-purple-700 font-bold px-5 py-2 rounded-lg">
+                                    <p className="text-2xl font-bold mb-4">$10,500</p>
+                                    <Link 
+                                    to='/registro_alumno'
+                                    onClick={() => {
+                                        localStorage.setItem(
+                                            'datos',
+                                            JSON.stringify({ curso, planMensual: 'Premium' })
+                                        );
+                                    }} 
+                                    className="mt-2 bg-white text-purple-700 font-bold px-6 py-2 rounded-lg cursor-pointer">
                                         ADQUIRIR
-                                    </button>
+                                    </Link>
                                     </div>
                                 </div>
                                 </div>

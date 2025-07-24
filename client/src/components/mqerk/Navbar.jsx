@@ -27,7 +27,7 @@ const Navbar = () => {
           </Link>
           <div className="flex space-x-4 justify-center items-center gap-6 mqerk-dis" style={{color: '#401454'}}>
               <Link to='/' className="text-lg text-white p-2 rounded-2xl ">Inicio</Link>
-              <Link  className="text-lg text-white p-2 rounded-2xl ">Acerca de</Link>
+              <Link to='/acerca_de' className="text-lg text-white p-2 rounded-2xl ">Acerca de</Link>
               <Link tabIndex={0} onBlur={() => setSubmenu(false)} onClick={() => setSubmenu(!submenu)} className="text-lg text-white gap-1 p-2 flex justify-center items-center rounded-2xl ">
                 Cursos
                 <svg
@@ -70,7 +70,7 @@ const Navbar = () => {
                   </div>
               )}
 
-              <Link tabIndex={0} onBlur={() => setSubmenu2(false)} onClick={() => setSubmenu2(!submenu2)} className="text-lg text-white gap-1 p-2 flex justify-center items-center rounded-2xl ">
+              <Link tabIndex={0} onBlur={() => setTimeout(() => setSubmenu2(false), 150)} onClick={() => setSubmenu2(!submenu2)} className="text-lg text-white gap-1 p-2 flex justify-center items-center rounded-2xl ">
                 Eventos
                 <svg
                   className={`w-4 h-4 mt-[2px] transition-transform ${
@@ -92,33 +92,32 @@ const Navbar = () => {
               {submenu2 && (
                 <div className="absolute right-65 mt-58 w-40 bg-white shadow-lg rounded-md z-10 eventos-mqerk">
                   <Link
-                  to="/mqerk/bootcamps"
+                  to="/bootcamps"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                   >
                     Bootcamp
                   </Link>
-                  <Link
-                  to='/mqerk/talleres'
+                  <Link to='/talleres'
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                   >
                     Talleres
                   </Link>
                   <Link
-                  to="/mqerk/exporientas"
+                  to="/exporientas"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                   >
                     Exporientas
                   </Link>
-                  <Link
-                  to="https://open.spotify.com/user/mvn8ly2def6rlqnbgrck8p85h?si=possNo4YSyqJ8ADW34LShw"
+                  <a
+                  href="https://open.spotify.com/user/mvn8ly2def6rlqnbgrck8p85h?si=possNo4YSyqJ8ADW34LShw"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                   >
                     Podcast
-                  </Link>
+                  </a>
                   <Link
-                  to="/mqerk/online"
+                  to="/online"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                   >
                     Online
@@ -247,19 +246,19 @@ const Navbar = () => {
               {movil2 && (
               <div className="relative w-40 z-10">
                 <Link
-                to="/mqerk/bootcamps"
+                to="/bootcamps"
                 className="block py-2 text-gray-700"
                 >
                   Bootcamp
                 </Link>
                 <Link
-                to="/mqerk/talleres"
+                to="/talleres"
                 className="block py-2 text-gray-700 hover:bg-gray-100"
                 >
                   Talleres
                 </Link>
                 <Link
-                to="/mqerk/exporientas"
+                to="/exporientas"
                 className="block py-2 text-gray-700 hover:bg-gray-100"
                 >
                   Exporientes
@@ -271,7 +270,7 @@ const Navbar = () => {
                   Podcast
                 </Link>
                 <Link
-                to="/mqerk/online"
+                to="/online"
                 className="block py-2 text-gray-700 hover:bg-gray-100"
                 >
                   Online
@@ -399,19 +398,19 @@ const Navbar = () => {
               {movil2 && (
               <div className="relative w-40 z-10">
                 <Link
-                to="/mqerk/bootcamps"
+                to="/bootcamps"
                 className="block py-2 text-gray-700"
                 >
                   Bootcamp
                 </Link>
                 <Link
-                to="/mqerk/talleres"
+                to="/talleres"
                 className="block py-2 text-gray-700 hover:bg-gray-100"
                 >
                   Talleres
                 </Link>
                 <Link
-                to="/mqerk/exporientas"
+                to="/exporientas"
                 className="block py-2 text-gray-700 hover:bg-gray-100"
                 >
                   Exporientes
@@ -423,7 +422,7 @@ const Navbar = () => {
                   Podcast
                 </Link>
                 <Link
-                to="/mqerk/online"
+                to="/online"
                 className="block py-2 text-gray-700 hover:bg-gray-100"
                 >
                   Online

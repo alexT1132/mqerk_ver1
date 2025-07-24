@@ -4,6 +4,7 @@ import { usePreventPageReload } from "../../NoReload";
 import { TextField, FormControlLabel, FormControl, FormLabel, Radio, RadioGroup, Checkbox, FormGroup } from "@mui/material";
 import { BtnForm } from '../../components/FormRegistroComp';
 import { useForm } from "react-hook-form";
+import { useAsesor } from "../../context/AsesorContext";
 
 // import SignatureCanvas from `react-signature-canvas`
 
@@ -13,17 +14,14 @@ export const FormularioAsesor=()=>{
 
         const { handleSubmit, register } = useForm();
 
+        const { datos1 } = useAsesor();
+
         const [step, setStep] = useState(0);
         const [titulo, setTitulo] = useState("");
-        const [adicional0, setAdicional0] = useState("")
         const [adicional1, setAdicional1] = useState("")
 
         const handleTituloChange = (e) => {
             setTitulo(e.target.value);
-        };
-
-        const handleAdicional0Change = (e) => {
-            setAdicional0(e.target.value);
         };
 
         const handleAdicional1Change = (e) => {
@@ -65,10 +63,7 @@ export const FormularioAsesor=()=>{
             <div className={`flex flex-col py-5 px-5 items-center`}>
 
             <div className={`flex flex-col items-center justify-center`}>
-                <h1 className={`text-center font-bold uppercase text-[17px] sm:text-3xl`}>Bienvenid@: Nombre de usuario</h1>      {/*Falta agregar la constante del usuario*/}
-            
-
-
+                <h1 className={`text-center font-bold uppercase text-[17px] sm:text-3xl`}>Bienvenid@: {datos1.nombres} {datos1.apellidos}</h1>      {/*Falta agregar la constante del usuario*/}
             
                 <p className={`flex flex-wrap text-justify p-2 sm:text-md md:w-200`}>
                 Como parte de nuestro proceso de reclutamiento de asesores, es fundamental llevar un registro detallado.

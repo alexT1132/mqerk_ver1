@@ -34,7 +34,7 @@ import { Link } from "react-router-dom";
   const tarjetas = [
     {
       id: "STEM",
-      titulo: "¿Por qué fallas en problemas de física? Descubre el truco para entenderlos mejor",
+      titulo: "¿Por qué fallas en problemas de física? Descubre el truco para entenderlos mejor.",
       fecha: "02/06/2025",
       visitas: "1k",
       categoria: "STEM",
@@ -42,7 +42,7 @@ import { Link } from "react-router-dom";
     },
     {
       id: "STEM",
-      titulo: "Matemáticas que sí sirven: Cómo usar álgebra para resolver problemas reales",
+      titulo: "Matemáticas que sí sirven: ¿Cómo usar álgebra para resolver problemas reales?",
       fecha: "02/06/2025",
       visitas: "1k",
       categoria: "STEM",
@@ -50,7 +50,7 @@ import { Link } from "react-router-dom";
     },
     {
       id: "Educación",
-      titulo: "Estudia con ciencia: Técnicas de memorización que funcionan según la neurociencia",
+      titulo: "Estudia con ciencia: Técnicas de memorización que funcionan según la neurociencia.",
       fecha: "02/06/2025",
       visitas: "1k",
       categoria: "Educación",
@@ -98,7 +98,7 @@ import { Link } from "react-router-dom";
     },
     {
       id: "Educación",
-      titulo: "Ciencias que se ven y se sienten: Como hacer un diario de observación científica.",
+      titulo: "Ciencias que se ven y se sienten: ¿Cómo hacer un diario de observación científica?",
       fecha: "02/06/2025",
       visitas: "1k",
       categoria: "Educación",
@@ -106,7 +106,7 @@ import { Link } from "react-router-dom";
     },
     {
       id: "STEM",
-      titulo: "¿Cual es el método científico y cómo lo aplicas tú sin darte cuenta?",
+      titulo: "¿Cuál es el método científico y cómo lo aplicas tú sin darte cuenta?",
       fecha: "02/06/2025",
       visitas: "1k",
       categoria: "STEM",
@@ -122,7 +122,7 @@ import { Link } from "react-router-dom";
     },
     {
       id: "STEM",
-      titulo: "Como resolver problemas matemáticos paso a paso…sin frustarse.",
+      titulo: "¿Como resolver problemas matemáticos paso a paso sin frustarse?",
       fecha: "02/06/2025",
       visitas: "1k",
       categoria: "STEM",
@@ -146,7 +146,7 @@ import { Link } from "react-router-dom";
     },
     {
       id: "Salud",
-      titulo: "Tu cerebro y el estrés en exámenes: ¿Cómo calmarte científicamente?",
+      titulo: "Cerebro y ansiedad ante exámenes: cómo regularte según la ciencia",
       fecha: "02/06/2025",
       visitas: "1k",
       categoria: "Salud",
@@ -162,7 +162,7 @@ import { Link } from "react-router-dom";
     },
     {
       id: "STEM",
-      titulo: "¿Como piensan los grandes científico? El arte de hacer preguntas inteligentes.",
+      titulo: "¿Cómo piensan los grandes científico? El arte de hacer preguntas inteligentes.",
       fecha: "02/06/2025",
       visitas: "1k",
       categoria: "STEM",
@@ -186,7 +186,7 @@ import { Link } from "react-router-dom";
     },
     {
       id: "Educación",
-      titulo: "Como aplicar la ciencia en tu vida diaria: Desde cocinar hasta andar en bici.",
+      titulo: "¿Cómo aplicar la ciencia en tu vida diaria? Desde cocinar hasta andar en bicicleta.",
       fecha: "02/06/2025",
       visitas: "1k",
       categoria: "Educación",
@@ -360,7 +360,7 @@ function Blog() {
                                     </div>
                                     <p className='text-[13px] mt-3 text-[#483dc7]'>Copyright © MQerKAcademy 2025 - Todos los derechos reservados</p>
                                   </div>
-                      </div>
+            </div>
             </div>
         </div>
     </div>

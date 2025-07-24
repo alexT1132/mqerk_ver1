@@ -327,6 +327,12 @@ html, body, #root{
   background-repeat: no-repeat;   /* No se repite */
 }
 
+.about{
+  background-image: url('./assets/mqerk/about/6.jpg');
+  background-size: cover;         /* La imagen cubre todo el div */
+  background-position: center;    /* Centrada */
+  background-repeat: no-repeat;   /* No se repite */
+}
 
 @keyframes draw-reverse {
   0% {

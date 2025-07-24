@@ -7,7 +7,8 @@ import { useNavigate } from "react-router-dom";
 const ResponsivePage = () => {
     const { register, handleSubmit } = useForm();
 
-    const { signin, errors: loginErrors, isAuthenticated, user } = useAuth();
+    const { signin, isAuthenticated, user, errors } = useAuth();
+
     const navigate = useNavigate();
 
     const onSubmit = handleSubmit((data) => {
@@ -15,20 +16,23 @@ const ResponsivePage = () => {
     });
 
     useEffect(() => {
-    if (isAuthenticated){
-      if (user.role === 'Administrador') {
-        navigate('/admin/dashboard');
-      } else if (user.role === 'Asesor') {
-        navigate('/asesor/dashboard');
+      if(isAuthenticated){
+        if(user.role === 'administrador'){
+          navigate('/admin/dashboard');
+        } else if(user.role === 'estudiante'){
+          navigate('/alumno')
+        } else if(user.role === 'asesor'){
+          navigate('/asesor/dashboard')
+        }
       }
-    }
-  }, [isAuthenticated]);
+    }, [signin])
+
 
     return (
         <div className="flex flex-col justify-center items-center h-screen" style={{ backgroundColor: "#3818c3" }}>
 
         {
-          loginErrors.map((error, i) => (
+          errors.map((error, i) => (
             <div className="absolute top-40 bg-red-500 text-white p-2 rounded w-85 font-bold text-center py-3" key={i}>
               {error}
             </div>
@@ -44,12 +48,12 @@ const ResponsivePage = () => {
 
           <form onSubmit={onSubmit}>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-400">Correo electrónico</label>
+              <label className="block text-sm font-medium text-gray-400">Usuario</label>
               <input
-                type="email"
+                type="text"
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Introduce tu correo electrónico"
-                {...register("correo", { required: true })}
+                {...register("usuario", { required: true })}
               />
             </div>
       
@@ -82,12 +86,14 @@ const ResponsivePage = () => {
       
           <form onSubmit={onSubmit}>
             <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-400">Correo electrónico</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-400">Usuario</label>
               <input
-                type="email"
-                {...register("correo", { required: true })}
+                type="text"
+                {...register("usuario")}
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Introduce tu correo electrónico"
+                required
+                autoComplete="off"
               />
             </div>
       
@@ -95,14 +101,16 @@ const ResponsivePage = () => {
               <label htmlFor="password" className="block text-sm font-medium text-gray-400">Contraseña</label>
               <input
                 type="password"
-                {...register("contraseña", { required: true })}
+                {...register("contraseña")}
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Introduce tu contraseña"
+                required
+                autoComplete="off"
               />
             </div>
       
             <button
-              type="submit"
+              type="submite"
               className="w-full py-3 bg-blue-400 text-white rounded-lg hover:bg-blue-600 transition duration-300 cursor-pointer"
             >
               Iniciar sesión

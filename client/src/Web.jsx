@@ -283,7 +283,8 @@ function Web() {
               </div>
             </div>
             <div className='w-full flex justify-center items-center py-8'>
-              <Link to='/entrenamiento_examen_admision_universidad' className='bg-[#3c24ba] w-60 py-2 flex justify-center items-center gap-2 rounded-2xl'>
+              <Link 
+              to='/entrenamiento_examen_admision_universidad' className='bg-[#3c24ba] w-60 py-2 flex justify-center items-center gap-2 rounded-2xl'>
                 <MdOutlineShoppingCart className='size-5 text-white' />
                 <div className="text-[13px] text-white font-bold">Empieza tu transformación</div>
               </Link>

@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { registerRequest, loginRequest, verifyTokenRequest } from "../api/auth.js";
+import { createContext, useContext, useEffect, useState } from 'react'
+import { registerRequest, loginRequest, verifyTokenRequest } from "../api/usuarios.js";
 import Cookies from "js-cookie";
 
 export const AuthContext = createContext();
@@ -14,51 +14,62 @@ export const useAuth = () => {
 
 export const AuthProvider = ({children}) => {
 
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState([]);
+    const [alumno, setAlumno] = useState([]);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [errors, setErrors] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (errors.length > 0) {
-          const timer = setTimeout(() => {
-            setErrors([]);
-          }, 5000);
-          return () => clearTimeout(timer);
-        }
-      }, [errors]);
-
     const signup = async (user) => {
         try {
             const res = await registerRequest(user);
-            if (res.status === 200) {
-                setUser(res.data);
-                setIsAuthenticated(true);
-              }
+            console.log(res.data);
         } catch (error) {
-            setErrors(error.response.data.message);
+            console.log(error);
         }
     }
 
     const signin = async (user) => {
         try {
             const res = await loginRequest(user);
-            setUser(res.data);
+            console.log(res.data.usuario);
+            setUser(res.data.usuario);
+            setAlumno(res.data.estudiante);
             setIsAuthenticated(true);
         } catch (error) {
-            if (Array.isArray(error.response.data.message)) {
-                return setErrors(error.response.data.message)
-            }
-            setErrors([error.response.data.message]);
-            // console.log(error);
+            const errMsg = error.response?.data?.message;
+            setErrors(Array.isArray(errMsg) ? errMsg : [errMsg || "Error desconocido"]);
         }
     }
 
-    const logout = () => {
-        Cookies.remove('token');
-        setIsAuthenticated(false);
-        setUser(null);
+    const envioComprobante = async (comprobante) => {
+        
     }
+
+    // const logout = () => {
+    //     logoutRequest();
+    //     Cookies.remove('token');
+    //     setIsAuthenticated(false);
+    //     setUser(null);
+    // }
+
+    // const getUsuarios = async () => {
+    //     try {
+    //         const res = await ObtenerUsuarios();
+    //         setUsers(res.data.data);
+    //     } catch (error) {
+    //         console.log(error);
+    //     }
+    // }
+
+    useEffect(() => {
+        if (errors.length > 0) {
+            const timer = setTimeout(() => {
+                setErrors([])
+            }, 3000)
+            return () => clearTimeout(timer)
+        }
+    }, [errors]);
 
     useEffect(() => {
         async function checkLogin () {
@@ -71,15 +82,16 @@ export const AuthProvider = ({children}) => {
             }
 
             try {
-                const res = await verifyTokenRequest(cookies.token)
+                const res = await verifyTokenRequest(cookies.token);
                 if (!res.data) {
                     setIsAuthenticated(false)
-                    setLoading(false)
+                    setLoading(false);
                     return
                 }
 
                 setIsAuthenticated(true)
-                setUser(res.data)
+                setUser(res.data.usuario)
+                setAlumno(res.data.estudiante);
                 setLoading(false)
             } catch (error) {
                 setIsAuthenticated(false)
@@ -89,20 +101,20 @@ export const AuthProvider = ({children}) => {
         }
 
         checkLogin();
-    }, [])
-
+    }, []);
 
     return (
         <AuthContext.Provider value={{
-            errors,
-            isAuthenticated,
-            user,
-            loading,
             signup,
             signin,
-            logout,
+            errors,
+            user,
+            alumno,
+            isAuthenticated,
+            loading
         }}>
             {children}
         </AuthContext.Provider>
     )
+
 }
