@@ -15,13 +15,22 @@ export function Header_Alumno_comp({
   markAllAsRead,
   notifications,
   unreadCount,
-  setIsNotificationsOpen
+  setIsNotificationsOpen,
+  // BACKEND: Props para datos del alumno
+  studentData = null, // Datos del estudiante desde el backend
+  profileImage = null, // URL de la imagen del perfil desde el backend
+  isOnline = true, // Estado de conexión del alumno
+  // BACKEND: Props para controlar la visibilidad del botón de salir
+  showLogoutButton = false, // Mostrar botón de salir solo en pantallas específicas
+  onLogout = null // Función para manejar el logout
 }) {
   const notificationRef = useRef(null);
 
   // Estados para la funcionalidad de búsqueda
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  // Estado para el modal de confirmación de logout
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Función para manejar la búsqueda - Lista para conectar con backend
   const handleSearch = (e) => {
@@ -58,39 +67,113 @@ export function Header_Alumno_comp({
 
   const displayedNotifications = notifications.filter(notif => !notif.isRead);
 
-  return (
-    <header className="relative flex items-center justify-between z-50 bg-gradient-to-r from-[#3d18c3] to-[#4816bf] sticky top-0 left-0 w-full px-4 sm:px-6 py-4">
-      {/* Estilos CSS personalizados */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @keyframes spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          .animate-spin-slow {
-            animation: spin-slow 3s linear infinite;
-          }
-          @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-4px); }
-          }
-          .animate-float {
-            animation: float 2s ease-in-out infinite;
-          }
-        `
-      }} />
-      {/* Contenedor del Logo */}
-      <div className="flex items-center justify-start h-full w-fit z-10">
-        <Link to={`/`} className="flex items-center justify-center">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
-            <Logos src={MQerkLogo} />
-          </div>
-        </Link>
-      </div>
+  // BACKEND: Función para obtener las iniciales del alumno
+  const getInitials = (name) => {
+    if (!name) return 'AL';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
 
-      {/* Barra de búsqueda central */}
-      {/* Ajustado mx-4 a ml-6 mr-2 para pantallas pequeñas para moverla más a la derecha */}
-      <div className="flex-1 flex justify-center ml-6 mr-2 sm:mx-6 lg:mx-8">
+  // BACKEND: Función para manejar error en carga de imagen
+  const handleImageError = (e) => {
+    console.log('Error cargando imagen de perfil, usando avatar de respaldo');
+    e.target.style.display = 'none';
+    e.target.nextSibling.style.display = 'flex'; // Mostrar avatar de respaldo
+  };
+
+  // BACKEND: Función para manejar el logout
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  // BACKEND: Confirmar logout desde el modal
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
+    if (onLogout) {
+      onLogout();
+    } else {
+      // Fallback si no se proporciona función de logout
+      console.log('Función de logout no proporcionada');
+      localStorage.clear();
+      window.location.href = '/login';
+    }
+  };
+
+  // BACKEND: Cancelar logout
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
+  };
+
+  return (
+    <>
+      {/* BACKEND: Modal de confirmación de logout - Sobrio y elegante */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100">
+            {/* Header del modal */}
+            <div className="px-6 py-5 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-5 h-5 text-red-600"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16,17 21,12 16,7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Cerrar sesión</h3>
+                  <p className="text-sm text-gray-500">Confirma que quieres salir</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Contenido del modal */}
+            <div className="px-6 py-5">
+              <p className="text-gray-700 text-base leading-relaxed">
+                ¿Estás seguro de que quieres cerrar sesión? Tendrás que volver a iniciar sesión para acceder a tu cuenta.
+              </p>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="px-6 py-4 bg-gray-50 rounded-b-2xl flex gap-3 justify-end">
+              <button
+                onClick={cancelLogout}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-medium text-sm shadow-sm hover:shadow-md"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <header className="relative flex items-center justify-between z-50 bg-gradient-to-r from-[#3d18c3] to-[#4816bf] sticky top-0 left-0 w-full px-4 sm:px-6 py-4">
+        {/* Contenedor del Logo */}
+        <div className="flex items-center justify-start h-full w-fit z-10">
+          <Link to={`/`} className="flex items-center justify-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
+              <Logos src={MQerkLogo} />
+            </div>
+          </Link>
+        </div>
+
+      {/* Barra de búsqueda central - OCULTA EN MÓVIL */}
+      {/* hidden = oculto en móvil, sm:flex = visible desde 640px en adelante */}
+      <div className="hidden sm:flex flex-1 justify-center mx-6 lg:mx-8">
         <form onSubmit={handleSearch} className="relative w-full sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl group">
           {/* Efecto de glow animado de fondo */}
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-400/20 via-pink-400/20 to-blue-400/20 blur-sm opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-500 animate-pulse pointer-events-none"></div>
@@ -143,17 +226,40 @@ export function Header_Alumno_comp({
 
           {/* Línea de progreso animada en el borde - solo cuando hay focus */}
           <div className={`absolute inset-0 rounded-full transition-opacity duration-300 pointer-events-none ${isSearchFocused ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 animate-spin-slow opacity-30 pointer-events-none" style={{
-              background: 'conic-gradient(from 0deg, #a855f7, #ec4899, #3b82f6, #a855f7)',
-              mask: 'radial-gradient(farthest-side, transparent calc(100% - 2px), white calc(100% - 2px))',
-              WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 2px), white calc(100% - 2px))'
-            }}></div>
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 animate-spin opacity-30 pointer-events-none"></div>
           </div>
         </form>
       </div>
 
       {/* Contenedor de los iconos de notificación y perfil */}
       <div className="flex items-center justify-end gap-3 sm:gap-4 h-full w-fit z-10">
+        
+        {/* BACKEND: Botón de Salir - Solo visible en pantallas específicas */}
+        {showLogoutButton && (
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white hover:scale-105 hover:bg-red-600 hover:bg-opacity-30 rounded-full transition-all duration-200 relative group"
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
+          >
+            {/* Icono de salir */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 group-hover:animate-pulse transition-all duration-200"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16,17 21,12 16,7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        )}
+
         {/* Icono de Notificación - MUY COMPACTO */}
         <div
           className="relative flex items-center justify-center"
@@ -188,7 +294,7 @@ export function Header_Alumno_comp({
 
           {/* Contenedor de Notificaciones Desplegable (se muestra condicionalmente) */}
           {isNotificationsOpen && (
-            <div className="absolute top-full mt-2 w-80 bg-white/50 border border-gray-200/50 rounded-lg shadow-xl z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200 backdrop-blur-xl
+            <div className="absolute top-full mt-2 w-80 bg-white/50 border border-gray-200/50 rounded-lg shadow-xl z-50 overflow-hidden animate-pulse backdrop-blur-xl
                             max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:w-[calc(100vw-32px)] sm:right-0 sm:max-w-xs">
               {/* Header del dropdown */}
               <div className="bg-gradient-to-r from-purple-600/50 to-purple-800/50 text-white px-4 py-3">
@@ -268,26 +374,94 @@ export function Header_Alumno_comp({
           )}
         </div>
 
-        {/* Icono de Perfil - MUY COMPACTO */}
+        {/* Icono de Perfil - PREPARADO PARA BACKEND */}
         <div className="relative flex items-center justify-center">
-          <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden border-1 sm:border-2 border-white shadow-md sm:shadow-lg bg-gradient-to-b from-orange-300 to-orange-400 hover:scale-105 transition-transform duration-200">
-            {/* Avatar ultra compacto */}
-            <div className="relative w-full h-full bg-gradient-to-b from-yellow-200 to-yellow-300">
-              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-4 h-1.5 sm:w-5 sm:h-2 lg:w-6 lg:h-2.5 bg-gradient-to-b from-orange-600 to-orange-700 rounded-t-full"></div>
-              <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 lg:top-2.5 lg:left-2.5 w-0.5 h-0.5 bg-gray-800 rounded-full"></div>
-              <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 lg:top-2.5 lg:right-2.5 w-0.5 h-0.5 bg-gray-800 rounded-full"></div>
-              <div className="absolute top-2.5 sm:top-3 lg:top-3.5 left-1/2 transform -translate-x-1/2 w-0.5 h-0.5 bg-yellow-400 rounded-full"></div>
-              <div className="absolute top-3 sm:top-3.5 lg:top-4 left-1/2 transform -translate-x-1/2 w-1 sm:w-1.5 h-0.5 bg-gray-700 rounded-full"></div>
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-1.5 sm:w-5 sm:h-2 lg:w-6 lg:h-2.5 bg-gradient-to-b from-gray-600 to-gray-700 rounded-t-lg">
-                <div className="absolute top-0.5 left-1/2 transform -translate-x-1/2 w-2.5 h-1 sm:w-3 sm:h-1 lg:w-3.5 lg:h-1.5 bg-white"></div>
-                <div className="absolute top-0.5 left-1/2 transform -translate-x-1/2 w-0.5 h-1 sm:w-0.5 sm:h-1 lg:w-0.5 lg:h-1.5 bg-red-600"></div>
-              </div>
+          <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden border-1 sm:border-2 border-white shadow-md sm:shadow-lg hover:scale-105 transition-transform duration-200 cursor-pointer">
+            
+            {/* BACKEND: Imagen real del alumno */}
+            {profileImage && (
+              <img
+                src={profileImage}
+                alt={`Foto de perfil de ${studentData?.name || 'Alumno'}`}
+                className="w-full h-full object-cover object-center"
+                onError={handleImageError}
+                loading="lazy"
+              />
+            )}
+            
+            {/* BACKEND: Avatar de respaldo cuando no hay imagen o falla la carga */}
+            <div 
+              className={`${profileImage ? 'hidden' : 'flex'} w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center`}
+              style={{ display: profileImage ? 'none' : 'flex' }}
+            >
+              {/* Mostrar iniciales del alumno */}
+              <span className="text-white font-bold text-xs sm:text-sm lg:text-base select-none">
+                {getInitials(studentData?.name)}
+              </span>
             </div>
           </div>
-          {/* Indicador de estado - PEQUEÑO */}
-          <div className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 sm:w-2 sm:h-2 lg:w-2.5 lg:h-2.5 bg-green-400 border-1 border-white rounded-full animate-pulse"></div>
+          
+          {/* BACKEND: Indicador de estado online/offline */}
+          <div className={`absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 sm:w-2 sm:h-2 lg:w-2.5 lg:h-2.5 ${isOnline ? 'bg-green-400' : 'bg-gray-400'} border-1 border-white rounded-full ${isOnline ? 'animate-pulse' : ''}`}></div>
         </div>
       </div>
+
+      {/* BACKEND: Modal de confirmación de logout - Sobrio y elegante */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100">
+            {/* Header del modal */}
+            <div className="px-6 py-5 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-5 h-5 text-red-600"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16,17 21,12 16,7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Cerrar sesión</h3>
+                  <p className="text-sm text-gray-500">Confirma que quieres salir</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Contenido del modal */}
+            <div className="px-6 py-5">
+              <p className="text-gray-700 text-base leading-relaxed">
+                ¿Estás seguro de que quieres cerrar sesión? Tendrás que volver a iniciar sesión para acceder a tu cuenta.
+              </p>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="px-6 py-4 bg-gray-50 rounded-b-2xl flex gap-3 justify-end">
+              <button
+                onClick={cancelLogout}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-medium text-sm shadow-sm hover:shadow-md"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
+    </>
   );
 }

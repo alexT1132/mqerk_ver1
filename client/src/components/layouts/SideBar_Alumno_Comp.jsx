@@ -93,19 +93,18 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onCli
           <span className="text-sm font-medium whitespace-nowrap block ml-2">
             {NombreElemento}
           </span>
-        ) : (
-          <>
-            <span className={`text-sm font-medium whitespace-nowrap ml-2 transition-all duration-300 ease-in-out ${
-              isSidebarOpen ? 'opacity-100 translate-x-0 delay-100' : 'opacity-0 -translate-x-2 w-0 overflow-hidden'
-            }`}>
-              {NombreElemento}
-            </span>
-            {!isSidebarOpen && (
-              <span className="hidden group-hover:block absolute left-full top-1/2 -translate-y-1/2 ml-3 bg-gray-900/90 text-white px-3 py-2 rounded-lg shadow-xl z-50 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none backdrop-blur-sm border border-gray-700/50 text-sm font-medium">
+        ) : (            <>
+              <span className={`text-sm font-medium whitespace-nowrap ml-2 transition-all duration-200 ease-out ${
+                isSidebarOpen ? 'opacity-100 translate-x-0 delay-75' : 'opacity-0 -translate-x-2 w-0 overflow-hidden'
+              }`}>
                 {NombreElemento}
               </span>
-            )}
-          </>
+              {!isSidebarOpen && (
+                <span className="hidden group-hover:block absolute left-full top-1/2 -translate-y-1/2 ml-3 bg-gray-900/90 text-white px-3 py-2 rounded-lg shadow-xl z-50 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none backdrop-blur-sm border border-gray-700/50 text-sm font-medium">
+                  {NombreElemento}
+                </span>
+              )}
+            </>
         )}
       </Link>
     </li>
@@ -239,7 +238,7 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
       if (setDesktopSidebarOpen) {
         setDesktopSidebarOpen(false);
       }
-    }, 200);
+    }, 100); // Reducido de 200ms a 100ms para más responsividad
   };
 
   useEffect(() => {
@@ -252,7 +251,7 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
 
   return (
     <aside
-      className={`max-sm:hidden flex flex-col fixed ${sidebarWidth} shadow-lg z-40 top-[80px] h-[calc(100vh-80px)] bg-white/95 backdrop-blur-sm border-r border-gray-200/80 transition-all duration-300 ease-in-out overflow-hidden`}
+      className={`max-sm:hidden flex flex-col fixed ${sidebarWidth} shadow-lg z-40 top-[80px] h-[calc(100vh-80px)] bg-white/95 backdrop-blur-sm border-r border-gray-200/80 transition-all duration-200 ease-out overflow-hidden`}
       style={{
         transform: isSidebarOpen ? 'translateX(0)' : 'translateX(0)',
         opacity: 1,
