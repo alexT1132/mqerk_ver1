@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [
     tailwindcss(),
-    React()
+    React(),
   ],
   server: {
     host: '192.168.0.15', // Permite acceso desde otras direcciones IP

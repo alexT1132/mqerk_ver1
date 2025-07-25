@@ -18,7 +18,7 @@ const TestComp = () => {
 }
 
 export const BtnDesplegable = ({selected, setSelected}) => {
-    const Opciones = [`Actividades`, `Quizt`, `Simuladores`];
+    const Opciones = [`Actividades`, `Quizt`];
 
     
 
@@ -660,7 +660,7 @@ export const TablaAsignacionActividades = () => {
     Contestado: true,
     fechaLimite: "2025-07-15T18:00:00",
     archivoUrl: "#",
-    calificacion: null,
+    calificacion: 100,
   },
   {
     folio: "A002",
@@ -669,7 +669,7 @@ export const TablaAsignacionActividades = () => {
     Contestado: false,
     fechaLimite: "2025-07-15T18:00:00",
     archivoUrl: "#",
-    calificacion: null,
+    calificacion: 82.5,
   },
   {
     folio: "A003",
@@ -678,34 +678,13 @@ export const TablaAsignacionActividades = () => {
     Contestado: true,
     fechaLimite: "2025-07-10T18:00:00",
     archivoUrl: "#",
-    calificacion: null,
+    calificacion: 70,
   },
 ];
 
 
 export const TablaAsignacionQuizt = () => {
   const [quizt, setQuizt] = useState(estudiantesQuiztEjemplo);
-
-
-
-  // Quitar grupo de actividad (doble confirmación)
-  const quitarGrupo = (quiztId, grupo) => {
-    const confirmar = window.confirm(`¿Desea quitar la actividad del grupo ${grupo}?`);
-    if (!confirmar) return;
-    const confirmar2 = window.confirm(`¿Está seguro que desea quitar la actividad del grupo ${grupo}?`);
-    if (!confirmar2) return;
-
-    setQuizt((prev) =>
-      prev.map((quizt) =>
-        quizt.id === quiztividadId
-          ? {
-              ...quizt,
-              gruposAsignados: quizt.gruposAsignados.filter((g) => g !== grupo),
-            }
-          : quizt
-      )
-    );
-  };
 
   return (
     <div className="overflow-x-auto w-full">
@@ -719,22 +698,27 @@ export const TablaAsignacionQuizt = () => {
           </tr>
         </thead>
         <tbody className="text-center">
-          {quizt.map((quizt, idx) => {
-            return (
-              <tr
-                key={quizt.id}
-                className={`transition hover:bg-purple-50 ${
-                  idx % 2 === 0 ? "bg-gray-100" : "bg-white"
-                }`}
-              >
-                <td className="py-2 px-4">{quizt.folio}</td>
-                <td className="py-2 px-4">{quizt.nombre}</td>
-                <td className="py-2 px-4">{quizt.Contestado}</td>
-                <td className="py-2 px-4">{quizt.Resultado}</td>
-
-              </tr>
-            );
-          })}
+          {quizt.map((q, idx) => (
+            <tr
+              key={q.folio}
+              className={`transition hover:bg-purple-50 ${
+                idx % 2 === 0 ? "bg-gray-100" : "bg-white"
+              }`}
+            >
+              <td className="py-2 px-4">{q.folio}</td>
+              <td className="py-2 px-4">{q.nombre}</td>
+              <td className="py-2 px-4">
+                {q.Contestado ? (
+                  <span className="text-green-600 font-semibold">Sí</span>
+                ) : (
+                  <span className="text-red-600 font-semibold">No</span>
+                )}
+              </td>
+              <td className={`py-2 px-4 ${q.calificacion > 70 ? "text-green-500":"text-yellow-500"}`}>
+              {q.calificacion}%
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
@@ -859,7 +843,7 @@ export const TablaEstudiantes = () => {
   };
 
   const handleEditar = (folio, calificacion) => {
-    setModal({ open: true, folio, calificacionInicial: calificacion });
+    setModal({ open: true, folio, calificacionInicial });
   };
 
   const handleConfirm = (calificacion) => {
