@@ -39,8 +39,8 @@ const RegistroEstudiante=()=>{
             fetch("https://worldtimeapi.org/api/timezone/America/Mexico_City")
             .then((res) => res.json())
             .then((data) => {
-                const year = data.datetime.slice(0, 4);   // "2025"
-                setUltimosDosDigitos(year.slice(-2));     // "25"
+                const year = parseInt(data.datetime.slice(0, 4)) + 1;   // "2025"
+                setUltimosDosDigitos(year.toString().slice(-2));     // "25"
             })
             .catch((err) => {
                 console.error("Error al obtener el año:", err);

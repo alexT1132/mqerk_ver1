@@ -43,7 +43,7 @@ export const Logos=({src, alt})=>{
             src={src}
             alt={alt}
             draggable={`false`}
-            className="flex object-contain min-w-15 sm:min-w-25 h-20"
+            className="flex object-contain select-none min-w-15 sm:min-w-25 h-20"
             onContextMenu={(e) => e.preventDefault()}
         />
     );
