@@ -1,48 +1,16 @@
-// src\components\ValidacionPagos_Admin_comp.jsx
-
-/**
- * DOCUMENTACIÓN PARA EL BACKEND
- * 
- * Estructura de datos esperada para cada pago:
- * {
- *   id: string,                 // ID único del pago (ej: "PAG001")
- *   folio: string,              // Folio del pago para identificación
- *   alumno: string,             // Nombre completo del alumno
- *   correoElectronico: string,  // Email del alumno
- *   fechaEntrada: string,       // Fecha del pago en formato "YYYY-MM-DD"
- *   planCurso: string,          // Descripción del plan contratado
- *   pagoCurso: string,          // Monto del pago (ej: "$1,200 MXN")
- *   metodoPago: string,         // Método utilizado para el pago
- *   categoria: string,          // Curso: "EEAU", "EEAP", "DIGI-START", "MINDBRIDGE", "SPEAKUP", "PCE"
- *   turno: string,              // "VESPERTINO 1" o "VESPERTINO 2"
- *   contratoGenerado: boolean,  // Si ya se generó el contrato
- *   contratoSubido: boolean,    // Si ya se subió el contrato firmado
- *   comprobanteUrl: string,     // URL del comprobante de pago
- *   contratoUrl: string,        // URL del contrato (cuando esté disponible)
- *   estatus: string,            // "Pendiente", "Aprobado", "Rechazado"
- *   fechaRegistro: string       // Fecha de registro en formato "YYYY-MM-DD"
- * }
- * 
- * APIs a implementar:
- * - GET /api/pagos?curso={curso}&turno={turno} - Obtener pagos filtrados
- * - PUT /api/pagos/{id}/generar-contrato - Generar contrato para un pago
- * - POST /api/pagos/{id}/subir-contrato - Subir contrato firmado
- * - GET /api/pagos/{id}/contrato - Descargar contrato
- * - PUT /api/pagos/{id}/aprobar - Aprobar pago
- * - PUT /api/pagos/{id}/rechazar - Rechazar pago
- */
-
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import jsPDF from 'jspdf';
+import { generarYDescargarContrato } from '../../service/contractPDFService.js';
+import { generarPDFCalibracion } from '../../service/pdfCalibrationService.js';
+import ConfirmModal from '../shared/ConfirmModal';
+import { useAdminContext } from '../../context/AdminContext.jsx';
 
-// Componente para la pantalla de carga simple (estilo consistente con otros componentes)
 function LoadingScreen({ onComplete }) {
     useEffect(() => {
-        // Simular carga por 2 segundos
         const timer = setTimeout(() => {
             onComplete();
         }, 2000);
-
         return () => clearTimeout(timer);
     }, [onComplete]);
 
@@ -56,18 +24,33 @@ function LoadingScreen({ onComplete }) {
     );
 }
 
-// Componente para los botones de categoría (cursos)
 function CategoryButton({ label, isActive, onClick }) {
+    // Función para obtener texto responsive
+    const getResponsiveText = (label) => {
+        const abbreviations = {
+            'DIGI-START': { short: 'DIGI', medium: 'DIGI-START' },
+            'MINDBRIDGE': { short: 'MIND', medium: 'MINDBRIDGE' },
+            'SPEAKUP': { short: 'SPEAK', medium: 'SPEAKUP' },
+            'EEAU': { short: 'EEAU', medium: 'EEAU' },
+            'EEAP': { short: 'EEAP', medium: 'EEAP' },
+            'PCE': { short: 'PCE', medium: 'PCE' }
+        };
+        
+        return abbreviations[label] || { short: label, medium: label };
+    };
+
+    const textVariants = getResponsiveText(label);
+
     return (
         <button
             onClick={onClick}
             className={`
                 relative overflow-hidden 
-                px-1.5 py-1.5 xs:px-2 xs:py-2 sm:px-3 sm:py-3 md:px-4 md:py-3
+                px-1 py-1.5 xs:px-2 xs:py-2 sm:px-3 sm:py-3 md:px-4 md:py-3
                 rounded-md xs:rounded-lg sm:rounded-xl 
-                font-bold text-[10px] xs:text-xs sm:text-sm md:text-base
+                font-bold text-[9px] xs:text-[10px] sm:text-xs md:text-sm lg:text-base
                 transition-all duration-300 ease-out 
-                w-full min-w-[80px] xs:min-w-[100px] max-w-[140px] xs:max-w-[160px]
+                w-full min-w-[70px] xs:min-w-[85px] sm:min-w-[100px] max-w-[120px] xs:max-w-[140px] sm:max-w-[160px]
                 h-10 xs:h-12 sm:h-14 md:h-16
                 flex items-center justify-center
                 border-2 transform hover:scale-105 hover:shadow-lg
@@ -77,122 +60,484 @@ function CategoryButton({ label, isActive, onClick }) {
                 }
             `}
         >
+            {/* Texto para pantallas muy pequeñas */}
+            <span className="block xs:hidden relative z-10 tracking-tight text-center leading-tight break-words hyphens-auto px-1">
+                {textVariants.short}
+            </span>
+            {/* Texto para pantallas medianas y grandes */}
+            <span className="hidden xs:block relative z-10 tracking-tight text-center leading-tight break-words hyphens-auto px-1">
+                {textVariants.medium}
+            </span>
+        </button>
+    );
+}
+
+// Botón de grupo con información de capacidad
+function GrupoButton({ label, isActive, onClick, grupo }) {
+    // Función para obtener estilos sobrios basados en el tipo de turno
+    const getGrupoStyles = (tipo, isActive) => {
+        const baseStyles = "relative overflow-hidden px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-3 rounded-md xs:rounded-lg font-medium text-xs xs:text-sm transition-all duration-200 ease-out w-full min-w-[100px] max-w-[140px] h-10 xs:h-12 sm:h-14 flex flex-col items-center justify-center gap-0.5 border hover:shadow-md";
+        
+        switch (tipo) {
+            case 'vespertino':
+                return isActive 
+                    ? `${baseStyles} bg-purple-500 text-white border-purple-500`
+                    : `${baseStyles} bg-white text-purple-600 border-purple-300 hover:bg-purple-50`;
+            
+            case 'matutino':
+                return isActive 
+                    ? `${baseStyles} bg-blue-500 text-white border-blue-500`
+                    : `${baseStyles} bg-white text-blue-600 border-blue-300 hover:bg-blue-50`;
+            
+            case 'sabatino':
+                return isActive 
+                    ? `${baseStyles} bg-green-500 text-white border-green-500`
+                    : `${baseStyles} bg-white text-green-600 border-green-300 hover:bg-green-50`;
+            
+            default:
+                return isActive 
+                    ? `${baseStyles} bg-gray-500 text-white border-gray-500`
+                    : `${baseStyles} bg-white text-gray-600 border-gray-300 hover:bg-gray-50`;
+        }
+    };
+
+    return (
+        <button
+            onClick={onClick}
+            className={getGrupoStyles(grupo?.tipo, isActive)}
+        >
             <span className="relative z-10 tracking-wide text-center leading-tight">{label}</span>
         </button>
     );
 }
 
-export function ValidacionPagos_Admin_comp() {
-  // Estado para controlar la pantalla de carga
-  const [isLoading, setIsLoading] = useState(true);
+/**
+ * Componente Admin de Gestión de Contratos
+ * Gestiona la generación y administración de contratos para alumnos con pagos aprobados
+ * 
+ * ENDPOINTS BACKEND REQUERIDOS:
+ * - GET /api/cursos/{curso}/grupos - Obtener grupos disponibles por curso
+ * - GET /api/alumnos/aprobados?curso={curso}&turno={turno} - Obtener alumnos aprobados por curso y turno
+ * - POST /api/contratos/{id}/generar - Generar contrato PDF
+ * - POST /api/contratos/{id}/subir - Subir contrato firmado
+ * - GET /api/contratos/{id}/visualizar - Visualizar contrato
+ * 
+ * FORMATO ESPERADO DE RESPUESTA ALUMNOS APROBADOS:
+ * [
+ *   {
+ *     "id": 1,
+ *     "folio": "PAG001",
+ *     "alumno": "Juan Pérez",
+ *     "correoElectronico": "juan@email.com",
+ *     "categoria": "EEAU",
+ *     "turno": "V1",
+ *     "pagoCurso": "$1,500.00",
+ *     "metodoPago": "Transferencia",
+ *     "fechaEntrada": "2024-12-15",
+ *     "planCurso": "Plan Básico - 6 meses",
+ *     "contratoUrl": "/uploads/contrato123.pdf", // null si no tiene contrato aún
+ *     "estado": "aprobado"
+ *   }
+ * ]
+ */
+
+function ValidacionPagos_Admin_comp() {
+  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
   
-  // Estados para manejar las categorías activas
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeTurno, setActiveTurno] = useState(null);
-  
-  // Estado para almacenar los datos de validación
   const [pagos, setPagos] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Estados para la modal de PDF
   const [modalPDF, setModalPDF] = useState({
     isOpen: false,
     url: '',
     alumno: null,
-    tipo: '' // 'contrato' o 'comprobante'
+    tipo: ''
+  });
+  
+  const [showContratoModal, setShowContratoModal] = useState(false);
+  const [selectedAlumno, setSelectedAlumno] = useState(null);
+  const [isGeneratingContract, setIsGeneratingContract] = useState(false);
+  const [contractModal, setContractModal] = useState({
+    isOpen: false,
+    type: '', // 'confirm' | 'success' | 'error'
+    alumno: null,
+    message: '',
+    details: ''
   });
 
-  // Definir las categorías de cursos y turnos
-  const categorias = ['EEAU', 'EEAP', 'DIGI-START', 'MINDBRIDGE', 'SPEAKUP', 'PCE'];
-  const turnos = ['VESPERTINO 1', 'VESPERTINO 2'];///alguna forma de mostrar cuando sean mas de lo que hay inicilamente
+  // ============= INTEGRACIÓN CON ADMINCONTEXT =============
+  
+  // AdminContext.jsx proporciona TODAS las funciones para pagos y contratos:
+  // - paymentsData: datos de pagos cargados desde el contexto
+  // - isLoading: estado de carga del contexto
+  // - error: errores del contexto
+  // - lastUpdated: timestamp de última actualización
+  // - loadPaymentsData(curso, turno): cargar pagos por curso/turno
+  // - approvePayment(paymentId): aprobar un pago
+  // - rejectPayment(paymentId, reason): rechazar un pago
+  // - generateContract(paymentId, contractData): generar contrato PDF
+  // - uploadContract(paymentId, file): subir contrato firmado
+  const { 
+    paymentsData,        // ← AdminContext.jsx datos de pagos
+    isLoading,           // ← AdminContext.jsx estado de carga
+    error,               // ← AdminContext.jsx errores
+    lastUpdated,         // ← AdminContext.jsx timestamp actualización
+    loadPaymentsData,    // ← AdminContext.jsx función cargar pagos
+    approvePayment,      // ← AdminContext.jsx función aprobar pago
+    rejectPayment,       // ← AdminContext.jsx función rechazar pago
+    generateContract,    // ← AdminContext.jsx función generar contrato
+    uploadContract       // ← AdminContext.jsx función subir contrato
+  } = useAdminContext();
 
-  // Función para obtener pagos del backend
+  // ==================== CONFIGURACIÓN DE CURSOS Y GRUPOS ====================
+  
+  // ❌ CURSOS FIJOS - HARDCODEADOS en el frontend
+  // Estos NO cambian desde el backend, están definidos aquí:
+  const cursosDisponibles = ['EEAU', 'EEAP', 'DIGI-START', 'MINDBRIDGE', 'SPEAKUP', 'PCE'];
+  
+  // ✅ GRUPOS DINÁMICOS - TODO viene del backend
+  // Incluye: nombre, tipo, capacidad máxima, alumnos actuales
+  // TODO: CONECTAR CON BACKEND - Endpoint: GET /api/cursos/{curso}/grupos
+  //  ESTOS DATOS SÍ VIENEN DEL BACKEND 
+  const [gruposPorCurso, setGruposPorCurso] = useState({
+    // DATOS MOCK TEMPORALES PARA PRUEBAS - ELIMINAR EN PRODUCCIÓN
+    'EEAU': [
+      { id: 1, nombre: 'V1', tipo: 'vespertino', capacidad: 10, alumnosActuales: 8 },
+      { id: 2, nombre: 'V2', tipo: 'vespertino', capacidad: 10, alumnosActuales: 5 },
+      { id: 3, nombre: 'M1', tipo: 'matutino', capacidad: 15, alumnosActuales: 12 }
+    ],
+    'EEAP': [
+      { id: 4, nombre: 'V1', tipo: 'vespertino', capacidad: 12, alumnosActuales: 9 },
+      { id: 5, nombre: 'S1', tipo: 'sabatino', capacidad: 20, alumnosActuales: 15 }
+    ],
+    'DIGI-START': [
+      { id: 6, nombre: 'V1', tipo: 'vespertino', capacidad: 8, alumnosActuales: 6 },
+      { id: 7, nombre: 'M1', tipo: 'matutino', capacidad: 10, alumnosActuales: 7 }
+    ],
+    'MINDBRIDGE': [
+      { id: 8, nombre: 'V1', tipo: 'vespertino', capacidad: 6, alumnosActuales: 4 }
+    ],
+    'SPEAKUP': [
+      { id: 9, nombre: 'V1', tipo: 'vespertino', capacidad: 8, alumnosActuales: 6 },
+      { id: 10, nombre: 'V2', tipo: 'vespertino', capacidad: 8, alumnosActuales: 3 }
+    ],
+    'PCE': [
+      { id: 11, nombre: 'M1', tipo: 'matutino', capacidad: 12, alumnosActuales: 10 },
+      { id: 12, nombre: 'S1', tipo: 'sabatino', capacidad: 15, alumnosActuales: 8 }
+    ]
+  });
+
+  // ==================== UTILIDADES ====================
+  
+  // Obtiene los grupos disponibles para el curso seleccionado
+  const getGruposDisponibles = () => {
+    return gruposPorCurso[activeCategory] || [];
+  };
+
   const fetchPagos = async () => {
+    if (!activeCategory || !activeTurno) return;
+    
     try {
-      // TODO: Implementar llamada al backend
-      // const response = await fetch(`/api/pagos?curso=${activeCategory}&turno=${activeTurno}`);
-      // const data = await response.json();
-      // setPagos(data);
+      // ✅ INTEGRACIÓN CON ADMINCONTEXT - Los datos vienen del contexto
+      // AdminContext.jsx maneja loadPaymentsData(curso, turno) con datos mock
+      // En producción, AdminContext hará las llamadas HTTP reales
       
-      // Datos de ejemplo para poder probar las funcionalidades
-      setPagos([
+      // TODO: USAR ADMINCONTEXT EN LUGAR DE MOCK - DESCOMENTAR EN PRODUCCIÓN
+      // const data = await loadPaymentsData(activeCategory, activeTurno);
+      // setPagos(data || []);
+      
+      // ⚠️ TEMPORAL: Usar datos mock hasta que AdminContext esté conectado
+      // Simular delay del backend (esto se quita en producción)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // DATOS MOCK PARA PRUEBAS - Solo alumnos APROBADOS que necesitan contratos
+      const todosMockPagos = [
+        // EEAU - V1
         {
           id: 1,
-          folio: 'PAG-001',
-          alumno: 'Juan Pérez García',
-          correoElectronico: 'juan.perez@email.com',
-          fechaEntrada: '2024-12-15',
-          planCurso: 'Curso Básico de Inglés - 6 meses',
-          pagoCurso: '$1,200 MXN',
-          metodoPago: 'Transferencia Bancaria',
-          categoria: activeCategory,
-          turno: activeTurno,
-          contratoGenerado: false,
-          contratoSubido: false,
-          comprobanteUrl: '/comprobantes/comp001.pdf',
-          // Datos adicionales del alumno para el contrato
-          telefono: '555-0123',
-          direccion: 'Calle Principal #123, Col. Centro',
-          fechaNacimiento: '1995-03-20',
-          identificacion: 'CURP123456789'
+          folio: "MQEEAU-2025-0001",
+          alumno: "María González López",
+          correoElectronico: "maria.gonzalez@email.com",
+          telefono: "555-0101",
+          direccion: "Av. Principal 123, Col. Centro",
+          fechaNacimiento: "1995-03-15",
+          identificacion: "INE123456789",
+          categoria: "EEAU",
+          turno: "V1",
+          planCurso: "Plan Básico - 6 meses",
+          pagoCurso: "$1,500.00",
+          metodoPago: "Transferencia bancaria",
+          fechaEntrada: "2024-07-29",
+          comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.pdf",
+          contratoUrl: null, // Sin contrato aún
+          estado: "aprobado"
         },
         {
           id: 2,
-          folio: 'PAG-002',
-          alumno: 'María González López',
-          correoElectronico: 'maria.gonzalez@email.com',
-          fechaEntrada: '2024-12-16',
-          planCurso: 'Curso Intermedio de Inglés - 8 meses',
-          pagoCurso: '$1,500 MXN',
-          metodoPago: 'Depósito en Efectivo',
-          categoria: activeCategory,
-          turno: activeTurno,
-          contratoGenerado: true,
-          contratoSubido: false,
-          comprobanteUrl: '/comprobantes/comp002.pdf',
-          contratoUrl: '/contratos/contrato002.pdf',
-          telefono: '555-0456',
-          direccion: 'Av. Reforma #456, Col. Roma',
-          fechaNacimiento: '1992-07-15',
-          identificacion: 'CURP987654321'
+          folio: "MQEEAU-2025-0002", 
+          alumno: "Carlos Hernández Ruiz",
+          correoElectronico: "carlos.hernandez@email.com",
+          telefono: "555-0102",
+          direccion: "Calle Secundaria 456, Col. Norte",
+          fechaNacimiento: "1992-08-22",
+          identificacion: "INE987654321",
+          categoria: "EEAU",
+          turno: "V1",
+          planCurso: "Plan Básico - 6 meses",
+          pagoCurso: "$1,500.00",
+          metodoPago: "Tarjeta de crédito",
+          fechaEntrada: "2024-07-28",
+          comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.png",
+          contratoUrl: "/src/assets/contrato-firmado-carlos.pdf", // Ya tiene contrato subido
+          estado: "aprobado"
         },
+        // EEAU - V2
         {
           id: 3,
-          folio: 'PAG-003',
-          alumno: 'Carlos Rodríguez Martín',
-          correoElectronico: 'carlos.rodriguez@email.com',
-          fechaEntrada: '2024-12-17',
-          planCurso: 'Curso Avanzado de Inglés - 12 meses',
-          pagoCurso: '$1,800 MXN',
-          metodoPago: 'Transferencia SPEI',
-          categoria: activeCategory,
-          turno: activeTurno,
-          contratoGenerado: true,
-          contratoSubido: true,
-          comprobanteUrl: '/comprobantes/comp003.pdf',
-          contratoUrl: '/contratos/contrato003.pdf',
-          telefono: '555-0789',
-          direccion: 'Blvd. Insurgentes #789, Col. Del Valle',
-          fechaNacimiento: '1988-11-10',
-          identificacion: 'CURP456789123'
+          folio: "MQEEAU-2025-0003",
+          alumno: "Ana Patricia Morales",
+          correoElectronico: "ana.morales@email.com", 
+          telefono: "555-0103",
+          direccion: "Blvd. Sur 789, Col. Jardines",
+          fechaNacimiento: "1988-12-10",
+          identificacion: "INE456789123",
+          categoria: "EEAU",
+          turno: "V2",
+          planCurso: "Plan Básico - 6 meses",
+          pagoCurso: "$1,500.00",
+          metodoPago: "Depósito en efectivo",
+          fechaEntrada: "2024-07-27",
+          comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.pdf",
+          contratoUrl: null, // Sin contrato aún
+          estado: "aprobado"
+        },
+        // EEAP - V1
+        {
+          id: 4,
+          folio: "MQEEAP-2025-0001",
+          alumno: "Roberto Silva Mendoza",
+          correoElectronico: "roberto.silva@email.com",
+          telefono: "555-0201",
+          direccion: "Av. Universidad 321, Col. Educación",
+          fechaNacimiento: "1990-05-18",
+          identificacion: "INE789123456",
+          categoria: "EEAP",
+          turno: "V1",
+          planCurso: "Plan Avanzado - 8 meses",
+          pagoCurso: "$1,800.00",
+          metodoPago: "Transferencia bancaria",
+          fechaEntrada: "2024-07-26",
+          comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.pdf",
+          contratoUrl: "/src/assets/contrato-firmado-roberto.pdf", // Ya tiene contrato subido
+          estado: "aprobado"
+        },
+        // DIGI-START - V1
+        {
+          id: 5,
+          folio: "MQDIGI-2025-0001",
+          alumno: "Lucía Rodríguez Tech",
+          correoElectronico: "lucia.rodriguez@email.com",
+          telefono: "555-0301",
+          direccion: "Calle Innovación 147, Col. Tecnológica",
+          fechaNacimiento: "1994-09-03",
+          identificacion: "INE321654987",
+          categoria: "DIGI-START",
+          turno: "V1",
+          planCurso: "Plan Digital - 4 meses",
+          pagoCurso: "$2,200.00",
+          metodoPago: "Tarjeta de crédito",
+          fechaEntrada: "2024-07-25",
+          comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.png",
+          contratoUrl: null, // Sin contrato aún
+          estado: "aprobado"
+        },
+        // MINDBRIDGE - V1
+        {
+          id: 6,
+          folio: "MQMIND-2025-0001",
+          alumno: "Eduardo Morales Mind",
+          correoElectronico: "eduardo.morales@email.com",
+          telefono: "555-0401",
+          direccion: "Av. Psicología 258, Col. Mental",
+          fechaNacimiento: "1987-11-14",
+          identificacion: "INE654987321",
+          categoria: "MINDBRIDGE",
+          turno: "V1",
+          planCurso: "Plan Psicológico - 3 meses",
+          pagoCurso: "$1,200.00",
+          metodoPago: "Depósito en efectivo",
+          fechaEntrada: "2024-07-24",
+          comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.pdf",
+          contratoUrl: null, // Sin contrato aún
+          estado: "aprobado"
+        },
+        // SPEAKUP - V1
+        {
+          id: 7,
+          folio: "MQSPEAK-2025-0001",
+          alumno: "Carmen Jiménez Speak",
+          correoElectronico: "carmen.jimenez@email.com",
+          telefono: "555-0501",
+          direccion: "Calle Oratoria 369, Col. Comunicación",
+          fechaNacimiento: "1991-07-08",
+          identificacion: "INE147258369",
+          categoria: "SPEAKUP",
+          turno: "V1",
+          planCurso: "Plan Conversacional - 5 meses",
+          pagoCurso: "$1,700.00",
+          metodoPago: "Transferencia bancaria",
+          fechaEntrada: "2024-07-23",
+          comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.png",
+          contratoUrl: "/src/assets/contrato-firmado-carmen.pdf", // Ya tiene contrato subido
+          estado: "aprobado"
+        },
+        // PCE - M1
+        {
+          id: 8,
+          folio: "MQPCE-2025-0001",
+          alumno: "Fernando Vargas Prep",
+          correoElectronico: "fernando.vargas@email.com",
+          telefono: "555-0601",
+          direccion: "Blvd. Preparatoria 741, Col. Académica",
+          fechaNacimiento: "1993-04-25",
+          identificacion: "INE963852741",
+          categoria: "PCE",
+          turno: "M1",
+          planCurso: "Plan Certificación - 7 meses",
+          pagoCurso: "$2,500.00",
+          metodoPago: "Tarjeta de crédito",
+          fechaEntrada: "2024-07-22",
+          comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.pdf",
+          contratoUrl: null, // Sin contrato aún
+          estado: "aprobado"
         }
-      ]);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error al obtener pagos:', error);
+      ];
+      
+      // Filtrar por curso y turno seleccionado
+      const mockPagosFiltrados = todosMockPagos.filter(pago => 
+        pago.categoria === activeCategory && pago.turno === activeTurno
+      );
+      
+      setPagos(mockPagosFiltrados);
+      
+    } catch (err) {
+      console.error('Error cargando pagos:', err);
       setPagos([]);
-      setIsLoading(false);
     }
   };
 
-  // Cargar pagos cuando se seleccione curso y turno
+  // ✅ CARGAR PAGOS CUANDO SE SELECCIONAN CURSO Y TURNO (ADMINCONTEXT)
   useEffect(() => {
     if (activeCategory && activeTurno) {
-      setIsLoading(true);
+      // fetchPagos usa datos mock temporales
+      // En producción, esta función debería usar loadPaymentsData del AdminContext
       fetchPagos();
     }
   }, [activeCategory, activeTurno]);
+
+  // TODO: IMPLEMENTAR - Cargar datos dinámicos desde el backend usando AdminContext
+  useEffect(() => {
+    // ✅ INTEGRACIÓN CON ADMINCONTEXT - Esta función debe usar AdminContext
+    // En lugar de llamadas HTTP directas, usar las funciones del contexto
+    // AdminContext.jsx maneja toda la lógica de carga de datos
+    
+    const loadInitialData = async () => {
+      try {
+        // TODO: USAR ADMINCONTEXT PARA CARGAR GRUPOS
+        // Ejemplo: const grupos = await loadCourseGroups();
+        // setGruposPorCurso(grupos);
+        
+        // MOCK TEMPORAL - Los grupos vienen hardcodeados arriba
+        // En producción, descomentar estas líneas y usar AdminContext:
+        //   if (loadCourseGroups && typeof loadCourseGroups === 'function') {
+        //     const gruposResponse = await loadCourseGroups();
+        //     setGruposPorCurso(gruposResponse);
+        //   }
+        
+        console.log('📦 Datos iniciales cargados (mock temporal)');
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+        setError('Error al cargar datos iniciales');
+      }
+    };
+    
+    // loadInitialData(); // Descomentar cuando AdminContext tenga loadCourseGroups
+  }, []);
+
+  // TODO: IMPLEMENTAR - Cargar grupos cuando se selecciona un curso
+  useEffect(() => {
+    if (activeCategory) {
+      // IMPLEMENTAR ESTA LLAMADA AL BACKEND 
+      
+      // const loadGruposForCurso = async () => {
+      //     try {
+      //         const response = await api.get(`/api/cursos/${activeCategory}/grupos`);
+      //         setGruposPorCurso(prev => ({
+      //             ...prev,
+      //             [activeCategory]: response.data
+      //         }));
+      //     } catch (error) {
+      //         console.error(`Error cargando grupos para ${activeCategory}:`, error);
+      //     }
+      // };
+      
+      // loadGruposForCurso();
+    }
+  }, [activeCategory]);
+
+  const handleLoadingComplete = () => {
+    setShowLoadingScreen(false);
+  };
+
+  const handleRefreshData = async () => {
+    if (activeCategory && activeTurno) {
+      await fetchPagos();
+    }
+  };
+
+  // ==================== FUNCIONES DEL MODAL DE CONTRATOS ====================
+  
+  // Cerrar modal de contratos
+  const closeContractModal = () => {
+    setContractModal({
+      isOpen: false,
+      type: '',
+      alumno: null,
+      message: '',
+      details: ''
+    });
+    setIsGeneratingContract(false);
+  };
+
+  // Abrir modal de confirmación para generar contrato
+  const openContractModal = (alumno) => {
+    setContractModal({
+      isOpen: true,
+      type: 'confirm',
+      alumno: alumno,
+      message: 'Generar Contrato desde Plantilla Oficial',
+      details: `Se generará el contrato usando la plantilla PDF oficial de MQERK con los datos del estudiante ${alumno.alumno}.`
+    });
+  };
+
+  // Confirmar generación de contrato
+  const confirmGenerateContract = async () => {
+    return handleConfirmarGeneracionContrato();
+  };
+
+  // Modal de error general
+  const showErrorModal = (message, details = '') => {
+    setContractModal({
+      isOpen: true,
+      type: 'error',
+      alumno: null,
+      message: message,
+      details: details
+    });
+  };
 
   // Filtrar pagos según categoría, turno y búsqueda
   const pagosFiltrados = pagos.filter(pago => {
@@ -208,370 +553,215 @@ export function ValidacionPagos_Admin_comp() {
 
   // Función para manejar la selección de categoría
   const handleCategorySelect = (categoria) => {
-    setActiveCategory(categoria === activeCategory ? null : categoria);
-    // Reset turno cuando se cambia de categoría
-    setActiveTurno(null);
+    if (activeCategory === categoria) {
+      setActiveCategory(null);
+      setActiveTurno(null);
+    } else {
+      setActiveCategory(categoria);
+      setActiveTurno(null); // Reset turno al cambiar curso
+    }
   };
 
   // Función para manejar la selección de turno
   const handleTurnoSelect = (turno) => {
-    setActiveTurno(turno === activeTurno ? null : turno);
-  };
-
-  // Función para manejar la carga completa
-  const handleLoadingComplete = () => {
-    setIsLoading(false);
-  };
-
-  // Función para generar un contrato PDF profesional con los datos del alumno
-  const generarContratoPDF = (alumno) => {
-    try {
-      // Crear nuevo documento PDF
-      const doc = new jsPDF();
-      
-      // Configurar fuentes y colores
-      const primaryColor = [128, 0, 128]; // Purple
-      const secondaryColor = [100, 100, 100]; // Gray
-      const textColor = [0, 0, 0]; // Black
-      
-      // === HEADER DEL DOCUMENTO ===
-      doc.setFillColor(...primaryColor);
-      doc.rect(0, 0, 220, 40, 'F');
-      
-      // Logo y título principal
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(24);
-      doc.setFont('helvetica', 'bold');
-      doc.text('MQERK', 20, 25);
-      
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      doc.text('INSTITUTO DE IDIOMAS', 20, 32);
-      
-      // Fecha y folio en header
-      doc.setFontSize(10);
-      doc.text(`Folio: ${alumno.folio}`, 150, 20);
-      doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 150, 28);
-      doc.text(`Hora: ${new Date().toLocaleTimeString('es-MX')}`, 150, 36);
-      
-      // === TÍTULO DEL CONTRATO ===
-      doc.setTextColor(...textColor);
-      doc.setFontSize(18);
-      doc.setFont('helvetica', 'bold');
-      doc.text('CONTRATO DE PRESTACIÓN DE SERVICIOS EDUCATIVOS', 20, 60);
-      
-      // Línea decorativa
-      doc.setDrawColor(...primaryColor);
-      doc.setLineWidth(2);
-      doc.line(20, 65, 190, 65);
-      
-      let currentY = 80;
-      
-      // === SECCIÓN: DATOS DEL ESTUDIANTE ===
-      doc.setFillColor(240, 240, 240);
-      doc.rect(15, currentY - 5, 180, 8, 'F');
-      
-      doc.setTextColor(...primaryColor);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('DATOS DEL ESTUDIANTE', 20, currentY);
-      currentY += 15;
-      
-      doc.setTextColor(...textColor);
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-      
-      const datosEstudiante = [
-        [`Nombre Completo:`, alumno.alumno],
-        [`Correo Electrónico:`, alumno.correoElectronico],
-        [`Teléfono:`, alumno.telefono],
-        [`Dirección:`, alumno.direccion],
-        [`Fecha de Nacimiento:`, alumno.fechaNacimiento],
-        [`Identificación:`, alumno.identificacion]
-      ];
-      
-      datosEstudiante.forEach(([label, value]) => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(label, 20, currentY);
-        doc.setFont('helvetica', 'normal');
-        doc.text(value, 70, currentY);
-        currentY += 8;
-      });
-      
-      currentY += 10;
-      
-      // === SECCIÓN: DATOS DEL CURSO ===
-      doc.setFillColor(240, 240, 240);
-      doc.rect(15, currentY - 5, 180, 8, 'F');
-      
-      doc.setTextColor(...primaryColor);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('DATOS DEL CURSO', 20, currentY);
-      currentY += 15;
-      
-      doc.setTextColor(...textColor);
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-      
-      const datosCurso = [
-        [`Curso:`, alumno.categoria],
-        [`Plan:`, alumno.planCurso],
-        [`Turno:`, alumno.turno],
-        [`Fecha de Inicio:`, alumno.fechaEntrada]
-      ];
-      
-      datosCurso.forEach(([label, value]) => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(label, 20, currentY);
-        doc.setFont('helvetica', 'normal');
-        doc.text(value, 70, currentY);
-        currentY += 8;
-      });
-      
-      currentY += 10;
-      
-      // === SECCIÓN: INFORMACIÓN DE PAGO ===
-      doc.setFillColor(240, 240, 240);
-      doc.rect(15, currentY - 5, 180, 8, 'F');
-      
-      doc.setTextColor(...primaryColor);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('INFORMACIÓN DE PAGO', 20, currentY);
-      currentY += 15;
-      
-      doc.setTextColor(...textColor);
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-      
-      const datosPago = [
-        [`Monto Total:`, alumno.pagoCurso],
-        [`Método de Pago:`, alumno.metodoPago],
-        [`Fecha de Pago:`, alumno.fechaEntrada]
-      ];
-      
-      datosPago.forEach(([label, value]) => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(label, 20, currentY);
-        doc.setFont('helvetica', 'normal');
-        doc.text(value, 70, currentY);
-        currentY += 8;
-      });
-      
-      currentY += 15;
-      
-      // === SECCIÓN: TÉRMINOS Y CONDICIONES ===
-      doc.setFillColor(240, 240, 240);
-      doc.rect(15, currentY - 5, 180, 8, 'F');
-      
-      doc.setTextColor(...primaryColor);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('TÉRMINOS Y CONDICIONES', 20, currentY);
-      currentY += 15;
-      
-      doc.setTextColor(...textColor);
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      
-      const terminos = [
-        '1. El estudiante se compromete a asistir puntualmente a las clases programadas.',
-        '2. El instituto se compromete a brindar educación de calidad según el plan contratado.',
-        '3. Los pagos deben realizarse en las fechas establecidas según el calendario.',
-        '4. El contrato tiene validez durante toda la duración del curso seleccionado.',
-        '5. Cualquier modificación al presente contrato debe ser acordada por ambas partes.'
-      ];
-      
-      terminos.forEach(termino => {
-        doc.text(termino, 20, currentY, { maxWidth: 170 });
-        currentY += 12;
-      });
-      
-      currentY += 10;
-      
-      // === SECCIÓN: FIRMAS ===
-      doc.setFillColor(240, 240, 240);
-      doc.rect(15, currentY - 5, 180, 8, 'F');
-      
-      doc.setTextColor(...primaryColor);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('FIRMAS', 20, currentY);
-      currentY += 20;
-      
-      // Firma del estudiante
-      doc.setTextColor(...textColor);
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.line(20, currentY, 90, currentY);
-      doc.text('Firma del Estudiante', 20, currentY + 8);
-      doc.setFont('helvetica', 'bold');
-      doc.text(alumno.alumno, 20, currentY + 16);
-      
-      // Firma del representante
-      doc.setFont('helvetica', 'normal');
-      doc.line(120, currentY, 190, currentY);
-      doc.text('Representante MQERK', 120, currentY + 8);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Director Académico', 120, currentY + 16);
-      
-      // === FOOTER ===
-      currentY += 30;
-      doc.setFillColor(...primaryColor);
-      doc.rect(0, currentY, 220, 20, 'F');
-      
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Este contrato ha sido generado automáticamente por el sistema MQERK', 20, currentY + 8);
-      doc.text(`Generado el ${new Date().toLocaleDateString('es-MX')} a las ${new Date().toLocaleTimeString('es-MX')}`, 20, currentY + 15);
-      
-      // Guardar el PDF
-      const fileName = `Contrato_${alumno.folio}_${alumno.alumno.replace(/\s+/g, '_')}.pdf`;
-      doc.save(fileName);
-      
-      return `/contratos/${fileName}`;
-      
-    } catch (error) {
-      console.error('Error al generar PDF:', error);
-      throw new Error('Error al generar el contrato PDF');
+    if (turno === activeTurno) {
+      setActiveTurno(null);
+    } else {
+      setActiveTurno(turno);
     }
   };
-  // Funciones para manejar acciones (preparadas para backend)
+
+  // Función para generar contrato usando la plantilla PDF oficial
+  const generarContratoDesdePlantilla = async (alumno) => {
+    try {
+      console.log('🔄 Generando contrato desde plantilla oficial para:', alumno.alumno);
+      
+      // Usar el nuevo servicio de generación de contratos
+      const resultado = await generarYDescargarContrato(alumno);
+      
+      console.log('✅ Contrato generado exitosamente:', resultado.nombreArchivo);
+      return resultado.url;
+      
+    } catch (error) {
+      console.error('❌ Error al generar contrato:', error);
+      throw new Error(error.message || 'Error al generar el contrato desde la plantilla oficial');
+    }
+  };
+
+  // Función para generar PDF de calibración (herramienta de desarrollo)
+  const generarPDFDeCalibracion = async () => {
+    try {
+      console.log('🔧 Generando PDF de calibración...');
+      await generarPDFCalibracion();
+      console.log('✅ PDF de calibración descargado');
+    } catch (error) {
+      console.error('❌ Error en calibración:', error);
+      alert('Error al generar PDF de calibración: ' + error.message);
+    }
+  };
+
+  // ==================== FUNCIONES DE INTEGRACIÓN CON ADMINCONTEXT ====================
+  
+  // FUNCIONES PARA GESTIÓN DE CONTRATOS - LISTAS PARA USAR
+  // generateContract y uploadContract vienen directamente del AdminContext.jsx
+  // Estas funciones YA están conectadas con el backend (actualmente con mocks)
+  
+  // Función para generar contrato usando AdminContext
   const handleGenerarContrato = async (id) => {
     try {
-      // TODO: Implementar llamada al backend
-      // const response = await fetch(`/api/pagos/${id}/generar-contrato`, { method: 'PUT' });
-      // const data = await response.json();
-      // fetchPagos(); // Recargar lista
-      
       // Encontrar el alumno por ID
       const alumno = pagos.find(p => p.id === id);
       if (!alumno) {
-        alert('No se encontró el alumno');
+        showErrorModal('Error', 'No se encontró el alumno');
         return;
       }
 
-      // Mostrar mensaje de confirmación
-      const confirmar = window.confirm(
-        `🔄 GENERACIÓN DE CONTRATO PDF\n\n` +
-        `¿Confirmas generar el contrato para:\n` +
-        `👤 Estudiante: ${alumno.alumno}\n` +
-        `📚 Curso: ${alumno.categoria}\n` +
-        `📋 Plan: ${alumno.planCurso}\n` +
-        `💰 Monto: ${alumno.pagoCurso}\n\n` +
-        `✅ Se generará un PDF profesional con:\n` +
-        `• Plantilla oficial de MQERK\n` +
-        `• Todos los datos auto-rellenados\n` +
-        `• Diseño profesional y formal\n` +
-        `• Espacios para firmas\n\n` +
-        `📁 El archivo PDF se descargará automáticamente.`
-      );
+      // Validar que los datos estén completos
+      if (!alumno.alumno || !alumno.categoria || !alumno.planCurso || !alumno.pagoCurso) {
+        showErrorModal('Error', 'Faltan datos del alumno para generar el contrato');
+        return;
+      }
 
-      if (confirmar) {
-        try {
-          // Generar y descargar el contrato
-          const contratoUrl = generarContratoPDF(alumno);
-          
-          // Actualizar el estado para marcar el contrato como generado
-          setPagos(pagos.map(pago => 
-            pago.id === id ? { 
-              ...pago, 
-              contratoGenerado: true, 
-              contratoUrl: contratoUrl 
-            } : pago
-          ));
-
-          // Mostrar mensaje de éxito
-          alert(
-            `🎉 ¡CONTRATO PDF GENERADO EXITOSAMENTE!\n\n` +
-            `📄 Archivo: Contrato_${alumno.folio}_${alumno.alumno.replace(/\s+/g, '_')}.pdf\n` +
-            `👤 Para: ${alumno.alumno}\n` +
-            `📚 Curso: ${alumno.categoria}\n\n` +
-            `📋 PRÓXIMOS PASOS:\n` +
-            `1. 📁 El PDF se descargó en tu carpeta de Descargas\n` +
-            `2. 🖨️ Imprimir el contrato\n` +
-            `3. ✍️ Hacer firmar al estudiante\n` +
-            `4. 📤 Subir contrato firmado usando el botón "Subir"\n` +
-            `5. 📱 El contrato aparecerá en el dashboard del alumno\n\n` +
-            `💡 Una vez subido, el estudiante podrá verlo en su panel.`
-          );
-        } catch (pdfError) {
-          console.error('Error específico en generación PDF:', pdfError);
-          alert(
-            `❌ ERROR AL GENERAR EL PDF\n\n` +
-            `No se pudo crear el contrato PDF para ${alumno.alumno}.\n\n` +
-            `Posibles causas:\n` +
-            `• Error en la librería jsPDF\n` +
-            `• Datos incompletos del alumno\n` +
-            `• Problema con el navegador\n\n` +
-            `Por favor, inténtalo de nuevo o contacta soporte técnico.`
-          );
-        }
+      // ✅ INTEGRACIÓN CON ADMINCONTEXT
+      // generateContract está disponible desde useAdminContext()
+      if (generateContract && typeof generateContract === 'function') {
+        // Abrir modal de confirmación - el contrato se genera en handleConfirmarGeneracionContrato
+        openContractModal(alumno);
+      } else {
+        throw new Error('Función generateContract no disponible en AdminContext');
       }
       
-      console.log('Generar contrato para pago:', id);
+      console.log('🔄 Preparando generación de contrato para pago:', id, '(AdminContext)');
     } catch (error) {
       console.error('Error al generar contrato:', error);
-      alert('❌ Error al generar el contrato. Inténtalo de nuevo.');
+      showErrorModal('Error', 'Error al generar el contrato. Inténtalo de nuevo.');
     }
   };
 
+  // Función para confirmar la generación de contrato usando AdminContext
+  const handleConfirmarGeneracionContrato = async () => {
+    setIsGeneratingContract(true);
+    
+    try {
+      // Obtener el alumno del modal actual
+      const alumnoCompleto = contractModal.alumno;
+      
+      // Cerrar modal de confirmación
+      setContractModal({ isOpen: false, type: '', alumno: null, message: '', details: '' });
+      
+      // ✅ USAR ADMINCONTEXT PARA GENERAR CONTRATO
+      // generateContract viene del AdminContext.jsx y maneja la generación del PDF
+      const contractData = {
+        alumno: alumnoCompleto.alumno,
+        folio: alumnoCompleto.folio,
+        curso: alumnoCompleto.categoria,
+        turno: alumnoCompleto.turno,
+        plan: alumnoCompleto.planCurso,
+        pago: alumnoCompleto.pagoCurso
+      };
+      
+      const result = await generateContract(alumnoCompleto.id, contractData);
+      
+      if (result && result.success) {
+        // Actualizar el estado local con la URL del contrato generado
+        setPagos(pagos.map(pago => 
+          pago.id === alumnoCompleto.id ? { 
+            ...pago, 
+            contratoGenerado: true, 
+            contratoUrl: result.contractUrl 
+          } : pago
+        ));
+
+        // Mostrar modal de éxito
+        setContractModal({
+          isOpen: true,
+          type: 'success',
+          alumno: alumnoCompleto,
+          message: '¡Contrato PDF Generado Exitosamente!',
+          details: `El contrato para ${alumnoCompleto.alumno} se ha generado correctamente usando AdminContext. Ahora puedes imprimirlo, hacerlo firmar y subirlo usando el botón "Subir".`
+        });
+      } else {
+        throw new Error('No se pudo generar el contrato desde AdminContext');
+      }
+      
+    } catch (pdfError) {
+      console.error('Error específico en generación PDF:', pdfError);
+      
+      // Mostrar modal de error
+      setContractModal({
+        isOpen: true,
+        type: 'error',
+        alumno: contractModal.alumno,
+        message: 'Error al Generar el PDF',
+        details: `No se pudo crear el contrato PDF para ${contractModal.alumno?.alumno}. Error: ${pdfError.message}`
+      });
+    }
+    
+    setIsGeneratingContract(false);
+  };
+
+  // Función para subir contrato firmado usando AdminContext
   const handleSubirContrato = async (id, file) => {
     try {
-      // TODO: Implementar llamada al backend
-      // const formData = new FormData();
-      // formData.append('contrato', file);
-      // const response = await fetch(`/api/pagos/${id}/subir-contrato`, {
-      //   method: 'POST',
-      //   body: formData
-      // });
-      // const data = await response.json();
-      // fetchPagos(); // Recargar lista
-      
       if (!file) {
-        alert('❌ Por favor selecciona un archivo PDF para subir.');
+        showErrorModal('Error de Archivo', 'Por favor selecciona un archivo PDF para subir.');
         return;
       }
 
       // Validar que sea un archivo PDF
       if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-        alert('❌ Solo se permiten archivos PDF. Por favor selecciona un archivo .pdf');
+        showErrorModal('Tipo de Archivo Incorrecto', 'Solo se permiten archivos PDF. Por favor selecciona un archivo .pdf');
         return;
       }
 
-      // Validar tamaño del archivo (máximo 10MB)
+      // Validar tamaño del archivo (máximo 10MB) 
+      // esta es una de las tantas formas que hay para establecer un tamaño máximo de archivo
+      // y evitar que suban archivos demasiado grandes vale
       const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
-        alert('❌ El archivo es demasiado grande. El tamaño máximo permitido es 10MB.');
+        showErrorModal('Archivo Demasiado Grande', 'El archivo es demasiado grande. El tamaño máximo permitido es 10MB.');
         return;
       }
 
       // Encontrar el alumno
       const alumno = pagos.find(p => p.id === id);
       if (!alumno) {
-        alert('❌ No se encontró el alumno');
+        showErrorModal('Error', 'No se encontró el alumno');
         return;
       }
 
-      // Mostrar confirmación con detalles del archivo
-      const confirmar = window.confirm(
-        `📤 SUBIR CONTRATO FIRMADO\n\n` +
-        `¿Confirmas la subida del contrato?\n\n` +
-        `👤 Alumno: ${alumno.alumno}\n` +
-        `📄 Archivo: ${file.name}\n` +
-        `📊 Tamaño: ${(file.size / 1024 / 1024).toFixed(2)} MB\n` +
-        `📋 Tipo: ${file.type}\n\n` +
-        `✅ UNA VEZ CONFIRMADO:\n` +
-        `• El contrato estará disponible para visualización\n` +
-        `• Aparecerá automáticamente en el dashboard del alumno\n` +
-        `• ${alumno.alumno} podrá verlo en su panel personal\n` +
-        `• Quedará registrado en el sistema\n\n` +
-        `📱 ¿Proceder con la subida?`
-      );
+      // ✅ USAR ADMINCONTEXT PARA SUBIR CONTRATO
+      // uploadContract viene del AdminContext.jsx y maneja la subida del archivo
+      if (uploadContract && typeof uploadContract === 'function') {
+        const result = await uploadContract(id, file);
+        
+        if (result && result.success) {
+          // Actualizar el estado local con la información del archivo subido
+          setPagos(pagos.map(pago => 
+            pago.id === id ? { 
+              ...pago, 
+              contratoSubido: true, 
+              contratoUrl: result.uploadedUrl,
+              nombreArchivoSubido: file.name,
+              fechaSubida: new Date().toISOString()
+            } : pago
+          ));
 
-      if (confirmar) {
+          // Mostrar modal de éxito
+          setContractModal({
+            isOpen: true,
+            type: 'success',
+            alumno: alumno,
+            message: '¡Contrato Subido Exitosamente!',
+            details: `El archivo "${file.name}" se ha subido correctamente usando AdminContext y ya está disponible para ${alumno.alumno} en su dashboard.`
+          });
+        } else {
+          throw new Error('No se pudo subir el contrato desde AdminContext');
+        }
+      } else {
+        // FALLBACK TEMPORAL: Usar simulación mock si AdminContext no está disponible
+        console.warn('⚠️ uploadContract no disponible en AdminContext, usando mock temporal');
+        
         // Simular subida del archivo creando una URL temporal
         const fileUrl = URL.createObjectURL(file);
         
@@ -586,34 +776,27 @@ export function ValidacionPagos_Admin_comp() {
           } : pago
         ));
 
-        // Mostrar mensaje de éxito
-        alert(
-          `✅ ¡CONTRATO SUBIDO EXITOSAMENTE!\n\n` +
-          `📄 Archivo: ${file.name}\n` +
-          `👤 Para: ${alumno.alumno}\n` +
-          `📚 Curso: ${alumno.categoria}\n\n` +
-          `🎯 ACCIONES COMPLETADAS:\n` +
-          `✓ Contrato subido al sistema\n` +
-          `✓ Agregado al dashboard del alumno\n` +
-          `✓ Disponible para visualización aquí\n` +
-          `✓ Registro actualizado en la base de datos\n\n` +
-          `📱 ${alumno.alumno} ya puede ver su contrato\n` +
-          `en su panel personal de estudiante.\n\n` +
-          `🔍 Usa el botón "Ver" para verificar el archivo.`
-        );
+        // Mostrar modal de éxito  
+        setContractModal({
+          isOpen: true,
+          type: 'success',
+          alumno: alumno,
+          message: '¡Contrato Subido Exitosamente!',
+          details: `El archivo "${file.name}" se ha subido correctamente usando mock temporal y ya está disponible para ${alumno.alumno} en su dashboard.`
+        });
       }
       
-      console.log('Subir contrato para pago:', id, 'Archivo:', file?.name);
+      console.log('📤 Subir contrato para pago:', id, 'Archivo:', file?.name, '(AdminContext)');
     } catch (error) {
       console.error('Error al subir contrato:', error);
-      alert('❌ Error al subir el contrato. Inténtalo de nuevo.');
+      showErrorModal('Error al Subir', 'Error al subir el contrato. Inténtalo de nuevo.');
     }
   };
 
   const handleVisualizarContrato = (url, alumno) => {
     try {
       if (!url) {
-        alert('❌ No hay contrato disponible para visualizar.');
+        showErrorModal('Sin Contrato', 'No hay contrato disponible para visualizar.');
         return;
       }
 
@@ -628,14 +811,14 @@ export function ValidacionPagos_Admin_comp() {
       console.log('Visualizar contrato en modal:', url);
     } catch (error) {
       console.error('Error al visualizar contrato:', error);
-      alert('❌ Error al abrir el contrato. Inténtalo de nuevo.');
+      showErrorModal('Error al Visualizar', 'Error al abrir el contrato. Inténtalo de nuevo.');
     }
   };
 
   const handleVisualizarComprobante = (url, alumno) => {
     try {
       if (!url) {
-        alert('❌ No hay comprobante disponible para visualizar.');
+        showErrorModal('Sin Comprobante', 'No hay comprobante disponible para visualizar.');
         return;
       }
 
@@ -650,35 +833,94 @@ export function ValidacionPagos_Admin_comp() {
       console.log('Visualizar comprobante en modal:', url);
     } catch (error) {
       console.error('Error al visualizar comprobante:', error);
-      alert('❌ Error al abrir el comprobante. Inténtalo de nuevo.');
+      showErrorModal('Error al Visualizar', 'Error al abrir el comprobante. Inténtalo de nuevo.');
     }
   };
 
+  // Función para aprobar pago usando AdminContext
   const handleAprobarPago = async (id) => {
     try {
-      // TODO: Implementar llamada al backend
-      // const response = await fetch(`/api/pagos/${id}/aprobar`, { method: 'PUT' });
-      // fetchPagos(); // Recargar lista
-      console.log('Aprobar pago:', id);
+      // ✅ USAR ADMINCONTEXT PARA APROBAR PAGO
+      // approvePayment viene del AdminContext.jsx y maneja la aprobación
+      if (approvePayment && typeof approvePayment === 'function') {
+        const result = await approvePayment(id);
+        
+        if (result && result.success) {
+          console.log('✅ Pago aprobado exitosamente:', id, '(AdminContext)');
+          // Recargar datos si es necesario
+          if (activeCategory && activeTurno) {
+            await fetchPagos();
+          }
+        } else {
+          throw new Error('No se pudo aprobar el pago desde AdminContext');
+        }
+      } else {
+        console.warn('⚠️ approvePayment no disponible en AdminContext');
+        console.log('📝 Aprobar pago (mock):', id);
+      }
     } catch (error) {
       console.error('Error al aprobar pago:', error);
     }
   };
 
+  // Función para rechazar pago usando AdminContext
   const handleRechazarPago = async (id) => {
     try {
-      // TODO: Implementar llamada al backend
-      // const response = await fetch(`/api/pagos/${id}/rechazar`, { method: 'PUT' });
-      // fetchPagos(); // Recargar lista
-      console.log('Rechazar pago:', id);
+      // ✅ USAR ADMINCONTEXT PARA RECHAZAR PAGO  
+      // rejectPayment viene del AdminContext.jsx y maneja el rechazo
+      if (rejectPayment && typeof rejectPayment === 'function') {
+        const reason = prompt('Ingrese la razón del rechazo:');
+        if (reason) {
+          const result = await rejectPayment(id, reason);
+          
+          if (result && result.success) {
+            console.log('❌ Pago rechazado exitosamente:', id, '(AdminContext)');
+            // Recargar datos si es necesario
+            if (activeCategory && activeTurno) {
+              await fetchPagos();
+            }
+          } else {
+            throw new Error('No se pudo rechazar el pago desde AdminContext');
+          }
+        }
+      } else {
+        console.warn('⚠️ rejectPayment no disponible en AdminContext');
+        console.log('📝 Rechazar pago (mock):', id);
+      }
     } catch (error) {
       console.error('Error al rechazar pago:', error);
     }
   };
 
-  // Si está cargando, mostrar pantalla de carga
-  if (isLoading) {
+  // Si está cargando inicialmente, mostrar pantalla de carga
+  if (showLoadingScreen) {
     return <LoadingScreen onComplete={handleLoadingComplete} />;
+  }
+
+  // Manejo de errores
+  if (error) {
+    return (
+      <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col items-center justify-center bg-gradient-to-br from-red-50 to-rose-100">
+        <div className="text-center bg-white rounded-2xl shadow-2xl p-8 border border-red-200 max-w-md">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-red-600 mb-2">Error al cargar datos</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="flex gap-3 justify-center">
+            <button 
+              onClick={handleRefreshData}
+              disabled={isLoading}
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+            >
+              {isLoading ? 'Reintentando...' : 'Reintentar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -689,11 +931,46 @@ export function ValidacionPagos_Admin_comp() {
           {/* Título principal */}
           <div className="text-center mb-4 xs:mb-6 sm:mb-8">
             <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-1 xs:mb-2 px-2">
-              Validación de pago y contratos
+              Generar Contratos
             </h1>
+            <div className="w-8 xs:w-12 sm:w-16 lg:w-20 h-0.5 xs:h-1 bg-gradient-to-r from-blue-500/80 to-indigo-500/80 mx-auto mb-2 rounded-full"></div>
             <p className="text-xs xs:text-sm sm:text-base text-gray-600 px-4">
-              Gestiona los pagos y contratos de los estudiantes por curso y turno.
+              Gestiona la generación de contratos de los estudiantes por curso y turno
             </p>
+            
+            {/* Información de actualización y refresh */}
+            {lastUpdated && (
+              <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-3">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>
+                  Actualizado: {new Date(lastUpdated).toLocaleTimeString('es-ES', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </span>
+                <button
+                  onClick={handleRefreshData}
+                  disabled={isLoading}
+                  className="ml-2 text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50"
+                  title="Actualizar datos"
+                >
+                  <svg className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+                <button
+                  onClick={generarPDFDeCalibracion}
+                  className="ml-2 text-purple-600 hover:text-purple-700 transition-colors"
+                  title="Generar PDF de calibración para ajustar coordenadas"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Botones de categoría (filtros por curso) */}
@@ -702,50 +979,68 @@ export function ValidacionPagos_Admin_comp() {
               <h2 className="text-base xs:text-lg sm:text-xl font-bold text-gray-800 mb-3 xs:mb-4 sm:mb-6 text-center px-2">
                 Filtrar por Curso
               </h2>
-              <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-1.5 xs:gap-2 sm:gap-3 md:gap-4 place-items-center">
-                {categorias.map((categoria) => (
+              <div className="grid grid-cols-3 xs:grid-cols-3 sm:grid-cols-6 md:grid-cols-6 gap-1 xs:gap-1.5 sm:gap-2 md:gap-3 place-items-center">
+                {cursosDisponibles.map((cat) => (
                   <CategoryButton
-                    key={categoria}
-                    label={categoria}
-                    isActive={activeCategory === categoria}
-                    onClick={() => handleCategorySelect(categoria)}
+                    key={cat}
+                    label={cat}
+                    isActive={activeCategory === cat}
+                    onClick={() => handleCategorySelect(cat)}
                   />
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Botones de turno - Solo se muestra si hay una categoría seleccionada */}
-          {activeCategory && (
-            <div className="mb-4 xs:mb-6 sm:mb-8">
-              <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-6 shadow-lg border border-blue-200">
+          {/* Selector de grupos/turnos dinámico */}
+          {activeCategory && getGruposDisponibles().length > 0 && (
+            <div className="mb-3 xs:mb-4 sm:mb-6">
+              <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-6 shadow-lg border border-gray-200">
                 <h2 className="text-base xs:text-lg sm:text-xl font-bold text-gray-800 mb-3 xs:mb-4 sm:mb-6 text-center px-2">
-                  Turnos Disponibles para {activeCategory}
+                  Grupos Disponibles para {activeCategory}
                 </h2>
-                <div className="flex flex-row gap-3 xs:gap-4 sm:gap-6 justify-center items-center max-w-md mx-auto">
-                  {turnos.map((turno) => (
-                    <button
-                      key={turno}
-                      onClick={() => handleTurnoSelect(turno)}
-                      className={`
-                        relative overflow-hidden 
-                        px-3 py-2 xs:px-4 xs:py-2 sm:px-6 sm:py-4
-                        rounded-md xs:rounded-lg sm:rounded-xl 
-                        font-bold text-xs xs:text-sm sm:text-base
-                        transition-all duration-300 ease-out 
-                        w-full min-w-[100px] max-w-[140px]
-                        h-10 xs:h-12 sm:h-14 md:h-16
-                        flex items-center justify-center
-                        border-2 transform hover:scale-105 hover:shadow-lg
-                        ${activeTurno === turno
-                          ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white border-blue-500 shadow-md shadow-blue-500/30' 
-                          : 'bg-gradient-to-r from-blue-400 to-blue-500 text-white border-blue-300 shadow-sm hover:from-blue-600 hover:to-blue-700 hover:border-blue-500'
-                        }
-                      `}
-                    >
-                      <span className="relative z-10 tracking-wide text-center leading-tight">{turno}</span>
-                    </button>
+                <div className="flex flex-wrap gap-1.5 xs:gap-2 sm:gap-3 justify-center items-center max-w-4xl mx-auto">
+                  {getGruposDisponibles().map((grupo) => (
+                    <GrupoButton
+                      key={grupo.id || grupo.nombre}
+                      label={`${grupo.nombre} (${grupo.alumnosActuales}/${grupo.capacidad})`}
+                      isActive={activeTurno === grupo.nombre}
+                      onClick={() => handleTurnoSelect(grupo.nombre)}
+                      grupo={grupo}
+                    />
                   ))}
+                </div>
+                
+                {/* Leyenda de colores por tipo de turno */}
+                <div className="mt-4 flex flex-wrap gap-2 justify-center text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                    <span>Matutino</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-purple-500 rounded"></div>
+                    <span>Vespertino</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-500 rounded"></div>
+                    <span>Sabatino</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Información del grupo seleccionado */}
+          {activeCategory && activeTurno && (
+            <div className="mb-4 xs:mb-6">
+              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 xs:px-6 sm:px-8 py-4 xs:py-5 sm:py-6 rounded-lg xs:rounded-xl sm:rounded-2xl shadow-lg">
+                <div className="text-center">
+                  <p className="text-sm xs:text-base sm:text-lg md:text-xl font-semibold mb-1 xs:mb-2">
+                    Grupo Activo: {activeCategory} - {activeTurno}
+                  </p>
+                  <p className="text-xs xs:text-sm sm:text-base text-blue-100">
+                    Validando pagos del grupo seleccionado
+                  </p>
                 </div>
               </div>
             </div>
@@ -794,11 +1089,7 @@ export function ValidacionPagos_Admin_comp() {
                 <p className="text-xs xs:text-base text-gray-600 mb-3 xs:mb-4">
                   Para ver los pagos y contratos, primero selecciona un curso de la lista anterior.
                 </p>
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 xs:p-4 mt-3 xs:mt-4">
-                  <p className="text-xs xs:text-sm text-purple-700">
-                    💡 <strong>Tip:</strong> Una vez seleccionado el curso, podrás filtrar por turno y buscar estudiantes específicos.
-                  </p>
-                </div>
+               
               </div>
             </div>
           ) : !activeTurno ? (
@@ -814,11 +1105,7 @@ export function ValidacionPagos_Admin_comp() {
                 <p className="text-xs xs:text-base text-gray-600 mb-3 xs:mb-4">
                   Ahora selecciona un turno para ver los pagos y contratos de <span className="font-medium">{activeCategory}</span>.
                 </p>
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 xs:p-4 mt-3 xs:mt-4">
-                  <p className="text-xs xs:text-sm text-purple-700">
-                    💡 <strong>Tip:</strong> Selecciona VESPERTINO 1 o VESPERTINO 2 para ver la lista completa de pagos.
-                  </p>
-                </div>
+               
               </div>
             </div>
           ) : (
@@ -1167,7 +1454,7 @@ export function ValidacionPagos_Admin_comp() {
         <div className="fixed inset-0 z-50 overflow-hidden">
           {/* Overlay */}
           <div 
-            className="absolute inset-0 bg-black bg-opacity-75 transition-opacity"
+            className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-all duration-300"
             onClick={() => setModalPDF({ isOpen: false, url: '', alumno: null, tipo: '' })}
           />
           
@@ -1279,6 +1566,18 @@ export function ValidacionPagos_Admin_comp() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmación para generar contrato */}
+      <ConfirmModal
+        isOpen={contractModal.isOpen}
+        type={contractModal.type}
+        message={contractModal.message}
+        details={contractModal.details}
+        onConfirm={confirmGenerateContract}
+        onCancel={() => setContractModal({ isOpen: false, type: '', alumno: null, message: '', details: '' })}
+      />
     </div>
   );
 }
+
+export default ValidacionPagos_Admin_comp;

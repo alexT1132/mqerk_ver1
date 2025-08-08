@@ -93,19 +93,18 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onCli
           <span className="text-sm font-medium whitespace-nowrap block ml-2">
             {NombreElemento}
           </span>
-        ) : (
-          <>
-            <span className={`text-sm font-medium whitespace-nowrap ml-2 transition-all duration-300 ease-in-out ${
-              isSidebarOpen ? 'opacity-100 translate-x-0 delay-100' : 'opacity-0 -translate-x-2 w-0 overflow-hidden'
-            }`}>
-              {NombreElemento}
-            </span>
-            {!isSidebarOpen && (
-              <span className="hidden group-hover:block absolute left-full top-1/2 -translate-y-1/2 ml-3 bg-gray-900/90 text-white px-3 py-2 rounded-lg shadow-xl z-50 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none backdrop-blur-sm border border-gray-700/50 text-sm font-medium">
+        ) : (            <>
+              <span className={`text-sm font-medium whitespace-nowrap ml-2 transition-all duration-200 ease-out ${
+                isSidebarOpen ? 'opacity-100 translate-x-0 delay-75' : 'opacity-0 -translate-x-2 w-0 overflow-hidden'
+              }`}>
                 {NombreElemento}
               </span>
-            )}
-          </>
+              {!isSidebarOpen && (
+                <span className="hidden group-hover:block absolute left-full top-1/2 -translate-y-1/2 ml-3 bg-gray-900/90 text-white px-3 py-2 rounded-lg shadow-xl z-50 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none backdrop-blur-sm border border-gray-700/50 text-sm font-medium">
+                  {NombreElemento}
+                </span>
+              )}
+            </>
         )}
       </Link>
     </li>
@@ -175,6 +174,12 @@ const LogoMisPagos = (
   </svg>
 );
 
+const LogoAsistencia = (
+  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+  </svg>
+);
+
 // Iconos que NO cambian (Configuración y Cerrar Sesión)
 const LogoConfigAlumno = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -198,6 +203,7 @@ const alumnoMenuItems = [
   { label: "Actividades", path: "/alumno/actividades", icon: LogoActividades },
   { label: "Simulaciones", path: "/alumno/simulaciones", icon: LogoSimulaciones },
   { label: "Feedback", path: "/alumno/feedback", icon: LogoFeedback },
+  { label: "Asistencia", path: "/alumno/asistencia", icon: LogoAsistencia },
   { label: "Calendario", path: "/alumno/calendario", icon: LogoCalendario },
   { label: "Mis Pagos", path: "/alumno/mis-pagos", icon: LogoMisPagos },
 ];
@@ -232,7 +238,7 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
       if (setDesktopSidebarOpen) {
         setDesktopSidebarOpen(false);
       }
-    }, 200);
+    }, 100); // Reducido de 200ms a 100ms para más responsividad
   };
 
   useEffect(() => {
@@ -245,7 +251,7 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
 
   return (
     <aside
-      className={`max-sm:hidden flex flex-col fixed ${sidebarWidth} shadow-lg z-40 top-[80px] h-[calc(100vh-80px)] bg-white/95 backdrop-blur-sm border-r border-gray-200/80 transition-all duration-300 ease-in-out overflow-hidden`}
+      className={`max-sm:hidden flex flex-col fixed ${sidebarWidth} shadow-lg z-40 top-[80px] h-[calc(100vh-80px)] bg-white/95 backdrop-blur-sm border-r border-gray-200/80 transition-all duration-200 ease-out overflow-hidden`}
       style={{
         transform: isSidebarOpen ? 'translateX(0)' : 'translateX(0)',
         opacity: 1,

@@ -1,7 +1,17 @@
-// src\components\Email_Admin_comp.jsx
+/**
+ * Componente Admin de Email
+ * 
+ * Interfaz de gestión de emails para administradores para comunicación con estudiantes y personal.
+ * APIs de Backend a implementar:
+ * - GET /api/admin/emails?folder={inbox|sent|drafts} - Obtener emails por carpeta
+ * - POST /api/admin/emails/send - Enviar nuevo email
+ * - PUT /api/admin/emails/{id}/read - Marcar email como leído
+ * - DELETE /api/admin/emails/{id} - Eliminar email
+ */
 import React, { useState, useEffect } from 'react';
+import { useAdminContext } from '../../context/AdminContext.jsx';
 
-export function Email_Admin_comp() {
+function Email_Admin_comp() {
   const [emails, setEmails] = useState([]);
   const [emailSeleccionado, setEmailSeleccionado] = useState(null);
   const [vistaActual, setVistaActual] = useState('bandeja'); // 'bandeja', 'redactar', 'enviados'
@@ -9,9 +19,14 @@ export function Email_Admin_comp() {
     para: '',
     asunto: '',
     mensaje: '',
-    tipo: 'individual' // 'individual', 'grupo', 'todos'
+    tipo: 'individual' // 'individual', 'group', 'all'
   });
-  const [cargando, setCargando] = useState(true);
+
+  const { 
+    isLoading,
+    error,
+    lastUpdated
+  } = useAdminContext();
 
   // Datos de ejemplo (esto vendrá del backend)
   useEffect(() => {
@@ -21,8 +36,8 @@ export function Email_Admin_comp() {
           id: 1,
           de: 'juan.perez@email.com',
           para: 'admin@mqerk.com',
-          asunto: 'Consulta sobre horarios',
-          mensaje: 'Hola, me gustaría saber si es posible cambiar mi horario de clase del martes por la mañana.',
+          asunto: 'Schedule inquiry',
+          mensaje: 'Hello, I would like to know if it is possible to change my Tuesday morning class schedule.',
           fecha: '2024-12-21 10:30',
           leido: false,
           tipo: 'recibido',
@@ -32,8 +47,8 @@ export function Email_Admin_comp() {
           id: 2,
           de: 'maria.gonzalez@email.com',
           para: 'admin@mqerk.com',
-          asunto: 'Problema con el pago',
-          mensaje: 'Buenos días, realicé mi pago pero no se ve reflejado en mi cuenta. ¿Podrían ayudarme?',
+          asunto: 'Payment issue',
+          mensaje: 'Good morning, I made my payment but it is not reflected in my account. Could you help me?',
           fecha: '2024-12-20 15:45',
           leido: true,
           tipo: 'recibido',
@@ -43,8 +58,8 @@ export function Email_Admin_comp() {
           id: 3,
           de: 'admin@mqerk.com',
           para: 'carlos.rodriguez@email.com',
-          asunto: 'Confirmación de inscripción',
-          mensaje: 'Hola Carlos, confirmamos tu inscripción al curso de Inglés Avanzado. Las clases inician el próximo lunes.',
+          asunto: 'Registration confirmation',
+          mensaje: 'Hello Carlos, we confirm your enrollment in the Advanced English course. Classes start next Monday.',
           fecha: '2024-12-20 09:15',
           leido: true,
           tipo: 'enviado',
@@ -73,7 +88,7 @@ export function Email_Admin_comp() {
           etiqueta: 'general'
         }
       ]);
-      setCargando(false);
+      // Los datos se cargan desde el contexto AdminContext
     }, 1000);
   }, []);
 
@@ -116,7 +131,7 @@ export function Email_Admin_comp() {
     setVistaActual('bandeja');
   };
 
-  if (cargando) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -227,9 +242,7 @@ export function Email_Admin_comp() {
                         setEmailSeleccionado(email);
                         if (!email.leido) handleMarcarComoLeido(email.id);
                       }}
-                      className={`p-6 hover:bg-gray-50 cursor-pointer ${
-                        !email.leido ? 'bg-blue-50' : ''
-                      }`}
+                      className="p-6 bg-white hover:bg-white cursor-pointer border-l-4 border-transparent hover:border-blue-200 transition-colors"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
@@ -277,7 +290,7 @@ export function Email_Admin_comp() {
                     <div 
                       key={email.id}
                       onClick={() => setEmailSeleccionado(email)}
-                      className="p-6 hover:bg-gray-50 cursor-pointer"
+                      className="p-6 bg-white hover:bg-white cursor-pointer border-l-4 border-transparent hover:border-blue-200 transition-colors"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
@@ -473,3 +486,4 @@ export function Email_Admin_comp() {
     </div>
   );
 }
+export default Email_Admin_comp;

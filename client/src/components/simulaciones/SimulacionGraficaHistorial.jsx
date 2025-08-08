@@ -52,7 +52,7 @@ import {
   generarAnalisisConGemini, 
   esGeminiConfigurado, 
   obtenerRecursosRecomendados 
-} from '../../services/geminiService';
+} from '../../service/geminiService.js';
 
 /**
  * Página completa responsive para mostrar análisis detallado de rendimiento y retroalimentación

@@ -1,104 +1,127 @@
 // src/components/MisCursos_Alumno_comp.jsx
+// BACKEND: Este componente maneja SOLO los cursos matriculados del estudiante
+// Los datos vienen del contexto StudentContext (NO CourseContext)
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCourse } from '../../context/CourseContext.jsx';
 import { useStudent } from '../../context/StudentContext.jsx';
 
-// Iconos básicos en formato SVG para la metadata de los cursos
+// Iconos para metadata de cursos - MEJORADOS PARA MÓVIL
 const IconoReloj = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
 const IconoLibro = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.523 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.523 18.246 18 16.5 18s-3.332.477-4.5 1.253" />
   </svg>
 );
 const IconoEstudiante = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-6-3h2m-2 0h-2M6 9H3V6m3 3h3m-3 0V6m0 6h3m-3 0V9m0 6h3m-3 0v-3m6-3h3m-3 0V9m0 6h3m-3 0v-3m0 6h3m-3 0v-3" />
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
   </svg>
 );
 
-
 /**
- * Componente de tarjeta individual para mostrar un curso.
- * Es altamente reutilizable para cursos activos y nuevos.
+ * INTEGRACIÓN BACKEND: Tarjeta individual para mostrar información de un curso
+ * 
+ * Esta tarjeta recibe un objeto 'course' que debe venir desde la API con la estructura:
+ * {
+ *   id: string,
+ *   title: string,
+ *   instructor: string,
+ *   image: string, // URL de la imagen del curso
+ *   category: string, // 'programacion', 'tecnologico', 'psicoeducativo', 'idiomas', 'exactas', 'admision', 'universidad'
+ *   type: string, // 'curso', 'desarrollo'
+ *   metadata: [
+ *     { icon: 'reloj', text: 'Duración del curso' },
+ *     { icon: 'libro', text: 'Número de lecciones' },
+ *     { icon: 'estudiante', text: 'Número de estudiantes inscritos' }
+ *   ]
+ * }
  */
 function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
+  // BACKEND: Extraer datos del objeto course que viene de la API
   const { title, instructor, image, metadata, category, type } = course;
 
-  // Clase de color basada en la categoría para el badge superior
+  // BACKEND: Sistema de colores para categorías - estos valores deben coincidir 
+  // con las categorías que manda el backend en el campo 'category' del curso
   const categoryColors = {
     'programacion': 'bg-red-500',
-    'tecnologico': 'bg-blue-500',
+    'tecnologico': 'bg-blue-500', 
     'psicoeducativo': 'bg-purple-500',
     'idiomas': 'bg-green-500',
     'exactas': 'bg-orange-500',
-    'admision': 'bg-indigo-500', // Nueva categoría para "admisión a la preparatoria"
-    'universidad': 'bg-pink-500', // Usado para el curso de universidad
+    'admision': 'bg-indigo-500',
+    'universidad': 'bg-pink-500',
   };
 
+  // BACKEND: Colores alternativos por tipo de curso
   const typeColors = {
     'curso': 'bg-pink-500',
     'desarrollo': 'bg-teal-500',
-    // 'universidad': 'bg-yellow-500', // Ya está en categoryColors
   };
 
-  // Determinar el color del badge superior
   const badgeColor = categoryColors[category] || typeColors[type] || 'bg-gray-500';
 
-  // Estilos especiales para el curso actual
+  // Estilos especiales para curso actual
   const currentCourseStyles = isCurrentCourse ? {
     border: 'border-2 border-blue-300',
-    shadow: 'shadow-2xl shadow-blue-500/20',
+    shadow: 'shadow-xl shadow-blue-500/20',
     background: 'bg-white',
     glow: 'ring-2 ring-blue-200/50'
   } : {
-    border: 'border border-gray-100',
-    shadow: 'shadow-xl',
+    border: 'border border-gray-200',
+    shadow: 'shadow-lg',
     background: 'bg-white',
     glow: ''
   };
 
   return (
-    <div className={`${currentCourseStyles.background} rounded-xl sm:rounded-2xl ${currentCourseStyles.shadow} hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col ${currentCourseStyles.border} ${currentCourseStyles.glow} h-full ${isCurrentCourse ? 'transform scale-105' : 'hover:scale-105'}`}>
-      {/* Imagen del curso con overlay de categoría/tipo */}
-      <div className="relative w-full h-32 sm:h-36 lg:h-40 bg-gray-200 flex-shrink-0">
+    <div className={`${currentCourseStyles.background} rounded-lg md:rounded-xl lg:rounded-2xl ${currentCourseStyles.shadow} hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col ${currentCourseStyles.border} ${currentCourseStyles.glow} 
+      w-full max-w-[180px] sm:max-w-[220px] md:max-w-[240px] lg:max-w-[280px] xl:max-w-[320px] 2xl:max-w-[360px] 
+      h-auto max-h-[300px] sm:max-h-[320px] md:max-h-[340px] lg:max-h-[420px] xl:max-h-[460px] 2xl:max-h-[500px]
+      mx-auto ${isCurrentCourse ? 'transform scale-[1.01]' : 'hover:scale-[1.01]'}`}>
+      {/* BACKEND: Imagen del curso - debe venir como URL desde la API */}
+      <div className="relative w-full h-16 sm:h-18 md:h-20 lg:h-32 xl:h-36 2xl:h-40 bg-gray-200 flex-shrink-0">
         <img
-          src={image}
+          src={image || "https://placehold.co/400x250/e0e0e0/555555?text=Curso"}
           alt={title}
           className="w-full h-full object-cover"
-          onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x200/e0e0e0/555555?text=Curso"; }} // Placeholder en caso de error
+          onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x250/e0e0e0/555555?text=Curso"; }}
         />
-        <div className={`absolute top-2 left-2 sm:top-3 sm:left-3 px-2 sm:px-3 py-1 rounded-full text-xs font-semibold text-white ${badgeColor} shadow-md z-10 ${isCurrentCourse ? 'ring-1 ring-white/70' : ''}`}>
-          {category || type} {/* Muestra categoría o tipo */}
+        {/* BACKEND: Badge con la categoría o tipo del curso */}
+        <div className={`absolute top-1.5 left-1.5 sm:top-2 sm:left-2 lg:top-3 lg:left-3 px-1.5 py-0.5 sm:px-2 lg:px-2.5 sm:py-1 rounded-full text-xs font-semibold text-white ${badgeColor} shadow-md z-10 ${isCurrentCourse ? 'ring-1 ring-white/70' : ''}`}>
+          {category || type}
         </div>
-        {/* Efecto de resplandor muy sutil para curso actual */}
         {isCurrentCourse && (
           <div className="absolute inset-0 bg-blue-500/5 pointer-events-none"></div>
         )}
       </div>
 
       {/* Contenido de la tarjeta */}
-      <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between min-h-0">
+      <div className="p-2 sm:p-2.5 md:p-3 lg:p-3.5 xl:p-4 2xl:p-4 flex-1 flex flex-col justify-between min-h-0">
         <div className="flex-1">
-          <h3 className={`text-sm sm:text-base lg:text-lg font-bold mb-1 sm:mb-2 leading-tight truncate ${isCurrentCourse ? 'text-blue-900' : 'text-gray-800'}`} title={title}>
+          {/* BACKEND: Título del curso */}
+          <h3 className={`text-xs sm:text-sm md:text-sm lg:text-base xl:text-lg 2xl:text-xl font-bold mb-1 sm:mb-1.5 md:mb-2 lg:mb-2 xl:mb-2.5 leading-tight line-clamp-2 ${isCurrentCourse ? 'text-blue-900' : 'text-gray-800'}`} title={title}>
             {title}
           </h3>
-          <p className={`text-xs sm:text-sm mb-2 sm:mb-3 ${isCurrentCourse ? 'text-blue-700' : 'text-gray-600'}`}>
+          {/* BACKEND: Nombre del instructor */}
+          <p className={`text-xs sm:text-xs md:text-sm lg:text-sm xl:text-base 2xl:text-lg mb-2 sm:mb-2 md:mb-2 lg:mb-3 xl:mb-3 ${isCurrentCourse ? 'text-blue-700' : 'text-gray-600'}`}>
             Por <span className="font-semibold">{instructor}</span>
           </p>
 
-          {/* Metadatos del curso (duración, lecciones, etc.) */}
-          <div className={`flex flex-col gap-1 text-xs mb-3 sm:mb-4 ${isCurrentCourse ? 'text-blue-600' : 'text-gray-700'}`}>
+          {/* BACKEND: Metadatos del curso (duración, lecciones, estudiantes, etc.) */}
+          {/* Los iconos se mapean según el campo 'icon' en cada metadata */}
+          <div className={`flex flex-col gap-0.5 sm:gap-1 md:gap-1 lg:gap-1 xl:gap-1.5 text-xs sm:text-xs md:text-xs lg:text-sm xl:text-base 2xl:text-lg mb-2 sm:mb-2 md:mb-2 lg:mb-3 xl:mb-3 ${isCurrentCourse ? 'text-blue-600' : 'text-gray-700'}`}>
             {metadata.slice(0, 3).map((item, index) => (
               <div key={index} className="flex items-center">
-                {item.icon === 'reloj' && <IconoReloj />}
-                {item.icon === 'libro' && <IconoLibro />}
-                {item.icon === 'estudiante' && <IconoEstudiante />}
-                <span className="truncate">{item.text}</span>
+                <div className="w-3 h-3 sm:w-4 sm:h-4 md:w-4 md:h-4 lg:w-5 lg:h-5 xl:w-5 xl:h-5 mr-1 sm:mr-1.5 md:mr-1.5 lg:mr-2 xl:mr-2 flex-shrink-0">
+                  {item.icon === 'reloj' && <IconoReloj />}
+                  {item.icon === 'libro' && <IconoLibro />}
+                  {item.icon === 'estudiante' && <IconoEstudiante />}
+                </div>
+                <span className="text-xs sm:text-xs md:text-xs lg:text-sm xl:text-base 2xl:text-lg">{item.text}</span>
               </div>
             ))}
           </div>
@@ -108,30 +131,33 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
         <div className="flex-shrink-0">
           <button
             onClick={() => onAction(course)}
-            className={`w-full py-2 sm:py-3 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200
+            className={`relative w-full py-1.5 sm:py-2 md:py-2.5 lg:py-2.5 xl:py-3 2xl:py-3 rounded-lg sm:rounded-xl md:rounded-2xl font-bold text-xs sm:text-xs md:text-sm lg:text-sm xl:text-base 2xl:text-lg text-white shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-95 transition-all duration-300 overflow-hidden
               ${isDashboardButton
                 ? isCurrentCourse 
-                  ? 'bg-gradient-to-r from-green-600 to-green-700 shadow-green-500/30 animate-pulse' // Estilo verde con animación para curso actual
-                  : 'bg-gradient-to-r from-purple-600 to-indigo-600' // Estilo normal para "IR AL DASHBOARD"
-                : 'bg-gradient-to-r from-blue-600 to-purple-600' // Estilo para "EMPIEZA TU TRANSFORMACIÓN"
+                  ? 'bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 shadow-green-500/30 hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 ring-2 ring-green-300/50' // Estilo verde mejorado para curso actual
+                  : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700' // Estilo normal para "IR AL DASHBOARD"
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' // Estilo para "EMPIEZA TU TRANSFORMACIÓN"
               }`}
           >
-            <span className="hidden sm:inline">
-              {isDashboardButton 
-                ? isCurrentCourse 
-                  ? 'CURSO ACTUAL' 
-                  : 'IR AL DASHBOARD'
-                : 'EMPIEZA TU TRANSFORMACIÓN'
-              }
-            </span>
-            <span className="sm:hidden">
-              {isDashboardButton 
-                ? isCurrentCourse 
-                  ? 'ACTUAL' 
-                  : 'IR AL CURSO'
-                : 'COMENZAR'
-              }
-            </span>
+            {/* Efecto de brillo para curso actual */}
+            {isDashboardButton && isCurrentCourse && (
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out"></div>
+            )}
+            <div className="relative z-10 flex items-center justify-center gap-1 sm:gap-1.5 md:gap-1.5 lg:gap-2 xl:gap-2">
+              {isDashboardButton && isCurrentCourse && (
+                <svg className="w-3 h-3 sm:w-3 sm:h-3 md:w-4 md:h-4 lg:w-4 lg:h-4 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              )}
+              <span className="font-bold text-xs sm:text-xs md:text-sm lg:text-sm xl:text-base 2xl:text-lg leading-tight">
+                {isDashboardButton 
+                  ? isCurrentCourse 
+                    ? 'CURSO ACTUAL' 
+                    : 'IR AL DASHBOARD'
+                  : 'EMPIEZA TU TRANSFORMACIÓN'
+                }
+              </span>
+            </div>
           </button>
         </div>
       </div>
@@ -140,98 +166,120 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
 }
 
 /**
- * Función simulada para obtener datos de cursos.
- * En una aplicación real, esto sería una llamada a tu API.
+ * INTEGRACIÓN BACKEND: Función para obtener los cursos matriculados del estudiante
+ * 
+ * Esta función debe conectarse con el endpoint del backend que retorne:
+ * - Lista de cursos en los que el estudiante está inscrito
+ * - Información del curso actual en progreso
+ * - Progreso y calificaciones de cada curso
+ * 
+ * Estructura esperada de respuesta:
+ * {
+ *   enrolledCourses: [
+ *     {
+ *       id: string,
+ *       title: string,
+ *       instructor: string,
+ *       image: string (URL),
+ *       category: string,
+ *       type: string,
+ *       isActive: boolean,
+ *       enrollmentDate: string,
+ *       progress: number, // 0-100
+ *       lastAccessed: string,
+ *       status: 'active' | 'completed' | 'paused',
+ *       metadata: [
+ *         { icon: 'reloj', text: 'Tiempo restante' },
+ *         { icon: 'libro', text: 'Lecciones completadas' },
+ *         { icon: 'estudiante', text: 'Progreso actual' }
+ *       ]
+ *     }
+ *   ],
+ *   currentCourseId: string
+ * }
  */
-async function fetchCourseData() {
-  await new Promise(resolve => setTimeout(resolve, 1000)); // Simula un retardo de red
-  return {
-    activeCourses: [
-      {
-        id: 'active1',
-        image: 'https://placehold.co/400x200/c7a2ff/333333?text=Curso+Universidad',
-        title: 'Entrenamiento para el examen de admisión a la universidad',
-        instructor: 'Kelvin Ramirez',
-        category: 'universidad',
-        metadata: [
-          { icon: 'reloj', text: '8 Semanas' },
-          { icon: 'libro', text: '12 Módulos' },
-          { icon: 'estudiante', text: 'En curso' },
-        ],
-      },
-      {
-        id: 'active2',
-        image: 'https://placehold.co/400x200/a2d4ff/333333?text=Curso+Prepa',
-        title: 'Entrenamiento para el examen de admisión a la preparatoria',
-        instructor: 'Kelvin Ramirez',
-        category: 'admision',
-        metadata: [
-          { icon: 'reloj', text: '5 Semanas' },
-          { icon: 'libro', text: '8 Lecciones' },
-          { icon: 'estudiante', text: '25 Alumnos' },
-        ],
-      },
-       {
-        id: 'active3',
-        image: 'https://placehold.co/400x200/ffd8b5/333333?text=Desbloquea+Tecno',
-        title: 'DIGI-START: desbloquea tu potencial tecnológico',
-        instructor: 'Alejandra Tellez',
-        category: 'tecnologico',
-        metadata: [
-          { icon: 'reloj', text: '10 horas' },
-          { icon: 'libro', text: '7 proyectos' },
-          { icon: 'estudiante', text: 'Nivel: Principiante a superior' },
-        ],
-      },
-    ],
-    // 'recommendedCourses' ha sido removido
-    newCourses: [], // Se mantiene vacío ya que la sección de "nuevos cursos" fue removida
-  };
+async function fetchEnrolledCourses(studentId) {
+  try {
+    // BACKEND: Reemplazar con la llamada real a la API de cursos matriculados
+    // Ejemplo: const response = await fetch(`/api/students/${studentId}/enrolled-courses`, {
+    //   method: 'GET',
+    //   headers: {
+    //     'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    //     'Content-Type': 'application/json'
+    //   }
+    // });
+    // const data = await response.json();
+    // return data;
+    
+    // Estructura temporal para desarrollo - eliminar cuando se conecte el backend
+    return {
+      enrolledCourses: [],
+      currentCourseId: null
+    };
+  } catch (error) {
+    console.error('Error al obtener cursos matriculados:', error);
+    throw error;
+  }
 }
 
 /**
- * Componente principal para la página "Mis Cursos" del alumno.
- * Muestra los cursos activos y un llamado a la acción para explorar más.
+ * Componente principal de Mis Cursos
+ * Muestra SOLO los cursos en los que el estudiante está matriculado
+ * 
+ * INTEGRACIÓN BACKEND REQUERIDA:
+ * 1. Los datos vienen del contexto StudentContext (enrolledCourses, currentCourse)
+ * 2. El contexto debe poblarse con datos del backend al cargar la aplicación
+ * 3. Se necesita endpoint para obtener cursos matriculados por estudiante ID
+ * 4. Se necesita endpoint para marcar curso como "actual/en progreso"
  */
-export function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
-  const { selectedCourse, courses, changeCourse } = useCourse();
-  const { availableCourses, currentCourse, selectCourse, forceCompleteReset, goToStart, isVerified, hasPaid } = useStudent();
+function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
+  // BACKEND: Estos datos vienen del contexto StudentContext (NO CourseContext)
+  // Solo se usan los cursos matriculados del estudiante
+  const { 
+    enrolledCourses = [], 
+    currentCourse = null, 
+    selectCourse = () => {}
+  } = useStudent() || {};
+  
   const navigate = useNavigate();
 
-  // Debug para MisCursos
-  console.log('MisCursos_Alumno_comp Debug:', {
-    currentCourse: currentCourse ? currentCourse.title : 'None',
-    isVerified,
-    hasPaid,
-    availableCoursesCount: availableCourses.length
-  });
-
-  // Usar los cursos del contexto de estudiante y ordenar para que el curso actual aparezca primero
-  const activeCourses = availableCourses.filter(course => course.isActive);
+  // BACKEND: Filtrar cursos activos de los matriculados
+  const activeCourses = enrolledCourses.filter(course => course?.isActive && course?.status === 'active');
   
-  // Ordenar cursos: curso actual primero, luego el resto
+  // BACKEND: Ordenar cursos para mostrar el curso currentCourse primero
   const sortedActiveCourses = activeCourses.sort((a, b) => {
-    const aIsCurrent = currentCourse && currentCourse.id === a.id;
-    const bIsCurrent = currentCourse && currentCourse.id === b.id;
+    const aIsCurrent = currentCourse?.id === a.id;
+    const bIsCurrent = currentCourse?.id === b.id;
     
-    if (aIsCurrent && !bIsCurrent) return -1; // a va primero
-    if (!aIsCurrent && bIsCurrent) return 1;  // b va primero
-    return 0; // mantener orden original para el resto
+    if (aIsCurrent && !bIsCurrent) return -1;
+    if (!aIsCurrent && bIsCurrent) return 1;
+    return 0;
   });
 
-  // Manejador de acción para los botones de las tarjetas
+  // BACKEND: Función para seleccionar un curso matriculado y navegar al dashboard
   const handleCourseAction = (course) => {
-    selectCourse(course.id);
-    console.log('Curso seleccionado:', course.title);
-    // Navegar al dashboard principal (inicio) con el curso seleccionado
-    navigate('/estudiante/');
+    try {
+      // Actualizar el contexto local
+      if (selectCourse && course?.id) {
+        selectCourse(course.id);
+      }
+      
+      // BACKEND: Aquí se debería hacer una llamada para actualizar el curso actual
+      // Ejemplo: await updateCurrentCourse(course.id);
+      
+      // Navegar al dashboard del estudiante
+      navigate('/alumno/');
+    } catch (error) {
+      console.error('Error al seleccionar curso:', error);
+    }
   };
 
-  // Renderizado condicional para el estado de carga
+  // BACKEND: Estados de carga y error que vienen como props
+  // Estos deberían ser manejados por el componente padre que hace la llamada a la API
   if (propIsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-lg font-medium text-gray-700">Cargando cursos...</p>
         </div>
@@ -239,11 +287,11 @@ export function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propErr
     );
   }
 
-  // Renderizado condicional para el estado de error
+  // BACKEND: Mostrar errores que puedan ocurrir al cargar los cursos
   if (propError) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-red-50">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-red-200 text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-red-200 text-center">
           <div className="text-4xl mb-4">📚</div>
           <p className="text-lg font-medium text-red-600">Error al cargar los cursos: {propError}</p>
         </div>
@@ -252,22 +300,32 @@ export function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propErr
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-100 p-3 sm:p-4 lg:p-6 font-inter text-gray-800">
-      <div className="max-w-7xl mx-auto space-y-8 sm:space-y-12">
-        {/* Sección de MIS CURSOS ACTIVOS */}
-        <section>
-          <div className="mb-4 sm:mb-6">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              MIS CURSOS ACTIVOS
-            </h2>
+    <div className="min-h-screen bg-white p-3 sm:p-4 md:p-6 lg:p-8 font-inter text-gray-800">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12">
+        
+        {/* Sección de Encabezado - Consistente con Dashboard */}
+        <div className="flex flex-col items-center md:flex-row md:items-start md:justify-between mb-6 pb-4 border-b-2 border-gradient-to-r from-blue-200 to-purple-200">
+          <h2 className="text-3xl xs:text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 md:mb-0">
+            MIS CURSOS ACTIVOS
+          </h2>
+          <div className="bg-white rounded-full px-3 xs:px-4 sm:px-6 py-1.5 xs:py-2 sm:py-3 shadow-lg border border-gray-200">
+            <span className="text-xs xs:text-sm sm:text-base font-bold text-gray-700">
+              Total: <span className="text-blue-600">{sortedActiveCourses?.length || 0}</span>
+            </span>
           </div>
-          {/* Grid responsivo inteligente */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
+        </div>
+
+        {/* Sección de cursos matriculados */}
+        <section>
+          {/* BACKEND: Renderizar cursos matriculados si existen, sino mostrar estado vacío */}
+          {/* Diseño responsivo: móvil intacto, mejorado para PC */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6 xl:gap-8 2xl:gap-10 max-w-none auto-rows-min">
             {sortedActiveCourses && sortedActiveCourses.length > 0 ? (
+              // BACKEND: Mapear los cursos matriculados obtenidos de la API
               sortedActiveCourses.map(course => {
                 const isCurrentCourse = currentCourse && currentCourse.id === course.id;
                 return (
-                  <div key={course.id} className="relative h-full">
+                  <div key={course.id} className="relative flex justify-center">
                     <CourseCard
                       course={course}
                       onAction={handleCourseAction}
@@ -278,9 +336,37 @@ export function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propErr
                 );
               })
             ) : (
-              <div className="col-span-full text-center py-12">
-                <div className="text-4xl mb-4">📚</div>
-                <p className="text-lg font-medium text-gray-600">No tienes cursos activos</p>
+              // Estado vacío: se muestra cuando el estudiante no tiene cursos matriculados
+              // BACKEND: Esto se mostrará cuando enrolledCourses.length === 0
+              <div className="col-span-2 sm:col-span-3 md:col-span-3 lg:col-span-3 xl:col-span-4 2xl:col-span-4 flex flex-col items-center justify-center py-16 sm:py-20 md:py-24">
+                <div className="bg-gray-50 rounded-2xl p-8 md:p-12 text-center max-w-lg mx-auto border border-gray-200 shadow-lg">
+                  {/* Icono simple */}
+                  <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.523 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.523 18.246 18 16.5 18s-3.332.477-4.5 1.253"></path>
+                    </svg>
+                  </div>
+                  
+                  {/* Texto simple */}
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-700 mb-3">
+                    No tienes cursos matriculados
+                  </h3>
+                  
+                  <p className="text-gray-500 mb-6">
+                    Una vez que te matricules en un curso, aparecerá aquí para que puedas acceder fácilmente.
+                  </p>
+
+                  {/* Botón para ir al dashboard/inicio */}
+                  <button
+                    onClick={() => navigate('/alumno/')}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    Ir al Dashboard
+                  </button>
+                </div>
               </div>
             )}
           </div>

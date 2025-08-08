@@ -17,12 +17,14 @@ const ResponsivePage = () => {
 
     useEffect(() => {
       if(isAuthenticated){
-        if(user.role === 'administrador'){
+        if(user?.role === 'administrador'){
           navigate('/admin/dashboard');
-        } else if(user.role === 'estudiante'){
+        } else if(user?.role === 'estudiante'){
           navigate('/alumno')
-        } else if(user.role === 'asesor'){
+        } else if(user?.role === 'asesor'){
           navigate('/asesor/dashboard')
+        } else if(user?.role === 'administrativo'){
+          navigate('/administrativo');
         }
       }
     }, [signin])

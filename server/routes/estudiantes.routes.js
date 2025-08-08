@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { crear, obtener, obtenerUno, actualizar, eliminar, getUltimoFolio } from "../controllers/estudiantes.controller.js";
+import { crear, obtener, obtenerUno, actualizar, eliminar, getUltimoFolio, obtenerGruposConCantidad  } from "../controllers/estudiantes.controller.js";
 import { authREquired } from "../middlewares/validateToken.js";
 import { upload } from "../middlewares/multer.js";
 
@@ -16,5 +16,7 @@ router.put("/estudiantes/:id", actualizar);
 router.delete("/estudiantes/:id", eliminar);
 
 router.get("/folio", getUltimoFolio);
+
+router.get("/grupos/:curso", obtenerGruposConCantidad);
 
 export default router;

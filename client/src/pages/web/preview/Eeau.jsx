@@ -31,7 +31,7 @@ function Eeau() {
         setMensaje(texto);
     };
 
-    const curso = 'Entrenamiento para el examen de admision a la universidad'
+    const curso = 'EEAU';
 
     localStorage.setItem('roles', JSON.stringify({ role: 'estudiante' }));
 

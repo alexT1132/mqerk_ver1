@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Navlogin from "../../components/NavLogin";
 import { FaUser, FaLock, FaArrowRight } from 'react-icons/fa';
 import { useForm } from "react-hook-form";
@@ -6,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 function Register() {
 
-    const { signup } = useAuth();
+    const { signup, isVerde } = useAuth();
 
     const { register, handleSubmit } = useForm();
 
@@ -15,16 +16,23 @@ function Register() {
     const datosRegistro = JSON.parse(localStorage.getItem('datosRegistro'));
     const datosRole = JSON.parse(localStorage.getItem('role')); 
 
+    console.log(datosRole);
+
     const onsubmite = handleSubmit((data) => {
         const datosCompletos = {
         ...data,
         role: datosRole,
-        id_estudiante: datosRegistro.id
+        id_estudiante: datosRegistro?.id,
     };
 
-    signup(datosCompletos);
-    navigate('/login');
-    })
+    signup(datosCompletos);        
+    });
+
+    useEffect(() => {
+      if(isVerde){
+        navigate('/login'); // Redirige al login después del registro
+      }
+    }, [signup])
 
   return (
     <div className="h-screen flex flex-col bg-[#3c24ba] overflow-hidden">

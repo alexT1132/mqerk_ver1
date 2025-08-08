@@ -3273,7 +3273,7 @@ export function Test() {
                                 <div>
                                     <select
                                         onChange={(e) => setBaron16(e.target.value)}
-                                        value={baron6}
+                                        value={baron16}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option selected value="">Selecciona un puntaje</option>
@@ -3853,7 +3853,7 @@ export function Test() {
                                 onChange={handleInputChange2}
                                 value={Wais12}
                                 className="mt-2 p-3 w-111 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Introduce tu correo electrónico"
+                                placeholder="Introduce tu respuesta aqui"
                                 />
                             </div>
                         </div>
@@ -3868,7 +3868,7 @@ export function Test() {
                                 onChange={handleInputChange3}
                                 value={Wais13}
                                 className="mt-2 p-3 w-111 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Introduce tu correo electrónico"
+                                placeholder="Introduce tu respuesta aqui"
                                 />
                             </div>
                         </div>
@@ -3906,7 +3906,7 @@ export function Test() {
                                 onChange={handleInputChange4}
                                 value={Wais15}
                                 className="mt-2 p-3 w-111 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Introduce tu correo electrónico"
+                                placeholder="Introduce tu respuesta aqui"
                             />
                             </div>
                         </div>
@@ -3950,7 +3950,7 @@ export function Test() {
                                 onChange={(e) => setWais16(e.target.value)}
                                 value={Wais16}
                                 className="mt-2 p-3 w-118 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Introduce tu correo electrónico"
+                                placeholder="Introduce tu respuesta aqui"
                                 />
                             </div>
                         </div>
@@ -3986,7 +3986,7 @@ export function Test() {
                                 onChange={(e) => setWais18(e.target.value)}
                                 value={Wais18}
                                 className="mt-2 p-3 w-118 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Introduce tu correo electrónico"
+                                placeholder="Introduce tu respuesta aqui"
                                 />
                             </div>
                         </div>
@@ -4022,7 +4022,7 @@ export function Test() {
                                 onChange={(e) => setWais20(e.target.value)}
                                 value={Wais20}
                                 className="mt-2 p-3 w-118 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Introduce tu correo electrónico"
+                                placeholder="Introduce tu respuesta aqui"
                             />
                             </div>
                         </div>

@@ -10,6 +10,7 @@ export const crear = async (req, res) => {
       comunidad1, 
       comunidad2,
       telefono,
+      grupo,
       nombre_tutor,
       tel_tutor,
       academico1,
@@ -28,11 +29,11 @@ export const crear = async (req, res) => {
       curso,
       plan,
       anio,
-      folio
+      folio,
     } = req.body;
 
     // Validación básica
-    if (!req.file || !nombre || !apellidos || !email || !telefono || !nombre_tutor || !tel_tutor || !telefono || !curso || !plan || !anio || !folio) {
+    if (!req.file || !nombre || !apellidos || !email || !telefono || !nombre_tutor || !tel_tutor || !grupo || !curso || !plan || !anio || !folio) {
       return res.status(400).json({ message: "Todos los campos son obligatorios" });
     } 
 
@@ -45,6 +46,7 @@ export const crear = async (req, res) => {
       apellidos, 
       email, 
       foto: imagen,
+      grupo,
       comunidad1, 
       comunidad2,
       telefono,
@@ -68,6 +70,8 @@ export const crear = async (req, res) => {
       anio,
       folio
     };
+
+    console.log(estudianteGenerado);
 
     const result = await Estudiantes.createEstudiante(estudianteGenerado);
 
@@ -151,4 +155,24 @@ export const getUltimoFolio = async (req, res) => {
     console.error('❌ ERROR EN CONTROLADOR getUltimoFolio:', error);
     res.status(500).json({ mensaje: 'Error del servidor' });
   }
+};
+
+export const obtenerGruposConCantidad = async (req, res) => {
+    try {
+        // Obtener el parámetro curso desde la URL o el body
+        const { curso } = req.params;
+
+        if (!curso) {
+            return res.status(400).json({ mensaje: "El parámetro curso es obligatorio" });
+        }
+
+        // Ejecutar el modelo
+        const resultado = await Estudiantes.getGruposConCantidad(curso);
+
+        // Responder con los datos obtenidos
+        res.status(200).json(resultado);
+    } catch (error) {
+        console.error("Error al obtener grupos con cantidad:", error);
+        res.status(500).json({ mensaje: "Error interno del servidor" });
+    }
 };

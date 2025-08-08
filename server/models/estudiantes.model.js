@@ -2,12 +2,13 @@ import db from '../db.js'; // ya no ejecutes connectDB()
 
 // Crear datos del alumno
 export const createEstudiante = async (data) => {
-  const sql = 'INSERT INTO estudiantes (nombre, apellidos, email, foto, comunidad1, comunidad2, telefono, nombre_tutor, tel_tutor, academico1, academico2, semestre, alergia, alergia2, discapacidad1, discapacidad2, orientacion, universidades1, universidades2, postulacion, comentario1, comentario2, curso, plan, anio, folio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  const sql = 'INSERT INTO estudiantes (nombre, apellidos, email, foto, grupo, comunidad1, comunidad2, telefono, nombre_tutor, tel_tutor, academico1, academico2, semestre, alergia, alergia2, discapacidad1, discapacidad2, orientacion, universidades1, universidades2, postulacion, comentario1, comentario2, curso, plan, anio, folio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
   const values = [
     data.nombre, 
     data.apellidos, 
     data.email, 
     data.foto, 
+    data.grupo,
     data.comunidad1, 
     data.comunidad2, 
     data.telefono, 
@@ -47,11 +48,23 @@ export const getEstudianteById = async (id) => {
   return rows[0]; // solo uno
 };
 
-// Actualizar un usuario
-export const updateUsuario = (id, data, callback) => {
-  const sql = 'UPDATE estudiantes SET nombre = ?, email = ?, rol = ? WHERE id = ?';
-  const values = [data.nombre, data.email, data.rol, id];
-  db.query(sql, values, callback);
+// Actualizar un estudiante
+export const updateComprobante = async (id, data) => {
+  const sql = `
+    UPDATE estudiantes 
+    SET verificacion = ?
+    WHERE id = ?;
+  `;
+
+  const values = [data.verificacion, id];
+
+  try {
+    const [result] = await db.query(sql, values);
+    return result; // Puedes devolver result para saber cuántas filas se actualizaron
+  } catch (error) {
+    console.error("Error al actualizar estudiante:", error);
+    throw error;
+  }
 };
 
 // Eliminar un usuario
@@ -68,4 +81,14 @@ export const obtenerUltimoFolio = async () => {
     console.error('ERROR EN MODELO obtenerUltimoFolio:', error);
     throw error;
   }
+};
+
+export const getGruposConCantidad = async (curso) => {
+    const [rows] = await db.query(`
+        SELECT grupo, COUNT(*) AS cantidad_estudiantes
+        FROM estudiantes
+        WHERE curso = ?
+        GROUP BY grupo
+    `, [curso]);
+    return rows;
 };

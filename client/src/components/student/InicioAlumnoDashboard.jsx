@@ -1,12 +1,10 @@
-// BACKEND: Componente principal del dashboard de inicio para estudiantes
-// Este componente maneja la pantalla de bienvenida y verificación de pago
-// Requiere integración con endpoints de subida de archivos y verificación de estudiantes
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Clock, BookOpen, TrendingUp, Upload, X, CheckCircle, Star, Calendar, GraduationCap, ChevronRight, AlertTriangle, Wifi, HelpCircle, Settings, ShieldCheck } from 'lucide-react';
 import { useStudent } from '../../context/StudentContext.jsx';
-import { useAuth } from "../../context/AuthContext.jsx";
 import { useNavigate } from 'react-router-dom';
 import { AlumnoDashboardMetrics } from './Metrics_dash_alumnos_comp.jsx';
+import { useAuth } from "../../context/AuthContext.jsx";
+import { useComprobante } from "../../context/ComprobantesContext.jsx";
 
 // BACKEND: Frases motivacionales que se muestran de forma rotativa diariamente
 // Estas frases se pueden personalizar desde el backend o mantener como están
@@ -149,12 +147,16 @@ const InicioAlumnoDashboard = ({
     goToWelcome
   } = useStudent();
   const navigate = useNavigate();
+
+    const { user, alumno: DatosAlumno } = useAuth();
+
+    const { crearComprobante } = useComprobante();
   
   // BACKEND: Combinar datos de props con datos del contexto
   // Priorizar props si existen, sino usar datos del contexto
   const finalVerificado = verificado !== undefined ? verificado : isVerified;
   const finalHaPagado = haPagado !== undefined ? haPagado : hasPaid;
-  const finalAlumno = alumno || studentData.name || "XXXX";
+  const finalAlumno = alumno || DatosAlumno?.nombre || "XXXX";
   const finalMatricula = matricula || studentData.matricula || "XXXX";
 
   // Estados locales
@@ -183,8 +185,6 @@ const InicioAlumnoDashboard = ({
   const circleSize = 48;
   const sliderWidth = 280;
 
-  const { alumno: estudianteContexto } = useAuth();
-
   // Función para copiar al portapapeles
   const handleCopy = (text, fieldName) => {
     const textarea = document.createElement('textarea');
@@ -204,14 +204,19 @@ const InicioAlumnoDashboard = ({
   // IMPORTANTE: Solo redirige si está verificado, pagado, NO es primer acceso, no tiene curso actual
   // y no es una visita directa (para evitar loops)
   useEffect(() => {
+    // BACKEND: Solo redirigir si está verificado, pagado, NO es primer acceso 
+    // y NO tiene curso seleccionado (para que vaya a seleccionar uno)
     const shouldRedirect = finalVerificado && 
                           finalHaPagado && 
                           !isFirstAccess && 
                           !currentCourse &&
                           !window.location.search.includes('direct=true');
     
+    // BACKEND: Si ya tiene curso seleccionado, NO redirigir
+    // La pantalla de inicio debe mostrarse como bienvenida al curso
     if (shouldRedirect) {
       const timer = setTimeout(() => {
+        console.log('🔄 Redirigiendo a /alumno/cursos para seleccionar curso');
         navigate('/alumno/cursos');
       }, 500);
       return () => clearTimeout(timer);
@@ -261,42 +266,45 @@ const InicioAlumnoDashboard = ({
   // BACKEND: Función para manejar la subida de comprobantes de pago
   // Esta función debe conectarse con el endpoint del backend para procesar archivos
   const handleSubirComprobante = async (e) => {
+    console.log("🚀 EJECUTANDO handleSubirComprobante");
     const file = e.target.files[0];
     if (file) {
       setShowUploadProgress(true);
       setUploadProgress(0);
-      
-      // Simulación temporal - ELIMINAR cuando se conecte el backend
+
+      const datosCompletos = new FormData();
+      datosCompletos.append("comprobante", file);
+      datosCompletos.append("id_estudiante", DatosAlumno.id);
+
       const interval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 100) {
             clearInterval(interval);
             setTimeout(() => {
               setShowUploadProgress(false);
-              setComprobante(file);
               setShowDestello(true);
-              
+
               // Efectos de feedback
               if ('vibrate' in navigator) {
                 navigator.vibrate([200, 100, 200]);
               }
               
-              // Sonido de éxito (opcional)
               try {
                 const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjiS2PLNFCIF');
                 audio.volume = 0.3;
                 audio.play().catch(() => {});
               } catch (e) {}
-              
+            
               setTimeout(() => setShowDestello(false), 3000);
               setShowModal(false);
-              if (onComprobanteSubido) onComprobanteSubido(file);
+              window.location.reload();
             }, 800);
             return 100;
           }
           return prev + Math.random() * 15 + 5;
         });
       }, 100);
+      crearComprobante(datosCompletos);
     }
   };
 
@@ -305,18 +313,6 @@ const InicioAlumnoDashboard = ({
   // IMPORTANTE: No depende de isFirstAccess para evitar bypasses de seguridad
   const mostrarBloqueo = !finalHaPagado || !finalVerificado;
   
-  // console.log('🔒 Estado de bloqueo:', {
-  //   finalHaPagado,
-  //   finalVerificado, 
-  //   isFirstAccess,
-  //   mostrarBloqueo,
-  //   currentCourse: !!currentCourse
-  // }, []);
-  
-  // BACKEND: Validar si hay un curso real (no placeholder)
-  // IMPORTANTE: Esta validación evita mostrar datos falsos del localStorage
-  // Si aparece información de curso cuando no debería, usar el botón "Limpiar Curso" 
-  // o "Resetear Estado" para limpiar los datos temporales del navegador
   const tieneNumCursoValido = currentCourse && 
                             currentCourse.title && 
                             currentCourse.title !== "XXXX" && 
@@ -336,7 +332,7 @@ const InicioAlumnoDashboard = ({
 
   // BACKEND: Función para obtener el mensaje de bienvenida personalizado
   const getWelcomeMessage = () => {
-    return `${getGreeting()}, ${estudianteContexto.nombre}!`;
+    return `${getGreeting()}, ${firstName}!`;
   };
 
   const handleTouchStart = (e) => {
@@ -376,7 +372,6 @@ const InicioAlumnoDashboard = ({
     sunset: 'from-orange-900 via-red-800 to-pink-900',
     forest: 'from-green-900 via-emerald-800 to-teal-900'
   };
-
 
   return (
     <div className="relative min-h-screen w-full">
@@ -464,7 +459,7 @@ const InicioAlumnoDashboard = ({
                         {/* Contenido cuando está en modo bloqueo (pago) */}
                         {mostrarBloqueo && (
                           <>
-                            {estudianteContexto.verificacion === 0 ? (
+                            {DatosAlumno?.verificacion === 0 ? (
                               <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-3 lg:gap-4">
                                 <div className="bg-yellow-400 rounded-full p-2 sm:p-3 md:p-2 lg:p-3 animate-pulse group-hover:animate-bounce">
                                   <AlertTriangle size={24} className="sm:w-8 sm:h-8 md:w-6 md:h-6 lg:w-8 lg:h-8 text-yellow-900 animate-pulse" style={{
@@ -494,7 +489,7 @@ const InicioAlumnoDashboard = ({
                               </div>
                             )}
                             
-                            {estudianteContexto.verificacion === 1 && (
+                            {DatosAlumno?.verificacion === 1 && (
                               <div className="mt-4 text-center text-green-200 font-bold bg-green-500/20 border border-green-300/30 rounded-lg px-4 py-3 animate-pulse">
                                 <div className="flex items-center justify-center gap-2">
                                   <CheckCircle size={20} />
@@ -537,7 +532,7 @@ const InicioAlumnoDashboard = ({
                     {mostrarBloqueo && (
                       <>
                         {/* Botón de subir comprobante mejorado */}
-                        {estudianteContexto.verificacion === 0 && (
+                        {DatosAlumno?.verificacion === 0 && (
                           <div className="group ml-0 sm:ml-8 md:ml-12 lg:ml-8 xl:ml-4">
                             {isMobile ? (
                               <div className="w-full flex justify-center">
@@ -590,7 +585,6 @@ const InicioAlumnoDashboard = ({
                             )}
                           </div>
                         )}
-
                       </>
                     )}
                   </div>
@@ -643,8 +637,6 @@ const InicioAlumnoDashboard = ({
                 </div>
               </div>
             </div>
-
-            
           </div>
         </div>
       )}
@@ -705,7 +697,7 @@ const InicioAlumnoDashboard = ({
                       {/* Info bancaria compacta */}
                       <div className="text-xs sm:text-sm mb-1 sm:mb-2 space-y-0.5">
                         <div>
-                          <span className="text-blue-600">Banco:</span> <span className="font-semibold">BANCO XXXX</span>
+                          <span className="text-blue-600">Banco:</span> <span className="font-semibold">BANCOPPEL</span>
                         </div>
                         <div>
                           <span className="text-blue-600">Beneficiario:</span> <span className="font-semibold">MQERK S.A.</span>
@@ -716,9 +708,9 @@ const InicioAlumnoDashboard = ({
                       <div className="space-y-1">
                         <div className="flex items-center gap-1">
                           <span className="text-blue-600 text-xs w-12 sm:w-14">Cuenta:</span>
-                          <span className="font-mono bg-gray-50 px-1 py-0.5 rounded text-xs flex-1">XXXXXXXXXX</span>
+                          <span className="font-mono bg-gray-50 px-1 py-0.5 rounded text-xs flex-1">4169 1608 5392 8977</span>
                           <button 
-                            onClick={() => handleCopy('XXXXXXXXXX', 'account')} 
+                            onClick={() => handleCopy('4169 1608 5392 8977', 'account')} 
                             className="px-1 py-0.5 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition relative"
                           >
                             📋
@@ -731,9 +723,9 @@ const InicioAlumnoDashboard = ({
                         </div>
                         <div className="flex items-center gap-1">
                           <span className="text-blue-600 text-xs w-12 sm:w-14">CLABE:</span>
-                          <span className="font-mono bg-gray-50 px-1 py-0.5 rounded text-xs flex-1 break-all">XXXXXXXXXXXXXXXXXX</span>
+                          <span className="font-mono bg-gray-50 px-1 py-0.5 rounded text-xs flex-1 break-all">137628103732170052</span>
                           <button 
-                            onClick={() => handleCopy('XXXXXXXXXXXXXXXXXX', 'clabe')} 
+                            onClick={() => handleCopy('137628103732170052', 'clabe')} 
                             className="px-1 py-0.5 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition relative"
                           >
                             📋
@@ -759,7 +751,7 @@ const InicioAlumnoDashboard = ({
                       <div className="text-xs sm:text-sm space-y-0.5">
                         <div>
                           <span className="text-green-600">Dir:</span> 
-                          <div className="font-semibold">Calle XXXX #XXX</div>
+                          <div className="font-semibold">Calle Juarez entre Av. Independencia y 5 de mayo C.P. 68300. En altos de COMPUMAX, Tuxtepec, Oaxaca</div>
                         </div>
                         <div>
                           <span className="text-green-600">Horario:</span> 
@@ -767,7 +759,7 @@ const InicioAlumnoDashboard = ({
                         </div>
                         <div>
                           <span className="text-green-600">Tel:</span> 
-                          <span className="font-semibold"> XX-XXXX-XXXX</span>
+                          <span className="font-semibold"> 287-181-1231</span>
                         </div>
                       </div>
                       

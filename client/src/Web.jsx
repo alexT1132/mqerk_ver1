@@ -223,8 +223,15 @@ function Web() {
     const getLeftImage = () => images[(currentIndex - 1 + images.length) % images.length];
     const getRightImage = () => images[(currentIndex + 1) % images.length];
 
+    const scrollToCursos = () => {
+      const section = document.getElementById('cursos');
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+      }
+    };
+
   return (
-    <div className="min-h-screen flex flex-col" >
+    <div className="min-h-screen flex flex-col" id="inicio" >
         <Navbar />
         {/* movil */}
         <div className="block md:hidden">
@@ -616,7 +623,7 @@ function Web() {
             <h1 className="text-white text-3xl font-bold mt-6">igual mentes que transforman el mundo.</h1>
             <h1 className="text-white text-5xl font-bold mt-6" style={{color: '#fff50c'}}>¡Da el primer paso hacia tu</h1>
             <h1 className="text-white text-5xl font-bold" style={{color: '#fff50c'}}>éxito académico!</h1>
-            <button className="fancy-button bg-[#3c24ba] mt-8 py-5 px-14 rounded-[52px]">
+            <button onClick={scrollToCursos} className="fancy-button bg-[#3c24ba] mt-8 py-5 px-14 rounded-[52px]">
               <svg className="border-svg bg-[#3c24ba]" viewBox="0 0 100 40" preserveAspectRatio="none">
                 <rect className="border-rect" x="0" y="0" width="100" height="39" rx="0" ry="0" />
               </svg>
@@ -625,7 +632,7 @@ function Web() {
           </div>
         </div>
 
-        <div className='text-center mt-10 text-4xl font-bold mb-10' style={{color: '#f4138a'}}>Nuestros cursos</div>
+        <div className='text-center mt-10 text-4xl font-bold mb-10' id="cursos" style={{color: '#f4138a'}}>Nuestros cursos</div>
         <hr className='ml-50 mr-50 text-[#3c24ba] border-1' />
 
         <div className='text-center mt-10 text-2xl font-bold' style={{color: '#3c24ba'}}>Asesores Especializados en la Enseñanza de las Ciencias y Tecnología</div>
@@ -898,7 +905,7 @@ function Web() {
               <div className="bg-blue-900 text-white rounded-full p-4 mb-2">
                 <FaUsers className='w-10 h-10' />
               </div>
-              <span className="font-bold text-3xl text-[#fff50c]">+ 1200 estudiantes</span>
+              <span className="font-bold text-3xl text-[#fff50c]">+ 1100 estudiantes</span>
             </div>
 
             {/* Línea divisora */}

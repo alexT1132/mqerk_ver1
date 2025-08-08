@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { registerRequest, loginRequest, verifyTokenRequest } from "../api/usuarios.js";
+import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 
 export const AuthContext = createContext();
@@ -17,13 +18,14 @@ export const AuthProvider = ({children}) => {
     const [user, setUser] = useState([]);
     const [alumno, setAlumno] = useState([]);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isVerde, setVerde] = useState(false);
     const [errors, setErrors] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const signup = async (user) => {
         try {
             const res = await registerRequest(user);
-            console.log(res.data);
+            setVerde(true);
         } catch (error) {
             console.log(error);
         }
@@ -32,8 +34,7 @@ export const AuthProvider = ({children}) => {
     const signin = async (user) => {
         try {
             const res = await loginRequest(user);
-            console.log(res.data.usuario);
-            setUser(res.data.usuario);
+            setUser(res.data.usuario)
             setAlumno(res.data.estudiante);
             setIsAuthenticated(true);
         } catch (error) {
@@ -42,16 +43,13 @@ export const AuthProvider = ({children}) => {
         }
     }
 
-    const envioComprobante = async (comprobante) => {
-        
+    const logout = () => {
+        Cookies.remove('token');
+        setIsAuthenticated(false);
+        setUser(null);
+        setAlumno(null);
+        localStorage.clear();
     }
-
-    // const logout = () => {
-    //     logoutRequest();
-    //     Cookies.remove('token');
-    //     setIsAuthenticated(false);
-    //     setUser(null);
-    // }
 
     // const getUsuarios = async () => {
     //     try {
@@ -90,8 +88,8 @@ export const AuthProvider = ({children}) => {
                 }
 
                 setIsAuthenticated(true)
-                setUser(res.data.usuario)
-                setAlumno(res.data.estudiante);
+                console.log(res.data.usuario)
+                console.log(res.data);
                 setLoading(false)
             } catch (error) {
                 setIsAuthenticated(false)
@@ -107,6 +105,8 @@ export const AuthProvider = ({children}) => {
         <AuthContext.Provider value={{
             signup,
             signin,
+            logout,
+            isVerde,
             errors,
             user,
             alumno,

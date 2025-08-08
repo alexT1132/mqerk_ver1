@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAdminNotificationContext } from '../../context/AdminNotificationContext.jsx';
 
+// INTEGRACIÓN BACKEND - ¡Contexto admin listo!
+import { useAdminContext } from '../../context/AdminContext.jsx';
+
 // Componente para cada tarjeta métrica individual
 function MetricCard({ title, value, icon, description, onClick, isClickable = false, colorScheme, isLoading = false }) {
     const [isHovered, setIsHovered] = useState(false);
@@ -9,9 +12,9 @@ function MetricCard({ title, value, icon, description, onClick, isClickable = fa
         <div
             className={`
                 relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-white via-white to-gray-50
-                border-2 border-gray-100/50 backdrop-blur-xl shadow-xl hover:shadow-2xl 
-                p-3 xs:p-4 sm:p-5 lg:p-6 transition-all duration-500 ease-out group
-                ${isClickable ? 'cursor-pointer hover:scale-[1.05] hover:border-gray-200/80 active:scale-[0.96] hover:-translate-y-2' : ''}
+                border-2 border-gray-200/80 hover:border-indigo-200/80 shadow-xl hover:shadow-2xl
+                p-3 xs:p-4 sm:p-5 lg:p-6 transition-shadow transition-transform duration-300 ease-out group
+                ${isClickable ? 'cursor-pointer hover:scale-105 active:scale-98 hover:-translate-y-1' : ''}
                 min-h-[100px] xs:min-h-[120px] sm:min-h-[140px] lg:min-h-[160px] flex flex-col justify-between
                 ${isLoading ? 'animate-pulse' : ''}
                 before:absolute before:inset-0 before:bg-gradient-to-br before:from-transparent before:via-white/20 before:to-transparent before:opacity-0 before:transition-opacity before:duration-500 hover:before:opacity-100
@@ -20,7 +23,7 @@ function MetricCard({ title, value, icon, description, onClick, isClickable = fa
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            {/* Patrón decorativo de fondo */}
+            
             <div className="absolute inset-0 opacity-5 pointer-events-none">
                 <div className="w-full h-full bg-repeat bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2740%27%20height%3D%2740%27%20viewBox%3D%270%200%2040%2040%27%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%3E%3Cg%20fill%3D%27%23000000%27%20fill-opacity%3D%270.1%27%3E%3Cpath%20d%3D%27M20%2020c0-1%201-2%202-2s2%201%202%202-1%202-2%202-2-1-2-2z%27/%3E%3C/g%3E%3C/svg%3E')]"></div>
             </div>
@@ -32,10 +35,10 @@ function MetricCard({ title, value, icon, description, onClick, isClickable = fa
                         rounded-xl sm:rounded-2xl transition-all duration-500 shadow-lg group-hover:shadow-xl
                         ${colorScheme.iconBg} group-hover:scale-110 group-hover:rotate-3
                     `}>
-                        {/* Efecto de brillo */}
+                       
                         <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                         
-                        <div className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 relative z-10 transition-transform duration-500 group-hover:scale-110">
+                        <div className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 relative z-10 transition-transform duration-500 group-hover:scale-110 drop-shadow-md">
                             {icon}
                         </div>
                     </div>
@@ -62,7 +65,7 @@ function MetricCard({ title, value, icon, description, onClick, isClickable = fa
                     </span>
                 </div>
 
-                <h3 className="font-bold text-[9px] xs:text-[10px] sm:text-sm text-gray-700 uppercase tracking-wider mb-1 leading-tight group-hover:text-gray-800 transition-colors duration-300">
+                <h3 className="font-bold text-[9px] xs:text-[10px] sm:text-sm text-gray-700 uppercase tracking-wider mb-1 leading-tight group-hover:text-indigo-600 transition-colors duration-300">
                     {title}
                 </h3>
 
@@ -70,7 +73,7 @@ function MetricCard({ title, value, icon, description, onClick, isClickable = fa
                     {isLoading ? 'Cargando datos...' : description}
                 </p>
 
-                {/* Barra de progreso mejorada con animación */}
+                
                 <div className={`
                     w-full h-1 xs:h-1.5 rounded-full overflow-hidden transition-all duration-500 shadow-inner
                     ${colorScheme.accentBar}
@@ -89,17 +92,23 @@ function MetricCard({ title, value, icon, description, onClick, isClickable = fa
     );
 }
 
-// Componente principal del dashboard
-export function DashboardMetrics() {
-    // Estados para manejar datos del backend
-    const [dashboardData, setDashboardData] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+// Componente principal del dashboard de métricas
+function DashboardMetrics() {
+    // Integración con el backend - usa el contexto AdminContext
+    const { 
+        dashboardData, 
+        isLoading, 
+        error, 
+        refreshDashboard,
+        lastUpdated 
+    } = useAdminContext();
 
     // Obtener datos de notificaciones del contexto
-    const { unreadCount, toggleNotifications } = useAdminNotificationContext();
+    // AdminNotificationContext.jsx proporciona: unreadCount, toggleNotifications, notifications, etc.
+    // Este contexto centraliza el estado de notificaciones entre HeaderAdmin y DashboardMetrics
+    const { unreadCount, toggleNotifications } = useAdminNotificationContext(); // ← AdminNotificationContext.jsx
 
-    // Esquemas de color para cada tarjeta
+    // Esquemas de colores para cada tarjeta de métrica
     const colorSchemes = [
         {
             iconBg: 'bg-emerald-100/90 hover:bg-emerald-200/90 backdrop-blur-sm',
@@ -138,7 +147,7 @@ export function DashboardMetrics() {
         }
     ];
 
-    // Iconos para las métricas - Mejorados con mejor visibilidad
+
     const icons = {
         ingresos: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-emerald-600" fill="currentColor" viewBox="0 0 24 24">
@@ -158,6 +167,11 @@ export function DashboardMetrics() {
                 <path d="M5.5 6.5C6.33 6.5 7 5.83 7 5S6.33 3.5 5.5 3.5 4 4.17 4 5s.67 1.5 1.5 1.5z"/>
             </svg>
         ),
+        cursos: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/>
+            </svg>
+        ),
         accesos: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-purple-600" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM15.1 8H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/>
@@ -170,65 +184,70 @@ export function DashboardMetrics() {
         )
     };
 
-    // Efecto para cargar datos del dashboard desde el backend
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            setIsLoading(true);
-            setError(null);
-            
-            try {
-                // TODO: Reemplazar con la URL real del backend
-                // const response = await fetch('/api/admin/dashboard', {
-                //     method: 'GET',
-                //     headers: {
-                //         'Content-Type': 'application/json',
-                //         'Authorization': `Bearer ${localStorage.getItem('token')}` // Si usas JWT
-                //     }
-                // });
+    // Cargar datos del dashboard al montar el componente
+    // Los datos se cargan automáticamente desde AdminContext
 
-                // if (!response.ok) {
-                //     throw new Error('Error al cargar datos del dashboard');
-                // }
-
-                // const data = await response.json();
-                // setDashboardData(data);
-
-                // TEMPORAL: Simular carga hasta conectar con backend real
-                setTimeout(() => {
-                    setDashboardData({
-                        ingresos: 0,
-                        pagosPendientes: 0,
-                        nuevosAlumnos: 0,
-                        accesosActivados: 0
-                    });
-                    setIsLoading(false);
-                }, 1000);
-
-            } catch (err) {
-                setError(err.message);
-                setIsLoading(false);
-            }
-        };
-
-        fetchDashboardData();
-    }, []);
-
-    // Función para manejar clics en las tarjetas
+    // Función para manejar clics en las tarjetas de métricas
     const handleCardClick = (metricType) => {
-        // TODO: Implementar navegación específica para cada métrica
+        // Aquí puedes implementar navegación o acciones específicas para cada métrica
+        // Ej.: navigate(`/administrativo/${metricType}`);
         console.log(`Navegando a: ${metricType}`);
+        
+        // Ejemplo de navegación condicional (nota: ya no es admin1 por órdenes superiores)
+        switch(metricType) {
+            case 'ingresos':
+                // navigate('/admin/reportes-financieros');
+                break;
+            case 'pagos-pendientes':
+                // navigate('/admin/validacion-pagos');
+                break;
+            case 'nuevos-alumnos':
+                // navigate('/admin/lista-alumnos');
+                break;
+            case 'cursos-activos':
+                // navigate('/admin/gestion-cursos');
+                break;
+            case 'accesos-activados':
+                // navigate('/admin/gestion-accesos');
+                break;
+            default:
+                console.log('Métrica sin navegación definida');
+        }
     };
 
-    // Configuración de métricas basada en datos del backend
+    // Función para refrescar datos manualmente (actualmente con datos mock)
+    const handleRefreshData = async () => {
+        if (isLoading) return;
+        
+        try {
+            // Aquí implementarás la lógica de refresco de datos con el backend
+            // Ej.: await fetchDashboardData();
+            console.log('Refrescando datos del dashboard...');
+            await refreshDashboard();
+        } catch (err) {
+            console.error('Error refreshing dashboard:', err);
+        }
+    };
+
+    /**
+     * Configuración de métricas - LISTO PARA BACKEND ✅
+     * 
+     * DATOS DESDE CONTEXTOS (NO requiere modificaciones en este componente):
+     * - dashboardData: AdminContext.jsx → ingresos, pagosPendientes, nuevosAlumnos, cursosActivos, accesosActivados
+     * - unreadCount: AdminNotificationContext.jsx → cantidad de notificaciones sin leer
+     * - isLoading: Estado de carga automático desde contextos
+     * 
+     * PARA ACTIVAR BACKEND: Solo configurar AdminContext.jsx y AdminNotificationContext.jsx
+     */
     const getMetricsData = () => {
         if (!dashboardData) return [];
 
         return [
             {
                 id: 'ingresos',
-                title: "INGRESOS",
-                value: isLoading ? '...' : `$${dashboardData.ingresos?.toLocaleString() || '0'}`,
-                description: "Total de ingresos del mes actual",
+                title: "INGRESOS TOTALES",
+                value: isLoading ? '...' : `$${dashboardData.ingresos?.toLocaleString('es-MX') || '0'}`, // ← AdminContext.jsx
+                description: "Ingresos acumulados del mes actual",
                 icon: icons.ingresos,
                 isClickable: true,
                 onClick: () => handleCardClick('ingresos')
@@ -236,8 +255,8 @@ export function DashboardMetrics() {
             {
                 id: 'pagos',
                 title: "PAGOS PENDIENTES",
-                value: isLoading ? '...' : String(dashboardData.pagosPendientes || '0'),
-                description: "Pagos pendientes por validar",
+                value: isLoading ? '...' : String(dashboardData.pagosPendientes || '0'), // ← AdminContext.jsx
+                description: "Pagos en espera de validación",
                 icon: icons.pagos,
                 isClickable: true,
                 onClick: () => handleCardClick('pagos-pendientes')
@@ -245,17 +264,26 @@ export function DashboardMetrics() {
             {
                 id: 'alumnos',
                 title: "NUEVOS ALUMNOS",
-                value: isLoading ? '...' : String(dashboardData.nuevosAlumnos || '0'),
-                description: "Registrados este mes",
+                value: isLoading ? '...' : String(dashboardData.nuevosAlumnos || '0'), // ← AdminContext.jsx
+                description: "Registros nuevos este mes",
                 icon: icons.alumnos,
                 isClickable: true,
                 onClick: () => handleCardClick('nuevos-alumnos')
             },
             {
+                id: 'cursos',
+                title: "CURSOS ACTIVOS",
+                value: isLoading ? '...' : String(dashboardData.cursosActivos || '0'), // ← AdminContext.jsx
+                description: "Cursos con estudiantes activos",
+                icon: icons.cursos,
+                isClickable: true,
+                onClick: () => handleCardClick('cursos-activos')
+            },
+            {
                 id: 'accesos',
                 title: "ACCESOS ACTIVADOS",
-                value: isLoading ? '...' : String(dashboardData.accesosActivados || '0'),
-                description: "Accesos activados hoy",
+                value: isLoading ? '...' : String(dashboardData.accesosActivados || '0'), // ← AdminContext.jsx
+                description: "Accesos habilitados hoy",
                 icon: icons.accesos,
                 isClickable: true,
                 onClick: () => handleCardClick('accesos-activados')
@@ -263,28 +291,42 @@ export function DashboardMetrics() {
             {
                 id: 'notificaciones',
                 title: "NOTIFICACIONES",
-                value: unreadCount > 0 ? String(unreadCount) : "0",
+                value: unreadCount > 0 ? String(unreadCount) : "0", // ← AdminNotificationContext.jsx
                 description: unreadCount > 0 ? "Notificaciones sin leer" : "Todo al día",
                 icon: icons.notificaciones,
                 isClickable: true,
-                onClick: toggleNotifications
+                onClick: toggleNotifications // ← AdminNotificationContext.jsx
             }
         ];
     };
 
-    // Manejo de errores
+    // Manejo de errores con opción de reintentar
     if (error) {
         return (
-            <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col items-center justify-center">
-                <div className="text-center">
+            <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col items-center justify-center bg-gradient-to-br from-red-50 to-rose-100">
+                <div className="text-center bg-white rounded-2xl shadow-2xl p-8 border border-red-200">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
                     <h2 className="text-xl font-bold text-red-600 mb-2">Error al cargar datos</h2>
-                    <p className="text-gray-600 mb-4">{error}</p>
-                    <button 
-                        onClick={() => window.location.reload()}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                        Reintentar
-                    </button>
+                    <p className="text-gray-600 mb-6 max-w-md">{error}</p>
+                    <div className="flex gap-3 justify-center">
+                        <button 
+                            onClick={handleRefreshData}
+                            disabled={isLoading}
+                            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? 'Reintentando...' : 'Reintentar'}
+                        </button>
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                        >
+                            Recargar página
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -293,22 +335,56 @@ export function DashboardMetrics() {
     const metricsData = getMetricsData();
 
     return (
-        <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col">
+        <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-gradient-to-br from-gray-50 via-white to-indigo-50">
+            {/* Header con información de actualización */}
             <div className="pt-2 xs:pt-4 sm:pt-6 lg:pt-8 pb-0 px-3 xs:px-4 sm:px-6">
-                <div className="w-full max-w-7xl mx-auto text-center">
-                    <h2 className="text-base xs:text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black text-gray-800/90 mb-1 xs:mb-2 tracking-tight leading-tight font-[system-ui,-apple-system,'Segoe_UI','Roboto','Helvetica_Neue',Arial,sans-serif]">
-                        Dashboard Administrativo
-                    </h2>
-                    <div className="w-8 xs:w-12 sm:w-16 lg:w-20 h-0.5 xs:h-1 bg-gradient-to-r from-indigo-500/80 to-purple-500/80 mx-auto mb-1 xs:mb-2 sm:mb-3 rounded-full"></div>
-                    <p className="text-[10px] xs:text-xs sm:text-sm lg:text-base text-gray-600/90 font-medium max-w-md mx-auto leading-relaxed">
-                        {isLoading ? 'Cargando métricas...' : 'Resumen de métricas y actividades principales'}
-                    </p>
+                <div className="w-full max-w-7xl mx-auto">
+                    <div className="text-center mb-4">
+                     
+                        <h2 className="relative inline-block text-base xs:text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black text-gray-800/90 mb-1 xs:mb-2 tracking-tight leading-tight font-[system-ui,-apple-system,'Segoe_UI','Roboto','Helvetica_Neue',Arial,sans-serif]">
+                            Dashboard Administrativo
+                            <span className="block absolute left-1/2 -translate-x-1/2 bottom-0 w-2/3 h-0.5 bg-gradient-to-r from-indigo-500/80 to-purple-500/80 rounded-full origin-center scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></span>
+                        </h2>
+                        <div className="w-8 xs:w-12 sm:w-16 lg:w-20 h-0.5 xs:h-1 bg-gradient-to-r from-indigo-500/80 to-purple-500/80 mx-auto mb-1 xs:mb-2 sm:mb-3 rounded-full"></div>
+                        <p className="text-[10px] xs:text-xs sm:text-sm lg:text-base text-gray-600/90 font-medium max-w-md mx-auto leading-relaxed">
+                            {isLoading ? 'Cargando métricas...' : 'Resumen de métricas y actividades principales'}
+                        </p>
+                    </div>
+                    
+                    {/* Información de última actualización y botón de refresh */}
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                        <div className="flex items-center gap-2">
+                            {lastUpdated && (
+                                <>
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>
+                                        Actualizado: {new Date(lastUpdated).toLocaleTimeString('es-ES', { 
+                                            hour: '2-digit', 
+                                            minute: '2-digit' 
+                                        })}
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                        <button
+                            onClick={handleRefreshData}
+                            disabled={isLoading}
+                            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <svg className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span>{isLoading ? 'Actualizando...' : 'Actualizar'}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div className="flex-1 flex flex-col justify-center items-center py-2 xs:py-4 sm:py-6">
                 <div className="w-full max-w-7xl mx-auto px-3 xs:px-4 sm:px-6">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 xs:gap-3 sm:gap-4 lg:gap-5 auto-rows-fr">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-2 xs:gap-3 sm:gap-4 lg:gap-5 auto-rows-fr">
                         {metricsData.map((metric, index) => (
                             <MetricCard
                                 key={metric.id}
@@ -318,13 +394,14 @@ export function DashboardMetrics() {
                                 description={metric.description}
                                 onClick={metric.onClick}
                                 isClickable={metric.isClickable}
-                                colorScheme={colorSchemes[index]}
+                                colorScheme={colorSchemes[index % colorSchemes.length]}
                                 isLoading={isLoading}
                             />
                         ))}
                     </div>
 
-                    <div className="mt-3 xs:mt-4 sm:mt-6 sm:hidden">
+                    {/* Indicador móvil */}
+                    <div className="mt-3 xs:mt-4 sm:mt-6 lg:hidden">
                         <div className="flex items-center justify-center gap-2 text-gray-400/80">
                             <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
                             <p className="text-[9px] xs:text-xs text-center">
@@ -333,8 +410,17 @@ export function DashboardMetrics() {
                             <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
                         </div>
                     </div>
+                    
+                    {/* Footer con información adicional */}
+                    <div className="mt-6 text-center">
+                        <div className="text-xs text-gray-400">
+                            <span>Datos actualizados automáticamente cada 5 minutos</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
+
+export default DashboardMetrics;

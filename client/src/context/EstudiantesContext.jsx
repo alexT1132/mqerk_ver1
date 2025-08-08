@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import { CreateRequest, getEstudiantesRequest, getFolioRequest } from "../api/estudiantes.js";
+import { CreateRequest, getEstudiantesRequest, getFolioRequest, getGruposConCantidadRequest } from "../api/estudiantes.js";
 
 const EstudiantesContext = createContext();
 
@@ -16,7 +16,7 @@ export const useEstudiantes = () => {
 export function EstudiantesProvider({ children }) {
 
     const [estudiantes, setEstudiantes] = useState([]);
-    const [datas, setDatas] = useState([]);
+    const [grupos, setGrupos] = useState([]);
     const [folioObtenido, getFolioObetenido] = useState([]);
 
     const getFolio = async () => {
@@ -41,26 +41,25 @@ export function EstudiantesProvider({ children }) {
     const crearEstudiante = async (estudiante) => {
         try {
             const res = await CreateRequest(estudiante);
+            console.log(res.data)
             localStorage.setItem('datosRegistro', JSON.stringify(res.data));
         } catch (error) {
             console.log(error);
         }
     }
 
-    const eliminarNegocio = async (id) => {
+    const getGrupo = async (curso) => {
         try {
-            const res = await EliminarNegocio(id);
-            if (res.status === 204) setEstudiantes(estudiantes.filter((negocio) => negocio._id !== id))
-        } catch (error) {
-            console.log(error);
-        }
-    }
-
-    const getNegocio = async (id) => {
-        try {
-            const res = await ObtenerNegocioPorId(id);
-            setNegocioSeleccionado(res.data);
-            return res.data;
+            const res = await getGruposConCantidadRequest(curso);
+            if (Array.isArray(res.data)) {
+                if (res.data.length === 1) {
+                setGrupos(res.data[0]);  // solo el objeto
+                } else {
+                setGrupos(res.data); // si hay varios, se mantiene el array
+                }
+            } else {
+                setGrupos(res.data); // si ya es objeto
+            }
         } catch (error) {
             console.log(error);
         }
@@ -88,11 +87,12 @@ export function EstudiantesProvider({ children }) {
     return (
         <EstudiantesContext.Provider value={{
             estudiantes,
-            datas,
+            grupos,
             folioObtenido,
             getEstudiantes,
             crearEstudiante,
             getFolio,
+            getGrupo,
         }}>
             {children}
         </EstudiantesContext.Provider>

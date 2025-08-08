@@ -11,3 +11,5 @@ export const loginRequest = user => axios.post(`/login`, user);
 export const verifyTokenRequest = () => axios.get('/verify');
 
 export const getFolioRequest = () => axios.get('/folio');
+
+export const getGruposConCantidadRequest = (curso) => axios.get(`/grupos/${curso}`);

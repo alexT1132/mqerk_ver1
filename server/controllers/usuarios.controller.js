@@ -101,7 +101,6 @@ export const login = async (req, res) => {
   }
 };
 
-
 // Logout
 export const logout = async (req, res) => {
 
@@ -135,7 +134,10 @@ export const verifyToken = async (req, res) => {
     if (err) return res.status(401).json({ message: "Unauthorized" });
 
     const userFound = await Usuarios.getUsuarioPorid(user.id);
-    if (!userFound) res.status(401).json({ message: "Unauthorized" });
+
+    if (!userFound) return res.status(401).json({ message: "Unauthorized" });
+
+    console.log(userFound);
 
     if(userFound.role === 'estudiante'){
 
@@ -164,11 +166,15 @@ export const obtenerUno = async (req, res) => {
   try {
     const usuario = await Usuarios.getUsuarioPorid(id);
 
+    console.log("Usuario encontrado:", usuario);
+
     if (!usuario) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    res.status(200).json({ data: usuario });
+    const estudiante = await Estudiantes.getEstudianteById(usuario.id_estudiante);
+
+    res.status(200).json({ data: usuario, estudiante });
   } catch (error) {
     console.error("Error al obtener el usuario:", error);
     res.status(500).json({ message: "Error al obtener el usuario", error });

@@ -13,6 +13,7 @@ const RegistroEstudiante=()=>{
     const [apellidos, setApellidos] = useState('');
     const [email, setEmail] = useState('');
     const [perfil, setPerfil] = useState({ foto: null });
+    const [grupo, setGrupo] = useState('');
     const [comunidad1, setComunidad1] = useState([]);
     const [comunidad2, setComunidad2] = useState('');
     const [telefono, setTelefono] = useState('');
@@ -72,6 +73,8 @@ const RegistroEstudiante=()=>{
             }
         };
 
+        const opciones = ["V1", "V2", "V3", "M1", "M2", "S1"];
+
 
         const toggleComunidad = (comunidad) => {
             setComunidad1((prev) =>
@@ -110,6 +113,7 @@ const RegistroEstudiante=()=>{
                 formData.append("comunidad1", comunidad1 ?? '');
                 formData.append("comunidad2", comunidad2 ?? '');
                 formData.append("telefono", telefono);
+                formData.append("grupo", grupo);
                 formData.append("nombre_tutor", nombre_tutor);
                 formData.append("tel_tutor", tel_tutor);
                 formData.append("academico1", academico1 ?? '');
@@ -240,7 +244,7 @@ const RegistroEstudiante=()=>{
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Municipio/Comunidad *
                             </label>
-                            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 gap-6">
                                 {Municipios.map((comunidad) => (
                                 <label key={comunidad} className="flex items-center space-x-2">
                                     <input
@@ -253,7 +257,7 @@ const RegistroEstudiante=()=>{
                                 </label>
                                 ))}
                             </div>
-                            <div className="flex items-center gap-5 mt-4">
+                            <div className="flex items-center gap-5 mt-5">
                                 <label className="block text-sm font-medium text-gray-700">Otra:</label>
                                 <input
                                     type="text"
@@ -273,10 +277,26 @@ const RegistroEstudiante=()=>{
                         className="mt-1 block w-full border border-gray-300 rounded-md p-2"
                         value={telefono}
                         onChange={(e) => setTelefono(e.target.value)}
+                        required
                     />
 
+                        <label className="block text-sm font-medium text-gray-700 mb-1 mt-5">
+                            Selecciona tu grupo: <span className="text-red-500">*</span>
+                        </label>
+
+                        <select
+                            value={grupo}
+                            onChange={(e) => setGrupo(e.target.value)}
+                            className="w-full border border-gray-300 rounded-md p-2 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="" disabled selected>Selecciona una opción</option>
+                            {opciones.map((opcion, i) => (
+                            <option key={i} value={opcion}>{opcion}</option>
+                            ))}
+                        </select>
+
                     {/* Tutor */}
-                    <div className="text-center mt-10">
+                    <div className="text-center mt-5">
                         <h2 className="text-2xl font-bold text-purple-800 mb-6">DATOS DEL TUTOR</h2>
                     </div>
 
@@ -290,7 +310,7 @@ const RegistroEstudiante=()=>{
                                 onChange={(e) => setTutor(e.target.value)}
                             />
                         </div>
-                        <div className="mt-8">
+                        <div className="mt-5">
                             <label className="block text-sm font-medium text-gray-700">Número de teléfono del tutor *</label>
                             <input
                                 type="tel"

@@ -15,6 +15,20 @@ const Navbar = () => {
   const [movil2, setMovil2] = useState(false);
   const [movil3, setMovil3] = useState(false);
 
+  const scrollToCursos = () => {
+    const section = document.getElementById('cursos');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const scrollToInicio = () => {
+      const section = document.getElementById('inicio');
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+      }
+    };
+
   return (
     <nav className="w-full p-4 sticky top-0 left-0 border-b-3 border-[white] bg-[#3c24ba] shadow-md z-10">
       {/* Desktop Navbar */}
@@ -26,49 +40,11 @@ const Navbar = () => {
               </div>
           </Link>
           <div className="flex space-x-4 justify-center items-center gap-6 mqerk-dis" style={{color: '#401454'}}>
-              <Link to='/' className="text-lg text-white p-2 rounded-2xl ">Inicio</Link>
+              <Link onClick={scrollToInicio} to='/' className="text-lg text-white p-2 rounded-2xl ">Inicio</Link>
               <Link to='/acerca_de' className="text-lg text-white p-2 rounded-2xl ">Acerca de</Link>
-              <Link tabIndex={0} onBlur={() => setSubmenu(false)} onClick={() => setSubmenu(!submenu)} className="text-lg text-white gap-1 p-2 flex justify-center items-center rounded-2xl ">
+              <Link onClick={scrollToCursos} className="text-lg text-white gap-1 p-2 flex justify-center items-center rounded-2xl">
                 Cursos
-                <svg
-                  className={`w-4 h-4 mt-[2px] transition-transform ${
-                    submenu ? "rotate-180" : "rotate-0"
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
               </Link>
-
-              {submenu && (
-                <div className="absolute right-99 mt-38 w-40 bg-white shadow-lg rounded-md z-10 cursos-mqerk">
-                  <a
-                  href="#"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  >
-                    Regularización
-                  </a>
-                  <a
-                  href="#"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  >
-                    Entrenamientos
-                  </a>
-                  <a
-                  href="#"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  >
-                    Profesional
-                  </a>
-                  </div>
-              )}
 
               <Link tabIndex={0} onBlur={() => setTimeout(() => setSubmenu2(false), 150)} onClick={() => setSubmenu2(!submenu2)} className="text-lg text-white gap-1 p-2 flex justify-center items-center rounded-2xl ">
                 Eventos

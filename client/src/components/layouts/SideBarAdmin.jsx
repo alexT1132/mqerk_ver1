@@ -28,9 +28,9 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick }) 
     // Esta lógica no se aplica al botón de "Cerrar Sesión" ya que siempre debe navegar.
     if (isActive && to !== "/login") { // Agregamos la condición to !== "/login"
       e.preventDefault(); // Previene la navegación por defecto del Link si ya está activo
-      // Navegamos de vuelta al dashboard principal/bienvenida
-      // Asegúrate de que esta ruta '/admin1/dashboard' es la correcta para tu pantalla de bienvenida
-      navigate("/admin1/dashboard"); 
+      // Navegamos de vuelta a la página de bienvenida
+      // Asegúrate de que esta ruta '/administrativo/bienvenida' es la correcta para tu pantalla de bienvenida
+      navigate("/administrativo/bienvenida"); 
     }
     // Si no está activo, o si es el botón de cerrar sesión, permitimos que la navegación predeterminada del Link continúe
   };
@@ -56,11 +56,11 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick }) 
             // Si es el ícono de "Cerrar Sesión", siempre usa svgColorLogout (rojo)
             // De lo contrario, el stroke será blanco si está activo, o svgColor si no.
             stroke: to === "/login" ? svgColorLogout : (isActive ? "white" : svgColor),
-            // Para el ícono de ALUMNOS (/admin1/lista-alumnos):
+            // Para el ícono de ALUMNOS (/administrativo/lista-alumnos):
             // - Si está activo, se rellena de blanco.
             // - Si NO está activo, no tiene relleno ('none').
             // Para otros íconos, el fill es 'none' por defecto (a menos que el ícono lo defina).
-            fill: (to === "/admin1/lista-alumnos" && isActive) ? "white" : "none"
+            fill: (to === "/administrativo/lista-alumnos" && isActive) ? "white" : "none"
           })}
         </div>
         {/*
@@ -98,6 +98,15 @@ const LogoInicio = (
   </svg>
 );
 
+const LogoDashboard = (
+  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7"></rect>
+    <rect x="14" y="3" width="7" height="7"></rect>
+    <rect x="14" y="14" width="7" height="7"></rect>
+    <rect x="3" y="14" width="7" height="7"></rect>
+  </svg>
+);
+
 const LogoComprobantes = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14 2H6a2 2 0 0 0-2 2v16l4-2 4 2 4-2 4 2V8z"></path>
@@ -118,7 +127,7 @@ const LogoAlumnos = (
 );
 
 
-const LogoValidacionPagos = (
+const LogoGenerarContrato = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
     <polyline points="14 2 14 8 20 8"></polyline>
@@ -183,13 +192,14 @@ export function SideBarDesktop() {
           {/* Grupo superior de elementos de navegación principales */}
           <div className="space-y-2">
             {/* Los componentes ElementoSideBar ahora manejan la lógica de toggle y el resaltado */}
-            <ElementoSideBar to="/admin1/inicio-admin" Icono={LogoInicio} NombreElemento="Inicio" />
-            <ElementoSideBar to="/admin1/comprobantes-recibo" Icono={LogoComprobantes} NombreElemento="Comprobantes Recibidos" />
-            <ElementoSideBar to="/admin1/lista-alumnos" Icono={LogoAlumnos} NombreElemento="Lista de Alumnos" />
-            <ElementoSideBar to="/admin1/validacion-pagos" Icono={LogoValidacionPagos} NombreElemento="Validación de Pagos" />
-            <ElementoSideBar to="/admin1/reportes-pagos" Icono={LogoReportesPagos} NombreElemento="Reportes de Pagos" />
-            <ElementoSideBar to="/admin1/calendario" Icono={LogoCalendario} NombreElemento="Calendario" />
-            <ElementoSideBar to="/admin1/email" Icono={LogoEmail} NombreElemento="Email" />
+            <ElementoSideBar to="/administrativo/bienvenida" Icono={LogoInicio} NombreElemento="Bienvenida" />
+            <ElementoSideBar to="/administrativo/dashboard-metricas" Icono={LogoDashboard} NombreElemento="Dashboard" />
+            <ElementoSideBar to="/administrativo/comprobantes-recibo" Icono={LogoComprobantes} NombreElemento="Comprobantes Recibidos" />
+            <ElementoSideBar to="/administrativo/lista-alumnos" Icono={LogoAlumnos} NombreElemento="Lista de Alumnos" />
+            <ElementoSideBar to="/administrativo/generar-contrato" Icono={LogoGenerarContrato} NombreElemento="Generar Contrato" />
+            <ElementoSideBar to="/administrativo/reportes-pagos" Icono={LogoReportesPagos} NombreElemento="Reportes de Pagos" />
+            <ElementoSideBar to="/administrativo/calendario" Icono={LogoCalendario} NombreElemento="Calendario" />
+            <ElementoSideBar to="/administrativo/email" Icono={LogoEmail} NombreElemento="Email" />
           </div>
 
           {/* Espacio flexible que empuja los elementos inferiores */}
@@ -197,7 +207,7 @@ export function SideBarDesktop() {
 
           {/* Elementos de Configuración y Cerrar Sesión en la parte inferior */}
           <div className="pt-2 space-y-2">
-            <ElementoSideBar to="/admin1/configuracion" Icono={LogoConfig} NombreElemento="Configuración" />
+            <ElementoSideBar to="/administrativo/configuracion" Icono={LogoConfig} NombreElemento="Configuración" />
             <ElementoSideBar to="/login" Icono={LogoLogOut} NombreElemento="Cerrar Sesión" />
           </div>
         </ul>
@@ -232,43 +242,49 @@ export function SideBarsm({ isMenuOpen, closeMenu }) {
                 <div>
                   {/* Los componentes ElementoSideBar ahora manejan la lógica de toggle y el resaltado */}
                   <ElementoSideBar
-                    to="/admin1/inicio-admin"
+                    to="/administrativo/bienvenida"
                     Icono={LogoInicio}
-                    NombreElemento="Inicio"
+                    NombreElemento="Bienvenida"
                     onClick={closeMenu}
                   />
                   <ElementoSideBar
-                    to="/admin1/comprobantes-recibo"
+                    to="/administrativo/dashboard-metricas"
+                    Icono={LogoDashboard}
+                    NombreElemento="Dashboard"
+                    onClick={closeMenu}
+                  />
+                  <ElementoSideBar
+                    to="/administrativo/comprobantes-recibo"
                     Icono={LogoComprobantes}
                     NombreElemento="Comprobantes Recibidos"
                     onClick={closeMenu}
                   />
                   <ElementoSideBar
-                    to="/admin1/lista-alumnos"
+                    to="/administrativo/lista-alumnos"
                     Icono={LogoAlumnos}
                     NombreElemento="Lista de Alumnos"
                     onClick={closeMenu}
                   />
                   <ElementoSideBar
-                    to="/admin1/validacion-pagos"
-                    Icono={LogoValidacionPagos}
-                    NombreElemento="Validación de Pagos"
+                    to="/administrativo/generar-contrato"
+                    Icono={LogoGenerarContrato}
+                    NombreElemento="Generar Contrato"
                     onClick={closeMenu}
                   />
                   <ElementoSideBar
-                    to="/admin1/reportes-pagos"
+                    to="/administrativo/reportes-pagos"
                     Icono={LogoReportesPagos}
                     NombreElemento="Reportes de Pagos"
                     onClick={closeMenu}
                   />
                   <ElementoSideBar
-                    to="/admin1/calendario"
+                    to="/administrativo/calendario"
                     Icono={LogoCalendario}
                     NombreElemento="Calendario"
                     onClick={closeMenu}
                   />
                   <ElementoSideBar
-                    to="/admin1/email"
+                    to="/administrativo/email"
                     Icono={LogoEmail}
                     NombreElemento="Email"
                     onClick={closeMenu}
@@ -277,7 +293,7 @@ export function SideBarsm({ isMenuOpen, closeMenu }) {
                 {/* Agrupación de Configuración y Cerrar Sesión en la parte inferior para móvil */}
                 <div className="mt-auto pb-4">
                   <ElementoSideBar
-                    to="/admin1/configuracion"
+                    to="/administrativo/configuracion"
                     Icono={LogoConfig}
                     NombreElemento="Configuración"
                     onClick={closeMenu}
