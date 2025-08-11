@@ -1,19 +1,13 @@
 // src/context/AdminContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from '../api/axios.js';
 
 /**
  * Contexto principal para el manejo de datos administrativos
  * Centraliza la lógica de datos del backend para todos los componentes admin
- * 
- * ESTADO ACTUAL: FUNCIONANDO CON DATOS MOCK
- * - Todas las funciones tienen datos mock temporales
- * - Los endpoints reales están comentados y listos para activar
- * - Solo necesitas descomentar y conectar el backend real
- * 
- * TODO BACKEND:
- * 1. Crear endpoints en el backend
- * 2. Descomentar las llamadas fetch reales
- * 3. Comentar/eliminar los datos mock
+ *
+ * Estado: conectado a backend real para métricas del dashboard y reportes de pagos.
+ * Otras secciones pueden seguir teniendo TODOs puntuales que iremos activando según necesidad.
  */
 const AdminContext = createContext();
 
@@ -37,6 +31,8 @@ export const AdminProvider = ({ children }) => {
   // Estados principales
   const [dashboardData, setDashboardData] = useState(null);
   const [adminProfile, setAdminProfile] = useState(null);
+  // Alias de compatibilidad para componentes que esperan adminData
+  const [adminData, setAdminData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -53,40 +49,23 @@ export const AdminProvider = ({ children }) => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // TODO: BACKEND - Reemplazar con endpoint real cuando esté disponible
-      // const response = await fetch('/api/admin/dashboard/metrics', {
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error(`HTTP error! status: ${response.status}`);
-      // }
-      
-      // const data = await response.json();
-      
-      // MOCK DATA - Simular datos temporales hasta que el backend esté listo
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simular latencia
-      
-      const mockData = {
-        ingresos: 125000 + Math.floor(Math.random() * 50000),
-        pagosPendientes: 23 + Math.floor(Math.random() * 10),
-        nuevosAlumnos: 15 + Math.floor(Math.random() * 5),
-        cursosActivos: 8 + Math.floor(Math.random() * 3),
-        accesosActivados: 42 + Math.floor(Math.random() * 20)
-      };
-      
-      setDashboardData(mockData);
-      setLastUpdated(new Date().toISOString());
+      // Llamada real al backend
+      const { data } = await axios.get('/admin/dashboard/metrics');
+      setDashboardData({
+        ingresos: Number(data?.ingresos || 0),
+        pagosPendientes: Number(data?.pagosPendientes || 0),
+        nuevosAlumnos: Number(data?.nuevosAlumnos || 0),
+        cursosActivos: Number(data?.cursosActivos || 0),
+        accesosActivados: Number(data?.accesosActivados || 0),
+        notificationsCount: Number(data?.notificationsCount || 0)
+      });
+      setLastUpdated(data?.updatedAt || new Date().toISOString());
       
     } catch (err) {
       setError(err.message);
       console.error('Dashboard metrics error:', err);
     } finally {
-      setIsLoading(false);
+  setIsLoading(false);
     }
   };
 
@@ -95,36 +74,48 @@ export const AdminProvider = ({ children }) => {
    */
   const loadAdminProfile = async () => {
     try {
-      // TODO: BACKEND - Reemplazar con endpoint real cuando esté disponible
-      // const response = await fetch('/api/admin/profile', {
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Error loading admin profile');
-      // }
-      
-      // const profile = await response.json();
-      
-      // MOCK DATA - Perfil temporal del administrador
-      const mockProfile = {
-        id: 'admin_001',
-        name: 'Administrador Principal',
-        email: 'admin@mqerk.academy',
-        role: 'Super Admin',
-        avatar: null,
-        lastLogin: new Date().toISOString(),
-        permissions: ['read', 'write', 'delete', 'manage_users', 'manage_payments']
-      };
-      
-      setAdminProfile(mockProfile);
-      
+      setIsLoading(true);
+      setError(null);
+      const { data } = await axios.get('/admin/profile');
+      // data: { usuario: { id, usuario, role }, admin_profile: { nombre, email, telefono, foto } }
+      const perfil = data?.admin_profile || null;
+      const usuario = data?.usuario || null;
+      // Construir URL absoluta para la foto si viene como ruta relativa (/public/..)
+      const apiBase = axios?.defaults?.baseURL || '';
+      const publicOrigin = apiBase.replace(/\/api\/?$/, '');
+      const avatarAbs = perfil?.foto ? `${publicOrigin}${perfil.foto}` : null;
+
+      // Exponer adminProfile con la forma esperada por componentes existentes
+      const normalizedProfile = perfil ? {
+        id: usuario?.id,
+        name: perfil.nombre || '',
+        email: perfil.email || '',
+        phone: perfil.telefono || '',
+        avatar: avatarAbs,
+        role: usuario?.role || 'admin',
+        // Guarda crudo por si se necesita
+        _raw: perfil
+      } : null;
+      setAdminProfile(normalizedProfile);
+
+      // Compat: exponer adminData con las claves que usa BienvenidaAdmin.jsx
+  const fullName = perfil?.nombre || 'Administrador';
+      const firstName = String(fullName).trim().split(/\s+/)[0] || 'Administrador';
+      const roleLabel = (usuario?.role === 'admin') ? 'Administrador' : (usuario?.role || 'Administrador');
+  const avatarUrl = avatarAbs;
+      setAdminData({
+        name: firstName,
+        fullName: fullName,
+        email: perfil?.email || null,
+        role: roleLabel,
+        avatarUrl
+      });
+
     } catch (err) {
       console.error('Admin profile error:', err);
-      // No lanzar error para el perfil, solo log
+      setError('No se pudo cargar el perfil del administrador');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -140,51 +131,17 @@ export const AdminProvider = ({ children }) => {
    */
   const loadStudentsData = async (curso, turno) => {
     try {
-      // TODO: BACKEND - Reemplazar con endpoint real cuando esté disponible
-      // const response = await fetch(`/api/admin/students?curso=${curso}&turno=${turno}`, {
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Error loading students data');
-      // }
-      
-      // const students = await response.json();
-      
-      // MOCK DATA - Estudiantes temporales
-      await new Promise(resolve => setTimeout(resolve, 600)); // Simular latencia
-      
-      const mockStudents = [
-        {
-          folio: 'ALU001',
-          correoElectronico: 'estudiante1@email.com',
-          nombres: 'Juan Carlos',
-          apellidos: 'Pérez García',
-          curso: curso,
-          turno: turno,
-          estatus: 'Activo',
-          fechaRegistro: '2024-12-15'
-        },
-        {
-          folio: 'ALU002',
-          correoElectronico: 'estudiante2@email.com',
-          nombres: 'María Elena',
-          apellidos: 'López Martínez',
-          curso: curso,
-          turno: turno,
-          estatus: 'Activo',
-          fechaRegistro: '2024-12-16'
-        }
-      ];
-      
-      setStudentsData(mockStudents);
-      return mockStudents;
-      
+      // Real backend for approved/activated students
+      const params = {};
+      if (curso) params.curso = curso;
+      if (turno) params.grupo = turno;
+      const { data } = await axios.get('/admin/estudiantes/aprobados', { params });
+      const list = Array.isArray(data?.data) ? data.data : [];
+      setStudentsData(list);
+      return list;
     } catch (err) {
       console.error('Students data error:', err);
+      setStudentsData([]);
       throw err;
     }
   };
@@ -502,51 +459,63 @@ export const AdminProvider = ({ children }) => {
   /**
    * Load financial reports data
    */
-  const loadFinancialReports = async (dateRange) => {
+  const loadFinancialReports = async (startDate, endDate) => {
     try {
-      // TODO: BACKEND - Reemplazar con endpoint real cuando esté disponible
-      // const response = await fetch(`/api/admin/reports/financial?from=${dateRange.from}&to=${dateRange.to}`, {
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Error loading financial reports');
-      // }
-      
-      // return await response.json();
-      
-      // MOCK - Datos de reportes financieros
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      const mockReports = {
-        totalIngresos: 385000,
-        pagosCompletados: 156,
-        pagosPendientes: 23,
-        pagosRechazados: 8,
-        ingresosPorMes: [
-          { mes: 'Enero', ingresos: 45000 },
-          { mes: 'Febrero', ingresos: 52000 },
-          { mes: 'Marzo', ingresos: 48000 },
-          { mes: 'Abril', ingresos: 58000 },
-          { mes: 'Mayo', ingresos: 62000 },
-          { mes: 'Junio', ingresos: 55000 },
-          { mes: 'Julio', ingresos: 65000 }
-        ],
-        pagosPorCurso: [
-          { curso: 'EEAU', pagos: 45, ingresos: 112500 },
-          { curso: 'EEAP', pagos: 38, ingresos: 95000 },
-          { curso: 'DIGI-START', pagos: 32, ingresos: 80000 },
-          { curso: 'MINDBRIDGE', pagos: 25, ingresos: 62500 },
-          { curso: 'SPEAKUP', pagos: 16, ingresos: 40000 }
-        ]
-      };
-      
-      return mockReports;
+      const { data } = await axios.get('/admin/reports/payments', {
+        params: { startDate, endDate }
+      });
+      return data;
     } catch (err) {
       console.error('Error loading financial reports:', err);
+      throw err;
+    }
+  };
+
+  const exportToExcel = async (startDate, endDate) => {
+    try {
+      const response = await axios.get('/admin/reports/export/excel', {
+        params: { startDate, endDate },
+        responseType: 'blob' // si en un futuro devolvemos archivo
+      });
+      const contentType = response.headers['content-type'] || '';
+      if (contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') || contentType.includes('application/octet-stream')) {
+        return { blob: response.data };
+      }
+      // Si devuelve JSON
+      try {
+        const text = await response.data.text?.();
+        if (text) {
+          const json = JSON.parse(text);
+          return json;
+        }
+      } catch {}
+      return null;
+    } catch (err) {
+      console.error('Export Excel error:', err);
+      throw err;
+    }
+  };
+
+  const exportToPDF = async (startDate, endDate) => {
+    try {
+      const response = await axios.get('/admin/reports/export/pdf', {
+        params: { startDate, endDate },
+        responseType: 'blob'
+      });
+      const contentType = response.headers['content-type'] || '';
+      if (contentType.includes('application/pdf')) {
+        return { blob: response.data };
+      }
+      try {
+        const text = await response.data.text?.();
+        if (text) {
+          const json = JSON.parse(text);
+          return json;
+        }
+      } catch {}
+      return null;
+    } catch (err) {
+      console.error('Export PDF error:', err);
       throw err;
     }
   };
@@ -559,37 +528,27 @@ export const AdminProvider = ({ children }) => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // TODO: BACKEND - Replace with real endpoint when available
-      // const formData = new FormData();
-      // formData.append('avatar', file);
-      // 
-      // const response = await fetch('/api/admin/profile/avatar', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-      //   },
-      //   body: formData
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Error uploading avatar');
-      // }
-      // 
-      // const result = await response.json();
-      
-      // MOCK DATA - Simulate file upload
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate upload time
-      
-      const mockAvatarUrl = URL.createObjectURL(file); // Create temporary URL for preview
-      
-      // Update admin profile with new avatar
-      setAdminProfile(prev => ({
-        ...prev,
-        avatar: mockAvatarUrl
-      }));
-      
-      return { success: true, avatarUrl: mockAvatarUrl };
+      const form = new FormData();
+      form.append('foto', file);
+      const { data } = await axios.put('/admin/profile/foto', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const perfil = data?.admin_profile || null;
+      const apiBase = axios?.defaults?.baseURL || '';
+      const publicOrigin = apiBase.replace(/\/api\/?$/, '');
+      const avatarAbs = perfil?.foto ? `${publicOrigin}${perfil.foto}` : null;
+      // Update profile and alias
+      const nextProfile = (prev => prev ? { ...prev, avatar: avatarAbs } : { name: perfil?.nombre || '', email: perfil?.email || '', phone: perfil?.telefono || '', avatar: avatarAbs })(adminProfile);
+      setAdminProfile(nextProfile);
+      if (nextProfile) {
+        const firstName = String(nextProfile.name || '').trim().split(/\s+/)[0] || 'Administrador';
+        setAdminData(prev => ({
+          ...(prev || {}),
+          name: firstName,
+          fullName: nextProfile.name || prev?.fullName,
+          email: nextProfile.email || prev?.email,
+          avatarUrl: nextProfile.avatar || null
+        }));
+      }
+      return { success: true, avatarUrl: avatarAbs };
       
     } catch (err) {
       setError(err.message);
@@ -608,34 +567,34 @@ export const AdminProvider = ({ children }) => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // TODO: BACKEND - Replace with real endpoint when available
-      // const response = await fetch('/api/admin/profile', {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify(profileData)
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Error updating profile');
-      // }
-      // 
-      // const updatedProfile = await response.json();
-      
-      // MOCK DATA - Simulate profile update
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const updatedProfile = {
-        ...adminProfile,
-        ...profileData,
-        lastUpdated: new Date().toISOString()
+      // Map incoming name to backend field nombre
+      const payload = {
+        nombre: profileData.name || adminProfile?.name || undefined,
+        email: profileData.email || adminProfile?.email || undefined,
+        telefono: profileData.phone || profileData.telefono || adminProfile?.phone || undefined,
       };
-      
+      const { data } = await axios.put('/admin/profile', payload);
+      const perfil = data?.admin_profile || null;
+      const apiBase = axios?.defaults?.baseURL || '';
+      const publicOrigin = apiBase.replace(/\/api\/?$/, '');
+      const avatarAbs = perfil?.foto ? `${publicOrigin}${perfil.foto}` : adminProfile?.avatar || null;
+      const updatedProfile = {
+        id: data?.usuario?.id,
+        name: perfil?.nombre || adminProfile?.name || '',
+        email: perfil?.email || adminProfile?.email || '',
+        phone: perfil?.telefono || adminProfile?.phone || '',
+        avatar: avatarAbs,
+        role: data?.usuario?.role || adminProfile?.role || 'admin'
+      };
       setAdminProfile(updatedProfile);
-      
+      const firstName = String(updatedProfile.name || '').trim().split(/\s+/)[0] || 'Administrador';
+      setAdminData(prev => ({
+        ...(prev || {}),
+        name: firstName,
+        fullName: updatedProfile.name || prev?.fullName,
+        email: updatedProfile.email || prev?.email,
+        avatarUrl: updatedProfile.avatar || prev?.avatarUrl
+      }));
       return { success: true, profile: updatedProfile };
       
     } catch (err) {
@@ -697,6 +656,7 @@ export const AdminProvider = ({ children }) => {
     // Estados principales
     dashboardData,
     adminProfile,
+  adminData,
     isLoading,
     error,
     lastUpdated,
@@ -723,7 +683,9 @@ export const AdminProvider = ({ children }) => {
     uploadContract,
     
     // Funciones de reportes
-    loadFinancialReports,
+  loadFinancialReports,
+  exportToExcel,
+  exportToPDF,
     
     // Profile functions
     loadAdminProfile,

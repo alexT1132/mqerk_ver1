@@ -37,6 +37,16 @@ export function Header_Alumno_comp({
 
   const { alumno, logout } = useAuth();
 
+  // Construir URL absoluto para archivos estticos del backend (evitar IPs fijas)
+  const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
+  const apiUrl = (import.meta?.env?.VITE_API_URL) || `http://${host}:1002/api`;
+  const apiOrigin = apiUrl.replace(/\/api\/?$/, ''); // ej. http://<host>:1002
+  const buildStaticUrl = (p) => {
+    if (!p) return null;
+    if (/^https?:\/\//i.test(p)) return p;
+    return `${apiOrigin}${p.startsWith('/') ? '' : '/'}${p}`;
+  };
+
 
   // Estados locales del componente
   const [searchQuery, setSearchQuery] = useState("");
@@ -454,9 +464,9 @@ export function Header_Alumno_comp({
           <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden border-1 sm:border-2 border-white shadow-md sm:shadow-lg hover:scale-105 transition-transform duration-200 cursor-pointer">
             
             {/* BACKEND: Imagen real del alumno */}
-            {alumno?.foto && (
+      {alumno?.foto && (
               <img
-                src={`http://192.168.0.14:1002${alumno?.foto}`}
+        src={buildStaticUrl(alumno?.foto)}
                 className="w-full h-full object-cover object-center"
                 onError={handleImageError}
                 loading="lazy"

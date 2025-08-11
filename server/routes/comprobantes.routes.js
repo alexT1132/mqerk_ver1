@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { crear, obtenerComprobantes, GetEnableVerificacion } from "../controllers/comprobantes.controller.js";
+import { crear, obtenerComprobantes, GetEnableVerificacion, RejectVerificacion } from "../controllers/comprobantes.controller.js";
 import { verifyToken } from "../controllers/usuarios.controller.js";
 import { authREquired } from "../middlewares/validateToken.js";
 import { upload } from "../middlewares/comprobantesMulter.js";
@@ -11,6 +11,7 @@ router.post("/comprobante", upload.single('comprobante'), crear);
 router.get("/comprobante/:grupo/:curso", obtenerComprobantes);
 
 router.put("/comprobante/verificacion/:folio", authREquired, GetEnableVerificacion);
+router.put("/comprobante/rechazo/:folio", authREquired, RejectVerificacion);
 
 // router.get("/estudiantes", authREquired, obtener);
 

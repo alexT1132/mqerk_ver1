@@ -1,6 +1,3 @@
-// BACKEND: Componente Bundle para el Dashboard de Administrador
-// Este archivo maneja SOLO las rutas y layout del dashboard admin, no contiene datos
-// Cada componente individual es responsable de obtener sus propios datos del backend
 import { Routes, Route } from 'react-router-dom';
 
 // Layout principal para administrador

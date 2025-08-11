@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useEstudiantes } from "../../context/EstudiantesContext";
 import { useComprobante } from '../../context/ComprobantesContext';
 
+
 function LoadingScreen({ onComplete }) {
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -193,9 +194,7 @@ export function ComprobanteRecibo() {
     const [showPdfTip, setShowPdfTip] = useState(false);
     
     // Estados para campos editables (importe y método)
-    const [editableFields, setEditableFields] = useState({}); // Para almacenar valores temporales de edición
-    const [importe, setImporteEditable] = useState(0); 
-    const [metodoPago, setMetodoEditable] = useState('');
+    const [editableFields, setEditableFields] = useState({}); // Para almacenar valores temporales de edición por comprobante
 
     
     
@@ -210,44 +209,54 @@ export function ComprobanteRecibo() {
     
     // TODO: REEMPLAZAR CON API - Comprobantes pendientes de validación
     //  ELIMINAR DATOS MOCK ANTES DE PRODUCCIÓN 
-    const [comprobantes, setComprobantes] = useState([
-        {
-            id: 1,
-            folio: "MQEEAU-2025-0001", 
-            nombreAlumno: "María González López",
-            cursoComprado: "EEAU - Grupo M1",
-            fechaHora: "2024-07-29 14:30",
-            importe: "1500.00",
-            metodoPago: "Transferencia bancaria",
-            estado: "pendiente",
-            comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.pdf"
-        },
-        {
-            id: 2,
-            folio: "MQEEAP-2025-0002", 
-            nombreAlumno: "Carlos Hernández Ruiz",
-            cursoComprado: "EEAP - Grupo V1",
-            fechaHora: "2024-07-29 16:45",
-            importe: "1800.00",
-            metodoPago: "Deposito en efectivo",
-            estado: "pendiente",
-            comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.png"
-        },
-        {
-            id: 3,
-            folio: "MQDIGI-2025-0003", 
-            nombreAlumno: "Ana Patricia Morales",
-            cursoComprado: "DIGI-START - Grupo V1",
-            fechaHora: "2024-07-29 10:15",
-            importe: "2200.00",
-            metodoPago: "Tarjeta de crédito",
-            estado: "pendiente",
-            comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.pdf"
-        }
-    ]);
+    // const [comprobantes, setComprobantes] = useState([
+    //     {
+    //         id: 1,
+    //         folio: "MQEEAU-2025-0001", 
+    //         nombreAlumno: "María González López",
+    //         cursoComprado: "EEAU - Grupo M1",
+    //         fechaHora: "2024-07-29 14:30",
+    //         importe: "1500.00",
+    //         metodoPago: "Transferencia bancaria",
+    //         estado: "pendiente",
+    //         comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.pdf"
+    //     },
+    //     {
+    //         id: 2,
+    //         folio: "MQEEAP-2025-0002", 
+    //         nombreAlumno: "Carlos Hernández Ruiz",
+    //         cursoComprado: "EEAP - Grupo V1",
+    //         fechaHora: "2024-07-29 16:45",
+    //         importe: "1800.00",
+    //         metodoPago: "Deposito en efectivo",
+    //         estado: "pendiente",
+    //         comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.png"
+    //     },
+    //     {
+    //         id: 3,
+    //         folio: "MQDIGI-2025-0003", 
+    //         nombreAlumno: "Ana Patricia Morales",
+    //         cursoComprado: "DIGI-START - Grupo V1",
+    //         fechaHora: "2024-07-29 10:15",
+    //         importe: "2200.00",
+    //         metodoPago: "Tarjeta de crédito",
+    //         estado: "pendiente",
+    //         comprobanteUrl: "/src/assets/comprobante-pago-MQ-20250729-0001.pdf"
+    //     }
+    // ]);
 
-    const refrescarPagina = () => {
-        window.location.reload();
+
+    // Cierra el modal de éxito y limpia el comprobante actual
+    const cerrarModalExito = () => {
+        setShowSuccessModal(false);
+        setCurrentComprobante(null);
+    };
+
+    // Modal de éxito para rechazo
+    const [showRejectSuccessModal, setShowRejectSuccessModal] = useState(false);
+    const cerrarModalRechazoExito = () => {
+        setShowRejectSuccessModal(false);
+        setCurrentComprobante(null);
     };
     
     /* 
@@ -271,9 +280,10 @@ export function ComprobanteRecibo() {
     ========== FIN DATOS MOCK ==========
     */
 
-    // TODO: REEMPLAZAR CON API - Historial de comprobantes procesados
-    const [comprobantesAprobados, setComprobantesAprobados] = useState([]);
-    const [comprobantesRechazados, setComprobantesRechazados] = useState([]);
+    // TODO: REEMPLAZAR CON API - Historial de comprobantes procesados / overrides locales
+    // Estado local de comprobantes pendientes (base) y overrides para aprobados / rechazados sin persistir aún
+    const [comprobantes, setComprobantes] = useState([]); // base pendientes
+    const [comprobantesOverrides, setComprobantesOverrides] = useState({}); // key -> objeto sobrescrito (verificacion/estado)
 
     // ==================== CONFIGURACIÓN DE CURSOS Y GRUPOS ====================
     
@@ -381,9 +391,23 @@ export function ComprobanteRecibo() {
         return `MQ${courseCode}-${year}-${paddedNumber}`;
     };
 
-    // Obtener valor de campo editable o valor original
+    // Obtener valor de campo editable o valor original, evitando null en inputs
     const getFieldValue = (comprobante, field) => {
-        return editableFields[comprobante.id]?.[field] ?? comprobante[field];
+        const byId = comprobante.id_estudiante ?? comprobante.id ?? comprobante.folio;
+        const raw = (editableFields[byId]?.[field] ?? comprobante[field]);
+        return raw == null ? '' : raw;
+    };
+
+    // Handler para actualizar campos editables por comprobante y campo
+    const handleFieldChange = (comprobante, field, value) => {
+        const byId = comprobante.id_estudiante ?? comprobante.id ?? comprobante.folio;
+        setEditableFields(prev => ({
+            ...prev,
+            [byId]: {
+                ...prev[byId],
+                [field]: value
+            }
+        }));
     };
 
     // Obtiene los comprobantes según la vista activa Y filtrados por curso/grupo seleccionado
@@ -529,7 +553,35 @@ export function ComprobanteRecibo() {
 
     const { getGrupo } = useEstudiantes();
 
-    const { getComprobantes, comprobantes: comprobantesObtenidos, getVerificacionComprobante } = useComprobante();
+    const { getComprobantes, comprobantes: comprobantesObtenidos, getVerificacionComprobante, rejectVerificacionComprobante } = useComprobante();
+
+    // Normalizar datos del contexto
+    const baseArray = Array.isArray(comprobantesObtenidos)
+        ? comprobantesObtenidos
+        : (comprobantesObtenidos ? [comprobantesObtenidos] : []);
+
+    // Merge overrides locales (aprobados / rechazados hechos en UI sin persistir todavía)
+    const mergedMap = {};
+    baseArray.forEach(c => {
+        const k = c.id_estudiante ?? c.id ?? c.folio;
+        mergedMap[k] = c;
+    });
+    Object.entries(comprobantesOverrides).forEach(([k, ov]) => {
+        mergedMap[k] = { ...(mergedMap[k] || {}), ...ov };
+    });
+    const mergedArray = Object.values(mergedMap);
+
+    // Derivar listas por estado/verificacion
+    const pendientes = mergedArray.filter(c => Number(c.verificacion) === 1 || (!c.verificacion && c.estado !== 'rechazado' && c.estado !== 'aprobado'));
+    const aprobados = mergedArray.filter(c => Number(c.verificacion) === 2 || c.estado === 'aprobado');
+    const rechazados = mergedArray.filter(c => Number(c.verificacion) === 3 || c.estado === 'rechazado');
+    const currentList = vistaActual === 'aprobados' ? aprobados : vistaActual === 'rechazados' ? rechazados : pendientes;
+    const apiOrigin = (import.meta?.env?.VITE_API_URL || `http://${window.location.hostname}:1002/api`).replace(/\/api\/?$/, '');
+
+    // Sincronizar estado base 'comprobantes' sólo cuando cambian datos del backend
+    useEffect(() => {
+        setComprobantes(baseArray);
+    }, [comprobantesObtenidos]);
 
     // Navegación entre cursos
     const handleCategorySelect = (categoria) => {
@@ -609,45 +661,65 @@ export function ComprobanteRecibo() {
             alert('Por favor, ingresa el motivo del rechazo');
             return;
         }
-        
-        try {
+        // Validar campos obligatorios importe y método
+        const importeActualizadoRaw = getFieldValue(currentComprobante, 'importe');
+        const metodoPagoActualizadoRaw = getFieldValue(currentComprobante, 'metodoPago');
+        if (!importeActualizadoRaw || String(importeActualizadoRaw).trim() === '') {
+            alert('El campo Importe es obligatorio para rechazar.');
+            return;
+        }
+        const importeNumber = Number(importeActualizadoRaw);
+        if (isNaN(importeNumber) || importeNumber < 0) {
+            alert('El importe debe ser un número válido (no negativo).');
+            return;
+        }
+        if (!metodoPagoActualizadoRaw || String(metodoPagoActualizadoRaw).trim() === '') {
+            alert('El campo Método de Pago es obligatorio para rechazar.');
+            return;
+        }
+    try {
             // Obtener los valores editados o usar los originales
-            const importeActualizado = getFieldValue(currentComprobante, 'importe');
-            const metodoPagoActualizado = getFieldValue(currentComprobante, 'metodoPago');
+            const importeActualizado = importeNumber.toFixed(2);
+            const metodoPagoActualizado = metodoPagoActualizadoRaw;
+            // Persistir rechazo en backend (verificacion=3)
+            const folioParaRechazo = currentComprobante.folio || generateFolio(currentComprobante.cursoComprado);
+            await rejectVerificacionComprobante(folioParaRechazo, { motivo: motivoRechazo, importe: importeActualizado, metodo: metodoPagoActualizado });
             
-            // TODO: Llamada a API
-            // await api.post(`/comprobantes/${currentComprobante.id}/rechazar`, {
-            //     motivo: motivoRechazo,
-            //     fechaRechazo: new Date().toISOString(),
-            //     adminId: sessionStorage.getItem('adminId'),
-            //     importe: importeActualizado,
-            //     metodoPago: metodoPagoActualizado,
-            //     folio: currentComprobante.folio || generateFolio(currentComprobante.cursoComprado)
-            // });
-            
-            const comprobanteRechazado = {
-                ...currentComprobante,
-                folio: currentComprobante.folio || generateFolio(currentComprobante.cursoComprado),
-                importe: importeActualizado,
-                metodoPago: metodoPagoActualizado,
-                estado: 'rechazado',
-                motivoRechazo: motivoRechazo,
-                fechaRechazo: new Date().toLocaleString()
-            };
-            
-            setComprobantes(prev => prev.filter(c => c.id !== currentComprobante.id));
-            setComprobantesRechazados(prev => [...prev, comprobanteRechazado]);
-            
-            // Limpiar campos editables para este comprobante
+            const key = (currentComprobante.id_estudiante ?? currentComprobante.id ?? currentComprobante.folio) || generateFolio(currentComprobante.cursoComprado);
+            const folioFinal = currentComprobante.folio || generateFolio(currentComprobante.cursoComprado);
+            setComprobantesOverrides(prev => ({
+                ...prev,
+                [key]: {
+                    ...currentComprobante,
+                    folio: folioFinal,
+                    importe: importeActualizado,
+                    metodoPago: metodoPagoActualizado,
+                    estado: 'rechazado',
+                    verificacion: 3,
+                    motivoRechazo: motivoRechazo,
+                    fechaRechazo: new Date().toLocaleString()
+                }
+            }));
+            // Limpiar campos editables de ese comprobante
             setEditableFields(prev => {
-                const newFields = { ...prev };
-                delete newFields[currentComprobante.id];
-                return newFields;
+                const copy = { ...prev };
+                delete copy[key];
+                return copy;
             });
             
             setShowRejectModal(false);
             setCurrentComprobante(null);
             setMotivoRechazo('');
+            setShowRejectSuccessModal(true);
+            setVistaActual('rechazados');
+
+            // Refrescar lista para que persista tras reload usando curso/grupo actuales
+            if (activeVespertino && activeCategory) {
+                await getComprobantes(activeVespertino, activeCategory);
+            }
+
+            // Opcional: limpiar override si backend ya refleja estado
+            // (mantener por ahora por consistencia con aprobación)
         } catch (error) {
             console.error('Error al rechazar comprobante:', error);
             alert('Error al procesar el rechazo. Intenta nuevamente.');
@@ -657,13 +729,51 @@ export function ComprobanteRecibo() {
     // TODO: Conectar con API - Endpoint: POST /api/comprobantes/{id}/aprobar
     const handleValidar = async (comprobante) => {
         try {
-            const folio = comprobante.folio
-            const dataComplete = {
-                importe,
-                metodo: metodoPago,
+            const folio = comprobante.folio;
+            if (folio === undefined || folio === null || String(folio).trim() === '') {
+                alert('Folio no encontrado. No se puede validar.');
+                return;
             }
-            getVerificacionComprobante(folio, dataComplete);
+            // Obtener los valores editados o usar los originales
+            const importeActualizadoRaw = getFieldValue(comprobante, 'importe');
+            const metodoPagoActualizadoRaw = getFieldValue(comprobante, 'metodoPago');
+            if (!importeActualizadoRaw || String(importeActualizadoRaw).trim() === '') {
+                alert('El campo Importe es obligatorio para validar.');
+                return;
+            }
+            const importeNumber = Number(importeActualizadoRaw);
+            if (isNaN(importeNumber) || importeNumber < 0) {
+                alert('El importe debe ser un número válido (no negativo).');
+                return;
+            }
+            if (!metodoPagoActualizadoRaw || String(metodoPagoActualizadoRaw).trim() === '') {
+                alert('El campo Método de Pago es obligatorio para validar.');
+                return;
+            }
+            const importeActualizado = importeNumber.toFixed(2);
+            const metodoPagoActualizado = metodoPagoActualizadoRaw;
+            const dataComplete = {
+                importe: importeActualizado,
+                metodo: metodoPagoActualizado,
+            };
+            await getVerificacionComprobante(folio, dataComplete);
+            // Override local inmediato (optimistic UI)
+            const key = comprobante.id_estudiante ?? comprobante.id ?? comprobante.folio;
+            setComprobantesOverrides(prev => ({
+                ...prev,
+                [key]: {
+                    ...comprobante,
+                    importe: importeActualizado,
+                    metodoPago: metodoPagoActualizado,
+                    estado: 'aprobado',
+                    verificacion: 2,
+                    fechaAprobacion: new Date().toLocaleString()
+                }
+            }));
+            setVistaActual('aprobados');
             setShowSuccessModal(true);
+            // Refrescar backend (mantener después de feedback al usuario)
+            await getComprobantes(activeVespertino, activeCategory);
         } catch (error) {
             console.error('Error al aprobar comprobante:', error);
             alert('Error al procesar la aprobación. Intenta nuevamente.');
@@ -840,18 +950,7 @@ export function ComprobanteRecibo() {
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
-                                        <span>Pendientes ({Array.isArray(comprobantesObtenidos) && comprobantesObtenidos.verificacion === 1 ? (
-                                                comprobantesObtenidos.map((item, index) => (
-                                                    <span key={index}>
-                                                    {index + 1} - {item.comprobante}
-                                                    </span>
-                                                ))
-                                                ) : !Array.isArray(comprobantesObtenidos) && comprobantesObtenidos.verificacion === 1 ? (
-                                                <span>1</span>
-                                                ) : (
-                                                <span>0</span>
-                                                )
-                                        })</span>
+                                        <span>Pendientes ({pendientes.length})</span>
                                     </button>
                                     <button
                                         onClick={() => setVistaActual('aprobados')}
@@ -864,18 +963,7 @@ export function ComprobanteRecibo() {
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
-                                        <span>Aprobados ({Array.isArray(comprobantesObtenidos) && comprobantesObtenidos.verificacion === 2 ? (
-                                                comprobantesObtenidos.map((item, index) => (
-                                                    <span key={index}>
-                                                    {index + 1} - {item.comprobante}
-                                                    </span>
-                                                ))
-                                                ) : !Array.isArray(comprobantesObtenidos) && comprobantesObtenidos.verificacion === 2 ? (
-                                                <span>1</span>
-                                                ) : (
-                                                <span>0</span>
-                                                )
-                                        })</span>
+                                        <span>Aprobados ({aprobados.length})</span>
                                     </button>
                                     <button
                                         onClick={() => setVistaActual('rechazados')}
@@ -888,18 +976,7 @@ export function ComprobanteRecibo() {
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
-                                        <span>Rechazados ({Array.isArray(comprobantesObtenidos) && comprobantesObtenidos.verificacion === 3 ? (
-                                                comprobantesObtenidos.map((item, index) => (
-                                                    <span key={index}>
-                                                    {index + 1} - {item.comprobante}
-                                                    </span>
-                                                ))
-                                                ) : !Array.isArray(comprobantesObtenidos) && comprobantesObtenidos.verificacion === 3 ? (
-                                                <span>1</span>
-                                                ) : (
-                                                <span>0</span>
-                                                )
-                                        })</span>
+                                        <span>Rechazados ({rechazados.length})</span>
                                     </button>
                                 </div>
                             </div>
@@ -944,7 +1021,7 @@ export function ComprobanteRecibo() {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {!comprobantesObtenidos && (
+                                        {currentList.length === 0 && (
                                             <tr>
                                                 <td colSpan={vistaActual === 'rechazados' ? '8' : vistaActual === 'aprobados' ? '7' : '7'} className="px-4 xs:px-6 py-12 xs:py-16 text-center text-gray-500">
                                                     <div className="flex flex-col items-center">
@@ -973,133 +1050,94 @@ export function ComprobanteRecibo() {
                                                 </td>
                                             </tr>
                                         )}
-                                        {/* Pendientes */}
-                                        {!Array.isArray(comprobantesObtenidos) && vistaActual === 'pendientes' && comprobantesObtenidos.verificacion === 1 ? (
-                                            <tr>
-                                                {/* Columna Folio */}
-                                                <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
-                                                    <div className="font-mono text-blue-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{String(comprobantesObtenidos.folio).padStart(4, '0')}</div>
-                                                </td>
-
-                                    {/* Columna Nombre del Alumno */}
-                                    <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
-                                        <div className="font-medium">{comprobantesObtenidos.nombre}{comprobantesObtenidos.apellidos}</div>
-                                    </td>
-                                    
-                                    {/* Columna Fecha y Hora  */}
-                                    <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
-                                        <div className="font-medium">{new Date(comprobantesObtenidos.created_at).toLocaleString('es-MX')}</div>
-                                    </td>
-                                    
-                                    {/* Columna Importe - Campo editable */}
-                                    <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-center border-r border-gray-200">
-                                        {vistaActual === 'pendientes' && (
-                                            <input
-                                                type="text"
-                                                value={getFieldValue(comprobantesObtenidos, 'importe')}
-                                                onChange={(e) => setImporteEditable(e.target.value)}
-                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                placeholder="0.00"
-                                            />
-                                        )}
-                                    </td>
-                                    
-                                    {/* Columna Método - Campo editable */}
-                                    <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-center border-r border-gray-200">
-                                        {vistaActual === 'pendientes' && (
-                                            <input
-                                                type="text"
-                                                value={getFieldValue(comprobantesObtenidos, 'metodoPago')}
-                                                onChange={(e) => setMetodoEditable(e.target.value)}
-                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                placeholder="Método de pago"
-                                            />
-                                        )}
-                                    </td>                                                  
-                                    {vistaActual === 'rechazados' && (
-                                        <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-red-700 text-center border-r border-gray-200">
-                                            <div className="bg-red-100 px-2 py-1 rounded-md max-w-xs mx-auto">
-                                                <span className="font-medium">{comprobantesObtenidos.motivoRechazo}</span>
-                                            </div>
-                                        </td>
-                                    )}
-                                    
-                                    {vistaActual === 'aprobados' && (
-                                        <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-green-700 font-medium text-center border-r border-gray-200">
-                                            {comprobantesObtenidos.fechaAprobacion}
-                                        </td>
-                                    )}
-                                    
-                                    {vistaActual === 'rechazados' && (
-                                        <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-red-700 font-medium text-center border-r border-gray-200">
-                                            {comprobantesObtenidos.fechaRechazo}
-                                        </td>
-                                    )}
-                                    
-                                    <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
-                                        <button onClick={() => handleVerComprobante(`http://localhost:1002${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
-                                            Ver comprobante
-                                        </button>
-                                    </td>
-                                    
-                                    {/* Botones de acción solo para pendientes */}
-                                    {vistaActual === 'pendientes' && (
-                                        <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
-                                            <div className="flex gap-1 xs:gap-2 sm:gap-3 justify-center">
-                                                <button onClick={() => handleRechazar(comprobantesObtenidos)} className="px-2 xs:px-3 sm:px-4 py-1 xs:py-2 bg-red-500 hover:bg-red-600 text-white text-[10px] xs:text-xs font-semibold rounded-md xs:rounded-lg transition-colors duration-150">
-                                                    RECHAZAR
-                                                </button>
-                                                <button onClick={() => handleValidar(comprobantesObtenidos)} className="px-2 xs:px-3 sm:px-4 py-1 xs:py-2 bg-green-500 hover:bg-green-600 text-white text-[10px] xs:text-xs font-semibold rounded-md xs:rounded-lg transition-colors duration-150">
-                                                    VALIDAR
-                                                </button>
-                                            </div>
-                                        </td>
-                                    )}
-                                                </tr>
-                                        ) : (
-                                            Array.isArray(comprobantesObtenidos) && comprobantesObtenidos.verificacion === 1 && vistaActual === 'pendientes' && comprobantesObtenidos.map((comprobante) => (
-                                                <tr key={comprobante.id} className={`hover:bg-gray-50 transition-colors duration-150 ${
+                                        {/* Renderizar lista actual (pendientes/aprobados/rechazados) */}
+                                        {currentList.map((comprobante) => (
+                                                <tr key={comprobante.id_estudiante ?? `${comprobante.folio}-${comprobante.created_at}`}
+                                                    className={`hover:bg-gray-50 transition-colors duration-150 ${
                                                     vistaActual === 'rechazados' ? 'bg-red-50/30' : 
                                                     vistaActual === 'aprobados' ? 'bg-green-50/30' : ''
                                                 }`}>
                                     {/* Columna Folio */}
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
-                                        <div className="font-mono text-blue-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{comprobante.folio}</div>
+                                        <div className="font-mono text-blue-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{String(comprobante.folio).padStart(4, '0')}</div>
                                     </td>
                                     
                                     {/* Columna Nombre del Alumno */}
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
-                                        <div className="font-medium">{comprobante.nombreAlumno}</div>
+                                        <div className="font-medium">{comprobante.nombre} {comprobante.apellidos}</div>
                                     </td>
                                     
                                     {/* Columna Fecha y Hora  */}
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
-                                        <div className="font-medium">{comprobante.fechaHora}</div>
+                                        <div className="font-medium">{new Date(comprobante.created_at).toLocaleString('es-MX')}</div>
                                     </td>
                                     
-                                    {/* Columna Importe - Campo editable */}
+                                    {/* Columna Importe - Campo editable (requerido) */}
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-center border-r border-gray-200">
-                                        {vistaActual === 'pendientes' && (
-                                            <input
-                                                type="text"
-                                                value={getFieldValue(comprobante, 'importe')}
-                                                onChange={(e) => handleFieldChange(comprobante.id, 'importe', e.target.value)}
-                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                placeholder="0.00"
-                                            />
+                                        {vistaActual === 'pendientes' ? (() => {
+                                            const val = getFieldValue(comprobante, 'importe');
+                                            const numeric = Number(val);
+                                            const empty = !val || !String(val).trim();
+                                            const notNumber = !empty && isNaN(numeric);
+                                            const negative = !empty && !notNumber && numeric < 0;
+                                            const invalid = empty || notNumber || negative;
+                                            const errorMsg = empty ? 'Requerido' : notNumber ? 'Número inválido' : negative ? 'No negativos' : '';
+                                            return (
+                                                <div className="space-y-1">
+                                                    <input
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        value={val}
+                                                        onChange={(e) => {
+                                                            let v = e.target.value;
+                                                            v = v.replace(/[^\d.]/g, '');
+                                                            v = v.replace(/(\..*)\./g, '$1');
+                                                            if (v.includes('.')) {
+                                                                const [intPart, decPart] = v.split('.');
+                                                                v = intPart + '.' + (decPart ? decPart.slice(0,2) : '');
+                                                            }
+                                                            handleFieldChange(comprobante, 'importe', v);
+                                                        }}
+                                                        onBlur={() => {
+                                                            if (!invalid) {
+                                                                const formatted = (val === '' ? '' : Number(val).toFixed(2));
+                                                                if (formatted !== '') handleFieldChange(comprobante, 'importe', formatted);
+                                                            }
+                                                        }}
+                                                        className={`w-full px-2 py-1 text-center border rounded hide-spinner focus:outline-none focus:ring-2 transition-colors duration-150 ${invalid ? 'border-red-500 focus:ring-red-400 focus:border-red-500 bg-red-50 placeholder-red-400' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'}`}
+                                                        placeholder="0.00"
+                                                    />
+                                                    {invalid && (
+                                                        <div className="text-[10px] xs:text-[11px] font-medium text-red-600 tracking-wide">{errorMsg}</div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })() : (
+                                            <div className="font-medium text-green-600">${comprobante.importe ?? ''}</div>
                                         )}
                                     </td>
                                     
-                                    {/* Columna Método - Campo editable */}
+                                    {/* Columna Método - Campo editable (requerido) */}
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-center border-r border-gray-200">
-                                        {vistaActual === 'pendientes' && (
-                                            <input
-                                                type="text"
-                                                value={getFieldValue(comprobante, 'metodoPago')}
-                                                onChange={(e) => handleFieldChange(e.target.value)}
-                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                placeholder="Método de pago"
-                                            />
+                                        {vistaActual === 'pendientes' ? (() => {
+                                            const val = getFieldValue(comprobante, 'metodoPago');
+                                            const invalid = !val || !String(val).trim();
+                                            return (
+                                                <div className="space-y-1">
+                                                    <input
+                                                        type="text"
+                                                        value={val}
+                                                        onChange={(e) => handleFieldChange(comprobante, 'metodoPago', e.target.value)}
+                                                        className={`w-full px-2 py-1 text-center border rounded focus:outline-none focus:ring-2 transition-colors duration-150 ${invalid ? 'border-red-500 focus:ring-red-400 focus:border-red-500 bg-red-50 placeholder-red-400' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'}`}
+                                                        placeholder="Método de pago"
+                                                    />
+                                                    {invalid && (
+                                                        <div className="text-[10px] xs:text-[11px] font-medium text-red-600 tracking-wide">Requerido</div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })() : (
+                                            <div className="font-medium">{comprobante.metodo ?? ''}</div>
                                         )}
                                     </td>                                                  
                                     {vistaActual === 'rechazados' && (
@@ -1112,7 +1150,7 @@ export function ComprobanteRecibo() {
                                     
                                     {vistaActual === 'aprobados' && (
                                         <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-green-700 font-medium text-center border-r border-gray-200">
-                                            {comprobante.fechaAprobacion}
+                                            {new Date(comprobante.created_at).toLocaleString('es-MX')}
                                         </td>
                                     )}
                                     
@@ -1123,7 +1161,7 @@ export function ComprobanteRecibo() {
                                     )}
                                     
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
-                                        <button onClick={() => handleVerComprobante(`http://localhost:1002${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
+                                        <button onClick={() => handleVerComprobante(`${apiOrigin}${comprobante.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
                                             Ver comprobante
                                         </button>
                                     </td>
@@ -1142,8 +1180,7 @@ export function ComprobanteRecibo() {
                                         </td>
                                     )}
                                                 </tr>
-                                            ))
-                                        )}
+                                            ))}
                                         {/* Aprobados */}
                                         {!Array.isArray(comprobantesObtenidos) && vistaActual === 'aprobados' && comprobantesObtenidos.verificacion === 2 ? (
                                             <tr>
@@ -1178,7 +1215,7 @@ export function ComprobanteRecibo() {
                                     )}
                                     
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
-                                        <button onClick={() => handleVerComprobante(`http://localhost:1002${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
+                                        <button onClick={() => handleVerComprobante(`${(import.meta?.env?.VITE_API_URL || `http://${window.location.hostname}:1002/api`).replace(/\/api\/?$/, '')}${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
                                             Ver comprobante
                                         </button>
                                     </td>
@@ -1254,7 +1291,7 @@ export function ComprobanteRecibo() {
                                     )}
                                     
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
-                                        <button onClick={() => handleVerComprobante(`http://localhost:1002${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
+                                        <button onClick={() => handleVerComprobante(`${(import.meta?.env?.VITE_API_URL || `http://${window.location.hostname}:1002/api`).replace(/\/api\/?$/, '')}${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
                                             Ver comprobante
                                         </button>
                                     </td>
@@ -1329,7 +1366,7 @@ export function ComprobanteRecibo() {
                                     )}
                                     
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
-                                        <button onClick={() => handleVerComprobante(`http://localhost:1002${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
+                                        <button onClick={() => handleVerComprobante(`${(import.meta?.env?.VITE_API_URL || `http://${window.location.hostname}:1002/api`).replace(/\/api\/?$/, '')}${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
                                             Ver comprobante
                                         </button>
                                     </td>
@@ -1419,7 +1456,7 @@ export function ComprobanteRecibo() {
                                     )}
                                     
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
-                                        <button onClick={() => handleVerComprobante(`http://localhost:1002${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
+                                        <button onClick={() => handleVerComprobante(`${(import.meta?.env?.VITE_API_URL || `http://${window.location.hostname}:1002/api`).replace(/\/api\/?$/, '')}${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
                                             Ver comprobante
                                         </button>
                                     </td>
@@ -1530,6 +1567,30 @@ export function ComprobanteRecibo() {
             {/***************************************************************/}
 
             {/* Modales de Confirmación  */}
+            {showRejectSuccessModal && (
+                <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50 p-2 xs:p-4">
+                    <div className="bg-red-50/95 backdrop-blur-lg rounded-lg xs:rounded-xl sm:rounded-2xl max-w-sm xs:max-w-md w-full shadow-2xl border border-red-200/50 overflow-hidden">
+                        <div className="flex justify-center pt-6 xs:pt-8 pb-3 xs:pb-4">
+                            <div className="w-16 xs:w-20 h-16 xs:h-20 bg-red-200/80 rounded-full flex items-center justify-center">
+                                <svg className="w-10 xs:w-12 h-10 xs:h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </div>
+                        </div>
+                        <div className="text-center px-4 xs:px-6 pb-1 xs:pb-2">
+                            <h3 className="text-lg xs:text-xl font-bold text-red-800">Comprobante Rechazado</h3>
+                        </div>
+                        <div className="px-4 xs:px-6 pb-6 xs:pb-8">
+                            <p className="text-sm xs:text-base text-gray-700 mb-4 xs:mb-6 text-center">
+                                El comprobante de <br />
+                                <span className="font-semibold text-gray-900">{currentComprobante?.nombreAlumno}</span> <br />
+                                ha sido rechazado exitosamente.
+                            </p>
+                            <div className="flex justify-center">
+                                <button onClick={cerrarModalRechazoExito} className="px-4 xs:px-6 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-md xs:rounded-lg text-sm xs:text-base transition-colors duration-150">Entendido</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
             {showRejectModal && (
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50 p-2 xs:p-4">
                     <div className="bg-red-50/95 backdrop-blur-lg rounded-lg xs:rounded-xl sm:rounded-2xl max-w-sm xs:max-w-md w-full shadow-2xl border border-red-200/50 overflow-hidden">
@@ -1589,7 +1650,7 @@ export function ComprobanteRecibo() {
                                 ha sido validado exitosamente.
                             </p>
                             <div className="flex justify-center">
-                                <button onClick={refrescarPagina} className="px-4 xs:px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-md xs:rounded-lg text-sm xs:text-base transition-colors duration-150">Entendido</button>
+                                <button onClick={cerrarModalExito} className="px-4 xs:px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-md xs:rounded-lg text-sm xs:text-base transition-colors duration-150">Entendido</button>
                             </div>
                         </div>
                     </div>

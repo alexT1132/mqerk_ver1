@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminContext } from '../../context/AdminContext.jsx';
+import { getGruposConCantidadRequest } from '../../api/estudiantes.js';
 
 // Modal de confirmación personalizado
 const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", studentName = "" }) => {
@@ -322,28 +323,28 @@ function ListaAlumnos_Admin_comp() {
     // DATOS MOCK TEMPORALES PARA PRUEBAS - ELIMINAR EN PRODUCCIÓN
     // ✅ Contadores actualizados según los datos simulados
     'EEAU': [
-      { id: 1, nombre: 'V1', tipo: 'vespertino', capacidad: 10, alumnosActuales: 3 }, // 3 estudiantes en EEAU-V1
-      { id: 2, nombre: 'V2', tipo: 'vespertino', capacidad: 10, alumnosActuales: 2 }, // 2 estudiantes en EEAU-V2
-      { id: 3, nombre: 'M1', tipo: 'matutino', capacidad: 15, alumnosActuales: 1 }    // 1 estudiante en EEAU-M1
+  { id: 1, nombre: 'V1', tipo: 'vespertino', capacidad: 10, alumnosActuales: 0 },
+  { id: 2, nombre: 'V2', tipo: 'vespertino', capacidad: 10, alumnosActuales: 0 },
+  { id: 3, nombre: 'M1', tipo: 'matutino', capacidad: 15, alumnosActuales: 0 }
     ],
     'EEAP': [
-      { id: 4, nombre: 'V1', tipo: 'vespertino', capacidad: 12, alumnosActuales: 2 }, // 2 estudiantes en EEAP-V1
-      { id: 5, nombre: 'S1', tipo: 'sabatino', capacidad: 20, alumnosActuales: 1 }    // 1 estudiante en EEAP-S1
+  { id: 4, nombre: 'V1', tipo: 'vespertino', capacidad: 12, alumnosActuales: 0 },
+  { id: 5, nombre: 'S1', tipo: 'sabatino', capacidad: 20, alumnosActuales: 0 }
     ],
     'DIGI-START': [
-      { id: 6, nombre: 'V1', tipo: 'vespertino', capacidad: 8, alumnosActuales: 1 },  // 1 estudiante en DIGI-START-V1
-      { id: 7, nombre: 'M1', tipo: 'matutino', capacidad: 10, alumnosActuales: 1 }    // 1 estudiante en DIGI-START-M1
+  { id: 6, nombre: 'V1', tipo: 'vespertino', capacidad: 8, alumnosActuales: 0 },
+  { id: 7, nombre: 'M1', tipo: 'matutino', capacidad: 10, alumnosActuales: 0 }
     ],
     'MINDBRIDGE': [
-      { id: 8, nombre: 'V1', tipo: 'vespertino', capacidad: 6, alumnosActuales: 1 }   // 1 estudiante en MINDBRIDGE-V1
+  { id: 8, nombre: 'V1', tipo: 'vespertino', capacidad: 6, alumnosActuales: 0 }
     ],
     'SPEAKUP': [
-      { id: 9, nombre: 'V1', tipo: 'vespertino', capacidad: 8, alumnosActuales: 1 },  // 1 estudiante en SPEAKUP-V1
-      { id: 10, nombre: 'V2', tipo: 'vespertino', capacidad: 8, alumnosActuales: 1 }  // 1 estudiante en SPEAKUP-V2
+  { id: 9, nombre: 'V1', tipo: 'vespertino', capacidad: 8, alumnosActuales: 0 },
+  { id: 10, nombre: 'V2', tipo: 'vespertino', capacidad: 8, alumnosActuales: 0 }
     ],
     'PCE': [
-      { id: 11, nombre: 'M1', tipo: 'matutino', capacidad: 12, alumnosActuales: 1 },  // 1 estudiante en PCE-M1
-      { id: 12, nombre: 'S1', tipo: 'sabatino', capacidad: 15, alumnosActuales: 1 }   // 1 estudiante en PCE-S1
+  { id: 11, nombre: 'M1', tipo: 'matutino', capacidad: 12, alumnosActuales: 0 },
+  { id: 12, nombre: 'S1', tipo: 'sabatino', capacidad: 15, alumnosActuales: 0 }
     ]
   });
 
@@ -357,7 +358,8 @@ function ListaAlumnos_Admin_comp() {
   
   // Obtiene los grupos disponibles para el curso seleccionado
   const getGruposDisponibles = () => {
-    return gruposPorCurso[activeCategory] || [];
+    const grupos = gruposPorCurso[activeCategory] || [];
+    return grupos.filter(g => (Number(g.alumnosActuales) || 0) > 0);
   };
 
   // Obtiene información del grupo seleccionado
@@ -369,27 +371,53 @@ function ListaAlumnos_Admin_comp() {
   };
 
   const fetchAlumnos = async () => {
-    if (!activeCategory || !activeTurno) return;
-    
+    if (!activeCategory || !activeTurno) return [];
     try {
-      // INTEGRACIÓN CON ADMINCONTEXT - Los datos vienen del contexto
-      // AdminContext.jsx maneja loadStudentsData(curso, turno) con datos mock
-      // En producción, AdminContext hará las llamadas HTTP reales
-      
-      // Simular delay del backend (esto se quita en producción)
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // TEMPORAL: Usar datos centralizados mock hasta que AdminContext esté conectado
-      const mockData = getStudentsByCourseAndTurn(activeCategory, activeTurno);
-      setAlumnos(mockData);
-      
-      // TODO: USAR ADMINCONTEXT EN LUGAR DE MOCK - DESCOMENTAR EN PRODUCCIÓN
-      // const data = await loadStudentsData(activeCategory, activeTurno);
-      // setAlumnos(data || []);
-      
+      const data = await loadStudentsData(activeCategory, activeTurno);
+      const list = Array.isArray(data) ? data : [];
+      setAlumnos(list);
+      // Actualizar contador dinámico del grupo seleccionado
+      setGruposPorCurso(prev => {
+        const grupos = prev[activeCategory] || [];
+        const actualizados = grupos.map(g =>
+          g.nombre === activeTurno ? { ...g, alumnosActuales: list.length } : g
+        );
+        return { ...prev, [activeCategory]: actualizados };
+      });
+      return list;
     } catch (err) {
       console.error('Error al cargar estudiantes:', err);
       setAlumnos([]);
+      return [];
+    }
+  };
+
+  // Cargar conteos de grupos para un curso desde el backend
+  const fetchGroupCounts = async (curso) => {
+    if (!curso) return;
+    try {
+      const res = await getGruposConCantidadRequest(curso);
+      const rows = Array.isArray(res?.data) ? res.data : (res?.data ? [res.data] : []);
+      const tipoFromNombre = (nombre) => {
+        const n = String(nombre || '').toUpperCase();
+        if (n.startsWith('M')) return 'matutino';
+        if (n.startsWith('V')) return 'vespertino';
+        if (n.startsWith('S')) return 'sabatino';
+        return 'vespertino';
+      };
+      const grupos = rows
+        .filter(r => Number(r.cantidad_estudiantes) > 0)
+        .map((r, idx) => ({
+          id: idx + 1,
+          nombre: r.grupo,
+          tipo: tipoFromNombre(r.grupo),
+          capacidad: (gruposPorCurso[curso]?.find(g => g.nombre === r.grupo)?.capacidad) || 10,
+          alumnosActuales: Number(r.cantidad_estudiantes) || 0
+        }));
+      setGruposPorCurso(prev => ({ ...prev, [curso]: grupos }));
+    } catch (err) {
+      console.error('Error al cargar grupos con cantidad:', err);
+      setGruposPorCurso(prev => ({ ...prev, [curso]: [] }));
     }
   };
 
@@ -430,12 +458,11 @@ function ListaAlumnos_Admin_comp() {
       // Mostrar notificación de carga
       showNotification(`🔄 Cargando estudiantes de ${activeCategory} - ${activeTurno}...`, 'info');
       
-      fetchAlumnos().then(() => {
-        // Mostrar notificación de éxito después de cargar
+      fetchAlumnos().then((res) => {
         setTimeout(() => {
-          const count = alumnosMockPorCursoTurno[`${activeCategory}-${activeTurno}`]?.length || 0;
+          const count = (Array.isArray(res) ? res.length : alumnos.length);
           showNotification(`✅ ${count} estudiantes cargados para ${activeCategory} - ${activeTurno}`, 'success');
-        }, 600);
+        }, 300);
       });
     }
   }, [activeCategory, activeTurno]);
@@ -478,6 +505,13 @@ function ListaAlumnos_Admin_comp() {
       fetchAlumnos();
     }
   }, []);
+
+  useEffect(() => {
+    if (activeCategory) {
+      fetchGroupCounts(activeCategory);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory]);
 
   // Manejar la finalización de la pantalla de carga inicial
   const handleLoadingComplete = () => {
@@ -528,6 +562,7 @@ function ListaAlumnos_Admin_comp() {
       setActiveCategory(categoria);
       setActiveTurno(null); // Reset grupo al cambiar curso
       setAlumnos([]); // ✅ Limpiar datos al cambiar curso
+  fetchGroupCounts(categoria);
     }
   };
 
@@ -786,7 +821,7 @@ function ListaAlumnos_Admin_comp() {
                   Grupo Activo: {activeCategory} - {activeTurno}
                 </p>
                 <p className="text-xs xs:text-sm sm:text-base text-blue-100">
-                  Capacidad: <span className="font-bold text-white">{getGrupoInfo()?.alumnosActuales || 0}/{getGrupoInfo()?.capacidad || 0}</span> estudiantes
+                  Capacidad: <span className="font-bold text-white">{alumnos?.length || 0}/{getGrupoInfo()?.capacidad || 0}</span> estudiantes
                 </p>
               </div>
             </div>

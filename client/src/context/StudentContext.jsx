@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext.jsx';
 
 /**
  * CONTEXTO PARA DATOS ESPECÍFICOS DEL ESTUDIANTE
@@ -35,6 +36,7 @@ export const useStudent = () => {
 };
 
 export const StudentProvider = ({ children }) => {
+  const { isAuthenticated, alumno } = useAuth();
   // Estados principales del estudiante
   const [isVerified, setIsVerified] = useState(false);
   const [hasPaid, setHasPaid] = useState(false);
@@ -416,6 +418,29 @@ export const StudentProvider = ({ children }) => {
     if (storedAreaRequests) setAreaRequests(JSON.parse(storedAreaRequests));
 
   }, []);
+
+  // Sincronizar flags con el backend: si AuthContext expone verificación aprobada (>=2), reflejarlo aquí
+  useEffect(() => {
+    const verif = Number(alumno?.verificacion ?? 0);
+    if (verif >= 2) {
+      if (!isVerified) setIsVerified(true);
+      if (!hasPaid) setHasPaid(true); // Asumir pagado cuando está aprobado
+      if (localStorage.getItem('studentVerified') !== 'true') localStorage.setItem('studentVerified', 'true');
+      if (localStorage.getItem('studentPaid') !== 'true') localStorage.setItem('studentPaid', 'true');
+    }
+  }, [alumno?.verificacion]);
+
+  // Resetear selección de curso y sección activa cuando el usuario cierra sesión
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setCurrentCourse(null);
+      setActiveSection(null);
+      setIsFirstAccess(true);
+      localStorage.removeItem('currentCourse');
+      localStorage.removeItem('activeSection');
+      localStorage.setItem('isFirstAccess', 'true');
+    }
+  }, [isAuthenticated]);
 
   // Función para resetear el estado (útil para testing)
   const resetStudentState = () => {

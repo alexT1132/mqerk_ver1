@@ -1,9 +1,13 @@
 import * as Usuarios from "../models/usuarios.model.js";
+import * as AdminProfiles from "../models/admin_profiles.model.js";
 import * as Estudiantes from "../models/estudiantes.model.js";
 import bcrypt from "bcryptjs";
 import { createAccessToken } from "../libs/jwt.js";
 import jwt from "jsonwebtoken";
 import { TOKEN_SECRET } from "../config.js";
+import * as SoftDeletes from "../models/soft_deletes.model.js";
+import * as AdminConfig from "../models/admin_config.model.js";
+import db from "../db.js";
 
 // Obtener todos los usuarios
 export const obtener = async (req, res) => {
@@ -56,7 +60,7 @@ export const crear = async (req, res) => {
 
 // Login
 export const login = async (req, res) => {
-  const { usuario, contraseña } = req.body;
+  const { usuario, contraseña, rememberMe } = req.body;
 
   try {
     if (!usuario || !contraseña) {
@@ -69,18 +73,43 @@ export const login = async (req, res) => {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    const isMatch = await bcrypt.compare(contraseña, usuarioFound.contraseña);
+  // Bloquear si fue soft-deleted
+  const soft = await SoftDeletes.getByUsuarioId(usuarioFound.id);
+  if (soft) return res.status(403).json({ message: "Cuenta desactivada" });
+
+  const isMatch = await bcrypt.compare(contraseña, usuarioFound.contraseña);
 
     if (!isMatch) {
       return res.status(401).json({ message: "Contraseña incorrecta" });
     }
 
-    const token = await createAccessToken({ id: usuarioFound.id });
-    res.cookie("token", token);
+    // Token expiry según configuración
+    let exp = "1d";
+    try {
+      const cfg = await (await import('../models/admin_config.model.js')).getConfig();
+      const minutos = cfg?.sesion_maxima || 1440;
+      // jwt exp format: s or string like "60m"; usamos minutos
+      exp = `${Math.max(5, Math.min(7*24*60, minutos))}m`;
+    } catch {}
+    const token = await createAccessToken({ id: usuarioFound.id }, exp);
+    const isProd = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: isProd,
+      path: '/',
+    };
+    if (rememberMe) {
+      // 30 días persistente
+      cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000;
+    }
+    res.cookie("token", token, cookieOptions);
 
-    if(usuarioFound.role === 'estudiante'){
+  if(usuarioFound.role === 'estudiante'){
 
       const estudiante = await Estudiantes.getEstudianteById(usuarioFound.id_estudiante);
+      const softByEst = await SoftDeletes.getByEstudianteId(estudiante?.id);
+      if (softByEst) return res.status(403).json({ message: "Cuenta desactivada" });
 
         return res.json({
           usuario: usuarioFound,
@@ -88,11 +117,9 @@ export const login = async (req, res) => {
         });
 
     } else {
-
-      return res.json({
-      usuario: usuarioFound
-    });
-
+      // role admin: adjuntar perfil si existe
+      const perfil = await AdminProfiles.getByUserId(usuarioFound.id).catch(() => null);
+      return res.json({ usuario: usuarioFound, admin_profile: perfil || null });
     }
     
   } catch (error) {
@@ -133,13 +160,15 @@ export const verifyToken = async (req, res) => {
   jwt.verify(token, TOKEN_SECRET, async (err, user) => {
     if (err) return res.status(401).json({ message: "Unauthorized" });
 
-    const userFound = await Usuarios.getUsuarioPorid(user.id);
+  const userFound = await Usuarios.getUsuarioPorid(user.id);
+  const soft = await SoftDeletes.getByUsuarioId(userFound?.id);
+  if (soft) return res.status(401).json({ message: "Unauthorized" });
 
     if (!userFound) return res.status(401).json({ message: "Unauthorized" });
 
     console.log(userFound);
 
-    if(userFound.role === 'estudiante'){
+  if(userFound.role === 'estudiante'){
 
       const estudiante = await Estudiantes.getEstudianteById(userFound.id_estudiante);
 
@@ -149,11 +178,8 @@ export const verifyToken = async (req, res) => {
         });
 
     } else {
-
-      return res.json({
-      usuario: userFound
-    });
-
+      const perfil = await AdminProfiles.getByUserId(userFound.id).catch(() => null);
+      return res.json({ usuario: userFound, admin_profile: perfil || null });
     }
 
   });
@@ -178,5 +204,584 @@ export const obtenerUno = async (req, res) => {
   } catch (error) {
     console.error("Error al obtener el usuario:", error);
     res.status(500).json({ message: "Error al obtener el usuario", error });
+  }
+};
+
+// Crear administrador con foto (multipart/form-data)
+// Crear administrador (solo admins autenticados)
+export const registrarAdmin = async (req, res) => {
+  try {
+    // Debe estar autenticado y ser admin
+    const requesterId = req.user?.id;
+    const requester = requesterId ? await Usuarios.getUsuarioPorid(requesterId) : null;
+    if (!requester || requester.role !== 'admin') {
+      return res.status(403).json({ message: 'Solo administradores pueden crear nuevos administradores' });
+    }
+  const { usuario, nombre, email, telefono } = req.body;
+  const contraseña = req.body?.['contraseña'] ?? req.body?.['contrasena'] ?? req.body?.['password'];
+  if (!usuario || !contraseña || !nombre || !email) {
+      return res.status(400).json({ message: 'usuario, contraseña, nombre y email son obligatorios' });
+    }
+
+    // Validaciones básicas de unicidad
+    const yaExisteUser = await Usuarios.getUsuarioPorusername(usuario);
+    if (yaExisteUser) return res.status(409).json({ message: 'Usuario ya existe' });
+  // Email único en admin_profiles
+  const yaExisteEmail = email ? await AdminProfiles.getByEmail(email) : null;
+  if (yaExisteEmail) return res.status(409).json({ message: 'Email ya está registrado' });
+
+    // Foto opcional
+    let fotoPath = null;
+    if (req.file) {
+      fotoPath = `/public/${req.file.filename}`; // expuesto por express.static('/public')
+    }
+
+    const hash = await bcrypt.hash(contraseña, 10);
+  // 1) Crear usuario (auth mínimo)
+  const userResult = await Usuarios.createUsuario({ usuario, contraseña: hash, role: 'admin', id_estudiante: null });
+  const userId = userResult?.insertId;
+  // 2) Crear perfil admin
+  await AdminProfiles.createProfile({ user_id: userId, nombre, email, telefono: telefono || null, foto: fotoPath });
+  const perfil = await AdminProfiles.getByUserId(userId);
+  return res.status(201).json({ usuario: { id: userId, usuario, role: 'admin' }, perfil });
+  } catch (error) {
+    console.error('Error registrando admin:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Bootstrap del primer admin (sin sesión): requiere x-bootstrap-token y que no existan admins
+export const registrarAdminBootstrap = async (req, res) => {
+  try {
+    const totalAdmins = await Usuarios.countAdmins();
+    if (totalAdmins > 0) return res.status(403).json({ message: 'Bootstrap no permitido: ya existe al menos un admin' });
+
+  const { usuario, nombre, email, telefono } = req.body;
+  const contraseña = req.body?.['contraseña'] ?? req.body?.['contrasena'] ?? req.body?.['password'];
+  if (!usuario || !contraseña || !nombre || !email) {
+      return res.status(400).json({ message: 'usuario, contraseña, nombre y email son obligatorios' });
+    }
+
+    const yaExisteUser = await Usuarios.getUsuarioPorusername(usuario);
+    if (yaExisteUser) return res.status(409).json({ message: 'Usuario ya existe' });
+    const yaExisteEmail = email ? await AdminProfiles.getByEmail(email) : null;
+    if (yaExisteEmail) return res.status(409).json({ message: 'Email ya está registrado' });
+
+    let fotoPath = null;
+    if (req.file) fotoPath = `/public/${req.file.filename}`;
+
+    const hash = await bcrypt.hash(contraseña, 10);
+    const userResult = await Usuarios.createUsuario({ usuario, contraseña: hash, role: 'admin', id_estudiante: null });
+    const userId = userResult?.insertId;
+    await AdminProfiles.createProfile({ user_id: userId, nombre, email, telefono: telefono || null, foto: fotoPath });
+    const perfil = await AdminProfiles.getByUserId(userId);
+
+    // Auto-login: emitir cookie como en /login
+    let exp = "1d";
+    try {
+      const cfg = await (await import('../models/admin_config.model.js')).getConfig();
+      const minutos = cfg?.sesion_maxima || 1440;
+      exp = `${Math.max(5, Math.min(7*24*60, minutos))}m`;
+    } catch {}
+    const token = await createAccessToken({ id: userId }, exp);
+    const isProd = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: isProd,
+      path: '/',
+    };
+    res.cookie('token', token, cookieOptions);
+
+    return res.status(201).json({ usuario: { id: userId, usuario, role: 'admin' }, admin_profile: perfil });
+  } catch (error) {
+    console.error('Error en bootstrap admin:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Perfil del admin autenticado
+export const getAdminProfile = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const user = await Usuarios.getUsuarioPorid(userId);
+    if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+    const perfil = await AdminProfiles.getByUserId(userId);
+    return res.status(200).json({ usuario: { id: user.id, usuario: user.usuario, role: user.role }, admin_profile: perfil });
+  } catch (e) {
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Estado de bootstrap: indica si hace falta crear el primer admin
+export const getBootstrapStatus = async (req, res) => {
+  try {
+    const totalAdmins = await Usuarios.countAdmins();
+    return res.status(200).json({ needsBootstrap: totalAdmins === 0 });
+  } catch (e) {
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Actualizar perfil del admin autenticado (nombre, email, telefono)
+export const updateAdminProfile = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const user = await Usuarios.getUsuarioPorid(userId);
+    if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+    const { nombre, email, telefono } = req.body || {};
+    const updates = {};
+    if (typeof nombre === 'string' && nombre.trim()) updates.nombre = nombre.trim();
+    if (typeof email === 'string' && email.trim()) updates.email = email.trim();
+    if (typeof telefono === 'string' && telefono.trim()) updates.telefono = telefono.trim();
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: 'No hay datos para actualizar' });
+    }
+
+    // Validar unicidad de email si se cambia
+    if (updates.email) {
+      const existing = await AdminProfiles.getByEmail(updates.email);
+      if (existing && existing.user_id !== userId) {
+        return res.status(409).json({ message: 'Email ya está registrado' });
+      }
+    }
+
+    await AdminProfiles.updateProfile(userId, updates);
+    const perfil = await AdminProfiles.getByUserId(userId);
+    return res.status(200).json({ usuario: { id: user.id, usuario: user.usuario, role: user.role }, admin_profile: perfil });
+  } catch (e) {
+    console.error('updateAdminProfile error:', e);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Actualizar foto del admin (multipart: field 'foto')
+export const updateAdminPhoto = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const user = await Usuarios.getUsuarioPorid(userId);
+    if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'Archivo de foto es requerido' });
+    }
+
+    const fotoPath = `/public/${req.file.filename}`;
+    await AdminProfiles.updateProfile(userId, { foto: fotoPath });
+    const perfil = await AdminProfiles.getByUserId(userId);
+    return res.status(200).json({ usuario: { id: user.id, usuario: user.usuario, role: user.role }, admin_profile: perfil });
+  } catch (e) {
+    console.error('updateAdminPhoto error:', e);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Cambiar contraseña del usuario autenticado (admin o estudiante)
+export const changePassword = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) return res.status(400).json({ message: 'currentPassword y newPassword son obligatorios' });
+
+    const user = await Usuarios.getUsuarioPorid(userId);
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    const ok = await bcrypt.compare(currentPassword, user.contraseña);
+    if (!ok) return res.status(401).json({ message: 'Contraseña actual incorrecta' });
+
+    if (newPassword.length < 6) return res.status(400).json({ message: 'La nueva contraseña debe tener al menos 6 caracteres' });
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    await Usuarios.updatePassword(userId, hash);
+    return res.status(200).json({ message: 'Contraseña actualizada' });
+  } catch (e) {
+    console.error('changePassword error:', e);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Desactivar (soft-delete) la propia cuenta de admin: crea registro en soft_deletes
+export const softDeleteSelf = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const user = await Usuarios.getUsuarioPorid(userId);
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    const reason = req.body?.motivo || 'Desactivación por el usuario';
+    await SoftDeletes.createForUsuario(userId, reason);
+    // Cerrar sesión
+    res.cookie('token', '', { expires: new Date(0) });
+    return res.status(200).json({ message: 'Cuenta desactivada' });
+  } catch (e) {
+    console.error('softDeleteSelf error:', e);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Configuración del sistema (seguridad) - obtener
+export const getAdminConfig = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const user = await Usuarios.getUsuarioPorid(userId);
+    if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+    const cfg = await AdminConfig.getConfig();
+    return res.status(200).json({ config: {
+      sesionMaxima: cfg?.sesion_maxima ?? 480,
+      intentosLogin: cfg?.intentos_login ?? 3,
+      cambioPasswordObligatorio: cfg?.cambio_password_obligatorio ?? 90,
+      autenticacionDosFactor: (cfg?.autenticacion_dos_factor ?? 0) === 1
+    }});
+  } catch (e) {
+    console.error('getAdminConfig error:', e);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Configuración del sistema (seguridad) - actualizar
+export const updateAdminConfig = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const user = await Usuarios.getUsuarioPorid(userId);
+    if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+    const body = req.body || {};
+    const payload = {
+      sesion_maxima: Number.isInteger(body.sesionMaxima) ? body.sesionMaxima : undefined,
+      intentos_login: Number.isInteger(body.intentosLogin) ? body.intentosLogin : undefined,
+      cambio_password_obligatorio: Number.isInteger(body.cambioPasswordObligatorio) ? body.cambioPasswordObligatorio : undefined,
+      autenticacion_dos_factor: typeof body.autenticacionDosFactor === 'boolean' ? (body.autenticacionDosFactor ? 1 : 0) : undefined
+    };
+    await AdminConfig.updateConfig(payload);
+    const cfg = await AdminConfig.getConfig();
+    return res.status(200).json({ config: cfg });
+  } catch (e) {
+    console.error('updateAdminConfig error:', e);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Métricas del Dashboard Administrativo (requiere admin)
+export const getDashboardMetrics = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const user = await Usuarios.getUsuarioPorid(userId);
+    if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+    // Consultas paralelas
+    const [
+      ingresosRows,
+      pagosPendRows,
+      nuevosAluRows,
+      cursosActRows,
+      accesosHoyRows
+    ] = await Promise.all([
+      // Ingresos del mes actual a partir de comprobantes con importe
+      db.query(
+        `SELECT COALESCE(SUM(importe), 0) AS total
+         FROM comprobantes
+         WHERE importe IS NOT NULL
+           AND YEAR(created_at) = YEAR(CURDATE())
+           AND MONTH(created_at) = MONTH(CURDATE())`
+      ).then(r => r[0]),
+
+      // Pagos pendientes: estudiantes con verificacion = 1 (enviado esperando validación)
+      db.query(`SELECT COUNT(*) AS total FROM estudiantes WHERE verificacion = 1`).then(r => r[0]),
+
+      // Nuevos alumnos del mes actual (por created_at)
+      db.query(
+        `SELECT COUNT(*) AS total
+         FROM estudiantes
+         WHERE YEAR(created_at) = YEAR(CURDATE())
+           AND MONTH(created_at) = MONTH(CURDATE())`
+      ).then(r => r[0]),
+
+      // Cursos activos: cantidad de cursos con al menos un estudiante con acceso verificado (verificacion = 2)
+      db.query(
+        `SELECT COUNT(DISTINCT curso) AS total
+         FROM estudiantes
+         WHERE verificacion = 2`
+      ).then(r => r[0]),
+
+      // Accesos activados hoy: comprobantes actualizados hoy con importe (se actualiza created_at en verificación)
+      db.query(
+        `SELECT COUNT(*) AS total
+         FROM comprobantes
+         WHERE importe IS NOT NULL
+           AND DATE(created_at) = CURDATE()`
+      ).then(r => r[0])
+    ]);
+
+    const data = {
+      ingresos: Number(ingresosRows[0]?.total || 0),
+      pagosPendientes: Number(pagosPendRows[0]?.total || 0),
+      nuevosAlumnos: Number(nuevosAluRows[0]?.total || 0),
+      cursosActivos: Number(cursosActRows[0]?.total || 0),
+      accesosActivados: Number(accesosHoyRows[0]?.total || 0),
+      notificationsCount: 0,
+      updatedAt: new Date().toISOString(),
+    };
+
+    return res.status(200).json(data);
+  } catch (error) {
+    console.error('getDashboardMetrics error:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Reportes de pagos (por rango de fechas)
+export const getPaymentReports = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const user = await Usuarios.getUsuarioPorid(userId);
+    if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+    const startDate = req.query.startDate;
+    const endDate = req.query.endDate;
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: 'startDate y endDate son obligatorios (YYYY-MM-DD)' });
+    }
+
+    // Normalizar límites de fecha
+    const from = `${startDate} 00:00:00`;
+    const to = `${endDate} 23:59:59`;
+
+    // =============================
+    // NUEVA LÓGICA DE ESTADOS:
+    // verificacion: 1=pendiente, 2=aprobado, 3=rechazado
+    // Solo ingresos y métricas de curso/método consideran aprobados (verificacion=2)
+    // =============================
+
+    // 1) Conteos por estado (usando verificacion en estudiantes)
+    const [estadoRows] = await db.query(
+      `SELECT 
+          SUM(CASE WHEN e.verificacion = 1 THEN 1 ELSE 0 END) AS pendientes,
+          SUM(CASE WHEN e.verificacion = 2 THEN 1 ELSE 0 END) AS aprobados,
+          SUM(CASE WHEN e.verificacion = 3 THEN 1 ELSE 0 END) AS rechazados
+       FROM comprobantes c
+       INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       WHERE c.created_at BETWEEN ? AND ?`, [from, to]
+    );
+
+    const pagosPendientes = Number(estadoRows?.[0]?.pendientes || 0);
+    const pagosAprobados = Number(estadoRows?.[0]?.aprobados || 0);
+    const pagosRechazados = Number(estadoRows?.[0]?.rechazados || 0);
+    const totalPagos = pagosAprobados + pagosRechazados; // procesados (no pendientes)
+
+    // 2) Ingresos totales (solo aprobados con importe no nulo)
+    const [ingRows] = await db.query(
+      `SELECT COALESCE(SUM(c.importe), 0) AS totalIngresos
+       FROM comprobantes c
+       INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       WHERE e.verificacion = 2
+         AND c.importe IS NOT NULL
+         AND c.created_at BETWEEN ? AND ?`, [from, to]
+    );
+    const totalIngresos = Number(ingRows?.[0]?.totalIngresos || 0);
+
+    // 3) Pagos aprobados por curso
+    const [cursoRows] = await db.query(
+      `SELECT e.curso AS curso, COUNT(c.id_estudiante) AS pagos, COALESCE(SUM(c.importe), 0) AS ingresos
+       FROM comprobantes c
+       INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       WHERE e.verificacion = 2
+         AND c.importe IS NOT NULL
+         AND c.created_at BETWEEN ? AND ?
+       GROUP BY e.curso
+       ORDER BY ingresos DESC`, [from, to]
+    );
+
+    // 4) Ingresos por mes (solo aprobados)
+    const [mesRows] = await db.query(
+      `SELECT YEAR(c.created_at) AS anio,
+              MONTH(c.created_at) AS mes_num,
+              COALESCE(SUM(c.importe), 0) AS ingresos,
+              COUNT(*) AS pagos
+       FROM comprobantes c
+       INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       WHERE e.verificacion = 2
+         AND c.importe IS NOT NULL
+         AND c.created_at BETWEEN ? AND ?
+       GROUP BY anio, mes_num
+       ORDER BY anio ASC, mes_num ASC`, [from, to]
+    );
+
+    // 5) Métodos de pago (solo aprobados)
+    const [metRows] = await db.query(
+      `SELECT c.metodo, COUNT(*) AS cantidad
+       FROM comprobantes c
+       INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       WHERE e.verificacion = 2
+         AND c.importe IS NOT NULL
+         AND c.created_at BETWEEN ? AND ?
+       GROUP BY c.metodo
+       ORDER BY cantidad DESC`, [from, to]
+    );
+
+    // 6) Pagos detallados (incluye aprobados, pendientes y rechazados)
+    const [detalleRows] = await db.query(
+      `SELECT c.id,
+              e.folio,
+              e.nombre,
+              e.apellidos,
+              e.curso,
+              e.verificacion,
+              c.importe,
+              c.metodo,
+              c.motivo_rechazo,
+              c.created_at,
+              c.updated_at
+       FROM comprobantes c
+       INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       WHERE c.created_at BETWEEN ? AND ?
+       ORDER BY c.created_at DESC`, [from, to]
+    );
+
+    // 7) Ingresos por semana (solo aprobados). YEARWEEK con modo 1 (semana ISO)
+    const [semanaRows] = await db.query(
+      `SELECT YEAR(c.created_at) AS anio,
+              WEEK(c.created_at, 1) AS semana,
+              MIN(DATE(c.created_at)) AS fecha_inicio_semana,
+              MAX(DATE(c.created_at)) AS fecha_fin_semana,
+              COALESCE(SUM(c.importe),0) AS ingresos,
+              COUNT(*) AS pagos
+       FROM comprobantes c
+       INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       WHERE e.verificacion = 2
+         AND c.importe IS NOT NULL
+         AND c.created_at BETWEEN ? AND ?
+       GROUP BY anio, semana
+       ORDER BY anio DESC, semana DESC`, [from, to]
+    );
+
+    // 8) Ingresos por año (solo aprobados) - útil para visión macro.
+    const [anioRows] = await db.query(
+      `SELECT YEAR(c.created_at) AS anio,
+              COALESCE(SUM(c.importe),0) AS ingresos,
+              COUNT(*) AS pagos
+       FROM comprobantes c
+       INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       WHERE e.verificacion = 2
+         AND c.importe IS NOT NULL
+       GROUP BY anio
+       ORDER BY anio DESC`
+    );
+
+    const mesesES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const ingresosPorMes = (mesRows || []).map(r => ({
+      mes: mesesES[(Number(r.mes_num) || 1) - 1],
+      ingresos: Number(r.ingresos || 0),
+      pagos: Number(r.pagos || 0),
+      anio: Number(r.anio || 0),
+      mes_num: Number(r.mes_num || 0)
+    }));
+
+    const pagosPorCurso = (cursoRows || []).map(r => ({
+      curso: r.curso || 'SIN CURSO',
+      pagos: Number(r.pagos || 0),
+      ingresos: Number(r.ingresos || 0)
+    }));
+
+    const totalMetodos = (metRows || []).reduce((acc, r) => acc + Number(r.cantidad || 0), 0);
+    const metodosDepago = (metRows || []).map(r => ({
+      metodo: r.metodo || 'N/A',
+      cantidad: Number(r.cantidad || 0),
+      porcentaje: totalMetodos ? Math.round((Number(r.cantidad || 0) / totalMetodos) * 100) : 0
+    }));
+
+    const pagosDetallados = (detalleRows || []).map(r => ({
+      id: r.id,
+      folio: r.folio,
+      alumno: `${r.nombre || ''} ${r.apellidos || ''}`.trim(),
+      nombre: r.nombre,
+      apellidos: r.apellidos,
+      curso: r.curso,
+      estado: r.verificacion, // 1 pendiente, 2 aprobado, 3 rechazado
+      importe: r.importe != null ? Number(r.importe) : null,
+      metodo: r.metodo,
+      motivoRechazo: r.motivo_rechazo,
+      created_at: r.created_at,
+      updated_at: r.updated_at
+    }));
+
+    const ingresosPorSemana = (semanaRows || []).map(r => ({
+      anio: Number(r.anio || 0),
+      semana: Number(r.semana || 0),
+      fechaInicio: r.fecha_inicio_semana,
+      fechaFin: r.fecha_fin_semana,
+      ingresos: Number(r.ingresos || 0),
+      pagos: Number(r.pagos || 0)
+    }));
+
+    const ingresosPorAnio = (anioRows || []).map(r => ({
+      anio: Number(r.anio || 0),
+      ingresos: Number(r.ingresos || 0),
+      pagos: Number(r.pagos || 0)
+    }));
+
+    // Promedio mensual simple: promedio de ingresosPorMes
+    const promedioMensual = ingresosPorMes.length
+      ? Math.round(ingresosPorMes.reduce((a, b) => a + b.ingresos, 0) / ingresosPorMes.length)
+      : 0;
+
+    const data = {
+      resumenGeneral: {
+        totalIngresos,
+        totalPagos,
+        pagosPendientes,
+        pagosAprobados,
+        pagosRechazados,
+        promedioMensual
+      },
+      ingresosPorMes,
+      pagosPorCurso,
+      metodosDepago,
+  pagosDetallados,
+  ingresosPorSemana,
+  ingresosPorAnio,
+      range: { startDate, endDate },
+      updatedAt: new Date().toISOString()
+    };
+
+    return res.status(200).json(data);
+  } catch (error) {
+    console.error('getPaymentReports error:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Exportaciones de reportes (stubs con fallback a JSON para exportación local en frontend)
+export const exportPaymentReportsExcel = async (req, res) => {
+  try {
+    // En esta versión simple devolvemos los mismos datos para que el front genere CSV/Excel localmente
+    req.query = req.query || {};
+    // Reutilizar lógica (idealmente refactorizar para compartir)
+    req.user = req.user; // mantener auth
+    const fakeRes = { status: () => fakeRes, json: (d) => d };
+    const data = await getPaymentReports(req, fakeRes);
+    // Si getPaymentReports respondió ya, data será undefined; por sencillez repetimos consulta directamente aquí
+    // Para no duplicar: retornamos 501 si se quiere un blob real
+    return res.status(200).json({ data: (data || null), filename: 'reportes_pagos.xlsx' });
+  } catch (e) {
+    return res.status(500).json({ message: 'No se pudo exportar Excel' });
+  }
+};
+
+export const exportPaymentReportsPDF = async (req, res) => {
+  try {
+    return res.status(200).json({ data: null, filename: 'reportes_pagos.pdf' });
+  } catch (e) {
+    return res.status(500).json({ message: 'No se pudo exportar PDF' });
   }
 };

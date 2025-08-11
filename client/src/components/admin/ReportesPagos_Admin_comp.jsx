@@ -77,7 +77,18 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { formatCurrencyMXN, formatDateTimeMX } from '../../utils/formatters.js';
+import {
+  ResponsiveContainer,
+  BarChart, Bar,
+  XAxis, YAxis,
+  Tooltip, Legend,
+  CartesianGrid,
+  PieChart, Pie, Cell,
+  LineChart, Line
+} from 'recharts';
 import { useAdminContext } from '../../context/AdminContext.jsx';
+import { exportReportToExcel } from '../../utils/exportExcel.js';
 
 // Componente de pantalla de carga simple (estilo consistente con otros componentes)
 function LoadingScreen({ onComplete }) {
@@ -113,12 +124,20 @@ export function ReportesPagos_Admin_comp() {
     },
     ingresosPorMes: [],
     pagosPorCurso: [],
-    metodosDepago: []
+  metodosDepago: [],
+  pagosDetallados: [],
+  ingresosPorSemana: [],
+  ingresosPorAnio: []
   });
-  const [fechaInicio, setFechaInicio] = useState('2024-01-01');
-  const [fechaFin, setFechaFin] = useState('2024-12-31');
+  // Rango por defecto: año actual hasta hoy
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const pad = (n) => String(n).padStart(2, '0');
+  const defaultStart = `${yyyy}-01-01`;
+  const defaultEnd = `${yyyy}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+  const [fechaInicio, setFechaInicio] = useState(defaultStart);
+  const [fechaFin, setFechaFin] = useState(defaultEnd);
   const [exportingExcel, setExportingExcel] = useState(false);
-  const [exportingPDF, setExportingPDF] = useState(false);
 
   const { 
     paymentReports,
@@ -126,8 +145,7 @@ export function ReportesPagos_Admin_comp() {
     error,
     lastUpdated,
     loadFinancialReports,
-    exportToExcel,
-    exportToPDF
+  // exportToExcel/exportToPDF ya no se usan; exportamos local con SheetJS
   } = useAdminContext();
 
   // Función para obtener reportes del backend
@@ -158,98 +176,17 @@ export function ReportesPagos_Admin_comp() {
 
   // Funciones de exportación (completamente funcionales para backend)
   const handleExportExcel = async () => {
-    if (exportingExcel) return; // Prevenir múltiples clics
-    
+    if (exportingExcel) return;
     setExportingExcel(true);
     try {
-      console.log('Iniciando exportación a Excel...');
-      
-      // Mostrar indicador de carga
-      const exportData = await exportToExcel(fechaInicio, fechaFin);
-      
-      // Si el backend devuelve un blob/archivo
-      if (exportData && exportData.blob) {
-        const url = window.URL.createObjectURL(exportData.blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `reportes_pagos_${fechaInicio}_${fechaFin}.xlsx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        
-        console.log('✅ Archivo Excel descargado exitosamente');
-        alert('✅ Reporte Excel descargado exitosamente');
-      } 
-      // Si el backend devuelve una URL de descarga
-      else if (exportData && exportData.downloadUrl) {
-        window.open(exportData.downloadUrl, '_blank');
-        console.log('✅ Descarga de Excel iniciada');
-        alert('✅ Descarga de reporte Excel iniciada');
-      }
-      // Fallback: crear archivo desde datos JSON
-      else if (exportData && exportData.data) {
-        // Implementar exportación local como respaldo
-        await exportToExcelLocal(exportData.data);
-        console.log('✅ Archivo Excel generado localmente');
-        alert('✅ Reporte Excel generado exitosamente');
-      }
-      else {
-        throw new Error('Formato de respuesta no válido del servidor');
-      }
+      // Asegurar datos frescos del rango
+      const data = await loadFinancialReports(fechaInicio, fechaFin);
+      exportReportToExcel(data || reportes, `reportes_pagos_${fechaInicio}_${fechaFin}.xlsx`);
     } catch (error) {
       console.error('❌ Error exportando a Excel:', error);
       alert(`❌ Error exportando a Excel: ${error.message}`);
     } finally {
       setExportingExcel(false);
-    }
-  };
-
-  const handleExportPDF = async () => {
-    if (exportingPDF) return; // Prevenir múltiples clics
-    
-    setExportingPDF(true);
-    try {
-      console.log('Iniciando exportación a PDF...');
-      
-      // Mostrar indicador de carga
-      const exportData = await exportToPDF(fechaInicio, fechaFin);
-      
-      // Si el backend devuelve un blob/archivo
-      if (exportData && exportData.blob) {
-        const url = window.URL.createObjectURL(exportData.blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `reportes_pagos_${fechaInicio}_${fechaFin}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        
-        console.log('✅ Archivo PDF descargado exitosamente');
-        alert('✅ Reporte PDF descargado exitosamente');
-      }
-      // Si el backend devuelve una URL de descarga
-      else if (exportData && exportData.downloadUrl) {
-        window.open(exportData.downloadUrl, '_blank');
-        console.log('✅ Descarga de PDF iniciada');
-        alert('✅ Descarga de reporte PDF iniciada');
-      }
-      // Fallback: crear archivo desde datos JSON
-      else if (exportData && exportData.data) {
-        // Implementar exportación local como respaldo
-        await exportToPDFLocal(exportData.data);
-        console.log('✅ Archivo PDF generado localmente');
-        alert('✅ Reporte PDF generado exitosamente');
-      }
-      else {
-        throw new Error('Formato de respuesta no válido del servidor');
-      }
-    } catch (error) {
-      console.error('❌ Error exportando a PDF:', error);
-      alert(`❌ Error exportando a PDF: ${error.message}`);
-    } finally {
-      setExportingPDF(false);
     }
   };
 
@@ -309,7 +246,7 @@ export function ReportesPagos_Admin_comp() {
         <h1>Reporte de Pagos</h1>
         <div class="summary">
           <h2>Resumen del Período: ${fechaInicio} a ${fechaFin}</h2>
-          <p><strong>Total Ingresos:</strong> $${(reportes.resumenGeneral?.totalIngresos || 0).toLocaleString()} MXN</p>
+          <p><strong>Total Ingresos:</strong> {formatCurrencyMXN(reportes.resumenGeneral?.totalIngresos || 0)}</p>
           <p><strong>Total Pagos:</strong> ${reportes.resumenGeneral?.totalPagos || 0}</p>
           <p><strong>Pagos Aprobados:</strong> ${reportes.resumenGeneral?.pagosAprobados || 0}</p>
           <p><strong>Pagos Pendientes:</strong> ${reportes.resumenGeneral?.pagosPendientes || 0}</p>
@@ -327,7 +264,7 @@ export function ReportesPagos_Admin_comp() {
               <tr>
                 <td>${curso.curso || ''}</td>
                 <td>${curso.pagos || 0}</td>
-                <td>$${(curso.ingresos || 0).toLocaleString()}</td>
+                <td>{formatCurrencyMXN(curso.ingresos || 0)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -429,28 +366,6 @@ export function ReportesPagos_Admin_comp() {
                   </>
                 )}
               </button>
-              <button 
-                onClick={handleExportPDF}
-                disabled={isLoading || exportingPDF}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {exportingPDF ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Exportando...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                    </svg>
-                    PDF
-                  </>
-                )}
-              </button>
             </div>
           </div>
         </div>
@@ -468,6 +383,7 @@ export function ReportesPagos_Admin_comp() {
                 className="block w-40 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
+        max={fechaFin}
               />
             </div>
             <div>
@@ -480,9 +396,11 @@ export function ReportesPagos_Admin_comp() {
                 className="block w-40 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 value={fechaFin}
                 onChange={(e) => setFechaFin(e.target.value)}
+        min={fechaInicio}
+        max={defaultEnd}
               />
             </div>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+      <button onClick={fetchReportes} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
               Aplicar Filtros
             </button>
           </div>
@@ -502,7 +420,7 @@ export function ReportesPagos_Admin_comp() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Total Ingresos</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  ${(reportes.resumenGeneral?.totalIngresos || 0).toLocaleString()} MXN
+                  {formatCurrencyMXN(reportes.resumenGeneral?.totalIngresos || 0)}
                 </p>
               </div>
             </div>
@@ -556,90 +474,182 @@ export function ReportesPagos_Admin_comp() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Promedio Mensual</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  ${(reportes.resumenGeneral?.promedioMensual || 0).toLocaleString()} MXN
+                  {formatCurrencyMXN(reportes.resumenGeneral?.promedioMensual || 0)}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Gráfico de ingresos por mes */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Ingresos por Mes</h3>
-            <div className="space-y-4">
-              {(reportes.ingresosPorMes || []).slice(0, 6).map((mes, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-12 text-sm text-gray-600">{mes.mes || ''}</div>
-                    <div className="flex-1 mx-4">
-                      <div className="bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${((mes.ingresos || 0) / 5100) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-sm font-medium text-gray-900">
-                    ${(mes.ingresos || 0).toLocaleString()}
-                  </div>
-                </div>
-              ))}
+        {/* Aviso si no hay datos en el rango */}
+        {(!reportes?.resumenGeneral || (
+          (reportes.resumenGeneral.totalIngresos || 0) === 0 &&
+          (reportes.resumenGeneral.totalPagos || 0) === 0 &&
+          (reportes.resumenGeneral.pagosPendientes || 0) === 0
+        )) && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 mb-4">
+            No se encontraron datos para el rango seleccionado. Ajusta las fechas para ver movimientos.
+          </div>
+        )}
+
+        {/* Gráficas principales */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Ingresos por Mes</h3>
+            <div className="text-xs text-gray-500 mb-4">Solo pagos aprobados</div>
+            <div className="flex-1 min-h-[240px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={(reportes.ingresosPorMes||[])}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip formatter={(v)=>formatCurrencyMXN(v)} />
+                  <Bar dataKey="ingresos" fill="#6366F1" radius={[4,4,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Pagos por Curso</h3>
-            <div className="space-y-4">
-              {(reportes.pagosPorCurso || []).map((curso, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-32 text-sm text-gray-600 truncate">{curso.curso || ''}</div>
-                    <div className="flex-1 mx-4">
-                      <div className="bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-green-600 h-2 rounded-full" 
-                          style={{ width: `${((curso.ingresos || 0) / 19200) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-sm font-medium text-gray-900">
-                    {curso.pagos || 0} pagos
-                  </div>
-                </div>
-              ))}
+            <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Pagos por Curso</h3>
+              <div className="text-xs text-gray-500 mb-4">Cantidad de pagos aprobados</div>
+              <div className="flex-1 min-h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={(reportes.pagosPorCurso||[])}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="curso" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" height={60} />
+                    <YAxis yAxisId={0} tick={{ fontSize: 11 }} />
+                    <YAxis yAxisId={1} orientation="right" tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Bar dataKey="pagos" name="Pagos" fill="#10B981" radius={[4,4,0,0]} yAxisId={0} />
+                    <Bar dataKey="ingresos" name="Ingresos" fill="#0EA5E9" radius={[4,4,0,0]} yAxisId={1} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Distribución por Método</h3>
+              <div className="text-xs text-gray-500 mb-4">Métodos de pago (aprobados)</div>
+              <div className="flex-1 min-h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Tooltip formatter={(v,_,p)=>`${v} (${p.payload.porcentaje}%)`} />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Pie data={(reportes.metodosDepago||[])} dataKey="cantidad" nameKey="metodo" innerRadius={50} outerRadius={80} paddingAngle={4}>
+                      {(reportes.metodosDepago||[]).map((d,i)=> {
+                        const colors=['#6366F1','#10B981','#F59E0B','#EF4444','#0EA5E9','#8B5CF6'];
+                        return <Cell key={i} fill={colors[i % colors.length]} />;
+                      })}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+        </div>
+
+        {/* Gráficas temporales adicionales */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Ingresos por Semana</h3>
+            <div className="text-xs text-gray-500 mb-4">Semanas en el rango</div>
+            <div className="flex-1 min-h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={(reportes.ingresosPorSemana||[]).slice().reverse()}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="semana" tickFormatter={(v)=>`S${v}`} />
+                  <YAxis />
+                  <Tooltip formatter={(v)=>formatCurrencyMXN(v)} labelFormatter={(l,p)=>`Semana ${p[0]?.payload?.semana} ${p[0]?.payload?.anio}`} />
+                  <Line type="monotone" dataKey="ingresos" stroke="#6366F1" strokeWidth={2} dot={{ r:3 }} activeDot={{ r:5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Ingresos por Año</h3>
+            <div className="text-xs text-gray-500 mb-4">Visión global</div>
+            <div className="flex-1 min-h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={(reportes.ingresosPorAnio||[])}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="anio" />
+                  <YAxis />
+                  <Tooltip formatter={(v)=>formatCurrencyMXN(v)} />
+                  <Bar dataKey="ingresos" fill="#8B5CF6" radius={[4,4,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
 
-        {/* Métodos de pago y tabla detallada */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      
-
+        {/* Resumen de Estado */}
+        <div className="grid grid-cols-1 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Resumen de Estado</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                 <span className="text-sm font-medium text-green-800">Pagos Aprobados</span>
-                <span className="text-lg font-bold text-green-900">
-                  {reportes.resumenGeneral?.pagosAprobados || 0}
-                </span>
+                <span className="text-lg font-bold text-green-900">{reportes.resumenGeneral?.pagosAprobados || 0}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
                 <span className="text-sm font-medium text-yellow-800">Pagos Pendientes</span>
-                <span className="text-lg font-bold text-yellow-900">
-                  {reportes.resumenGeneral?.pagosPendientes || 0}
-                </span>
+                <span className="text-lg font-bold text-yellow-900">{reportes.resumenGeneral?.pagosPendientes || 0}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                 <span className="text-sm font-medium text-red-800">Pagos Rechazados</span>
-                <span className="text-lg font-bold text-red-900">
-                  {reportes.resumenGeneral?.pagosRechazados || 0}
-                </span>
+                <span className="text-lg font-bold text-red-900">{reportes.resumenGeneral?.pagosRechazados || 0}</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Tabla detallada de pagos */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Pagos Detallados</h3>
+            <span className="text-xs text-gray-500">Mostrando {reportes.pagosDetallados?.length || 0} registros</span>
+          </div>
+          <div className="overflow-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="bg-gray-100 text-gray-700">
+                  <th className="px-3 py-2 text-left font-semibold">Folio</th>
+                  <th className="px-3 py-2 text-left font-semibold">Alumno</th>
+                  <th className="px-3 py-2 text-left font-semibold">Curso</th>
+                  <th className="px-3 py-2 text-left font-semibold">Estado</th>
+                  <th className="px-3 py-2 text-left font-semibold">Importe</th>
+                  <th className="px-3 py-2 text-left font-semibold">Método</th>
+                  <th className="px-3 py-2 text-left font-semibold">Motivo Rechazo</th>
+                  <th className="px-3 py-2 text-left font-semibold">Creado</th>
+                  <th className="px-3 py-2 text-left font-semibold">Actualizado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(reportes.pagosDetallados||[]).map(r => {
+                  const estadoLabel = r.estado === 1 ? 'Pendiente' : r.estado === 2 ? 'Aprobado' : 'Rechazado';
+                  const estadoColor = r.estado === 1 ? 'bg-yellow-100 text-yellow-800' : r.estado === 2 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                  return (
+                    <tr key={r.id} className="border-b last:border-b-0 hover:bg-gray-50">
+                      <td className="px-3 py-2 font-mono text-xs">{r.folio}</td>
+                      <td className="px-3 py-2">{r.alumno}</td>
+                      <td className="px-3 py-2">{r.curso}</td>
+                      <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded text-xs font-medium ${estadoColor}`}>{estadoLabel}</span></td>
+                      <td className="px-3 py-2">{r.importe != null ? formatCurrencyMXN(r.importe) : '-'}</td>
+                      <td className="px-3 py-2">{r.metodo || '-'}</td>
+                      <td className="px-3 py-2 text-xs max-w-[160px] truncate" title={r.motivoRechazo || ''}>{r.motivoRechazo || '-'}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs">{formatDateTimeMX(r.created_at)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs">{formatDateTimeMX(r.updated_at)}</td>
+                    </tr>
+                  );
+                })}
+                {!(reportes.pagosDetallados||[]).length && (
+                  <tr>
+                    <td colSpan="9" className="px-3 py-6 text-center text-gray-400">Sin pagos en el rango seleccionado</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

@@ -168,7 +168,7 @@ const GreetingHeader = memo(({ greeting, adminName }) => {
         
       
         <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl opacity-80 px-1 xs:px-2 sm:px-4 md:px-6 lg:px-8 leading-relaxed animate-fade-in-delayed">
-          Bienvenido al panel administrativo de MQerK Academy
+          Bienvenido al panel administrativo de MQerKAcademy
         </p>
 
        

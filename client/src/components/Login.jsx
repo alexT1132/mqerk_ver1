@@ -5,29 +5,43 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
 
 const ResponsivePage = () => {
-    const { register, handleSubmit } = useForm();
+    const { register, handleSubmit } = useForm({
+      defaultValues: { rememberMe: true }
+    });
 
     const { signin, isAuthenticated, user, errors } = useAuth();
 
     const navigate = useNavigate();
 
-    const onSubmit = handleSubmit((data) => {
-      signin(data);
+  const onSubmit = handleSubmit((data) => {
+      const payload = {
+        ...data,
+        usuario: (data.usuario || '').trim(),
+    rememberMe: Boolean(data.rememberMe)
+      };
+      signin(payload);
     });
 
     useEffect(() => {
-      if(isAuthenticated){
-        if(user?.role === 'administrador'){
-          navigate('/admin/dashboard');
-        } else if(user?.role === 'estudiante'){
-          navigate('/alumno')
-        } else if(user?.role === 'asesor'){
-          navigate('/asesor/dashboard')
-        } else if(user?.role === 'administrativo'){
-          navigate('/administrativo');
-        }
+      if (!isAuthenticated) return;
+
+      const role = (user?.role || '').toLowerCase();
+      if (role === 'admin' || role === 'administrador' || role === 'administrativo') {
+        // En tu App.jsx el bundle del admin está en "/administrativo/*"
+        navigate('/administrativo', { replace: true });
+        return;
       }
-    }, [signin])
+      if (role === 'estudiante') {
+        navigate('/alumno', { replace: true });
+        return;
+      }
+      if (role === 'asesor') {
+        navigate('/asesor/dashboard', { replace: true });
+        return;
+      }
+      // Rol desconocido: fallback seguro
+      navigate('/', { replace: true });
+    }, [isAuthenticated, user, navigate])
 
 
     return (
@@ -68,6 +82,11 @@ const ResponsivePage = () => {
                 placeholder="Introduce tu contraseña"
               />
             </div>
+
+            <label className="inline-flex items-center gap-2 text-sm text-gray-500 mb-4">
+              <input type="checkbox" className="accent-blue-500" {...register("rememberMe")} />
+              Recuérdame en este dispositivo
+            </label>
       
             <button
               type="submit"
@@ -110,9 +129,16 @@ const ResponsivePage = () => {
                 autoComplete="off"
               />
             </div>
+
+            <div className="mb-4">
+              <label className="inline-flex items-center gap-2 text-sm text-gray-500">
+                <input type="checkbox" className="accent-blue-500" {...register("rememberMe")} />
+                Recuérdame en este dispositivo
+              </label>
+            </div>
       
             <button
-              type="submite"
+              type="submit"
               className="w-full py-3 bg-blue-400 text-white rounded-lg hover:bg-blue-600 transition duration-300 cursor-pointer"
             >
               Iniciar sesión
