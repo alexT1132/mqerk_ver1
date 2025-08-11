@@ -50,6 +50,7 @@ import Ingles2021 from "./components/mqerk/online/Ingles_21.jsx";
 import Profesiografica from "./components/mqerk/exporientas/Profesiografica.jsx";
 import ExporientaEducativa from "./components/mqerk/exporientas/ExporientaEducativa.jsx";
 import { AdminDashboardBundle } from './components/admin/AdminDashboardBundle.jsx';
+import SetupAdmin from './components/admin/SetupAdmin.jsx';
 
 export default function App(){
     return(
@@ -109,6 +110,9 @@ export default function App(){
 
                     {/* Login */}
                     <Route path='/login' element={<Login />} />
+
+                    {/* Configuración inicial (bootstrap) */}
+                    <Route path='/setup' element={<SetupAdmin />} />
 
                     {/* Asesor Tests */}
                     <Route path='/pre_registro' element={<PreRegAsesor />} />

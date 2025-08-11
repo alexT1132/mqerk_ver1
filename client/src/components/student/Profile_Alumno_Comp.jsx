@@ -1,6 +1,8 @@
 // src/components/Profile_Alumno_comp.jsx
 import React, { useState, useEffect } from 'react';
 import { useStudent } from '../../context/StudentContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { getEstudianteByIdRequest, updateEstudianteRequest } from '../../api/estudiantes.js';
 
 // Componente para input con validaciones completas restauradas
 const InputField = ({ name, type = "text", placeholder, value, onChange, className, isAcademic = false, isCourse = false, helpText = null, errors = {}, maxLength = null }) => {
@@ -157,26 +159,6 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
         }
         break;
       
-      // Validaciones de datos del curso
-      case 'course.advisor':
-        if (!validateLength(value, 2, 100)) {
-          error = value.length < 2 ? 'Nombre del asesor debe tener al menos 2 caracteres' : 'Nombre muy largo (máx. 100 caracteres)';
-        } else if (!validateName(value)) {
-          error = 'Nombre del asesor solo puede contener letras y espacios';
-        }
-        break;
-      case 'course.group':
-        if (!validateLength(value, 1, 20)) {
-          error = value.length < 1 ? 'Grupo es requerido' : 'Grupo muy largo (máx. 20 caracteres)';
-        } else if (!/^[a-zA-Z0-9\-\s]+$/.test(value)) {
-          error = 'Grupo solo puede contener letras, números, guiones y espacios';
-        }
-        break;
-      case 'course.modality':
-        if (!validateLength(value, 2, 50)) {
-          error = value.length < 2 ? 'Modalidad debe tener al menos 2 caracteres' : 'Modalidad muy larga (máx. 50 caracteres)';
-        }
-        break;
       
       default:
         break;
@@ -226,10 +208,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
       'personal.tutorName',
       'academic.bachillerato',
       'academic.licenciaturaOption',
-      'academic.universityOption',
-      'course.advisor',
-      'course.group',
-      'course.modality'
+      'academic.universityOption'
     ];
 
     // Validar cada campo individualmente
@@ -409,44 +388,13 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                 </div>
               </div>
 
-              {/* Datos del Curso */}
+              {/* Datos del Curso - Solo informativos, no editables por alumno */}
               <div>
                 <h3 className="text-xs font-bold text-orange-700 mb-2 flex items-center gap-1 uppercase tracking-wider">
                   <span>📚</span> Datos del Curso
                 </h3>
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <InputField
-                      name="course.advisor"
-                      value={formData.course.advisor}
-                      onChange={handleChange}
-                      placeholder="Asesor"
-                      helpText="Tu asesor académico"
-                      isCourse={true}
-                      errors={errors}
-                      maxLength={100}
-                    />
-                    <InputField
-                      name="course.group"
-                      value={formData.course.group}
-                      onChange={handleChange}
-                      placeholder="Grupo"
-                      helpText="Ej: A1, B2, C3"
-                      isCourse={true}
-                      errors={errors}
-                      maxLength={20}
-                    />
-                  </div>
-                  <InputField
-                    name="course.modality"
-                    value={formData.course.modality}
-                    onChange={handleChange}
-                    placeholder="Modalidad"
-                    helpText="Presencial, virtual, híbrida"
-                    isCourse={true}
-                    errors={errors}
-                    maxLength={50}
-                  />
+                <div className="space-y-2 text-xs text-gray-600 bg-orange-50 border border-orange-200 rounded-md p-2">
+                  Estos datos los gestiona la administración. Si necesitas algún cambio, contacta a soporte.
                 </div>
               </div>
             </div>
@@ -570,29 +518,40 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
   
   // BACKEND: Obtener datos básicos del contexto del estudiante
   const { studentData, currentCourse } = useStudent();
+  const { alumno } = useAuth();
+
+  // Helper: construir URL absoluta para archivos servidos por el backend
+  const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
+  const apiUrl = (import.meta?.env?.VITE_API_URL) || `http://${host}:1002/api`;
+  const apiOrigin = apiUrl.replace(/\/api\/?$/, '');
+  const buildStaticUrl = (p) => {
+    if (!p) return null;
+    if (/^https?:\/\//i.test(p)) return p;
+    return `${apiOrigin}${p.startsWith('/') ? '' : '/'}${p}`;
+  };
   
   // BACKEND: Estructura base del perfil - se poblará desde la API
   const defaultProfileData = {
-    name: studentData?.name && studentData.name !== "XXXX" ? studentData.name : "Estudiante",
-    profilePic: null, // TODO: Implementar subida de imagen
+    name: studentData?.name && studentData.name !== "XXXX" ? studentData.name : (alumno?.nombre ? `${alumno.nombre} ${alumno.apellidos || ''}`.trim() : "Estudiante"),
+    profilePic: buildStaticUrl(alumno?.foto) || null,
     personal: {
-      email: studentData?.email && studentData.email !== "XXXX" ? studentData.email : "",
-      municipio: "",
-      tutorName: "",
-      phoneNumber: "",
-      tutorPhoneNumber: "",
+      email: studentData?.email && studentData.email !== "XXXX" ? studentData.email : (alumno?.email || ""),
+      municipio: alumno?.comunidad1 || "",
+      tutorName: alumno?.nombre_tutor || "",
+      phoneNumber: alumno?.telefono || "",
+      tutorPhoneNumber: alumno?.tel_tutor || "",
     },
     academic: {
-      academy: "",
-      bachillerato: "",
-      licenciaturaOption: "",
-      universityOption: "",
+      academy: alumno?.academico1 || "",
+      bachillerato: alumno?.academico2 || "",
+      licenciaturaOption: alumno?.orientacion || "",
+      universityOption: alumno?.universidades1 || "",
     },
     course: {
-      activeCourse: currentCourse?.title || "",
+      activeCourse: currentCourse?.title || (alumno?.curso || ""),
       advisor: "",
-      group: "",
-      modality: "",
+      group: alumno?.grupo || "",
+      modality: alumno?.plan || "",
     }
   };
 
@@ -601,42 +560,69 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
 
   // BACKEND: Sincronizar con cambios en el contexto
   useEffect(() => {
-    if (studentData || currentCourse) {
+    if (studentData || currentCourse || alumno) {
       setCurrentProfileData(prev => ({
         ...prev,
-        name: studentData?.name && studentData.name !== "XXXX" ? studentData.name : "Estudiante",
+        name: studentData?.name && studentData.name !== "XXXX" ? studentData.name : (alumno?.nombre ? `${alumno.nombre} ${alumno.apellidos || ''}`.trim() : "Estudiante"),
+        profilePic: buildStaticUrl(alumno?.foto) || prev.profilePic,
         personal: {
           ...prev.personal,
-          email: studentData?.email && studentData.email !== "XXXX" ? studentData.email : "",
+          email: studentData?.email && studentData.email !== "XXXX" ? studentData.email : (alumno?.email || ""),
+          municipio: alumno?.comunidad1 ?? prev.personal.municipio,
+          tutorName: alumno?.nombre_tutor ?? prev.personal.tutorName,
+          phoneNumber: alumno?.telefono ?? prev.personal.phoneNumber,
+          tutorPhoneNumber: alumno?.tel_tutor ?? prev.personal.tutorPhoneNumber,
         },
         course: {
           ...prev.course,
-          activeCourse: currentCourse?.title || "",
+          activeCourse: currentCourse?.title || (alumno?.curso || ""),
+          group: alumno?.grupo ?? prev.course.group,
+          modality: alumno?.plan ?? prev.course.modality,
         }
       }));
     }
-  }, [studentData, currentCourse]);
+  }, [studentData, currentCourse, alumno]);
 
   // BACKEND: Implementar carga de datos desde el backend
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        // TODO: Implementar llamada a API para obtener perfil completo
-        // const response = await fetch(`/api/student/profile`, {
-        //   headers: {
-        //     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        //   }
-        // });
-        // const profileData = await response.json();
-        // setCurrentProfileData(profileData);
+        if (!alumno?.id) return;
+        const res = await getEstudianteByIdRequest(alumno.id);
+        const est = res.data?.data || res.data; // controlador devuelve {data}
+        if (!est) return;
+
+        const uiProfile = {
+          name: `${est.nombre || 'Estudiante'}${est.apellidos ? ' ' + est.apellidos : ''}`.trim(),
+          profilePic: buildStaticUrl(est.foto),
+          personal: {
+            email: est.email || '',
+            municipio: est.comunidad1 || '',
+            tutorName: est.nombre_tutor || '',
+            phoneNumber: est.telefono || '',
+            tutorPhoneNumber: est.tel_tutor || '',
+          },
+          academic: {
+            academy: est.academico1 || '',
+            bachillerato: est.academico2 || '',
+            licenciaturaOption: est.orientacion || '',
+            universityOption: est.universidades1 || '',
+          },
+          course: {
+            activeCourse: currentCourse?.title || est.curso || '',
+            advisor: '',
+            group: est.grupo || '',
+            modality: est.plan || '',
+          }
+        };
+        setCurrentProfileData(uiProfile);
       } catch (error) {
         console.error('Error al cargar perfil:', error);
       }
     };
     
-    // TODO: Descomentar cuando esté listo el backend
-    // fetchProfileData();
-  }, []);
+    fetchProfileData();
+  }, [alumno?.id]);
 
   // Sincronizar el estado interno si la prop profileData cambia desde el padre
   useEffect(() => {
@@ -658,21 +644,56 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
   // BACKEND: Guardar cambios del perfil en la API
   const handleSaveProfile = async (updatedData) => {
     try {
-      // TODO: Implementar llamada a API para guardar perfil
-      // const response = await fetch('/api/student/profile', {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      //   },
-      //   body: JSON.stringify(updatedData)
-      // });
-      // if (!response.ok) throw new Error('Error al guardar el perfil');
-      // const data = await response.json();
-      // setCurrentProfileData(data);
-      
-      // Por ahora, solo actualizar el estado local
-      setCurrentProfileData(updatedData);
+      if (!alumno?.id) throw new Error('ID de alumno no disponible');
+
+      // Mapear datos del UI -> backend
+      const payload = {
+        email: updatedData.personal.email || null,
+        comunidad1: updatedData.personal.municipio || null,
+        nombre_tutor: updatedData.personal.tutorName || null,
+        telefono: updatedData.personal.phoneNumber || null,
+        tel_tutor: updatedData.personal.tutorPhoneNumber || null,
+        academico1: updatedData.academic.academy || null,
+        academico2: updatedData.academic.bachillerato || null,
+        orientacion: updatedData.academic.licenciaturaOption || null,
+        universidades1: updatedData.academic.universityOption || null
+        // Datos del curso NO se envían ni se modifican aquí
+      };
+
+      // Limpiar nulls para evitar sobreescritura innecesaria
+      Object.keys(payload).forEach(k => (payload[k] == null || payload[k] === '') && delete payload[k]);
+
+      const res = await updateEstudianteRequest(alumno.id, payload);
+      const est = res.data?.data || res.data;
+
+      // Actualizar el estado del perfil con la respuesta
+      if (est) {
+        setCurrentProfileData(prev => ({
+          ...prev,
+          name: `${est.nombre || prev.name}${est.apellidos ? ' ' + est.apellidos : ''}`.trim(),
+          profilePic: buildStaticUrl(est.foto) || prev.profilePic,
+          personal: {
+            ...prev.personal,
+            email: est.email ?? prev.personal.email,
+            municipio: est.comunidad1 ?? prev.personal.municipio,
+            tutorName: est.nombre_tutor ?? prev.personal.tutorName,
+            phoneNumber: est.telefono ?? prev.personal.phoneNumber,
+            tutorPhoneNumber: est.tel_tutor ?? prev.personal.tutorPhoneNumber,
+          },
+          academic: {
+            ...prev.academic,
+            academy: est.academico1 ?? prev.academic.academy,
+            bachillerato: est.academico2 ?? prev.academic.bachillerato,
+            licenciaturaOption: est.orientacion ?? prev.academic.licenciaturaOption,
+            universityOption: est.universidades1 ?? prev.academic.universityOption,
+          },
+          // course: datos informativos, no se actualizan desde este flujo
+        }));
+      } else {
+        // Si no retorna el registro, al menos reflejar el UI editado
+        setCurrentProfileData(updatedData);
+      }
+
       handleCloseModal();
     } catch (error) {
       console.error('Error al guardar perfil:', error);

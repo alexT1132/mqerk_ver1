@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import NavLogin from "../../components/NavLogin.jsx";
 import { BtnForm } from "../../components/FormRegistroComp.jsx";
 import { TextField, } from "@mui/material";
+import SelectField from "../../components/shared/SelectField.jsx";
 import { useEstudiantes } from "../../context/EstudiantesContext.jsx";
 import { useNavigate } from "react-router-dom";
 
@@ -33,13 +34,56 @@ const RegistroEstudiante=()=>{
     const [comentario1, setComentario1] = useState('');
     const [comentario2, setComentario2] = useState('');
 
+    // errores por paso
+    const [errors, setErrors] = useState({});
+    const [globalError, setGlobalError] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [showErrors0, setShowErrors0] = useState(false);
+    const [showErrors1, setShowErrors1] = useState(false);
+
     const { crearEstudiante, getFolio, folioObtenido } = useEstudiantes();
 
     const navigate = useNavigate();
 
+    const validateStep0 = () => {
+        const errs = {};
+        if (!nombre.trim()) errs.nombre = 'Campo obligatorio';
+        if (!apellidos.trim()) errs.apellidos = 'Campo obligatorio';
+        if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) errs.email = 'Correo inválido';
+        if (!perfil.foto) errs.foto = 'Debes subir una foto';
+        if (comunidad1.length === 0 && !comunidad2.trim()) errs.comunidad = 'Selecciona al menos una opción u “Otra”';
+        if (!telefono.trim()) errs.telefono = 'Campo obligatorio';
+        if (!grupo) errs.grupo = 'Selecciona un grupo';
+        if (!nombre_tutor.trim()) errs.nombre_tutor = 'Campo obligatorio';
+        if (!tel_tutor.trim()) errs.tel_tutor = 'Campo obligatorio';
+        setErrors(errs);
+        setGlobalError(Object.keys(errs).length ? 'Completa los campos obligatorios marcados con *.' : '');
+        return Object.keys(errs).length === 0;
+    };
+
+    const validateStep1 = () => {
+        const errs = {};
+        if (academico1.length === 0 && !academico2.trim()) errs.academico = 'Selecciona al menos una opción u “Otra”';
+        if (!semestre) errs.semestre = 'Selecciona un semestre';
+        if (orientacion === 'No' && universidades1.length === 0 && !universidades2.trim()) {
+            errs.universidades = 'Selecciona al menos una universidad u “Otra”';
+        }
+        setErrors(errs);
+        setGlobalError(Object.keys(errs).length ? 'Completa los campos obligatorios marcados con *.' : '');
+        return Object.keys(errs).length === 0;
+    };
+
     const nextStep = (e) => {
-        setStep(step + 1);
         e.preventDefault();
+        const isValid = step === 0 ? validateStep0() : step === 1 ? validateStep1() : true;
+        if (!isValid) {
+            if (step === 0) setShowErrors0(true);
+            if (step === 1) setShowErrors1(true);
+            return;
+        }
+        // avanzar y limpiar mensaje global
+        setGlobalError("");
+        setStep(step + 1);
         };
     
         const prevStep = (e) => {
@@ -51,8 +95,8 @@ const RegistroEstudiante=()=>{
 
         const datos = JSON.parse(localStorage.getItem('datos'));
 
-        const numero = folioObtenido === 404 ? 1 : Number(folioObtenido) + 1;
-        const numeroFormateado = numero.toString().padStart(4, '0');
+    const numero = folioObtenido ? Number(folioObtenido) : 1;
+    const numeroFormateado = numero.toString().padStart(4, '0');
 
 
         const Municipios=[`SAN JUAN BAUTISTA TUXTEPEC`,`SAN JOSÉ CHILTEPEC`,`SANTA MARÍA JACATEPEC`,`AYOTZINTEPEC`,`LOMA BONITA`,`SAN LUCAS OJITLÁN`,`SAN JUAN BAUTISTA VALLE NACIONAL`];
@@ -102,9 +146,16 @@ const RegistroEstudiante=()=>{
 
         const foto = perfil.foto;
 
-        const onSubmit = (e) => {
+        const onSubmit = async (e) => {
             e.preventDefault();
+            setGlobalError("");
+            // Validación simple final
+            if (!comentario1.trim() || !comentario2.trim()) {
+                setGlobalError('Completa los comentarios requeridos.');
+                return;
+            }
             try {
+                setSaving(true);
                 const formData = new FormData();
                 formData.append("nombre", nombre);
                 formData.append("apellidos", apellidos);
@@ -129,14 +180,22 @@ const RegistroEstudiante=()=>{
                 formData.append("postulacion", postulacion ?? '');
                 formData.append("comentario1", comentario1 ?? '');
                 formData.append("comentario2", comentario2 ?? '');
-                formData.append("curso", datos.curso);
-                formData.append("plan", datos.planMensual);
-                formData.append("anio", ultimosDosDigitos);
-                formData.append("folio", numero);
-                crearEstudiante(formData);
-                navigate('/usuario_alumno');
+                formData.append("curso", datos?.curso ?? '');
+                formData.append("plan", datos?.planMensual ?? '');
+                formData.append("anio", ultimosDosDigitos ?? '');
+                // ya no enviamos folio; el servidor asigna secuencialmente
+
+                const saved = await crearEstudiante(formData);
+                if (saved?.id) {
+                    navigate('/usuario_alumno');
+                } else {
+                    setGlobalError('No se pudo guardar el registro.');
+                }
             } catch (error) {
-                console.log(error);
+                const msg = error?.response?.data?.message || 'No se pudo guardar el registro.';
+                setGlobalError(msg);
+            } finally {
+                setSaving(false);
             }
         };
 
@@ -153,8 +212,10 @@ const RegistroEstudiante=()=>{
         }, []);
 
         useEffect(() => {
-            getFolio();
-        }, []);
+            if (datos?.curso && ultimosDosDigitos) {
+                getFolio(datos.curso, ultimosDosDigitos);
+            }
+        }, [datos?.curso, ultimosDosDigitos]);
 
         useEffect(() => {
             if(!datos){
@@ -166,9 +227,9 @@ const RegistroEstudiante=()=>{
         <>
         <NavLogin/>
 
-        <div className={`flex w-full justify-end px-1 sm:px-4`}>
-        <h1 className="text-[#53289f] text-end text-xs sm:text-base uppercase font-semibold">Folio: meeau{ultimosDosDigitos} - {numeroFormateado}</h1>
-        </div>
+    <div className={`flex w-full justify-end px-1 sm:px-4`}>
+    <h1 className="text-[#53289f] text-end text-xs sm:text-base uppercase font-semibold">Folio: {`${(datos?.curso || 'EEAU').slice(0,4).toUpperCase()}${ultimosDosDigitos || ''}`} - {numeroFormateado}</h1>
+    </div>
 
         {/* <div className={`flex flex-col mt-3`}> */}
 
@@ -177,6 +238,12 @@ const RegistroEstudiante=()=>{
                 <div className="text-center">
                     <h2 className="text-2xl font-bold text-purple-800 mb-6">DATOS PERSONALES</h2>
                 </div>
+
+                {showErrors0 && globalError && (
+                    <div className="mb-4 p-3 rounded bg-red-100 text-red-700 text-sm">
+                        {globalError}
+                    </div>
+                )}
 
                 <form onSubmit={nextStep} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Nombre y Apellidos */}
@@ -188,9 +255,9 @@ const RegistroEstudiante=()=>{
                         className="mt-1 block w-full border border-gray-300 rounded-md p-2"
                         value={nombre}
                         onChange={(e) => setNombre(e.target.value)}
-                        required
                         autoComplete="off"
                     />
+                    {showErrors0 && errors.nombre && <p className="text-red-600 text-xs mt-1">{errors.nombre}</p>}
                     </div>
                     <div>
                     <label className="block text-sm font-medium text-gray-700">Apellido(s): *</label>
@@ -200,9 +267,9 @@ const RegistroEstudiante=()=>{
                         className="mt-1 block w-full border border-gray-300 rounded-md p-2"
                         value={apellidos}
                         onChange={(e) => setApellidos(e.target.value)}
-                        required
                         autoComplete="off"
                     />
+                    {showErrors0 && errors.apellidos && <p className="text-red-600 text-xs mt-1">{errors.apellidos}</p>}
                     </div>
 
                     {/* Email y Foto */}
@@ -214,9 +281,9 @@ const RegistroEstudiante=()=>{
                         className="mt-1 block w-full border border-gray-300 rounded-md p-2"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        required
                         autoComplete="off"
                     />
+                    {showErrors0 && errors.email && <p className="text-red-600 text-xs mt-1">{errors.email}</p>}
                     </div>
 
                     <div>
@@ -228,7 +295,6 @@ const RegistroEstudiante=()=>{
                             className="hidden"
                             name="foto"
                             onChange={handleChange} 
-                            required
                         />
                         <label
                             htmlFor="foto"
@@ -236,6 +302,7 @@ const RegistroEstudiante=()=>{
                         >
                             {perfil.foto === null ? 'Sube tu foto de perfil' : 'Foto cargada exitosamente'}
                         </label>
+                        {showErrors0 && errors.foto && <p className="text-red-600 text-xs mt-1">{errors.foto}</p>}
                     </div>
 
                     {/* Comunidad y Teléfono */}
@@ -267,38 +334,40 @@ const RegistroEstudiante=()=>{
                                     className="mt-1 block border w-full border-gray-300 rounded-md p-2"
                                 />
                             </div>
+                            {showErrors0 && errors.comunidad && <p className="text-red-600 text-xs mt-1">{errors.comunidad}</p>}
                         </div>
                     </div>
-                    <div>
-                    <label className="block text-sm font-medium text-gray-700">Número de teléfono: *</label>
-                    <input
-                        type="numer"
-                        placeholder="Ingrese su número de teléfono"
-                        className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                        value={telefono}
-                        onChange={(e) => setTelefono(e.target.value)}
-                        required
-                    />
+                    <div className="space-y-4 md:space-y-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Número de teléfono: *</label>
+                            <input
+                                type="tel"
+                                placeholder="Ingrese su número de teléfono"
+                                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                                value={telefono}
+                                onChange={(e) => setTelefono(e.target.value)}
+                            />
+                            {showErrors0 && errors.telefono && (
+                                <p className="text-red-600 text-xs mt-1">{errors.telefono}</p>
+                            )}
+                        </div>
 
-                        <label className="block text-sm font-medium text-gray-700 mb-1 mt-5">
-                            Selecciona tu grupo: <span className="text-red-500">*</span>
-                        </label>
+                        <div>
+                            <SelectField
+                                label="Selecciona tu grupo *"
+                                value={grupo}
+                                onChange={(e) => setGrupo(e.target.value)}
+                                options={opciones.map((o) => ({ label: o, value: o }))}
+                                placeholder="Selecciona una opción"
+                                error={showErrors0 && !!errors.grupo}
+                                helperText={showErrors0 && errors.grupo ? errors.grupo : ""}
+                            />
+                        </div>
 
-                        <select
-                            value={grupo}
-                            onChange={(e) => setGrupo(e.target.value)}
-                            className="w-full border border-gray-300 rounded-md p-2 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="" disabled selected>Selecciona una opción</option>
-                            {opciones.map((opcion, i) => (
-                            <option key={i} value={opcion}>{opcion}</option>
-                            ))}
-                        </select>
-
-                    {/* Tutor */}
-                    <div className="text-center mt-5">
-                        <h2 className="text-2xl font-bold text-purple-800 mb-6">DATOS DEL TUTOR</h2>
-                    </div>
+                        {/* Tutor */}
+                        <div className="text-center pt-2">
+                            <h2 className="text-2xl font-bold text-purple-800 mb-6">DATOS DEL TUTOR</h2>
+                        </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Nombre completo del tutor *</label>
@@ -309,8 +378,12 @@ const RegistroEstudiante=()=>{
                                 value={nombre_tutor}
                                 onChange={(e) => setTutor(e.target.value)}
                             />
+                            {showErrors0 && errors.nombre_tutor && (
+                                <p className="text-red-600 text-xs mt-1">{errors.nombre_tutor}</p>
+                            )}
                         </div>
-                        <div className="mt-5">
+
+                        <div>
                             <label className="block text-sm font-medium text-gray-700">Número de teléfono del tutor *</label>
                             <input
                                 type="tel"
@@ -319,13 +392,20 @@ const RegistroEstudiante=()=>{
                                 value={tel_tutor}
                                 onChange={(e) => setTel_tutor(e.target.value)}
                             />
-                   </div>
-                    {/* Botón */}
-                    <div className="flex justify-end mt-8">
-                        <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
-                            Continuar
-                        </button>
-                    </div>
+                            {showErrors0 && errors.tel_tutor && (
+                                <p className="text-red-600 text-xs mt-1">{errors.tel_tutor}</p>
+                            )}
+                        </div>
+
+                        {/* Botón */}
+                        <div className="flex justify-end pt-2">
+                            <button
+                                type="submit"
+                                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
+                            >
+                                Continuar
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -336,6 +416,12 @@ const RegistroEstudiante=()=>{
                 <div className="text-center">
                     <h2 className="text-2xl font-bold text-purple-800 mb-6">DATOS ACADÉMICOS</h2>
                 </div>
+
+                {showErrors1 && globalError && (
+                    <div className="mb-4 p-3 rounded bg-red-100 text-red-700 text-sm">
+                        {globalError}
+                    </div>
+                )}
 
                 <form onSubmit={nextStep} className="gap-6">
                     {/* Comunidad y Teléfono */}
@@ -367,38 +453,32 @@ const RegistroEstudiante=()=>{
                                     onChange={(e) => setAcademico2(e.target.value)}
                                 />
                             </div>
+                            {showErrors1 && errors.academico && <p className="text-red-600 text-xs mt-1">{errors.academico}</p>}
                         </div>
                     </div>
-                    <div className="mt-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Selecciona un Semestre *
-                        </label>
-                        <select
-                            name="semestre"
+            <div className="mt-6">
+                        <SelectField
+                label="Selecciona un Semestre *"
                             value={semestre}
-                            onChange={(e) => setSemestre(e.target.value)}
-                            className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Selecciona una opción</option>
-                            <option value="5° semestre">5° semestre</option>
-                            <option value="6° semestre">6° semestre</option>
-                            <option value="Concluido">Concluido</option>
-                        </select>
+                            onChange={(e)=>setSemestre(e.target.value)}
+                            options={[
+                                {label:'5° semestre', value:'5° semestre'},
+                                {label:'6° semestre', value:'6° semestre'},
+                                {label:'Concluido', value:'Concluido'},
+                            ]}
+                            placeholder="Selecciona una opción"
+                            error={showErrors1 && !!errors.semestre}
+                            helperText={showErrors1 && errors.semestre ? errors.semestre : ""}
+                        />
                     </div>
-                    <div className="mt-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            ¿Cuentas con alguna alergia en especial?
-                        </label>
-                        <select
-                            name="alergias1"
+            <div className="mt-6">
+                        <SelectField
+                            label="¿Cuentas con alguna alergia en especial?"
                             value={alergia}
-                            onChange={(e) => setAlergia(e.target.value)}
-                            className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Selecciona una opción</option>
-                            <option value="Si">Si</option>
-                            <option value="No">No</option>
-                        </select>
+                            onChange={(e)=>setAlergia(e.target.value)}
+                            options={[{label:'Si', value:'Si'},{label:'No', value:'No'}]}
+                            placeholder="Selecciona una opción"
+                        />
                     </div>
 
                     {alergia === 'Si' && (
@@ -416,20 +496,14 @@ const RegistroEstudiante=()=>{
                         </div>
                     )}
 
-                    <div className="mt-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            ¿Cuenta con alguna condición, discapacidad o trastorno especifico de apoyo?
-                        </label>
-                        <select
-                            name="discapacidad1"
+            <div className="mt-6">
+                        <SelectField
+                label="¿Cuenta con alguna condición, discapacidad o trastorno especifico de apoyo?"
                             value={discapacidad1}
-                            onChange={(e) => setDiscapacidad1(e.target.value)}
-                            className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Selecciona una opción</option>
-                            <option value="Si">Si</option>
-                            <option value="No">No</option>
-                        </select>
+                            onChange={(e)=>setDiscapacidad1(e.target.value)}
+                            options={[{label:'Si', value:'Si'},{label:'No', value:'No'}]}
+                            placeholder="Selecciona una opción"
+                        />
                     </div>
 
                     {discapacidad1 === 'Si' && (
@@ -448,19 +522,14 @@ const RegistroEstudiante=()=>{
                         </div>
                     )}
 
-                    <div className="mt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            ¿Ocupas orientación vocacional para determinar a qué universidad y/o licenciatura elegir?
-                        </label>
-                        <select
+            <div className="mt-4">
+                        <SelectField
+                label="¿Ocupas orientación vocacional para determinar a qué universidad y/o licenciatura elegir?"
                             value={orientacion}
-                            onChange={(e) => setOrientacion(e.target.value)}
-                            className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Selecciona una opción</option>
-                            <option value="Si">Si</option>
-                            <option value="No">No</option>
-                        </select>
+                            onChange={(e)=>setOrientacion(e.target.value)}
+                            options={[{label:'Si', value:'Si'},{label:'No', value:'No'}]}
+                            placeholder="Selecciona una opción"
+                        />
                     </div>
 
                     {orientacion === 'No' && (
@@ -493,6 +562,7 @@ const RegistroEstudiante=()=>{
                                             className="mt-1 block border w-full border-gray-300 rounded-md p-2"
                                         />
                                     </div>
+                                    {showErrors1 && errors.universidades && <p className="text-red-600 text-xs mt-1">{errors.universidades}</p>}
                                 </div>
                             </div>
                             <div className="mt-6">
@@ -529,6 +599,11 @@ const RegistroEstudiante=()=>{
             
             <form onSubmit={onSubmit} className={`flex flex-col gap-2 sm:w-150 items-center flex-wrap sm:gap-8 p-4`}>
 
+            {globalError && (
+                <div className="mb-4 p-3 rounded bg-red-100 text-red-700 text-sm w-full max-w-3xl">
+                    {globalError}
+                </div>
+            )}
 
             <div className={`w-full flex gap-x-3 flex-col items-center justify-center`}>
 
@@ -564,7 +639,7 @@ const RegistroEstudiante=()=>{
 
             <div className={`flex flex-wrap w-full gap-2 justify-between`}>
                 <BtnForm onClick={prevStep} TextoBtn={`Anterior`}/>
-                <BtnForm type={`submit`} TextoBtn={`Finalizar`}/>
+                <BtnForm type={`submit`} TextoBtn={saving ? `Guardando...` : `Finalizar`} disabled={saving}/>
             </div>
             </form>
             

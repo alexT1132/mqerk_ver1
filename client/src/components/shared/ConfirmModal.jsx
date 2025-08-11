@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const ConfirmModal = ({ 
   isOpen, 
@@ -8,7 +8,14 @@ const ConfirmModal = ({
   onConfirm, 
   onCancel,
   confirmText = 'Confirmar',
-  cancelText = 'Cancelar'
+  cancelText = 'Cancelar',
+  variant = 'default', // 'default' | 'danger'
+  requireText = false,
+  expectedText = 'ELIMINAR',
+  inputLabel = "Para confirmar, escribe el texto:",
+  confirmDisabled = false,
+  isProcessing = false,
+  processingText = 'Procesando...'
 }) => {
   if (!isOpen) return null;
 
@@ -24,8 +31,22 @@ const ConfirmModal = ({
     }
   };
 
+  const [text, setText] = useState('');
+  useEffect(() => {
+    if (isOpen) setText('');
+  }, [isOpen]);
+
+  const meetsTextRequirement = !requireText || (text.trim() === expectedText);
+  const confirmIsDisabled = confirmDisabled || isProcessing || !meetsTextRequirement;
+
+  const btnBase = 'px-4 py-2 text-sm font-medium border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors';
+  const cancelCls = `${btnBase} text-gray-700 bg-gray-100 border-gray-300 hover:bg-gray-200 focus:ring-gray-500`;
+  const confirmCls = variant === 'danger'
+    ? `${btnBase} text-white bg-rose-600 border-transparent hover:bg-rose-700 focus:ring-rose-500 disabled:opacity-60 disabled:cursor-not-allowed`
+    : `${btnBase} text-white bg-blue-600 border-transparent hover:bg-blue-700 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed`;
+
   return (
-    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-[5000]">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">{message || 'Confirmar Acción'}</h3>
@@ -35,20 +56,29 @@ const ConfirmModal = ({
           {details && (
             <p className="text-gray-600 text-sm">{details}</p>
           )}
+          {requireText && (
+            <div className="mt-4">
+              <label className="block text-sm text-gray-700 mb-1">{inputLabel} <span className="font-semibold">{expectedText}</span></label>
+              <input
+                type="text"
+                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder={expectedText}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+              {!meetsTextRequirement && (
+                <p className="mt-2 text-xs text-rose-600">Debes escribir exactamente "{expectedText}" para continuar.</p>
+              )}
+            </div>
+          )}
         </div>
         
         <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-          <button 
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
-            onClick={handleCancel}
-          >
+          <button className={cancelCls} onClick={handleCancel}>
             {cancelText}
           </button>
-          <button 
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-            onClick={handleConfirm}
-          >
-            {confirmText}
+          <button className={confirmCls} onClick={handleConfirm} disabled={confirmIsDisabled}>
+            {isProcessing ? processingText : confirmText}
           </button>
         </div>
       </div>

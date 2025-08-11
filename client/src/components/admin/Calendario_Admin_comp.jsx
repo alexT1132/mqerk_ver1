@@ -18,6 +18,7 @@
  * - DELETE /api/admin/calendar/events/{id} - Eliminar evento/recordatorio
  */
 import React, { useState, useEffect } from 'react';
+import api from '../../api/axios';
 
 export function Calendario_Admin_comp() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -46,26 +47,12 @@ export function Calendario_Admin_comp() {
     setIsLoading(true);
     setApiError(null);
     try {
-      const response = await fetch(`/api/admin/calendar/events?startDate=${startDate}&endDate=${endDate}`);
-      
-      // Verificar si la respuesta es exitosa y el content-type es JSON
-      if (!response.ok) {
-        throw new Error(`Error HTTP! status: ${response.status}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('API del backend no disponible - usando datos de ejemplo');
-      }
-      
-      const data = await response.json();
+      const response = await api.get(`/admin/calendar/events`, { params: { startDate, endDate } });
+      const data = response?.data;
+      if (!Array.isArray(data)) throw new Error('Formato inesperado');
       setReminders(data);
     } catch (error) {
       console.error('Error obteniendo recordatorios:', error);
-      // No mostrar error en desarrollo - solo usar datos de ejemplo
-      console.log('Usando datos de ejemplo para desarrollo');
-      // setApiError('Backend no disponible - usando datos de ejemplo');
-      // Recurrir a datos de ejemplo
       loadSampleData();
     } finally {
       setIsLoading(false);
@@ -76,39 +63,13 @@ export function Calendario_Admin_comp() {
     setIsLoading(true);
     setApiError(null);
     try {
-      const response = await fetch('/api/admin/calendar/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(reminderData),
-      });
-      
-      // Verificar si la respuesta es exitosa y el content-type es JSON
-      if (!response.ok) {
-        throw new Error(`Error HTTP! status: ${response.status}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('API del backend no disponible');
-      }
-      
-      const newReminder = await response.json();
+      const { data: newReminder } = await api.post('/admin/calendar/events', reminderData);
       setReminders(prev => [...prev, newReminder]);
       return newReminder;
     } catch (error) {
       console.error('Error creando recordatorio:', error);
-      
-      // Para desarrollo, crear un recordatorio simulado localmente
-      const mockReminder = {
-        id: Date.now(), // Generación simple de ID para desarrollo
-        ...reminderData,
-        completado: false
-      };
-      
+      const mockReminder = { id: Date.now(), ...reminderData, completado: false };
       setReminders(prev => [...prev, mockReminder]);
-      console.log('Recordatorio creado localmente (modo desarrollo):', mockReminder);
       return mockReminder;
     } finally {
       setIsLoading(false);
@@ -119,52 +80,16 @@ export function Calendario_Admin_comp() {
     setIsLoading(true);
     setApiError(null);
     try {
-      const response = await fetch(`/api/admin/calendar/events/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      });
-      
-      // Verificar si la respuesta es exitosa y el content-type es JSON
-      if (!response.ok) {
-        throw new Error(`Error HTTP! status: ${response.status}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('API del backend no disponible');
-      }
-      
-      const updatedReminder = await response.json();
-      
-      const updatedReminders = reminders.map(r => 
-        r.id === id ? updatedReminder : r
-      );
+      const { data: updatedReminder } = await api.put(`/admin/calendar/events/${id}`, updates);
+      const updatedReminders = reminders.map(r => r.id === id ? updatedReminder : r);
       setReminders(updatedReminders);
-      
-      // Actualizar selectedReminder si es el mismo que se está editando
-      if (selectedReminder && selectedReminder.id === id) {
-        setSelectedReminder(updatedReminder);
-      }
-      
+      if (selectedReminder && selectedReminder.id === id) setSelectedReminder(updatedReminder);
       return updatedReminder;
     } catch (error) {
       console.error('Error actualizando recordatorio:', error);
-      
-      // Para desarrollo, actualizar recordatorio localmente
-      const updatedReminders = reminders.map(r => 
-        r.id === id ? { ...r, ...updates } : r
-      );
+      const updatedReminders = reminders.map(r => r.id === id ? { ...r, ...updates } : r);
       setReminders(updatedReminders);
-      
-      // Actualizar selectedReminder si es el mismo que se está editando
-      if (selectedReminder && selectedReminder.id === id) {
-        setSelectedReminder({ ...selectedReminder, ...updates });
-      }
-      
-      console.log('Recordatorio actualizado localmente (modo desarrollo)');
+      if (selectedReminder && selectedReminder.id === id) setSelectedReminder({ ...selectedReminder, ...updates });
       return { ...reminders.find(r => r.id === id), ...updates };
     } finally {
       setIsLoading(false);
@@ -175,26 +100,15 @@ export function Calendario_Admin_comp() {
     setIsLoading(true);
     setApiError(null);
     try {
-      const response = await fetch(`/api/admin/calendar/events/${id}`, {
-        method: 'DELETE',
-      });
-      
-      // Verificar si la respuesta es exitosa
-      if (!response.ok) {
-        throw new Error(`Error HTTP! status: ${response.status}`);
-      }
-      
+      await api.delete(`/admin/calendar/events/${id}`);
       setReminders(prev => prev.filter(r => r.id !== id));
       setShowEditModal(false);
       setSelectedReminder(null);
     } catch (error) {
       console.error('Error eliminando recordatorio:', error);
-      
-      // Para desarrollo, eliminar recordatorio localmente
       setReminders(prev => prev.filter(r => r.id !== id));
       setShowEditModal(false);
       setSelectedReminder(null);
-      console.log('Recordatorio eliminado localmente (modo desarrollo)');
     } finally {
       setIsLoading(false);
     }
@@ -630,7 +544,7 @@ export function Calendario_Admin_comp() {
                       className="text-gray-400 hover:text-green-600 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                       </svg>
                     </button>
                   </div>
@@ -982,7 +896,7 @@ export function Calendario_Admin_comp() {
                   <div className="flex items-center space-x-2">
                     <div className="p-2 bg-yellow-100 rounded-full">
                       <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
                       </svg>
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900">

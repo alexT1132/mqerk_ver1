@@ -2,7 +2,7 @@ import db from '../db.js'; // ya no ejecutes connectDB()
 
 // Crear datos del alumno
 export const createEstudiante = async (data) => {
-  const sql = 'INSERT INTO estudiantes (nombre, apellidos, email, foto, grupo, comunidad1, comunidad2, telefono, nombre_tutor, tel_tutor, academico1, academico2, semestre, alergia, alergia2, discapacidad1, discapacidad2, orientacion, universidades1, universidades2, postulacion, comentario1, comentario2, curso, plan, anio, folio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  const sql = 'INSERT INTO estudiantes (nombre, apellidos, email, foto, grupo, comunidad1, comunidad2, telefono, fecha_nacimiento, nombre_tutor, tel_tutor, academico1, academico2, semestre, alergia, alergia2, discapacidad1, discapacidad2, orientacion, universidades1, universidades2, postulacion, comentario1, comentario2, curso, plan, anio, folio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
   const values = [
     data.nombre, 
     data.apellidos, 
@@ -11,7 +11,8 @@ export const createEstudiante = async (data) => {
     data.grupo,
     data.comunidad1, 
     data.comunidad2, 
-    data.telefono, 
+  data.telefono, 
+  data.fecha_nacimiento,
     data.nombre_tutor, 
     data.tel_tutor, 
     data.academico1, 
@@ -46,6 +47,12 @@ export const ObtenerUsuarios = (callback) => {
 export const getEstudianteById = async (id) => {
   const [rows] = await db.query('SELECT * FROM estudiantes WHERE id = ?', [id]);
   return rows[0]; // solo uno
+};
+
+// Obtener un estudiante por folio
+export const getEstudianteByFolio = async (folio) => {
+  const [rows] = await db.query('SELECT * FROM estudiantes WHERE folio = ? LIMIT 1', [folio]);
+  return rows[0] || null;
 };
 
 // Actualizar un estudiante
@@ -91,4 +98,40 @@ export const getGruposConCantidad = async (curso) => {
         GROUP BY grupo
     `, [curso]);
     return rows;
+};
+
+// Actualizar estudiante con campos parciales
+export const updateEstudiante = async (id, data) => {
+  // Construir SET dinámico
+  const keys = Object.keys(data);
+  if (keys.length === 0) return { affectedRows: 0 };
+  const setClause = keys.map(k => `\`${k}\` = ?`).join(', ');
+  const values = keys.map(k => data[k]);
+  const sql = `UPDATE estudiantes SET ${setClause} WHERE id = ?`;
+  const [result] = await db.query(sql, [...values, id]);
+  return result;
+};
+
+// Obtener el último folio por prefijo (e.g., 'MEEAU25')
+export const getLastFolioByPrefix = async (prefix) => {
+  try {
+    const like = `${prefix}-%`;
+    const [rows] = await db.query('SELECT folio FROM estudiantes WHERE folio LIKE ? ORDER BY folio DESC LIMIT 1', [like]);
+    return rows.length ? rows[0].folio : null;
+  } catch (error) {
+    console.error('ERROR EN MODELO getLastFolioByPrefix:', error);
+    throw error;
+  }
+};
+
+// Obtener el mayor folio numérico por curso y año (secuencial por combinación curso+anio)
+export const getMaxFolioByCourseYear = async (curso, anio) => {
+  try {
+    const [rows] = await db.query('SELECT MAX(folio) AS max_folio FROM estudiantes WHERE curso = ? AND anio = ?', [curso, anio]);
+    const max = rows && rows.length ? rows[0].max_folio : null;
+    return max == null ? null : Number(max);
+  } catch (error) {
+    console.error('ERROR EN MODELO getMaxFolioByCourseYear:', error);
+    throw error;
+  }
 };

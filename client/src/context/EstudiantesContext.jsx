@@ -19,12 +19,12 @@ export function EstudiantesProvider({ children }) {
     const [grupos, setGrupos] = useState([]);
     const [folioObtenido, getFolioObetenido] = useState([]);
 
-    const getFolio = async () => {
+    const getFolio = async (curso, anio) => {
         try {
-            const res = await getFolioRequest();
+            const res = await getFolioRequest(curso, anio);
             getFolioObetenido(res.data.folio);
         } catch (error) {
-            getFolioObetenido(error.status);
+            getFolioObetenido(null);
         }
     }
 
@@ -41,10 +41,11 @@ export function EstudiantesProvider({ children }) {
     const crearEstudiante = async (estudiante) => {
         try {
             const res = await CreateRequest(estudiante);
-            console.log(res.data)
             localStorage.setItem('datosRegistro', JSON.stringify(res.data));
+            return res.data;
         } catch (error) {
-            console.log(error);
+            // Re-lanzar para que la vista pueda manejar el fallo
+            throw error;
         }
     }
 

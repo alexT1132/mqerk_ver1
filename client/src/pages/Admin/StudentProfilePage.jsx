@@ -783,7 +783,7 @@ function StudentProfilePage() {
                   <div className="lg:col-span-4 flex flex-col items-center space-y-4">
                     <div className="relative">
                       <img
-                        src={defaultStudentPhoto}
+                        src={student?.fotoAbs || defaultStudentPhoto}
                         alt={`Foto de ${formData.nombres} ${formData.apellidos}`}
                         className="w-48 h-48 object-cover rounded-full border-4 border-gray-200 shadow-lg"
                       />

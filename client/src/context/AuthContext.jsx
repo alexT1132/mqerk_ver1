@@ -34,11 +34,13 @@ export const AuthProvider = ({children}) => {
     const signin = async (user) => {
         try {
             const res = await loginRequest(user);
+            // Opcional: inspeccionar respuesta en dev
+            // console.log('login response', res.data);
             setUser(res.data.usuario)
             setAlumno(res.data.estudiante);
             setIsAuthenticated(true);
         } catch (error) {
-            const errMsg = error.response?.data?.message;
+            const errMsg = error.response?.data?.message || (error.response?.status === 404 ? 'Endpoint /login no encontrado' : undefined);
             setErrors(Array.isArray(errMsg) ? errMsg : [errMsg || "Error desconocido"]);
         }
     }
@@ -88,8 +90,9 @@ export const AuthProvider = ({children}) => {
                 }
 
                 setIsAuthenticated(true)
-                console.log(res.data.usuario)
-                console.log(res.data);
+                // Popular usuario y alumno desde verify para que el nombre esté disponible tras recargar
+                if (res.data.usuario) setUser(res.data.usuario);
+                if (res.data.estudiante) setAlumno(res.data.estudiante);
                 setLoading(false)
             } catch (error) {
                 setIsAuthenticated(false)

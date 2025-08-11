@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { CreateRequest, getComprobantesRequest, getVerificacionComprobanteRequest } from "../api/comprobantes.js";
+import { CreateRequest, getComprobantesRequest, getVerificacionComprobanteRequest, rejectVerificacionComprobanteRequest } from "../api/comprobantes.js";
 
 export const ComprobanteContext = createContext();
 
@@ -18,35 +18,43 @@ export const ComprobanteProvider = ({children}) => {
     const crearComprobante = async (comprobante) => {
         try {
             const res = await CreateRequest(comprobante);
-            console.log(res.data)
+            return res.data;
         } catch (error) {
             console.log(error);
+            throw error;
         }
     }
 
     const getComprobantes = async (grupo, curso) => {
         try {
             const res = await getComprobantesRequest(grupo, curso);
-            if (Array.isArray(res.data)) {
-                if (res.data.length === 1) {
-                    setComprobantes(res.data[0]);
-                } else {
-                    setComprobantes(res.data);
-                }
-            } else {
-                    setComprobantes(res.data); // si ya es objeto
-                }
-            } catch (error) {
-                    console.log(error);
-                }
+            // Normalizar siempre a array
+            const data = Array.isArray(res.data)
+                ? res.data
+                : (res.data ? [res.data] : []);
+            setComprobantes(data);
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     const getVerificacionComprobante = async (folio, dataComplete) => {
         try {
             const res = await getVerificacionComprobanteRequest(folio, dataComplete);
-            console.log(res.data);
+            return res.data;
         } catch (error) {
             console.log(error);
+            throw error;
+        }
+    }
+
+    const rejectVerificacionComprobante = async (folio, data) => {
+        try {
+            const res = await rejectVerificacionComprobanteRequest(folio, data);
+            return res.data;
+        } catch (error) {
+            console.log(error);
+            throw error;
         }
     }
 
@@ -55,7 +63,8 @@ export const ComprobanteProvider = ({children}) => {
             comprobantes,
             crearComprobante,
             getComprobantes,
-            getVerificacionComprobante
+            getVerificacionComprobante,
+            rejectVerificacionComprobante
         }}>
             {children}
         </ComprobanteContext.Provider>

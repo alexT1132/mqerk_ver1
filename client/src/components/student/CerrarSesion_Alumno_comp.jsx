@@ -2,6 +2,8 @@
 // Este componente maneja la funcionalidad de logout del estudiante
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { logoutRequest } from '../../api/usuarios.js';
 
 /**
  * BACKEND: Componente de cerrar sesión
@@ -9,34 +11,24 @@ import { useNavigate } from 'react-router-dom';
  */
 export function CerrarSesion_Alumno_comp() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
-    // BACKEND: TODO - Implementar lógica de logout
-    const logout = async () => {
+  const doLogout = async () => {
       try {
-        // TODO: Llamada a endpoint /api/auth/logout
-        // await fetch('/api/auth/logout', {
-        //   method: 'POST',
-        //   headers: {
-        //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-        //   }
-        // });
-        
-        console.log('Cerrando sesión...');
+    await logoutRequest();
       } catch (error) {
-        console.error('Error al cerrar sesión:', error);
+        // Silenciar: logout client-side de todas formas
+        console.warn('Fallo en logout del servidor, continuando con logout local');
       }
-      
-      // TODO: Limpiar datos locales
-      // localStorage.clear();
-      // sessionStorage.clear();
-      
-      // TODO: Redirigir a login
-      // navigate('/login');
+      // Logout del contexto limpia cookies/localStorage
+      logout();
+      // Redirigir a login
+      navigate('/login', { replace: true });
     };
-    
-    logout();
-  }, [navigate]);
+
+    doLogout();
+  }, [navigate, logout]);
 
   return (
     <div className="p-10">

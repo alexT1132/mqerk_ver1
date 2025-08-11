@@ -24,14 +24,16 @@ export const crear = async (req, res) => {
 
     const result = await Comprobantes.createComprobante(comprobanteGenerado);
 
-    // Actualizar la verificación del estudiante
-    const verificacion = await Estudiantes.updateComprobante(id_estudiante, { verificacion: 1 });
+    // Actualizar la verificación del estudiante a "enviado"
+    await Estudiantes.updateComprobante(id_estudiante, { verificacion: 1 });
 
     return res.status(201).json({
-      message: "Comprobante creado exitosamente"
+      message: "Comprobante creado exitosamente",
+      url
     });
   } catch (error) {
-    console.error("Error en el controlador:", error);
+    console.error("Error en el controlador de comprobantes:", error);
+    return res.status(500).json({ message: 'Error al crear comprobante', error: error?.message || error });
   }
 };
 
@@ -71,8 +73,10 @@ export const GetEnableVerificacion = async (req, res) => {
             return res.status(404).json({ mensaje: "Estudiante no encontrado" });
         }
 
-        // Actualizar el comprobante
-        const resultComprobante = await Comprobantes.actualizarComprobante(estudiante.id, { importe, metodo });
+        // Actualizar el comprobante (si vienen campos se actualizan, sino se ignoran manteniendo los existentes)
+        if (importe != null || metodo != null) {
+          await Comprobantes.actualizarComprobante(estudiante.id, { importe, metodo });
+        }
 
         const resultAcceso = await Comprobantes.verificarAcceso(estudiante.id);
 
@@ -82,4 +86,35 @@ export const GetEnableVerificacion = async (req, res) => {
         console.error("Error al obtener verificación del comprobante:", error);
         res.status(500).json({ mensaje: "Error interno del servidor" });
     }
+};
+
+// Rechazar verificación (estado = 3)
+export const RejectVerificacion = async (req, res) => {
+  try {
+    const { folio } = req.params;
+  const { motivo, importe, metodo } = req.body; // ahora también podemos recibir importe/metodo al rechazar
+
+    if (!folio) {
+      return res.status(400).json({ mensaje: "El parámetro folio es obligatorio" });
+    }
+
+    const estudiante = await Comprobantes.getEstudianteVerificacion(folio);
+
+    if (!estudiante) {
+      return res.status(404).json({ mensaje: "Estudiante no encontrado" });
+    }
+
+    // Actualizar comprobante con motivo de rechazo y datos capturados
+    if (importe != null || metodo != null || motivo) {
+      await Comprobantes.actualizarComprobanteRechazo(estudiante.id, { importe, metodo, motivo });
+    }
+
+    // Setear verificación = 3 (rechazado) en estudiante
+    await Estudiantes.updateComprobante(estudiante.id, { verificacion: 3 });
+
+    return res.status(200).json({ mensaje: 'Comprobante rechazado correctamente', folio, verificacion: 3, motivo });
+  } catch (error) {
+    console.error('Error al rechazar comprobante:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
 };

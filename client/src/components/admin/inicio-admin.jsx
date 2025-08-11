@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatCurrencyMXN } from '../../utils/formatters.js';
 import { useAdminNotificationContext } from '../../context/AdminNotificationContext.jsx';
 
 // INTEGRACIÓN BACKEND - ¡Contexto admin listo!
@@ -215,7 +216,7 @@ function DashboardMetrics() {
         }
     };
 
-    // Función para refrescar datos manualmente (actualmente con datos mock)
+    // Función para refrescar datos manualmente (backend real)
     const handleRefreshData = async () => {
         if (isLoading) return;
         
@@ -246,7 +247,7 @@ function DashboardMetrics() {
             {
                 id: 'ingresos',
                 title: "INGRESOS TOTALES",
-                value: isLoading ? '...' : `$${dashboardData.ingresos?.toLocaleString('es-MX') || '0'}`, // ← AdminContext.jsx
+                value: isLoading ? '...' : formatCurrencyMXN(dashboardData.ingresos || 0), // ← AdminContext.jsx
                 description: "Ingresos acumulados del mes actual",
                 icon: icons.ingresos,
                 isClickable: true,

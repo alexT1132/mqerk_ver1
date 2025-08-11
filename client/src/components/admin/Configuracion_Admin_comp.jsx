@@ -16,6 +16,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAdminContext } from '../../context/AdminContext.jsx';
+import { changeAdminPasswordRequest, getAdminConfigRequest, updateAdminConfigRequest } from '../../api/usuarios.js';
 
 // Componente de pantalla de carga simple (estilo consistente con otros componentes)
 function LoadingScreen({ onComplete }) {
@@ -128,22 +129,25 @@ export function Configuracion_Admin_comp() {
     };
   }, [personalData.fotoPreview]);
 
-  // Efecto para simular la carga inicial de configuraciones
+  // Efecto para cargar la configuración de seguridad desde el backend
   useEffect(() => {
-    // Simular carga de configuraciones desde el backend
     const loadConfigurations = async () => {
       try {
-        // TODO: Implementar llamada al backend
-        // const response = await fetch('/api/admin/config');
-        // const data = await response.json();
-        // setConfiguration(data);
-        
-        // Por ahora mantener simulación de carga
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 2000);
+        const { data } = await getAdminConfigRequest();
+        if (data?.config) {
+          setConfiguration(prev => ({
+            ...prev,
+            seguridad: {
+              sesionMaxima: data.config.sesionMaxima ?? prev.seguridad.sesionMaxima,
+              intentosLogin: data.config.intentosLogin ?? prev.seguridad.intentosLogin,
+              cambioPasswordObligatorio: data.config.cambioPasswordObligatorio ?? prev.seguridad.cambioPasswordObligatorio,
+              autenticacionDosFactor: !!data.config.autenticacionDosFactor,
+            },
+          }));
+        }
       } catch (error) {
         console.error('Error al cargar configuraciones:', error);
+      } finally {
         setIsLoading(false);
       }
     };
@@ -160,24 +164,20 @@ export function Configuracion_Admin_comp() {
     }
   }, [location.search]);
 
-  // Función para guardar configuración general del sistema
+  // Función para guardar configuración de seguridad del sistema
   // PATRÓN: API DIRECTA (no AdminContext) - configuraciones específicas del sistema
   const handleGuardarConfiguracion = async () => {
     setSaving(true);
     setMessage(''); // Limpiar mensaje anterior
     
     try {
-      // TODO: Implementar llamada al backend - API directa para configuraciones del sistema
-      // const response = await fetch('/api/admin/config', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(configuration)
-      // });
-      // if (!response.ok) throw new Error('Error al guardar');
-      
-      // Simular llamada a la API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      const payload = {
+        sesionMaxima: Number(configuration.seguridad.sesionMaxima) || 0,
+        intentosLogin: Number(configuration.seguridad.intentosLogin) || 0,
+        cambioPasswordObligatorio: Number(configuration.seguridad.cambioPasswordObligatorio) || 0,
+        autenticacionDosFactor: !!configuration.seguridad.autenticacionDosFactor,
+      };
+      await updateAdminConfigRequest(payload);
       setMessage('Configuración guardada exitosamente');
       setTimeout(() => setMessage(''), 4000);
     } catch (error) {
@@ -208,26 +208,17 @@ export function Configuracion_Admin_comp() {
     setMessage(''); // Limpiar mensaje anterior
     
     try {
-      // TODO: Implementar llamada al backend - API directa para cambio de contraseña
-      // const response = await fetch('/api/admin/cambiar-password', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     currentPassword: passwordData.currentPassword,
-      //     newPassword: passwordData.newPassword
-      //   })
-      // });
-      // if (!response.ok) throw new Error('Error al cambiar contraseña');
-      
-      // Simular llamada a la API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      await changeAdminPasswordRequest({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      });
       setMessage('Contraseña actualizada exitosamente');
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setTimeout(() => setMessage(''), 4000);
     } catch (error) {
       console.error('Error changing password:', error);
-      setMessage('Error al cambiar la contraseña');
+      const errMsg = error?.response?.data?.message || 'Error al cambiar la contraseña';
+      setMessage(errMsg);
       setTimeout(() => setMessage(''), 4000);
     } finally {
       setSaving(false);
@@ -804,6 +795,26 @@ export function Configuracion_Admin_comp() {
                           onChange={(e) => handleInputChange('seguridad', 'cambioPasswordObligatorio', parseInt(e.target.value))}
                           className="block w-full px-4 py-4 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white/80 backdrop-blur-sm hover:shadow-md hover:border-blue-300"
                         />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                          Autenticación de Dos Factores (2FA)
+                        </label>
+                        <div className="flex items-center h-12">
+                          <button
+                            type="button"
+                            onClick={() => handleInputChange('seguridad', 'autenticacionDosFactor', !configuration.seguridad.autenticacionDosFactor)}
+                            className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 ${configuration.seguridad.autenticacionDosFactor ? 'bg-green-500' : 'bg-gray-300'}`}
+                          >
+                            <span
+                              className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-300 ${configuration.seguridad.autenticacionDosFactor ? 'translate-x-7' : 'translate-x-1'}`}
+                            />
+                          </button>
+                          <span className="ml-3 text-sm text-gray-700">
+                            {configuration.seguridad.autenticacionDosFactor ? 'Activado' : 'Desactivado'}
+                          </span>
+                        </div>
+                          <p className="text-xs text-gray-500">Nota: esta función aún no está habilitada.</p>
                       </div>
                     </div>
 

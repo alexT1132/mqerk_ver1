@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { useCourse } from '../../context/CourseContext.jsx';
 // Importaciones de Recharts para gráficos
 import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
@@ -17,6 +18,10 @@ const reeseProfilePic = "https://placehold.co/128x128/A0AEC0/FFFFFF?text=Foto";
 const DEFAULT_USER_DATA = {
   name: "Mari Lu Rodríguez Marquez",
   email: "XXXXXXXXXXXXX@gmail.com",
+  telefono: "",
+  comunidad: "",
+  telTutor: "",
+  nombreTutor: "",
   activeCourse: "XXXXXXXXX",
   currentBachillerato: "XXXXXXXXXXXXX",
   academy: "MQerK Academy",
@@ -331,8 +336,31 @@ const ChartModal = ({ isOpen, onClose, title, children }) => {
  * @param {boolean} [props.isLoading=false] - Bandera para mostrar un estado de carga.
  * @param {string|null} [props.error=null] - Mensaje de error a mostrar si la carga de datos falla.
  */
-export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = false, error = null }) {
+export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = false, error = null, showMetrics = false }) {
   const { selectedCourse } = useCourse();
+  const { alumno } = useAuth();
+
+  // Helper to build absolute URL for stored photos
+  const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
+  const apiUrl = (import.meta?.env?.VITE_API_URL) || `http://${host}:1002/api`;
+  const apiOrigin = apiUrl.replace(/\/api\/?$/, '');
+  const buildStaticUrl = (p) => {
+    if (!p) return reeseProfilePic;
+    if (/^https?:\/\//i.test(p)) return p;
+    return `${apiOrigin}${p.startsWith('/') ? '' : '/'}${p}`;
+  };
+
+  // Map alumno from AuthContext into userData shape
+  const alumnoUserData = alumno ? {
+    name: `${alumno.nombre || ''} ${alumno.apellidos || ''}`.trim() || DEFAULT_USER_DATA.name,
+    email: alumno.email || DEFAULT_USER_DATA.email,
+    telefono: alumno.telefono || '',
+    comunidad: alumno.comunidad1 || '',
+    telTutor: alumno.tel_tutor || '',
+    nombreTutor: alumno.nombre_tutor || '',
+    folio: alumno.folio || DEFAULT_USER_DATA.folio,
+    profilePic: buildStaticUrl(alumno.foto) || DEFAULT_USER_DATA.profilePic,
+  } : {};
 
   // Fusionar los datos proporcionados con los datos por defecto
   const mergedMetricsData = { ...DEFAULT_METRICS_DATA, ...metricsData };
@@ -354,8 +382,155 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
   const calculatedAcademicStatus = calculateAcademicStatus(currentMetricsData);
   currentMetricsData.academicStatus = calculatedAcademicStatus;
 
-  // Fusiona las props proporcionadas con los datos por defecto
-  const currentUserData = { ...DEFAULT_USER_DATA, ...userData };
+  // Fusiona: defaults <- alumno (Auth) <- props (override)
+  const currentUserData = { ...DEFAULT_USER_DATA, ...alumnoUserData, ...userData };
+
+  const buildCourseCode = () => 'MEEAU';
+  const onlyDigits = (v) => typeof v === 'string' ? /^\d+$/.test(v) : (typeof v === 'number' && Number.isFinite(v));
+  const seqNum = onlyDigits(currentUserData.folio) ? parseInt(currentUserData.folio, 10) : null;
+  const yy = String((alumno?.anio && Number(alumno?.anio)) ? Number(alumno.anio) : new Date().getFullYear()).slice(-2);
+  const displayFolio = seqNum != null
+    ? `${buildCourseCode()}${yy}-${String(seqNum).padStart(4, '0')}`
+    : currentUserData.folio;
+
+  // Si solo queremos mostrar foto + nombre + datos personales, salimos temprano
+  if (!showMetrics) {
+    return (
+      <div className="w-full font-inter text-gray-800">
+
+        {/* Sección de Encabezado del Dashboard */}
+        <div className="flex flex-col items-center md:flex-row md:items-start md:justify-between mb-6 pb-4 border-b-2 border-gradient-to-r from-blue-200 to-purple-200">
+          <h2 className="text-3xl xs:text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 md:mb-0">
+            DASHBOARD
+          </h2>
+          <div className="bg-white rounded-full px-3 xs:px-4 sm:px-6 py-1.5 xs:py-2 sm:py-3 shadow-lg border border-gray-200">
+            <span className="text-xs xs:text-sm sm:text-base font-bold text-gray-700">
+              Folio: <span className="text-blue-600">{displayFolio}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Sección de Información del Usuario (solo datos personales) */}
+        <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 hover:shadow-3xl transition-all duration-150">
+
+          {/* Columna izquierda: Foto de perfil y nombre */}
+          <div className="flex flex-col items-center justify-center">
+            <div className="relative mb-4">
+              <img
+                src={currentUserData.profilePic}
+                alt={currentUserData.name}
+                className="w-32 h-32 rounded-full object-cover border-4 border-blue-400 shadow-xl hover:shadow-2xl transition-all duration-150 hover:scale-105"
+                onError={(e) => { e.target.onerror = null; e.target.src = reeseProfilePic; }}
+              />
+              <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                <span className="text-white text-xs font-bold">✓</span>
+              </div>
+            </div>
+            <div className="text-center bg-white rounded-xl px-3 py-2 shadow-lg border border-gray-100">
+              <p className="text-lg font-bold text-gray-900 mb-1">{currentUserData.name}</p>
+              <div className="flex items-center justify-center text-xs text-green-600 font-medium">
+                <div className="w-1.5 h-1.5 bg-green-40-0 rounded-full mr-2 animate-pulse"></div>
+                Estudiante Activo
+              </div>
+            </div>
+          </div>
+
+          {/* Columnas derechas para detalles de datos personales */}
+          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
+            <div className="md:col-span-2">
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 mb-6 shadow-lg">
+                <h3 className="text-lg font-bold text-white flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 13a2 2 0 11-4 0 2 2 0 014 0z"/>
+                  </svg>
+                  DATOS PERSONALES
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                {/* Correo */}
+                <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1">
+                  <div className="flex items-start">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 13H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Correo electrónico</p>
+                      <p className="text-sm font-bold text-gray-800 break-all">{currentUserData.email}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Teléfono estudiante */}
+                <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1">
+                  <div className="flex items-start">
+                    <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Mi número de teléfono</p>
+                      <p className="text-sm font-bold text-gray-800">{currentUserData.telefono || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Municipio / Comunidad */}
+                <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1">
+                  <div className="flex items-start">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Municipio o comunidad</p>
+                      <p className="text-sm font-bold text-gray-800">{currentUserData.comunidad || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Teléfono tutor */}
+                <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1">
+                  <div className="flex items-start">
+                    <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Teléfono de mi tutor</p>
+                      <p className="text-sm font-bold text-gray-800">{currentUserData.telTutor || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Nombre tutor */}
+                <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1 sm:col-span-2">
+                  <div className="flex items-start">
+                    <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 15v2m-2 2h4M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Nombre de mi tutor</p>
+                      <p className="text-sm font-bold text-gray-800">{currentUserData.nombreTutor || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Estado para controlar la visibilidad de la modal del gráfico de actividades
   const [isActivitiesChartModalOpen, setIsActivitiesChartModalOpen] = useState(false);

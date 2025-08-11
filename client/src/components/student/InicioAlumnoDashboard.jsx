@@ -148,7 +148,7 @@ const InicioAlumnoDashboard = ({
   } = useStudent();
   const navigate = useNavigate();
 
-    const { user, alumno: DatosAlumno } = useAuth();
+  const { user, alumno: DatosAlumno } = useAuth();
 
     const { crearComprobante } = useComprobante();
   
@@ -156,7 +156,9 @@ const InicioAlumnoDashboard = ({
   // Priorizar props si existen, sino usar datos del contexto
   const finalVerificado = verificado !== undefined ? verificado : isVerified;
   const finalHaPagado = haPagado !== undefined ? haPagado : hasPaid;
+  // Nombre desde props, luego desde AuthContext.estudiante, fallback "XXXX"
   const finalAlumno = alumno || DatosAlumno?.nombre || "XXXX";
+  const estadoVerificacion = Number(DatosAlumno?.verificacion ?? 0); // 0: no subido, 1: enviado, 2: aprobado
   const finalMatricula = matricula || studentData.matricula || "XXXX";
 
   // Estados locales
@@ -178,12 +180,19 @@ const InicioAlumnoDashboard = ({
   const [hora, setHora] = useState(new Date());
   const [clockPulse, setClockPulse] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState({ visible: false, target: '' });
+  // Estado local reactivo para verificación, evita UI vieja por mutación no reactiva
+  const [verifLocal, setVerifLocal] = useState(estadoVerificacion);
   
   const audioRef = useRef(null);
   const sliderRef = useRef(null);
   const fileInputRef = useRef(null);
   const circleSize = 48;
   const sliderWidth = 280;
+
+  // Mantener verifLocal sincronizado si backend/ctx cambia
+  useEffect(() => {
+    setVerifLocal(estadoVerificacion);
+  }, [estadoVerificacion]);
 
   // Función para copiar al portapapeles
   const handleCopy = (text, fieldName) => {
@@ -200,28 +209,24 @@ const InicioAlumnoDashboard = ({
     }, 2000);
   };
 
-  // BACKEND: Redirigir automáticamente solo si se acaba de verificar
-  // IMPORTANTE: Solo redirige si está verificado, pagado, NO es primer acceso, no tiene curso actual
-  // y no es una visita directa (para evitar loops)
+  // BACKEND: Redirigir a "Mis Cursos" tan pronto como esté aprobado y no haya curso seleccionado (sin delay)
   useEffect(() => {
-    // BACKEND: Solo redirigir si está verificado, pagado, NO es primer acceso 
-    // y NO tiene curso seleccionado (para que vaya a seleccionar uno)
-    const shouldRedirect = finalVerificado && 
-                          finalHaPagado && 
-                          !isFirstAccess && 
-                          !currentCourse &&
-                          !window.location.search.includes('direct=true');
-    
-    // BACKEND: Si ya tiene curso seleccionado, NO redirigir
-    // La pantalla de inicio debe mostrarse como bienvenida al curso
-    if (shouldRedirect) {
-      const timer = setTimeout(() => {
-        console.log('🔄 Redirigiendo a /alumno/cursos para seleccionar curso');
-        navigate('/alumno/cursos');
-      }, 500);
-      return () => clearTimeout(timer);
+    const alreadyOnCursos = window.location.pathname.startsWith('/alumno/cursos');
+    if ((verifLocal >= 2) && !currentCourse && !alreadyOnCursos) {
+      navigate('/alumno/cursos', { replace: true });
     }
-  }, [finalVerificado, finalHaPagado, isFirstAccess, currentCourse, navigate]);
+  }, [verifLocal, currentCourse, navigate]);
+
+  // En cuanto el backend marque verificación aprobada (2), sincronizar StudentContext
+  useEffect(() => {
+    if (verifLocal >= 2 && (!isVerified || !hasPaid)) {
+      try {
+        simulateVerification(); // Esto marca verified/paid=true y persiste en localStorage
+      } catch (e) {
+        console.warn('No se pudo sincronizar verificación con StudentContext', e);
+      }
+    }
+  }, [verifLocal, isVerified, hasPaid, simulateVerification]);
 
   // Animación de entrada
   useEffect(() => {
@@ -276,7 +281,7 @@ const InicioAlumnoDashboard = ({
       datosCompletos.append("comprobante", file);
       datosCompletos.append("id_estudiante", DatosAlumno.id);
 
-      const interval = setInterval(() => {
+  const interval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 100) {
             clearInterval(interval);
@@ -297,21 +302,38 @@ const InicioAlumnoDashboard = ({
             
               setTimeout(() => setShowDestello(false), 3000);
               setShowModal(false);
-              window.location.reload();
             }, 800);
             return 100;
           }
           return prev + Math.random() * 15 + 5;
         });
       }, 100);
-      crearComprobante(datosCompletos);
+      try {
+        await crearComprobante(datosCompletos);
+        // Marcar localmente que está en revisión para reflejarlo inmediatamente en UI
+        // Si disponemos de DatosAlumno, emulamos el cambio de verificación a 1
+        if (DatosAlumno) {
+          // Evitar mutaciones no reactivas; usar estado local
+          DatosAlumno.verificacion = 1;
+        }
+        setVerifLocal(1);
+        // Forzar re-render del estado verificación
+        setShowUploadProgress(false);
+        setShowDestello(true);
+        setTimeout(() => setShowDestello(false), 2000);
+      } catch (err) {
+        console.error('Error subiendo comprobante', err);
+        setShowUploadProgress(false);
+        alert('No se pudo subir el comprobante. Intenta de nuevo.');
+      }
     }
   };
 
   // BACKEND: Determinar si mostrar el bloqueo de pago
   // SEGURIDAD: Se muestra cuando el estudiante no ha pagado O no está verificado
   // IMPORTANTE: No depende de isFirstAccess para evitar bypasses de seguridad
-  const mostrarBloqueo = !finalHaPagado || !finalVerificado;
+  // Bloquear si no ha subido o no aprobado; cuando verificación=0 mostrar invitación a subir
+  const mostrarBloqueo = (verifLocal ?? estadoVerificacion) < 2;
   
   const tieneNumCursoValido = currentCourse && 
                             currentCourse.title && 
@@ -373,22 +395,31 @@ const InicioAlumnoDashboard = ({
     forest: 'from-green-900 via-emerald-800 to-teal-900'
   };
 
+  // Si está bloqueado y había una sección activa, forzar regreso a bienvenida para evitar UIs mezcladas
+  useEffect(() => {
+    if (mostrarBloqueo && activeSection) {
+      try { goToWelcome(); } catch {}
+    }
+  }, [mostrarBloqueo, activeSection, goToWelcome]);
+
   return (
-    <div className="relative min-h-screen w-full">
+    <div className="relative min-h-screen w-full overflow-x-hidden">
       
       {/* Progreso de carga */}
       <UploadProgress show={showUploadProgress} progress={uploadProgress} />
 
-      {/* Mostrar métricas del curso cuando activeSection sea "inicio" y hay un curso válido */}
-      {activeSection === 'inicio' && tieneNumCursoValido && (
+  {/* Mostrar métricas del curso solo si NO hay bloqueo, activeSection es "inicio" y hay curso válido */}
+  {!mostrarBloqueo && activeSection === 'inicio' && tieneNumCursoValido && (
         <div className={`transition-all duration-1000 ${elementsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <AlumnoDashboardMetrics />
+          <AlumnoDashboardMetrics showMetrics={false} />
         </div>
       )}
 
-      {/* Mostrar mensaje de bienvenida cuando NO hay sección activa */}
-      {!activeSection && (
-        <div className={`fixed inset-0 min-h-screen w-full bg-gradient-to-br ${themes[currentTheme]} overflow-y-auto transition-all duration-1000`}>
+  {/* Mostrar mensaje de bienvenida cuando NO hay sección activa o cuando hay BLOQUEO */}
+  {(!activeSection || mostrarBloqueo) && (
+        <div className={`min-h-screen w-full relative transition-all duration-1000`}>
+          {/* Fondo a pantalla completa sin scroll secundario */}
+          <div className={`fixed inset-0 w-screen h-screen bg-gradient-to-br ${themes[currentTheme]} z-0 pointer-events-none`} />
           
           {/* Partículas flotantes */}
           <FloatingParticles />
@@ -417,7 +448,7 @@ const InicioAlumnoDashboard = ({
               }}
             ></div>
             
-            {/* Estrellas mejoradas con más animación */}
+            
             {[...Array(8)].map((_, i) => (
               <div
                 key={i}
@@ -434,11 +465,12 @@ const InicioAlumnoDashboard = ({
             ))}
           </div>
 
-          {/* Layout principal para bienvenida */}
-          <div className="relative z-10 min-h-screen p-4 sm:p-6 lg:p-8 sm:pl-40 md:pl-52 lg:pl-40 xl:pl-32 pt-20 sm:pt-24 md:pt-28 lg:pt-32">
+          {/* Layout principal para bienvenida (centrado y sin sangría lateral excesiva) */}
+          <div className="relative z-10 min-h-screen p-4 sm:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-28 lg:pt-32">
             {/* Header con saludo animado */}
             <div className={`text-center mb-12 lg:mb-16 transition-all duration-1000 ${elementsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 drop-shadow-2xl animate-pulse duration-1000 hover:scale-105 transition-transform cursor-pointer">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-normal tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 drop-shadow-2xl animate-pulse duration-1000 hover:scale-105 transition-transform cursor-pointer break-words px-3 sm:px-4 pb-1"
+                  style={{ textWrap: 'balance' }}>
                 {getWelcomeMessage()}
               </h1>
             </div>
@@ -449,17 +481,17 @@ const InicioAlumnoDashboard = ({
               {/* Columna izquierda - Área de comprobante O nombre del curso */}
               {(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) && (
                 <div className={`space-y-6 md:order-1 transition-all duration-1000 delay-300 ${elementsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
-                  <div className="w-full max-w-md mx-auto md:mx-0 sm:ml-8 md:ml-12 lg:ml-8 xl:ml-4 px-4 md:px-0">
+                  <div className="w-full max-w-md mx-auto px-4 md:px-0">
                     
                     {/* Mensaje de estado con efectos mejorados O nombre del curso */}
-                    <div className="relative group ml-0 sm:ml-8 md:ml-12 lg:ml-8 xl:ml-4">
+                    <div className="relative group mx-auto">
                       <div className={`absolute inset-0 ${mostrarBloqueo ? 'bg-gradient-to-r from-yellow-400/30 via-amber-300/30 to-orange-400/30' : 'bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-indigo-500/30'} blur-lg rounded-xl animate-pulse`}></div>
                       <div className={`relative ${mostrarBloqueo ? 'bg-gradient-to-r from-yellow-400/20 via-amber-300/20 to-orange-400/20' : 'bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-indigo-500/20'} backdrop-blur-lg rounded-xl p-4 sm:p-6 md:p-4 lg:p-6 border ${mostrarBloqueo ? 'border-yellow-300/40' : 'border-purple-300/40'} text-center mb-6 shadow-xl ${mostrarBloqueo ? 'shadow-yellow-500/30 hover:shadow-yellow-500/50' : 'shadow-purple-500/30 hover:shadow-purple-500/50'} transition-all duration-500 group-hover:scale-102`}>
                         
                         {/* Contenido cuando está en modo bloqueo (pago) */}
                         {mostrarBloqueo && (
                           <>
-                            {DatosAlumno?.verificacion === 0 ? (
+                            {estadoVerificacion === 0 ? (
                               <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-3 lg:gap-4">
                                 <div className="bg-yellow-400 rounded-full p-2 sm:p-3 md:p-2 lg:p-3 animate-pulse group-hover:animate-bounce">
                                   <AlertTriangle size={24} className="sm:w-8 sm:h-8 md:w-6 md:h-6 lg:w-8 lg:h-8 text-yellow-900 animate-pulse" style={{
@@ -489,7 +521,7 @@ const InicioAlumnoDashboard = ({
                               </div>
                             )}
                             
-                            {DatosAlumno?.verificacion === 1 && (
+                            {estadoVerificacion === 1 && (
                               <div className="mt-4 text-center text-green-200 font-bold bg-green-500/20 border border-green-300/30 rounded-lg px-4 py-3 animate-pulse">
                                 <div className="flex items-center justify-center gap-2">
                                   <CheckCircle size={20} />
@@ -533,7 +565,7 @@ const InicioAlumnoDashboard = ({
                       <>
                         {/* Botón de subir comprobante mejorado */}
                         {DatosAlumno?.verificacion === 0 && (
-                          <div className="group ml-0 sm:ml-8 md:ml-12 lg:ml-8 xl:ml-4">
+                          <div className="group mx-auto">
                             {isMobile ? (
                               <div className="w-full flex justify-center">
                                 <div
@@ -700,7 +732,7 @@ const InicioAlumnoDashboard = ({
                           <span className="text-blue-600">Banco:</span> <span className="font-semibold">BANCOPPEL</span>
                         </div>
                         <div>
-                          <span className="text-blue-600">Beneficiario:</span> <span className="font-semibold">MQERK S.A.</span>
+                          <span className="text-blue-600">Beneficiario:</span> <span className="font-semibold">Kelvin Valentin Gómez Ramírez</span>
                         </div>
                       </div>
                       
@@ -755,11 +787,11 @@ const InicioAlumnoDashboard = ({
                         </div>
                         <div>
                           <span className="text-green-600">Horario:</span> 
-                          <span className="font-semibold"> L-V 9-17h</span>
+                          <span className="font-semibold"> L-V 9-18h</span>
                         </div>
                         <div>
                           <span className="text-green-600">Tel:</span> 
-                          <span className="font-semibold"> 287-181-1231</span>
+                          <span className="font-semibold"> 287-151-5760</span>
                         </div>
                       </div>
                       

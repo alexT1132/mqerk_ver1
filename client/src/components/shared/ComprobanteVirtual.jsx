@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { useStudent } from '../../context/StudentContext.jsx';
-import { useStudentDataForRecibo } from '../../hooks/useReciboData.js';
 
 /*
 EJEMPLO DE USO CON BACKEND:
@@ -101,11 +100,15 @@ export default function ComprobanteVirtual({
   studentData: propStudentData // Datos del estudiante desde el backend
 }) {
   const reciboRef = useRef(null);
-  const { currentCourse } = useStudent();
-  const { studentForRecibo, courseInfo } = useStudentDataForRecibo();
+  const { currentCourse, studentData: ctxStudentData } = useStudent();
   
-  // Usar datos de la prop (backend) o del hook (mock/local)
-  const finalStudentData = propStudentData || studentForRecibo;
+  // Usar datos de la prop (backend) o del contexto
+  const finalStudentData = propStudentData || ctxStudentData;
+
+  // Si el modal no está abierto o no hay datos de pago, no renderizar (evita cálculos con undefined)
+  if (!isOpen || !paymentData) {
+    return null;
+  }
 
   // BACKEND INTEGRATION: Estructura esperada para paymentData
   /*
@@ -140,19 +143,19 @@ export default function ComprobanteVirtual({
   }
   */
 
-  // BACKEND INTEGRATION: Estructura esperada para courseInfo
-  /*
-  courseInfo = {
-    id: number,                    // ID único del curso
-    name: string,                  // Nombre del curso
-    duration: string,              // Duración (ej: "10 horas", "3 meses")
-    level: string,                 // Nivel (ej: "Elemental", "Intermedio")
-    price: number,                 // Precio del curso
-    startDate: string,             // Fecha de inicio (opcional)
-    endDate: string,               // Fecha de fin (opcional)
-    instructor: string,            // Instructor asignado (opcional)
-  }
-  */
+  // Información del curso: derivada del contexto (currentCourse) si está disponible
+  const courseInfo = currentCourse
+    ? {
+        id: currentCourse.id,
+        name: currentCourse.title || currentCourse.name,
+        duration: currentCourse.duration,
+        level: currentCourse.level || currentCourse.category || 'Elemental',
+        price: currentCourse.price,
+        startDate: currentCourse.startDate,
+        endDate: currentCourse.endDate,
+        instructor: currentCourse.instructor,
+      }
+    : {};
 
   // Función para generar el folio único
   const generateFolio = (paymentId, date) => {
@@ -1117,7 +1120,8 @@ export default function ComprobanteVirtual({
     method: paymentData.method || 'Efectivo',
     status: paymentData.status || 'paid',
     plan: paymentData.plan || 'Plan no especificado',
-    cashReceived: paymentData.cashReceived || 700.00,
+  // Si no se especifica, asumir que se recibió el monto total pagado
+  cashReceived: (typeof paymentData.cashReceived === 'number') ? paymentData.cashReceived : (paymentData.amount || paymentData.baseAmount || 0),
     transactionId: paymentData.transactionId || folio,
   };
 
@@ -1187,7 +1191,6 @@ export default function ComprobanteVirtual({
             <div className="text-center text-xs py-2 border-t-2 border-b border-dashed border-gray-600">
               <div className="font-bold">{fechaActual} {horaActual} a. m.</div>
               <div className="text-gray-600">Horas</div>
-              <div className="font-bold text-blue-600">Folio: {folio}</div>
             </div>
 
             {/* Datos del cliente */}
@@ -1293,7 +1296,7 @@ export default function ComprobanteVirtual({
 
             {/* Información del comprobante */}
             <div className="text-center pt-2 border-t-2 border-dashed border-gray-600">
-              <div className="text-sm font-bold text-blue-600 mb-1">📄 Folio: {folio}</div>
+              {/* Folio mostrado al final en la sección de información del comprobante */}
               <div className="text-xs text-gray-600 space-y-0.5">
                 <div>✅ Comprobante válido para efectos fiscales</div>
                 <div>📁 Conserve este documento como respaldo</div>
@@ -1308,7 +1311,7 @@ export default function ComprobanteVirtual({
           <div className="text-blue-700 space-y-0.5">
             <p>• Este comprobante es válido para efectos fiscales</p>
             <p>• Guarda este documento como respaldo de tu pago</p>
-            <p>• En caso de dudas, presenta este folio: <strong>{folio}</strong></p>
+            {/* Folio ya se muestra arriba, evitamos duplicarlo */}
             <p>• El recibo incluye todos los detalles de tu transacción</p>
           </div>
         </div>

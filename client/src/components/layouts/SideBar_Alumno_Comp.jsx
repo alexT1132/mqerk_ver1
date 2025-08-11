@@ -1,7 +1,7 @@
 // src/components/SideBar_Alumno_comp.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Lock } from 'lucide-react';
+import { Lock, Unlock } from 'lucide-react';
 import { useStudent } from '../../context/StudentContext.jsx';
 
 /**
@@ -15,26 +15,21 @@ import { useStudent } from '../../context/StudentContext.jsx';
  * @param {function} [props.onClick] - Función opcional para manejar clics (principalmente para cerrar el menú móvil).
  */
 function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onClick: mobileOnClick, activo, sectionKey }) {
-  const { isVerified, hasPaid, activeSection, setActiveSectionHandler } = useStudent();
+  const { activeSection, setActiveSectionHandler } = useStudent();
   const location = useLocation();
   const navigate = useNavigate();
-  const isLogout = to === "/logout";
+  // Detectar logout tanto si llega como ruta absoluta como anidada
+  const isLogout = to === "/logout" || to === "/alumno/logout";
   const isInicio = to === "/alumno/" || to === "/alumno";
   
   // Para las secciones que usan el nuevo sistema, verificar si esta sección está activa
   const isActive = sectionKey ? activeSection === sectionKey : location.pathname === to;
-  
-  // El elemento está bloqueado si el estudiante no está verificado/pagado y no es inicio o logout
-  const isBlocked = (!isVerified || !hasPaid) && !isInicio && !isLogout;
+  // Quitar bloqueo visual/funcional de elementos: todos accesibles
+  const isBlocked = false;
   const isMobileItem = !!mobileOnClick;
 
   const handleLinkClick = (e) => {
-    if (isBlocked) {
-      e.preventDefault();
-      alert('Debes completar la verificación y el pago para acceder a esta sección.');
-      return;
-    }
-    
+  // Todos los elementos son accesibles; no bloquear navegación
     if (mobileOnClick) {
       mobileOnClick();
     }
@@ -53,7 +48,7 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onCli
         setActiveSectionHandler(null);
       }
       
-      if (isActive && !isLogout) {
+  if (isActive && !isLogout) {
         e.preventDefault();
         navigate("/alumno/");
       }
@@ -65,46 +60,36 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onCli
   return (
     <li className="group flex justify-start items-center h-fit gap-1.5 relative">
       <Link
-        to={isBlocked ? '#' : to}
+        to={to}
         onClick={handleLinkClick}
         className={`
           items-center p-2 rounded-lg flex w-full transition-all duration-200 ease-in-out relative
           ${isActive
             ? "bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg transform scale-[1.02]"
-            : isBlocked
-              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-              : "text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 hover:text-purple-700 hover:shadow-md hover:transform hover:scale-[1.01]"}
+            : "text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 hover:text-purple-700 hover:shadow-md hover:transform hover:scale-[1.01]"}
           ${isLogout ? "hover:bg-red-50 hover:text-red-600" : ""}
         `}
-        tabIndex={isBlocked ? -1 : 0}
-        aria-disabled={isBlocked}
+        tabIndex={0}
+        aria-disabled={false}
       >
         <div className="flex-shrink-0">
-          {isBlocked ? (
-            <Lock size={24} className="text-gray-400" />
-          ) : (
-            React.cloneElement(Icono, {
-              stroke: isLogout ? svgColorLogout : (isActive ? "white" : svgColor),
-              fill: "none"
-            })
-          )}
+          {React.cloneElement(Icono, {
+            stroke: isLogout ? svgColorLogout : (isActive ? "white" : svgColor),
+            fill: "none"
+          })}
         </div>
         {isMobileItem ? (
           <span className="text-sm font-medium whitespace-nowrap block ml-2">
             {NombreElemento}
           </span>
-        ) : (            <>
-              <span className={`text-sm font-medium whitespace-nowrap ml-2 transition-all duration-200 ease-out ${
-                isSidebarOpen ? 'opacity-100 translate-x-0 delay-75' : 'opacity-0 -translate-x-2 w-0 overflow-hidden'
-              }`}>
-                {NombreElemento}
-              </span>
-              {!isSidebarOpen && (
-                <span className="hidden group-hover:block absolute left-full top-1/2 -translate-y-1/2 ml-3 bg-gray-900/90 text-white px-3 py-2 rounded-lg shadow-xl z-50 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none backdrop-blur-sm border border-gray-700/50 text-sm font-medium">
-                  {NombreElemento}
-                </span>
-              )}
-            </>
+        ) : isSidebarOpen ? (
+          <span className="text-sm font-medium whitespace-nowrap block ml-2">
+            {NombreElemento}
+          </span>
+        ) : (
+          <span className="hidden group-hover:block absolute left-full top-1/2 -translate-y-1/2 ml-3 bg-gray-900/90 text-white px-3 py-2 rounded-lg shadow-xl z-[3000] opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none backdrop-blur-sm border border-gray-700/50 text-sm font-medium">
+            {NombreElemento}
+          </span>
         )}
       </Link>
     </li>
@@ -215,11 +200,17 @@ const alumnoMenuItems = [
  */
 export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Pin colapsado: no se expande con hover
+  const [isPinnedCollapsed, setIsPinnedCollapsed] = useState(false);
   const timeoutRef = useRef(null);
+  // Ventana de protección post-click para evitar colapsos por reflow/navegación
+  const freezeUntilRef = useRef(0);
+  const sidebarRef = useRef(null);
 
   const sidebarWidth = isSidebarOpen ? 'w-64' : 'w-[80px]'; // Incrementado el ancho expandido para mejor visibilidad
 
   const handleMouseEnter = () => {
+    if (isPinnedCollapsed) return; // No expandir cuando está fijado en colapsado
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -231,15 +222,49 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
     }
   };
 
-  const handleMouseLeave = () => {
-    timeoutRef.current = setTimeout(() => {
+  const handleMouseLeave = (e) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    // Pequeña demora para evitar colapso mientras haces click o por reflows
+  timeoutRef.current = setTimeout(() => {
+      // Evitar cerrar si el mouse sigue dentro (salida a un hijo)
+      const rt = e?.relatedTarget;
+      if (rt && sidebarRef.current && sidebarRef.current.contains(rt)) return;
+      // Si el sidebar sigue hovered, no cerrar
+      if (sidebarRef.current && sidebarRef.current.matches(':hover')) return;
+      // Evitar cerrar durante un breve periodo tras un click (reflows/rutas)
+      if (Date.now() < freezeUntilRef.current) return;
       setIsSidebarOpen(false);
-      // ¡CRÍTICO! Llama a la función del Layout para comunicar el estado
-      if (setDesktopSidebarOpen) {
-        setDesktopSidebarOpen(false);
-      }
-    }, 100); // Reducido de 200ms a 100ms para más responsividad
+      if (setDesktopSidebarOpen) setDesktopSidebarOpen(false);
+      timeoutRef.current = null;
+    }, 200);
   };
+
+  const togglePinned = () => {
+    setIsPinnedCollapsed(prev => {
+      const next = !prev;
+      if (next) {
+        // Si lo fijamos en colapsado, asegurar que quede cerrado y avisar al Layout
+        setIsSidebarOpen(false);
+        if (setDesktopSidebarOpen) setDesktopSidebarOpen(false);
+      }
+      // Persistencia
+      try { localStorage.setItem('sidebarPinnedCollapsed', String(next)); } catch (_) {}
+      return next;
+    });
+  };
+
+  // Cargar estado persistido al montar
+  useEffect(() => {
+    try {
+  const pc = localStorage.getItem('sidebarPinnedCollapsed') === 'true';
+  if (pc) {
+        setIsPinnedCollapsed(true);
+        setIsSidebarOpen(false);
+        if (setDesktopSidebarOpen) setDesktopSidebarOpen(false);
+      }
+    } catch (_) {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -249,9 +274,18 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
     };
   }, []);
 
+  // Sincroniza el overlay de blur con el estado real del sidebar.
+  // Si por cualquier motivo el sidebar se cierra, el overlay se limpia automáticamente.
+  useEffect(() => {
+    if (setDesktopSidebarOpen) {
+      setDesktopSidebarOpen(isSidebarOpen);
+    }
+  }, [isSidebarOpen, setDesktopSidebarOpen]);
+
   return (
     <aside
-      className={`max-sm:hidden flex flex-col fixed ${sidebarWidth} shadow-lg z-40 top-[80px] h-[calc(100vh-80px)] bg-white/95 backdrop-blur-sm border-r border-gray-200/80 transition-all duration-200 ease-out overflow-hidden`}
+      ref={sidebarRef}
+      className={`max-sm:hidden flex flex-col fixed ${sidebarWidth} shadow-lg z-[2000] top-[80px] h-[calc(100vh-80px)] bg-white/95 backdrop-blur-sm border-r border-gray-200/80 transition-all duration-150 ease-out overflow-visible`}
       style={{
         transform: isSidebarOpen ? 'translateX(0)' : 'translateX(0)',
         opacity: 1,
@@ -261,7 +295,20 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
       aria-label="Sidebar de escritorio de alumno"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+  onClickCapture={() => { freezeUntilRef.current = Date.now() + 500; }}
     >
+  {/* Barra superior con botón de fijar colapsado */}
+  <div className="px-3 py-2 flex items-center justify-end gap-2 border-b border-gray-200/60 bg-white/70">
+        <button
+          onClick={togglePinned}
+          className={`inline-flex items-center justify-center w-8 h-8 rounded-md border text-xs font-medium transition-all
+            ${isPinnedCollapsed ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+          title={isPinnedCollapsed ? 'Liberar sidebar (permitir expandir)' : 'Fijar colapsado (no expandir)'}
+          aria-pressed={isPinnedCollapsed}
+        >
+          {isPinnedCollapsed ? <Lock size={16} /> : <Unlock size={16} />}
+        </button>
+      </div>
       <nav className="h-full">
         <ul className="p-4 h-full flex flex-col list-none">
           {/* Grupo superior de elementos de navegación principales */}
@@ -293,7 +340,7 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
                 activo={activo}
               />
               <ElementoSideBarAlumno
-                to="/logout"
+                to="/alumno/logout"
                 Icono={LogoCerrarSesionAlumno}
                 NombreElemento="Cerrar Sesión"
                 isSidebarOpen={isSidebarOpen}
@@ -354,7 +401,7 @@ export function SideBarSm_Alumno_comp({ isMenuOpen, closeMenu, activo }) {
                   activo={activo}
                 />
                 <ElementoSideBarAlumno
-                  to="/logout"
+                  to="/alumno/logout"
                   Icono={LogoCerrarSesionAlumno}
                   NombreElemento="Cerrar Sesión"
                   mobileOnClick={closeMenu}

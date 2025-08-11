@@ -13,12 +13,23 @@ export const createComprobante = async (data) => {
 
 export const getComprobantes = async (grupo, curso) => {
     const [rows] = await db.query(`
-        SELECT estudiantes.folio, estudiantes.nombre, estudiantes.apellidos, estudiantes.verificacion, comprobantes.comprobante, comprobantes.importe, comprobantes.metodo, comprobantes.created_at 
+        SELECT 
+          estudiantes.id AS id_estudiante,
+          estudiantes.folio, 
+          estudiantes.nombre, 
+          estudiantes.apellidos, 
+          estudiantes.verificacion, 
+          comprobantes.comprobante, 
+          comprobantes.importe, 
+          comprobantes.metodo, 
+          comprobantes.motivo_rechazo AS motivoRechazo,
+          comprobantes.created_at, 
+          comprobantes.updated_at 
         FROM comprobantes 
         INNER JOIN estudiantes 
-        ON comprobantes.id_estudiante = estudiantes.id 
+          ON comprobantes.id_estudiante = estudiantes.id 
         WHERE estudiantes.grupo = ?
-        AND estudiantes.curso = ?
+          AND estudiantes.curso = ?
     `, [grupo, curso]);
     return rows;
 };
@@ -38,10 +49,21 @@ export const getEstudianteVerificacion = async (folio) => {
 export const actualizarComprobante = async (id, { importe, metodo }) => {
   const sql = `
     UPDATE comprobantes 
-    SET importe = ?, metodo = ?, created_at = NOW()
+    SET importe = ?, metodo = ?, updated_at = NOW()
     WHERE id_estudiante = ?
   `;
   const [result] = await db.query(sql, [importe, metodo, id]);
+  return result;
+};
+
+// Actualizar comprobante incluyendo motivo de rechazo (se usa al rechazar)
+export const actualizarComprobanteRechazo = async (id, { importe, metodo, motivo }) => {
+  const sql = `
+    UPDATE comprobantes
+    SET importe = ?, metodo = ?, motivo_rechazo = ?, updated_at = NOW()
+    WHERE id_estudiante = ?
+  `;
+  const [result] = await db.query(sql, [importe, metodo, motivo, id]);
   return result;
 };
 

@@ -32,7 +32,7 @@ function Register() {
       if(isVerde){
         navigate('/login'); // Redirige al login después del registro
       }
-    }, [signup])
+    }, [isVerde, navigate])
 
   return (
     <div className="h-screen flex flex-col bg-[#3c24ba] overflow-hidden">
