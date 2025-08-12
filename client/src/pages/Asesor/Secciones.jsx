@@ -1,3 +1,4 @@
+import React from "react";
 import {
     // Componentes para seccion mi perfil
     DatosPersonales,
@@ -15,7 +16,7 @@ import {
     // TarjetaPerfil,
     BtnCursoActivo,
     Analiticas
-    } from "../../components/DashboardComp";
+    } from "../../components/DashboradComp.jsx";
 import Persona from '../../assets/Persona.jpg'
 
 
@@ -27,8 +28,8 @@ export function Dashboard({src, TituloAsesor, Nombre, Ingreso, cantidadCursos, c
     return(
         <div className="flex flex-col w-full gap-y-20 p-10">
         <div className="flex">
-        <Container SeccionDashboard={'Cursos Activos'} ModalCursos={<ModalCursos/>} Contenido={<BtnCursoActivo NombreCurso='Ingles Elemental' />}/>
-        <TarjetaPerfil src={Persona} TituloAsesor={TituloAsesor} Nombre={Nombre} Ingreso={Ingreso} cantidadCursos={cantidadCursos} cantidadEstudiantes={cantidadEstudiantes} cantidadCertificados={cantidadCertificados} cantidadGeneraciones={cantidadGeneraciones}/>
+        <Container SeccionDashboard={'Cursos Activos'} ModalCursos={<ModalCursos/>} Contenido={<BtnCursoActivo/>}/>
+        <TarjetaPerfil src={src} TituloAsesor={TituloAsesor} Nombre={Nombre} Ingreso={Ingreso} cantidadCursos={cantidadCursos} cantidadEstudiantes={cantidadEstudiantes} cantidadCertificados={cantidadCertificados} cantidadGeneraciones={cantidadGeneraciones}/>
         </div>
 
         <Container SeccionDashboard={'Analíticas'} Contenido={<Analiticas TituloTabla1={'Rendimiento'} TituloTabla2={'Tareas entregadas'}/>}/>

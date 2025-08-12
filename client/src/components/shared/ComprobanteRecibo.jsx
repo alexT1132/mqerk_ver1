@@ -1,25 +1,10 @@
 import { useState, useEffect } from 'react';
+import LoadingOverlay from './LoadingOverlay.jsx';
 import { useEstudiantes } from "../../context/EstudiantesContext";
 import { useComprobante } from '../../context/ComprobantesContext';
 
 
-function LoadingScreen({ onComplete }) {
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            onComplete();
-        }, 2000); // Simula un tiempo de carga de 2 segundos
-        return () => clearTimeout(timer);
-    }, [onComplete]);
-// Esta función se ejecuta una vez que la carga se completa 
-    return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-white">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                <p className="text-lg font-medium text-gray-700">Cargando validación de recibos... </p>
-            </div>
-        </div>
-    );
-}
+// Reemplazado por el componente reutilizable LoadingOverlay
 
 // Botón de categoría de curso
 function CategoryButton({ label, isActive, onClick }) {
@@ -72,10 +57,8 @@ function CategoryButton({ label, isActive, onClick }) {
     );
 }
 
-// Botón de turno vespertino con profesor asignado
-function VespertinoButton({ label, isActive, onClick, profesorAsignado }) {
-
-    const { grupos: gruposObtenidos } = useEstudiantes();
+// Botón de turno (matutino/vespertino/sabatino) con profesor asignado
+function VespertinoButton({ label, isActive, onClick, profesorAsignado, grupo }) {
 
     // Función para obtener estilos sobrios basados en el tipo de turno
     const getGrupoStyles = (grupo, isActive) => {
@@ -124,7 +107,7 @@ function VespertinoButton({ label, isActive, onClick, profesorAsignado }) {
     return (
         <button
             onClick={onClick}
-            className={getGrupoStyles(gruposObtenidos.grupo, isActive)}
+            className={getGrupoStyles(grupo, isActive)}
         >
             <span className="relative z-10 tracking-wide text-center leading-tight">{label}</span>
             {isActive && profesorAsignado && (
@@ -608,10 +591,15 @@ export function ComprobanteRecibo() {
         }
     };
 
-    const handleLoadingComplete = () => {
-        setShowLoadingScreen(false);
-        setIsLoading(false);
-    };
+    // Auto-ocultar overlay tras 2s para simular la carga inicial
+    useEffect(() => {
+        if (!showLoadingScreen) return;
+        const t = setTimeout(() => {
+            setShowLoadingScreen(false);
+            setIsLoading(false);
+        }, 2000);
+        return () => clearTimeout(t);
+    }, [showLoadingScreen]);
 
     // ==================== ACCIONES DE COMPROBANTES ====================
     
@@ -818,13 +806,11 @@ export function ComprobanteRecibo() {
 
     // ==================== RENDER ====================
 
-    // Si está cargando inicialmente, mostrar pantalla de carga
-    if (showLoadingScreen) {
-        return <LoadingScreen onComplete={handleLoadingComplete} />;
-    }
-
     return (
         <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
+            {showLoadingScreen && (
+                <LoadingOverlay message="Cargando validación de recibos..." />
+            )}
             {/* ==================== HEADER Y FILTROS ==================== */}
             <div className="pt-2 xs:pt-4 sm:pt-6 pb-2 xs:pb-3 sm:pb-4 px-2 xs:px-4 sm:px-6">
                 <div className="w-full max-w-7xl mx-auto">
@@ -1156,7 +1142,9 @@ export function ComprobanteRecibo() {
                                     
                                     {vistaActual === 'rechazados' && (
                                         <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-red-700 font-medium text-center border-r border-gray-200">
-                                            {comprobante.fechaRechazo}
+                                            { (comprobante.fechaRechazo || comprobante.updated_at || comprobante.created_at) 
+                                                ? new Date(comprobante.fechaRechazo || comprobante.updated_at || comprobante.created_at).toLocaleString('es-MX') 
+                                                : '' }
                                         </td>
                                     )}
                                     
@@ -1247,7 +1235,7 @@ export function ComprobanteRecibo() {
                                             <input
                                                 type="text"
                                                 value={getFieldValue(comprobante, 'importe')}
-                                                onChange={(e) => handleFieldChange(comprobante.id, 'importe', e.target.value)}
+                                                onChange={(e) => handleFieldChange(comprobante, 'importe', e.target.value)}
                                                 className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 placeholder="0.00"
                                             />
@@ -1262,7 +1250,7 @@ export function ComprobanteRecibo() {
                                             <input
                                                 type="text"
                                                 value={getFieldValue(comprobante, 'metodoPago')}
-                                                onChange={(e) => handleFieldChange(comprobante.id, 'metodoPago', e.target.value)}
+                                                onChange={(e) => handleFieldChange(comprobante, 'metodoPago', e.target.value)}
                                                 className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 placeholder="Método de pago"
                                             />
@@ -1286,7 +1274,9 @@ export function ComprobanteRecibo() {
                                     
                                     {vistaActual === 'rechazados' && (
                                         <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-red-700 font-medium text-center border-r border-gray-200">
-                                            {comprobante.fechaRechazo}
+                                            { (comprobante.fechaRechazo || comprobante.updated_at || comprobante.created_at)
+                                                ? new Date(comprobante.fechaRechazo || comprobante.updated_at || comprobante.created_at).toLocaleString('es-MX')
+                                                : '' }
                                         </td>
                                     )}
                                     
@@ -1322,7 +1312,7 @@ export function ComprobanteRecibo() {
                                             <input
                                                 type="text"
                                                 value={getFieldValue(comprobantesObtenidos, 'importe')}
-                                                onChange={(e) => setImporteEditable(e.target.value)}
+                                                onChange={(e) => handleFieldChange(comprobantesObtenidos, 'importe', e.target.value)}
                                                 className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 placeholder="0.00"
                                             />
@@ -1337,7 +1327,7 @@ export function ComprobanteRecibo() {
                                             <input
                                                 type="text"
                                                 value={getFieldValue(comprobantesObtenidos, 'metodoPago')}
-                                                onChange={(e) => setMetodoEditable(e.target.value)}
+                                                onChange={(e) => handleFieldChange(comprobantesObtenidos, 'metodoPago', e.target.value)}
                                                 className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 placeholder="Método de pago"
                                             />
@@ -1361,7 +1351,9 @@ export function ComprobanteRecibo() {
                                     
                                     {vistaActual === 'rechazados' && (
                                         <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-red-700 font-medium text-center border-r border-gray-200">
-                                            {comprobantesObtenidos.fechaRechazo}
+                                            { (comprobantesObtenidos.fechaRechazo || comprobantesObtenidos.updated_at || comprobantesObtenidos.created_at)
+                                                ? new Date(comprobantesObtenidos.fechaRechazo || comprobantesObtenidos.updated_at || comprobantesObtenidos.created_at).toLocaleString('es-MX')
+                                                : '' }
                                         </td>
                                     )}
                                     
@@ -1412,7 +1404,7 @@ export function ComprobanteRecibo() {
                                             <input
                                                 type="text"
                                                 value={getFieldValue(comprobante, 'importe')}
-                                                onChange={(e) => handleFieldChange(comprobante.id, 'importe', e.target.value)}
+                                                onChange={(e) => handleFieldChange(comprobante, 'importe', e.target.value)}
                                                 className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 placeholder="0.00"
                                             />
@@ -1427,7 +1419,7 @@ export function ComprobanteRecibo() {
                                             <input
                                                 type="text"
                                                 value={getFieldValue(comprobante, 'metodoPago')}
-                                                onChange={(e) => handleFieldChange(comprobante.id, 'metodoPago', e.target.value)}
+                                                onChange={(e) => handleFieldChange(comprobante, 'metodoPago', e.target.value)}
                                                 className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 placeholder="Método de pago"
                                             />
@@ -1451,7 +1443,9 @@ export function ComprobanteRecibo() {
                                     
                                     {vistaActual === 'rechazados' && (
                                         <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-red-700 font-medium text-center border-r border-gray-200">
-                                            {comprobante.fechaRechazo}
+                                            { (comprobante.fechaRechazo || comprobante.updated_at || comprobante.created_at)
+                                                ? new Date(comprobante.fechaRechazo || comprobante.updated_at || comprobante.created_at).toLocaleString('es-MX')
+                                                : '' }
                                         </td>
                                     )}
                                     

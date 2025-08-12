@@ -16,7 +16,7 @@ export const verifyTokenRequest = () => axios.get('/verify');
 
 export const getFolioRequest = (curso, anio) => axios.get(`/folio`, { params: { curso, anio } });
 
-export const getGruposConCantidadRequest = (curso) => axios.get(`/grupos/${curso}`);
+export const getGruposConCantidadRequest = (curso, status = 'aprobados') => axios.get(`/grupos/${curso}`, { params: { status } });
 
 // Configuración del alumno
 export const getConfigRequest = (idEstudiante) => axios.get(`/estudiantes/${idEstudiante}/config`);

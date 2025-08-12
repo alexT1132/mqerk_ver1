@@ -1,5 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom"; // Importamos useLocation y useNavigate
+import { logoutRequest } from "../../api/usuarios.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 /**
  * Componente para un elemento individual de la barra lateral.
@@ -13,12 +15,31 @@ import { Link, useLocation, useNavigate } from "react-router-dom"; // Importamos
 function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick }) { // Renombramos onClick a mobileOnClick
   const location = useLocation(); // Hook para obtener la ubicación actual
   const navigate = useNavigate(); // Hook para navegar programáticamente
+  const { logout: authLogout } = useAuth();
   const isActive = location.pathname === to; // Comprobamos si la ruta actual coincide con la ruta del enlace
 
   // Define si es un elemento para el menú móvil o de escritorio
   const isMobileItem = !!mobileOnClick; // Si mobileOnClick está presente, asumimos que es para el menú móvil
 
   const handleLinkClick = (e) => {
+    // Manejo especial para Cerrar Sesión
+    if (to === "/login") {
+      e.preventDefault();
+      try {
+        // Actualiza estado de auth en el cliente inmediatamente
+        authLogout?.();
+        // Llama al backend para limpiar la cookie httpOnly (sin bloquear redirección)
+        logoutRequest().catch(() => {});
+      } finally {
+        // Limpieza adicional
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminProfile');
+        if (mobileOnClick) mobileOnClick();
+        // Hard redirect para desmontar Providers y evitar llamadas residuales
+        window.location.href = '/login';
+      }
+      return;
+    }
     // Si se proporciona una función de cierre para móvil, la llamamos primero
     if (mobileOnClick) {
       mobileOnClick();

@@ -268,6 +268,69 @@ export default function Componente({}){
 
 
 
+export const TablaEvaluacion=({Personalidad, DASS21, Zavic, Emocional, WAIS, Academica, Total})=>{
+
+
+  const Test = [
+    {
+      prueba: "Test de Personalidad",
+      puntaje: Personalidad,
+      evaluacion: "Compatible con el perfil de asesor educativo",
+    },
+    {
+      prueba: "Test DASS-21",
+      puntaje: DASS21,
+      evaluacion: "Dentro de rangos normales",
+    },
+    {
+      prueba: "Test de Zavic",
+      puntaje: Zavic,
+      evaluacion: "Valores alineados con liderazgo y ética profesional",
+    },
+    {
+      prueba: "Test de Inteligencia Emocional",
+      puntaje: Emocional,
+      evaluacion: "Adecuada capacidad de gestión emocional",
+    },
+    {
+      prueba: "Test de WAIS",
+      puntaje: WAIS,
+      evaluacion: "Inteligencia superior al promedio",
+    },
+    {
+      prueba: "Prueba Académica",
+      puntaje: Academica,
+      evaluacion: "Excelencia en habilidades técnicas y académicas",
+    },
+  ];
+
+
+  return(
+    <table className="border border-gray-400 text-sm">
+        <thead className="bg-gray-200">
+          <tr>
+            <th className="border border-gray-400 px-4 py-2 text-center">Test/Prueba</th>
+            <th className="border border-gray-400 px-4 py-2 text-center">Puntaje Obtenido</th>
+            <th className="border border-gray-400 px-4 py-2 text-center">Evaluación</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Test.map((row, index) => (
+            <tr key={index}>
+              <td className="border border-gray-400 px-4 py-2">{row.prueba}</td>
+              <td className="border border-gray-400 px-4 py-2 text-center">{row.puntaje}</td>
+              <td className="border border-gray-400 px-4 py-2">{row.evaluacion}</td>
+            </tr>
+          ))}
+          <tr className="font-semibold">
+            <td className="border border-gray-400 px-4 py-2 text-center uppercase">TOTAL EN PUNTOS</td>
+            <td className="border border-gray-400 px-4 py-2 text-center">{Total}</td>
+            <td className="border border-gray-400 px-4 py-2 text-center uppercase">ACEPTADO / RECHAZADO</td>
+          </tr>
+        </tbody>
+      </table>
+  )
+}
 
 export const SeleccionarActividad=()=>{
 
@@ -374,70 +437,6 @@ export function TablaColaboradores({}){
       </table>
     </div>
     );
-}
-
-export const TablaEvaluacion=({Personalidad, DASS21, Zavic, Emocional, WAIS, Academica, Total})=>{
-
-
-  const Test = [
-    {
-      prueba: "Test de Personalidad",
-      puntaje: Personalidad,
-      evaluacion: "Compatible con el perfil de asesor educativo",
-    },
-    {
-      prueba: "Test DASS-21",
-      puntaje: DASS21,
-      evaluacion: "Dentro de rangos normales",
-    },
-    {
-      prueba: "Test de Zavic",
-      puntaje: Zavic,
-      evaluacion: "Valores alineados con liderazgo y ética profesional",
-    },
-    {
-      prueba: "Test de Inteligencia Emocional",
-      puntaje: Emocional,
-      evaluacion: "Adecuada capacidad de gestión emocional",
-    },
-    {
-      prueba: "Test de WAIS",
-      puntaje: WAIS,
-      evaluacion: "Inteligencia superior al promedio",
-    },
-    {
-      prueba: "Prueba Académica",
-      puntaje: Academica,
-      evaluacion: "Excelencia en habilidades técnicas y académicas",
-    },
-  ];
-
-
-  return(
-    <table className="border border-gray-400 text-sm">
-        <thead className="bg-gray-200">
-          <tr>
-            <th className="border border-gray-400 px-4 py-2 text-center">Test/Prueba</th>
-            <th className="border border-gray-400 px-4 py-2 text-center">Puntaje Obtenido</th>
-            <th className="border border-gray-400 px-4 py-2 text-center">Evaluación</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Test.map((row, index) => (
-            <tr key={index}>
-              <td className="border border-gray-400 px-4 py-2">{row.prueba}</td>
-              <td className="border border-gray-400 px-4 py-2 text-center">{row.puntaje}</td>
-              <td className="border border-gray-400 px-4 py-2">{row.evaluacion}</td>
-            </tr>
-          ))}
-          <tr className="font-semibold">
-            <td className="border border-gray-400 px-4 py-2 text-center uppercase">TOTAL EN PUNTOS</td>
-            <td className="border border-gray-400 px-4 py-2 text-center">{Total}</td>
-            <td className="border border-gray-400 px-4 py-2 text-center uppercase">ACEPTADO / RECHAZADO</td>
-          </tr>
-        </tbody>
-      </table>
-  )
 }
 
 export function TablaAsesores({}){
@@ -606,7 +605,7 @@ export function OrdenarBtn(){
 
 // Panel principal del administrador
 
-export function BtnPanelAdmin({Informacion, cantidad}){
+export function BtnPanelAdmin({Informacion, cantidad, customClass}){
  
 
     const MostrarCantidad = cantidad != null && cantidad !== '';
@@ -614,14 +613,14 @@ export function BtnPanelAdmin({Informacion, cantidad}){
     const colorClass = cantidad < 0 ? `text-red-500` : `text-green-500`;
 
     return(
-    <div className="">
-    <button className="flex flex-col flex-wrap grow cursor-pointer p-2 w-70 bg-white text-purple-700 border-gray-300 rounded-lg shadow-[4px_6px_5px_rgba(0,0,0,0.5)]">
-    <span className="uppercase text-xl w-full rounded-b-full bg-gradient-to-r">
+    // <div>
+    <button className={`flex flex-col flex-wrap md:gap-1 md:justify-center justify-between items-center cursor-pointer w-30 h-20 md:w-70 md:h-fit bg-white hover:bg-gray-200 rounded-lg shadow-[4px_6px_5px_rgba(0,0,0,0.5)]`}>
+    <span className={`flex justify-center items-center text-center uppercase ${customClass} h-[60%] md:h-fit font-semibold text-white md:text-xl bg-gradient-to-r from-[#B89CDC] to-[#E558A4] rounded-t-lg w-full`}>
       {Informacion}
     
     </span>
     {MostrarCantidad && (
-    <span className={`text-2xl ${colorClass} font-bold`}>{new Intl.NumberFormat('es-MX', {
+    <span className={`md:text-2xl ${colorClass} font-bold`}>{new Intl.NumberFormat('es-MX', {
             style: 'currency',
             currency: 'MXN',
           }).format(cantidad)}</span>
@@ -629,7 +628,7 @@ export function BtnPanelAdmin({Informacion, cantidad}){
     
     
     </button>
-    </div>
+    // </div>
     )
 }
 

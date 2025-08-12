@@ -51,7 +51,8 @@ export function EstudiantesProvider({ children }) {
 
     const getGrupo = async (curso) => {
         try {
-            const res = await getGruposConCantidadRequest(curso);
+            // En comprobantes necesitamos ver todos los estados (pendientes/aprobados/rechazados)
+            const res = await getGruposConCantidadRequest(curso, 'todos');
             if (Array.isArray(res.data)) {
                 if (res.data.length === 1) {
                 setGrupos(res.data[0]);  // solo el objeto

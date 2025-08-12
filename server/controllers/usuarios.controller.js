@@ -2,7 +2,7 @@ import * as Usuarios from "../models/usuarios.model.js";
 import * as AdminProfiles from "../models/admin_profiles.model.js";
 import * as Estudiantes from "../models/estudiantes.model.js";
 import bcrypt from "bcryptjs";
-import { createAccessToken } from "../libs/jwt.js";
+import { createAccessToken, createRefreshToken } from "../libs/jwt.js";
 import jwt from "jsonwebtoken";
 import { TOKEN_SECRET } from "../config.js";
 import * as SoftDeletes from "../models/soft_deletes.model.js";
@@ -91,7 +91,8 @@ export const login = async (req, res) => {
       // jwt exp format: s or string like "60m"; usamos minutos
       exp = `${Math.max(5, Math.min(7*24*60, minutos))}m`;
     } catch {}
-    const token = await createAccessToken({ id: usuarioFound.id }, exp);
+  const token = await createAccessToken({ id: usuarioFound.id }, exp);
+  const rtoken = await createRefreshToken({ id: usuarioFound.id }, "30d");
     const isProd = process.env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
@@ -103,7 +104,9 @@ export const login = async (req, res) => {
       // 30 días persistente
       cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000;
     }
-    res.cookie("token", token, cookieOptions);
+  res.cookie("token", token, cookieOptions);
+  // Refresh cookie: httpOnly, longer, same flags
+  res.cookie("rtoken", rtoken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
 
   if(usuarioFound.role === 'estudiante'){
 
@@ -147,6 +150,7 @@ export const logout = async (req, res) => {
   res.cookie("token", "", {
     expires: new Date(0),
   });
+  res.cookie("rtoken", "", { expires: new Date(0) });
   
   return res.sendStatus(200);
 };
@@ -283,7 +287,8 @@ export const registrarAdminBootstrap = async (req, res) => {
       const minutos = cfg?.sesion_maxima || 1440;
       exp = `${Math.max(5, Math.min(7*24*60, minutos))}m`;
     } catch {}
-    const token = await createAccessToken({ id: userId }, exp);
+  const token = await createAccessToken({ id: userId }, exp);
+  const rtoken = await createRefreshToken({ id: userId }, "30d");
     const isProd = process.env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
@@ -291,7 +296,8 @@ export const registrarAdminBootstrap = async (req, res) => {
       secure: isProd,
       path: '/',
     };
-    res.cookie('token', token, cookieOptions);
+  res.cookie('token', token, cookieOptions);
+  res.cookie('rtoken', rtoken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
 
     return res.status(201).json({ usuario: { id: userId, usuario, role: 'admin' }, admin_profile: perfil });
   } catch (error) {
@@ -438,7 +444,14 @@ export const getAdminConfig = async (req, res) => {
       sesionMaxima: cfg?.sesion_maxima ?? 480,
       intentosLogin: cfg?.intentos_login ?? 3,
       cambioPasswordObligatorio: cfg?.cambio_password_obligatorio ?? 90,
-      autenticacionDosFactor: (cfg?.autenticacion_dos_factor ?? 0) === 1
+      autenticacionDosFactor: (cfg?.autenticacion_dos_factor ?? 0) === 1,
+      // Campos generales
+      nombreInstitucion: cfg?.nombre_institucion || null,
+      emailAdministrativo: cfg?.email_administrativo || null,
+      telefonoContacto: cfg?.telefono_contacto || null,
+      direccion: cfg?.direccion || null,
+      sitioWeb: cfg?.sitio_web || null,
+      horarioAtencion: cfg?.horario_atencion || null
     }});
   } catch (e) {
     console.error('getAdminConfig error:', e);
@@ -459,7 +472,14 @@ export const updateAdminConfig = async (req, res) => {
       sesion_maxima: Number.isInteger(body.sesionMaxima) ? body.sesionMaxima : undefined,
       intentos_login: Number.isInteger(body.intentosLogin) ? body.intentosLogin : undefined,
       cambio_password_obligatorio: Number.isInteger(body.cambioPasswordObligatorio) ? body.cambioPasswordObligatorio : undefined,
-      autenticacion_dos_factor: typeof body.autenticacionDosFactor === 'boolean' ? (body.autenticacionDosFactor ? 1 : 0) : undefined
+      autenticacion_dos_factor: typeof body.autenticacionDosFactor === 'boolean' ? (body.autenticacionDosFactor ? 1 : 0) : undefined,
+      // Generales (strings opcionales)
+      nombre_institucion: typeof body.nombreInstitucion === 'string' ? body.nombreInstitucion : undefined,
+      email_administrativo: typeof body.emailAdministrativo === 'string' ? body.emailAdministrativo : undefined,
+      telefono_contacto: typeof body.telefonoContacto === 'string' ? body.telefonoContacto : undefined,
+      direccion: typeof body.direccion === 'string' ? body.direccion : undefined,
+      sitio_web: typeof body.sitioWeb === 'string' ? body.sitioWeb : undefined,
+      horario_atencion: typeof body.horarioAtencion === 'string' ? body.horarioAtencion : undefined
     };
     await AdminConfig.updateConfig(payload);
     const cfg = await AdminConfig.getConfig();

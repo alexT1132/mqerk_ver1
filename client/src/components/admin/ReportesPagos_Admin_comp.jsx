@@ -89,27 +89,7 @@ import {
 } from 'recharts';
 import { useAdminContext } from '../../context/AdminContext.jsx';
 import { exportReportToExcel } from '../../utils/exportExcel.js';
-
-// Componente de pantalla de carga simple (estilo consistente con otros componentes)
-function LoadingScreen({ onComplete }) {
-    useEffect(() => {
-        // Simular carga por 2 segundos
-        const timer = setTimeout(() => {
-            onComplete();
-        }, 2000);
-
-        return () => clearTimeout(timer);
-    }, [onComplete]);
-
-    return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-white">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                <p className="text-lg font-medium text-gray-700">Cargando reportes de pagos...</p>
-            </div>
-        </div>
-    );
-}
+import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 
 export function ReportesPagos_Admin_comp() {
   const [showLoadingScreen, setShowLoadingScreen] = useState(true);
@@ -164,10 +144,11 @@ export function ReportesPagos_Admin_comp() {
     fetchReportes();
   }, [fechaInicio, fechaFin]);
 
-  // Manejar finalización de pantalla de carga inicial
-  const handleLoadingComplete = () => {
-    setShowLoadingScreen(false);
-  };
+  // Pantalla de carga inicial (2s) para consistencia visual
+  useEffect(() => {
+    const t = setTimeout(() => setShowLoadingScreen(false), 2000);
+    return () => clearTimeout(t);
+  }, []);
 
   // Función para actualizar datos manualmente
   const handleRefreshData = async () => {
@@ -246,7 +227,7 @@ export function ReportesPagos_Admin_comp() {
         <h1>Reporte de Pagos</h1>
         <div class="summary">
           <h2>Resumen del Período: ${fechaInicio} a ${fechaFin}</h2>
-          <p><strong>Total Ingresos:</strong> {formatCurrencyMXN(reportes.resumenGeneral?.totalIngresos || 0)}</p>
+      <p><strong>Total Ingresos:</strong> ${formatCurrencyMXN(reportes.resumenGeneral?.totalIngresos || 0)}</p>
           <p><strong>Total Pagos:</strong> ${reportes.resumenGeneral?.totalPagos || 0}</p>
           <p><strong>Pagos Aprobados:</strong> ${reportes.resumenGeneral?.pagosAprobados || 0}</p>
           <p><strong>Pagos Pendientes:</strong> ${reportes.resumenGeneral?.pagosPendientes || 0}</p>
@@ -264,7 +245,7 @@ export function ReportesPagos_Admin_comp() {
               <tr>
                 <td>${curso.curso || ''}</td>
                 <td>${curso.pagos || 0}</td>
-                <td>{formatCurrencyMXN(curso.ingresos || 0)}</td>
+        <td>${formatCurrencyMXN(curso.ingresos || 0)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -274,10 +255,6 @@ export function ReportesPagos_Admin_comp() {
     `;
   };
 
-  // Si está cargando inicialmente, mostrar pantalla de carga
-  if (showLoadingScreen) {
-    return <LoadingScreen onComplete={handleLoadingComplete} />;
-  };
 
   // Manejo de errores
   if (error) {
@@ -307,6 +284,9 @@ export function ReportesPagos_Admin_comp() {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
+      {(showLoadingScreen || isLoading) && (
+        <LoadingOverlay message="Cargando reportes de pagos..." />
+      )}
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-2xl p-6 mb-6 border border-gray-200">

@@ -8,6 +8,9 @@ import EstudiantesRoutes from "./routes/estudiantes.routes.js";
 import UsuariosRoutes from "./routes/usuarios.routes.js";
 import ComprobantesRoutes from "./routes/comprobantes.routes.js";
 import CalendarRoutes from "./routes/calendar.routes.js";
+import EmailsRoutes from "./routes/emails.routes.js";
+import GmailRoutes from "./routes/gmail.routes.js";
+import HealthRoutes from "./routes/health.routes.js";
 
 const app = express();
 
@@ -44,5 +47,8 @@ app.use("/api", EstudiantesRoutes);
 app.use("/api", UsuariosRoutes);
 app.use("/api", ComprobantesRoutes);
 app.use("/api", CalendarRoutes);
+app.use("/api", EmailsRoutes);
+app.use("/api", GmailRoutes);
+app.use("/api", HealthRoutes);
 
 export default app;

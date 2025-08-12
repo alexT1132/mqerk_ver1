@@ -90,14 +90,70 @@ export const obtenerUltimoFolio = async () => {
   }
 };
 
-export const getGruposConCantidad = async (curso) => {
-    const [rows] = await db.query(`
-        SELECT grupo, COUNT(*) AS cantidad_estudiantes
-        FROM estudiantes
-        WHERE curso = ?
-        GROUP BY grupo
-    `, [curso]);
+export const getGruposConCantidad = async (curso, status = 'aprobados') => {
+  const st = String(status || 'aprobados').toLowerCase();
+  if (st === 'todos') {
+    // Todos los estudiantes del curso por grupo (independiente del estado)
+    const [rows] = await db.query(
+      `
+        SELECT e.grupo AS grupo, COUNT(*) AS cantidad_estudiantes
+        FROM estudiantes e
+        WHERE e.curso = ?
+        GROUP BY e.grupo
+      `,
+      [curso]
+    );
     return rows;
+  }
+
+  if (st === 'pendientes') {
+    const [rows] = await db.query(
+      `
+        SELECT e.grupo AS grupo, COUNT(*) AS cantidad_estudiantes
+        FROM estudiantes e
+        WHERE e.curso = ?
+          AND e.verificacion = 1
+        GROUP BY e.grupo
+      `,
+      [curso]
+    );
+    return rows;
+  }
+
+  if (st === 'rechazados') {
+    const [rows] = await db.query(
+      `
+        SELECT e.grupo AS grupo, COUNT(*) AS cantidad_estudiantes
+        FROM estudiantes e
+        WHERE e.curso = ?
+          AND e.verificacion = 3
+        GROUP BY e.grupo
+      `,
+      [curso]
+    );
+    return rows;
+  }
+
+  // 'aprobados' por defecto: alineado con getApprovedStudents
+  const [rows] = await db.query(
+    `
+      SELECT e.grupo AS grupo, COUNT(DISTINCT e.id) AS cantidad_estudiantes
+      FROM estudiantes e
+      INNER JOIN (
+        SELECT id_estudiante, MAX(created_at) AS latest
+        FROM comprobantes
+        WHERE importe IS NOT NULL
+        GROUP BY id_estudiante
+      ) lp ON lp.id_estudiante = e.id
+      INNER JOIN comprobantes c 
+        ON c.id_estudiante = lp.id_estudiante AND c.created_at = lp.latest
+      WHERE e.curso = ?
+        AND e.verificacion = 2
+      GROUP BY e.grupo
+    `,
+    [curso]
+  );
+  return rows;
 };
 
 // Actualizar estudiante con campos parciales
