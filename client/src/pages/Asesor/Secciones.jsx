@@ -16,7 +16,7 @@ import {
     // TarjetaPerfil,
     BtnCursoActivo,
     Analiticas
-    } from "../../components/DashboradComp.jsx";
+    } from "../../components/DashboardComp";
 import Persona from '../../assets/Persona.jpg'
 
 

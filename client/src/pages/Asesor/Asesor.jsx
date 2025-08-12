@@ -1,5 +1,5 @@
 import Navbar from "../../components/NavBar";
-import { SideBarDesktopAsesor as SideBarDesktop } from "../../components/asesor/SideBarAsesor.jsx";
+import { SideBarDesktopAsesor as SideBarDesktop } from "../../components/layouts/SideBarAsesor.jsx";
 import React from "react";
 import { MiPerfil, Dashboard } from "./Secciones";
 

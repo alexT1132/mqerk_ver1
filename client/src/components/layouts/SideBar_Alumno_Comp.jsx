@@ -376,8 +376,7 @@ export function SideBarSm_Alumno_comp({ isMenuOpen, closeMenu, activo }) {
           <ul className="p-4 space-y-2 h-full flex flex-col justify-between overflow-y-auto list-none">
             {/* Grupo superior de elementos de navegación móvil */}
             <div>
-              {alumnoMenuItems.map((item) => (
-                <ElementoSideBarAlumno
+              {alumnoMenuItems.map((item) => (<ElementoSideBarAlumno
                   key={item.path}
                   to={item.path}
                   Icono={item.icon}
