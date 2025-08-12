@@ -7,7 +7,7 @@ import Login from './pages/Login';
 import {PreRegAsesor} from './pages/Asesor/PreRegAsesor.jsx';
 import {Bienvenida} from './pages/Asesor/Bienvenida.jsx';
 import {Test} from './pages/Asesor/Test.jsx';
-import {DashboardAsesor, PerfilAsesor, DashboardCurso} from './pages/Asesor/Asesor.jsx'
+import {DashboardAsesor, PerfilAsesor, DashboardCurso, Actividades, Quizt, Simuladores} from './pages/Asesor/Asesor.jsx'
 
 import { DashboardAdm, ListaAsesores, ListaColaboradores } from './pages/Admin/Panel.jsx';
 
@@ -18,6 +18,8 @@ import { ResultadoAsesor } from './pages/Asesor/Resultado.jsx';
 import { FormularioAsesor } from './pages/Asesor/FormRegistro.jsx';
 
 import RegistroEstudiante from './pages/Alumnos/RegistroEstudiante.jsx';
+
+
 
 
 
@@ -54,6 +56,12 @@ export default function App(){
           <Route path='/asesor/perfil' element={<PerfilAsesor/>}></Route>
 
           <Route path='/test/asesor/resultado' element={<ResultadoAsesor/>}/>
+
+          <Route path='/asesor/actividades' element={<Actividades/>}/>
+
+          <Route path='/asesor/quizt' element={<Quizt/>}/>
+
+          <Route path='/asesor/simuladores' element={<Simuladores/>}/>
 
           {/* Final asesor */}
 

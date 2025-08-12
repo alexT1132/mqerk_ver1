@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Navbar from "../../components/NavBar";
 import { SideBar } from "../../components/SideBar.jsx";
-import { MiPerfil, Dashboard, MisCursos } from "./Secciones";
+import { MiPerfil, Dashboard, MisCursos, ActividadesAsesor, QuiztAsesor, SimuladoresAsesor} from "./Secciones";
 import { BtnDesplegable } from "../../components/CursosComp.jsx";
 
 
@@ -58,6 +58,60 @@ export const DashboardCurso=() =>{
 
         </div>
         
+        </>
+    );
+};
+
+export const Actividades=()=>{
+    return(
+        <>
+        <Navbar/>
+
+
+        <SideBar asesor/>
+        <div className="flex flex-col justify-center items-center gap-y-15">
+        <ActividadesAsesor/>
+        </div>
+
+        </>
+    );
+};
+
+export const Quizt=()=>{
+    return(
+        <>
+        <Navbar/>
+        <SideBar asesor/>
+        <div className="flex flex-col justify-center items-center gap-y-15">
+        <QuiztAsesor/>
+        </div>
+
+        </>
+    );
+};
+
+export const CrearQuizt=()=>{
+    return(
+        <>
+        <Navbar/>
+        <SideBar asesor/>
+        <div className="flex flex-col justify-center items-center gap-y-15">
+        <CrearQuiztAsesor/>
+        </div>
+
+        </>
+    );
+};
+
+export const Simuladores=()=>{
+    return(
+        <>
+        <Navbar/>
+        <SideBar asesor/>
+        <div className="flex flex-col justify-center items-center gap-y-15">
+        <SimuladoresAsesor/>
+        </div>
+
         </>
     );
 };

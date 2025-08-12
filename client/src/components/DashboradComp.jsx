@@ -887,16 +887,26 @@ export function ModalCursos(){
 }
 
 export function BtnCursoActivo({src, NombreCurso}){
-
-
     return(
-
-        
         <button className="p-3 gap-x-6 cursor-pointer flex border-2 w-fit border-[#483dc7] rounded-2xl">
             <img className="aspect-square w-15 text-white" src={src} alt="Logo del curso"/>
             <h2 className="text-[#f4138a] font-black w-35 text-start">{NombreCurso}</h2>
         </button>
     );
-}
+};
 
+
+
+export const BtnCursoEEAU=({src})=>{
+
+  return(
+    <aside className="rounded-2xl p-[5px] w-fit bg-linear-to-r from-[#14458d] to-[#7b40b0]">
+        <button className="p-3 gap-x-6 cursor-pointer flex w-fit bg-white rounded-2xl">
+            <img className="aspect-square w-15 text-white" src={src} alt="Logo del curso"/>
+            <h2 className="text-[#f4138a] font-black w-35 text-start">Examen de admision a la universidad</h2>
+        </button>
+    </aside>
+  );
+
+};
 

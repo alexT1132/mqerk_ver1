@@ -59,7 +59,7 @@ export const BtnDesplegable = ({selected, setSelected}) => {
 
 export const ModalCursos=({onClick})=>{
     return(
-        <button onClick={onClick} className={`relative flex group rounded-full hover:bg-gray-300 cursor-pointer`}>
+        <button onClick={onClick} className={`relative flex group rounded-full w-fit hover:bg-gray-300 cursor-pointer`}>
             <svg className={`flex sm:hidden`} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#53289f"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
             <svg className={`hidden sm:flex`} xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#53289f"><path d="M446.67-446.67H200v-66.66h246.67V-760h66.66v246.67H760v66.66H513.33V-200h-66.66v-246.67Z"/></svg>
             <span className={`absolute opacity-0 hover:opacity-0 cursor-default group-hover:opacity-100 font-semibold transition-opacity duration-300 bg-violet-600 border-1 border-gray-400 text-white rounded-full pointer-events-none px-2 -top-6.5 -right-7 select-none z-3`}>Crear</span>
@@ -507,6 +507,8 @@ export const ActivityModal = ({isOpen, onClose}) => {
 };
 
 
+
+
 // Grupos disponibles
 const ALL_GROUPS = ["M1", "M2", "M3", "V1", "V2", "V3"];
 
@@ -876,7 +878,7 @@ export const TablaEstudiantes = () => {
             <th className="py-2 px-4 text-center">Nombre del estudiante</th>
             <th className="py-2 px-4 text-center">Entregado</th>
             <th className="py-2 px-4 text-center">Asignar calificación</th>
-            <th className="py-2 px-4 text-center">Descargar tarea</th>
+            <th className="py-2 px-4 text-center">Visualizar tarea</th>
           </tr>
         </thead>
         <tbody className="text-center">
@@ -922,13 +924,20 @@ export const TablaEstudiantes = () => {
                     </div>
                   )}
                 </td>
-                <td className="py-2 px-4">
+                <td className="flex py-2 px-4 justify-center gap-x-3">
+                  <a href=""
+                  title="Descargar tarea"
+                  className="bg-blue-500 flex items-center hover:bg-blue-700 px-3 py-1 rounded">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>
+                  </a>
                   <a
+                    title="Visualizar tarea"
                     href={est.archivoUrl}
                     className={`bg-green-500 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold transition ${!est.entregado ? "opacity-50 pointer-events-none" : ""}`}
-                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
-                    Descargar tarea
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z"/></svg>
                   </a>
                 </td>
               </tr>
