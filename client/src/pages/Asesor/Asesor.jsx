@@ -1,13 +1,14 @@
 import Navbar from "../../components/NavBar";
+import { SideBarDesktopAsesor as SideBarDesktop } from "../../components/asesor/SideBarAsesor.jsx";
+import React from "react";
 import { MiPerfil, Dashboard } from "./Secciones";
-import { SideBarDesktop } from "../../components/SideBar.jsx";
 
 
 export function PerfilAsesor(){
     return(
     <>
         <Navbar/>
-        <SideBarDesktop/>
+    <SideBarDesktop toMiPerfil={'/PerfilAsesor'}/>
         
 
         <div className="flex flex-col flex-wrap justify-center items-center sm:gap-8 sm:p-10 sm:px-25">
@@ -25,12 +26,12 @@ export function DashboardAsesor(){
     return(
         <>
         <Navbar/>
-        <SideBarDesktop/>
+    <SideBarDesktop/>
 
         <div className="flex flex-col flex-wrap justify-center items-center gap-8 p-10 px-25">
         <Dashboard/>
         </div>
 
         </>
-    )
-}
+    );
+};

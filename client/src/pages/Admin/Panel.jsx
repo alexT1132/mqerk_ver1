@@ -1,5 +1,5 @@
 import Navbar from "../../components/NavBar";
-import { SideBarDesktopAdmin } from "../../components/SideBar";
+import { SideBarDesktop as SideBarDesktopAdmin } from "../../components/layouts/SideBarAdmin.jsx";
 import { BtnPanelAdmin, Container, AnaliticasAdmin, Buscador, TablaAsesores, OrdenarBtn, TablaColaboradores} from "../../components/DashboardComp"
 
 
