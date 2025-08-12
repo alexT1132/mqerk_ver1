@@ -10,17 +10,22 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useAdminContext } from '../../context/AdminContext.jsx';
+import { getAdminEmails, sendAdminEmail, markEmailRead } from '../../api/emails';
+import { getGmailAuthUrl, listGmailInbox, sendGmail, getGmailStatus, getGmailEnvCheck } from '../../api/gmail';
 
 function Email_Admin_comp() {
   const [emails, setEmails] = useState([]);
   const [emailSeleccionado, setEmailSeleccionado] = useState(null);
   const [vistaActual, setVistaActual] = useState('bandeja'); // 'bandeja', 'redactar', 'enviados'
+  const [loadingEmails, setLoadingEmails] = useState(false);
+  const [isGmailFetching, setIsGmailFetching] = useState(false);
   const [nuevoEmail, setNuevoEmail] = useState({
     para: '',
     asunto: '',
     mensaje: '',
     tipo: 'individual' // 'individual', 'group', 'all'
   });
+  const [query, setQuery] = useState('');
 
   const { 
     isLoading,
@@ -28,72 +33,94 @@ function Email_Admin_comp() {
     lastUpdated
   } = useAdminContext();
 
-  // Datos de ejemplo (esto vendrá del backend)
+  // Estado de vinculación de Gmail
+  const [gmailLinked, setGmailLinked] = useState(false);
+  const [gmailEmail, setGmailEmail] = useState(null);
+  const [isLinking, setIsLinking] = useState(false);
+
+  // Toast muy ligero en-local
+  const [toast, setToast] = useState(null); // { msg, type: 'info'|'success'|'error' }
+  const notify = (msg, type = 'info') => {
+    setToast({ msg, type });
+    window.clearTimeout(notify._t);
+    notify._t = window.setTimeout(() => setToast(null), 3000);
+  };
+
   useEffect(() => {
-    setTimeout(() => {
-      setEmails([
-        {
-          id: 1,
-          de: 'juan.perez@email.com',
-          para: 'admin@mqerk.com',
-          asunto: 'Schedule inquiry',
-          mensaje: 'Hello, I would like to know if it is possible to change my Tuesday morning class schedule.',
-          fecha: '2024-12-21 10:30',
-          leido: false,
-          tipo: 'recibido',
-          etiqueta: 'consulta'
-        },
-        {
-          id: 2,
-          de: 'maria.gonzalez@email.com',
-          para: 'admin@mqerk.com',
-          asunto: 'Payment issue',
-          mensaje: 'Good morning, I made my payment but it is not reflected in my account. Could you help me?',
-          fecha: '2024-12-20 15:45',
-          leido: true,
-          tipo: 'recibido',
-          etiqueta: 'pago'
-        },
-        {
-          id: 3,
-          de: 'admin@mqerk.com',
-          para: 'carlos.rodriguez@email.com',
-          asunto: 'Registration confirmation',
-          mensaje: 'Hello Carlos, we confirm your enrollment in the Advanced English course. Classes start next Monday.',
-          fecha: '2024-12-20 09:15',
-          leido: true,
-          tipo: 'enviado',
-          etiqueta: 'confirmacion'
-        },
-        {
-          id: 4,
-          de: 'ana.hernandez@email.com',
-          para: 'admin@mqerk.com',
-          asunto: 'Certificado de finalización',
-          mensaje: 'Hola, he completado mi curso de Inglés Intermedio. ¿Cuándo podré obtener mi certificado?',
-          fecha: '2024-12-19 14:20',
-          leido: false,
-          tipo: 'recibido',
-          etiqueta: 'certificado'
-        },
-        {
-          id: 5,
-          de: 'admin@mqerk.com',
-          para: 'todos@mqerk.com',
-          asunto: 'Horarios de vacaciones diciembre',
-          mensaje: 'Estimados estudiantes, les informamos los horarios especiales para el período vacacional de diciembre.',
-          fecha: '2024-12-18 11:00',
-          leido: true,
-          tipo: 'enviado',
-          etiqueta: 'general'
-        }
-      ]);
-      // Los datos se cargan desde el contexto AdminContext
-    }, 1000);
+    const check = async () => {
+      try {
+        const st = await getGmailStatus();
+        setGmailLinked(!!st?.linked);
+        setGmailEmail(st?.email || null);
+      } catch {}
+    };
+    check();
   }, []);
 
-  const emailsRecibidos = emails.filter(email => email.tipo === 'recibido');
-  const emailsEnviados = emails.filter(email => email.tipo === 'enviado');
+  const handleLinkGmail = async () => {
+    try {
+      setIsLinking(true);
+      // Pre-chequeo de configuración del servidor para evitar errores invalid_client
+      const env = await getGmailEnvCheck();
+      if (!env?.ok || !env?.hasId || !env?.hasSecret) {
+        alert(
+          'Gmail no está configurado en el servidor. Falta GOOGLE_CLIENT_ID o GOOGLE_CLIENT_SECRET.\n' +
+          'Pídele al administrador que configure el .env del servidor y lo reinicie.'
+        );
+        return;
+      }
+      const url = await getGmailAuthUrl();
+      if (url) {
+        notify('Abriendo ventana de Google para vincular tu cuenta…', 'info');
+        window.open(url, '_blank');
+      }
+    } catch (e) { console.error(e); notify('No se pudo iniciar la vinculación', 'error'); }
+    finally { setIsLinking(false); }
+  };
+
+  // Transformar del backend a la forma de UI
+  const mapEmail = (e) => ({
+    id: e.id,
+    de: e.de,
+    para: e.para,
+    asunto: e.asunto,
+    mensaje: e.mensaje,
+    fecha: e.fecha,
+    leido: !!e.leido,
+    tipo: e.tipo === 'sent' ? 'enviado' : (e.tipo === 'inbox' ? 'recibido' : e.tipo),
+    etiqueta: e.etiqueta || 'general'
+  });
+
+  // Cargar emails desde backend según vista
+  useEffect(() => {
+    const load = async () => {
+      if (vistaActual !== 'bandeja' && vistaActual !== 'enviados') return;
+      setLoadingEmails(true);
+      try {
+        const folder = vistaActual === 'bandeja' ? 'inbox' : 'sent';
+        const data = await getAdminEmails(folder);
+        setEmails((data || []).map(mapEmail));
+      } catch (e) {
+        console.error('Error cargando emails', e);
+      } finally {
+        setLoadingEmails(false);
+      }
+    };
+    load();
+  }, [vistaActual]);
+
+  const matches = (e) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      (e.de || '').toLowerCase().includes(q) ||
+      (e.para || '').toLowerCase().includes(q) ||
+      (e.asunto || '').toLowerCase().includes(q) ||
+      (e.mensaje || '').toLowerCase().includes(q)
+    );
+  };
+  const emailsRecibidos = emails.filter(email => email.tipo === 'recibido').filter(matches);
+  const emailsEnviados = emails.filter(email => email.tipo === 'enviado').filter(matches);
   const emailsNoLeidos = emailsRecibidos.filter(email => !email.leido);
 
   const getEtiquetaColor = (etiqueta) => {
@@ -107,41 +134,51 @@ function Email_Admin_comp() {
     }
   };
 
-  const handleMarcarComoLeido = (id) => {
-    setEmails(emails.map(email => 
-      email.id === id ? { ...email, leido: true } : email
-    ));
+  const handleMarcarComoLeido = async (id) => {
+    try {
+      await markEmailRead(id);
+      setEmails((prev) => prev.map(email => email.id === id ? { ...email, leido: true } : email));
+    } catch (e) {
+      console.error('No se pudo marcar como leído', e);
+    }
   };
 
-  const handleEnviarEmail = () => {
-    const nuevoEmailObj = {
-      id: Date.now(),
-      de: 'admin@mqerk.com',
-      para: nuevoEmail.para,
-      asunto: nuevoEmail.asunto,
-      mensaje: nuevoEmail.mensaje,
-      fecha: new Date().toISOString().replace('T', ' ').slice(0, 16),
-      leido: true,
-      tipo: 'enviado',
-      etiqueta: 'general'
-    };
-
-    setEmails([...emails, nuevoEmailObj]);
-    setNuevoEmail({ para: '', asunto: '', mensaje: '', tipo: 'individual' });
-    setVistaActual('bandeja');
+  const handleEnviarEmail = async () => {
+    if (nuevoEmail.tipo !== 'individual') {
+      alert('Por ahora el envío soportado es individual.');
+      return;
+    }
+    if (!nuevoEmail.para || !nuevoEmail.asunto || !nuevoEmail.mensaje) return;
+    try {
+      const saved = await sendAdminEmail({
+        recipient: nuevoEmail.para,
+        subject: nuevoEmail.asunto,
+        body: nuevoEmail.mensaje,
+        etiqueta: 'general'
+      });
+      if (saved) {
+        // Ir a enviados y recargar
+        setNuevoEmail({ para: '', asunto: '', mensaje: '', tipo: 'individual' });
+        setVistaActual('enviados');
+      }
+    } catch (e) {
+      console.error('No se pudo enviar el email', e);
+    }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const Spinner = ({size='h-5 w-5'}) => (
+    <span className={`inline-block animate-spin rounded-full border-2 border-b-transparent border-current ${size}`} />
+  );
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
+        {/* Toast */}
+        {toast && (
+          <div className={`mb-4 rounded-md p-3 text-sm transition-all ${toast.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : toast.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
+            {toast.msg}
+          </div>
+        )}
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -151,7 +188,19 @@ function Email_Admin_comp() {
                 Administra la comunicación con estudiantes y personal
               </p>
             </div>
-            <div className="mt-4 sm:mt-0">
+            <div className="mt-4 sm:mt-0 flex items-center gap-3">
+              {!gmailLinked ? (
+                <button
+                  type="button"
+                  onClick={handleLinkGmail}
+                  disabled={isLinking}
+                  className={`inline-flex items-center gap-2 px-3 py-2 border text-sm rounded-md transition-colors ${isLinking ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'}`}
+                >
+                  {isLinking && <Spinner size="h-4 w-4" />} Vincular Gmail
+                </button>
+              ) : (
+                <span className="text-sm text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded">Gmail vinculado{gmailEmail ? ` (${gmailEmail})` : ''}</span>
+              )}
               <button 
                 onClick={() => setVistaActual('redactar')}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -228,21 +277,64 @@ function Email_Admin_comp() {
             {/* Vista de Bandeja de Entrada */}
             {vistaActual === 'bandeja' && (
               <div className="bg-white rounded-lg shadow-sm">
-                <div className="px-6 py-4 border-b border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                   <h3 className="text-lg font-medium text-gray-900">
                     Bandeja de Entrada ({emailsRecibidos.length})
                   </h3>
+                  <div className="flex items-center gap-3">
+                    <div className="hidden sm:block">
+                      <input
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Buscar…"
+                        className="text-sm px-3 py-1.5 rounded border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                    {!gmailLinked && (
+                      <button
+                        onClick={handleLinkGmail}
+                        className="text-sm text-gray-700 border border-gray-300 rounded px-2 py-1 hover:bg-gray-50"
+                      >
+                        Vincular Gmail
+                      </button>
+                    )}
+                    <button
+                      onClick={async () => {
+                        try {
+                          setIsGmailFetching(true);
+                          const list = await listGmailInbox();
+                          setEmails(list.map(e => ({ ...e })));
+                          notify('Correos cargados desde Gmail', 'success');
+                        } catch (e) { console.error(e); notify('No se pudo cargar Gmail', 'error'); } finally { setIsGmailFetching(false); }
+                      }}
+                      disabled={!gmailLinked || isGmailFetching}
+                      className={`inline-flex items-center gap-2 text-sm ${!gmailLinked || isGmailFetching ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-700'}`}
+                    >
+                      {isGmailFetching && <Spinner size="h-4 w-4" />} Cargar desde Gmail
+                    </button>
+                  </div>
                 </div>
+                {emailsRecibidos.length === 0 && (
+                  <div className="px-6 py-8 text-sm text-gray-500 flex flex-col items-center gap-2">
+                    <div className="text-4xl">📭</div>
+                    {query ? (
+                      <span>No hay resultados para “{query}”.</span>
+                    ) : (
+                      <span>No hay correos para mostrar{!gmailLinked ? ' · Vincula Gmail y luego pulsa “Cargar desde Gmail”.' : ''}</span>
+                    )}
+                  </div>
+                )}
                 
                 <div className="divide-y divide-gray-200">
-                  {emailsRecibidos.map((email) => (
+      {emailsRecibidos.map((email) => (
                     <div 
                       key={email.id}
                       onClick={() => {
                         setEmailSeleccionado(email);
-                        if (!email.leido) handleMarcarComoLeido(email.id);
+        // Evitar marcar en DB cuando es un correo cargado desde Gmail
+        if (!email.leido && email.etiqueta !== 'gmail') handleMarcarComoLeido(email.id);
                       }}
-                      className="p-6 bg-white hover:bg-white cursor-pointer border-l-4 border-transparent hover:border-blue-200 transition-colors"
+                      className="p-6 bg-white cursor-pointer border-l-4 border-transparent hover:border-blue-200 transition-all hover:shadow-sm"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
@@ -401,10 +493,27 @@ function Email_Admin_comp() {
                     </button>
                     <button
                       type="button"
-                      onClick={handleEnviarEmail}
-                      className="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      onClick={async () => { await handleEnviarEmail(); notify('Email enviado', 'success'); }}
+                      className="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60"
                     >
                       Enviar Email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!nuevoEmail.para || !nuevoEmail.asunto || !nuevoEmail.mensaje) return;
+                        try {
+                          await sendGmail({ to: nuevoEmail.para, subject: nuevoEmail.asunto, text: nuevoEmail.mensaje });
+                          setNuevoEmail({ para: '', asunto: '', mensaje: '', tipo: 'individual' });
+                          setVistaActual('enviados');
+                          notify('Enviado con Gmail', 'success');
+                        } catch (e) { console.error(e); }
+                      }}
+                      disabled={!gmailLinked}
+                      title={!gmailLinked ? 'Vincula tu Gmail para usar este botón' : ''}
+                      className={`px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 ${gmailLinked ? 'bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500' : 'bg-emerald-400 cursor-not-allowed'}`}
+                    >
+                      Enviar con Gmail
                     </button>
                   </div>
                 </form>

@@ -1,48 +1,17 @@
-/**
- * Componente de Configuración de Administrador
- * 
- * PATRÓN DE INTEGRACIÓN: HÍBRIDO (AdminContext + API Directa)
- * - PERFIL PERSONAL: Usa AdminContext (updateAdminProfile, uploadAdminAvatar, adminProfile)
- * - CONFIGURACIONES DEL SISTEMA: Usa APIs directas (/api/admin/config, /api/admin/cambiar-password)
- 
- * APIs de backend a implementar:
- * - GET /api/admin/config - Obtener configuración del sistema
- * - PUT /api/admin/config - Actualizar configuración del sistema
- * - POST /api/admin/config/backup - Crear respaldo de configuración
- * - GET /api/admin/config/logs - Obtener logs de cambios de configuración
- * - PUT /api/admin/perfil - Actualizar perfil del administrador (VIA AdminContext)
- * - PUT /api/admin/cambiar-password - Cambiar contraseña del administrador
- */
+
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAdminContext } from '../../context/AdminContext.jsx';
 import { changeAdminPasswordRequest, getAdminConfigRequest, updateAdminConfigRequest } from '../../api/usuarios.js';
+import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 
-// Componente de pantalla de carga simple (estilo consistente con otros componentes)
-function LoadingScreen({ onComplete }) {
-    useEffect(() => {
-        // Simular carga por 2 segundos
-        const timer = setTimeout(() => {
-            onComplete();
-        }, 2000);
-
-        return () => clearTimeout(timer);
-    }, [onComplete]);
-
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-md mx-auto">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                <h2 className="text-xl font-bold text-gray-800 mb-2">Cargando Configuración</h2>
-                <p className="text-gray-600">Preparando panel de configuración...</p>
-            </div>
-        </div>
-    );
-}
+// Pantalla de carga local eliminada en favor de LoadingOverlay compartido
 
 export function Configuracion_Admin_comp() {
   const location = useLocation(); // Hook para obtener parámetros de URL
   const [isLoading, setIsLoading] = useState(true);
+  // Overlay inicial para consistencia visual (2s)
+  const [showInitialOverlay, setShowInitialOverlay] = useState(true);
   // Datos de configuración inicial del sistema
   const [configuration, setConfiguration] = useState({
     general: {
@@ -99,10 +68,7 @@ export function Configuracion_Admin_comp() {
     uploadAdminAvatar     // ✅ USADO: Función para subir foto de perfil
   } = useAdminContext();
 
-  // Función para manejar la finalización de la carga
-  const handleLoadingComplete = () => {
-    setIsLoading(false);
-  };
+  // isLoading se controla al terminar de cargar configuraciones del backend
 
   // Efecto para cargar datos del perfil desde AdminContext
   // INTEGRACIÓN: adminProfile viene del AdminContext y se mapea a personalData local
@@ -143,6 +109,14 @@ export function Configuracion_Admin_comp() {
               cambioPasswordObligatorio: data.config.cambioPasswordObligatorio ?? prev.seguridad.cambioPasswordObligatorio,
               autenticacionDosFactor: !!data.config.autenticacionDosFactor,
             },
+            general: {
+              nombreInstitucion: data.config.nombreInstitucion ?? prev.general.nombreInstitucion,
+              email: data.config.emailAdministrativo ?? prev.general.email,
+              telefono: data.config.telefonoContacto ?? prev.general.telefono,
+              direccion: data.config.direccion ?? prev.general.direccion,
+              sitioWeb: data.config.sitioWeb ?? prev.general.sitioWeb,
+              horarioAtencion: data.config.horarioAtencion ?? prev.general.horarioAtencion,
+            }
           }));
         }
       } catch (error) {
@@ -153,6 +127,12 @@ export function Configuracion_Admin_comp() {
     };
 
     loadConfigurations();
+  }, []);
+
+  // Efecto: overlay inicial 2s
+  useEffect(() => {
+    const t = setTimeout(() => setShowInitialOverlay(false), 2000);
+    return () => clearTimeout(t);
   }, []);
 
   // Efecto para actualizar la sección activa cuando cambien los parámetros de URL
@@ -176,6 +156,13 @@ export function Configuracion_Admin_comp() {
         intentosLogin: Number(configuration.seguridad.intentosLogin) || 0,
         cambioPasswordObligatorio: Number(configuration.seguridad.cambioPasswordObligatorio) || 0,
         autenticacionDosFactor: !!configuration.seguridad.autenticacionDosFactor,
+        // Generales
+        nombreInstitucion: configuration.general.nombreInstitucion?.toString() || '',
+        emailAdministrativo: configuration.general.email?.toString() || '',
+        telefonoContacto: configuration.general.telefono?.toString() || '',
+        direccion: configuration.general.direccion?.toString() || '',
+        sitioWeb: configuration.general.sitioWeb?.toString() || '',
+        horarioAtencion: configuration.general.horarioAtencion?.toString() || '',
       };
       await updateAdminConfigRequest(payload);
       setMessage('Configuración guardada exitosamente');
@@ -370,13 +357,11 @@ export function Configuracion_Admin_comp() {
     }
   ];
 
-  // Si está cargando, mostrar pantalla de carga
-  if (isLoading) {
-    return <LoadingScreen onComplete={handleLoadingComplete} />;
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 p-4 sm:p-6 lg:p-8">
+      {(showInitialOverlay || isLoading || contextLoading) && (
+        <LoadingOverlay message="Cargando configuración..." subMessage="Por favor espera..." />
+      )}
       <div className="max-w-7xl mx-auto">
         {/* Header Principal */}
         <div className="bg-gradient-to-br from-white via-blue-50 to-indigo-100 rounded-2xl sm:rounded-3xl shadow-xl shadow-blue-200/30 border-2 border-blue-200/50 p-6 sm:p-8 mb-6 sm:mb-8 backdrop-blur-sm relative overflow-hidden">

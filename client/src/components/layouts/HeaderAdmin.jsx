@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import MQerkLogo from "../../assets/MQerK_logo.png";
 import { Logos } from "../../pages/public/IndexComp.jsx"; 
 import { useAdminContext } from "../../context/AdminContext.jsx";
+import { useAdminNotificationContext } from "../../context/AdminNotificationContext.jsx";
 
 /**
  * Componente de encabezado de administrador con sistema de notificaciones y avatar de perfil
@@ -17,14 +18,7 @@ import { useAdminContext } from "../../context/AdminContext.jsx";
  * - Diseño responsivo para móvil y escritorio
  * - Indicador de estado en línea para administrador
  */
-export function HeaderAdmin({
-  isNotificationsOpen,
-  toggleNotifications,
-  markAllAsRead, 
-  notifications, 
-  unreadCount,   
-  setIsNotificationsOpen 
-}) {
+export function HeaderAdmin() {
   
   const location = useLocation(); // Hook para obtener la ruta actual
   const { adminProfile } = useAdminContext(); // Obtener perfil de administrador del contexto
@@ -64,6 +58,15 @@ export function HeaderAdmin({
   // Referencias para detectar clics fuera de los menús desplegables
   const notificationRef = useRef(null);
   const profileRef = useRef(null);
+  const {
+    notifications,
+    unreadNotifications,
+    unreadCount,
+    isNotificationsOpen,
+    setIsNotificationsOpen,
+    toggleNotifications,
+    markAllAsRead,
+  } = useAdminNotificationContext();
 
   /**
    * Efecto para cerrar menús desplegables al hacer clic fuera
@@ -132,7 +135,7 @@ export function HeaderAdmin({
   };
 
   // Filtrar notificaciones no leídas para mostrar en el menú desplegable
-  const displayedNotifications = notifications.filter(notif => !notif.isRead);
+  const displayedNotifications = unreadNotifications;
 
   /**
    * Obtener iniciales del administrador para avatar de respaldo

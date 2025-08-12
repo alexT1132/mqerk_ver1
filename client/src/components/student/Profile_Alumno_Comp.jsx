@@ -542,8 +542,8 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
       tutorPhoneNumber: alumno?.tel_tutor || "",
     },
     academic: {
-      academy: alumno?.academico1 || "",
-      bachillerato: alumno?.academico2 || "",
+      academy:  "MQERKACADEMY",
+      bachillerato: alumno?.academico1 || "",
       licenciaturaOption: alumno?.orientacion || "",
       universityOption: alumno?.universidades1 || "",
     },

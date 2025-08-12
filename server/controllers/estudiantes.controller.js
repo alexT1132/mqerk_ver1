@@ -211,14 +211,15 @@ export const getUltimoFolio = async (req, res) => {
 export const obtenerGruposConCantidad = async (req, res) => {
     try {
         // Obtener el parámetro curso desde la URL o el body
-        const { curso } = req.params;
+  const { curso } = req.params;
+  const status = (req.query?.status || 'aprobados').toLowerCase();
 
         if (!curso) {
             return res.status(400).json({ mensaje: "El parámetro curso es obligatorio" });
         }
 
-        // Ejecutar el modelo
-        const resultado = await Estudiantes.getGruposConCantidad(curso);
+  // Ejecutar el modelo (filtrado por estado)
+  const resultado = await Estudiantes.getGruposConCantidad(curso, status);
 
         // Responder con los datos obtenidos
         res.status(200).json(resultado);

@@ -33,3 +33,6 @@ export const softDeleteAdminSelfRequest = (data) => axios.post('/admin/soft-dele
 // Admin security configuration
 export const getAdminConfigRequest = () => axios.get('/admin/config');
 export const updateAdminConfigRequest = (data) => axios.put('/admin/config', data);
+
+// Admin dashboard metrics (includes pagosPendientes)
+export const getAdminDashboardMetricsRequest = () => axios.get('/admin/dashboard/metrics');

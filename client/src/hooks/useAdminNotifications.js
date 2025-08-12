@@ -1,5 +1,6 @@
 // src\hooks\useAdminNotifications.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { getAdminDashboardMetricsRequest } from '../api/usuarios.js';
 
 /**
  * Hook personalizado para manejar notificaciones administrativas
@@ -8,24 +9,62 @@ import { useState, useEffect } from 'react';
 export function useAdminNotifications() {
   const [notifications, setNotifications] = useState([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const pollingRef = useRef(null);
 
-  // TODO: Obtener notificaciones reales del backend
+  // Poll admin metrics to drive pending payments notification badge
   useEffect(() => {
-    // Por ahora iniciamos con un array vacío
-    // En el futuro, aquí haremos la llamada al backend:
-    // const fetchNotifications = async () => {
-    //   try {
-    //     const response = await fetch('/api/admin/notifications');
-    //     const adminNotifications = await response.json();
-    //     setNotifications(adminNotifications);
-    //   } catch (error) {
-    //     console.error('Error fetching notifications:', error);
-    //     setNotifications([]);
-    //   }
-    // };
-    // fetchNotifications();
+    let isMounted = true;
 
-    setNotifications([]);
+    const fetchMetrics = async () => {
+      try {
+        const { data } = await getAdminDashboardMetricsRequest();
+        if (!isMounted) return;
+        const pend = Number(data?.pagosPendientes || 0);
+        setPendingCount(pend);
+        // Optionally synthesize a notification entry to show in dropdown
+        // We only add a lightweight summary item if there are pendings and none exists
+        setNotifications(prev => {
+          const hasSynthetic = prev.some(n => n._synthetic === 'pending_summary');
+          if (pend > 0 && !hasSynthetic) {
+            return [
+              {
+                id: 'pending-summary',
+                _synthetic: 'pending_summary',
+                timestamp: new Date(),
+                isRead: false,
+                priority: 'normal',
+                type: 'payment_pending',
+                message: `Tienes ${pend} pagos pendientes por revisar`
+              },
+              ...prev
+            ];
+          }
+          if (pend === 0 && hasSynthetic) {
+            return prev.filter(n => n._synthetic !== 'pending_summary');
+          }
+          // Update message if count changed
+          if (hasSynthetic) {
+            return prev.map(n => n._synthetic === 'pending_summary' ? { ...n, message: `Tienes ${pend} pagos pendientes por revisar`, isRead: false, timestamp: new Date() } : n);
+          }
+          return prev;
+        });
+      } catch (error) {
+        if (!isMounted) return;
+        // On error, keep last known values; no throw
+        // console.error('Error fetching admin metrics:', error);
+      }
+    };
+
+    // initial fetch
+    fetchMetrics();
+    // start polling every 60s
+    pollingRef.current = setInterval(fetchMetrics, 60000);
+
+    return () => {
+      isMounted = false;
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
   }, []);
 
   // Función para alternar el estado del dropdown de notificaciones
@@ -70,8 +109,9 @@ export function useAdminNotifications() {
     );
   };
 
-  // Calculamos el número de notificaciones no leídas
-  const unreadCount = notifications.filter(notif => !notif.isRead).length;
+  // Calculamos el número de notificaciones no leídas; ensure at least pendingCount shows as badge
+  const unreadCountFromList = notifications.filter(notif => !notif.isRead).length;
+  const unreadCount = pendingCount > 0 ? pendingCount : unreadCountFromList;
 
   // Obtenemos solo las notificaciones no leídas para mostrar en el dropdown
   const unreadNotifications = notifications.filter(notif => !notif.isRead);
@@ -129,6 +169,7 @@ export function useAdminNotifications() {
     notifications,
     unreadNotifications,
     unreadCount,
+  pendingCount,
     isNotificationsOpen,
     setIsNotificationsOpen,
     toggleNotifications,

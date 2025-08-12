@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import jsPDF from 'jspdf';
 import { generarYDescargarContrato } from '../../service/contractPDFService.js';
@@ -6,23 +7,7 @@ import { generarPDFCalibracion } from '../../service/pdfCalibrationService.js';
 import ConfirmModal from '../shared/ConfirmModal';
 import { useAdminContext } from '../../context/AdminContext.jsx';
 
-function LoadingScreen({ onComplete }) {
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            onComplete();
-        }, 2000);
-        return () => clearTimeout(timer);
-    }, [onComplete]);
-
-    return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-white">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                <p className="text-lg font-medium text-gray-700">Cargando validación de pagos...</p>
-            </div>
-        </div>
-    );
-}
+// Reemplazado por el componente reutilizable LoadingOverlay
 
 function CategoryButton({ label, isActive, onClick }) {
     // Función para obtener texto responsive
@@ -488,9 +473,12 @@ function ValidacionPagos_Admin_comp() {
     }
   }, [activeCategory]);
 
-  const handleLoadingComplete = () => {
-    setShowLoadingScreen(false);
-  };
+  // Auto-ocultar overlay tras 2s para simular la carga inicial
+  useEffect(() => {
+    if (!showLoadingScreen) return;
+    const t = setTimeout(() => setShowLoadingScreen(false), 2000);
+    return () => clearTimeout(t);
+  }, [showLoadingScreen]);
 
   const handleRefreshData = async () => {
     if (activeCategory && activeTurno) {
@@ -892,10 +880,7 @@ function ValidacionPagos_Admin_comp() {
     }
   };
 
-  // Si está cargando inicialmente, mostrar pantalla de carga
-  if (showLoadingScreen) {
-    return <LoadingScreen onComplete={handleLoadingComplete} />;
-  }
+  // Carga inicial: overlay en capa, no reemplaza la vista
 
   // Manejo de errores
   if (error) {
@@ -925,6 +910,9 @@ function ValidacionPagos_Admin_comp() {
 
   return (
     <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
+      {(showLoadingScreen || isLoading) && (
+        <LoadingOverlay message={showLoadingScreen ? "Cargando validación de pagos..." : "Cargando..."} />
+      )}
       {/* Header con filtros optimizado */}
       <div className="pt-2 xs:pt-4 sm:pt-6 pb-2 xs:pb-3 sm:pb-4 px-2 xs:px-4 sm:px-6">
         <div className="w-full max-w-7xl mx-auto">

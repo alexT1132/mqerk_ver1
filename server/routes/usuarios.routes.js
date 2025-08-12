@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { obtener, crear, login, verifyToken, obtenerUno, logout, registrarAdmin, registrarAdminBootstrap, getAdminProfile, getBootstrapStatus, updateAdminProfile, updateAdminPhoto, changePassword, softDeleteSelf, getAdminConfig, updateAdminConfig, getDashboardMetrics, getPaymentReports, exportPaymentReportsExcel, exportPaymentReportsPDF } from "../controllers/usuarios.controller.js";
+import { refreshToken } from '../tokens/refresh.controller.js';
 import { upload } from "../middlewares/multer.js";
 import { authREquired } from "../middlewares/validateToken.js";
 
@@ -18,6 +19,8 @@ router.post("/admin/register", authREquired, upload.single('foto'), registrarAdm
 router.post("/admin/register-bootstrap", upload.single('foto'), registrarAdminBootstrap);
 
 router.post("/login", login);
+// Refresh access token using rtoken cookie
+router.post('/token/refresh', refreshToken);
 
 router.get("/verify", verifyToken);
 

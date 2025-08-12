@@ -17,8 +17,9 @@
  * - PUT /api/admin/calendar/events/{id} - Actualizar evento/recordatorio
  * - DELETE /api/admin/calendar/events/{id} - Eliminar evento/recordatorio
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../../api/axios';
+import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 
 export function Calendario_Admin_comp() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -30,6 +31,25 @@ export function Calendario_Admin_comp() {
   const [showNotification, setShowNotification] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
+  // Mantener visible el overlay un mínimo de tiempo para percepción visual
+  const [showOverlay, setShowOverlay] = useState(false);
+  const overlayStartRef = useRef(0);
+  useEffect(() => {
+    let timeout;
+    if (isLoading) {
+      overlayStartRef.current = Date.now();
+      setShowOverlay(true);
+    } else {
+      const elapsed = Date.now() - overlayStartRef.current;
+      const minVisible = 700; // ms
+      if (elapsed < minVisible) {
+        timeout = setTimeout(() => setShowOverlay(false), minVisible - elapsed);
+      } else {
+        setShowOverlay(false);
+      }
+    }
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
   
   // Estado para el formulario de nuevo recordatorio
   const [newReminder, setNewReminder] = useState({
@@ -393,13 +413,27 @@ export function Calendario_Admin_comp() {
         )}
 
        
-        {isLoading && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-            <div className="flex items-center">
-              <svg className="animate-spin w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        {showOverlay && <LoadingOverlay message="Cargando agenda..." />}
+
+        {/* Estado vacío cuando no hay recordatorios y no está cargando */}
+        {!isLoading && reminders.length === 0 && (
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-gray-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <p className="text-blue-800 text-sm font-medium">Cargando...</p>
+              <div>
+                <p className="text-sm text-gray-700 font-medium">No hay recordatorios para este mes.</p>
+                <button
+                  onClick={() => setShowNewModal(true)}
+                  className="mt-2 inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Crear recordatorio
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -18,7 +18,40 @@ const AdminContext = createContext();
 export const useAdminContext = () => {
   const context = useContext(AdminContext);
   if (!context) {
-    throw new Error('useAdminContext debe usarse dentro de AdminProvider');
+    // Fallback seguro para evitar romper la UI si un componente se monta fuera del provider
+    if (typeof window !== 'undefined') {
+      console.warn('[AdminContext] useAdminContext usado fuera de AdminProvider. Devolviendo valores por defecto.');
+    }
+    return {
+      // Estados mínimos
+      isLoading: false,
+      error: null,
+      lastUpdated: null,
+      systemStatus: 'online',
+      dashboardData: null,
+      adminProfile: null,
+      adminData: null,
+      studentsData: null,
+      paymentsData: null,
+      // No-op functions para evitar errores
+      refreshDashboard: async () => {},
+      loadDashboardMetrics: async () => {},
+      loadAdminProfile: async () => {},
+      loadStudentsData: async () => [],
+      deleteStudent: async () => {},
+      updateStudent: async () => {},
+      loadPaymentsData: async () => [],
+      approvePayment: async () => {},
+      rejectPayment: async () => {},
+      generateContract: async () => {},
+      uploadContract: async () => {},
+      loadFinancialReports: async () => ({}),
+      exportToExcel: async () => {},
+      exportToPDF: async () => {},
+      uploadAdminAvatar: async () => {},
+      updateAdminProfile: async () => {},
+      removeAdminAvatar: async () => {},
+    };
   }
   return context;
 };

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useAdminContext } from '../../context/AdminContext.jsx';
 import { getGruposConCantidadRequest } from '../../api/estudiantes.js';
@@ -148,23 +149,7 @@ const CustomNotification = ({ message, type, isVisible, onClose }) => {
   );
 };
 
-function LoadingScreen({ onComplete }) {
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            onComplete();
-        }, 2000);
-        return () => clearTimeout(timer);
-    }, [onComplete]);
-
-    return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-white">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                <p className="text-lg font-medium text-gray-700">Cargando lista de estudiantes...</p>
-            </div>
-        </div>
-    );
-}
+// Reemplazado por el componente reutilizable LoadingOverlay
 
 // Componente para botones de categoría (cursos)
 function CategoryButton({ label, isActive, onClick }) {
@@ -270,6 +255,7 @@ function ListaAlumnos_Admin_comp() {
     return sessionStorage.getItem('listAlumnos_activeTurno') || null;
   });
   const [alumnos, setAlumnos] = useState([]);
+  const [isFetching, setIsFetching] = useState(false);
   const [searchTerm, setSearchTerm] = useState(() => {
     return sessionStorage.getItem('listAlumnos_searchTerm') || '';
   });
@@ -287,6 +273,31 @@ function ListaAlumnos_Admin_comp() {
     message: '',
     type: 'success'
   });
+
+  // Menú desplegable de estatus por fila (abierto por folio)
+  const [openStatusMenu, setOpenStatusMenu] = useState(null); // guarda el folio abierto o null
+
+  // Cerrar menú al hacer click fuera o al presionar Escape
+  useEffect(() => {
+    if (!openStatusMenu) return;
+    const handleOutside = (e) => {
+      const selector = `[data-status-menu="${openStatusMenu}"]`;
+      if (!e.target.closest(selector)) {
+        setOpenStatusMenu(null);
+      }
+    };
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setOpenStatusMenu(null);
+    };
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside, { passive: true });
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [openStatusMenu]);
 
   // ============= INTEGRACIÓN CON ADMINCONTEXT =============
   
@@ -356,6 +367,13 @@ function ListaAlumnos_Admin_comp() {
 
   // ==================== UTILIDADES ====================
   
+  // Formato de folio consistente con ComprobanteRecibo.jsx
+  function obtenerDosUltimosDigitosAnioSiguiente() {
+    const fechaActual = new Date();
+    const anioSiguiente = fechaActual.getFullYear() + 1;
+    return anioSiguiente.toString().slice(-2);
+  }
+
   // Obtiene los grupos disponibles para el curso seleccionado
   const getGruposDisponibles = () => {
     const grupos = gruposPorCurso[activeCategory] || [];
@@ -373,6 +391,7 @@ function ListaAlumnos_Admin_comp() {
   const fetchAlumnos = async () => {
     if (!activeCategory || !activeTurno) return [];
     try {
+      setIsFetching(true);
       const data = await loadStudentsData(activeCategory, activeTurno);
       const list = Array.isArray(data) ? data : [];
       setAlumnos(list);
@@ -389,6 +408,9 @@ function ListaAlumnos_Admin_comp() {
       console.error('Error al cargar estudiantes:', err);
       setAlumnos([]);
       return [];
+    }
+    finally {
+      setIsFetching(false);
     }
   };
 
@@ -514,9 +536,11 @@ function ListaAlumnos_Admin_comp() {
   }, [activeCategory]);
 
   // Manejar la finalización de la pantalla de carga inicial
-  const handleLoadingComplete = () => {
-    setShowLoadingScreen(false);
-  };
+  useEffect(() => {
+    if (!showLoadingScreen) return;
+    const t = setTimeout(() => setShowLoadingScreen(false), 2000);
+    return () => clearTimeout(t);
+  }, [showLoadingScreen]);
 
   // Función para actualizar manualmente los datos
   const handleRefreshData = async () => {
@@ -647,10 +671,7 @@ function ListaAlumnos_Admin_comp() {
     }
   };
 
-  // Si está cargando inicialmente, mostrar pantalla de carga
-  if (showLoadingScreen) {
-    return <LoadingScreen onComplete={handleLoadingComplete} />;
-  }
+  // Carga inicial: ahora se muestra como overlay en capa, no reemplaza la vista
 
   // Manejo de errores
   if (error) {
@@ -680,6 +701,9 @@ function ListaAlumnos_Admin_comp() {
 
   return (
     <>
+      {(showLoadingScreen || isLoading || isFetching) && (
+        <LoadingOverlay message={showLoadingScreen ? "Cargando lista de estudiantes..." : "Cargando estudiantes..."} />
+      )}
       {/* Modal de confirmación */}
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
@@ -895,7 +919,7 @@ function ListaAlumnos_Admin_comp() {
                         <span>Estado</span>
                       </div>
                     </th>
-                    <th className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-center text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider">
+                    <th className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-center text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider w-28 sm:w-32 md:w-36">
                       <div className="flex flex-col space-y-1">
                         <span>Acciones</span>
                         <span className="text-gray-500 font-normal">Gestionar</span>
@@ -909,10 +933,10 @@ function ListaAlumnos_Admin_comp() {
                       {/* Columna Folio */}
                       <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 border-r border-gray-200">
                         <div className="text-center">
-                          <div className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md inline-block">
-                            {alumno.folio}
+                          <div className="text-xs font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-md inline-block">
+                            {`M${alumno.curso || ''}${obtenerDosUltimosDigitosAnioSiguiente()}-${String(alumno.folio).padStart(4, '0')}`}
                           </div>
-                          <div className="text-xs text-gray-400 mt-1">
+                          <div className="text-[10px] text-gray-400 mt-1">
                             {alumno.fechaRegistro}
                           </div>
                         </div>
@@ -966,50 +990,79 @@ function ListaAlumnos_Admin_comp() {
                       </td>
                       
                       {/* Columna Estado */}
-                      <td className="px-1 xs:px-2 py-3 xs:py-4 border-r border-gray-200 w-20">
-                        <div className="flex flex-col items-center space-y-1">
+                      <td className="px-1 xs:px-2 py-3 xs:py-4 border-r border-gray-200 w-24">
+                        <div className="flex flex-col items-center space-y-1" data-status-menu={alumno.folio}>
                           {getStatusBadge(alumno.estatus)}
-                          {/* Dropdown para cambiar estatus */}
-                          <div className="relative group">
-                            <button className="text-xs text-gray-500 hover:text-blue-600 transition-colors">
+                          {/* Dropdown para cambiar estatus (click/tap) */}
+                          <div className="relative">
+                            <button
+                              type="button"
+                              aria-haspopup="menu"
+                              aria-expanded={openStatusMenu === alumno.folio}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenStatusMenu(prev => prev === alumno.folio ? null : alumno.folio);
+                              }}
+                              onKeyDown={(e) => { if (e.key === 'Escape') setOpenStatusMenu(null); }}
+                              className="text-xs text-gray-600 hover:text-blue-600 transition-colors px-2 py-1 rounded-md hover:bg-gray-100"
+                            >
                               Cambiar
                             </button>
-                            <div className="absolute hidden group-hover:block bg-white border border-gray-200 rounded-lg shadow-lg mt-1 py-1 w-24 z-10">
-                              {alumno.estatus !== 'Activo' && (
-                                <button
-                                  onClick={() => handleCambiarEstatus(alumno, 'Activo')}
-                                  className="block w-full text-left px-2 py-1 text-xs text-green-600 hover:bg-green-50"
-                                >
-                                  ✅ Activar
-                                </button>
-                              )}
-                              {alumno.estatus !== 'Inactivo' && (
-                                <button
-                                  onClick={() => handleCambiarEstatus(alumno, 'Inactivo')}
-                                  className="block w-full text-left px-2 py-1 text-xs text-yellow-600 hover:bg-yellow-50"
-                                >
-                                  ⏸️ Inactivar
-                                </button>
-                              )}
-                              {alumno.estatus !== 'Suspendido' && (
-                                <button
-                                  onClick={() => handleCambiarEstatus(alumno, 'Suspendido')}
-                                  className="block w-full text-left px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-                                >
-                                  ❌ Suspender
-                                </button>
-                              )}
-                            </div>
+                            {openStatusMenu === alumno.folio && (
+                              <div
+                                role="menu"
+                                className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl py-1 w-28 z-50 animate-[fadeIn_120ms_ease-out]"
+                                style={{ minWidth: '7rem' }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {alumno.estatus !== 'Activo' && (
+                                  <button
+                                    role="menuitem"
+                                    onClick={async () => {
+                                      await handleCambiarEstatus(alumno, 'Activo');
+                                      setOpenStatusMenu(null);
+                                    }}
+                                    className="block w-full text-left px-3 py-1.5 text-xs text-green-700 hover:bg-green-50"
+                                  >
+                                    ✅ Activar
+                                  </button>
+                                )}
+                                {alumno.estatus !== 'Inactivo' && (
+                                  <button
+                                    role="menuitem"
+                                    onClick={async () => {
+                                      await handleCambiarEstatus(alumno, 'Inactivo');
+                                      setOpenStatusMenu(null);
+                                    }}
+                                    className="block w-full text-left px-3 py-1.5 text-xs text-yellow-700 hover:bg-yellow-50"
+                                  >
+                                    ⏸️ Inactivar
+                                  </button>
+                                )}
+                                {alumno.estatus !== 'Suspendido' && (
+                                  <button
+                                    role="menuitem"
+                                    onClick={async () => {
+                                      await handleCambiarEstatus(alumno, 'Suspendido');
+                                      setOpenStatusMenu(null);
+                                    }}
+                                    className="block w-full text-left px-3 py-1.5 text-xs text-red-700 hover:bg-red-50"
+                                  >
+                                    ❌ Suspender
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
                       
                       {/* Columna Acciones */}
-                      <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-center">
-                        <div className="flex flex-col space-y-2">
+                      <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-center w-28 sm:w-32 md:w-36">
+                        <div className="flex flex-col space-y-1 items-center">
                           <button 
                             onClick={() => handleVerPerfil(alumno)}
-                            className="inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+                            className="inline-flex w-fit items-center justify-center px-2.5 py-1.5 bg-blue-600 text-white text-[11px] rounded-md hover:bg-blue-700 transition-colors duration-200 shadow-sm hover:shadow-md"
                             title="Ver perfil completo del estudiante"
                           >
                             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1019,7 +1072,7 @@ function ListaAlumnos_Admin_comp() {
                           </button>
                           <button 
                             onClick={() => handleEliminarAlumno(alumno)}
-                            className="inline-flex items-center justify-center px-3 py-2 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+                            className="inline-flex w-fit items-center justify-center px-2.5 py-1.5 bg-red-600 text-white text-[11px] rounded-md hover:bg-red-700 transition-colors duration-200 shadow-sm hover:shadow-md"
                             title="Eliminar estudiante"
                           >
                             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
