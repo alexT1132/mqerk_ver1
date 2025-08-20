@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext.jsx';
+import { computeOverdueState } from '../utils/payments.js';
 
 /**
  * CONTEXTO PARA DATOS ESPECÍFICOS DEL ESTUDIANTE
@@ -52,8 +53,8 @@ export const StudentProvider = ({ children }) => {
   // Estados legacy para compatibilidad (deprecated - se mantendrán temporalmente)
   const [allowedAreas, setAllowedAreas] = useState([]); // Áreas permitidas (legacy)
   const [areaRequests, setAreaRequests] = useState([]); // Solicitudes de nuevas áreas (legacy)
-  const [hasContentAccess, setHasContentAccess] = useState(true); // NUEVO: Control de acceso al contenido
-  const [overdueDays, setOverdueDays] = useState(0); // NUEVO: Días de retraso en pagos
+  const [hasContentAccess, setHasContentAccess] = useState(true); // Acceso al contenido (global)
+  const [overdueDays, setOverdueDays] = useState(0); // Días de mora efectivos (más allá de tolerancia)
   
   // TODO: BACKEND - Datos del estudiante serán proporcionados por el endpoint del perfil
   // Estructura esperada: GET /api/students/profile
@@ -483,55 +484,25 @@ export const StudentProvider = ({ children }) => {
     localStorage.setItem('isFirstAccess', 'true');
   };
 
-  // Verificar acceso al contenido basado en pagos vencidos
-  const checkContentAccess = () => {
-    // Si tiene acceso al contenido, salir
-    if (hasContentAccess) return;
-
-    // Calcular días de retraso en pagos
-    const today = new Date();
-    const dueDate = new Date(localStorage.getItem('nextPaymentDue'));
-    const diffTime = Math.abs(today - dueDate);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-
-    setOverdueDays(diffDays);
-
-    // Si el pago está vencido por más de X días (por ejemplo, 3 días), denegar acceso
-    if (diffDays > 3) {
-      setHasContentAccess(false);
-    } else {
+  // Verificar acceso al contenido basado en calendario de pagos (tolerancia aplicada)
+  const refreshOverdueAccess = (now = new Date()) => {
+    try {
+      const { isOverdueLocked, overdueDays } = computeOverdueState({ alumno, now });
+      setHasContentAccess(!isOverdueLocked);
+      setOverdueDays(overdueDays || 0);
+      return { hasAccess: !isOverdueLocked, overdueDays };
+    } catch (e) {
+      console.warn('No se pudo evaluar estado de mora:', e);
+      // Ante error, no bloquear
       setHasContentAccess(true);
+      setOverdueDays(0);
+      return { hasAccess: true, overdueDays: 0 };
     }
   };
 
-  // TODO BACKEND: Función para verificar estado de pagos y bloquear contenido
+  // Chequeo de pagos: usar cálculo local; opcionalmente podría mezclarse con backend en el futuro
   const checkPaymentStatus = async () => {
-    try {
-      // TODO: Implementar llamada al backend
-      // const response = await fetch(`/api/students/${studentData.id}/payment-status`);
-      // const paymentData = await response.json();
-      
-      // MOCK LOGIC - Reemplazar con datos reales del backend
-      const mockOverduePayments = 0; // Número de pagos vencidos
-      const mockOverdueDays = 0; // Días de retraso más antiguo
-      
-      // LÓGICA DE BLOQUEO:
-      // - Si hay pagos vencidos por más de 30 días → bloquear acceso
-      // - Si hay más de 2 pagos vencidos → bloquear acceso
-      const shouldBlockAccess = mockOverduePayments > 2 || mockOverdueDays > 30;
-      
-      setHasContentAccess(!shouldBlockAccess);
-      setOverdueDays(mockOverdueDays);
-      
-      return {
-        hasAccess: !shouldBlockAccess,
-        overduePayments: mockOverduePayments,
-        overdueDays: mockOverdueDays
-      };
-    } catch (error) {
-      console.error('Error checking payment status:', error);
-      return { hasAccess: true, overduePayments: 0, overdueDays: 0 };
-    }
+    return refreshOverdueAccess();
   };
 
   // TODO BACKEND: Función para actualizar estado de pago
@@ -595,9 +566,10 @@ export const StudentProvider = ({ children }) => {
     requestNewAreaAccess,
     clearAreas,
     
-    // Funciones de pagos
-    checkPaymentStatus,
-    updatePaymentStatus,
+  // Funciones de pagos y acceso global
+  checkPaymentStatus,
+  updatePaymentStatus,
+  refreshOverdueAccess,
   };
 
   return (

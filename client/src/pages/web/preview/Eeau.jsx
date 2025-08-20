@@ -130,15 +130,13 @@ function Eeau() {
                 </div>
                 <div className="relative top-[25rem] left-[50%] transform -translate-x-1/2 -translate-y-1/2 max-w-7xl p-4 flex gap-6 items-start">
                     {/* VIDEO Y ASESOR */}
-                    <div className="bg-white rounded-lg w-[70%] shadow overflow-hidden">
-                        <div className="aspect-video">
-                        <iframe
-                            className="w-full h-full"
-                            src={Video}
-                            title="Video del curso"
-                            allowFullScreen
-                        ></iframe>
-                        </div>
+                                        <div className="bg-white rounded-lg w-[70%] shadow overflow-hidden">
+                                                <div className="aspect-video">
+                                                    <video className="w-full h-full" controls preload="metadata">
+                                                        <source src={Video} type="video/mp4" />
+                                                        Tu navegador no soporta el video HTML5.
+                                                    </video>
+                                                </div>
                         <div className="flex justify-between items-center p-4 text-sm text-gray-700">
                         <div className="flex items-center gap-2">
                             <img src={Asesor} className="w-8 h-8 bg-gray-300 rounded-full" />

@@ -9,10 +9,10 @@ import { useStudent } from '../../context/StudentContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 // Componentes de páginas
-import Profile_Alumno_comp from './Profile_Alumno_comp.jsx';
+import Profile_Alumno_comp from './Profile_Alumno_Comp.jsx';
 import { Calendar_Alumno_comp } from './Calendar_Alumno_comp.jsx';
 import MisCursos_Alumno_comp from './MisCursos_Alumno_Comp.jsx';
-import MisPagos_Alumno_comp from './MisPagos_Alumno_comp.jsx';
+import MisPagos_Alumno_comp from './MisPagos_Alumno_Comp.jsx';
 import { Configuracion_Alumno_comp } from './Configuracion_Alumno_Comp.jsx';
 import Feedback_Alumno_Comp from './Feedback_Alumno_Comp.jsx';
 import { Asistencia_Alumno_comp } from './Asistencia_Alumno_comp.jsx';
@@ -42,7 +42,7 @@ export function AlumnoDashboardBundle() {
 // BACKEND: Layout con contexto de estudiante
 
 function StudentAwareLayout() {
-  const { isVerified, hasPaid, currentCourse, isLoading } = useStudent();
+  const { isVerified, hasPaid, currentCourse, isLoading, hasContentAccess, refreshOverdueAccess } = useStudent();
   const { alumno } = useAuth();
   const location = useLocation();
   const isCoursesRoute = location.pathname.startsWith('/alumno/cursos');
@@ -61,13 +61,15 @@ function StudentAwareLayout() {
   const shouldShowSidebar = (
     isConfigRoute || (
       !!currentCourse && (
-        (isVerified && hasPaid) || isApproved
+    ((isVerified && hasPaid) || isApproved) && hasContentAccess
       )
     )
   );
 
   // Redirección temprana para evitar parpadeo del dashboard sin curso seleccionado
   const shouldRedirectToCourses = isApproved && !currentCourse && !isCoursesRoute;
+  // Redirección por bloqueo global de acceso
+  const shouldRedirectToWelcome = !hasContentAccess && location.pathname !== '/alumno' && location.pathname !== '/alumno/dashboard' && location.pathname !== '/alumno/';
 
   // BACKEND: El botón de logout se muestra cuando NO hay sidebar
   const showLogoutButton = !shouldShowSidebar;
@@ -99,6 +101,12 @@ function StudentAwareLayout() {
     return () => clearTimeout(timer);
   }, [currentCourse, isVerified, hasPaid]);
 
+  // Recalcular acceso global al montar y cuando cambie alumno
+  useEffect(() => {
+    refreshOverdueAccess();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alumno?.plan, alumno?.plan_type, alumno?.folio, alumno?.id, alumno?.created_at]);
+
   // ✅ FORZAR RE-RENDER cuando cambie currentCourse
   useEffect(() => {
     if (currentCourse) {
@@ -125,6 +133,9 @@ function StudentAwareLayout() {
   // Redirigir antes de renderizar Layout para evitar flicker y exposición del sidebar
   if (shouldRedirectToCourses) {
     return <Navigate to="/alumno/cursos" replace />;
+  }
+  if (shouldRedirectToWelcome) {
+    return <Navigate to="/alumno" replace />;
   }
 
   // BACKEND: Renderizado del layout principal

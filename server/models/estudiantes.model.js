@@ -2,7 +2,7 @@ import db from '../db.js'; // ya no ejecutes connectDB()
 
 // Crear datos del alumno
 export const createEstudiante = async (data) => {
-  const sql = 'INSERT INTO estudiantes (nombre, apellidos, email, foto, grupo, comunidad1, comunidad2, telefono, fecha_nacimiento, nombre_tutor, tel_tutor, academico1, academico2, semestre, alergia, alergia2, discapacidad1, discapacidad2, orientacion, universidades1, universidades2, postulacion, comentario1, comentario2, curso, plan, anio, folio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  const sql = 'INSERT INTO estudiantes (nombre, apellidos, email, foto, grupo, comunidad1, comunidad2, telefono, fecha_nacimiento, nombre_tutor, tel_tutor, academico1, academico2, semestre, alergia, alergia2, discapacidad1, discapacidad2, orientacion, universidades1, universidades2, postulacion, modalidad, comentario1, comentario2, curso, turno, plan, academia, anio, folio, asesor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
   const values = [
     data.nombre, 
     data.apellidos, 
@@ -24,14 +24,18 @@ export const createEstudiante = async (data) => {
     data.discapacidad2, 
     data.orientacion, 
     data.universidades1, 
-    data.universidades2, 
-    data.postulacion, 
+  data.universidades2, 
+  data.postulacion, 
+  data.modalidad,
     data.comentario1, 
     data.comentario2, 
-    data.curso, 
-    data.plan, 
+  data.curso, 
+  data.turno,
+  data.plan, 
+  data.academia,
     data.anio, 
-    data.folio
+  data.folio,
+  data.asesor
   ];
   const [result] = await db.query(sql, values);
   return result;
@@ -52,6 +56,12 @@ export const getEstudianteById = async (id) => {
 // Obtener un estudiante por folio
 export const getEstudianteByFolio = async (folio) => {
   const [rows] = await db.query('SELECT * FROM estudiantes WHERE folio = ? LIMIT 1', [folio]);
+  return rows[0] || null;
+};
+
+// Obtener un estudiante por folio_formateado
+export const getEstudianteByFolioFormateado = async (folioFormateado) => {
+  const [rows] = await db.query('SELECT * FROM estudiantes WHERE folio_formateado = ? LIMIT 1', [folioFormateado]);
   return rows[0] || null;
 };
 

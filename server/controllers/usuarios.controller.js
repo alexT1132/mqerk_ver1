@@ -1,8 +1,11 @@
 import * as Usuarios from "../models/usuarios.model.js";
 import * as AdminProfiles from "../models/admin_profiles.model.js";
+import * as AsesorPerfiles from "../models/asesor_perfiles.model.js";
 import * as Estudiantes from "../models/estudiantes.model.js";
 import bcrypt from "bcryptjs";
 import { createAccessToken, createRefreshToken } from "../libs/jwt.js";
+import { findAccessToken, findRefreshToken, issueTokenCookies, maybeSlideAccess } from '../libs/authTokens.js';
+import { isRevoked } from '../libs/tokenStore.js';
 import jwt from "jsonwebtoken";
 import { TOKEN_SECRET } from "../config.js";
 import * as SoftDeletes from "../models/soft_deletes.model.js";
@@ -91,24 +94,13 @@ export const login = async (req, res) => {
       // jwt exp format: s or string like "60m"; usamos minutos
       exp = `${Math.max(5, Math.min(7*24*60, minutos))}m`;
     } catch {}
-  const token = await createAccessToken({ id: usuarioFound.id }, exp);
-  const rtoken = await createRefreshToken({ id: usuarioFound.id }, "30d");
-    const isProd = process.env.NODE_ENV === 'production';
-    const cookieOptions = {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: isProd,
-      path: '/',
-    };
-    if (rememberMe) {
-      // 30 días persistente
-      cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000;
-    }
-  res.cookie("token", token, cookieOptions);
-  // Refresh cookie: httpOnly, longer, same flags
-  res.cookie("rtoken", rtoken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
+  const role = (usuarioFound.role || '').toLowerCase();
+  const expMinutes = parseInt(exp.replace(/m$/,''),10) || 60;
+  const { accessName, refreshName } = await issueTokenCookies(res, usuarioFound.id, role, { accessMins: expMinutes, refreshDays: 30, remember: rememberMe });
+  if(process.env.NODE_ENV !== 'production') console.log(`[LOGIN] role=${usuarioFound.role} accessCookie=${accessName} refreshCookie=${refreshName} remember=${rememberMe?'yes':'no'}`);
 
-  if(usuarioFound.role === 'estudiante'){
+  const userRoleLower = (usuarioFound.role || '').toLowerCase();
+  if(userRoleLower === 'estudiante'){
 
       const estudiante = await Estudiantes.getEstudianteById(usuarioFound.id_estudiante);
       const softByEst = await SoftDeletes.getByEstudianteId(estudiante?.id);
@@ -119,8 +111,20 @@ export const login = async (req, res) => {
           estudiante: estudiante
         });
 
+  } else if (userRoleLower === 'asesor') {
+        let perfilAsesor = await AsesorPerfiles.getByUserId(usuarioFound.id).catch(()=>null);
+        // Fallback: si no está vinculado y existe exactamente un perfil sin usuario, vincularlo (migración suave)
+        if(!perfilAsesor){
+          try {
+            const [candidatos] = await db.query('SELECT preregistro_id FROM asesor_perfiles WHERE usuario_id IS NULL LIMIT 2');
+            if(candidatos.length === 1){
+              await db.query('UPDATE asesor_perfiles SET usuario_id=? WHERE preregistro_id=?',[usuarioFound.id, candidatos[0].preregistro_id]);
+              perfilAsesor = await AsesorPerfiles.getByUserId(usuarioFound.id).catch(()=>null);
+            }
+          } catch(_e) {}
+        }
+      return res.json({ usuario: usuarioFound, asesor_profile: perfilAsesor || null });
     } else {
-      // role admin: adjuntar perfil si existe
       const perfil = await AdminProfiles.getByUserId(usuarioFound.id).catch(() => null);
       return res.json({ usuario: usuarioFound, admin_profile: perfil || null });
     }
@@ -133,46 +137,85 @@ export const login = async (req, res) => {
 
 // Logout
 export const logout = async (req, res) => {
-
+  // Permitir logout aunque no haya req.user (token vencido) para limpiar cookies client-side
   const userId = req.user?.id;
-
-  if (!userId) {
-    return res.status(400).json({ message: "Usuario no autenticado" });
+  if (userId) {
+    Usuarios.marcarComoLogout(userId, (err) => {
+      if (err) console.error("Error al marcar logout:", err);
+    });
   }
 
-  // Marcar al usuario como logueado
-  Usuarios.marcarComoLogout(userId, (err) => {
-    if (err) {
-      console.error("Error al marcar como logueado:", err);
+  // Revocar JTIs actuales (best effort)
+  try {
+    const cookies = req.cookies || {};
+    const names = Object.keys(cookies).filter(n => /^(token_|rtoken_|access_token|refresh_token|token$|rtoken$)/.test(n));
+    for (const name of names) {
+      try {
+        const decoded = jwt.decode(cookies[name]);
+        if (decoded?.jti) {
+          const { revokeJti } = await import('../libs/tokenStore.js');
+          revokeJti(decoded.jti);
+        }
+      } catch { /* noop */ }
     }
-  });
+  } catch { /* noop */ }
 
-  res.cookie("token", "", {
-    expires: new Date(0),
-  });
-  res.cookie("rtoken", "", { expires: new Date(0) });
-  
+  const expire = { expires: new Date(0), httpOnly: true, sameSite: 'lax', path: '/' };
+  ['token','rtoken','token_admin','rtoken_admin','token_asesor','rtoken_asesor','token_estudiante','rtoken_estudiante','access_token','refresh_token']
+    .forEach(c=> { try { res.cookie(c,'',expire); } catch {} });
   return res.sendStatus(200);
 };
 
 // VerifyToken
 export const verifyToken = async (req, res) => {
-  const { token } = req.cookies;
-
-  if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-  jwt.verify(token, TOKEN_SECRET, async (err, user) => {
-    if (err) return res.status(401).json({ message: "Unauthorized" });
+  try { res.set('Cache-Control','no-store'); res.set('Pragma','no-cache'); } catch {}
+  const { value: candidate } = findAccessToken(req.cookies);
+  if (!candidate) {
+    const { value: rtoken, role: rrole } = findRefreshToken(req.cookies);
+    if (rtoken) {
+      try {
+        const decoded = jwt.verify(rtoken, TOKEN_SECRET);
+        const userId = decoded?.id;
+        if (userId) {
+          const newAccess = await createAccessToken({ id: userId, role: rrole }, '60m');
+          const accessName = rrole ? `token_${rrole}` : 'token';
+          const isProd = process.env.NODE_ENV === 'production';
+          res.cookie(accessName, newAccess, { httpOnly: true, sameSite: 'lax', secure: isProd, path: '/' });
+          if (process.env.NODE_ENV !== 'production') console.log('[VERIFY] minted access from refresh role=%s', rrole);
+          return verifyToken(req, res);
+        }
+      } catch(e) {
+        if (process.env.NODE_ENV !== 'production') console.log('[VERIFY] refresh fallback failed: %s', e.name);
+      }
+    }
+    if (process.env.NODE_ENV !== 'production') console.log('[VERIFY] no-token cookies=%o', Object.keys(req.cookies||{}));
+    return res.status(401).json({ message: 'Unauthorized', reason: 'no-token' });
+  }
+  jwt.verify(candidate, TOKEN_SECRET, async (err, user) => {
+    if (err) {
+      if (process.env.NODE_ENV !== 'production') console.log('[VERIFY] jwt error %s', err.name);
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: "Unauthorized", reason: 'expired' });
+      }
+      return res.status(401).json({ message: "Unauthorized", reason: 'invalid-token' });
+    }
+    if (isRevoked(user.jti)) {
+      return res.status(401).json({ message: 'Unauthorized', reason: 'revoked' });
+    }
 
   const userFound = await Usuarios.getUsuarioPorid(user.id);
   const soft = await SoftDeletes.getByUsuarioId(userFound?.id);
-  if (soft) return res.status(401).json({ message: "Unauthorized" });
+  if (soft) return res.status(401).json({ message: "Unauthorized", reason: 'soft-deleted' });
 
-    if (!userFound) return res.status(401).json({ message: "Unauthorized" });
+    if (!userFound) return res.status(401).json({ message: "Unauthorized", reason: 'user-not-found' });
 
-    console.log(userFound);
+  console.log(userFound);
 
-  if(userFound.role === 'estudiante'){
+  // Sliding expiration: renovar si queda <20%% del tiempo
+  await maybeSlideAccess(res, user, candidate, { thresholdPct: 20, accessMins: 60 });
+
+  const roleLower = (userFound.role || '').toLowerCase();
+  if(roleLower === 'estudiante'){
 
       const estudiante = await Estudiantes.getEstudianteById(userFound.id_estudiante);
 
@@ -181,6 +224,18 @@ export const verifyToken = async (req, res) => {
           estudiante: estudiante
         });
 
+  } else if (roleLower === 'asesor') {
+        let perfilAsesor = await AsesorPerfiles.getByUserId(userFound.id).catch(()=>null);
+        if(!perfilAsesor){
+          try {
+            const [candidatos] = await db.query('SELECT preregistro_id FROM asesor_perfiles WHERE usuario_id IS NULL LIMIT 2');
+            if(candidatos.length === 1){
+              await db.query('UPDATE asesor_perfiles SET usuario_id=? WHERE preregistro_id=?',[userFound.id, candidatos[0].preregistro_id]);
+              perfilAsesor = await AsesorPerfiles.getByUserId(userFound.id).catch(()=>null);
+            }
+          } catch(_e) {}
+        }
+      return res.json({ usuario: userFound, asesor_profile: perfilAsesor || null });
     } else {
       const perfil = await AdminProfiles.getByUserId(userFound.id).catch(() => null);
       return res.json({ usuario: userFound, admin_profile: perfil || null });
@@ -310,13 +365,14 @@ export const registrarAdminBootstrap = async (req, res) => {
 export const getAdminProfile = async (req, res) => {
   try {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-    const user = await Usuarios.getUsuarioPorid(userId);
-    if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+  if (!userId) return res.status(401).json({ message: 'Unauthorized', reason:'no-token-user' });
+  const user = await Usuarios.getUsuarioPorid(userId);
+  if (!user) return res.status(401).json({ message:'Unauthorized', reason:'user-not-found' });
+  if (user.role !== 'admin') return res.status(403).json({ message: 'Forbidden', reason:'not-admin' });
     const perfil = await AdminProfiles.getByUserId(userId);
     return res.status(200).json({ usuario: { id: user.id, usuario: user.usuario, role: user.role }, admin_profile: perfil });
   } catch (e) {
-    return res.status(500).json({ message: 'Error interno del servidor' });
+  return res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
 

@@ -206,48 +206,61 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
   // Ventana de protección post-click para evitar colapsos por reflow/navegación
   const freezeUntilRef = useRef(0);
   const sidebarRef = useRef(null);
+  // Ventana de gracia tras fijar colapsado para ignorar hovers residuales
+  const pinnedGraceUntilRef = useRef(0);
+  // Constantes de timing
+  const HOVER_CLOSE_DELAY = 200;
+  const CLICK_FREEZE_MS = 500;
+
+  // Setter seguro: nunca abre si está fijado colapsado
+  const setSidebarOpenSafe = (open) => {
+    setIsSidebarOpen(prev => {
+      if (isPinnedCollapsed && open) return false;
+      return open;
+    });
+  };
 
   const sidebarWidth = isSidebarOpen ? 'w-64' : 'w-[80px]'; // Incrementado el ancho expandido para mejor visibilidad
 
   const handleMouseEnter = () => {
-    if (isPinnedCollapsed) return; // No expandir cuando está fijado en colapsado
+    // Bloquear apertura si está fijado o dentro de la ventana de gracia tras fijar
+    if (isPinnedCollapsed || Date.now() < pinnedGraceUntilRef.current) return;
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    setIsSidebarOpen(true);
-    // ¡CRÍTICO! Llama a la función del Layout para comunicar el estado
-    if (setDesktopSidebarOpen) {
-      setDesktopSidebarOpen(true);
-    }
+    setSidebarOpenSafe(true);
   };
 
   const handleMouseLeave = (e) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    // Pequeña demora para evitar colapso mientras haces click o por reflows
-  timeoutRef.current = setTimeout(() => {
-      // Evitar cerrar si el mouse sigue dentro (salida a un hijo)
-      const rt = e?.relatedTarget;
-      if (rt && sidebarRef.current && sidebarRef.current.contains(rt)) return;
-      // Si el sidebar sigue hovered, no cerrar
+    const relatedTarget = e?.relatedTarget;
+    const isNode = (n) => !!(n && typeof n === 'object' && 'nodeType' in n);
+    timeoutRef.current = setTimeout(() => {
+      if (
+        relatedTarget &&
+        isNode(relatedTarget) &&
+        sidebarRef.current &&
+        sidebarRef.current.contains(relatedTarget)
+      ) return;
       if (sidebarRef.current && sidebarRef.current.matches(':hover')) return;
-      // Evitar cerrar durante un breve periodo tras un click (reflows/rutas)
       if (Date.now() < freezeUntilRef.current) return;
-      setIsSidebarOpen(false);
-      if (setDesktopSidebarOpen) setDesktopSidebarOpen(false);
+      setSidebarOpenSafe(false);
       timeoutRef.current = null;
-    }, 200);
+    }, HOVER_CLOSE_DELAY);
   };
 
   const togglePinned = () => {
     setIsPinnedCollapsed(prev => {
       const next = !prev;
       if (next) {
-        // Si lo fijamos en colapsado, asegurar que quede cerrado y avisar al Layout
-        setIsSidebarOpen(false);
-        if (setDesktopSidebarOpen) setDesktopSidebarOpen(false);
+        // Forzar cerrado inmediato y crear una ventana de gracia para evitar re-apertura por eventos hover residuales
+        setSidebarOpenSafe(false);
+        pinnedGraceUntilRef.current = Date.now() + 800; // 800ms de bloqueo de hover
+      } else {
+        // Al liberar, permitir hover normal después de un corto margen para evitar apertura instantánea durante reflow
+        pinnedGraceUntilRef.current = Date.now() + 100; // breve
       }
-      // Persistencia
       try { localStorage.setItem('sidebarPinnedCollapsed', String(next)); } catch (_) {}
       return next;
     });
@@ -256,15 +269,22 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
   // Cargar estado persistido al montar
   useEffect(() => {
     try {
-  const pc = localStorage.getItem('sidebarPinnedCollapsed') === 'true';
-  if (pc) {
+      const pc = localStorage.getItem('sidebarPinnedCollapsed') === 'true';
+      if (pc) {
         setIsPinnedCollapsed(true);
-        setIsSidebarOpen(false);
-        if (setDesktopSidebarOpen) setDesktopSidebarOpen(false);
+        setSidebarOpenSafe(false);
+        pinnedGraceUntilRef.current = Date.now() + 800;
       }
     } catch (_) {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Efecto de seguridad: si se fija colapsado y quedó abierto por alguna carrera, cerrarlo
+  useEffect(() => {
+    if (isPinnedCollapsed && isSidebarOpen) {
+      setSidebarOpenSafe(false);
+    }
+  }, [isPinnedCollapsed, isSidebarOpen]);
 
   useEffect(() => {
     return () => {
@@ -277,9 +297,7 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
   // Sincroniza el overlay de blur con el estado real del sidebar.
   // Si por cualquier motivo el sidebar se cierra, el overlay se limpia automáticamente.
   useEffect(() => {
-    if (setDesktopSidebarOpen) {
-      setDesktopSidebarOpen(isSidebarOpen);
-    }
+  if (setDesktopSidebarOpen) setDesktopSidebarOpen(isSidebarOpen);
   }, [isSidebarOpen, setDesktopSidebarOpen]);
 
   return (
@@ -295,7 +313,15 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
       aria-label="Sidebar de escritorio de alumno"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-  onClickCapture={() => { freezeUntilRef.current = Date.now() + 500; }}
+      onClickCapture={() => { freezeUntilRef.current = Date.now() + CLICK_FREEZE_MS; }}
+      onFocus={() => { /* Evitar expansión accidental al tabular */ if (!isPinnedCollapsed) setSidebarOpenSafe(true); }}
+      onBlur={(e) => {
+        if (isPinnedCollapsed) return; // si está fijado colapsado, ya está cerrado
+        // Cerrar si el foco sale totalmente del sidebar
+        if (sidebarRef.current && !sidebarRef.current.contains(e.relatedTarget)) {
+          setSidebarOpenSafe(false);
+        }
+      }}
     >
   {/* Barra superior con botón de fijar colapsado */}
   <div className="px-3 py-2 flex items-center justify-end gap-2 border-b border-gray-200/60 bg-white/70">

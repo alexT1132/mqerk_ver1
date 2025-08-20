@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon index.js",
-    "migrate": "node ./scripts/run-migrations.js"
+    "simulate": "node ./scripts/simular_tests.js",
+    "seed:asesor": "node ./scripts/seed-asesor-sample.js"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +22,11 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^2.0.1",
-    "mysql2": "^3.14.1"
+    "mysql2": "^3.14.1",
+  "pdf-lib": "^1.17.1",
+  "node-fetch": "^3.3.2",
+  "ws": "^8.18.0",
+  "cookie": "^0.6.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

@@ -169,13 +169,73 @@ export const AdminProvider = ({ children }) => {
       if (curso) params.curso = curso;
       if (turno) params.grupo = turno;
       const { data } = await axios.get('/admin/estudiantes/aprobados', { params });
-      const list = Array.isArray(data?.data) ? data.data : [];
+      const listRaw = Array.isArray(data?.data) ? data.data : [];
+      // Normalizar claves snake_case del backend a las esperadas por la UI
+      const list = listRaw.map(est => {
+        if (!est || typeof est !== 'object') return est;
+        const folioFormateado = est.folio_formateado || est.folioFormateado || null;
+        const folioNumero = est.folio; // número original
+        return {
+          ...est,
+          folioNumero,
+          folio_formateado: folioFormateado,
+          folio: folioFormateado || est.folio, // para compatibilidad con componentes existentes
+          // nombres / apellidos
+          nombres: est.nombres ?? est.nombre ?? '',
+            apellidos: est.apellidos ?? '',
+          // contacto
+          correoElectronico: est.correoElectronico ?? est.email ?? '',
+          municipioComunidad: est.municipioComunidad ?? est.comunidad1 ?? '',
+          telefonoAlumno: est.telefonoAlumno ?? est.telefono ?? '',
+          nombreTutor: est.nombreTutor ?? est.nombre_tutor ?? '',
+          telefonoTutor: est.telefonoTutor ?? est.tel_tutor ?? '',
+          // académico
+          nivelAcademico: est.nivelAcademico ?? est.academico1 ?? est.estudios ?? '',
+          bachillerato: est.bachillerato ?? est.academico2 ?? est.institucion ?? '',
+          gradoSemestre: est.gradoSemestre ?? est.semestre ?? '',
+          universidadesPostula: est.universidadesPostula ?? est.universidades1 ?? est.universidades2 ?? '',
+          licenciaturaPostula: est.licenciaturaPostula ?? est.orientacion ?? est.universidades1 ?? '',
+          orientacionVocacional: est.orientacionVocacional ?? est.orientacion ?? '',
+          // curso / turno / grupo
+          curso: est.curso ?? '',
+          turno: est.turno ?? est.grupo ?? '',
+          grupo: est.grupo ?? est.turno ?? '',
+          modalidad: est.modalidad ?? est.postulacion ?? '',
+          // pago
+          planCurso: est.planCurso || est.plan || null,
+          pagoCurso: est.pago?.importe != null ? `$${Number(est.pago.importe).toLocaleString('es-MX',{ minimumFractionDigits:2 })}` : null,
+          metodoPago: est.pago?.metodo || null,
+          pagoFechaISO: est.pago?.fecha || null,
+          // estatus derivado si no existe
+          estatus: est.estatus ?? (est.verificacion === 2 ? 'Activo' : 'Pendiente'),
+          fechaRegistro: est.fechaRegistro ?? (est.created_at ? new Date(est.created_at).toISOString().split('T')[0] : ''),
+        };
+      });
       setStudentsData(list);
       return list;
     } catch (err) {
       console.error('Students data error:', err);
       setStudentsData([]);
       throw err;
+    }
+  };
+
+  // Cargar grupos dinámicos por curso (aprobados)
+  const loadCourseGroups = async (curso, status = 'aprobados') => {
+    try {
+      if (!curso) return [];
+      const { data } = await axios.get(`/grupos/${encodeURIComponent(curso)}`, { params: { status } });
+      const inferTipo = (g) => (/^M/i.test(g) ? 'matutino' : /^V/i.test(g) ? 'vespertino' : /^S/i.test(g) ? 'sabatino' : 'otro');
+      return (data || []).map(row => ({
+        id: `${curso}-${row.grupo}`,
+        nombre: row.grupo,
+        tipo: inferTipo(row.grupo),
+        capacidad: row.cantidad_estudiantes,
+        alumnosActuales: row.cantidad_estudiantes
+      }));
+    } catch (err) {
+      console.error('Error loading course groups:', err);
+      return [];
     }
   };
 
@@ -714,6 +774,7 @@ export const AdminProvider = ({ children }) => {
     rejectPayment,
     generateContract,
     uploadContract,
+  loadCourseGroups,
     
     // Funciones de reportes
   loadFinancialReports,

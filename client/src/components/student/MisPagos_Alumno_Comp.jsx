@@ -3,6 +3,12 @@ import { formatCurrencyMXN, formatDateTimeMX } from '../../utils/formatters.js';
 import { useStudent } from '../../context/StudentContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useComprobante } from '../../context/ComprobantesContext.jsx';
+import { generatePaymentSchedule as genScheduleShared, resolvePlanType as resolvePlanTypeShared, getActivationDate as getActivationDateShared } from '../../utils/payments.js';
+import { 
+  useStudentNotifications, 
+  NOTIFICATION_TYPES, 
+  NOTIFICATION_PRIORITIES 
+} from '../../context/StudentNotificationContext.jsx';
 import ComprobanteVirtual from '../shared/ComprobanteVirtual.jsx';
 
 // Iconos SVG para los componentes de la interfaz
@@ -74,13 +80,68 @@ const IconoTransferencia = () => (
 
 const IconoEfectivo = () => (
   <div className="w-12 h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-3">
-    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M7,15H9C9,16.08 10.37,17 12,17C13.63,17 15,16.08 15,15C15,13.9 13.96,13.5 11.76,12.97C9.64,12.44 7,11.78 7,9C7,7.21 8.47,5.69 10.5,5.18V3H13.5V5.18C15.53,5.69 17,7.21 17,9H15C15,7.92 13.63,7 12,7C10.37,7 9,7.92 9,9C9,10.1 10.04,10.5 12.24,11.03C14.36,11.56 17,12.22 17,15C17,16.79 15.53,18.31 13.5,18.82V21H10.5V18.82C8.47,18.31 7,16.79 7,15Z"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white">
+      <path d="M21 6H3c-1.1 0-2 .9-2 2v8a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2zm0 10H3V8h18v8zM7 10h2v2H7v-2zm0 3h2v2H7v-2z" />
     </svg>
   </div>
 );
 
-// Componente Modal reutilizable para mostrar contenido en ventana emergente
+// --- Componente reutilizable de subida de archivos ---
+function FileUpload({ onFileSelect, acceptedTypes = 'image/*,application/pdf', maxSize = 10 }) {
+  const fileInputRef = useRef(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleFileSelect = (file) => {
+    if (!file) return;
+    const sizeMB = file.size / 1024 / 1024;
+    if (sizeMB > maxSize) {
+      alert(`El archivo excede el tamaño máximo de ${maxSize}MB`);
+      return;
+    }
+    onFileSelect && onFileSelect(file);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length > 0) handleFileSelect(files[0]);
+  };
+  const handleDragEnter = (e) => { e.preventDefault(); e.stopPropagation(); setDragOver(true); };
+  const handleDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); setDragOver(false); };
+  const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
+
+  return (
+    <div
+      className={`border-2 ${dragOver ? 'border-blue-400 bg-blue-50' : 'border-dashed border-gray-300'} rounded-xl p-6 text-center cursor-pointer`}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      onClick={() => fileInputRef.current?.click()}
+    >
+      <div className="w-12 h-12 mx-auto mb-4 text-gray-400">
+        <Upload />
+      </div>
+      <p className="text-gray-600 text-sm mb-2">
+        <span className="font-semibold text-blue-600">Haz clic para subir</span> o arrastra tu archivo aquí
+      </p>
+      <p className="text-xs text-gray-400">
+        JPG, PNG, PDF (máx. {maxSize}MB)
+      </p>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={acceptedTypes}
+        onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])}
+        className="hidden"
+      />
+    </div>
+  );
+}
+
+// --- Modal simple reutilizable ---
 function Modal({ isOpen, onClose, children, title }) {
   useEffect(() => {
     if (isOpen) {
@@ -118,67 +179,6 @@ function Modal({ isOpen, onClose, children, title }) {
           {children}
         </div>
       </div>
-    </div>
-  );
-}
-
-// Componente para subir archivos con drag & drop y validación de tamaño
-function FileUpload({ onFileSelect, acceptedTypes = "image/*,application/pdf", maxSize = 5 }) {
-  const [dragOver, setDragOver] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      handleFileSelect(files[0]);
-    }
-  };
-
-  const handleFileSelect = (file) => {
-    if (file.size > maxSize * 1024 * 1024) {
-      console.error(`El archivo debe ser menor a ${maxSize}MB`); 
-      return;
-    }
-    onFileSelect(file);
-  };
-
-  return (
-    <div
-      className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 cursor-pointer
-        ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      onClick={() => fileInputRef.current?.click()}
-    >
-      <div className="w-12 h-12 mx-auto mb-4 text-gray-400">
-        <Upload />
-      </div>
-      <p className="text-gray-600 text-sm mb-2">
-        <span className="font-semibold text-blue-600">Haz clic para subir</span> o arrastra tu archivo aquí
-      </p>
-      <p className="text-xs text-gray-400">
-        JPG, PNG, PDF (máx. {maxSize}MB)
-      </p>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={acceptedTypes}
-        onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])}
-        className="hidden"
-      />
     </div>
   );
 }
@@ -346,10 +346,11 @@ function TransferPaymentModal({ onReceiptUpload }) {
   const [copiedMessage, setCopiedMessage] = useState({ visible: false, target: '' });
 
   const bankInfo = {
-    bank: 'BANCO: Bancoppel', // TODO: Reemplazar con banco real
-    beneficiary: 'Kelvin Valentin Gómez Ramírez', // TODO: Verificar razón social correcta
+    bank: 'BANCO: BANCOPPEL', // TODO: Reemplazar con banco real
+    beneficiary: 'KELVIN VALENTIN GOMEZ RAMIREZ', // TODO: Verificar razón social correcta
     account: '4169 1608 5392 8977', // TODO: Reemplazar con número de cuenta real
-    clabe: '137628103732170052' // TODO: Reemplazar con CLABE real
+    clabe: '137628103732170052'
+    
   };
 
   const handleCopy = (text, fieldName) => {
@@ -446,25 +447,25 @@ function TransferPaymentModal({ onReceiptUpload }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-gray-50 rounded-xl p-6">
-          <h4 className="font-bold text-gray-800 mb-4">📝 Instrucciones</h4>
+          <h4 className="font-bold text-gray-800 mb-4">📋 Instrucciones</h4>
           <ol className="space-y-3 text-gray-700">
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>
-              <span>Realiza una transferencia SPEI o depósito al número de cuenta/CLABE indicado</span>
+              <span>Realiza una transferencia SPEI o depósito al número de cuenta/CLABE indicado.</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>
-              <span>Asegúrate de incluir tu nombre completo en la referencia o concepto de pago</span>
+              <span>Asegúrate de incluir tu nombre completo en la referencia o concepto de pago.</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>
-              <span>Sube tu comprobante de transferencia para validación rápida</span>
+              <span>Sube tu comprobante de transferencia para validación rápida.</span>
             </li>
           </ol>
         </div>
 
         <div>
-          <h4 className="font-bold text-gray-800 mb-3">📄 Subir Comprobante</h4>
+          <h4 className="font-bold text-gray-800 mb-3">📄 Subir Comprobante.</h4>
           {!uploadedFile ? (
             <div>
               <FileUpload onFileSelect={handleFileUpload} />
@@ -519,10 +520,13 @@ function CashPaymentModal({ onReceiptUpload }) {
   const [isUploading, setIsUploading] = useState(false);
 
   const locationInfo = {
-    address: 'Calle XXXX #XXX, Colonia XXXX, Ciudad XXXX', // TODO: Reemplazar con dirección real
-    hours: 'Lunes a Viernes, XX:XX AM - XX:XX PM', // TODO: Reemplazar con horarios reales
-    contact: 'Tel: XX-XXXX-XXXX' // TODO: Reemplazar con teléfono real
+    address: 'Calle Juárez entre Av. Independencia y 5 de Mayo, C.P. 68300. En altos de COMPUMAX, Tuxtepec, Oaxaca',
+  hours: 'Horario: Lunes a Viernes, 9:00 a 17:00 h',
+    contact: 'Tel: 287-151-5760'
   };
+
+  // Link de Google Maps para la dirección
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationInfo.address)}`;
 
   const handleFileUpload = async (file) => {
     setIsUploading(true);
@@ -550,7 +554,16 @@ function CashPaymentModal({ onReceiptUpload }) {
           <div className="space-y-4">
             <div>
               <label className="text-xs text-green-600 font-medium uppercase tracking-wide">Dirección</label>
-              <p className="font-semibold">{locationInfo.address}</p>
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-blue-600 hover:underline flex items-start gap-1"
+                title="Abrir en Google Maps"
+              >
+                <span className="mt-0.5">📍</span>
+                <span className="break-words">{locationInfo.address}</span>
+              </a>
             </div>
             <div>
               <label className="text-xs text-green-600 font-medium uppercase tracking-wide">Horario de Atención</label>
@@ -573,20 +586,17 @@ function CashPaymentModal({ onReceiptUpload }) {
             <div className="space-y-2 text-sm text-green-700">
               <p className="flex items-start gap-2">
                 <span className="text-green-500 mt-1">•</span>
-                <span>Lleva identificación oficial</span>
+                <span>Lleva identificación oficial.</span>
               </p>
               <p className="flex items-start gap-2">
                 <span className="text-green-500 mt-1">•</span>
-                <span>Solicita tu recibo de pago</span>
+                <span>Solicita tu recibo de pago.</span>
               </p>
               <p className="flex items-start gap-2">
                 <span className="text-green-500 mt-1">•</span>
-                <span>Pregunta por descuentos disponibles</span>
+                <span>Pregunta por descuentos disponibles.</span>
               </p>
-              <p className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">•</span>
-                <span>Confirma tu pago en línea</span>
-              </p>
+        
             </div>
           </div>
         </div>
@@ -598,21 +608,21 @@ function CashPaymentModal({ onReceiptUpload }) {
           <ol className="space-y-3 text-gray-700">
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>
-              <span>Acude a nuestra dirección en los horarios establecidos</span>
+              <span>Acude a nuestra dirección en los horarios establecidos.</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>
-              <span>Presenta tu ID o folio de estudiante para registrar el pago</span>
+              <span>Presenta tu ID o folio de estudiante para registrar el pago.</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>
-              <span>Sube tu recibo físico para mantener el registro actualizado</span>
+              <span>Sube tu recibo físico para mantener el registro actualizado.</span>
             </li>
           </ol>
         </div>
 
         <div>
-          <h4 className="font-bold text-gray-800 mb-3">📄 Subir Comprobante</h4>
+          <h4 className="font-bold text-gray-800 mb-3">📄 Subir Comprobante.</h4>
           {!uploadedFile ? (
             <div>
               <FileUpload onFileSelect={handleFileUpload} />
@@ -1021,16 +1031,57 @@ function PaymentHistoryIntelligent({ allPaymentsHistory = [], onFilterChange, on
 }
 
 // --- Componente para la tabla del plan de pagos ---
-function PaymentPlanTable({ onViewScheduleReceipt, activationDate }) {
+// Generador compartido de calendario de pagos con reglas por plan y tolerancia
+function generatePaymentSchedule({ startDate, totalPayments = 8, paymentAmount = 1500, planType = 'mensual', now = new Date() }) {
+  if (!startDate) return [];
+  const type = (planType || 'mensual').toString().toLowerCase();
+  const shared = genScheduleShared({ startDate, planType: type, now });
+  return shared.slice(0, totalPayments).map((p, idx) => {
+    // Mantener la fecha "paymentDate" usada por la tabla
+    const paymentDate = new Date(startDate);
+    if (type === 'start') {
+      paymentDate.setMonth(paymentDate.getMonth() + (idx === 0 ? 0 : 4));
+    } else {
+      paymentDate.setMonth(paymentDate.getMonth() + idx);
+    }
+    // La verificación depende del plan: premium todos pagados; otros solo el primero
+    const verificationDate = idx < (type === 'premium' ? totalPayments : 1) ? paymentDate : null;
+    return {
+      id: idx + 1,
+      paymentNumber: idx + 1,
+      amount: p.amount ?? paymentAmount,
+      paymentDate,
+      dueDate: p.dueDate,
+      status: p.status,
+      isOverdue: p.isOverdue,
+      verificationDate,
+      month: paymentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+    };
+  });
+}
+
+function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'mensual' }) {
   const { currentCourse } = useStudent();
 
   // Configuración del plan actual: mensual con 8 pagos
-  const selectedPlan = 'mensual';
+  const selectedPlan = (planType || 'mensual').toString().toLowerCase();
+  // Pagos y totales por plan
+  const totalPayments = selectedPlan === 'premium' ? 1 : (selectedPlan === 'start' ? 2 : 8);
+  const baseTotalAmount = (
+    selectedPlan === 'premium' ? 10500 :
+    selectedPlan === 'start' ? 11000 :
+    1500 * 8 // mensual
+  );
+  const perPaymentAmount = (
+    selectedPlan === 'premium' ? 10500 :
+    selectedPlan === 'start' ? 5500 :
+    1500
+  );
   const currentPlan = {
-    name: 'Plan Mensual',
-    totalPayments: 8,
-    paymentAmount: 1500,
-    frequency: 'mensual',
+    name: selectedPlan === 'premium' ? 'Plan Premium' : (selectedPlan === 'start' ? 'Plan Start' : 'Plan Mensual'),
+    totalPayments,
+    paymentAmount: perPaymentAmount,
+    frequency: selectedPlan === 'premium' ? 'pago único' : (selectedPlan === 'start' ? 'por exhibición' : 'mensual'),
     // Usamos la fecha de activación si viene por props; si no, caemos al enrollmentDate o hoy
     startDate: (() => {
       const anchor = activationDate
@@ -1038,50 +1089,17 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate }) {
         : (currentCourse?.enrollmentDate ? new Date(currentCourse.enrollmentDate) : new Date());
       return isNaN(anchor.getTime()) ? new Date() : anchor;
     })(),
-    totalAmount: 12000,
+    totalAmount: baseTotalAmount,
   };
 
   // Generar calendario de pagos del curso actual. El primer pago SIEMPRE está pagado.
-  const paymentSchedule = Array.from({ length: currentPlan.totalPayments }).map((_, i) => {
-    const baseDate = new Date(currentPlan.startDate);
-    const paymentDate = new Date(baseDate);
-    paymentDate.setMonth(baseDate.getMonth() + i);
-    // Fecha límite: último día del mes del periodo + 14 días
-    const lastDayOfMonth = new Date(paymentDate.getFullYear(), paymentDate.getMonth() + 1, 0);
-    const dueDate = new Date(lastDayOfMonth);
-    dueDate.setDate(dueDate.getDate() + 14);
-
-    const today = new Date();
-    let status = 'pending';
-    let isOverdue = false;
-    let verificationDate = null;
-    let receiptUrl = null; // Integración futura con backend
-
-    if (i === 0) {
-      status = 'paid';
-      verificationDate = paymentDate;
-    } else if (today > dueDate) {
-      status = 'overdue';
-      isOverdue = true;
-    } else if (today >= paymentDate) {
-      status = 'pending';
-    } else {
-      status = 'upcoming';
-    }
-
-    return {
-      id: i + 1,
-      paymentNumber: i + 1,
-      amount: currentPlan.paymentAmount,
-      paymentDate,
-      dueDate,
-      status,
-      isOverdue,
-      receiptUrl,
-      verificationDate,
-      month: paymentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
-    };
-  });
+  const paymentSchedule = generatePaymentSchedule({
+    startDate: currentPlan.startDate,
+    totalPayments: currentPlan.totalPayments,
+    paymentAmount: currentPlan.paymentAmount,
+    planType: selectedPlan,
+    now: new Date()
+  }).map(p => ({ ...p, receiptUrl: null }));
 
   const allPaymentsPaid = paymentSchedule.length > 0 && paymentSchedule.every(payment => payment.status === 'paid');
   const planCompletionDate = allPaymentsPaid ? paymentSchedule[paymentSchedule.length - 1].verificationDate : null;
@@ -1090,7 +1108,12 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate }) {
     if (!allPaymentsPaid) return null;
     if (!planCompletionDate) return null;
     const lastPaymentDate = new Date(planCompletionDate);
-    if (selectedPlan === 'premium') return null;
+  // Premium: acceso durante el curso (8 meses), no de por vida.
+    if (selectedPlan === 'premium') {
+      const courseEnd = new Date(currentPlan.startDate);
+      courseEnd.setMonth(courseEnd.getMonth() + 8);
+      return courseEnd;
+  }
     if (selectedPlan === 'mensual') { lastPaymentDate.setMonth(lastPaymentDate.getMonth() + 8); return lastPaymentDate; }
     if (selectedPlan === 'start') { lastPaymentDate.setMonth(lastPaymentDate.getMonth() + 12); return lastPaymentDate; }
     return null;
@@ -1099,6 +1122,8 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate }) {
   const planExpirationDate = calculatePlanExpirationDate();
   const isPlanActive = !planExpirationDate || new Date() < planExpirationDate;
   const isPlanExpired = planExpirationDate && new Date() > planExpirationDate;
+  const amountPaid = paymentSchedule.filter(p => p.status === 'paid').length * currentPlan.paymentAmount;
+  const upgradeDifference = Math.max(0, 10500 - amountPaid);
   
   // TODO BACKEND: Función para procesar el pago de un elemento específico
   const handlePayment = async (paymentId) => {
@@ -1318,7 +1343,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate }) {
               Monto Pagado
             </div>
             <div className={`text-xl font-bold ${allPaymentsPaid ? 'text-green-800' : 'text-green-800'}`}>
-              {formatCurrencyMXN(paymentSchedule.filter(p => p.status === 'paid').length * currentPlan.paymentAmount)}
+              {formatCurrencyMXN(amountPaid)}
             </div>
             {allPaymentsPaid && (
               <div className="text-xs text-green-600 mt-1">Inversión total</div>
@@ -1332,7 +1357,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate }) {
             <div className={`text-xl font-bold ${allPaymentsPaid ? 'text-green-800' : 'text-yellow-800'}`}>
               {allPaymentsPaid 
                 ? formatCurrencyMXN(currentPlan.totalAmount)
-                : formatCurrencyMXN(paymentSchedule.filter(p => p.status !== 'paid').length * currentPlan.paymentAmount)
+                : formatCurrencyMXN((currentPlan.totalPayments - paymentSchedule.filter(p => p.status === 'paid').length) * currentPlan.paymentAmount)
               }
             </div>
             {allPaymentsPaid && (
@@ -1485,8 +1510,10 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate }) {
                 <div className="text-lg font-bold text-green-800">
                   {selectedPlan === 'premium' ? (
                     <div>
-                      <span className="text-purple-700">🔓 Acceso de por vida</span>
-                      <div className="text-xs text-purple-600 mt-1">Sin fecha de expiración</div>
+                      <span className="text-purple-700">🔓 Acceso durante el curso</span>
+                      <div className="text-xs text-purple-600 mt-1">
+                        Hasta {planExpirationDate?.toLocaleDateString('es-MX')} (8 meses)
+                      </div>
                     </div>
                   ) : isPlanActive ? (
                     <div>
@@ -1510,29 +1537,19 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate }) {
               <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-6 rounded-xl shadow-lg">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-2xl">🌟</span>
-                  <h5 className="font-bold text-xl">Plan Premium - Acceso Ilimitado</h5>
+                  <h5 className="font-bold text-xl">Plan Premium - Pago único</h5>
                 </div>
                 <p className="text-purple-100 mb-4">
-                  ¡Felicidades! Tienes acceso completo y permanente a todos los contenidos de la plataforma. 
-                  Tu inversión te garantiza acceso de por vida a:
+                  Acceso completo durante el curso (8 meses) sin pagos mensuales y con beneficios incluidos:
                 </p>
-                <div className="grid grid-cols-2 gap-4 text-sm text-purple-100">
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-300">✓</span>
-                    <span>Todos los cursos actuales</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-300">✓</span>
-                    <span>Cursos futuros sin costo</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-300">✓</span>
-                    <span>Soporte prioritario</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-300">✓</span>
-                    <span>Certificados ilimitados</span>
-                  </div>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-purple-100 list-disc pl-5">
+                  <li>Acceso a nuestra plataforma educativa</li>
+                  <li>Guías digitales con ejercicios tipo examen</li>
+                  <li>Libros electrónicos en PDF por materia</li>
+                  <li>Simuladores en línea</li>
+                </ul>
+                <div className="mt-4 text-sm text-purple-200">
+                  Precio preferencial: <span className="font-bold text-white">$10,500 MXN</span>
                 </div>
               </div>
             ) : isPlanActive ? (
@@ -1584,18 +1601,18 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate }) {
                       💎 ¿Quieres acceso permanente?
                     </h5>
                     <p className="text-blue-700 text-sm">
-                      Actualiza a Plan Premium y obtén acceso de por vida sin más pagos.
-                      Solo paga la diferencia: <strong>{formatCurrencyMXN(10500 - currentPlan.totalAmount)}</strong>
+                      Actualiza a Plan Premium y olvídate de pagos mensuales: pago único con acceso completo durante el curso y beneficios extra.
+                      Solo paga la diferencia: <strong>{formatCurrencyMXN(upgradeDifference)}</strong>
                     </p>
                     <ul className="text-xs text-blue-600 mt-2 space-y-1">
-                      <li>• Sin más pagos mensuales</li>
-                      <li>• Acceso a todos los cursos futuros</li>
-                      <li>• Soporte prioritario de por vida</li>
+                      <li>• Sin pagos mensuales</li>
+                      <li>• Acceso durante el curso (8 meses)</li>
+                      <li>• Beneficios incluidos: plataforma, guías, libros PDF y simuladores</li>
                     </ul>
                   </div>
                   <div className="flex flex-col gap-2">
                     <button className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center gap-2">
-                      ⭐ Actualizar a Premium
+                      ⭐ Actualizar a Premium (Pago único)
                       <span className="text-xs bg-white/20 px-2 py-1 rounded">
                         -{Math.round(((currentPlan.totalAmount / 10500) * 100))}%
                       </span>
@@ -1781,11 +1798,12 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
       date: payment.paymentDate?.toISOString?.() || new Date().toISOString(),
       method: 'Efectivo',
       status: 'paid',
-      plan: `Plan Mensual - Pago ${payment.paymentNumber}`,
+  plan: `Plan ${planType === 'premium' ? 'Premium' : (planType === 'start' ? 'Start' : 'Mensual')} - Pago ${payment.paymentNumber}`,
+  planType, // pasar el tipo de plan real
       paymentNumber: payment.paymentNumber,
       dueDate: payment.dueDate?.toISOString?.() || new Date().toISOString(),
       verificationDate: payment.verificationDate?.toISOString?.() || payment.paymentDate?.toISOString?.() || new Date().toISOString(),
-      description: `Pago ${payment.paymentNumber} del plan mensual`
+  description: `Pago ${payment.paymentNumber} del plan ${planType}`
     };
     setSelectedPaymentForRecibo(paymentData);
     setShowRecibo(true);
@@ -1838,7 +1856,8 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
       penalty: 0,
       method,
       status,
-      plan: alumno?.plan || 'Plan actual',
+  plan: alumno?.plan || 'Plan actual',
+  planType: alumno?.plan || alumno?.plan_type || 'mensual',
       cashReceived: amount || 0,
       transactionId: `TXN-${alumno?.folio || 'MQ'}`,
       verificationDate: status === 'paid' ? (row?.created_at || new Date().toISOString()) : null,
@@ -1863,84 +1882,67 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
     }));
   }, [myComprobantes]);
 
-  // Determinar y persistir la fecha de activación del plan (para anclar el calendario)
-  const activationDate = useMemo(() => {
-    const key = `planActivationDate:${alumno?.folio || alumno?.id || 'anon'}`;
-    // 1) Preferir la persistida si existe
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      const d = new Date(stored);
-      if (!isNaN(d.getTime())) return d;
-    }
-    // 2) Primer comprobante (más antiguo)
-    let firstCompDate = null;
-    if (myComprobantes.length > 0) {
-      firstCompDate = myComprobantes
-        .map(r => r?.created_at ? new Date(r.created_at) : null)
-        .filter(Boolean)
-        .sort((a,b) => a - b)[0] || null;
-    }
-    // 3) Fecha de creación del alumno si existe
-    const alumnoCreated = alumno?.created_at ? new Date(alumno.created_at) : null;
-    const candidate = firstCompDate || alumnoCreated || new Date();
-    // Persistir para estabilidad
-    try { localStorage.setItem(key, candidate.toISOString()); } catch {}
-    return candidate;
-  }, [alumno?.folio, alumno?.id, alumno?.created_at, myComprobantes]);
+  // Determinar fecha de activación desde util compartido
+  const activationDate = useMemo(() => getActivationDateShared(alumno), [alumno?.folio, alumno?.id, alumno?.created_at]);
 
   // Configuración del plan y cálculo del próximo pago (alineado con la tabla)
-  const planConfig = useMemo(() => ({
-    name: 'Plan Mensual',
-    paymentAmount: 1500,
-    totalPayments: 8,
-    frequency: 'mensual',
-    startDate: activationDate,
-  }), [activationDate]);
+  const planType = useMemo(() => resolvePlanTypeShared(alumno?.plan || alumno?.plan_type), [alumno?.plan, alumno?.plan_type]);
 
-  const schedule = useMemo(() => {
-    if (!planConfig?.startDate) return [];
-    const today = new Date();
-    return Array.from({ length: planConfig.totalPayments }).map((_, i) => {
-      const baseDate = new Date(planConfig.startDate);
-      const paymentDate = new Date(baseDate);
-      paymentDate.setMonth(baseDate.getMonth() + i);
-      // Fecha límite: último día del mes del periodo + 14 días
-      const lastDayOfMonth = new Date(paymentDate.getFullYear(), paymentDate.getMonth() + 1, 0);
-      const dueDate = new Date(lastDayOfMonth);
-      dueDate.setDate(dueDate.getDate() + 14);
+  const planConfig = useMemo(() => {
+    const name = planType === 'premium' ? 'Plan Premium' : (planType === 'start' ? 'Plan Start' : 'Plan Mensual');
+    const totalPayments = planType === 'premium' ? 1 : (planType === 'start' ? 2 : 8);
+    const paymentAmount = planType === 'premium' ? 10500 : (planType === 'start' ? 5500 : 1500);
+    const totalAmount = planType === 'premium' ? 10500 : (planType === 'start' ? 11000 : 1500 * 8);
+    const frequency = planType === 'premium' ? 'pago único' : (planType === 'start' ? 'por exhibición' : 'mensual');
+    return { name, paymentAmount, totalPayments, frequency, startDate: activationDate, planType };
+  }, [activationDate, planType]);
 
-      let status = 'pending';
-      let isOverdue = false;
-      let verificationDate = null;
-      if (i === 0) {
-        status = 'paid';
-        verificationDate = paymentDate;
-      } else if (today > dueDate) {
-        status = 'overdue';
-        isOverdue = true;
-      } else if (today >= paymentDate) {
-        status = 'pending';
-      } else {
-        status = 'upcoming';
-      }
-
-      return {
-        id: i + 1,
-        paymentNumber: i + 1,
-        amount: planConfig.paymentAmount,
-        paymentDate,
-        dueDate,
-        status,
-        isOverdue,
-        verificationDate,
-        month: paymentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
-      };
-    });
-  }, [planConfig]);
+  const schedule = useMemo(() => generatePaymentSchedule({
+    startDate: planConfig.startDate,
+    totalPayments: planConfig.totalPayments,
+    paymentAmount: planConfig.paymentAmount,
+    planType: planConfig.planType,
+    now: new Date(),
+  }), [planConfig]);
 
   const nextPayment = useMemo(() => {
     return schedule.find(p => p.status !== 'paid') || null;
   }, [schedule]);
+
+  // Notificación: 3 días antes del próximo pago
+  const { addNotification } = useStudentNotifications();
+  useEffect(() => {
+    if (!nextPayment) return;
+    try {
+      const now = new Date();
+      const dueDate = new Date(nextPayment.dueDate);
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const due = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+      const diffDays = Math.round((due - today) / (1000 * 60 * 60 * 24));
+
+      const key = `notif_payment_3d_${due.toISOString().slice(0, 10)}`;
+      const alreadyNotified = sessionStorage.getItem(key) === '1';
+
+      if (diffDays === 3 && !alreadyNotified) {
+        addNotification({
+          type: NOTIFICATION_TYPES.PAYMENT,
+          priority: NOTIFICATION_PRIORITIES.HIGH,
+          title: 'Tu pago vence en 3 días',
+          message: `Tu próximo pago de ${formatCurrencyMXN(nextPayment.amount)} vence el ${due.toLocaleDateString('es-MX')}. Realízalo a tiempo para evitar recargos.`,
+          actionUrl: '/mis-pagos',
+          metadata: {
+            amount: nextPayment.amount,
+            dueDate: due.toISOString(),
+            tag: 'payment-3days',
+          },
+        });
+        sessionStorage.setItem(key, '1');
+      }
+    } catch (e) {
+      // No romper la vista si algo falla
+      console.error('Error al preparar notificación de pago:', e);
+    }
+  }, [nextPayment, addNotification]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -2070,7 +2072,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
             {/* Comprobantes enviados se movió al Historial */}
 
             {/* Tabla de Plan de Pagos del curso actual */}
-            <PaymentPlanTable onViewScheduleReceipt={handleViewScheduleReceipt} activationDate={activationDate} />
+            <PaymentPlanTable onViewScheduleReceipt={handleViewScheduleReceipt} activationDate={activationDate} planType={planType} />
           </div>
         ) : (
           /* Tab de historial completo */

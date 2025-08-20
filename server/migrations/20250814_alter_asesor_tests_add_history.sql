@@ -1,0 +1,1 @@
+-- (Neutralizada) ya no se altera asesor_tests; se usará tabla asesor_tests_history para historial.

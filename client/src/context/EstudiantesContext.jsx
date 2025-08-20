@@ -18,13 +18,16 @@ export function EstudiantesProvider({ children }) {
     const [estudiantes, setEstudiantes] = useState([]);
     const [grupos, setGrupos] = useState([]);
     const [folioObtenido, getFolioObetenido] = useState([]);
+    const [folioFormateado, setFolioFormateado] = useState('');
 
     const getFolio = async (curso, anio) => {
         try {
             const res = await getFolioRequest(curso, anio);
             getFolioObetenido(res.data.folio);
+            if(res.data.folio_formateado) setFolioFormateado(res.data.folio_formateado);
         } catch (error) {
             getFolioObetenido(null);
+            setFolioFormateado('');
         }
     }
 
@@ -91,6 +94,7 @@ export function EstudiantesProvider({ children }) {
             estudiantes,
             grupos,
             folioObtenido,
+            folioFormateado,
             getEstudiantes,
             crearEstudiante,
             getFolio,

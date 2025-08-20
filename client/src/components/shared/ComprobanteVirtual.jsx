@@ -163,6 +163,23 @@ export default function ComprobanteVirtual({
     return `MQ-${dateStr}-${String(paymentId).padStart(4, '0')}`;
   };
 
+  // Formateador de montos con comas y 2 decimales (ej. 1,000.00)
+  const formatMoney = (value) => {
+    const num = Number(value ?? 0);
+    if (Number.isNaN(num)) return '0.00';
+    try {
+      return num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    } catch {
+      // Fallback manual
+      return num
+        .toFixed(2)
+        .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+  };
+
   // Función alternativa para descargar usando DOM-to-image como fallback
   const handleDownloadFallback = async () => {
     try {
@@ -342,12 +359,13 @@ export default function ComprobanteVirtual({
       };
       
       // Header
-      addCenteredText('MQerK Academy', 12, true);
+      addCenteredText('MQerKAcademy', 12, true);
       addCenteredText('Asesores Especializados en la');
       addCenteredText('Enseñanza de las Cien y Tec');
-      addCenteredText('C. Benito Juárez #25 Col. Centro', 9, true);
-      addCenteredText('Tuxtepec, Oaxaca C.P. 68300');
-      addCenteredText('Tel. 287-181-1231', 9, true);
+  addCenteredText('Calle Benito Juárez #25, Col. Centro', 9, true);
+  addCenteredText('Entre Av. Independencia y 20 de Noviembre');
+  addCenteredText('Tuxtepec, Oaxaca C.P. 68300');
+      addCenteredText('Tel. 287-151-5760', 9, true);
       addCenteredText('RFC: GQRK980906K61');
       
       yPosition += 2;
@@ -379,9 +397,13 @@ export default function ComprobanteVirtual({
       doc.text(safeStudentData.address, leftMargin, yPosition);
       yPosition += lineHeight;
       
-      doc.text(`Servicio: ${safeCourseInfo.name}`, leftMargin, yPosition);
-      yPosition += lineHeight;
-      doc.text(`Sesiones: ${safePaymentData.plan}`, leftMargin, yPosition);
+  doc.text(`Servicio: ${safeCourseInfo.name}`, leftMargin, yPosition);
+  yPosition += lineHeight;
+  doc.text(`Plan: ${typeof displayPlanName!== 'undefined' ? displayPlanName : (safePaymentData.plan || 'Plan')}`, leftMargin, yPosition);
+  yPosition += lineHeight;
+  doc.text(`Pago: ${typeof displayPaymentNumber!== 'undefined' ? displayPaymentNumber : (paymentData?.paymentNumber || 1)}`, leftMargin, yPosition);
+  yPosition += lineHeight;
+  doc.text(`Sesiones: ${typeof sesionesLabel !== 'undefined' ? sesionesLabel : '24 hrs'}`, leftMargin, yPosition);
       yPosition += lineHeight;
       doc.text(`Grupo: ${safeStudentData.group}`, leftMargin, yPosition);
       yPosition += lineHeight;
@@ -396,7 +418,7 @@ export default function ComprobanteVirtual({
       doc.setFontSize(8);
       doc.setFont('courier', 'normal');
       doc.text(`Curso ${safeCourseInfo.name}`, leftMargin, yPosition);
-      doc.text(`$${safePaymentData.baseAmount.toFixed(2)}`, rightMargin - 20, yPosition);
+  doc.text(`$${formatMoney(safePaymentData.baseAmount)}`, rightMargin - 20, yPosition);
       yPosition += lineHeight;
       
       doc.text(`${safeCourseInfo.level}`, leftMargin, yPosition);
@@ -408,13 +430,13 @@ export default function ComprobanteVirtual({
       
       if (safePaymentData.discount > 0) {
         doc.text('Descuento', leftMargin, yPosition);
-        doc.text(`-$${safePaymentData.discount.toFixed(2)}`, rightMargin - 20, yPosition);
+  doc.text(`-$${formatMoney(safePaymentData.discount)}`, rightMargin - 20, yPosition);
         yPosition += lineHeight;
       }
       
       if (safePaymentData.penalty > 0) {
         doc.text('Recargo', leftMargin, yPosition);
-        doc.text(`+$${safePaymentData.penalty.toFixed(2)}`, rightMargin - 20, yPosition);
+  doc.text(`+$${formatMoney(safePaymentData.penalty)}`, rightMargin - 20, yPosition);
         yPosition += lineHeight;
       }
       
@@ -425,13 +447,13 @@ export default function ComprobanteVirtual({
       doc.setFontSize(10);
       doc.setFont('courier', 'bold');
       doc.text('TOTAL A PAGAR:', leftMargin, yPosition);
-      doc.text(`$${safePaymentData.amount.toFixed(2)}`, rightMargin - 20, yPosition);
+  doc.text(`$${formatMoney(safePaymentData.amount)}`, rightMargin - 20, yPosition);
       yPosition += lineHeight;
       
       doc.setFontSize(8);
       doc.setFont('courier', 'normal');
       doc.text('Efectivo recibido:', leftMargin, yPosition);
-      doc.text(`$${safePaymentData.cashReceived.toFixed(2)}`, rightMargin - 20, yPosition);
+  doc.text(`$${formatMoney(safePaymentData.cashReceived)}`, rightMargin - 20, yPosition);
       yPosition += lineHeight;
       
       yPosition += 2;
@@ -451,7 +473,7 @@ export default function ComprobanteVirtual({
       addCenteredText('CUALQUIER SERVICIO PRESTADO', 8);
       addCenteredText('EN NUESTRA INSTITUCION', 8);
       yPosition += 3;
-      addCenteredText('Dudas o quejas al: 287-181-1231', 8, true);
+      addCenteredText('Dudas o quejas al: 287-151-5760', 8, true);
       yPosition += 2;
       addCenteredText('GRACIAS POR LA CONFIANZA!', 9, true);
       
@@ -876,12 +898,13 @@ export default function ComprobanteVirtual({
       };
       
       // Header
-      addText('MQerK Academy', 22, 'center', true);
+      addText('MQerKAcademy', 22, 'center', true);
       addText('Asesores Especializados en la', 16);
       addText('Enseñanza de las Cien y Tec', 16);
-      addText('C. Benito Juárez #25 Col. Centro', 16, 'center', true);
-      addText('Tuxtepec, Oaxaca C.P. 68300', 16);
-      addText('Tel. 287-181-1231', 16, 'center', true);
+  addText('Calle Benito Juárez #25, Col. Centro', 16, 'center', true);
+  addText('Entre Av. Independencia y 20 de Noviembre', 16);
+  addText('Tuxtepec, Oaxaca C.P. 68300', 16);
+      addText('Tel. 287-151-5760', 16, 'center', true);
       addText('RFC: GQRK980906K61', 16);
       
       yPos += 10;
@@ -904,8 +927,10 @@ export default function ComprobanteVirtual({
       addText(safeStudentData.name, 16, 'left');
       addText('Dirección:', 16, 'left', true);
       addText(safeStudentData.address, 14, 'left');
-      addText(`Servicio: ${safeCourseInfo.name}`, 14, 'left');
-      addText(`Sesiones: ${safePaymentData.plan}`, 14, 'left');
+  addText(`Servicio: ${safeCourseInfo.name}`, 14, 'left');
+  addText(`Plan: ${typeof displayPlanName!== 'undefined' ? displayPlanName : (safePaymentData.plan || 'Plan')}`, 14, 'left');
+  addText(`Pago: ${typeof displayPaymentNumber!== 'undefined' ? displayPaymentNumber : (paymentData?.paymentNumber || 1)}`, 14, 'left');
+  addText(`Sesiones: ${typeof sesionesLabel !== 'undefined' ? sesionesLabel : '24 hrs'}`, 14, 'left');
       addText(`Grupo: ${safeStudentData.group}`, 14, 'left');
       
       yPos += 10;
@@ -915,24 +940,24 @@ export default function ComprobanteVirtual({
       addText('CONCEPTO ――――――― IMPORTE', 16, 'center', true);
       yPos += 10;
       
-      addTwoColumnText(`Curso ${safeCourseInfo.name}`, `$${safePaymentData.baseAmount.toFixed(2)}`, 14);
+  addTwoColumnText(`Curso ${safeCourseInfo.name}`, `$${formatMoney(safePaymentData.baseAmount)}`, 14);
       addTwoColumnText(safeCourseInfo.level, '', 14);
       addTwoColumnText('IVA (0%)', '$0.00', 14);
       
       if (safePaymentData.discount > 0) {
-        addTwoColumnText('Descuento', `-$${safePaymentData.discount.toFixed(2)}`, 14);
+  addTwoColumnText('Descuento', `-$${formatMoney(safePaymentData.discount)}`, 14);
       }
       
       if (safePaymentData.penalty > 0) {
-        addTwoColumnText('Recargo', `+$${safePaymentData.penalty.toFixed(2)}`, 14);
+  addTwoColumnText('Recargo', `+$${formatMoney(safePaymentData.penalty)}`, 14);
       }
       
       yPos += 10;
       addLine();
       
       // Total
-      addTwoColumnText('TOTAL A PAGAR:', `$${safePaymentData.amount.toFixed(2)}`, 16);
-      addTwoColumnText('Efectivo recibido:', `$${safePaymentData.cashReceived.toFixed(2)}`, 14);
+  addTwoColumnText('TOTAL A PAGAR:', `$${formatMoney(safePaymentData.amount)}`, 16);
+  addTwoColumnText('Efectivo recibido:', `$${formatMoney(safePaymentData.cashReceived)}`, 14);
       
       yPos += 10;
       addLine();
@@ -953,7 +978,7 @@ export default function ComprobanteVirtual({
       addText('EN NUESTRA INSTITUCIÓN', 12, 'center');
       
       yPos += 10;
-      addText('Dudas o quejas al: 287-181-1231', 14, 'center', true);
+      addText('Dudas o quejas al: 287-151-5760', 14, 'center', true);
       
       yPos += 10;
       addText('¡GRACIAS POR LA CONFIANZA!', 18, 'center', true, '#2563eb');
@@ -1120,8 +1145,8 @@ export default function ComprobanteVirtual({
     method: paymentData.method || 'Efectivo',
     status: paymentData.status || 'paid',
     plan: paymentData.plan || 'Plan no especificado',
-  // Si no se especifica, asumir que se recibió el monto total pagado
-  cashReceived: (typeof paymentData.cashReceived === 'number') ? paymentData.cashReceived : (paymentData.amount || paymentData.baseAmount || 0),
+    // Si no se especifica, asumir que se recibió el monto total pagado
+    cashReceived: (typeof paymentData.cashReceived === 'number') ? paymentData.cashReceived : (paymentData.amount || paymentData.baseAmount || 0),
     transactionId: paymentData.transactionId || folio,
   };
 
@@ -1138,6 +1163,31 @@ export default function ComprobanteVirtual({
     address: finalStudentData?.address || 'Dirección no disponible',
     group: finalStudentData?.group || 'Grupo no asignado',
   };
+
+  // Normalización de plan y número de pago para mostrar correctamente en el recibo
+  const normalizedPlanType = (() => {
+    const raw = String(paymentData?.planType || safePaymentData.plan || '').toLowerCase();
+    if (raw.includes('premium')) return 'premium';
+    if (raw.includes('start')) return 'start';
+    if (raw.includes('mensual')) return 'mensual';
+    return 'mensual';
+  })();
+
+  const displayPlanName = (
+    normalizedPlanType === 'premium' ? 'Premium' :
+    normalizedPlanType === 'start' ? 'Start' :
+    'Mensual'
+  );
+
+  const displayPaymentNumber = (
+    typeof paymentData?.paymentNumber === 'number'
+      ? paymentData.paymentNumber
+      : normalizedPlanType === 'premium' ? 8
+  : normalizedPlanType === 'start' ? 2
+      : 1
+  );
+
+  const sesionesLabel = '24 hrs';
 
   return (
     <ReciboModal isOpen={isOpen} onClose={onClose}>
@@ -1176,13 +1226,13 @@ export default function ComprobanteVirtual({
             
             {/* Header de la empresa */}
             <div className="text-center space-y-1 pb-2">
-              <div className="font-bold text-lg tracking-wide">MQerK Academy</div>
+              <div className="font-bold text-lg tracking-wide">MQerKAcademy</div>
               <div className="text-xs space-y-0.5 text-gray-700">
                 <div>Asesores Especializados en la</div>
                 <div>Enseñanza de las Cien y Tec</div>
                 <div className="font-semibold">C. Benito Juárez #25 Col. Centro</div>
                 <div>Tuxtepec, Oaxaca C.P. 68300</div>
-                <div className="font-semibold">Tel. 287-181-1231</div>
+                <div className="font-semibold">Tel. 287-151-5760</div>
                 <div>RFC: GQRK980906K61</div>
               </div>
             </div>
@@ -1199,7 +1249,9 @@ export default function ComprobanteVirtual({
               <div className="text-xs text-gray-700 space-y-0.5">
                 <div>Dirección: {safeStudentData.address}</div>
                 <div>Servicio educativo: {safeCourseInfo.name}</div>
-                <div>Sesiones: {safePaymentData.plan}</div>
+                <div>Plan: {displayPlanName}</div>
+                <div>Pago: {displayPaymentNumber}</div>
+                <div>Sesiones: {sesionesLabel}</div>
                 <div>Grupo: {safeStudentData.group}</div>
               </div>
             </div>
@@ -1213,7 +1265,7 @@ export default function ComprobanteVirtual({
               <div className="space-y-1 text-left bg-gray-50 p-2 rounded">
                 <div className="flex justify-between items-center">
                   <div className="text-xs flex-1 pr-2 font-medium">Curso {safeCourseInfo.name}</div>
-                  <div className="text-xs text-right font-bold">${safePaymentData.baseAmount.toFixed(2)}</div>
+                  <div className="text-xs text-right font-bold">${formatMoney(safePaymentData.baseAmount)}</div>
                 </div>
                 
                 <div className="flex justify-between items-center">
@@ -1229,14 +1281,14 @@ export default function ComprobanteVirtual({
                 {safePaymentData.discount > 0 && (
                   <div className="flex justify-between items-center text-green-600">
                     <div className="text-xs flex-1 pr-2">Descuento</div>
-                    <div className="text-xs text-right">-${safePaymentData.discount.toFixed(2)}</div>
+                    <div className="text-xs text-right">-${formatMoney(safePaymentData.discount)}</div>
                   </div>
                 )}
                 
                 {safePaymentData.penalty > 0 && (
                   <div className="flex justify-between items-center text-red-600">
                     <div className="text-xs flex-1 pr-2">Recargo</div>
-                    <div className="text-xs text-right">+${safePaymentData.penalty.toFixed(2)}</div>
+                    <div className="text-xs text-right">+${formatMoney(safePaymentData.penalty)}</div>
                   </div>
                 )}
               </div>
@@ -1244,11 +1296,11 @@ export default function ComprobanteVirtual({
               <div className="pt-2 bg-blue-50 p-2 rounded border-t-2 border-dashed border-gray-600">
                 <div className="flex justify-between items-center font-bold text-sm">
                   <div className="flex-1 pr-2">TOTAL A PAGAR:</div>
-                  <div className="text-right text-blue-600">${safePaymentData.amount.toFixed(2)}</div>
+                  <div className="text-right text-blue-600">${formatMoney(safePaymentData.amount)}</div>
                 </div>
                 <div className="flex justify-between items-center mt-1">
                   <div className="text-xs flex-1 pr-2">Efectivo recibido:</div>
-                  <div className="text-xs text-right font-semibold">${safePaymentData.cashReceived.toFixed(2)}</div>
+                  <div className="text-xs text-right font-semibold">${formatMoney(safePaymentData.cashReceived)}</div>
                 </div>
               </div>
             </div>
@@ -1270,7 +1322,7 @@ export default function ComprobanteVirtual({
                 <div>EN NUESTRA INSTITUCIÓN</div>
               </div>
               <div className="text-center font-semibold text-blue-600 mt-2">
-                <div>📞 Dudas o quejas al: 287-181-1231</div>
+                <div>📞 Dudas o quejas al: 287-151-5760</div>
               </div>
               <div className="text-center font-bold text-purple-600 mt-2">
                 <div>¡GRACIAS POR LA CONFIANZA!</div>

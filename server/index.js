@@ -3,6 +3,10 @@ import dotenv from 'dotenv';
 dotenv.config({ override: true });
 import app from "./app.js";
 import db from './db.js';
+import http from 'http';
+import { setupWebSocket } from './ws.js';
 
-app.listen(1002);
-console.log("Conectado en el puerto", 1002);
+const PORT = 1002;
+const server = http.createServer(app);
+setupWebSocket(server);
+server.listen(PORT, () => console.log('Conectado en el puerto', PORT));

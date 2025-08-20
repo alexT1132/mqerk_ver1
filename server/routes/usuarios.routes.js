@@ -24,6 +24,11 @@ router.post('/token/refresh', refreshToken);
 
 router.get("/verify", verifyToken);
 
+// DEBUG: inspeccionar cookies (no usar en producción)
+router.get('/debug/cookies', (req,res)=>{
+	res.json({ cookies: req.cookies || {}, time: new Date().toISOString() });
+});
+
 // Cerrar sesión (borra cookie token en servidor)
 router.post("/logout", authREquired, logout);
 

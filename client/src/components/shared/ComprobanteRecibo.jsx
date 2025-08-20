@@ -178,6 +178,28 @@ export function ComprobanteRecibo() {
     
     // Estados para campos editables (importe y método)
     const [editableFields, setEditableFields] = useState({}); // Para almacenar valores temporales de edición por comprobante
+    // Celda en edición (solo aprobados) { key, field }
+    const [editingCell, setEditingCell] = useState(null);
+    const [isCoarsePointer, setIsCoarsePointer] = useState(false); // detectar móvil/táctil
+    const [toast, setToast] = useState(null); // { msg, type }
+
+    useEffect(() => {
+        try {
+            const mq = window.matchMedia('(pointer: coarse)');
+            setIsCoarsePointer(mq.matches);
+            const handler = (e) => setIsCoarsePointer(e.matches);
+            mq.addEventListener ? mq.addEventListener('change', handler) : mq.addListener(handler);
+            return () => { mq.removeEventListener ? mq.removeEventListener('change', handler) : mq.removeListener(handler); };
+        } catch (_) { /* noop */ }
+    }, []);
+
+    // Toast auto hide
+    useEffect(() => {
+        if (toast) {
+            const t = setTimeout(() => setToast(null), 2500);
+            return () => clearTimeout(t);
+        }
+    }, [toast]);
 
     
     
@@ -393,6 +415,61 @@ export function ComprobanteRecibo() {
         }));
     };
 
+    // Iniciar edición de una celda aprobada
+    const startEditApprovedCell = (comprobante, field) => {
+        const key = comprobante.id_estudiante ?? comprobante.id ?? comprobante.folio;
+        setEditingCell({ key, field });
+        setEditableFields(prev => ({
+            ...prev,
+            [key]: {
+                ...prev[key],
+                importe: getFieldValue(comprobante, 'importe') || comprobante.importe || '',
+                metodoPago: getFieldValue(comprobante, 'metodoPago') || comprobante.metodoPago || comprobante.metodo || ''
+            }
+        }));
+    };
+
+    const saveApprovedEdit = (comprobante) => {
+        if (!editingCell) return;
+        const key = editingCell.key;
+        const field = editingCell.field;
+        const importeRaw = getFieldValue(comprobante, 'importe');
+        const metodoRaw = getFieldValue(comprobante, 'metodoPago') || getFieldValue(comprobante, 'metodo');
+        if (field === 'importe') {
+            if (!importeRaw || String(importeRaw).trim() === '') { alert('El importe es obligatorio'); return; }
+            const num = Number(importeRaw); if (isNaN(num) || num < 0) { alert('Importe inválido'); return; }
+        }
+        if (field === 'metodoPago') {
+            if (!metodoRaw || String(metodoRaw).trim() === '') { alert('El método es obligatorio'); return; }
+        }
+        const num = Number(importeRaw); const importeFormat = isNaN(num) ? comprobante.importe : num.toFixed(2);
+        // TODO: persistir cambios en backend (PATCH /api/comprobantes/{folio})
+        setComprobantesOverrides(prev => ({
+            ...prev,
+            [key]: {
+                ...comprobante,
+                importe: importeFormat,
+                metodoPago: metodoRaw,
+                metodo: metodoRaw
+            }
+        }));
+        setEditingCell(null);
+        setToast({ msg: 'Cambios guardados', type: 'success' });
+    };
+
+    const cancelApprovedEdit = (comprobante) => {
+        if (!editingCell) return;
+        const key = editingCell.key;
+        setEditableFields(prev => ({
+            ...prev,
+            [key]: {
+                importe: comprobante.importe ?? '',
+                metodoPago: comprobante.metodoPago || comprobante.metodo || ''
+            }
+        }));
+        setEditingCell(null);
+    };
+
     // Obtiene los comprobantes según la vista activa Y filtrados por curso/grupo seleccionado
     const getComprobantesActuales = () => {
         let comprobantesBase;
@@ -538,10 +615,23 @@ export function ComprobanteRecibo() {
 
     const { getComprobantes, comprobantes: comprobantesObtenidos, getVerificacionComprobante, rejectVerificacionComprobante } = useComprobante();
 
-    // Normalizar datos del contexto
-    const baseArray = Array.isArray(comprobantesObtenidos)
+    // Normalizar datos del contexto (armonizar nombre de campo metodo/metodoPago)
+    const normalizeComprobante = (c) => {
+        if (!c || typeof c !== 'object') return c;
+        // Si backend manda 'metodo' copiar a metodoPago para UI consistente
+        if (c.metodo && !c.metodoPago) {
+            return { ...c, metodoPago: c.metodo };
+        }
+        // Si sólo hay metodoPago pero no metodo, generar metodo para compatibilidad con usos antiguos
+        if (c.metodoPago && !c.metodo) {
+            return { ...c, metodo: c.metodoPago };
+        }
+        return c;
+    };
+    const baseArrayRaw = Array.isArray(comprobantesObtenidos)
         ? comprobantesObtenidos
         : (comprobantesObtenidos ? [comprobantesObtenidos] : []);
+    const baseArray = baseArrayRaw.map(normalizeComprobante);
 
     // Merge overrides locales (aprobados / rechazados hechos en UI sin persistir todavía)
     const mergedMap = {};
@@ -639,7 +729,7 @@ export function ComprobanteRecibo() {
     
     // TODO: Conectar con API - Endpoint: POST /api/comprobantes/{id}/rechazar
     const handleRechazar = (comprobante) => {
-        setCurrentComprobante(comprobante);
+        setCurrentComprobante(normalizeComprobante(comprobante));
         setShowRejectModal(true);
     };
 
@@ -671,8 +761,7 @@ export function ComprobanteRecibo() {
             const metodoPagoActualizado = metodoPagoActualizadoRaw;
             // Persistir rechazo en backend (verificacion=3)
             const folioParaRechazo = currentComprobante.folio || generateFolio(currentComprobante.cursoComprado);
-            await rejectVerificacionComprobante(folioParaRechazo, { motivo: motivoRechazo, importe: importeActualizado, metodo: metodoPagoActualizado });
-            
+            // Optimistic UI primero
             const key = (currentComprobante.id_estudiante ?? currentComprobante.id ?? currentComprobante.folio) || generateFolio(currentComprobante.cursoComprado);
             const folioFinal = currentComprobante.folio || generateFolio(currentComprobante.cursoComprado);
             setComprobantesOverrides(prev => ({
@@ -682,12 +771,20 @@ export function ComprobanteRecibo() {
                     folio: folioFinal,
                     importe: importeActualizado,
                     metodoPago: metodoPagoActualizado,
+                    metodo: metodoPagoActualizado,
                     estado: 'rechazado',
                     verificacion: 3,
                     motivoRechazo: motivoRechazo,
                     fechaRechazo: new Date().toLocaleString()
                 }
             }));
+            // Llamada backend después (sin bloquear UI)
+            try {
+                await rejectVerificacionComprobante(folioParaRechazo, { motivo: motivoRechazo, importe: importeActualizado, metodo: metodoPagoActualizado });
+            } catch (apiErr) {
+                console.error('Fallo rechazo backend:', apiErr);
+                alert('Rechazo local aplicado, pero falló guardar en servidor. Reintenta.');
+            }
             // Limpiar campos editables de ese comprobante
             setEditableFields(prev => {
                 const copy = { ...prev };
@@ -744,8 +841,7 @@ export function ComprobanteRecibo() {
                 importe: importeActualizado,
                 metodo: metodoPagoActualizado,
             };
-            await getVerificacionComprobante(folio, dataComplete);
-            // Override local inmediato (optimistic UI)
+            // Optimistic UI ANTES de llamar API
             const key = comprobante.id_estudiante ?? comprobante.id ?? comprobante.folio;
             setComprobantesOverrides(prev => ({
                 ...prev,
@@ -753,6 +849,7 @@ export function ComprobanteRecibo() {
                     ...comprobante,
                     importe: importeActualizado,
                     metodoPago: metodoPagoActualizado,
+                    metodo: metodoPagoActualizado,
                     estado: 'aprobado',
                     verificacion: 2,
                     fechaAprobacion: new Date().toLocaleString()
@@ -760,8 +857,14 @@ export function ComprobanteRecibo() {
             }));
             setVistaActual('aprobados');
             setShowSuccessModal(true);
-            // Refrescar backend (mantener después de feedback al usuario)
-            await getComprobantes(activeVespertino, activeCategory);
+            // Llamada backend luego, y refresco al terminar
+            try {
+                await getVerificacionComprobante(folio, dataComplete);
+                await getComprobantes(activeVespertino, activeCategory);
+            } catch (apiErr) {
+                console.error('Fallo aprobación backend:', apiErr);
+                alert('Aprobación mostrada localmente, pero falló guardar en servidor. Reintenta.');
+            }
         } catch (error) {
             console.error('Error al aprobar comprobante:', error);
             alert('Error al procesar la aprobación. Intenta nuevamente.');
@@ -1004,6 +1107,7 @@ export function ComprobanteRecibo() {
                                             {vistaActual === 'pendientes' && (
                                                 <th className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-center text-xs xs:text-sm font-semibold uppercase tracking-wider">Acciones</th>
                                             )}
+                                            {/* Sin columna extra de edición; edición inline */}
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
@@ -1098,6 +1202,50 @@ export function ComprobanteRecibo() {
                                                     )}
                                                 </div>
                                             );
+                                        })() : vistaActual === 'aprobados' ? (() => {
+                                            const key = comprobante.id_estudiante ?? comprobante.id ?? comprobante.folio;
+                                            const isEditing = editingCell && editingCell.key === key && editingCell.field === 'importe';
+                                            if (isEditing) {
+                                                const val = getFieldValue(comprobante, 'importe');
+                                                const numeric = Number(val);
+                                                const empty = !val || !String(val).trim();
+                                                const notNumber = !empty && isNaN(numeric);
+                                                const negative = !empty && !notNumber && numeric < 0;
+                                                const invalid = empty || notNumber || negative;
+                                                const errorMsg = empty ? 'Requerido' : notNumber ? 'Número inválido' : negative ? 'No negativos' : '';
+                                                return (
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-1">
+                                                            <input
+                                                                autoFocus
+                                                                type="text"
+                                                                inputMode="decimal"
+                                                                value={val}
+                                                                onChange={(e) => {
+                                                                    let v = e.target.value;
+                                                                    v = v.replace(/[^\d.]/g, '');
+                                                                    v = v.replace(/(\..*)\./g, '$1');
+                                                                    if (v.includes('.')) {
+                                                                        const [intPart, decPart] = v.split('.');
+                                                                        v = intPart + '.' + (decPart ? decPart.slice(0,2) : '');
+                                                                    }
+                                                                    handleFieldChange(comprobante, 'importe', v);
+                                                                }}
+                                                                onKeyDown={(e) => { if (e.key === 'Enter') saveApprovedEdit(comprobante); if (e.key === 'Escape') cancelApprovedEdit(comprobante); }}
+                                                                onBlur={() => { if (isCoarsePointer && !invalid) saveApprovedEdit(comprobante); }}
+                                                                className={`w-full px-2 py-2 text-center border rounded hide-spinner focus:outline-none focus:ring-2 transition-colors duration-150 text-sm ${invalid ? 'border-red-500 focus:ring-red-400 focus:border-red-500 bg-red-50' : 'border-gray-300 focus:ring-green-500 focus:border-green-500'}`}
+                                                                placeholder="0.00"
+                                                            />
+                                                            <button onClick={() => saveApprovedEdit(comprobante)} className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-[10px]">✓</button>
+                                                            <button onClick={() => cancelApprovedEdit(comprobante)} className="px-2 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded text-[10px]">✕</button>
+                                                        </div>
+                                                        {invalid && <div className="text-[10px] font-medium text-red-600">{errorMsg}</div>}
+                                                    </div>
+                                                );
+                                            }
+                                            return (
+                                                <div className="font-medium text-green-600 cursor-pointer hover:underline select-none" onClick={() => startEditApprovedCell(comprobante, 'importe')} role="button" aria-label="Editar importe">${comprobante.importe ?? ''}</div>
+                                            );
                                         })() : (
                                             <div className="font-medium text-green-600">${comprobante.importe ?? ''}</div>
                                         )}
@@ -1121,6 +1269,35 @@ export function ComprobanteRecibo() {
                                                         <div className="text-[10px] xs:text-[11px] font-medium text-red-600 tracking-wide">Requerido</div>
                                                     )}
                                                 </div>
+                                            );
+                                        })() : vistaActual === 'aprobados' ? (() => {
+                                            const key = comprobante.id_estudiante ?? comprobante.id ?? comprobante.folio;
+                                            const isEditing = editingCell && editingCell.key === key && editingCell.field === 'metodoPago';
+                                            if (isEditing) {
+                                                const val = getFieldValue(comprobante, 'metodoPago');
+                                                const invalid = !val || !String(val).trim();
+                                                return (
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-1">
+                                                            <input
+                                                                autoFocus
+                                                                type="text"
+                                                                value={val}
+                                                                onChange={(e) => handleFieldChange(comprobante, 'metodoPago', e.target.value)}
+                                                                onKeyDown={(e) => { if (e.key === 'Enter') saveApprovedEdit(comprobante); if (e.key === 'Escape') cancelApprovedEdit(comprobante); }}
+                                                                onBlur={() => { if (isCoarsePointer && !invalid) saveApprovedEdit(comprobante); }}
+                                                                className={`w-full px-2 py-2 text-center border rounded focus:outline-none focus:ring-2 transition-colors duration-150 text-sm ${invalid ? 'border-red-500 focus:ring-red-400 focus:border-red-500 bg-red-50' : 'border-gray-300 focus:ring-green-500 focus:border-green-500'}`}
+                                                                placeholder="Método de pago"
+                                                            />
+                                                            <button onClick={() => saveApprovedEdit(comprobante)} className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-[10px]">✓</button>
+                                                            <button onClick={() => cancelApprovedEdit(comprobante)} className="px-2 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded text-[10px]">✕</button>
+                                                        </div>
+                                                        {invalid && <div className="text-[10px] font-medium text-red-600">Requerido</div>}
+                                                    </div>
+                                                );
+                                            }
+                                            return (
+                                                <div className="font-medium cursor-pointer hover:underline select-none" onClick={() => startEditApprovedCell(comprobante, 'metodoPago')} role="button" aria-label="Editar método de pago">{comprobante.metodoPago || comprobante.metodo || ''}</div>
                                             );
                                         })() : (
                                             <div className="font-medium">{comprobante.metodo ?? ''}</div>
@@ -1154,19 +1331,16 @@ export function ComprobanteRecibo() {
                                         </button>
                                     </td>
                                     
-                                    {/* Botones de acción solo para pendientes */}
+                                    {/* Botones de acción */}
                                     {vistaActual === 'pendientes' && (
                                         <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
                                             <div className="flex gap-1 xs:gap-2 sm:gap-3 justify-center">
-                                                <button onClick={() => handleRechazar(comprobante)} className="px-2 xs:px-3 sm:px-4 py-1 xs:py-2 bg-red-500 hover:bg-red-600 text-white text-[10px] xs:text-xs font-semibold rounded-md xs:rounded-lg transition-colors duration-150">
-                                                    RECHAZAR
-                                                </button>
-                                                <button onClick={() => handleValidar(comprobante)} className="px-2 xs:px-3 sm:px-4 py-1 xs:py-2 bg-green-500 hover:bg-green-600 text-white text-[10px] xs:text-xs font-semibold rounded-md xs:rounded-lg transition-colors duration-150">
-                                                    VALIDAR
-                                                </button>
+                                                <button onClick={() => handleRechazar(comprobante)} className="px-2 xs:px-3 sm:px-4 py-1 xs:py-2 bg-red-500 hover:bg-red-600 text-white text-[10px] xs:text-xs font-semibold rounded-md xs:rounded-lg transition-colors duration-150">RECHAZAR</button>
+                                                <button onClick={() => handleValidar(comprobante)} className="px-2 xs:px-3 sm:px-4 py-1 xs:py-2 bg-green-500 hover:bg-green-600 text-white text-[10px] xs:text-xs font-semibold rounded-md xs:rounded-lg transition-colors duration-150">VALIDAR</button>
                                             </div>
                                         </td>
                                     )}
+                                    {/* En aprobados no hay columna de acciones (edición inline) */}
                                                 </tr>
                                             ))}
                                         {/* Aprobados */}
@@ -1648,6 +1822,14 @@ export function ComprobanteRecibo() {
                             </div>
                         </div>
                     </div>
+                </div>
+            )}
+            {/* Toast */}
+            {toast && (
+                <div className={`fixed bottom-4 right-4 z-[100] px-4 py-3 rounded-md shadow-lg text-sm font-medium text-white animate-fade-in-up
+                    ${toast.type === 'success' ? 'bg-green-600' : toast.type === 'error' ? 'bg-red-600' : 'bg-gray-700'}`}
+                    role="status" aria-live="polite">
+                    {toast.msg}
                 </div>
             )}
         </div>

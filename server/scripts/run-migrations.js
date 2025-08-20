@@ -28,7 +28,15 @@ async function run() {
       .filter(Boolean);
     console.log(`Applying migration: ${file} (${statements.length} statement(s))`);
     for (const stmt of statements) {
-      await db.query(stmt);
+      try {
+        await db.query(stmt);
+      } catch (err) {
+        if (['ER_DUP_FIELDNAME','ER_DUP_KEYNAME','ER_DUP_ENTRY'].includes(err.code)) {
+          console.log(`  Skip benign error ${err.code}: ${err.message.split('\n')[0]}`);
+          continue;
+        }
+        throw err;
+      }
     }
   }
   console.log('All migrations applied successfully');

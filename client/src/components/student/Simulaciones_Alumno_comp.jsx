@@ -5,11 +5,14 @@
 // 3. Tabla de simulaciones disponibles con funcionalidad completa
 import React, { useState, useEffect } from 'react';
 import { useStudent } from '../../context/StudentContext'; // Importar el hook
+// TODO: Reemplazar simulaciones mock por endpoint real cuando esté disponible.
 import { 
-  MOCK_MODULOS_ESPECIFICOS, 
   MOCK_SIMULACIONES_GENERALES, 
   MOCK_SIMULACIONES_ESPECIFICAS 
 } from '../../data/mockData';
+import { getAreasCatalog } from '../../api/areas';
+import { AREAS_CATALOG_CACHE } from '../../utils/catalogCache';
+import { styleForArea } from '../common/areaStyles.jsx';
 import SimulacionGraficaHistorial from '../simulaciones/SimulacionGraficaHistorial';
 import { 
   ArrowLeft, 
@@ -44,6 +47,7 @@ import {
   GraduationCap as School, // Icono para Núcleo UNAM / IPN
   Anchor     // Icono para Militar, Naval y Náutica Mercante
 } from 'lucide-react';
+import UnifiedCard from '../common/UnifiedCard.jsx';
 
 /**
  * Helper para convertir nombres de iconos a componentes React
@@ -108,10 +112,40 @@ export function Simulaciones_Alumno_comp() {
     message: '',
     type: 'success' // 'success', 'info', 'warning', 'error'
   });
+  // Fallback / retry minimal (para futuras integraciones API)
+  const [loadError, setLoadError] = useState('');
+  const [retryToken, setRetryToken] = useState(0);
+  const manualRetrySims = () => setRetryToken(t=>t+1);
 
-  // Datos de simulaciones importados desde mockData
-  // TODO: ELIMINAR estos datos mock cuando se conecte el backend
-  const modulosEspecificos = MOCK_MODULOS_ESPECIFICOS;
+  // Catálogo dinámico de áreas/módulos (reuso de endpoint de Actividades)
+  const [modulosEspecificos, setModulosEspecificos] = useState([]);
+  const [loadingCatalog, setLoadingCatalog] = useState(false);
+  const [catalogError, setCatalogError] = useState('');
+  useEffect(()=> {
+    let cancel=false;
+    const fromCache = AREAS_CATALOG_CACHE.get();
+    if (fromCache?.data) {
+      const payload = fromCache.data;
+      const modulos = Array.isArray(payload.modulos) ? payload.modulos : [];
+      const mapped = modulos.map(m=> ({ id:m.id, titulo:m.nombre, descripcion:m.descripcion, ...styleForArea(m.id) }));
+      setModulosEspecificos(mapped);
+      if (!fromCache.stale) return; // mostrar cache y revalidar silenciosamente si stale
+    }
+    const load = async (silent=false)=> {
+      if(!silent) { setLoadingCatalog(true); setCatalogError(''); }
+      try {
+        const res = await getAreasCatalog();
+        const payload = res.data?.data || res.data || {};
+        AREAS_CATALOG_CACHE.set(payload);
+        const modulos = Array.isArray(payload.modulos) ? payload.modulos : [];
+        const mapped = modulos.map(m=> ({ id:m.id, titulo:m.nombre, descripcion:m.descripcion, ...styleForArea(m.id) }));
+        if(!cancel) setModulosEspecificos(mapped);
+      } catch(e){ if(!cancel) setCatalogError('No se pudo cargar catálogo de módulos'); }
+      finally { if(!cancel) setLoadingCatalog(false); }
+    };
+    load(fromCache?.data ? true : false);
+    return ()=> { cancel=true; };
+  },[]);
   const simulacionesGenerales = MOCK_SIMULACIONES_GENERALES;
   const simulacionesEspecificas = MOCK_SIMULACIONES_ESPECIFICAS;
 
@@ -120,6 +154,9 @@ export function Simulaciones_Alumno_comp() {
     'Primero', 'Segundo', 'Tercero', 'Cuarto', 'Quinto', 'Sexto',
     'Séptimo', 'Octavo', 'Noveno'
   ];
+
+  // Altura mínima uniforme para tarjetas (módulos específicos) alineada con Actividades
+  const CARD_HEIGHT_PX = 230;
 
   // Efecto para calcular el puntaje total
   useEffect(() => {
@@ -561,8 +598,25 @@ export function Simulaciones_Alumno_comp() {
             </div>
           </div>
 
-          {/* Grid de módulos específicos con lógica de acceso y estilo restaurado */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {/* Grid de módulos específicos - responsive uniforme (igual que actividades):
+        - 2 columnas en móviles
+        - 3 en tablets
+        - 4 en desktop
+        - auto-rows-fr para alturas uniformes con minHeight
+      */}
+          {(loadError || catalogError) && (
+            <div className="mb-4 p-4 rounded-xl border border-red-200 bg-red-50 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 text-sm text-red-700">{loadError || catalogError}</div>
+              <div className="flex gap-2">
+                <button onClick={manualRetrySims} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 active:scale-95">Reintentar</button>
+                <button onClick={()=> window.location.reload()} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 active:scale-95">Recargar</button>
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-fr gap-3 sm:gap-5">
+            {(loadingCatalog && modulosEspecificos.length===0) && (
+              <div className="col-span-full py-6 text-center text-sm text-gray-500">Cargando módulos...</div>
+            )}
             {modulosEspecificos.map((modulo) => {
               const isAllowed = allowedSimulationAreas.includes(modulo.id);
               const request = simulationRequests.find(req => req.areaId === modulo.id);
@@ -570,7 +624,7 @@ export function Simulaciones_Alumno_comp() {
 
               let actionHandler = () => {};
               let footerContent;
-              let cardClassName = `${modulo.bgColor} ${modulo.borderColor} border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group p-6 flex flex-col h-full`;
+        let cardClassName = `${modulo.bgColor} ${modulo.borderColor} border rounded-2xl shadow-md hover:shadow-xl transition-all duration-200 group px-4 py-5 sm:px-6 sm:py-6 flex flex-col select-none`;
               let isClickable = false;
 
               if (hasInitialArea) {
@@ -617,22 +671,25 @@ export function Simulaciones_Alumno_comp() {
               }
 
               return (
-                <div key={modulo.id} onClick={isClickable ? actionHandler : undefined}>
-                  <div className={cardClassName}>
-                    <div className="text-center flex-grow">
-                      <div className={`w-16 h-16 bg-gradient-to-br ${modulo.color} rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
-                        {getIconComponent(modulo.icono)}
-                      </div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-2">{modulo.titulo}</h3>
-                      <p className="text-gray-700 text-sm mb-4 leading-relaxed">{modulo.descripcion}</p>
-                    </div>
-                    <div className="text-center mt-auto pt-4">
-                      {footerContent}
-                    </div>
-                  </div>
+                <div key={modulo.id} className="[tap-highlight-color:transparent]">
+                  <UnifiedCard
+                    title={modulo.titulo}
+                    description={modulo.descripcion}
+                    icon={modulo.icono}
+                    containerClasses={`${modulo.bgColor} ${modulo.borderColor} bg-gradient-to-br`}
+                    iconWrapperClass={`bg-gradient-to-br ${modulo.color}`}
+                    minHeight={CARD_HEIGHT_PX}
+                    onClick={isClickable ? actionHandler : undefined}
+                    interactive={isClickable}
+                    pending={isPending}
+                    footer={<div className="text-xs sm:text-sm">{footerContent}</div>}
+                  />
                 </div>
               );
             })}
+            {!loadingCatalog && !catalogError && modulosEspecificos.length===0 && (
+              <div className="col-span-full text-center text-xs sm:text-sm text-gray-500 py-6">No hay módulos específicos disponibles.</div>
+            )}
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import MQerkLogo from "../../assets/MQerK_logo.png";
 import { Logos } from "../IndexComp"; // Asegúrate de que la ruta a IndexComp.jsx sea correcta
 import { useStudent } from "../../context/StudentContext";
+import { buildStaticUrl, getApiOrigin } from "../../utils/url";
 import { useStudentNotifications } from "../../context/StudentNotificationContext";
 import { useAuth } from "../../context/AuthContext";
 
@@ -38,14 +39,7 @@ export function Header_Alumno_comp({
   const { alumno, logout } = useAuth();
 
   // Construir URL absoluto para archivos estticos del backend (evitar IPs fijas)
-  const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
-  const apiUrl = (import.meta?.env?.VITE_API_URL) || `http://${host}:1002/api`;
-  const apiOrigin = apiUrl.replace(/\/api\/?$/, ''); // ej. http://<host>:1002
-  const buildStaticUrl = (p) => {
-    if (!p) return null;
-    if (/^https?:\/\//i.test(p)) return p;
-    return `${apiOrigin}${p.startsWith('/') ? '' : '/'}${p}`;
-  };
+  const apiOrigin = getApiOrigin();
 
 
   // Estados locales del componente
@@ -53,6 +47,7 @@ export function Header_Alumno_comp({
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   // Determinar datos finales usando contexto con fallbacks
   const finalStudentData = studentData || { name: "Estudiante", matricula: "0000", email: "estudiante@mqerk.com" };
@@ -132,6 +127,24 @@ export function Header_Alumno_comp({
 
   // Filtrar notificaciones no leídas para mostrar
   const displayedNotifications = notifications.filter(notif => !notif.isRead);
+
+  // Debug: loggear la URL final del avatar en desarrollo
+  useEffect(() => {
+    try {
+      // Vite: import.meta.env.DEV
+      if (import.meta && import.meta.env && import.meta.env.DEV) {
+        const finalPhoto = buildStaticUrl(alumno?.foto);
+        console.debug('[Header alumno] foto raw:', alumno?.foto, ' -> url:', finalPhoto);
+      }
+    } catch (_) {
+      // ignore
+    }
+  }, [alumno?.foto]);
+
+  // Si cambia la ruta de la foto, reintenta mostrarla reseteando el estado de error
+  useEffect(() => {
+    setAvatarError(false);
+  }, [alumno?.foto]);
 
   // Función para formatear tiempo transcurrido
   const formatTimeAgo = (timestamp) => {
@@ -462,27 +475,28 @@ export function Header_Alumno_comp({
         {/* Icono de Perfil - PREPARADO PARA BACKEND */}
         <div className="relative flex items-center justify-center">
           <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden border-1 sm:border-2 border-white shadow-md sm:shadow-lg hover:scale-105 transition-transform duration-200 cursor-pointer">
-            
-            {/* BACKEND: Imagen real del alumno */}
-      {alumno?.foto && (
-              <img
-        src={buildStaticUrl(alumno?.foto)}
-                className="w-full h-full object-cover object-center"
-                onError={handleImageError}
-                loading="lazy"
-              />
-            )}
-            
-            {/* BACKEND: Avatar de respaldo cuando no hay imagen o falla la carga */}
-            <div 
-              className={`${alumno?.foto ? 'hidden' : 'flex'} w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center`}
-              style={{ display: alumno?.foto ? 'none' : 'flex' }}
-            >
-              {/* Mostrar iniciales del alumno */}
-              <span className="text-white font-bold text-xs sm:text-sm lg:text-base select-none">
-                {getInitials(alumno?.nombre)}
-              </span>
-            </div>
+            {(() => {
+              const finalPhoto = buildStaticUrl(alumno?.foto);
+              const showImage = !!finalPhoto && !avatarError;
+              if (showImage) {
+                return (
+                  <img
+                    src={finalPhoto}
+                    className="w-full h-full object-cover object-center"
+                    onError={() => setAvatarError(true)}
+                    loading="lazy"
+                    alt="Foto de perfil"
+                  />
+                );
+              }
+              return (
+                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <span className="text-white font-bold text-xs sm:text-sm lg:text-base select-none">
+                    {getInitials(alumno?.nombre)}
+                  </span>
+                </div>
+              );
+            })()}
           </div>
           
           {/* BACKEND: Indicador de estado online/offline */}

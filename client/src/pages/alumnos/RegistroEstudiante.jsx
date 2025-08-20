@@ -33,6 +33,8 @@ const RegistroEstudiante=()=>{
     const [postulacion, setPostulacion] = useState('');
     const [comentario1, setComentario1] = useState('');
     const [comentario2, setComentario2] = useState('');
+    const [asesor, setAsesor] = useState('Kélvil Valentín Gómez Ramírez');
+    const [academia, setAcademia] = useState('MQerKAcademy');
 
     // errores por paso
     const [errors, setErrors] = useState({});
@@ -41,7 +43,7 @@ const RegistroEstudiante=()=>{
     const [showErrors0, setShowErrors0] = useState(false);
     const [showErrors1, setShowErrors1] = useState(false);
 
-    const { crearEstudiante, getFolio, folioObtenido } = useEstudiantes();
+    const { crearEstudiante, getFolio, folioObtenido, folioFormateado } = useEstudiantes();
 
     const navigate = useNavigate();
 
@@ -121,19 +123,13 @@ const RegistroEstudiante=()=>{
 
 
         const toggleComunidad = (comunidad) => {
-            setComunidad1((prev) =>
-            prev.includes(comunidad)
-                ? prev.filter((c) => c !== comunidad)
-                : [...prev, comunidad]
-            );
+            // Permitir solo una selección: si se hace clic en la ya seleccionada, se desmarca
+            setComunidad1((prev) => (prev.includes(comunidad) ? [] : [comunidad]));
         };
 
         const toggleAcademico = (academico) => {
-            setAcademico1((prev) =>
-            prev.includes(academico)
-                ? prev.filter((c) => c !== academico)
-                : [...prev, academico]
-            );
+            // Permitir solo una selección (si se vuelve a hacer clic se desmarca)
+            setAcademico1((prev) => (prev.includes(academico) ? [] : [academico]));
         };
 
         const toggleUniversidad = (universidad) => {
@@ -183,6 +179,8 @@ const RegistroEstudiante=()=>{
                 formData.append("curso", datos?.curso ?? '');
                 formData.append("plan", datos?.planMensual ?? '');
                 formData.append("anio", ultimosDosDigitos ?? '');
+                formData.append("academia", academia || 'MQerKAcademy');
+                formData.append("asesor", asesor || 'Kélvil Valentín Gómez Ramírez');
                 // ya no enviamos folio; el servidor asigna secuencialmente
 
                 const saved = await crearEstudiante(formData);
@@ -227,9 +225,15 @@ const RegistroEstudiante=()=>{
         <>
         <NavLogin/>
 
-    <div className={`flex w-full justify-end px-1 sm:px-4`}>
-    <h1 className="text-[#53289f] text-end text-xs sm:text-base uppercase font-semibold">Folio: {`${(datos?.curso || 'EEAU').slice(0,4).toUpperCase()}${ultimosDosDigitos || ''}`} - {numeroFormateado}</h1>
-    </div>
+        <div className={`flex w-full justify-end px-1 sm:px-4`}>
+            {folioFormateado ? (
+                <h1 className="text-[#53289f] text-end text-xs sm:text-base uppercase font-semibold">Folio: {folioFormateado}</h1>
+            ) : (
+        (() => { const displayAnio = ultimosDosDigitos ? String((Number(ultimosDosDigitos) + 1) % 100).padStart(2,'0') : ''; return (
+            <h1 className="text-[#53289f] text-end text-xs sm:text-base uppercase font-semibold">Folio: {`M${(datos?.curso || 'EEAU').slice(0,4).toUpperCase()}${displayAnio}`} - {numeroFormateado}</h1>
+                ); })()
+            )}
+        </div>
 
         {/* <div className={`flex flex-col mt-3`}> */}
 
@@ -309,8 +313,9 @@ const RegistroEstudiante=()=>{
                     <div>
                         <div className="md:col-span-2">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Municipio/Comunidad *
+                                Municipio/Comunidad*
                             </label>
+                            
                             <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 gap-6">
                                 {Municipios.map((comunidad) => (
                                 <label key={comunidad} className="flex items-center space-x-2">
@@ -324,6 +329,7 @@ const RegistroEstudiante=()=>{
                                 </label>
                                 ))}
                             </div>
+
                             <div className="flex items-center gap-5 mt-5">
                                 <label className="block text-sm font-medium text-gray-700">Otra:</label>
                                 <input
@@ -641,6 +647,26 @@ const RegistroEstudiante=()=>{
                 <BtnForm onClick={prevStep} TextoBtn={`Anterior`}/>
                 <BtnForm type={`submit`} TextoBtn={saving ? `Guardando...` : `Finalizar`} disabled={saving}/>
             </div>
+                        <div className="hidden">
+                                <label className="block text-sm font-medium text-gray-700">Asesor asignado</label>
+                                <input
+                                    type="text"
+                                    value={asesor}
+                                    onChange={(e)=>setAsesor(e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                                    readOnly
+                                />
+                        </div>
+                                    <div className="hidden">
+                                            <label className="block text-sm font-medium text-gray-700">Academia</label>
+                                            <input
+                                                type="text"
+                                                value={academia}
+                                                onChange={(e)=>setAcademia(e.target.value)}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                                                readOnly
+                                            />
+                                    </div>
             </form>
             
             </div>

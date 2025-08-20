@@ -221,6 +221,7 @@ export function SideBarDesktop() {
             <ElementoSideBar to="/administrativo/reportes-pagos" Icono={LogoReportesPagos} NombreElemento="Reportes de Pagos" />
             <ElementoSideBar to="/administrativo/calendario" Icono={LogoCalendario} NombreElemento="Calendario" />
             <ElementoSideBar to="/administrativo/email" Icono={LogoEmail} NombreElemento="Email" />
+            <ElementoSideBar to="/administrativo/asesores" Icono={LogoAlumnos} NombreElemento="Asesores" />
           </div>
 
           {/* Espacio flexible que empuja los elementos inferiores */}
@@ -308,6 +309,12 @@ export function SideBarsm({ isMenuOpen, closeMenu }) {
                     to="/administrativo/email"
                     Icono={LogoEmail}
                     NombreElemento="Email"
+                    onClick={closeMenu}
+                  />
+                  <ElementoSideBar
+                    to="/administrativo/asesores"
+                    Icono={LogoAlumnos}
+                    NombreElemento="Asesores"
                     onClick={closeMenu}
                   />
                 </div>

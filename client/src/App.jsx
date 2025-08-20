@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop'; // Ajusta la ruta según tu estructura
 import Index from './Index.jsx';
 import Login from './pages/Login';
@@ -8,10 +8,11 @@ import About from "./pages/web/About.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import { DashboardAdm, ListaAsesores, ListaColaboradores } from './pages/admin/Panel.jsx';
 import { DashboardAsesor } from "./pages/Asesor/Asesor.jsx";
+// Asesor additional section components
+import { PerfilAsesor, Actividades, Quizt, Simuladores, DashboardCurso, Asesorias } from "./pages/Asesor/Asesor.jsx";
 import { PreRegAsesor } from "./pages/Asesor/PreRegAsesor.jsx";
 import { Bienvenida } from "./pages/Asesor/Bienvenida.jsx";
-import { Test } from "./pages/Asesor/Test.jsx";
-import { Resultado } from "./pages/Asesor/Resultado.jsx";
+// Eliminados módulos de tests (Test, Resultado) para flujo simplificado
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { AsesorProvider } from "./context/AsesorContext.jsx";
 import { EstudiantesProvider } from "./context/EstudiantesContext.jsx";
@@ -114,14 +115,15 @@ export default function App(){
                     {/* Configuración inicial (bootstrap) */}
                     <Route path='/setup' element={<SetupAdmin />} />
 
-                    {/* Asesor Tests */}
+                    {/* Asesor Registro Simplificado (sin tests) */}
                     <Route path='/pre_registro' element={<PreRegAsesor />} />
                     <Route path='/comunicado' element={<Bienvenida />} />
-                    <Route path='/test' element={<Test />} />
-                    <Route path='/resultados' element={<Resultado />} />
 
                     {/* Asesor Registro */}
                     <Route path='/registro_asesor' element={<FormularioAsesor />} />
+                    <Route path='/asesor/registro_asesor' element={<Navigate to='/registro_asesor' replace />} />
+                    {/* Debug direct access to formulario (omit approval gating) */}
+                    <Route path='/debug/registro_asesor' element={<FormularioAsesor debugBypass={true} />} />
 
                     {/* Registro alumno */}
                     <Route path='/registro_alumno' element={<RegistroEstudiante />} />
@@ -136,6 +138,14 @@ export default function App(){
 
                       {/* Dashboard Asesores */}
                       <Route path='/asesor/dashboard' element={<DashboardAsesor/>} />
+                      <Route path='/asesor/perfil' element={<PerfilAsesor />} />
+                      <Route path='/asesor/actividades' element={<Actividades />} />
+                      <Route path='/asesorias-asesor' element={<Asesorias />} />
+                      <Route path='/asesor/quizt' element={<Quizt />} />
+                      <Route path='/asesor/simuladores' element={<Simuladores />} />
+                      <Route path='/cursos-asesor' element={<DashboardCurso />} />
+                      {/* Fallback redirect if accessed within protected group */}
+                      <Route path='/asesor/registro_asesor' element={<Navigate to='/registro_asesor' replace />} />
 
                       {/* Dashboard Alumno */}
                       <Route path="/alumno/*" element={<AlumnoDashboardBundle />} />
@@ -143,6 +153,9 @@ export default function App(){
                       <Route path="/administrativo/*" element={<AdminDashboardBundle />} />
 
                     </Route>
+
+                    {/* 404 Not Found */}
+                    <Route path='*' element={<div style={{padding:'4rem', textAlign:'center'}}><h2>404 - Página no encontrada</h2><p>La ruta solicitada no existe.</p></div>} />
 
                   </Routes>
                 </BrowserRouter>

@@ -3,6 +3,7 @@ import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useAdminContext } from '../../context/AdminContext.jsx';
 import { getGruposConCantidadRequest } from '../../api/estudiantes.js';
+import studentService from '../../service/studentService.js';
 
 // Modal de confirmación personalizado
 const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", studentName = "" }) => {
@@ -243,11 +244,14 @@ function GrupoButton({ label, isActive, onClick, grupo }) {
 
 function ListaAlumnos_Admin_comp() {
   const navigate = useNavigate();
+  // Bandera temporal para usar el perfil simplificado de diagnóstico
+  const USE_SIMPLIFIED_PROFILE = false; // Cambiado a false para usar la página completa de perfil
   const [showLoadingScreen, setShowLoadingScreen] = useState(() => {
     const hasState = sessionStorage.getItem('listAlumnos_activeCategory') && 
                      sessionStorage.getItem('listAlumnos_activeTurno');
     return !hasState;
   });
+  // Restaurar curso (categoría) si estaba guardado para que al volver del perfil no se reinicie
   const [activeCategory, setActiveCategory] = useState(() => {
     return sessionStorage.getItem('listAlumnos_activeCategory') || null;
   });
@@ -301,15 +305,7 @@ function ListaAlumnos_Admin_comp() {
 
   // ============= INTEGRACIÓN CON ADMINCONTEXT =============
   
-  // AdminContext.jsx proporciona TODAS las funciones para estudiantes:
-  // - studentsData: datos de estudiantes cargados
-  // - isLoading: estado de carga del contexto
-  // - error: errores del contexto
-  // - lastUpdated: timestamp de última actualización
-  // - loadStudentsData(curso, turno): cargar estudiantes por curso/turno
-  // - deleteStudent(folio): eliminar estudiante
-  // - updateStudent(folio, data): actualizar estudiante
-  // - updateStudentStatus(folio, status): cambiar estatus del estudiante
+
   const { 
     studentsData,
     isLoading,
@@ -326,13 +322,9 @@ function ListaAlumnos_Admin_comp() {
   // Estos NO cambian desde el backend, están definidos aquí:
   const cursosDisponibles = ['EEAU', 'EEAP', 'DIGI-START', 'MINDBRIDGE', 'SPEAKUP', 'PCE'];
   
-  // ✅ GRUPOS DINÁMICOS - TODO viene del backend
-  // Incluye: nombre, tipo, capacidad máxima, alumnos actuales
-  // TODO: CONECTAR CON BACKEND - Endpoint: GET /api/cursos/{curso}/grupos
-  //  ESTOS DATOS SÍ VIENEN DEL BACKEND 
+  
   const [gruposPorCurso, setGruposPorCurso] = useState({
-    // DATOS MOCK TEMPORALES PARA PRUEBAS - ELIMINAR EN PRODUCCIÓN
-    // ✅ Contadores actualizados según los datos simulados
+   
     'EEAU': [
   { id: 1, nombre: 'V1', tipo: 'vespertino', capacidad: 10, alumnosActuales: 0 },
   { id: 2, nombre: 'V2', tipo: 'vespertino', capacidad: 10, alumnosActuales: 0 },
@@ -360,10 +352,7 @@ function ListaAlumnos_Admin_comp() {
   });
 
   // ==================== SIMULACIÓN DE DATOS POR CURSO Y TURNO ====================
-  
-  // ✅ DATOS MOCK CENTRALIZADOS - Los datos ahora se importan desde /data/studentsData.js
-  // Esto asegura que ListaAlumnos y StudentProfilePage usen los mismos datos
-  // ELIMINAR EN PRODUCCIÓN junto con el archivo studentsData.js
+
 
   // ==================== UTILIDADES ====================
   
@@ -395,6 +384,8 @@ function ListaAlumnos_Admin_comp() {
       const data = await loadStudentsData(activeCategory, activeTurno);
       const list = Array.isArray(data) ? data : [];
       setAlumnos(list);
+      // Enriquecer datos faltantes de tutor (si el endpoint de lista no los trae)
+      enrichTutorData(list);
       // Actualizar contador dinámico del grupo seleccionado
       setGruposPorCurso(prev => {
         const grupos = prev[activeCategory] || [];
@@ -411,6 +402,31 @@ function ListaAlumnos_Admin_comp() {
     }
     finally {
       setIsFetching(false);
+    }
+  };
+
+  // Enriquecer alumnos que no tienen nombre/telefono de tutor consultando el endpoint individual
+  const enrichTutorData = async (list) => {
+  const toFetch = list.filter(a => (!a?.nombreTutor || !a?.telefonoTutor) && (a?.folioNumero || a?.folio));
+    if (!toFetch.length) return;
+    try {
+  const results = await Promise.allSettled(toFetch.map(a => studentService.getStudent(a.folioNumero || a.folio)));
+      const updates = {};
+      results.forEach((res, idx) => {
+        if (res.status === 'fulfilled' && res.value?.success && res.value.data) {
+          const det = res.value.data;
+          const keyFolio = toFetch[idx].folio;
+          updates[keyFolio] = {
+            nombreTutor: det.nombreTutor || toFetch[idx].nombreTutor || '',
+            telefonoTutor: det.telefonoTutor || toFetch[idx].telefonoTutor || ''
+          };
+        }
+      });
+      if (Object.keys(updates).length) {
+        setAlumnos(prev => prev.map(a => updates[a.folio] ? { ...a, ...updates[a.folio] } : a));
+      }
+    } catch (e) {
+      console.warn('No se pudo enriquecer datos de tutor:', e);
     }
   };
 
@@ -443,9 +459,7 @@ function ListaAlumnos_Admin_comp() {
     }
   };
 
-  // FUNCIONES DE INTEGRACIÓN CON ADMINCONTEXT - LISTAS PARA USAR
-  // deleteStudent y updateStudent vienen directamente del AdminContext.jsx
-  // Estas funciones YA están conectadas con el backend (actualmente con mocks)
+  
   const deleteStudentFromBackend = async (folio) => {
     try {
       if (deleteStudent && typeof deleteStudent === 'function') {
@@ -490,21 +504,16 @@ function ListaAlumnos_Admin_comp() {
   }, [activeCategory, activeTurno]);
 
   // Guardar estado en sessionStorage cuando cambie
-  useEffect(() => {
-    if (activeCategory) {
-      sessionStorage.setItem('listAlumnos_activeCategory', activeCategory);
-    } else {
-      sessionStorage.removeItem('listAlumnos_activeCategory');
-    }
-  }, [activeCategory]);
+  // Eliminado: ya no persistimos selección para que siempre inicie oculto
 
   useEffect(() => {
-    if (activeTurno) {
-      sessionStorage.setItem('listAlumnos_activeTurno', activeTurno);
-    } else {
-      sessionStorage.removeItem('listAlumnos_activeTurno');
-    }
+    if (activeTurno) sessionStorage.setItem('listAlumnos_activeTurno', activeTurno); else sessionStorage.removeItem('listAlumnos_activeTurno');
   }, [activeTurno]);
+
+  // Persistir categoría seleccionada
+  useEffect(() => {
+    if (activeCategory) sessionStorage.setItem('listAlumnos_activeCategory', activeCategory); else sessionStorage.removeItem('listAlumnos_activeCategory');
+  }, [activeCategory]);
 
   useEffect(() => {
     sessionStorage.setItem('listAlumnos_searchTerm', searchTerm);
@@ -563,17 +572,26 @@ function ListaAlumnos_Admin_comp() {
 
   // Filtrar estudiantes basado en término de búsqueda, categoría activa y turno
   const alumnosFiltrados = alumnos.filter(alumno => {
-    const matchesSearch = 
-      alumno.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      alumno.apellidos.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      alumno.correoElectronico.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      alumno.folio.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      alumno.municipioComunidad.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = (searchTerm || '').trim().toLowerCase();
+    if (!term) {
+      const matchesCategoryQuick = activeCategory === null || alumno.curso === activeCategory;
+      const matchesTurnoQuick = activeTurno === null || alumno.turno === activeTurno;
+      return matchesCategoryQuick && matchesTurnoQuick;
+    }
+    const safe = (v) => (v === undefined || v === null) ? '' : String(v).toLowerCase();
+    const matchesSearch =
+      safe(alumno.nombres).includes(term) ||
+      safe(alumno.apellidos).includes(term) ||
+      safe(alumno.correoElectronico).includes(term) ||
+  safe(alumno.folio).includes(term) ||
+  safe(alumno.folio_formateado).includes(term) ||
+  safe(alumno.folioNumero).includes(term) ||
+      safe(alumno.municipioComunidad).includes(term);
     
     const matchesCategory = activeCategory === null || alumno.curso === activeCategory;
     const matchesTurno = activeTurno === null || alumno.turno === activeTurno;
     
-    return matchesSearch && matchesCategory && matchesTurno;
+  return matchesSearch && matchesCategory && matchesTurno;
   });
 
   // Manejar selección de categoría (curso)
@@ -604,7 +622,10 @@ function ListaAlumnos_Admin_comp() {
   // Action Handlers - Ready for backend integration
   const handleVerPerfil = (alumno) => {
     sessionStorage.setItem('listAlumnos_scrollPosition', window.pageYOffset.toString());
-    navigate(`/administrativo/student/${alumno.folio}`);
+    navigate(USE_SIMPLIFIED_PROFILE
+      ? `/administrativo/student-simple/${alumno.folio}`
+      : `/administrativo/student/${alumno.folio}`
+    );
   };
 
   // Función para mostrar notificaciones
@@ -934,7 +955,8 @@ function ListaAlumnos_Admin_comp() {
                       <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 border-r border-gray-200">
                         <div className="text-center">
                           <div className="text-xs font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-md inline-block">
-                            {`M${alumno.curso || ''}${obtenerDosUltimosDigitosAnioSiguiente()}-${String(alumno.folio).padStart(4, '0')}`}
+                            {/* Mostrar folio formateado provisto por backend (folio ya se mapeó al formateado en AdminContext). */}
+                            {alumno.folio || alumno.folio_formateado || ''}
                           </div>
                           <div className="text-[10px] text-gray-400 mt-1">
                             {alumno.fechaRegistro}
@@ -976,17 +998,7 @@ function ListaAlumnos_Admin_comp() {
                       
                       {/* Columna Tutor */}
                       <td className="px-3 xs:px-4 sm:px-6 py-3 xs:py-4 border-r border-gray-200">
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium text-gray-900">
-                            {alumno.nombreTutor}
-                          </div>
-                          <div className="text-sm text-green-600 font-mono">
-                            {alumno.telefonoTutor}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            Tel. Alumno: {alumno.telefonoAlumno}
-                          </div>
-                        </div>
+                        <ContactoTutorAlumno alumno={alumno} />
                       </td>
                       
                       {/* Columna Estado */}
@@ -1133,6 +1145,35 @@ function ListaAlumnos_Admin_comp() {
       </div>
     </div>
     </>
+  );
+}
+
+// Subcomponente para centralizar lógica de contacto
+function ContactoTutorAlumno({ alumno }) {
+  const formatearTel = (tel) => {
+    if (!tel) return '';
+    const digits = String(tel).replace(/\D/g, '');
+    if (digits.length === 10) {
+      return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+    }
+    if (digits.length === 8) {
+      return `${digits.slice(0,4)}-${digits.slice(4)}`;
+    }
+    return tel; // fallback original
+  };
+
+  const telTutor = formatearTel(alumno.telefonoTutor);
+  const noTutor = !telTutor && !alumno.nombreTutor;
+
+  return (
+    <div className="space-y-1">
+      <div className="text-sm font-medium text-gray-900">
+        {alumno.nombreTutor || <span className="text-gray-400 italic">Sin tutor</span>}
+      </div>
+      <div className="text-xs text-gray-500">
+        {noTutor ? '—' : (telTutor || <span className="text-gray-400">Sin teléfono</span>)}
+      </div>
+    </div>
   );
 }
 

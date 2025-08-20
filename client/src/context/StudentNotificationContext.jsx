@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import axios from '../api/axios.js';
+import { useAuth } from './AuthContext.jsx';
 
 /**
  * CONTEXTO PARA NOTIFICACIONES DEL ESTUDIANTE
@@ -139,9 +141,9 @@ export const StudentNotificationProvider = ({ children }) => {
   ];
 
   // Computadas
-  const unreadCount = notifications.filter(n => !n.isRead).length;
-  const unreadNotifications = notifications.filter(n => !n.isRead);
-  const readNotifications = notifications.filter(n => n.isRead);
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadNotifications = notifications.filter(n => !n.is_read);
+  const readNotifications = notifications.filter(n => n.is_read);
 
   // Filtros por tipo
   const getNotificationsByType = (type) => {
@@ -157,158 +159,33 @@ export const StudentNotificationProvider = ({ children }) => {
   const loadNotifications = async () => {
     setIsLoading(true);
     try {
-      // TODO: Implementar llamada al backend
-      // const studentId = getStudentId(); // Obtener desde contexto de autenticación
-      // const response = await fetch(`/api/students/${studentId}/notifications`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      // const data = await response.json();
-      // setNotifications(data.notifications);
-      // setLastUpdated(new Date());
-      
-      // MOCK: Solo para testing - comentar/descomentar según necesites
-      // console.log('🔔 Cargando notificaciones del estudiante...');
-      // setNotifications(mockNotifications);
-      // setLastUpdated(new Date());
-      
-      console.log('🔔 Esperando conexión con backend para cargar notificaciones...');
-      
+      const res = await axios.get('/student/notifications');
+      const rows = res.data?.data || [];
+      setNotifications(rows.map(r => ({ ...r, timestamp: new Date(r.created_at) })));
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error al cargar notificaciones:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { setIsLoading(false); }
   };
 
   // TODO: BACKEND - Marcar notificación como leída
   const markAsRead = async (notificationId) => {
-    try {
-      // TODO: Implementar llamada al backend
-      // const studentId = getStudentId();
-      // await fetch(`/api/students/${studentId}/notifications/${notificationId}/read`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      
-      // Actualizar estado local
-      setNotifications(prev => 
-        prev.map(notification => 
-          notification.id === notificationId 
-            ? { ...notification, isRead: true }
-            : notification
-        )
-      );
-      
-      console.log(`✅ Notificación ${notificationId} marcada como leída`);
-    } catch (error) {
-      console.error('Error al marcar notificación como leída:', error);
-    }
+    try { await axios.put(`/student/notifications/${notificationId}/read`); setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, is_read:1 } : n)); } catch(e){ console.error('markAsRead', e); }
   };
 
   // TODO: BACKEND - Marcar notificación como no leída
   const markAsUnread = async (notificationId) => {
-    try {
-      // TODO: Implementar llamada al backend
-      // const studentId = getStudentId();
-      // await fetch(`/api/students/${studentId}/notifications/${notificationId}/unread`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      
-      // Actualizar estado local
-      setNotifications(prev => 
-        prev.map(notification => 
-          notification.id === notificationId 
-            ? { ...notification, isRead: false }
-            : notification
-        )
-      );
-      
-      console.log(`📬 Notificación ${notificationId} marcada como no leída`);
-    } catch (error) {
-      console.error('Error al marcar notificación como no leída:', error);
-    }
+    try { await axios.put(`/student/notifications/${notificationId}/unread`); setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, is_read:0 } : n)); } catch(e){ console.error('markAsUnread', e); }
   };
 
   // Marcar todas las notificaciones como leídas
-  const markAllAsRead = async () => {
-    try {
-      // TODO: Implementar llamada al backend
-      // const studentId = getStudentId();
-      // await fetch(`/api/students/${studentId}/notifications/mark-all-read`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      
-      // Actualizar estado local
-      setNotifications(prev => 
-        prev.map(notification => ({ ...notification, isRead: true }))
-      );
-      
-      console.log('✅ Todas las notificaciones marcadas como leídas');
-    } catch (error) {
-      console.error('Error al marcar todas las notificaciones como leídas:', error);
-    }
-  };
+  const markAllAsRead = async () => { try { await axios.put('/student/notifications/mark-all-read'); setNotifications(prev => prev.map(n => ({ ...n, is_read:1 }))); } catch(e){ console.error('markAllAsRead', e); } };
 
   // TODO: BACKEND - Eliminar notificación
-  const deleteNotification = async (notificationId) => {
-    try {
-      // TODO: Implementar llamada al backend
-      // const studentId = getStudentId();
-      // await fetch(`/api/students/${studentId}/notifications/${notificationId}`, {
-      //   method: 'DELETE',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      
-      // Actualizar estado local
-      setNotifications(prev => 
-        prev.filter(notification => notification.id !== notificationId)
-      );
-      
-      console.log(`🗑️ Notificación ${notificationId} eliminada`);
-    } catch (error) {
-      console.error('Error al eliminar notificación:', error);
-    }
-  };
+  const deleteNotification = async (notificationId) => { try { await axios.delete(`/student/notifications/${notificationId}`); setNotifications(prev => prev.filter(n => n.id !== notificationId)); } catch(e){ console.error('deleteNotification', e); } };
 
   // Eliminar todas las notificaciones leídas
-  const deleteAllRead = async () => {
-    try {
-      // TODO: Implementar llamada al backend
-      // const studentId = getStudentId();
-      // await fetch(`/api/students/${studentId}/notifications/delete-read`, {
-      //   method: 'DELETE',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      
-      // Actualizar estado local
-      setNotifications(prev => prev.filter(notification => !notification.isRead));
-      
-      console.log('🗑️ Todas las notificaciones leídas eliminadas');
-    } catch (error) {
-      console.error('Error al eliminar notificaciones leídas:', error);
-    }
-  };
+  const deleteAllRead = async () => { try { await axios.delete('/student/notifications/delete-read'); setNotifications(prev => prev.filter(n => !n.is_read)); } catch(e){ console.error('deleteAllRead', e); } };
 
   // TODO: BACKEND - Configurar WebSocket para notificaciones en tiempo real
   const connectToNotifications = () => {
@@ -385,19 +262,63 @@ export const StudentNotificationProvider = ({ children }) => {
   };
 
   // Cargar notificaciones al inicializar
+  const { isAuthenticated, user } = useAuth();
+  const pollRef = useRef(null);
+  const wsRef = useRef(null);
   useEffect(() => {
+    // Si NO está autenticado como estudiante: asegurar limpieza (importante para evitar 401 tras logout)
+    if(!(isAuthenticated && user?.role === 'estudiante')){
+      if(pollRef.current){ clearInterval(pollRef.current); pollRef.current = null; }
+      if(wsRef.current && wsRef.current.readyState === 1){ try { wsRef.current.close(); } catch(_){} }
+      return; // no configuramos nada
+    }
+
+    // Autenticado estudiante: cargar y comenzar polling
     loadNotifications();
-    
-    // Configurar WebSocket
-    const ws = connectToNotifications();
-    
-    // Cleanup
+    pollRef.current = setInterval(() => loadNotifications(), 60000);
+
+    // Construir URL WS a partir del baseURL de axios para no usar el puerto de Vite (5173)
+    let wsUrl;
+    try {
+      const base = new URL(axios.defaults.baseURL); // ej: http://localhost:1002/api
+      const proto = base.protocol === 'https:' ? 'wss:' : 'ws:'; // CORRECTO: http -> ws, https -> wss
+      wsUrl = `${proto}//${base.host}/ws/notifications`;
+    } catch(_e){
+      const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      wsUrl = `${proto}://${window.location.hostname}:1002/ws/notifications`;
+    }
+
+    try {
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+      ws.onopen = () => setIsConnected(true);
+      ws.onclose = () => setIsConnected(false);
+      ws.onerror = () => {};
+      ws.onmessage = (evt) => {
+        try {
+          const data = JSON.parse(evt.data);
+          if(data.type === 'notification' && data.payload){
+            const base = data.payload;
+            const temp = {
+              id: `temp-${Date.now()}`,
+              type: base.kind === 'grade' ? 'grade' : base.kind === 'assignment' ? 'assignment' : 'system',
+              title: base.kind === 'grade' ? 'Nueva calificación' : base.title || 'Notificación',
+              message: base.kind === 'grade' ? `Calificación: ${base.calificacion}` : (base.message || ''),
+              action_url: '/alumno/actividades',
+              is_read: 0,
+              timestamp: new Date()
+            };
+            setNotifications(prev => [temp, ...prev]);
+          }
+        } catch {}
+      };
+    } catch(_err) {}
+
     return () => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
+      if(pollRef.current){ clearInterval(pollRef.current); pollRef.current = null; }
+      if(wsRef.current && wsRef.current.readyState === 1){ try { wsRef.current.close(); } catch(_){} }
     };
-  }, []);
+  }, [isAuthenticated, user]);
 
   // Función para cargar datos mock (solo para testing)
   const loadMockNotifications = () => {
@@ -449,7 +370,7 @@ export const StudentNotificationProvider = ({ children }) => {
     loadMockNotifications, // Solo para testing
     
     // Funciones de carga
-    loadNotifications,
+  loadNotifications,
     
     // Constantes
     NOTIFICATION_TYPES,

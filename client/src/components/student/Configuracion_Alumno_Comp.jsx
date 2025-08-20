@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { buildStaticUrl, getApiOrigin } from '../../utils/url';
 import { getConfigRequest, upsertConfigRequest, changePasswordRequest, updateEstudianteRequest, updateFotoEstudianteRequest, softDeleteAlumnoRequest } from '../../api/estudiantes.js';
 import ConfirmModal from '../shared/ConfirmModal.jsx';
 
@@ -71,16 +72,32 @@ const isValidEmail = (email) => {
 };
 
 export function Configuracion_Alumno_comp() {
-    const { user, alumno, logout } = useAuth();
+    const { user, alumno, logout, setAlumno } = useAuth();
     // Estados del componente
     // Helper para armar URL absoluta de fotos
-    const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
-    const apiUrl = (import.meta?.env?.VITE_API_URL) || `http://${host}:1002/api`;
-    const apiOrigin = apiUrl.replace(/\/api\/?$/, '');
-    const buildStaticUrl = (p) => {
-        if (!p) return null;
-        if (/^https?:\/\//i.test(p)) return p;
-        return `${apiOrigin}${p.startsWith('/') ? '' : '/'}${p}`;
+    const apiOrigin = getApiOrigin();
+
+    // Catálogo de áreas predefinidas (claves conocidas)
+    const interestLabels = {
+        programacion: 'Programación',
+        tecnologico: 'Technology & AI',
+        psicoeducativo: 'Psicoeducativo',
+        idiomas: 'Idiomas',
+        exactas: 'Ciencias Exactas',
+        admision: 'Preparación Admisión'
+    };
+
+    // Helper: ensure date fits input[type="date"] format (YYYY-MM-DD)
+    const formatDateForInput = (val) => {
+        if (!val) return '';
+        if (val instanceof Date && !isNaN(val)) return val.toISOString().slice(0, 10);
+        if (typeof val === 'string') {
+            // Accept ISO strings like 2000-11-01T06:00:00.000Z or already formatted dates
+            if (val.includes('T')) return val.slice(0, 10);
+            // Basic yyyy-mm-dd safeguard
+            return val.length >= 10 ? val.slice(0, 10) : val;
+        }
+        return '';
     };
 
     const [profile, setProfile] = useState({
@@ -93,8 +110,12 @@ export function Configuracion_Alumno_comp() {
 
     const [learningPreferences, setLearningPreferences] = useState({
         nivelExperiencia: 'intermedio',
-        intereses: ['programacion', 'tecnologico'],
+        intereses: ['programacion', 'tecnologico'], // claves predefinidas seleccionadas
     });
+    // Sugerencias libres con nivel deseado de inicio (se serializan dentro de intereses como objetos)
+    const [suggestions, setSuggestions] = useState([]); // [{ titulo: string, nivel: 'principiante'|'intermedio'|'avanzado' }]
+    const [newSuggestionTitle, setNewSuggestionTitle] = useState('');
+    const [newSuggestionLevel, setNewSuggestionLevel] = useState('intermedio');
 
     const [security, setSecurity] = useState({
         currentPassword: '',
@@ -119,6 +140,7 @@ export function Configuracion_Alumno_comp() {
     const [deleteProcessing, setDeleteProcessing] = useState(false);
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [saveProcessing, setSaveProcessing] = useState(false);
+    const [photoError, setPhotoError] = useState(false);
 
     // Carga inicial de datos del usuario
     
@@ -133,17 +155,38 @@ export function Configuracion_Alumno_comp() {
                     nombre: alumno?.nombre ? `${alumno.nombre} ${alumno.apellidos || ''}`.trim() : prev.nombre,
                     email: alumno?.email || prev.email,
                     telefono: alumno?.telefono || prev.telefono,
-                    fechaNacimiento: alumno?.fecha_nacimiento || prev.fechaNacimiento,
+                    fechaNacimiento: formatDateForInput(alumno?.fecha_nacimiento) || prev.fechaNacimiento,
                     fotoUrl: buildStaticUrl(alumno?.foto) || prev.fotoUrl,
                 }));
+                setPhotoError(false);
 
                 // Cargar preferencias
                 const res = await getConfigRequest(alumno.id);
                 const cfg = res.data;
+                const rawInterests = Array.isArray(cfg.intereses) ? cfg.intereses : (cfg.intereses ? JSON.parse(cfg.intereses) : []);
+                // Separar claves conocidas y sugerencias libres
+                const knownKeys = Object.keys(interestLabels);
+                const selectedKeys = [];
+                const parsedSuggestions = [];
+                for (const item of rawInterests || []) {
+                    if (typeof item === 'string') {
+                        if (knownKeys.includes(item)) selectedKeys.push(item);
+                        else parsedSuggestions.push({ titulo: String(item), nivel: cfg.nivel_experiencia || 'intermedio' });
+                    } else if (item && typeof item === 'object') {
+                        // Forma enriquecida: { type:'sugerencia', titulo, nivel }
+                        if (item.type === 'sugerencia' && item.titulo) {
+                            parsedSuggestions.push({ titulo: String(item.titulo), nivel: item.nivel || 'intermedio' });
+                        } else if (item.key && knownKeys.includes(item.key)) {
+                            selectedKeys.push(item.key);
+                        }
+                    }
+                }
                 setLearningPreferences({
                     nivelExperiencia: cfg.nivel_experiencia || 'intermedio',
-                    intereses: Array.isArray(cfg.intereses) ? cfg.intereses : (cfg.intereses ? JSON.parse(cfg.intereses) : []),
+                    intereses: selectedKeys.length ? selectedKeys : [],
                 });
+                setSuggestions(parsedSuggestions);
+                setNewSuggestionLevel(cfg.nivel_experiencia || 'intermedio');
             } catch (error) {
                 setErrors({ general: 'Error al cargar los datos del usuario' });
             } finally {
@@ -159,7 +202,8 @@ export function Configuracion_Alumno_comp() {
     
     const handleProfileChange = (e) => {
         const { name, value } = e.target;
-        setProfile(prev => ({ ...prev, [name]: value }));
+        const nextValue = name === 'fechaNacimiento' ? formatDateForInput(value) : value;
+        setProfile(prev => ({ ...prev, [name]: nextValue }));
 
         if (name === 'email') {
             setEmailValid(isValidEmail(value));
@@ -169,6 +213,10 @@ export function Configuracion_Alumno_comp() {
     const handleLearningPreferenceChange = (e) => {
         const { name, value } = e.target;
         setLearningPreferences(prev => ({ ...prev, [name]: value }));
+        if (name === 'nivelExperiencia') {
+            // Por defecto, usar este nivel como sugerencia inicial también
+            setNewSuggestionLevel(value || 'intermedio');
+        }
     };
 
     const handleInterestsChange = (e) => {
@@ -179,6 +227,33 @@ export function Configuracion_Alumno_comp() {
                 ? [...prev.intereses, value]
                 : prev.intereses.filter(interest => interest !== value)
         }));
+    };
+
+    // Manejo de sugerencias libres
+    const addSuggestion = () => {
+        const title = (newSuggestionTitle || '').trim();
+        if (!title) return;
+        // Evitar duplicados (case-insensitive) tanto en sugerencias como en claves conocidas
+        const existsInSuggestions = suggestions.some(s => s.titulo.toLowerCase() === title.toLowerCase());
+        const existsAsKnown = Object.keys(interestLabels).some(k => k.toLowerCase() === title.toLowerCase());
+        if (existsInSuggestions || existsAsKnown) {
+            alert('Esa sugerencia ya existe o coincide con un área de interés.');
+            return;
+        }
+        if (suggestions.length >= 8) {
+            alert('Puedes agregar hasta 8 sugerencias.');
+            return;
+        }
+        setSuggestions(prev => [...prev, { titulo: title, nivel: newSuggestionLevel || 'intermedio' }]);
+        setNewSuggestionTitle('');
+    };
+
+    const removeSuggestion = (idx) => {
+        setSuggestions(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const updateSuggestionLevel = (idx, nivel) => {
+        setSuggestions(prev => prev.map((s, i) => (i === idx ? { ...s, nivel } : s)));
     };
 
     const handleDeleteAccount = () => {
@@ -245,9 +320,14 @@ export function Configuracion_Alumno_comp() {
         try {
             if (!alumno?.id) throw new Error('ID de alumno no disponible');
             // 1) Guardar preferencias
+            // Empaquetar intereses con sugerencias libres en un solo JSON
+            const mergedInterests = [
+                ...learningPreferences.intereses,
+                ...suggestions.map(s => ({ type: 'sugerencia', titulo: s.titulo, nivel: s.nivel }))
+            ];
             const prefPayload = {
                 nivel_experiencia: learningPreferences.nivelExperiencia,
-                intereses: learningPreferences.intereses,
+                intereses: mergedInterests,
             };
             // 2) Actualizar email/teléfono/fecha_nacimiento del estudiante
             const estPayload = {
@@ -337,6 +417,10 @@ export function Configuracion_Alumno_comp() {
                     const nuevaRel = res?.data?.data?.foto; // ej: /public/xxx.png
                     const nuevaAbs = buildStaticUrl(nuevaRel);
                     setProfile(prev => ({ ...prev, fotoUrl: nuevaAbs }));
+                    // Actualizar AuthContext para que header y otras vistas reflejen la nueva foto
+                    if (typeof setAlumno === 'function') {
+                        setAlumno(prev => ({ ...(prev || {}), foto: nuevaRel }));
+                    }
                     alert('Foto de perfil actualizada');
                 } catch (error) {
                     alert(error?.response?.data?.message || 'Error al cambiar la foto de perfil.');
@@ -352,15 +436,6 @@ export function Configuracion_Alumno_comp() {
     };
 
     // Configuración de datos estáticos
-
-    const interestLabels = {
-        programacion: 'Programación',
-        tecnologico: 'Technology & AI',
-        psicoeducativo: 'Psicoeducativo',
-        idiomas: 'Idiomas',
-        exactas: 'Ciencias Exactas',
-        admision: 'Preparación Admisión'
-    };
 
     // Render del componente
     
@@ -417,7 +492,7 @@ export function Configuracion_Alumno_comp() {
                     {/* COLUMNA IZQUIERDA */}
                     <div className="space-y-8">
                         {/* Información Personal */}
-                        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden hover:shadow-3xl transition-all duration-300">
+                        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-visible hover:shadow-3xl transition-all duration-300">
                             <div className="p-8">
                                 <div className="flex items-center gap-4 mb-8">
                                     <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl">
@@ -434,15 +509,12 @@ export function Configuracion_Alumno_comp() {
                                     <div className="flex justify-center">
                                         <div className="relative group">
                                             <div className="w-32 h-32 rounded-2xl overflow-hidden shadow-lg ring-4 ring-blue-100 transition-all duration-500 group-hover:ring-blue-200 group-hover:shadow-xl bg-gradient-to-br from-gray-100 to-gray-200 group-hover:scale-105">
-                                                {profile.fotoUrl ? (
+                                                {profile.fotoUrl && !photoError ? (
                                                     <img
                                                         src={profile.fotoUrl}
                                                         alt="Foto de Perfil"
                                                         className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
-                                                        onError={(e) => {
-                                                            e.target.style.display = 'none';
-                                                            e.target.nextSibling.style.display = 'flex';
-                                                        }}
+                                                        onError={() => setPhotoError(true)}
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center">
@@ -660,6 +732,75 @@ export function Configuracion_Alumno_comp() {
                                                 </label>
                                             ))}
                                         </div>
+                                    </div>
+
+                                    {/* Sugerencias de nuevos cursos o materias */}
+                                    <div>
+                                        <div className="flex items-end justify-between gap-2 mb-2">
+                                            <h3 className="text-sm font-semibold text-gray-700">Sugerir nuevos cursos o materias</h3>
+                                            {suggestions.length > 0 && (
+                                                <span className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">{suggestions.length} sugerencia(s)</span>
+                                            )}
+                                        </div>
+                                        <p className="text-gray-500 text-sm mb-3">Cuéntanos qué temas te interesaría que impartamos y desde qué nivel te gustaría comenzar.</p>
+
+                    {/* Input + selector */}
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap md:flex-nowrap gap-2 sm:gap-3 items-center w-full">
+                                            <input
+                                                type="text"
+                                                value={newSuggestionTitle}
+                                                onChange={(e) => setNewSuggestionTitle(e.target.value)}
+                        placeholder="Ej. Robótica o Dibujo técnico"
+                                                disabled={isLoading}
+                        className="flex-1 max-w-full min-w-0 flex-[1_1_240px] px-4 h-11 sm:h-12 min-h-0 max-h-12 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-200 hover:bg-gray-100 placeholder:text-gray-400 text-sm sm:text-base leading-tight whitespace-nowrap overflow-hidden appearance-none"
+                                            />
+                                            <select
+                                                value={newSuggestionLevel}
+                                                onChange={(e) => setNewSuggestionLevel(e.target.value)}
+                                                disabled={isLoading}
+                        className="w-full sm:w-56 md:w-64 sm:min-w-[220px] md:min-w-[260px] px-4 h-11 sm:h-12 min-h-0 max-h-12 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-200 hover:bg-gray-100 truncate shrink-0 text-sm sm:text-base leading-tight appearance-none"
+                                            >
+                                                <option value="principiante">🌱 Empezar en Principiante</option>
+                                                <option value="intermedio">📈 Empezar en Intermedio</option>
+                                                <option value="avanzado">🚀 Empezar en Avanzado</option>
+                                            </select>
+                                            <button
+                                                type="button"
+                                                onClick={addSuggestion}
+                                                disabled={isLoading || !newSuggestionTitle.trim()}
+                        className="w-full sm:w-auto shrink-0 md:ml-auto px-6 h-11 sm:h-12 min-h-0 max-h-12 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all duration-200 disabled:opacity-50 font-semibold shadow text-sm sm:text-base"
+                                            >
+                                                Agregar
+                                            </button>
+                                        </div>
+
+                                        {/* Chips de sugerencias agregadas */}
+                                        {suggestions.length > 0 && (
+                                            <div className="mt-3 flex flex-wrap gap-2">
+                                                {suggestions.map((sug, idx) => (
+                                                    <div key={idx} className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full pl-3 pr-2 py-1 max-w-full">
+                                                        <span className="text-sm font-medium truncate max-w-[180px]" title={sug.titulo}>{sug.titulo}</span>
+                                                        <select
+                                                            value={sug.nivel}
+                                                            onChange={(e) => updateSuggestionLevel(idx, e.target.value)}
+                                                            className="text-xs bg-transparent border-0 focus:ring-0 outline-none cursor-pointer px-1"
+                                                        >
+                                                            <option value="principiante">Principiante</option>
+                                                            <option value="intermedio">Intermedio</option>
+                                                            <option value="avanzado">Avanzado</option>
+                                                        </select>
+                                                        <button
+                                                            type="button"
+                                                            className="ml-1 text-emerald-700 hover:text-emerald-900 p-0.5"
+                                                            onClick={() => removeSuggestion(idx)}
+                                                            aria-label="Eliminar sugerencia"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
