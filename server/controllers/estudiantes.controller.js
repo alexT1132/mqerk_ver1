@@ -3,10 +3,30 @@ import * as Estudiantes from "../models/estudiantes.model.js";
 import * as EstudiantesConfig from "../models/estudiantes_config.model.js";
 import * as Usuarios from "../models/usuarios.model.js";
 import bcrypt from 'bcryptjs';
-import fs from 'fs';
-import path from 'path';
 import * as SoftDeletes from "../models/soft_deletes.model.js";
 import db from "../db.js";
+import { generarContratoEstudiante } from "../libs/contracts.js";
+import * as Contratos from "../models/contratos.model.js";
+import fs from 'fs';
+import path from 'path';
+
+// Helper para aceptar folio numérico o formateado (p.ej. MEEAU26-0001)
+const parseFolioParam = (raw) => {
+  if (!raw || typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  const formattedRegex = /^[Mm][A-Z]{4}\d{2}-\d{4}$/; // M + 4 letras curso + 2 digitos año + - + 4 digitos correlativo
+  if (formattedRegex.test(trimmed)) {
+    const numPart = trimmed.split('-').pop();
+    const n = Number(numPart);
+    return Number.isNaN(n) ? null : n; // correlativo es el folio numérico original
+  }
+  // Sólo dígitos
+  if (/^-?\d+$/.test(trimmed)) {
+    const n = Number(trimmed);
+    return Number.isNaN(n) ? null : n;
+  }
+  return null;
+};
 
 // Crear un nuevo estudiante
 export const crear = async (req, res) => {
@@ -19,7 +39,8 @@ export const crear = async (req, res) => {
       comunidad2,
       telefono,
   fecha_nacimiento,
-      grupo,
+  grupo,
+  turno,
       nombre_tutor,
       tel_tutor,
       academico1,
@@ -33,12 +54,15 @@ export const crear = async (req, res) => {
       universidades1,
       universidades2,
       postulacion,
+  modalidad,
       comentario1,
       comentario2,
       curso,
       plan,
+  academia,
       anio,
   folio,
+  asesor,
     } = req.body;
 
     // Validación básica
@@ -61,12 +85,13 @@ export const crear = async (req, res) => {
     }
 
     // Objeto listo para guardar en la base de datos
-    const estudianteGenerado = {
+  const estudianteGenerado = {
       nombre,
       apellidos, 
       email, 
       foto: imagen,
-      grupo,
+  grupo,
+  turno: turno && turno.trim() !== '' ? turno.trim() : 'VESPERTINO',
       comunidad1, 
       comunidad2,
       telefono,
@@ -83,13 +108,16 @@ export const crear = async (req, res) => {
       orientacion,
       universidades1,
       universidades2,
-      postulacion,
+  postulacion,
+  modalidad: modalidad && modalidad.trim() !== '' ? modalidad.trim() : 'Presencial',
       comentario1,
       comentario2,
       curso,
       plan,
+  academia: academia && academia.trim() !== '' ? academia.trim() : 'MQerKAcademy',
   anio,
-  folio: finalFolioNumber
+  folio: finalFolioNumber,
+  asesor: asesor && asesor.trim() !== '' ? asesor.trim() : 'Kélvil Valentín Gómez Ramírez'
     };
 
     console.log(estudianteGenerado);
@@ -97,10 +125,14 @@ export const crear = async (req, res) => {
     const result = await Estudiantes.createEstudiante(estudianteGenerado);
 
     const idInsertado = result?.insertId || null;
+  const basePrefix = (curso || 'EEAU').slice(0,4).toUpperCase();
+  const nextYearDigits = String((Number(anio) + 1) % 100).padStart(2,'0');
+  const folioFormateado = `M${basePrefix}${nextYearDigits}-${String(finalFolioNumber).padStart(4,'0')}`;
 
-  return res.status(201).json({
+    return res.status(201).json({
       id: idInsertado,
       ...estudianteGenerado,
+      folio_formateado: folioFormateado
     });
 
   } catch (error) {
@@ -143,20 +175,45 @@ export const obtenerUno = async (req, res) => {
 export const actualizar = async (req, res) => {
   const { id } = req.params;
 
-  // Campos permitidos a actualizar desde el perfil del alumno
-  // Importante: Los datos del curso (curso, grupo, plan, semestre) NO se pueden modificar desde este endpoint.
-  // Si se requiere, hacerlo desde un endpoint administrativo separado.
+  // Campos permitidos a actualizar desde el perfil del alumno / admin
+  // Ampliado para permitir que un administrador complete información académica y de curso.
   const allowedFields = [
-    'email',
-    'comunidad1',
-    'telefono',
+  // Básicos
+  'nombre',
+  'apellidos',
+  'email',
+  'telefono',
   'fecha_nacimiento',
-    'nombre_tutor',
-    'tel_tutor',
-    'academico1',
-    'academico2',
-    'universidades1',
-    'orientacion'
+  // Ubicación / comunidad
+  'comunidad1',
+  'comunidad2',
+  // Tutor
+  'nombre_tutor',
+  'tel_tutor',
+  // Académico actual
+  'academico1', // nivel / academia
+  'academico2', // bachillerato
+  'semestre',
+  // Aspiraciones / orientación
+  'orientacion', // usamos para licenciatura / orientación vocacional
+  'universidades1', // universidades a postular
+  'universidades2',
+  // Curso / asignaciones
+  'curso',
+  'grupo',
+  'turno',
+  'postulacion', // modalidad
+  'modalidad',
+  'asesor',
+  'academia',
+  // Salud
+  'alergia',
+  'alergia2',
+  'discapacidad1',
+  'discapacidad2',
+  // Expectativas / comentarios
+  'comentario1',
+  'comentario2'
   ];
 
   // Construir objeto con solo campos permitidos presentes en el body
@@ -197,11 +254,15 @@ export const eliminar = (req, res) => {
 
 export const getUltimoFolio = async (req, res) => {
   try {
-  const { curso, anio } = req.query || {};
-  const anioNum = Number(anio) || Number(String(new Date().getFullYear()).slice(-2));
-  const max = await Estudiantes.getMaxFolioByCourseYear(curso || 'EEAU', anioNum);
-  const next = (max || 0) + 1;
-  res.status(200).json({ folio: next, curso: curso || 'EEAU', anio: anioNum });
+    const { curso, anio } = req.query || {};
+    const cursoSafe = curso || 'EEAU';
+    const anioNum = Number(anio) || Number(String(new Date().getFullYear()).slice(-2));
+    const max = await Estudiantes.getMaxFolioByCourseYear(cursoSafe, anioNum);
+    const next = (max || 0) + 1;
+  const basePrefix = cursoSafe.slice(0,4).toUpperCase();
+  const nextYearDigits = String((anioNum + 1) % 100).padStart(2,'0');
+  const folioFormateado = `M${basePrefix}${nextYearDigits}-${String(next).padStart(4,'0')}`;
+    res.status(200).json({ folio: next, curso: cursoSafe, anio: anioNum, folio_formateado: folioFormateado });
   } catch (error) {
     console.error('❌ ERROR EN CONTROLADOR getUltimoFolio:', error);
     res.status(500).json({ mensaje: 'Error del servidor' });
@@ -211,14 +272,15 @@ export const getUltimoFolio = async (req, res) => {
 export const obtenerGruposConCantidad = async (req, res) => {
     try {
         // Obtener el parámetro curso desde la URL o el body
-        const { curso } = req.params;
+  const { curso } = req.params;
+  const status = (req.query?.status || 'aprobados').toLowerCase();
 
         if (!curso) {
             return res.status(400).json({ mensaje: "El parámetro curso es obligatorio" });
         }
 
-        // Ejecutar el modelo
-        const resultado = await Estudiantes.getGruposConCantidad(curso);
+  // Ejecutar el modelo (filtrado por estado)
+  const resultado = await Estudiantes.getGruposConCantidad(curso, status);
 
         // Responder con los datos obtenidos
         res.status(200).json(resultado);
@@ -298,9 +360,14 @@ export const actualizarFoto = async (req, res) => {
     // Intentar eliminar la foto anterior si existe y es diferente
     try {
       if (estudiante.foto && typeof estudiante.foto === 'string') {
-        const oldPath = estudiante.foto.startsWith('/public/') ? estudiante.foto.replace(/^\//, '') : null;
-        if (oldPath && fs.existsSync(oldPath)) {
-          fs.unlink(oldPath, () => {});
+        const rel = estudiante.foto.startsWith('/public/') ? estudiante.foto.replace(/^\//, '') : null;
+        if (rel) {
+          const abs = path.resolve(process.cwd(), rel);
+          if (fs.existsSync(abs)) {
+            fs.unlink(abs, (err) => {
+              if (err) console.warn('No se pudo eliminar foto anterior:', abs, err?.message);
+            });
+          }
         }
       }
     } catch (_) {
@@ -311,8 +378,8 @@ export const actualizarFoto = async (req, res) => {
     const actualizado = await Estudiantes.getEstudianteById(id);
     return res.status(200).json({ message: 'Foto actualizada', data: { id: actualizado.id, foto: actualizado.foto } });
   } catch (error) {
-    console.error('Error al actualizar foto del alumno:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    console.error('Error al actualizar foto del alumno:', error?.message, error?.stack);
+    res.status(500).json({ message: 'Error interno del servidor al actualizar foto', detail: error?.message });
   }
 };
 
@@ -345,7 +412,7 @@ export const getApprovedStudents = async (req, res) => {
 
     // Subconsulta para último pago aprobado por estudiante
     const sql = `
-      SELECT e.id, e.folio, e.nombre, e.apellidos, e.email, e.grupo, e.curso, e.plan, e.anio,
+      SELECT e.id, e.folio, e.folio_formateado, e.nombre, e.apellidos, e.email, e.grupo, e.curso, e.plan, e.anio,
              e.created_at AS registrado_en,
              c.importe AS pago_importe, c.metodo AS pago_metodo, c.created_at AS pago_fecha
       FROM estudiantes e
@@ -356,7 +423,9 @@ export const getApprovedStudents = async (req, res) => {
         GROUP BY id_estudiante
       ) lp ON lp.id_estudiante = e.id
       INNER JOIN comprobantes c ON c.id_estudiante = lp.id_estudiante AND c.created_at = lp.latest
+      LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
       WHERE e.verificacion = 2
+        AND sd.id IS NULL
         ${curso ? 'AND e.curso = ?' : ''}
         ${grupo ? 'AND e.grupo = ?' : ''}
       ORDER BY c.created_at DESC`;
@@ -370,12 +439,15 @@ export const getApprovedStudents = async (req, res) => {
     // Map a una forma amigable para el frontend ListaAlumnos
     const data = (rows || []).map(r => ({
       id: r.id,
+      // Enviamos ambos: folio (numérico original) y folio_formateado (nuevo generado en BD)
       folio: r.folio,
+      folio_formateado: r.folio_formateado || null,
       nombres: r.nombre,
       apellidos: r.apellidos,
       correoElectronico: r.email,
       curso: r.curso,
       turno: r.grupo, // el componente usa 'turno' para el grupo seleccionado
+  plan: r.plan, // incluir plan del curso para contratos/pagos
       estatus: 'Activo',
       fechaRegistro: r.registrado_en ? new Date(r.registrado_en).toISOString().split('T')[0] : null,
       pago: {
@@ -396,13 +468,135 @@ export const getApprovedStudents = async (req, res) => {
 // Obtener por folio (admin protegido)
 export const getByFolioAdmin = async (req, res) => {
   try {
-    const folio = req.params?.folio;
-    if (!folio) return res.status(400).json({ message: 'Folio requerido' });
-    const estudiante = await Estudiantes.getEstudianteByFolio(folio);
+    const folioRaw = req.params?.folio;
+    if (!folioRaw) return res.status(400).json({ message: 'Folio requerido' });
+    const folioParsed = parseFolioParam(folioRaw);
+    let estudiante = null;
+    if (folioParsed == null) {
+      estudiante = await Estudiantes.getEstudianteByFolioFormateado(folioRaw);
+    } else {
+      estudiante = await Estudiantes.getEstudianteByFolio(folioParsed);
+      if (!estudiante) {
+        estudiante = await Estudiantes.getEstudianteByFolioFormateado(folioRaw);
+      }
+    }
     if (!estudiante) return res.status(404).json({ message: 'Estudiante no encontrado' });
     return res.status(200).json({ data: estudiante });
   } catch (error) {
     console.error('Error getByFolioAdmin:', error);
     return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// ===== Generar contrato PDF del estudiante (admin) =====
+export const generarContrato = async (req, res) => {
+  try {
+    const folio = req.params?.folio;
+    if (!folio) return res.status(400).json({ message: 'Folio requerido' });
+    const folioParsed = parseFolioParam(folio);
+    let estudiante = null;
+    if (folioParsed == null) {
+      estudiante = await Estudiantes.getEstudianteByFolioFormateado(folio);
+    } else {
+      estudiante = await Estudiantes.getEstudianteByFolio(folioParsed);
+      if (!estudiante) {
+        estudiante = await Estudiantes.getEstudianteByFolioFormateado(folio);
+      }
+    }
+    if (!estudiante) return res.status(404).json({ message: 'Estudiante no encontrado' });
+    // Flags de comportamiento
+    const force = String(req.query?.force || '0') === '1'; // forzar regeneración
+    const store = String(req.query?.store || '0') === '1'; // guardar físicamente y registrar
+    const preview = !store; // si no se especifica store=1 es solo vista previa
+
+    // Si ya existe en BD y no se fuerza: devolver metadata existente
+    const existente = await Contratos.getContratoByFolio(estudiante.folio).catch(() => null);
+    if (existente && existente.archivo && !force && store) {
+      return res.status(200).json({ existing: true, archivo: existente.archivo, stored: true, message: 'Contrato existente' });
+    }
+
+    // Asegurar folio_formateado
+    if (!estudiante.folio_formateado) {
+      const basePrefix = (estudiante.curso || 'EEAU').slice(0,4).toUpperCase();
+      const nextYearDigits = String((Number(estudiante.anio) + 1) % 100).padStart(2,'0');
+      estudiante.folio_formateado = `M${basePrefix}${nextYearDigits}-${String(estudiante.folio).padStart(4,'0')}`;
+    }
+
+    const pdfBuffer = await generarContratoEstudiante(estudiante);
+
+    if (preview) {
+      // Devolver PDF en base64 para vista previa sin guardar
+      const base64 = pdfBuffer.toString('base64');
+      return res.status(200).json({ preview: true, stored: false, existing: !!existente, needsStore: true, archivo_base64: base64, mime: 'application/pdf' });
+    }
+
+    // Guardar archivo y registrar en BD
+    const filename = `contrato-${Date.now()}-${estudiante.folio_formateado}.pdf`;
+    const fsPath = path.resolve(process.cwd(), 'contratos');
+    try { if (!fs.existsSync(fsPath)) fs.mkdirSync(fsPath, { recursive: true }); } catch (_) {}
+    const absFile = path.join(fsPath, filename);
+    await fs.promises.writeFile(absFile, pdfBuffer);
+    const relPath = `/contratos/${filename}`;
+
+    // Registrar sólo si no existe o si force
+    if (!existente || force) {
+      await Contratos.createContrato({
+        id_estudiante: estudiante.id,
+        folio: estudiante.folio,
+        folio_formateado: estudiante.folio_formateado,
+        archivo: relPath,
+        original_nombre: filename,
+        mime_type: 'application/pdf',
+        tamano: pdfBuffer.length,
+        firmado: 0,
+        version: (existente?.version || 0) + 1,
+        notas: null
+      });
+    }
+
+    return res.status(201).json({ preview: false, stored: true, existing: !!existente && !force, archivo: relPath, message: 'Contrato generado y guardado' });
+  } catch (error) {
+    console.error('Error generarContrato:', error);
+    return res.status(500).json({ message: 'Error interno del servidor al generar contrato' });
+  }
+};
+
+// ===== Subir contrato firmado (admin) =====
+export const subirContrato = async (req, res) => {
+  try {
+    const folio = req.params?.folio;
+    if (!folio) return res.status(400).json({ message: 'Folio requerido' });
+    if (!req.file) return res.status(400).json({ message: 'Archivo PDF requerido' });
+    const folioParsed = parseFolioParam(folio);
+    let estudiante = null;
+    if (folioParsed == null) {
+      estudiante = await Estudiantes.getEstudianteByFolioFormateado(folio);
+    } else {
+      estudiante = await Estudiantes.getEstudianteByFolio(folioParsed);
+      if (!estudiante) {
+        estudiante = await Estudiantes.getEstudianteByFolioFormateado(folio);
+      }
+    }
+    if (!estudiante) return res.status(404).json({ message: 'Estudiante no encontrado' });
+
+    // Construir registro
+    const relPath = `/contratos/${req.file.filename}`; // ruta pública a servir con express.static si se configura
+    await Contratos.createContrato({
+      id_estudiante: estudiante.id,
+      folio: estudiante.folio,
+      folio_formateado: estudiante.folio_formateado,
+      archivo: relPath,
+      original_nombre: req.file.originalname,
+      mime_type: req.file.mimetype,
+      tamano: req.file.size,
+      firmado: 1,
+      version: 1,
+      notas: null
+    });
+
+    return res.status(201).json({ message: 'Contrato subido correctamente', archivo: relPath });
+  } catch (error) {
+    console.error('Error subirContrato:', error);
+    return res.status(500).json({ message: 'Error interno del servidor al subir contrato' });
   }
 };

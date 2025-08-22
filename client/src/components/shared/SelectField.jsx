@@ -33,7 +33,7 @@ export default function SelectField({
         <em>{placeholder}</em>
       </MenuItem>
       {options.map((opt) => (
-        <MenuItem key={opt.value} value={opt.value}>
+        <MenuItem key={opt.value} value={opt.value} disabled={!!opt.disabled}>
           {opt.label}
         </MenuItem>
       ))}

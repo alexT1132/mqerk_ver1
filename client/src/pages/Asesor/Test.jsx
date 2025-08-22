@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react'
+import {useState, useEffect, useRef} from 'react'
 import { useAsesor } from "../../context/AsesorContext.jsx";
 import { usePreventPageReload } from "../../NoReload.jsx";
 import { useNavigate } from "react-router-dom";
@@ -523,21 +523,298 @@ export function Test() {
  
 
 
-    const nextStep = () => {
-        setStep(step + 1);
-      };
-    
-      const prevStep = () => {
-        setStep(step - 1);
-      };
+        const scrollTop = () => {
+                try { window.scrollTo({ top:0, behavior:'smooth'}); } catch(_) {}
+        };
+        const nextStep = () => {
+                setStep(s => { const ns = s + 1; setTimeout(scrollTop,10); return ns; });
+            };
+        const prevStep = () => {
+                setStep(s => { const ps = s - 1; setTimeout(scrollTop,10); return ps; });
+            };
 
-        const {datos1} = useAsesor();
+    const { datos1, saveTestResults, preregistroId, loadPreRegistro, loading, error } = useAsesor();
+
+    // Intentar cargar datos si volvieron al test tras refrescar / volver desde flechas
+    useEffect(()=>{
+        if(preregistroId && !datos1){
+            loadPreRegistro();
+        }
+    },[preregistroId]);
+
+    // (fallback moved into main return to not alterar orden de hooks)
+
+        // ================== VALIDACION & CONFIRMACION SALIDA ==================
+        const [validationError, setValidationError] = useState('');
+        const testCompletedRef = useRef(false);
+
+        const handleStepSubmit = (e) => {
+            e.preventDefault();
+            setValidationError('');
+            const form = e.target;
+            // Requerimos que todos los selects visibles tengan valor y los textareas/inputs type=text si existen
+            const missing = [];
+            const elements = Array.from(form.querySelectorAll('select, textarea, input[type="text"], input[type="number"]'));
+            elements.forEach(el => {
+                if(el.offsetParent === null) return; // oculto
+                if(el.tagName === 'SELECT' && el.value === '') missing.push(el);
+                if((el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'number') && el.hasAttribute('required') && el.value.trim() === '') missing.push(el);
+            });
+            // Radio groups: cada group name distinto debe tener uno seleccionado
+            const radios = Array.from(form.querySelectorAll('input[type="radio"]'));
+            const radioNames = [...new Set(radios.map(r=>r.name))];
+            radioNames.forEach(name => {
+                const group = radios.filter(r=>r.name===name && r.offsetParent!==null);
+                if(group.length && !group.some(r=>r.checked)) missing.push(group[0]);
+            });
+            if(missing.length){
+                setValidationError('Responde todas las preguntas antes de continuar.');
+                // Añadir marca visual
+                missing.forEach(el => el.classList.add('ring','ring-red-500'));
+                setTimeout(()=> missing.forEach(el => el.classList.remove('ring','ring-red-500')), 1500);
+                return;
+            }
+            nextStep();
+        };
+
+        // Confirmación al intentar cerrar/recargar
+        useEffect(()=>{
+            const handleBeforeUnload = (e) => {
+                if(!testCompletedRef.current){
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            };
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+        },[]);
+
+        // ================== PERSISTENCIA Y BLOQUEO DE REGRESO ==================
+        const STORAGE_KEY = 'asesor_test_draft_v1';
+        const restoredRef = useRef(false);
+        const savingRef = useRef(false);
+
+        // Restaurar borrador al montar (solo una vez)
+        useEffect(()=>{
+            if(restoredRef.current) return;
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if(raw){
+                    const data = JSON.parse(raw);
+                    if(data && typeof data === 'object'){
+                        if(data.step) setStep(data.step);
+                        // Restaurar BigFive (22)
+                        const bf = data.bigFive || [];
+                        if(bf.length){
+                            setBigfive1(bf[0]||''); setBigfive2(bf[1]||''); setBigfive3(bf[2]||''); setBigfive4(bf[3]||''); setBigfive5(bf[4]||''); setBigfive6(bf[5]||''); setBigfive7(bf[6]||''); setBigfive8(bf[7]||''); setBigfive9(bf[8]||''); setBigfive10(bf[9]||''); setBigfive11(bf[10]||''); setBigfive12(bf[11]||''); setBigfive13(bf[12]||''); setBigfive14(bf[13]||''); setBigfive15(bf[14]||''); setBigfive16(bf[15]||''); setBigfive17(bf[16]||''); setBigfive18(bf[17]||''); setBigfive19(bf[18]||''); setBigfive20(bf[19]||''); setBigfive21(bf[20]||''); setBigfive22(bf[21]||'');
+                        }
+                        // DASS (21)
+                        const ds = data.dass || [];
+                        if(ds.length){
+                            setDass1(ds[0]||''); setDass2(ds[1]||''); setDass3(ds[2]||''); setDass4(ds[3]||''); setDass5(ds[4]||''); setDass6(ds[5]||''); setDass7(ds[6]||''); setDass8(ds[7]||''); setDass9(ds[8]||''); setDass10(ds[9]||''); setDass11(ds[10]||''); setDass12(ds[11]||''); setDass13(ds[12]||''); setDass14(ds[13]||''); setDass15(ds[14]||''); setDass16(ds[15]||''); setDass17(ds[16]||''); setDass18(ds[17]||''); setDass19(ds[18]||''); setDass20(ds[19]||''); setDass21(ds[20]||'');
+                        }
+                        // Zavic (60) solo pares suman pero guardamos todos
+                        const zv = data.zavic || [];
+                        if(zv.length){
+                          [setZavic1,setZavic2,setZavic3,setZavic4,setZavic5,setZavic6,setZavic7,setZavic8,setZavic9,setZavic10,setZavic11,setZavic12,setZavic13,setZavic14,setZavic15,setZavic16,setZavic17,setZavic18,setZavic19,setZavic20,setZavic21,setZavic22,setZavic23,setZavic24,setZavic25,setZavic26,setZavic27,setZavic28,setZavic29,setZavic30,setZavic31,setZavic32,setZavic33,setZavic34,setZavic35,setZavic36,setZavic37,setZavic38,setZavic39,setZavic40,setZavic41,setZavic42,setZavic43,setZavic44,setZavic45,setZavic46,setZavic47,setZavic48,setZavic49,setZavic50,setZavic51,setZavic52,setZavic53,setZavic54,setZavic55,setZavic56,setZavic57,setZavic58,setZavic59,setZavic60]
+                            .forEach((setter,idx)=> setter(zv[idx]||''));
+                        }
+                        // BarOn (25)
+                        const bo = data.baron || [];
+                        if(bo.length){
+                            [setBaron1,setBaron2,setBaron3,setBaron4,setBaron5,setBaron6,setBaron7,setBaron8,setBaron9,setBaron10,setBaron11,setBaron12,setBaron13,setBaron14,setBaron15,setBaron16,setBaron17,setBaron18,setBaron19,setBaron20,setBaron21,setBaron22,setBaron23,setBaron24,setBaron25].forEach((setter,idx)=> setter(bo[idx]||''));
+                        }
+                        // Wais (25)
+                        const ws = data.wais || [];
+                        if(ws.length){
+                            [setWais1,setWais2,setWais3,setWais4,setWais5,setWais6,setWais7,setWais8,setWais9,setWais10,setWais11,setWais12,setWais13,setWais14,setWais15,setWais16,setWais17,setWais18,setWais19,setWais20,setWais21,setWais22,setWais23,setWais24,setWais25].forEach((setter,idx)=> setter(ws[idx]||''));
+                        }
+                        // Académica (20)
+                        const ac = data.academica || [];
+                        if(ac.length){
+                            [setAcademica1,setAcademica2,setAcademica3,setAcademica4,setAcademica5,setAcademica6,setAcademica7,setAcademica8,setAcademica9,setAcademica10,setAcademica11,setAcademica12,setAcademica13,setAcademica14,setAcademica15,setAcademica16,setAcademica17,setAcademica18,setAcademica19,setAcademica20].forEach((setter,idx)=> setter(ac[idx]||''));
+                        }
+                    }
+                }
+            } catch(err){
+                console.error('Error restaurando borrador test', err);
+            } finally {
+                restoredRef.current = true;
+            }
+        },[]);
+
+        // Guardar borrador (debounce ~400ms para mejorar rendimiento móvil)
+        const debounceTimer = useRef(null);
+        useEffect(()=>{
+            if(!restoredRef.current) return;
+            if(debounceTimer.current) clearTimeout(debounceTimer.current);
+            debounceTimer.current = setTimeout(()=>{
+                try {
+                    const draft = {
+                        step,
+                        bigFive: [bigfive1,bigfive2,bigfive3,bigfive4,bigfive5,bigfive6,bigfive7,bigfive8,bigfive9,bigfive10,bigfive11,bigfive12,bigfive13,bigfive14,bigfive15,bigfive16,bigfive17,bigfive18,bigfive19,bigfive20,bigfive21,bigfive22],
+                        dass: [dass1,dass2,dass3,dass4,dass5,dass6,dass7,dass8,dass9,dass10,dass11,dass12,dass13,dass14,dass15,dass16,dass17,dass18,dass19,dass20,dass21],
+                        zavic: [Zavic1,Zavic2,Zavic3,Zavic4,Zavic5,Zavic6,Zavic7,Zavic8,Zavic9,Zavic10,Zavic11,Zavic12,Zavic13,Zavic14,Zavic15,Zavic16,Zavic17,Zavic18,Zavic19,Zavic20,Zavic21,Zavic22,Zavic23,Zavic24,Zavic25,Zavic26,Zavic27,Zavic28,Zavic29,Zavic30,Zavic31,Zavic32,Zavic33,Zavic34,Zavic35,Zavic36,Zavic37,Zavic38,Zavic39,Zavic40,Zavic41,Zavic42,Zavic43,Zavic44,Zavic45,Zavic46,Zavic47,Zavic48,Zavic49,Zavic50,Zavic51,Zavic52,Zavic53,Zavic54,Zavic55,Zavic56,Zavic57,Zavic58,Zavic59,Zavic60],
+                        baron: [baron1,baron2,baron3,baron4,baron5,baron6,baron7,baron8,baron9,baron10,baron11,baron12,baron13,baron14,baron15,baron16,baron17,baron18,baron19,baron20,baron21,baron22,baron23,baron24,baron25],
+                        wais: [Wais1,Wais2,Wais3,Wais4,Wais5,Wais6,Wais7,Wais8,Wais9,Wais10,Wais11,Wais12,Wais13,Wais14,Wais15,Wais16,Wais17,Wais18,Wais19,Wais20,Wais21,Wais22,Wais23,Wais24,Wais25],
+                        academica: [Academica1,Academica2,Academica3,Academica4,Academica5,Academica6,Academica7,Academica8,Academica9,Academica10,Academica11,Academica12,Academica13,Academica14,Academica15,Academica16,Academica17,Academica18,Academica19,Academica20]
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+                } catch(err){
+                    console.error('Error guardando borrador test', err);
+                }
+            },400);
+            return ()=> { if(debounceTimer.current) clearTimeout(debounceTimer.current); };
+        }, [step, bigfive1,bigfive2,bigfive3,bigfive4,bigfive5,bigfive6,bigfive7,bigfive8,bigfive9,bigfive10,bigfive11,bigfive12,bigfive13,bigfive14,bigfive15,bigfive16,bigfive17,bigfive18,bigfive19,bigfive20,bigfive21,bigfive22,
+            dass1,dass2,dass3,dass4,dass5,dass6,dass7,dass8,dass9,dass10,dass11,dass12,dass13,dass14,dass15,dass16,dass17,dass18,dass19,dass20,dass21,
+            Zavic1,Zavic2,Zavic3,Zavic4,Zavic5,Zavic6,Zavic7,Zavic8,Zavic9,Zavic10,Zavic11,Zavic12,Zavic13,Zavic14,Zavic15,Zavic16,Zavic17,Zavic18,Zavic19,Zavic20,Zavic21,Zavic22,Zavic23,Zavic24,Zavic25,Zavic26,Zavic27,Zavic28,Zavic29,Zavic30,Zavic31,Zavic32,Zavic33,Zavic34,Zavic35,Zavic36,Zavic37,Zavic38,Zavic39,Zavic40,Zavic41,Zavic42,Zavic43,Zavic44,Zavic45,Zavic46,Zavic47,Zavic48,Zavic49,Zavic50,Zavic51,Zavic52,Zavic53,Zavic54,Zavic55,Zavic56,Zavic57,Zavic58,Zavic59,Zavic60,
+            baron1,baron2,baron3,baron4,baron5,baron6,baron7,baron8,baron9,baron10,baron11,baron12,baron13,baron14,baron15,baron16,baron17,baron18,baron19,baron20,baron21,baron22,baron23,baron24,baron25,
+            Wais1,Wais2,Wais3,Wais4,Wais5,Wais6,Wais7,Wais8,Wais9,Wais10,Wais11,Wais12,Wais13,Wais14,Wais15,Wais16,Wais17,Wais18,Wais19,Wais20,Wais21,Wais22,Wais23,Wais24,Wais25,
+            Academica1,Academica2,Academica3,Academica4,Academica5,Academica6,Academica7,Academica8,Academica9,Academica10,Academica11,Academica12,Academica13,Academica14,Academica15,Academica16,Academica17,Academica18,Academica19,Academica20]);
+
+        // Ajustar layout móvil: quitar 'hidden' de bloques md:flex
+        useEffect(()=>{
+            if(window.innerWidth < 768){
+                document.querySelectorAll('.hidden.md\\:flex').forEach(el=>{
+                    el.classList.remove('hidden');
+                    if(!el.classList.contains('flex')) el.classList.add('flex');
+                    if(!el.classList.contains('flex-col')) el.classList.add('flex-col');
+                });
+            }
+        },[]);
+
+        // Bloquear botón atrás del navegador (permite usar botones internos prevStep)
+        useEffect(()=>{
+            const handlePop = (e) => {
+                // Empujar de nuevo para evitar salir y mostrar aviso simple
+                window.history.pushState(null, '', window.location.href);
+            };
+            window.history.pushState(null, '', window.location.href);
+            window.addEventListener('popstate', handlePop);
+            return () => window.removeEventListener('popstate', handlePop);
+        },[]);
 
         const navigate = useNavigate();
 
-        const ResultadoBigFive = Number(bigfive1) + Number(bigfive2) + Number(bigfive3) + Number(bigfive4) + Number(bigfive5) + Number(bigfive6) + Number(bigfive7) + Number(bigfive8) + Number(bigfive9) + Number(bigfive10) + Number(bigfive11) + Number(bigfive12) + Number(bigfive13) + Number(bigfive14) + Number(bigfive15) + Number(bigfive16) + Number(bigfive17) + Number(bigfive18) + Number(bigfive19) + Number(bigfive20) + Number(bigfive21) + Number(bigfive22)
+        // ========================
+        // BIG FIVE (versión mejorada intermedia)
+        // Objetivo: pasar de un total bruto a puntajes por las 5 dimensiones O C E A N.
+        // Nota: Este mapeo es ilustrativo (aprox) y debe ajustarse a los ítems reales que uses en formulario.
+        // Cada entrada de bigFiveMeta describe: dimension y si el ítem es de puntaje invertido.
+        // Escala asumida Likert 1–5. Reverse scoring: score = 6 - valor.
+        // Dimensiones: O (Apertura), C (Responsabilidad/Conscientiousness), E (Extraversión), A (Amabilidad/Agreeableness), N (Neuroticismo).
+        // Comentarios por ítem para trazabilidad (ej: "E+ sociabilidad", "N- estabilidad" si fuera invertido, etc.)
+        // Ajusta según tu baterÍa real: los ítems invertidos suelen medir el polo opuesto (ej: baja sociabilidad).
+        const bigFiveRawItems = [
+            bigfive1,bigfive2,bigfive3,bigfive4,bigfive5,bigfive6,bigfive7,bigfive8,bigfive9,bigfive10,
+            bigfive11,bigfive12,bigfive13,bigfive14,bigfive15,bigfive16,bigfive17,bigfive18,bigfive19,bigfive20,bigfive21,bigfive22
+        ];
+        const bigFiveMeta = [
+            // Ítem 1
+            { dimension:'E', reverse:false, comentario:'Extraversión: energía social' },
+            // Ítem 2
+            { dimension:'A', reverse:true, comentario:'Amabilidad (invertido: rudeza / crítica)' },
+            // Ítem 3
+            { dimension:'C', reverse:false, comentario:'Responsabilidad: organización' },
+            // Ítem 4
+            { dimension:'N', reverse:false, comentario:'Neuroticismo: ansiedad / tensión' },
+            // Ítem 5
+            { dimension:'O', reverse:false, comentario:'Apertura: curiosidad intelectual' },
+            // Ítem 6
+            { dimension:'E', reverse:true, comentario:'Extraversión (invertido: reserva)' },
+            // Ítem 7
+            { dimension:'A', reverse:false, comentario:'Amabilidad: cooperación / empatía' },
+            // Ítem 8
+            { dimension:'C', reverse:true, comentario:'Responsabilidad (invertido: desorden)' },
+            // Ítem 9
+            { dimension:'N', reverse:true, comentario:'Neuroticismo (invertido: calma)' },
+            // Ítem 10
+            { dimension:'O', reverse:false, comentario:'Apertura: imaginación' },
+            // Ítem 11
+            { dimension:'E', reverse:false, comentario:'Extraversión: assertividad' },
+            // Ítem 12
+            { dimension:'A', reverse:false, comentario:'Amabilidad: confianza' },
+            // Ítem 13
+            { dimension:'C', reverse:false, comentario:'Responsabilidad: autodisciplina' },
+            // Ítem 14
+            { dimension:'N', reverse:false, comentario:'Neuroticismo: vulnerabilidad emocional' },
+            // Ítem 15
+            { dimension:'O', reverse:true, comentario:'Apertura (invertido: preferencia rutina)' },
+            // Ítem 16
+            { dimension:'E', reverse:false, comentario:'Extraversión: entusiasmo' },
+            // Ítem 17
+            { dimension:'A', reverse:true, comentario:'Amabilidad (invertido: competitividad dura)' },
+            // Ítem 18
+            { dimension:'C', reverse:false, comentario:'Responsabilidad: diligencia' },
+            // Ítem 19
+            { dimension:'N', reverse:false, comentario:'Neuroticismo: preocupación' },
+            // Ítem 20
+            { dimension:'O', reverse:false, comentario:'Apertura: apreciación estética' },
+            // Ítem 21
+            { dimension:'E', reverse:true, comentario:'Extraversión (invertido: retiro social)' },
+            // Ítem 22
+            { dimension:'A', reverse:false, comentario:'Amabilidad: altruismo' }
+        ];
+        // Contenedores acumuladores
+        const bigFiveDimScores = {};
+        const bigFiveDimCounts = {};
+        // Recorrer ítems y sumar puntajes por dimensión
+        bigFiveRawItems.forEach((val,i)=>{
+            const meta = bigFiveMeta[i];
+            const raw = Number(val)||0;
+            const score = meta.reverse ? (raw ? (6 - raw) : 0) : raw; // reverse scoring
+            if(!meta.dimension) return;
+            bigFiveDimScores[meta.dimension] = (bigFiveDimScores[meta.dimension]||0) + score;
+            bigFiveDimCounts[meta.dimension] = (bigFiveDimCounts[meta.dimension]||0) + (raw?1:0);
+        });
+        // Promedios (para comparar dimensiones entre sí sin sesgo por ítems faltantes)
+        const bigFiveDimAverages = Object.fromEntries(Object.entries(bigFiveDimScores).map(([k,v])=> [k, (v / (bigFiveDimCounts[k]||1))]));
+        // Total legacy (suma cruda sin reversas) se mantiene para gating retro-compatibilidad
+        const ResultadoBigFive = bigFiveRawItems.reduce((acc,v)=> acc + (Number(v)||0),0);
+        // Totales ajustados (con reversas aplicadas) – pueden usarse en futuro para un gating más fino
+        const bigFiveDimAdjustedTotals = Object.fromEntries(Object.entries(bigFiveDimScores));
+        // Categorías simples (bajo <2.5, medio 2.5–3.5, alto >3.5)
+        const categorize = (avg)=> avg<=0 ? 'Sin datos' : (avg < 2.5 ? 'Bajo' : (avg <= 3.5 ? 'Medio' : 'Alto'));
+        const bigFiveDimCategories = Object.fromEntries(Object.entries(bigFiveDimAverages).map(([k,v])=> [k, categorize(v)]));
+        // Paquete dimensiones para enviar
+        const bigFiveDimPacked = {
+            averages: bigFiveDimAverages,
+            adjusted_totals: bigFiveDimAdjustedTotals,
+            categories: bigFiveDimCategories,
+            meta: bigFiveMeta.map((m,idx)=> ({ idx: idx+1, dimension: m.dimension, reverse: m.reverse, comentario: m.comentario }))
+        };
+    // (Bloque previo duplicado eliminado) -- ya calculado arriba
 
-        const ResultadoDASS = Number(dass1) + Number(dass2) + Number(dass3) + Number(dass4) + Number(dass5) + Number(dass6) + Number(dass7) + Number(dass8) + Number(dass9) + Number(dass10) + Number(dass11) + Number(dass12) + Number(dass13) + Number(dass14) + Number(dass15) + Number(dass16) + Number(dass17) + Number(dass18) + Number(dass19) + Number(dass20) + Number(dass21);
+        // ========================
+        // DASS-21 SUBESCALAS
+        // Ítems (1-21) se mapean a 3 subescalas y luego cada subescala se multiplica x2.
+        // Depresión: 3,5,10,13,16,17,21
+        // Ansiedad : 2,4,7,9,15,19,20
+        // Estrés   : 1,6,8,11,12,14,18
+        const dassItems = [dass1,dass2,dass3,dass4,dass5,dass6,dass7,dass8,dass9,dass10,dass11,dass12,dass13,dass14,dass15,dass16,dass17,dass18,dass19,dass20,dass21];
+        const idx = (n)=> Number(dassItems[n-1])||0; // helper index 1-based
+        const dassDepRaw = [3,5,10,13,16,17,21].reduce((a,n)=>a+idx(n),0);
+        const dassAnxRaw = [2,4,7,9,15,19,20].reduce((a,n)=>a+idx(n),0);
+        const dassStrRaw = [1,6,8,11,12,14,18].reduce((a,n)=>a+idx(n),0);
+        const dassDep = dassDepRaw * 2;
+        const dassAnx = dassAnxRaw * 2;
+        const dassStr = dassStrRaw * 2;
+        // Clasificación simple (tablas oficiales) devuelven etiqueta; útil para informe futuro
+        const dassClassify = (type, score)=>{
+            // type: 'D','A','S'
+            const ranges = type==='D'
+                ? [[0,9,'Normal'],[10,13,'Mild'],[14,20,'Moderate'],[21,27,'Severe'],[28,99,'Extremely Severe']]
+                : type==='A'
+                    ? [[0,7,'Normal'],[8,9,'Mild'],[10,14,'Moderate'],[15,19,'Severe'],[20,99,'Extremely Severe']]
+                    : [[0,14,'Normal'],[15,18,'Mild'],[19,25,'Moderate'],[26,33,'Severe'],[34,99,'Extremely Severe']];
+            const found = ranges.find(r=> score>=r[0] && score<=r[1]);
+            return found?found[2]:'NA';
+        };
+        const dassDepCat = dassClassify('D', dassDep);
+        const dassAnxCat = dassClassify('A', dassAnx);
+        const dassStrCat = dassClassify('S', dassStr);
+        // Total legacy (se mantiene para gating actual) = suma ítems sin multiplicar
+        const ResultadoDASS = dassItems.reduce((a,v)=> a + (Number(v)||0),0);
 
         const ResultadoZavic = Number(Zavic2) + Number(Zavic4) + Number(Zavic6) + Number(Zavic8) + Number(Zavic10) + Number(Zavic12) + Number(Zavic14) + Number(Zavic16) + Number(Zavic18) + Number(Zavic20) + Number(Zavic22) + Number(Zavic24) + Number(Zavic26) + Number(Zavic28) + Number(Zavic30) + Number(Zavic32) + Number(Zavic34) + Number(Zavic36) + Number(Zavic38) + Number(Zavic40) + Number(Zavic42) + Number(Zavic44) + Number(Zavic46) + Number(Zavic48) + Number (Zavic50) + Number (Zavic52) + Number (Zavic54) + Number (Zavic56) + Number (Zavic58) + Number (Zavic60);
 
@@ -547,9 +824,48 @@ export function Test() {
 
         const ResultadoAcademica = Number(ResultAcademica);
 
-        const Onsubmite = (e) => {
+    const Onsubmite = async (e) => {
             e.preventDefault();
-            navigate('/resultados', { state: { ResultadoBigFive, ResultadoDASS, ResultadoZavic, ResultadoBarOn, ResultadoWais, ResultadoAcademica } });
+            // Evitar doble envío
+            if(!preregistroId){
+                navigate('/pre_registro');
+                return;
+            }
+            // ===== Validación de completitud mínima Big Five + DASS (no romper gating existente) =====
+            const bigFiveIncomplete = bigFiveRawItems.some(v=> v === '' || v == null);
+            const dassIncomplete = dassItems.some(v=> v === '' || v == null);
+            if(bigFiveIncomplete || dassIncomplete){
+                alert('Faltan responder ítems en las pruebas iniciales (Personalidad o DASS). Por favor completa todas las preguntas antes de continuar.');
+                return;
+            }
+            try {
+                await saveTestResults({
+                    bigfive_total: ResultadoBigFive,
+                    dass21_total: ResultadoDASS,
+                    zavic_total: ResultadoZavic,
+                    baron_total: ResultadoBarOn,
+                    wais_total: ResultadoWais,
+                    academica_total: ResultadoAcademica,
+                    // Respuestas opcionales (solo guardamos si no son vacías)
+                    bigfive_respuestas: [bigfive1,bigfive2,bigfive3,bigfive4,bigfive5,bigfive6,bigfive7,bigfive8,bigfive9,bigfive10,bigfive11,bigfive12,bigfive13,bigfive14,bigfive15,bigfive16,bigfive17,bigfive18,bigfive19,bigfive20,bigfive21,bigfive22],
+                    dass21_respuestas: [dass1,dass2,dass3,dass4,dass5,dass6,dass7,dass8,dass9,dass10,dass11,dass12,dass13,dass14,dass15,dass16,dass17,dass18,dass19,dass20,dass21],
+                    zavic_respuestas: [Zavic1,Zavic2,Zavic3,Zavic4,Zavic5,Zavic6,Zavic7,Zavic8,Zavic9,Zavic10,Zavic11,Zavic12,Zavic13,Zavic14,Zavic15,Zavic16,Zavic17,Zavic18,Zavic19,Zavic20,Zavic21,Zavic22,Zavic23,Zavic24,Zavic25,Zavic26,Zavic27,Zavic28,Zavic29,Zavic30,Zavic31,Zavic32,Zavic33,Zavic34,Zavic35,Zavic36,Zavic37,Zavic38,Zavic39,Zavic40,Zavic41,Zavic42,Zavic43,Zavic44,Zavic45,Zavic46,Zavic47,Zavic48,Zavic49,Zavic50,Zavic51,Zavic52,Zavic53,Zavic54,Zavic55,Zavic56,Zavic57,Zavic58,Zavic59,Zavic60],
+                    baron_respuestas: [baron1,baron2,baron3,baron4,baron5,baron6,baron7,baron8,baron9,baron10,baron11,baron12,baron13,baron14,baron15,baron16,baron17,baron18,baron19,baron20,baron21,baron22,baron23,baron24,baron25],
+                    wais_respuestas: [Wais1,Wais2,Wais3,Wais4,Wais5,Wais6,Wais7,Wais8,Wais9,Wais10,Wais11,Wais12,Wais13,Wais14,Wais15,Wais16,Wais17,Wais18,Wais19,Wais20,Wais21,Wais22,Wais23,Wais24,Wais25],
+                    academica_respuestas: [Academica1,Academica2,Academica3,Academica4,Academica5,Academica6,Academica7,Academica8,Academica9,Academica10,Academica11,Academica12,Academica13,Academica14,Academica15,Academica16,Academica17,Academica18,Academica19,Academica20],
+                    // Campos exploratorios (backend puede ignorar si no los reconoce)
+                    dass21_subescalas: { depresion: dassDep, ansiedad: dassAnx, estres: dassStr, dep_cat: dassDepCat, anx_cat: dassAnxCat, str_cat: dassStrCat },
+                    bigfive_dimensiones: bigFiveDimPacked
+                });
+        // Limpiar borrador tras guardado exitoso
+        localStorage.removeItem(STORAGE_KEY);
+        testCompletedRef.current = true;
+            } catch(err){
+                console.error('Error guardando resultados', err);
+                // Podemos mostrar un alert básico por ahora
+                alert('Error guardando resultados: ' + err.message);
+            }
+            navigate('/resultados', { state: { ResultadoBigFive, ResultadoDASS, ResultadoZavic, ResultadoBarOn, ResultadoWais, ResultadoAcademica, dassDep, dassAnx, dassStr, dassDepCat, dassAnxCat, dassStrCat, bigFiveDim: bigFiveDimPacked } });
         }
 
 
@@ -628,18 +944,34 @@ export function Test() {
       };
 
         useEffect(() => {
-            if (datos1.length === 0) {
+            if (datos1 === null) {
+                // si aún no cargó dejamos que el fallback lo maneje
+                return;
+            }
+            if (!datos1) {
                 navigate('/pre_registro');
             }
-        }, []);
+        }, [datos1]);
 
   return (
     <div>
         <Navbar />
+        {!datos1 && (
+            <div className="min-h-screen flex flex-col items-center justify-center p-6 w-full">
+                <p className="mb-4 text-center text-gray-700">{loading ? 'Cargando tus datos...' : (error || 'Recuperando preregistro...')}</p>
+                {!loading && (
+                    <div className="flex gap-3">
+                        {preregistroId && <button onClick={()=>loadPreRegistro()} className="px-4 py-2 bg-blue-500 text-white rounded">Reintentar</button>}
+                        <button onClick={()=>window.location.href='/pre_registro'} className="px-4 py-2 bg-gray-500 text-white rounded">Ir a preregistro</button>
+                    </div>
+                )}
+            </div>
+        )}
+        {datos1 && (
         <div className="flex justify-center items-center overflow-hidden">
                 {/* <!-- Tarjeta para móviles --> */}
                 <div className="p-8 rounded-3xl md:hidden mb-5">
-                <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">{datos1.nombres} {datos1.apellidos}</h2>
+                <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">{datos1?.nombres || ''} {datos1?.apellidos || ''}</h2>
                 <p className='text-justify mb-10'>Estamos muy emocionados de contar contigo como parte de nuestro proceso de selección. Tu talento y experiencia son clave para seguir construyendo una academia disruptiva y que prepare a los estudiantes para enfrentar los retos del futuro.</p>
                     <div className='border-4 border-[#3818c3]'>
                         <p className='text-justify mt-5 ml-3 mr-3 mb-6'>Una vez culminado la entrevista en Recursos Humanos, ahora necesitamos que completes algunos pasos importantes:</p>
@@ -659,9 +991,9 @@ export function Test() {
               
                 {/* <!-- Tarjeta para computadoras --> */}
                 <div className="hidden md:flex p-8 d-flex w-330 flex-col">
-                    <h2 className="text-3xl font-semibold text-center text-gray-900 mb-6">{datos1.nombres} {datos1.apellidos}</h2>
+                    <h2 className="text-3xl font-semibold text-center text-gray-900 mb-6">{datos1?.nombres || ''} {datos1?.apellidos || ''}</h2>
                     {step === 1 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                     <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DE PERSONALIDAD - Big Five</h2>
                     <p className='text-center text-xl mb-2'>Instrucciones:</p>
                     <p className='text-center text-xl mb-3'>Responde cada afirmación indicando qué tan de acuerdo estás con la afirmación. Usa la siguiente escala:</p>
@@ -678,7 +1010,7 @@ export function Test() {
                                 value={bigfive1}
                                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option selected value="">Selecciona un puntaje</option>
+                                <option value="" disabled hidden>Selecciona un puntaje</option>
                                 <option value="0">0</option>
                                 <option value="1">1</option>
                                 <option value="2">2</option>
@@ -698,7 +1030,7 @@ export function Test() {
                                 value={bigfive2}
                                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option selected value="">Selecciona un puntaje</option>
+                                <option value="" disabled hidden>Selecciona un puntaje</option>
                                 <option value="0">0</option>
                                 <option value="1">1</option>
                                 <option value="2">2</option>
@@ -718,7 +1050,7 @@ export function Test() {
                                 value={bigfive3}
                                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option selected value="">Selecciona un puntaje</option>
+                                <option value="" disabled hidden>Selecciona un puntaje</option>
                                 <option value="0">0</option>
                                 <option value="1">1</option>
                                 <option value="2">2</option>
@@ -738,7 +1070,7 @@ export function Test() {
                                 value={bigfive4}                               
                                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option selected value="">Selecciona un puntaje</option>
+                                <option value="" disabled hidden>Selecciona un puntaje</option>
                                 <option value="0">0</option>
                                 <option value="1">1</option>
                                 <option value="2">2</option>
@@ -758,7 +1090,7 @@ export function Test() {
                                 value={bigfive5}
                                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option selected value="">Selecciona un puntaje</option>
+                                <option value="" disabled hidden>Selecciona un puntaje</option>
                                 <option value="0">0</option>
                                 <option value="1">1</option>
                                 <option value="2">2</option>
@@ -778,7 +1110,7 @@ export function Test() {
                                     value={bigfive6}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -798,7 +1130,7 @@ export function Test() {
                                     value={bigfive7}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -813,19 +1145,20 @@ export function Test() {
                             <p className='text-justify'></p>
                         </div>
 
-                        <div className='flex justify-center items-center'>
+                        <div className='flex flex-col justify-center items-center'>
                             <button
                             type="submit"
                             className="w-full px-10 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300"
                             >
                             Siguiente
                             </button>
+                            {validationError && <p className="mt-2 text-red-600 text-sm font-semibold">{validationError}</p>}
                         </div>
                     </div>
                     </form>
                     )}
                     {step === 2 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DE PERSONALIDAD - Big Five</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'>Responde cada afirmación indicando qué tan de acuerdo estás con la afirmación. Usa la siguiente escala:</p>
@@ -842,7 +1175,7 @@ export function Test() {
                                     value={bigfive8}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -862,7 +1195,7 @@ export function Test() {
                                     value={bigfive9}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -882,7 +1215,7 @@ export function Test() {
                                     value={bigfive10}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -902,7 +1235,7 @@ export function Test() {
                                     value={bigfive11}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -922,7 +1255,7 @@ export function Test() {
                                     value={bigfive12}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -942,7 +1275,7 @@ export function Test() {
                                     value={bigfive13}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -962,7 +1295,7 @@ export function Test() {
                                     value={bigfive14}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -994,7 +1327,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 3 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DE PERSONALIDAD - Big Five</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'>Responde cada afirmación indicando qué tan de acuerdo estás con la afirmación. Usa la siguiente escala:</p>
@@ -1011,7 +1344,7 @@ export function Test() {
                                     value={bigfive15}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1031,7 +1364,7 @@ export function Test() {
                                     value={bigfive16}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1051,7 +1384,7 @@ export function Test() {
                                     value={bigfive17}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1071,7 +1404,7 @@ export function Test() {
                                     value={bigfive18}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1091,7 +1424,7 @@ export function Test() {
                                     value={bigfive19}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1111,7 +1444,7 @@ export function Test() {
                                     value={bigfive20}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1131,7 +1464,7 @@ export function Test() {
                                     value={bigfive21}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1151,7 +1484,7 @@ export function Test() {
                                     value={bigfive22}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1183,7 +1516,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 4 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DASS-21</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'>Responde a cada ítem considerando cómo te has sentido o comportado en la última semana, seleccionando una opción por cada afirmación:</p>
@@ -1200,7 +1533,7 @@ export function Test() {
                                     value={dass1}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1220,7 +1553,7 @@ export function Test() {
                                     value={dass2}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1240,7 +1573,7 @@ export function Test() {
                                     value={dass3}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1260,7 +1593,7 @@ export function Test() {
                                     value={dass4}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1280,7 +1613,7 @@ export function Test() {
                                     value={dass5}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1300,7 +1633,7 @@ export function Test() {
                                     value={dass6}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1320,7 +1653,7 @@ export function Test() {
                                     value={dass7}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1347,7 +1680,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 5 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DASS-21</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'>Responde a cada ítem considerando cómo te has sentido o comportado en la última semana, seleccionando una opción por cada afirmación:</p>
@@ -1364,7 +1697,7 @@ export function Test() {
                                     value={dass8}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1384,7 +1717,7 @@ export function Test() {
                                                                         value={dass9}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1404,7 +1737,7 @@ export function Test() {
                                                                         value={dass10}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1424,7 +1757,7 @@ export function Test() {
                                                                         value={dass11}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1444,7 +1777,7 @@ export function Test() {
                                                                         value={dass12}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1464,7 +1797,7 @@ export function Test() {
                                                                         value={dass13}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1484,7 +1817,7 @@ export function Test() {
                                                                         value={dass14}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1516,7 +1849,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 6 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DASS-21</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'>Responde a cada ítem considerando cómo te has sentido o comportado en la última semana, seleccionando una opción por cada afirmación:</p>
@@ -1533,7 +1866,7 @@ export function Test() {
                                                                         value={dass15}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1553,7 +1886,7 @@ export function Test() {
                                                                         value={dass16}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1573,7 +1906,7 @@ export function Test() {
                                                                         value={dass17}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1593,7 +1926,7 @@ export function Test() {
                                                                         value={dass18}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1613,7 +1946,7 @@ export function Test() {
                                                                         value={dass19}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1633,7 +1966,7 @@ export function Test() {
                                                                         value={dass20}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1653,7 +1986,7 @@ export function Test() {
                                                                         value={dass21}
                                     className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option selected value="">Selecciona un puntaje</option>
+                                    <option value="" disabled hidden>Selecciona un puntaje</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -1685,7 +2018,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 7 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DE ZAVIC</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'>A continuación, encontrarás una serie de situaciones con cuatro posibles respuestas. Lee cada situación cuidadosamente y asigna un número del 1 al 4 según lo siguiente:</p>
@@ -1704,7 +2037,7 @@ export function Test() {
                                                                             value={Zavic1}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Lo reportas a un supervisor de inmediato.">Lo reportas a un supervisor de inmediato.</option>
                                         <option value="Intentas hablar con él para entender la situación.">Intentas hablar con él para entender la situación.</option>
                                         <option value="Decides no involucrarte en el asunto.">Decides no involucrarte en el asunto.</option>
@@ -1717,7 +2050,7 @@ export function Test() {
                                         value={Zavic2}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -1739,7 +2072,7 @@ export function Test() {
                                         value={Zavic3}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Propones seguir estrictamente las políticas establecidas.">Propones seguir estrictamente las políticas establecidas.</option>
                                         <option value="Buscas la opción más justa para todos.">Buscas la opción más justa para todos.</option>
                                         <option value="Consideras lo que beneficiaría más a la mayoría.">Consideras lo que beneficiaría más a la mayoría.</option>
@@ -1752,7 +2085,7 @@ export function Test() {
                                         value={Zavic4}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -1774,7 +2107,7 @@ export function Test() {
                                         value={Zavic5}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Está alineado con las normas de la empresa.">Está alineado con las normas de la empresa.</option>
                                         <option value="Tiene un mayor impacto positivo en las personas.">Tiene un mayor impacto positivo en las personas.</option>
                                         <option value="Te brinde más beneficios económicos.">Te brinde más beneficios económicos.</option>
@@ -1787,7 +2120,7 @@ export function Test() {
                                         value={Zavic6}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -1809,7 +2142,7 @@ export function Test() {
                                         value={Zavic7}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Seguir las reglas para evitar conflictos.">Seguir las reglas para evitar conflictos.</option>
                                         <option value="Crear un ambiente de respeto mutuo.">Crear un ambiente de respeto mutuo.</option>
                                         <option value="Cumplir con los objetivos, sin importar las relaciones personales.">Cumplir con los objetivos, sin importar las relaciones personales.</option>
@@ -1822,7 +2155,7 @@ export function Test() {
                                         value={Zavic8}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -1844,7 +2177,7 @@ export function Test() {
                                         value={Zavic9}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Informas inmediatamente a los responsables.">Informas inmediatamente a los responsables.</option>
                                         <option value="Buscas entender las razones detrás de la situación antes de actuar.">Buscas entender las razones detrás de la situación antes de actuar.</option>
                                         <option value="Te mantienes al margen para evitar conflictos.">Te mantienes al margen para evitar conflictos.</option>
@@ -1857,7 +2190,7 @@ export function Test() {
                                         value={Zavic10}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -1879,7 +2212,7 @@ export function Test() {
                                         value={Zavic11}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Lo devuelves inmediatamente a su dueño.">Lo devuelves inmediatamente a su dueño.</option>
                                         <option value="Informas a tus superiores y entregas el objeto.">Informas a tus superiores y entregas el objeto.</option>
                                         <option value="Decides esperar para ver si alguien lo reclama.">Decides esperar para ver si alguien lo reclama.</option>
@@ -1892,7 +2225,7 @@ export function Test() {
                                         value={Zavic12}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -1919,7 +2252,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 8 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DE ZAVIC</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'>A continuación, encontrarás una serie de situaciones con cuatro posibles respuestas. Lee cada situación cuidadosamente y asigna un número del 1 al 4 según lo siguiente:</p>
@@ -1938,7 +2271,7 @@ export function Test() {
                                         value={Zavic13}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Rechazas el incentivo y explicas que no es ético.">Rechazas el incentivo y explicas que no es ético.</option>
                                         <option value="Informas la situación a tu supervisor.">Informas la situación a tu supervisor.</option>
                                         <option value="Aceptas el incentivo para evitar problemas.">Aceptas el incentivo para evitar problemas.</option>
@@ -1951,7 +2284,7 @@ export function Test() {
                                         value={Zavic14}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -1973,7 +2306,7 @@ export function Test() {
                                         value={Zavic15}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Mantener la integridad, aunque afecte los resultados.">Mantener la integridad, aunque afecte los resultados.</option>
                                         <option value="Buscar apoyo del equipo para trabajar dentro de las reglas.">Buscar apoyo del equipo para trabajar dentro de las reglas.</option>
                                         <option value="Tomar atajos siempre que sean efectivos.">Tomar atajos siempre que sean efectivos.</option>
@@ -1986,7 +2319,7 @@ export function Test() {
                                         value={Zavic16}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -2008,7 +2341,7 @@ export function Test() {
                                         value={Zavic17}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Informas al supervisor sobre la situación.">Informas al supervisor sobre la situación.</option>
                                         <option value="Lo ayudas solo si es una emergencia.">Lo ayudas solo si es una emergencia.</option>
                                         <option value="Aceptas hacerlo, pero te aseguras de que sea la última vez.">Aceptas hacerlo, pero te aseguras de que sea la última vez.</option>
@@ -2021,7 +2354,7 @@ export function Test() {
                                         value={Zavic18}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -2043,7 +2376,7 @@ export function Test() {
                                         value={Zavic19}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Ofrece mayor estabilidad económica.">Ofrece mayor estabilidad económica.</option>
                                         <option value="Te permite obtener mayores ingresos a corto plazo.">Te permite obtener mayores ingresos a corto plazo.</option>
                                         <option value="Ofrece menos ingresos pero más equilibrio personal.">Ofrece menos ingresos pero más equilibrio personal.</option>
@@ -2056,7 +2389,7 @@ export function Test() {
                                         value={Zavic20}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -2078,7 +2411,7 @@ export function Test() {
                                         value={Zavic21}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Un salario justo y competitivo.">Un salario justo y competitivo.</option>
                                         <option value="Incentivos adicionales como bonos.">Incentivos adicionales como bonos.</option>
                                         <option value="Un ambiente laboral cómodo y equilibrado.">Un ambiente laboral cómodo y equilibrado.</option>
@@ -2091,7 +2424,7 @@ export function Test() {
                                         value={Zavic22}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -2113,7 +2446,7 @@ export function Test() {
                                         value={Zavic23}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Aumenta la productividad de tu equipo.">Aumenta la productividad de tu equipo.</option>
                                         <option value="Mejora los ingresos de la empresa.">Mejora los ingresos de la empresa.</option>
                                         <option value="Beneficia a los clientes o usuarios.">Beneficia a los clientes o usuarios.</option>
@@ -2126,7 +2459,7 @@ export function Test() {
                                         value={Zavic24}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -2158,7 +2491,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 9 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DE ZAVIC</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'>A continuación, encontrarás una serie de situaciones con cuatro posibles respuestas. Lee cada situación cuidadosamente y asigna un número del 1 al 4 según lo siguiente:</p>
@@ -2177,7 +2510,7 @@ export function Test() {
                                         value={Zavic25}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona una opción</option>
+                                        <option value="" disabled hidden>Selecciona una opción</option>
                                         <option value="Te aseguras de que valga la pena el esfuerzo.">Te aseguras de que valga la pena el esfuerzo.</option>
                                         <option value="Preguntas si habrá beneficios futuros por hacerlo.">Preguntas si habrá beneficios futuros por hacerlo.</option>
                                         <option value="Lo haces porque es parte de tu compromiso.">Lo haces porque es parte de tu compromiso.</option>
@@ -2190,7 +2523,7 @@ export function Test() {
                                         value={Zavic26}
                                         className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option selected value="">Selecciona un puntaje</option>
+                                        <option value="" disabled hidden>Selecciona un puntaje</option>
                                         <option value="4">4</option>
                                         <option value="3">3</option>
                                         <option value="2">2</option>
@@ -2397,7 +2730,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 10 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DE ZAVIC</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'>A continuación, encontrarás una serie de situaciones con cuatro posibles respuestas. Lee cada situación cuidadosamente y asigna un número del 1 al 4 según lo siguiente:</p>
@@ -2636,7 +2969,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 11 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST DE ZAVIC</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'>A continuación, encontrarás una serie de situaciones con cuatro posibles respuestas. Lee cada situación cuidadosamente y asigna un número del 1 al 4 según lo siguiente:</p>
@@ -2875,7 +3208,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 12 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">Test de Inteligencia Emocional Bar-On</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'> Lee cada afirmación y selecciona la opción que mejor describa tu comportamiento habitual en el entorno laboral. Utiliza una escala del 1 al 5:</p>
@@ -3053,7 +3386,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 13 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">Test de Inteligencia Emocional Bar-On</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'> Lee cada afirmación y selecciona la opción que mejor describa tu comportamiento habitual en el entorno laboral. Utiliza una escala del 1 al 5:</p>
@@ -3214,7 +3547,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 14 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">Test de Inteligencia Emocional Bar-On</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'> Lee cada afirmación y selecciona la opción que mejor describa tu comportamiento habitual en el entorno laboral. Utiliza una escala del 1 al 5:</p>
@@ -3375,7 +3708,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 15 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">Test de Inteligencia Emocional Bar-On</h2>
                         <p className='text-center text-xl mb-2'>Instrucciones:</p>
                         <p className='text-center text-xl mb-3'> Lee cada afirmación y selecciona la opción que mejor describa tu comportamiento habitual en el entorno laboral. Utiliza una escala del 1 al 5:</p>
@@ -3536,7 +3869,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 16 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST de Inteligencia Cognitiva Completa (IQ Test de Alto Nivel)-WAIS:</h2>
                         <p className='text-xl mb-2'>Instrucciones:</p>
                         <p className='text-xl'>1. Lee cuidadosamente cada pregunta antes de responder.</p>
@@ -3558,7 +3891,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 17 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST de Inteligencia Cognitiva Completa (IQ Test de Alto Nivel)-WAIS:</h2>
                         <div className='flex justify-center items-center font-bold text-xl text-gray-900 mb-4'>
                             <h2 className='bg-[#3818c3] px-3 py-1 rounded-2xl text-white'>{formatTime(timeLeft)}</h2>
@@ -3687,7 +4020,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 18 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST de Inteligencia Cognitiva Completa (IQ Test de Alto Nivel)-WAIS:</h2>
                         <div className='flex justify-center items-center font-bold text-xl text-gray-900 mb-4'>
                             <h2 className='bg-[#3818c3] px-3 py-1 rounded-2xl text-white'>{formatTime(timeLeft)}</h2>
@@ -3815,7 +4148,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 19 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST de Inteligencia Cognitiva Completa (IQ Test de Alto Nivel)-WAIS:</h2>
                         <div className='flex justify-center items-center font-bold text-xl text-gray-900 mb-4'>
                             <h2 className='bg-[#3818c3] px-3 py-1 rounded-2xl text-white'>{formatTime(timeLeft)}</h2>
@@ -3933,7 +4266,7 @@ export function Test() {
                     </form>
                     )}
                     {step === 20 && (
-                    <form onSubmit={nextStep}>
+                    <form onSubmit={handleStepSubmit}>
                         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">TEST de Inteligencia Cognitiva Completa (IQ Test de Alto Nivel)-WAIS:</h2>
                         <div className='flex justify-center items-center font-bold text-xl text-gray-900 mb-4'>
                             <h2 className='bg-[#3818c3] px-3 py-1 rounded-2xl text-white'>{formatTime(timeLeft)}</h2>
@@ -4782,7 +5115,8 @@ export function Test() {
                     </form>
                     )}
                 </div>
-        </div>
+    </div>
+    )}
     </div>
   )
 }

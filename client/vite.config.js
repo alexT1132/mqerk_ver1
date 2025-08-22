@@ -9,6 +9,39 @@ export default defineConfig({
   ],
   server:{
     host: true,
+<<<<<<< HEAD
     port: 5001,
+=======
+    port: 5173,
+    // Proxy para evitar que fetch('/api/...') devuelva index.html del dev server (causando '<!doctype' en JSON)
+    proxy: {
+      '/api': {
+        target: 'http://localhost:1002',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Permitir abrir PDFs y otros archivos servidos por Express (evita 404 del dev server de Vite)
+      '/public': {
+        target: 'http://localhost:1002',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/comprobantes': {
+        target: 'http://localhost:1002',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/contratos': {
+        target: 'http://localhost:1002',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/uploads': {
+        target: 'http://localhost:1002',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
+>>>>>>> ee21e856ea1319a49641a4636a567bcd761e4961
   }
 })

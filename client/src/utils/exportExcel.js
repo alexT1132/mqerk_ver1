@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { formatCurrencyMXN } from './formatters.js';
+import { formatCurrencyMXN, formatDateTimeMX } from './formatters.js';
 
 export function exportReportToExcel({ resumenGeneral, ingresosPorMes, pagosPorCurso, metodosDepago, pagosDetallados, ingresosPorSemana, ingresosPorAnio }, filename = 'reportes_pagos.xlsx') {
   const wb = XLSX.utils.book_new();
@@ -104,5 +104,61 @@ export function exportReportToExcel({ resumenGeneral, ingresosPorMes, pagosPorCu
     ws['!cols'] = colWidths;
   });
 
+  XLSX.writeFile(wb, filename);
+}
+
+/**
+ * Exporta a Excel la tabla de "Comprobantes Aprobados" tal como se ve en UI
+ * columns: Folio, Nombre del Alumno, Fecha y Hora, Importe, Método, Fecha Aprobación, Comprobante
+ * list: arreglo de comprobantes (del componente ComprobanteRecibo)
+ * opts: { curso, grupo, apiOrigin }
+ */
+export function exportApprovedComprobantesToExcel(list = [], opts = {}) {
+  const { curso = '', grupo = '', apiOrigin = '' } = opts;
+  const wb = XLSX.utils.book_new();
+  const yearTwo = String(new Date().getFullYear() + 1).slice(-2);
+
+  const rows = (Array.isArray(list) ? list : []).map((c, i) => {
+    const folioNum = String(c.folio ?? '').padStart(4, '0');
+    const folioShown = `M${String(curso || '').toUpperCase()}${yearTwo}-${folioNum}`;
+    const fullUrl = (typeof c.comprobante === 'string' && c.comprobante.startsWith('http'))
+      ? c.comprobante
+      : (c.comprobante ? `${apiOrigin}${c.comprobante}` : '');
+    return {
+      '#': i + 1,
+      'FOLIO': folioShown,
+      'NOMBRE DEL ALUMNO': `${c.nombre || ''} ${c.apellidos || ''}`.trim(),
+      'FECHA Y HORA': formatDateTimeMX(c.created_at),
+      'IMPORTE': Number(c.importe ?? 0),
+      'MÉTODO': c.metodoPago || c.metodo || '',
+      'FECHA APROBACIÓN': formatDateTimeMX(c.created_at),
+      'COMPROBANTE': fullUrl,
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Aprobados');
+
+  // Auto width
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const cols = Array(range.e.c - range.s.c + 1).fill({ wch: 14 });
+  for (let C = range.s.c; C <= range.e.c; ++C) {
+    let max = 10;
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+      const v = cell && cell.v ? String(cell.v) : '';
+      if (v.length > max) max = Math.min(60, v.length);
+    }
+    cols[C] = { wch: max + 2 };
+  }
+  ws['!cols'] = cols;
+
+  const ts = new Date();
+  const y = ts.getFullYear();
+  const m = String(ts.getMonth() + 1).padStart(2, '0');
+  const d = String(ts.getDate()).padStart(2, '0');
+  const hh = String(ts.getHours()).padStart(2, '0');
+  const mm = String(ts.getMinutes()).padStart(2, '0');
+  const filename = `aprobados_${String(curso || 'CURSO')}_${String(grupo || 'GRUPO')}_${y}${m}${d}_${hh}${mm}.xlsx`;
   XLSX.writeFile(wb, filename);
 }

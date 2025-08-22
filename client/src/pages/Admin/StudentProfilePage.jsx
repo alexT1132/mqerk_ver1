@@ -1,22 +1,12 @@
-// ============================================================================
-// PERFIL DE ESTUDIANTE - VISTA ADMINISTRATIVA
-// ============================================================================
-// Este componente permite a los administradores ver y editar perfiles completos 
-// de estudiantes con información organizada en tabs.
-//
-// INTEGRACIÓN BACKEND - PUNTOS CLAVE:
-// 1. Cargar datos del estudiante desde API usando el ID de la URL
-// 2. Manejar actualización de datos del estudiante 
-// 3. Gestionar cambios de estado (Activo/Inactivo/Suspendido)
-// 4. Upload de fotografía del estudiante
-// ============================================================================
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAdminContext } from '../../context/AdminContext.jsx';
 
 // TODO BACKEND: Reemplazar por el servicio real que conecte con tu API
 import studentService from '../../service/studentService.js';
+import api from '../../api/axios.js';
 
 // TODO BACKEND: Configurar el manejo de imágenes desde tu servidor
 import defaultStudentPhoto from '../../assets/reese.jfif';
@@ -77,69 +67,13 @@ const CustomNotification = ({ message, type, isVisible, onClose }) => {
     <div className="fixed top-4 right-4 z-50 transform transition-all duration-300 ease-in-out">
       <div className={`max-w-md p-4 rounded-lg border shadow-xl ${getNotificationStyles()}`}>
         <div className="flex items-start">
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 mr-3">
             {getIcon()}
           </div>
-          <div className="ml-3 flex-1">
-            <p className="text-sm font-medium">{message}</p>
+          <div className="flex-1">
+            <p className="text-sm font-medium leading-5">{message}</p>
           </div>
-          <div className="ml-4 flex-shrink-0">
-            <button
-              onClick={onClose}
-              className="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar" }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
-      <div className="fixed inset-0 backdrop-blur-sm transition-all duration-300" onClick={onCancel}></div>
-      <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-auto transform transition-all duration-300 scale-100">
-        <div className="p-6">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-            </div>
-            <div className="ml-4 flex-1">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {title}
-              </h3>
-              <p className="text-sm text-gray-500 mb-6">
-                {message}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-lg">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            {cancelText}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-          >
-            {confirmText}
-          </button>
+          <button onClick={onClose} className="ml-4 text-xs text-gray-500 hover:text-gray-700">Cerrar</button>
         </div>
       </div>
     </div>
@@ -233,6 +167,23 @@ const InputField = ({
   );
 };
 
+// Modal de confirmación genérico (restaurado)
+const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = 'Aceptar', cancelText = 'Cancelar' }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.35)' }}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">{title}</h2>
+        <p className="text-sm text-gray-600 mb-6 whitespace-pre-line">{message}</p>
+        <div className="flex justify-end gap-3">
+          <button onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50">{cancelText}</button>
+          <button onClick={onConfirm} className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700">{confirmText}</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ============================================================================
 // COMPONENTE PRINCIPAL - PERFIL DE ESTUDIANTE
 // ============================================================================
@@ -270,15 +221,15 @@ function StudentProfilePage() {
       nivelAcademico: '',
       gradoSemestre: '',
       bachillerato: '',
-      licenciaturaOption: '',
+  postulaciones: '',
       universityOption: ''
     },
     
     // Información del Curso
     course: {
       curso: '',
-      turno: '',
-      modality: '',
+  turno: 'VESPERTINO',
+  modality: 'Presencial',
       advisor: '',
       group: ''
     },
@@ -287,7 +238,9 @@ function StudentProfilePage() {
     health: {
       tipoAlergia: '',
       discapacidadTranstorno: '',
-      orientacionVocacional: ''
+  orientacionVocacional: '',
+  alergiaDetalle: '',
+  discapacidadDetalle: ''
     },
     
     // Estado del Estudiante
@@ -299,6 +252,16 @@ function StudentProfilePage() {
     expectations: {
       cambioQuiereLograr: '',
       comentarioEspera: ''
+    },
+    rawExtras: {
+      comunidad2: '',
+      alergia2: '',
+      discapacidad2: '',
+      universidades2: '',
+      plan: '',
+      anio: '',
+      verificacion: '',
+      created_at: ''
     }
   });
   
@@ -323,6 +286,20 @@ function StudentProfilePage() {
   });
 
   const [saveConfirmModal, setSaveConfirmModal] = useState(false);
+
+  // Folio mostrado con formato: M + CURSO + (año siguiente 2 dígitos) + '-' + número folio con 4 dígitos
+  const displayFolio = useMemo(() => {
+    const raw = formData.folio;
+    if (!raw) return '';
+    // Curso elegido (puede venir en formData.course.curso o directamente en student.curso)
+    const course = formData?.course?.curso || student?.curso || '';
+    // Año: siempre un año adelantado respecto al año actual (dos dígitos)
+    const nextYear = ((new Date().getFullYear() + 1) % 100).toString().padStart(2, '0');
+    // Parte numérica del folio (se asume que formData.folio es un número incremental)
+    const numPart = String(raw).replace(/\D/g, '').padStart(4, '0');
+    if (!course) return `M${nextYear}-${numPart}`; // fallback si aún no hay curso
+    return `M${course}${nextYear}-${numPart}`;
+  }, [formData.folio, formData?.course?.curso, student?.curso]);
 
   // ========================================================================
   // FUNCIONES DE UTILIDAD
@@ -414,69 +391,157 @@ function StudentProfilePage() {
     return value !== undefined ? value : '';
   };
 
-  useEffect(() => {
-    if (!student) return;
-    
-    const initialData = {
-      nombres: student.nombres || '',
-      apellidos: student.apellidos || '',
-      folio: student.folio || '',
-      fechaRegistro: student.fechaRegistro || '',
+  // Normaliza turno/grupo a los valores enumerados usados en el select
+  const mapTurnoLabel = (valor) => {
+    if (!valor) return 'VESPERTINO'; // default global
+    const raw = String(valor).trim();
+    const upper = raw.toUpperCase();
+    // Si ya es un valor válido, devolverlo
+    if (['VESPERTINO','MATUTINO','SABATINO'].includes(upper)) return upper;
+    // Mapear códigos y variantes
+    if (upper.startsWith('V')) return 'VESPERTINO'; // V, V1, V2, VESPERTINO 1, etc.
+    if (upper.startsWith('M')) return 'MATUTINO';   // M, M1, M2, MATUTINO 1, etc.
+    if (upper.startsWith('S')) return 'SABATINO';   // S, S1, SAB, SABATINO
+    return 'VESPERTINO';
+  };
+
+  // =============================
+  // Mapeo robusto backend -> formData (unifica llaves distintas)
+  // =============================
+  const mapBackendStudentToFormData = useCallback((st) => {
+    if (!st) return null;
+
+    // Helper para obtener el primer valor no vacío (string con algo más que espacios)
+    const pickFirstNonEmpty = (...vals) => {
+      for (const v of vals) {
+        if (v !== undefined && v !== null && String(v).trim() !== '') return v;
+      }
+      return '';
+    };
+
+    // Normalizar fecha (si viene ISO cortar día)
+    const fechaRegistro = st.fechaRegistro || st.created_at || st.createdAt || '';
+    const fechaNormalizada = typeof fechaRegistro === 'string' && fechaRegistro.includes('T')
+      ? fechaRegistro.split('T')[0]
+      : fechaRegistro;
+
+    const result = {
+      nombres: st.nombres || st.nombre || '',
+      apellidos: st.apellidos || st.apellido || '',
+      folio: st.folio || st.id || '',
+      fechaRegistro: fechaNormalizada,
       personal: {
-        email: student.correoElectronico || '',
-        municipio: student.municipioComunidad || '',
-        tutorName: student.nombreTutor || '',
-        phoneNumber: student.telefonoAlumno || '',
-        tutorPhoneNumber: student.telefonoTutor || '',
+        email: st.correoElectronico || st.email || st.personalEmail || '',
+        municipio: st.municipioComunidad || st.comunidad1 || st.municipio || st.localidad || '',
+        tutorName: st.nombreTutor || st.tutorNombre || st.nombre_tutor || '',
+        phoneNumber: st.telefonoAlumno || st.telefono || st.phoneNumber || '',
+        tutorPhoneNumber: st.telefonoTutor || st.tel_tutor || st.tutorPhone || '',
       },
       academic: {
-        nivelAcademico: student.nivelAcademico || '',
-        gradoSemestre: student.gradoSemestre || '',
-        bachillerato: student.bachillerato || '',
-        licenciaturaOption: student.licenciaturaPostula || '',
-        universityOption: student.universidadesPostula || '',
+        nivelAcademico: pickFirstNonEmpty(st.academia, st.nivelAcademico, st.academico1, st.estudios, st.nivel),
+        gradoSemestre: pickFirstNonEmpty(st.gradoSemestre, st.semestre, st.grado),
+        // Bachillerato: academico2 -> bachillerato -> institucion -> preparatoria -> nivelAcademico -> academico1
+        bachillerato: pickFirstNonEmpty(st.academico2, st.bachillerato, st.institucion, st.preparatoria, st.nivelAcademico, st.academico1),
+  postulaciones: pickFirstNonEmpty(st.postulaciones, st.postulacion, st.licenciaturaPostula, st.orientacionVocacional, st.orientacion, st.carreraInteres),
+  universityOption: pickFirstNonEmpty(st.universidadesPostula, st.universidades1, st.universidades2, st.universityOption)
       },
       course: {
-        curso: student.curso || '',
-        turno: student.turno || '',
-        advisor: student.asesor || '',
-        group: student.grupo || '',
-        modality: student.modalidad || '',
+        curso: st.curso || st.course || '',
+        turno: mapTurnoLabel(st.turno || st.turnoCodigo || st.shift || ''),
+        advisor: st.asesor || st.advisor || st.asesorAsignado || '',
+        group: st.grupo || st.group || st.grupoAsignado || '',
+  modality: st.modalidad || st.modality || st.modalidadCurso || 'Presencial',
+  academia: st.academia || 'MQerKAcademy',
       },
       health: {
-        tipoAlergia: student.tipoAlergia || '',
-        discapacidadTranstorno: student.discapacidadTranstorno || '',
-        orientacionVocacional: student.orientacionVocacional || '',
+        tipoAlergia: st.tipoAlergia || st.alergia || '',
+        discapacidadTranstorno: st.discapacidadTranstorno || st.discapacidad || st.trastorno || '',
+        orientacionVocacional: st.orientacionVocacional || st.testVocacional || '',
+  alergiaDetalle: st.alergia2 || '',
+  discapacidadDetalle: st.discapacidad2 || '',
       },
       expectations: {
-        cambioQuiereLograr: student.cambioQuiereLograr || '',
-        comentarioEspera: student.comentarioEspera || '',
+        cambioQuiereLograr: st.cambioQuiereLograr || st.metaPrincipal || '',
+        comentarioEspera: st.comentarioEspera || st.expectativa || '',
       },
       status: {
-        estatus: student.estatus || 'Activo'
+        estatus: st.estatus || st.status || 'Activo'
+      },
+      rawExtras: {
+        comunidad2: st.comunidad2 || '',
+        alergia2: st.alergia2 || '',
+        discapacidad2: st.discapacidad2 || '',
+  // Detalles derivados (solo locales para UI)
+  alergiaDetalle: st.alergia2 || '',
+  discapacidadDetalle: st.discapacidad2 || '',
+        universidades2: st.universidades2 || '',
+  plan: st.plan || '',
+  academia: st.academia || '',
+        anio: st.anio || '',
+        verificacion: st.verificacion ?? '',
+        created_at: st.created_at || fechaNormalizada || ''
       }
     };
-    
-    setFormData(initialData);
-    setOriginalData(initialData);
-  }, [student]);
+
+    if (!result.academic.nivelAcademico && result.academic.bachillerato) {
+      result.academic.nivelAcademico = 'Preparatoria';
+    }
+    if (result.course.modality) {
+      const mod = String(result.course.modality).toLowerCase();
+      if (mod === 'presencial' || mod === 'virtual') {
+        result.course.modality = mod.charAt(0).toUpperCase() + mod.slice(1);
+      }
+    }
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[MAP ADMIN] bachillerato origen/actual ->', {
+        academico2: st.academico2,
+        bachilleratoNorm: st.bachillerato,
+        academico1: st.academico1,
+        resultado: result.academic.bachillerato
+      });
+    }
+    return result;
+  }, []);
+
+  // Populate formData when student changes using unified mapping
+  useEffect(() => {
+    if (!student) return;
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[ADMIN PAGE] student recibido:', student);
+    }
+    let mapped = mapBackendStudentToFormData(student);
+    // Fallback extra: si mapping salió vacío pero student ya está normalizado desde service
+    if (mapped && (!mapped.academic.bachillerato || !mapped.academic.nivelAcademico)) {
+      if (!mapped.academic.bachillerato && (student.academico2 || student.bachillerato)) {
+        mapped.academic.bachillerato = student.academico2 || student.bachillerato;
+      }
+      if (!mapped.academic.nivelAcademico && (student.academico1 || student.nivelAcademico)) {
+        mapped.academic.nivelAcademico = student.academico1 || student.nivelAcademico;
+      }
+      if (!mapped.academic.gradoSemestre && (student.semestre || student.gradoSemestre)) {
+        mapped.academic.gradoSemestre = student.semestre || student.gradoSemestre;
+      }
+    }
+    if (mapped) {
+      setFormData(mapped);
+      setOriginalData(mapped);
+    }
+  }, [student, mapBackendStudentToFormData]);
 
   const formatPhoneNumber = (value) => {
-    const cleaned = value.replace(/\D/g, '');
-    const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
-    if (!match) return cleaned;
-    return `(${match[1]})${match[2] ? ' ' : ''}${match[2]}${match[3] ? '-' : ''}${match[3]}`;
+    const cleaned = (value || '').replace(/\D/g, '').slice(0,10);
+    const len = cleaned.length;
+    if (len === 0) return '';
+    if (len < 4) return `(${cleaned}`; // empieza paréntesis
+    if (len < 7) return `(${cleaned.slice(0,3)}) ${cleaned.slice(3)}`;
+    return `(${cleaned.slice(0,3)}) ${cleaned.slice(3,6)}-${cleaned.slice(6)}`;
   };
 
   const handleInputChange = (field, value) => {
     let processedValue = value;
-    
+
     if (field === 'personal.phoneNumber' || field === 'personal.tutorPhoneNumber') {
-      if (value.replace(/\D/g, '').length <= 10) {
-        processedValue = formatPhoneNumber(value);
-      } else {
-        return;
-      }
+      processedValue = formatPhoneNumber(value);
     } else if (field === 'academic.gradoSemestre') {
       const numericValue = value.replace(/\D/g, '');
       if (numericValue === '' || (parseInt(numericValue, 10) >= 1 && parseInt(numericValue, 10) <= 12)) {
@@ -501,6 +566,48 @@ function StudentProfilePage() {
       current[keys[keys.length - 1]] = processedValue;
       return newData;
     });
+  };
+
+  // =============================
+  // Cambio de foto del estudiante
+  // =============================
+  const fileInputRef = useRef(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  const triggerPhotoSelect = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const handlePhotoSelected = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setNotification({ type: 'error', message: 'La imagen excede 2MB' });
+      return;
+    }
+    setIsUploadingPhoto(true);
+    try {
+      // Necesitamos el id real del estudiante
+      if (!student?.id) throw new Error('ID estudiante no disponible');
+      const formDataFd = new FormData();
+      formDataFd.append('foto', file);
+      const apiBase = (api?.defaults?.baseURL || '').replace(/\/api\/?$/, '');
+      // Usar axios instancia si existe, si no fetch
+      if (api && api.put) {
+        await api.put(`/estudiantes/${student.id}/foto`, formDataFd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      } else {
+        await fetch(`/api/estudiantes/${student.id}/foto`, { method: 'PUT', body: formDataFd });
+      }
+      // Refrescar estudiante
+      await loadStudentData(true);
+      setNotification({ type: 'success', message: 'Foto actualizada' });
+    } catch (err) {
+      console.error('Error subiendo foto:', err);
+      setNotification({ type: 'error', message: 'No se pudo actualizar la foto' });
+    } finally {
+      setIsUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const validateEmail = (email) => {
@@ -543,31 +650,31 @@ function StudentProfilePage() {
         nombreTutor: formData.personal.tutorName?.trim() || '',
         telefonoTutor: formData.personal.tutorPhoneNumber?.replace(/\D/g, '') || '',
         nivelAcademico: formData.academic.nivelAcademico || '',
+  academia: formData.academic.nivelAcademico || '',
         gradoSemestre: formData.academic.gradoSemestre || '',
         bachillerato: formData.academic.bachillerato?.trim() || '',
-        licenciaturaPostula: formData.academic.licenciaturaOption?.trim() || '',
-        universidadesPostula: formData.academic.universityOption?.trim() || '',
+  universidadesPostula: formData.academic.universityOption?.trim() || '',
+  postulaciones: formData.academic.postulaciones?.trim() || '',
         curso: formData.course.curso || '',
         turno: formData.course.turno || '',
         asesor: formData.course.advisor?.trim() || '',
         grupo: formData.course.group?.trim() || '',
-        modalidad: formData.course.modality || '',
+  modalidad: formData.course.modality || 'Presencial',
         tipoAlergia: formData.health.tipoAlergia?.trim() || '',
+        alergiaDetalle: formData.health.tipoAlergia && formData.health.tipoAlergia.toLowerCase() !== 'no'
+          ? formData.health.alergiaDetalle?.trim() || ''
+          : '',
         discapacidadTranstorno: formData.health.discapacidadTranstorno?.trim() || '',
+        discapacidadDetalle: formData.health.discapacidadTranstorno && formData.health.discapacidadTranstorno.toLowerCase() !== 'no'
+          ? formData.health.discapacidadDetalle?.trim() || ''
+          : '',
         orientacionVocacional: formData.health.orientacionVocacional || '',
         cambioQuiereLograr: formData.expectations.cambioQuiereLograr?.trim() || '',
         comentarioEspera: formData.expectations.comentarioEspera?.trim() || '',
         estatus: formData.status.estatus
       };
 
-      // 🔄 CONEXIÓN API - PASO 4: Cambiar esta línea para actualizar vía API
-      // Reemplazar: const response = await studentService.updateStudent(student.folio, updateData);
-      // Por: const response = await fetch(`/api/students/${student.folio}`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(updateData)
-      // });
-      // Y luego: const data = await response.json();
+    
       const response = await studentService.updateStudent(student.folio, updateData);
       
       if (response.success) {
@@ -595,14 +702,7 @@ function StudentProfilePage() {
   const handleStatusChange = async (newStatus) => {
     setIsLoading(true);
     try {
-      // 🔄 CONEXIÓN API - PASO 5: Cambiar esta línea para cambiar estatus vía API
-      // Reemplazar: const response = await studentService.updateStatus(student.folio, newStatus);
-      // Por: const response = await fetch(`/api/students/${student.folio}/status`, {
-      //   method: 'PATCH',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ estatus: newStatus })
-      // });
-      // Y luego: const data = await response.json();
+    
       const response = await studentService.updateStatus(student.folio, newStatus);
       
       if (response.success) {
@@ -638,12 +738,7 @@ function StudentProfilePage() {
         setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => {} });
         
         try {
-          // 🔄 CONEXIÓN API - PASO 7: Cambiar esta línea para eliminar vía API
-          // Reemplazar: const response = await studentService.deleteStudent(student.folio);
-          // Por: const response = await fetch(`/api/students/${student.folio}`, {
-          //   method: 'DELETE'
-          // });
-          // Y luego: const data = await response.json();
+          
           const response = await studentService.deleteStudent(student.folio);
           
           if (response.success) {
@@ -756,7 +851,7 @@ function StudentProfilePage() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       )
-    }
+  }
   ];
 
   const renderTabContent = () => {
@@ -792,14 +887,32 @@ function StudentProfilePage() {
                     
                     <div className="text-center space-y-1">
                       <p className="text-lg font-semibold text-gray-900">{formData.nombres} {formData.apellidos}</p>
-                      <p className="text-sm text-gray-600">Folio: {formData.folio}</p>
+                      <p className="text-sm text-gray-600">Folio: {displayFolio}</p>
                       <p className="text-sm text-gray-600">Registrado: {formData.fechaRegistro}</p>
                     </div>
                     
                     {isEditing && (
                       <div className="w-full max-w-xs">
-                        <button className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-md">
-                          Cambiar Foto
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png"
+                          className="hidden"
+                          onChange={handlePhotoSelected}
+                        />
+                        <button
+                          type="button"
+                          disabled={isUploadingPhoto}
+                          onClick={triggerPhotoSelect}
+                          className="w-full px-4 py-2 bg-blue-600 disabled:opacity-60 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center"
+                        >
+                          {isUploadingPhoto && (
+                            <svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                          )}
+                          {isUploadingPhoto ? 'Subiendo...' : 'Cambiar Foto'}
                         </button>
                         <p className="text-xs text-gray-400 text-center mt-2">JPG, PNG (Máx. 2MB)</p>
                       </div>
@@ -841,9 +954,10 @@ function StudentProfilePage() {
                       <label className="block text-sm font-medium text-gray-700">Folio</label>
                       <input
                         type="text"
-                        value={formData.folio || ''}
+                        value={displayFolio}
                         disabled={true}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm bg-gray-50 cursor-not-allowed text-sm"
+                        title={formData.folio ? `Folio interno: ${formData.folio}` : ''}
                       />
                     </div>
                     
@@ -971,33 +1085,22 @@ function StudentProfilePage() {
                 </h3>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <InputField 
-                    label="Nivel Académico" 
-                    field="academic.nivelAcademico" 
-                    value={getNestedValue(formData, 'academic.nivelAcademico')} 
-                    onChange={handleInputChange} 
-                    options={[
-                      { value: '', label: 'Seleccionar...' }, 
-                      { value: 'Preparatoria', label: 'Preparatoria' }, 
-                      { value: 'Universidad', label: 'Universidad' }, 
-                      { value: 'Posgrado', label: 'Posgrado' }
-                    ]} 
-                    disabled={!isEditing} 
-                  />
+                {/* Ajuste: usar siempre 2 columnas en pantallas medianas y grandes para que los campos tengan el mismo ancho y no quede una tercera columna vacía */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  {/* Campo Academia removido a solicitud; valor sigue disponible en formData.academic.nivelAcademico si se necesita mostrar en otra sección */}
                   
                   <InputField 
                     label="Grado/Semestre" 
                     field="academic.gradoSemestre" 
                     value={getNestedValue(formData, 'academic.gradoSemestre')} 
                     onChange={handleInputChange} 
-                    type="number" 
-                    helpText="Número del 1 al 12" 
+                    maxLength={30}
                     disabled={!isEditing} 
                   />
                   
                   <InputField 
-                    label="Bachillerato de Origen" 
+                    label="Bachillerato Actual" 
                     field="academic.bachillerato" 
                     value={getNestedValue(formData, 'academic.bachillerato')} 
                     onChange={handleInputChange} 
@@ -1022,15 +1125,14 @@ function StudentProfilePage() {
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <InputField 
-                    label="Licenciatura a Postular" 
-                    field="academic.licenciaturaOption" 
-                    value={getNestedValue(formData, 'academic.licenciaturaOption')} 
-                    onChange={handleInputChange} 
-                    maxLength={100} 
-                    disabled={!isEditing} 
+                  <InputField
+                    label="Licenciatura a Postular"
+                    field="academic.postulaciones"
+                    value={getNestedValue(formData, 'academic.postulaciones')}
+                    onChange={handleInputChange}
+                    maxLength={150}
+                    disabled={!isEditing}
                   />
-                  
                   <InputField 
                     label="Universidades a Postular" 
                     field="academic.universityOption" 
@@ -1060,66 +1162,80 @@ function StudentProfilePage() {
                 </h3>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Primera fila */}
-                  <InputField 
-                    label="Curso" 
-                    field="course.curso" 
-                    value={getNestedValue(formData, 'course.curso')} 
-                    onChange={handleInputChange} 
-                    options={[
-                      { value: '', label: 'Seleccionar...' }, 
-                      { value: 'EEAU', label: 'EEAU' }, 
-                      { value: 'EEAP', label: 'EEAP' }
-                    ]} 
-                    disabled={!isEditing} 
-                  />
-                  
-                  <InputField 
-                    label="Turno" 
-                    field="course.turno" 
-                    value={getNestedValue(formData, 'course.turno')} 
-                    onChange={handleInputChange} 
-                    options={[
-                      { value: '', label: 'Seleccionar...' }, 
-                      { value: 'VESPERTINO 1', label: 'VESPERTINO 1' }, 
-                      { value: 'MATUTINO', label: 'MATUTINO' }
-                    ]} 
-                    disabled={!isEditing} 
-                  />
-                  
-                  <InputField 
-                    label="Modalidad" 
-                    field="course.modality" 
-                    value={getNestedValue(formData, 'course.modality')} 
-                    onChange={handleInputChange} 
-                    options={[
-                      { value: '', label: 'Seleccionar...' }, 
-                      { value: 'Presencial', label: 'Presencial' }, 
-                      { value: 'Virtual', label: 'Virtual' }
-                    ]} 
-                    disabled={!isEditing} 
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  <InputField 
-                    label="Asesor Asignado" 
-                    field="course.advisor" 
-                    value={getNestedValue(formData, 'course.advisor')} 
-                    onChange={handleInputChange} 
-                    maxLength={50} 
-                    disabled={!isEditing} 
-                  />
-                  
-                  <InputField 
-                    label="Grupo" 
-                    field="course.group" 
-                    value={getNestedValue(formData, 'course.group')} 
-                    onChange={handleInputChange} 
-                    maxLength={20} 
-                    disabled={!isEditing} 
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {/* Fila 1 */}
+                  <div>
+                    <InputField 
+                      label="Academia" 
+                      field="course.academia" 
+                      value={getNestedValue(formData, 'course.academia') || 'MQerKAcademy'} 
+                      onChange={handleInputChange} 
+                      disabled={true} 
+                    />
+                  </div>
+                  <div>
+                    <InputField 
+                      label="Curso" 
+                      field="course.curso" 
+                      value={getNestedValue(formData, 'course.curso')} 
+                      onChange={handleInputChange} 
+                      options={[
+                        { value: '', label: 'Seleccionar...' }, 
+                        { value: 'EEAU', label: 'EEAU' }, 
+                        { value: 'EEAP', label: 'EEAP' }
+                      ]} 
+                      disabled={!isEditing} 
+                    />
+                  </div>
+                  <div>
+                    <InputField 
+                      label="Modalidad" 
+                      field="course.modality" 
+                      value={getNestedValue(formData, 'course.modality') || 'Presencial'} 
+                      onChange={handleInputChange} 
+                      options={[
+                        { value: 'Presencial', label: 'Presencial' }, 
+                        { value: 'Virtual', label: 'Virtual' }
+                      ]} 
+                      disabled={!isEditing} 
+                    />
+                  </div>
+                  {/* Fila 2 */}
+                  <div>
+                    <InputField 
+                      label="Turno" 
+                      field="course.turno" 
+                      value={getNestedValue(formData, 'course.turno')} 
+                      onChange={handleInputChange} 
+                      options={[
+                        { value: '', label: 'Seleccionar...' }, 
+                        { value: 'VESPERTINO', label: 'VESPERTINO' }, 
+                        { value: 'MATUTINO', label: 'MATUTINO' },
+                        { value: 'SABATINO', label: 'SABATINO' }
+                      ]} 
+                      disabled={!isEditing} 
+                    />
+                  </div>
+                  <div>
+                    <InputField 
+                      label="Grupo" 
+                      field="course.group" 
+                      value={getNestedValue(formData, 'course.group')} 
+                      onChange={handleInputChange} 
+                      maxLength={20} 
+                      disabled={!isEditing} 
+                    />
+                  </div>
+                  <div className="xl:col-span-1 md:col-span-2">
+                    <InputField 
+                      label="Asesor Asignado" 
+                      field="course.advisor" 
+                      value={getNestedValue(formData, 'course.advisor')} 
+                      onChange={handleInputChange} 
+                      maxLength={50} 
+                      disabled={!isEditing} 
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1142,37 +1258,69 @@ function StudentProfilePage() {
                 </h3>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
-                  <InputField 
-                    label="Tipo de Alergia" 
-                    field="health.tipoAlergia" 
-                    value={getNestedValue(formData, 'health.tipoAlergia')} 
-                    onChange={handleInputChange} 
-                    maxLength={100} 
-                    disabled={!isEditing} 
-                  />
-                  
-                  <InputField 
-                    label="Discapacidad/Trastorno" 
-                    field="health.discapacidadTranstorno" 
-                    value={getNestedValue(formData, 'health.discapacidadTranstorno')} 
-                    onChange={handleInputChange} 
-                    maxLength={200} 
-                    disabled={!isEditing} 
-                  />
-                  
-                  <InputField 
-                    label="Orientación Vocacional" 
-                    field="health.orientacionVocacional" 
-                    value={getNestedValue(formData, 'health.orientacionVocacional')} 
-                    onChange={handleInputChange} 
-                    options={[
-                      { value: '', label: 'Seleccionar...' }, 
-                      { value: 'Sí', label: 'Sí' }, 
-                      { value: 'No', label: 'No' }
-                    ]} 
-                    disabled={!isEditing} 
-                  />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+                  <div className="space-y-4">
+                    <InputField
+                      label="¿Presenta alguna alergia?"
+                      field="health.tipoAlergia"
+                      value={getNestedValue(formData, 'health.tipoAlergia')}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        if (e.target.value.toLowerCase() === 'no') {
+                          setFormData(prev => ({
+                            ...prev,
+                            health: { ...prev.health, alergiaDetalle: '' }
+                          }));
+                        }
+                      }}
+                      options={[
+                        { value: 'No', label: 'No' },
+                        { value: 'Si', label: 'Sí' }
+                      ]}
+                      disabled={!isEditing}
+                    />
+                    {formData.health.tipoAlergia && formData.health.tipoAlergia.toLowerCase() !== 'no' && (
+                      <InputField
+                        label="Detalle de la alergia"
+                        field="health.alergiaDetalle"
+                        value={getNestedValue(formData, 'health.alergiaDetalle')}
+                        onChange={handleInputChange}
+                        maxLength={150}
+                        disabled={!isEditing}
+                      />
+                    )}
+                  </div>
+                  <div className="space-y-4">
+                    <InputField
+                      label="¿Discapacidad o trastorno?"
+                      field="health.discapacidadTranstorno"
+                      value={getNestedValue(formData, 'health.discapacidadTranstorno')}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        if (e.target.value.toLowerCase() === 'no') {
+                          setFormData(prev => ({
+                            ...prev,
+                            health: { ...prev.health, discapacidadDetalle: '' }
+                          }));
+                        }
+                      }}
+                      options={[
+                        { value: 'No', label: 'No' },
+                        { value: 'Si', label: 'Sí' }
+                      ]}
+                      disabled={!isEditing}
+                    />
+                    {formData.health.discapacidadTranstorno && formData.health.discapacidadTranstorno.toLowerCase() !== 'no' && (
+                      <InputField
+                        label="Detalle discapacidad / trastorno"
+                        field="health.discapacidadDetalle"
+                        value={getNestedValue(formData, 'health.discapacidadDetalle')}
+                        onChange={handleInputChange}
+                        maxLength={180}
+                        disabled={!isEditing}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1275,6 +1423,7 @@ function StudentProfilePage() {
           </div>
         );
 
+
       default:
         return null;
     }
@@ -1342,7 +1491,7 @@ function StudentProfilePage() {
                   {formData.nombres} {formData.apellidos}
                   {isEditing && <span className="block sm:inline ml-0 sm:ml-3 mt-1 sm:mt-0 text-sm sm:text-lg text-blue-600">(Editando)</span>}
                 </h1>
-                <p className="text-sm sm:text-base text-gray-600">Folio: {formData.folio}</p>
+                <p className="text-sm sm:text-base text-gray-600">Folio: {displayFolio}</p>
               </div>
             </div>
             

@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import eeauImg from '../assets/mqerk/1.png';
 import { useAuth } from './AuthContext.jsx';
+import { computeOverdueState } from '../utils/payments.js';
 
 /**
  * CONTEXTO PARA DATOS ESPECÍFICOS DEL ESTUDIANTE
@@ -52,8 +54,8 @@ export const StudentProvider = ({ children }) => {
   // Estados legacy para compatibilidad (deprecated - se mantendrán temporalmente)
   const [allowedAreas, setAllowedAreas] = useState([]); // Áreas permitidas (legacy)
   const [areaRequests, setAreaRequests] = useState([]); // Solicitudes de nuevas áreas (legacy)
-  const [hasContentAccess, setHasContentAccess] = useState(true); // NUEVO: Control de acceso al contenido
-  const [overdueDays, setOverdueDays] = useState(0); // NUEVO: Días de retraso en pagos
+  const [hasContentAccess, setHasContentAccess] = useState(true); // Acceso al contenido (global)
+  const [overdueDays, setOverdueDays] = useState(0); // Días de mora efectivos (más allá de tolerancia)
   
   // TODO: BACKEND - Datos del estudiante serán proporcionados por el endpoint del perfil
   // Estructura esperada: GET /api/students/profile
@@ -85,70 +87,65 @@ export const StudentProvider = ({ children }) => {
   //   currentCourseId: string
   // }
 
-  // Mock data para testing - ELIMINAR cuando se conecte al backend
-  const mockEnrolledCourses = [
-    {
-      id: 'enrolled-1',
-      title: 'Mi Curso de Inglés',
-      instructor: 'Prof. María González',
-      image: 'https://placehold.co/400x250/4f46e5/ffffff?text=Mi+Inglés',
-      category: 'idiomas',
-      type: 'curso',
-      isActive: true,
-      enrollmentDate: '2024-01-15',
-      progress: 65,
-      lastAccessed: '2024-01-20',
-      status: 'active',
-      metadata: [
-        { icon: 'reloj', text: '6 meses de duración' },
-        { icon: 'libro', text: '48 lecciones interactivas' },
-        { icon: 'estudiante', text: 'Progreso: 65%' }
-      ]
-    },
-    {
-      id: 'enrolled-2',
-      title: 'Matemáticas que Estoy Cursando',
-      instructor: 'Dr. Ana López',
-      image: 'https://placehold.co/400x250/059669/ffffff?text=Mis+Matemáticas',
-      category: 'exactas',
-      type: 'curso',
-      isActive: true,
-      enrollmentDate: '2024-01-10',
-      progress: 40,
-      lastAccessed: '2024-01-19',
-      status: 'active',
-      metadata: [
-        { icon: 'reloj', text: '4 meses intensivos' },
-        { icon: 'libro', text: '85 ejercicios prácticos' },
-        { icon: 'estudiante', text: 'Progreso: 40%' }
-      ]
-    }
-  ];
-
-  const [enrolledCourses, setEnrolledCourses] = useState(mockEnrolledCourses);
+  // Reemplazo de mocks: se cargará dinámicamente EEAU desde backend
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
 
   // TODO: BACKEND - Función para cargar cursos matriculados desde API
   const loadEnrolledCourses = async () => {
+    const buildCourse = (override = {}) => ({
+      id: 'EEAU',
+      title: 'Curso EEAU',
+      instructor: 'Kelvin Valentin Ramirez',
+      image: eeauImg,
+         category: 'preparacion',
+      type: 'curso',
+      isActive: true,
+      enrollmentDate: new Date().toISOString().slice(0,10),
+      progress: 0,
+      lastAccessed: new Date().toISOString(),
+      status: 'active',
+      metadata: [
+        { icon: 'reloj', text: 'Duración: 8 meses' },
+        { icon: 'libro', text: 'Lecciones interactivas' },
+        { icon: 'estudiante', text: 'Progreso: 0%' }
+      ],
+      ...override
+    });
     try {
-      // TODO: Implementar llamada al backend
-      // const response = await fetch(`/api/students/${studentData.id}/enrolled-courses`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      // const data = await response.json();
-      // setEnrolledCourses(data.enrolledCourses);
-      // if (data.currentCourseId) {
-      //   const currentCourse = data.enrolledCourses.find(c => c.id === data.currentCourseId);
-      //   setCurrentCourse(currentCourse);
-      // }
-      
-      // Mock para testing - eliminar cuando se implemente backend
-      console.log('Cargando cursos matriculados del estudiante...');
+      const res = await fetch('/api/eeau', { credentials: 'include' });
+      if (!res.ok) {
+        console.warn('No se pudo obtener EEAU (status no OK, usando fallback):', res.status);
+        const fallback = buildCourse();
+        setEnrolledCourses([fallback]);
+        return;
+      }
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        console.warn('Respuesta /api/eeau no es JSON (content-type=' + ct + '), usando fallback');
+        const fallback = buildCourse();
+        setEnrolledCourses([fallback]);
+        return;
+      }
+      let json;
+      try {
+        json = await res.json();
+      } catch(parseErr) {
+        console.warn('Parse JSON /api/eeau falló, usando fallback:', parseErr);
+        const fallback = buildCourse();
+        setEnrolledCourses([fallback]);
+        return;
+      }
+      const c = json?.data;
+      const courseObj = c ? buildCourse({
+        id: c.codigo || 'EEAU',
+  title: c.titulo || 'Curso EEAU',
+        instructor: c.asesor || 'Kelvin Valentin Ramirez'
+      }) : buildCourse();
+      setEnrolledCourses([courseObj]); // el usuario debe hacer click para seleccionar
     } catch (error) {
-      console.error('Error al cargar cursos matriculados:', error);
+      console.error('Error al cargar curso EEAU (fallback activado):', error);
+      const fallback = buildCourse(); // sólo mostrar lista
+      setEnrolledCourses([fallback]);
     }
   };
 
@@ -419,6 +416,78 @@ export const StudentProvider = ({ children }) => {
 
   }, []);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadEnrolledCourses();
+    }
+  }, [isAuthenticated]);
+
+  // WebSocket robusto (notificaciones + estado verificación) con reconexión exponencial
+  const [wsStatus, setWsStatus] = useState('idle'); // idle|connecting|open|closed|error
+  const [wsAttempts, setWsAttempts] = useState(0);
+  // WebSocket con helper de URL y pre-chequeo de backend
+  useEffect(() => {
+    if(!isAuthenticated){ return; }
+    let ws; let closedManually = false; let reconnectTimer;
+    let lastUrl = '';
+    async function openSocket(attempt){
+      setWsStatus('connecting');
+      // Importar dinámicamente para evitar ciclos y facilitar tree-shaking
+      const { getWsNotificationsUrl, waitForBackendHealth } = await import('../utils/ws.js');
+      const healthy = await waitForBackendHealth(2500);
+      if(!healthy){
+        console.warn('[WS] Backend no responde health todavía, intentando igualmente abrir WS');
+      }
+      const url = getWsNotificationsUrl();
+      lastUrl = url;
+      try {
+        ws = new WebSocket(url);
+      } catch(err){
+        console.error('[WS] Error creando instancia WebSocket', err);
+        scheduleReconnect(attempt);
+        return;
+      }
+      ws.onopen = () => { setWsStatus('open'); setWsAttempts(0); };
+      ws.onmessage = (evt) => {
+        try {
+          const data = JSON.parse(evt.data);
+          window.dispatchEvent(new CustomEvent('student-ws-message', { detail: data }));
+          if (data.type === 'student_status' && data.payload && typeof data.payload.verificacion !== 'undefined') {
+            const v = Number(data.payload.verificacion);
+            if (v >= 2) {
+              if (!isVerified) setIsVerified(true);
+              if (!hasPaid) setHasPaid(true);
+              localStorage.setItem('studentVerified','true');
+              localStorage.setItem('studentPaid','true');
+            } else if (v === 3) {
+              setIsVerified(false);
+              setHasPaid(false);
+              localStorage.removeItem('studentVerified');
+              localStorage.removeItem('studentPaid');
+            }
+          }
+        } catch(_){}
+      };
+      ws.onerror = (e) => { console.warn('[WS] onerror', e?.message || e); setWsStatus('error'); };
+      ws.onclose = (ev) => {
+        setWsStatus('closed');
+        if(!closedManually){
+          scheduleReconnect(attempt+1);
+        }
+      };
+    }
+    function scheduleReconnect(nextAttempt){
+      const backoff = Math.min(30000, 1000 * Math.pow(2, nextAttempt));
+      setWsAttempts(nextAttempt);
+      reconnectTimer = setTimeout(()=> openSocket(nextAttempt), backoff);
+    }
+    openSocket(wsAttempts+1);
+    return () => { closedManually = true; try { ws && ws.close(); } catch(_){}; if(reconnectTimer) clearTimeout(reconnectTimer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
+
+  // Ya no se auto-selecciona el curso: el alumno debe elegirlo manualmente en /alumno/cursos.
+
   // Sincronizar flags con el backend: si AuthContext expone verificación aprobada (>=2), reflejarlo aquí
   useEffect(() => {
     const verif = Number(alumno?.verificacion ?? 0);
@@ -483,55 +552,25 @@ export const StudentProvider = ({ children }) => {
     localStorage.setItem('isFirstAccess', 'true');
   };
 
-  // Verificar acceso al contenido basado en pagos vencidos
-  const checkContentAccess = () => {
-    // Si tiene acceso al contenido, salir
-    if (hasContentAccess) return;
-
-    // Calcular días de retraso en pagos
-    const today = new Date();
-    const dueDate = new Date(localStorage.getItem('nextPaymentDue'));
-    const diffTime = Math.abs(today - dueDate);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-
-    setOverdueDays(diffDays);
-
-    // Si el pago está vencido por más de X días (por ejemplo, 3 días), denegar acceso
-    if (diffDays > 3) {
-      setHasContentAccess(false);
-    } else {
+  // Verificar acceso al contenido basado en calendario de pagos (tolerancia aplicada)
+  const refreshOverdueAccess = (now = new Date()) => {
+    try {
+      const { isOverdueLocked, overdueDays } = computeOverdueState({ alumno, now });
+      setHasContentAccess(!isOverdueLocked);
+      setOverdueDays(overdueDays || 0);
+      return { hasAccess: !isOverdueLocked, overdueDays };
+    } catch (e) {
+      console.warn('No se pudo evaluar estado de mora:', e);
+      // Ante error, no bloquear
       setHasContentAccess(true);
+      setOverdueDays(0);
+      return { hasAccess: true, overdueDays: 0 };
     }
   };
 
-  // TODO BACKEND: Función para verificar estado de pagos y bloquear contenido
+  // Chequeo de pagos: usar cálculo local; opcionalmente podría mezclarse con backend en el futuro
   const checkPaymentStatus = async () => {
-    try {
-      // TODO: Implementar llamada al backend
-      // const response = await fetch(`/api/students/${studentData.id}/payment-status`);
-      // const paymentData = await response.json();
-      
-      // MOCK LOGIC - Reemplazar con datos reales del backend
-      const mockOverduePayments = 0; // Número de pagos vencidos
-      const mockOverdueDays = 0; // Días de retraso más antiguo
-      
-      // LÓGICA DE BLOQUEO:
-      // - Si hay pagos vencidos por más de 30 días → bloquear acceso
-      // - Si hay más de 2 pagos vencidos → bloquear acceso
-      const shouldBlockAccess = mockOverduePayments > 2 || mockOverdueDays > 30;
-      
-      setHasContentAccess(!shouldBlockAccess);
-      setOverdueDays(mockOverdueDays);
-      
-      return {
-        hasAccess: !shouldBlockAccess,
-        overduePayments: mockOverduePayments,
-        overdueDays: mockOverdueDays
-      };
-    } catch (error) {
-      console.error('Error checking payment status:', error);
-      return { hasAccess: true, overduePayments: 0, overdueDays: 0 };
-    }
+    return refreshOverdueAccess();
   };
 
   // TODO BACKEND: Función para actualizar estado de pago
@@ -595,9 +634,12 @@ export const StudentProvider = ({ children }) => {
     requestNewAreaAccess,
     clearAreas,
     
-    // Funciones de pagos
-    checkPaymentStatus,
-    updatePaymentStatus,
+  // Funciones de pagos y acceso global
+  checkPaymentStatus,
+  updatePaymentStatus,
+  refreshOverdueAccess,
+  wsStatus,
+  wsAttempts,
   };
 
   return (

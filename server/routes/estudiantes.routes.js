@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { crear, obtener, obtenerUno, actualizar, eliminar, getUltimoFolio, obtenerGruposConCantidad, getConfiguracion, upsertConfiguracion, changePassword, actualizarFoto, softDeleteCuenta, getApprovedStudents, getByFolioAdmin  } from "../controllers/estudiantes.controller.js";
+import { crear, obtener, obtenerUno, actualizar, eliminar, getUltimoFolio, obtenerGruposConCantidad, getConfiguracion, upsertConfiguracion, changePassword, actualizarFoto, softDeleteCuenta, getApprovedStudents, getByFolioAdmin, generarContrato, subirContrato  } from "../controllers/estudiantes.controller.js";
+import { uploadContrato } from "../middlewares/contratosMulter.js";
 import { authREquired } from "../middlewares/validateToken.js";
 import { upload } from "../middlewares/multer.js";
 
@@ -24,6 +25,10 @@ router.get("/admin/estudiantes/aprobados", authREquired, getApprovedStudents);
 
 // Perfil de alumno por folio (admin)
 router.get("/admin/estudiantes/folio/:folio", authREquired, getByFolioAdmin);
+
+// Generar contrato PDF del alumno (admin)
+router.get("/admin/estudiantes/folio/:folio/contrato", authREquired, generarContrato);
+router.post("/admin/estudiantes/folio/:folio/contrato", authREquired, uploadContrato.single('contrato'), subirContrato);
 
 // Configuración del alumno (protegido)
 router.get("/estudiantes/:id/config", authREquired, getConfiguracion);

@@ -18,13 +18,16 @@ export function EstudiantesProvider({ children }) {
     const [estudiantes, setEstudiantes] = useState([]);
     const [grupos, setGrupos] = useState([]);
     const [folioObtenido, getFolioObetenido] = useState([]);
+    const [folioFormateado, setFolioFormateado] = useState('');
 
     const getFolio = async (curso, anio) => {
         try {
             const res = await getFolioRequest(curso, anio);
             getFolioObetenido(res.data.folio);
+            if(res.data.folio_formateado) setFolioFormateado(res.data.folio_formateado);
         } catch (error) {
             getFolioObetenido(null);
+            setFolioFormateado('');
         }
     }
 
@@ -49,9 +52,10 @@ export function EstudiantesProvider({ children }) {
         }
     }
 
-    const getGrupo = async (curso) => {
+    const getGrupo = async (curso, status = 'todos') => {
         try {
-            const res = await getGruposConCantidadRequest(curso);
+            // Permite elegir el estado a contar (todos|pendientes|rechazados|aprobados)
+            const res = await getGruposConCantidadRequest(curso, status);
             if (Array.isArray(res.data)) {
                 if (res.data.length === 1) {
                 setGrupos(res.data[0]);  // solo el objeto
@@ -90,6 +94,7 @@ export function EstudiantesProvider({ children }) {
             estudiantes,
             grupos,
             folioObtenido,
+            folioFormateado,
             getEstudiantes,
             crearEstudiante,
             getFolio,
