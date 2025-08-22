@@ -590,13 +590,14 @@ export function ReportesPagos_Admin_comp() {
             <h3 className="text-lg font-medium text-gray-900">Pagos Detallados</h3>
             <span className="text-xs text-gray-500">Mostrando {reportes.pagosDetallados?.length || 0} registros</span>
           </div>
-          <div className="overflow-auto">
+      <div className="overflow-auto">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
                   <th className="px-3 py-2 text-left font-semibold">Folio</th>
                   <th className="px-3 py-2 text-left font-semibold">Alumno</th>
                   <th className="px-3 py-2 text-left font-semibold">Curso</th>
+          <th className="px-3 py-2 text-left font-semibold">Grupo</th>
                   <th className="px-3 py-2 text-left font-semibold">Estado</th>
                   <th className="px-3 py-2 text-left font-semibold">Importe</th>
                   <th className="px-3 py-2 text-left font-semibold">Método</th>
@@ -613,7 +614,8 @@ export function ReportesPagos_Admin_comp() {
                     <tr key={r.id} className="border-b last:border-b-0 hover:bg-gray-50">
                       <td className="px-3 py-2 font-mono text-xs">{r.folio}</td>
                       <td className="px-3 py-2">{r.alumno}</td>
-                      <td className="px-3 py-2">{r.curso}</td>
+            <td className="px-3 py-2">{r.curso}</td>
+            <td className="px-3 py-2">{r.grupo || '-'}</td>
                       <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded text-xs font-medium ${estadoColor}`}>{estadoLabel}</span></td>
                       <td className="px-3 py-2">{r.importe != null ? formatCurrencyMXN(r.importe) : '-'}</td>
                       <td className="px-3 py-2">{r.metodo || '-'}</td>

@@ -9,7 +9,7 @@ import { getAreasCatalog } from '../../api/areas';
 import { AREAS_CATALOG_CACHE } from '../../utils/catalogCache';
 import { styleForArea } from '../common/areaStyles.jsx';
 import UnifiedCard from '../common/UnifiedCard.jsx';
-import { resumenActividadesEstudiante, crearOReemplazarEntrega, agregarEntrega } from '../../api/actividades';
+import { resumenActividadesEstudiante, crearOReemplazarEntrega, addArchivoEntrega, listArchivosEntrega, deleteArchivoEntrega } from '../../api/actividades';
 import { resumenQuizzesEstudiante, crearIntentoQuiz, listIntentosQuizEstudiante } from '../../api/quizzes';
 import { useAuth } from '../../context/AuthContext';
 import { useStudent } from '../../context/StudentContext'; // BACKEND: Control de acceso a módulos
@@ -89,13 +89,23 @@ export function Actividades_Alumno_comp() {
   
   // Estados para modales (inspirado en Feedback)
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [entregaArchivos, setEntregaArchivos] = useState([]); // archivos actuales de la entrega seleccionada
   const [selectedActividad, setSelectedActividad] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
   // Eliminado modal de edición separado; se usa un único modal para subir / reemplazar
   const [viewingActivityFile, setViewingActivityFile] = useState('');
-  const [uploadSelectedFile, setUploadSelectedFile] = useState(null); // Archivo seleccionado en el modal
+  const [viewingEntregaArchivos, setViewingEntregaArchivos] = useState([]); // archivos de la entrega para modal de vista
+  const [viewingSelectedArchivoId, setViewingSelectedArchivoId] = useState(null);
+  const [viewingArchivosLoading, setViewingArchivosLoading] = useState(false);
+  const [viewingArchivosError, setViewingArchivosError] = useState('');
+  // Multi-upload: lista de archivos seleccionados en el modal
+  const [uploadSelectedFiles, setUploadSelectedFiles] = useState([]); // File[]
   const [uploadError, setUploadError] = useState('');
   const [pdfError, setPdfError] = useState(false); // Error de carga de PDF en visor
+  // Estados para manejar inline PDF en móviles (detección y fallback)
+  const [mobilePdfLoading, setMobilePdfLoading] = useState(false);
+  const [mobilePdfFailed, setMobilePdfFailed] = useState(false);
+  const [useAltViewer, setUseAltViewer] = useState(false); // visor alterno (Google Docs) en móvil
   // UI: menú de recursos múltiples por actividad
   const [openResourceMenu, setOpenResourceMenu] = useState(null); // (legacy dropdown) mantengo por compatibilidad (ya no se usa)
   const [showResourcesModal, setShowResourcesModal] = useState(false);
@@ -234,6 +244,9 @@ export function Actividades_Alumno_comp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Hook para detectar si es móvil (debe declararse antes de cualquier uso en efectos)
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+
   // Meses como ordinales (como en Feedback)
   const months = [
     'Primero', 'Segundo', 'Tercero', 'Cuarto', 'Quinto', 'Sexto',
@@ -295,7 +308,8 @@ export function Actividades_Alumno_comp() {
                 mejorPuntaje: cal,
               // Compatibilidad: usamos 'plantilla' para mostrar el botón de descarga con el primer recurso
               plantilla: r.plantilla || (firstRecurso ? firstRecurso.archivo : null),
-              recursos
+              recursos,
+              entrega_id: r.entrega_id || r.entregaId || null,
             };
           });
           setActividades(mapped);
@@ -339,6 +353,22 @@ export function Actividades_Alumno_comp() {
     };
     fetchData();
   }, [estudianteId, selectedType, selectedArea, retryCount, gradeRefreshKey]);
+
+  // Efecto: cuando cambia el PDF a visualizar en móvil intentamos inline y medimos si carga
+  useEffect(() => {
+    if (!showViewModal) return;
+    if (!isMobile) return; // sólo móviles
+    if (!viewingActivityFile) return;
+    setMobilePdfLoading(true); setMobilePdfFailed(false);
+    const timer = setTimeout(()=> {
+      // Si después de 3s no terminó onLoad asumimos que fallará inline
+      setMobilePdfLoading(l => {
+        if (l) { setMobilePdfFailed(true); return false; }
+        return l;
+      });
+    }, 3000);
+    return ()=> clearTimeout(timer);
+  }, [viewingActivityFile, showViewModal, isMobile]);
 
   const manualRetry = () => { setRetryCount(c=>c+1); };
 
@@ -406,8 +436,21 @@ export function Actividades_Alumno_comp() {
     return () => clearInterval(interval);
   }, [actividades, selectedType, estudianteId]);
 
-  // Hook para detectar si es móvil (como en Feedback)
-  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+  // Estados y detección para optimizar vista móvil de PDFs y listas de archivos
+  const [showMobileFileList, setShowMobileFileList] = useState(false); // toggle de lista lateral en móviles
+  const [canInlinePdf, setCanInlinePdf] = useState(true); // heurística simple de si podemos intentar inline
+  useEffect(() => {
+    if (!isMobile) { setCanInlinePdf(true); return; }
+    try {
+      const ua = navigator.userAgent || '';
+      // Heurísticas básicas donde el inline PDF suele fallar o es incómodo
+      if (/FBAN|FBAV|Instagram|Line\//i.test(ua)) { setCanInlinePdf(false); return; }
+      // WebView genéricas
+      if (/wv\)/i.test(ua)) { setCanInlinePdf(false); return; }
+      // Por defecto permitir
+      setCanInlinePdf(true);
+    } catch { setCanInlinePdf(true); }
+  }, [isMobile]);
 
   // Función para manejar la selección de área/materia
   const handleSelectArea = (area) => {
@@ -500,85 +543,81 @@ export function Actividades_Alumno_comp() {
     }
   };
 
-  // Función para manejar subida de archivos (mejorada con historial de intentos)
-  const handleFileUpload = async (actividadId, file) => {
-    if (!file || file.type !== 'application/pdf') {
-      showNotification('Archivo no válido','Por favor, selecciona únicamente archivos PDF.','warning');
-      return;
+  // Función para manejar subida multi-archivo
+  const handleFileUpload = async (actividadId, files) => {
+    if (!files || !files.length) { showNotification('Sin archivos','Selecciona al menos un PDF.','warning'); return; }
+    if (!Array.isArray(files)) files = [files];
+    // Validaciones ya se hacen previo, pero reforzamos
+    let totalBytes = 0;
+    for (const f of files) {
+      if (f.type !== 'application/pdf') { showNotification('Solo PDF', `El archivo ${f.name} no es PDF.`, 'warning'); return; }
+      if (f.size > MAX_FILE_SIZE_BYTES) { showNotification('Archivo grande', `${f.name} supera 5MB.`, 'warning'); return; }
+      totalBytes += f.size;
     }
-    if (!estudianteId) {
-      showNotification('Sesión requerida','No se encontró ID de estudiante','error');
-      return;
-    }
+    if (totalBytes > MAX_TOTAL_BYTES) { showNotification('Límite excedido','Los archivos combinados superan 20MB.','warning'); return; }
+    if (!estudianteId) { showNotification('Sesión requerida','No se encontró ID de estudiante','error'); return; }
     const esTipoActividad = selectedType === 'actividades';
     try {
       if (esTipoActividad) {
         const fd = new FormData();
-        fd.append('archivo', file);
+        files.forEach(f => fd.append('archivos', f));
         fd.append('id_estudiante', estudianteId);
-        // Usar siempre la ruta append para conservar historial de intentos
-        await agregarEntrega(actividadId, fd).catch(async err => {
-          // fallback: si ruta no existe (deploy viejo) usar comportamiento legacy
-          if (err?.response?.status === 404) {
-            await crearOReemplazarEntrega(actividadId, fd);
-          } else throw err;
-        });
-        // refrescar lista
+        if (selectedActividad?.entrega_id) {
+          await addArchivoEntrega(selectedActividad.entrega_id, fd);
+        } else {
+          await crearOReemplazarEntrega(actividadId, fd);
+        }
+        // refrescar lista actividades
         const { data } = await resumenActividadesEstudiante(estudianteId);
         const rows = (data?.data || data || []).filter(a => {
           if(!a.id_area) return true;
-          if(selectedArea.id === 5){
-            if(!selectedModulo) return false;
-            return a.id_area === selectedModulo.id;
-          }
+          if(selectedArea.id === 5){ if(!selectedModulo) return false; return a.id_area === selectedModulo.id; }
           return a.id_area === selectedArea.id;
         });
         const mapped = rows.map(r => {
           let recursos = [];
-          if (r.recursos_json) {
-            try {
-              recursos = typeof r.recursos_json === 'string' ? JSON.parse(r.recursos_json) : r.recursos_json;
-              if (!Array.isArray(recursos)) recursos = [];
-            } catch { recursos = []; }
-          }
-          const firstRecurso = recursos[0];
-          return {
-            id: r.id,
-            nombre: r.titulo,
-            descripcion: r.descripcion || '',
-            fechaEntrega: r.fecha_limite,
-            fechaSubida: r.entregada_at ? new Date(r.entregada_at).toISOString().split('T')[0] : null,
-            archivo: r.archivo || null,
-            entregada: !!r.entrega_estado,
-            score: r.calificacion ?? null,
-            maxScore: r.puntos_max || 100,
-            estado: r.entrega_estado || 'pendiente',
-            areaId: r.id_area,
-            tipo: 'actividades',
-            intentos: [],
-            totalIntentos: r.version || (r.entrega_estado ? 1 : 0),
-            mejorPuntaje: r.calificacion ?? null,
-            plantilla: r.plantilla || (firstRecurso ? firstRecurso.archivo : null),
-            recursos
-          };
-        });
+            if (r.recursos_json) {
+              try {
+                recursos = typeof r.recursos_json === 'string' ? JSON.parse(r.recursos_json) : r.recursos_json;
+                if (!Array.isArray(recursos)) recursos = [];
+              } catch { recursos = []; }
+            }
+            const firstRecurso = recursos[0];
+            return {
+              id: r.id,
+              nombre: r.titulo,
+              descripcion: r.descripcion || '',
+              fechaEntrega: r.fecha_limite,
+              fechaSubida: r.entregada_at ? new Date(r.entregada_at).toISOString().split('T')[0] : null,
+              archivo: r.archivo || null,
+              entregada: !!r.entrega_estado,
+              score: r.calificacion ?? null,
+              maxScore: r.puntos_max || 100,
+              estado: r.entrega_estado || 'pendiente',
+              areaId: r.id_area,
+              tipo: 'actividades',
+              intentos: [],
+              totalIntentos: r.version || (r.entrega_estado ? 1 : 0),
+              mejorPuntaje: r.calificacion ?? null,
+              plantilla: r.plantilla || (firstRecurso ? firstRecurso.archivo : null),
+              recursos,
+              entrega_id: r.entrega_id || r.entregaId || null,
+            };
+          });
         setActividades(mapped);
       } else {
-        // Simular intento de quiz: aquí solo creamos intento con puntaje aleatorio (placeholder real de UI de quiz)
-        const randomScore = Math.floor(Math.random() * 41) + 60; // 60-100
+        // Quiz (placeholder existente)
+        const randomScore = Math.floor(Math.random() * 41) + 60;
         await crearIntentoQuiz(actividadId, { id_estudiante: estudianteId, puntaje: randomScore });
         const { data } = await resumenQuizzesEstudiante(estudianteId);
         const rows = (data?.data || data || []).filter(q => {
           if(!q.id_area) return true;
-          if(selectedArea.id === 5){
-            if(!selectedModulo) return false;
-            return q.id_area === selectedModulo.id;
-          }
+          if(selectedArea.id === 5){ if(!selectedModulo) return false; return q.id_area === selectedModulo.id; }
           return q.id_area === selectedArea.id;
         });
         const mapped = rows.map(q => ({
           id: q.id,
-            nombre: q.titulo,
+          nombre: q.titulo,
           descripcion: q.descripcion || '',
           fechaEntrega: q.fecha_limite,
           fechaSubida: null,
@@ -599,9 +638,9 @@ export function Actividades_Alumno_comp() {
       setShowUploadModal(false); setSelectedActividad(null);
       setConfettiScore(esTipoActividad ? 0 : actividades.find(a=>a.id===actividadId)?.score || 0);
       setShowConfetti(true); setTimeout(()=> setShowConfetti(false),3000);
-    } catch (e) {
+    } catch(e) {
       console.error(e);
-      showNotification('Error','No se pudo subir el archivo','error');
+      showNotification('Error','No se pudieron subir los archivos','error');
     }
   };
 
@@ -613,19 +652,48 @@ export function Actividades_Alumno_comp() {
 
   const openViewModal = (actividad) => {
     setSelectedActividad(actividad);
-  setViewingActivityFile(resolveFileUrl(actividad.archivo));
+    setViewingEntregaArchivos([]);
+    setViewingSelectedArchivoId(null);
+    setViewingArchivosError('');
+  setMobilePdfFailed(false); setMobilePdfLoading(false);
+  setUseAltViewer(false);
+    // Si la actividad tiene registro de entrega múltiple, obtener lista
+    if (actividad.entrega_id) {
+      setViewingArchivosLoading(true);
+      listArchivosEntrega(actividad.entrega_id)
+        .then(resp => {
+          const arr = resp.data?.data || [];
+          setViewingEntregaArchivos(arr);
+          if (arr.length) {
+            setViewingSelectedArchivoId(arr[0].id);
+            const firstSrc = arr[0].archivo.startsWith('http') ? arr[0].archivo : `${window.location.origin}${arr[0].archivo}`;
+            setViewingActivityFile(firstSrc);
+          } else {
+            setViewingActivityFile(resolveFileUrl(actividad.archivo));
+          }
+        })
+        .catch(()=> { setViewingArchivosError('No se pudieron cargar los archivos de la entrega'); setViewingActivityFile(resolveFileUrl(actividad.archivo)); })
+        .finally(()=> setViewingArchivosLoading(false));
+    } else {
+      setViewingActivityFile(resolveFileUrl(actividad.archivo));
+    }
     setPdfError(false);
     setShowViewModal(true);
   };
 
   const closeModals = () => {
-    setShowUploadModal(false);
+  setShowUploadModal(false);
+  setEntregaArchivos([]); // limpiar archivos al cerrar
     setShowViewModal(false);
     setSelectedActividad(null);
     setViewingActivityFile('');
-  setUploadSelectedFile(null);
+  setViewingEntregaArchivos([]);
+  setViewingSelectedArchivoId(null);
+  setUploadSelectedFiles([]);
   setUploadError('');
     setPdfError(false);
+  setShowMobileFileList(false);
+  setUseAltViewer(false);
   };
 
   // Función para descargar actividad
@@ -761,24 +829,21 @@ export function Actividades_Alumno_comp() {
     return item.completado && item.intentos < item.maxIntentos && item.estado === 'completado';
   };
 
-  // Límite de tamaño para PDF (1.5MB)
-  const MAX_FILE_SIZE_BYTES = 1.5 * 1024 * 1024; // 1.5MB
+  // Límites multi-archivo
+  const MAX_FILES = 5;
+  const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB individuales
+  const MAX_TOTAL_BYTES = 20 * 1024 * 1024; // 20MB combinados
 
-  // Nueva función para confirmar subida/reemplazo desde el modal (single-submission)
+  // Confirmar subida multi-archivo
   const handleConfirmUpload = () => {
-    if (!uploadSelectedFile) {
-      setUploadError('Selecciona un archivo PDF.');
-      return;
-    }
-    if (uploadSelectedFile.type !== 'application/pdf') {
-      setUploadError('Solo se permiten archivos PDF.');
-      return;
-    }
-    if (uploadSelectedFile.size > MAX_FILE_SIZE_BYTES) {
-      setUploadError('El archivo supera 1.5MB. Comprime el PDF e inténtalo nuevamente.');
-      return;
-    }
-    handleFileUpload(selectedActividad.id, uploadSelectedFile);
+    if (!uploadSelectedFiles.length) { setUploadError('Selecciona al menos un PDF.'); return; }
+    const anyNonPdf = uploadSelectedFiles.some(f => f.type !== 'application/pdf');
+    if (anyNonPdf) { setUploadError('Solo archivos PDF.'); return; }
+    const anyTooBig = uploadSelectedFiles.some(f => f.size > MAX_FILE_SIZE_BYTES);
+    if (anyTooBig) { setUploadError('Uno o más archivos superan 5MB.'); return; }
+    const total = uploadSelectedFiles.reduce((s,f)=> s + f.size, 0);
+    if (total > MAX_TOTAL_BYTES) { setUploadError('Tamaño combinado > 20MB.'); return; }
+    handleFileUpload(selectedActividad.id, uploadSelectedFiles);
   };
 
   // Función para reintentar una actividad
@@ -908,24 +973,27 @@ export function Actividades_Alumno_comp() {
     return item.mejorPuntaje || 0;
   };
 
+  // Efecto para cargar archivos de la entrega cuando se abre el modal (no hooks dentro de render condicional)
+  useEffect(() => {
+    if (!showUploadModal || !selectedActividad) return;
+    const isEdit = selectedActividad.entregada && selectedActividad.estado !== 'revisada';
+    const blocked = selectedActividad.entregada && selectedActividad.estado === 'revisada';
+    if (selectedActividad.entrega_id && entregaArchivos.length === 0 && isEdit && !blocked) {
+      (async () => {
+        try {
+          const resp = await listArchivosEntrega(selectedActividad.entrega_id);
+          setEntregaArchivos(resp.data?.data || []);
+        } catch {}
+      })();
+    }
+  }, [showUploadModal, selectedActividad, entregaArchivos.length]);
+
   // Modal para gestionar archivos (multi-archivo estilo Classroom)
   const renderUploadModal = () => {
     if (!showUploadModal || !selectedActividad) return null;
 
     const isEdit = selectedActividad.entregada && selectedActividad.estado !== 'revisada';
     const blocked = selectedActividad.entregada && selectedActividad.estado === 'revisada';
-    // Cargar lista de archivos si no la tenemos aún y hay entrega
-    useEffect(() => {
-      (async () => {
-        if (selectedActividad.entrega_id && entregaArchivos.length === 0 && isEdit && !blocked) {
-          try {
-            const resp = await listArchivosEntrega(selectedActividad.entrega_id);
-            setEntregaArchivos(resp.data?.data || []);
-          } catch {}
-        }
-      })();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -959,31 +1027,31 @@ export function Actividades_Alumno_comp() {
               </div>
             </div>
 
-            <div className={`border-2 ${uploadError ? 'border-red-300 bg-red-50' : 'border-dashed border-gray-300 bg-gray-50'} rounded-xl p-4 transition-colors`}> 
+            <div className={`border-2 ${uploadError ? 'border-red-300 bg-red-50' : 'border-dashed border-gray-300 bg-gray-50'} rounded-xl p-4 transition-colors`}>
               <input
                 type="file"
                 accept="application/pdf"
+                multiple
+                name="archivos"
                 disabled={blocked}
                 onChange={(e) => {
                   setUploadError('');
-                  const file = e.target.files?.[0];
-                  if (!file) { setUploadSelectedFile(null); return; }
-                  if (file.type !== 'application/pdf') {
-                    setUploadError('Debe ser un PDF.');
-                    setUploadSelectedFile(null);
-                    return;
+                  const fileList = Array.from(e.target.files || []);
+                  if (!fileList.length) { setUploadSelectedFiles([]); return; }
+                  if (fileList.length > MAX_FILES) { setUploadError(`Máximo ${MAX_FILES} PDFs por envío.`); setUploadSelectedFiles([]); return; }
+                  let total = 0;
+                  for (const f of fileList) {
+                    if (f.type !== 'application/pdf') { setUploadError('Todos los archivos deben ser PDF.'); setUploadSelectedFiles([]); return; }
+                    if (f.size > MAX_FILE_SIZE_BYTES) { setUploadError(`${f.name} supera 5MB.`); setUploadSelectedFiles([]); return; }
+                    total += f.size;
                   }
-                  if (file.size > MAX_FILE_SIZE_BYTES) {
-                    setUploadError('Supera 1.5MB. Comprime el PDF.');
-                    setUploadSelectedFile(null);
-                    return;
-                  }
-                  setUploadSelectedFile(file);
+                  if (total > MAX_TOTAL_BYTES) { setUploadError('Tamaño combinado > 20MB.'); setUploadSelectedFiles([]); return; }
+                  setUploadSelectedFiles(fileList);
                 }}
                 className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
               />
               <p className="mt-2 text-xs text-gray-500">
-                Solo PDF. Tamaño máximo 1.5MB. Necesitas reducirlo? {' '}
+                Solo PDF. Máx {MAX_FILES} archivos, 5MB c/u, 20MB total. ¿Comprimir?{' '}
                 <a
                   href="https://www.ilovepdf.com/compress_pdf"
                   target="_blank"
@@ -993,10 +1061,12 @@ export function Actividades_Alumno_comp() {
                   Comprimir PDF
                 </a>
               </p>
-              {uploadSelectedFile && !uploadError && (
-                <div className="mt-2 text-xs text-green-600 flex items-center gap-1">
-                  <CheckCircle className="w-4 h-4" /> {uploadSelectedFile.name} ({(uploadSelectedFile.size/1024).toFixed(1)} KB)
-                </div>
+              {!!uploadSelectedFiles.length && !uploadError && (
+                <ul className="mt-2 text-xs text-green-600 space-y-1 max-h-28 overflow-auto pr-1">
+                  {uploadSelectedFiles.map(f => (
+                    <li key={f.name} className="flex items-center gap-1"><CheckCircle className="w-4 h-4" /> {f.name} ({(f.size/1024).toFixed(1)} KB)</li>
+                  ))}
+                </ul>
               )}
               {uploadError && (
                 <div className="mt-2 text-xs text-red-600 font-medium flex items-center gap-1">
@@ -1024,7 +1094,7 @@ export function Actividades_Alumno_comp() {
             )}
             <div className="flex gap-3 pt-4">
               <button onClick={closeModals} className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">Cerrar</button>
-              {!blocked && <button onClick={() => { if (!uploadSelectedFile) { setUploadError('Selecciona un archivo.'); return; } handleConfirmUpload(); }} className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors text-white shadow ${isEdit ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'}`}>{isEdit ? 'Agregar Archivo' : 'Subir'}</button>}
+              {!blocked && <button onClick={() => { if (!uploadSelectedFiles.length) { setUploadError('Selecciona archivos.'); return; } handleConfirmUpload(); }} className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors text-white shadow ${isEdit ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'}`}>{isEdit ? 'Agregar Archivos' : 'Subir Archivos'}</button>}
             </div>
           </div>
         </div>
@@ -1042,52 +1112,106 @@ export function Actividades_Alumno_comp() {
       if (pdfSrc) window.open(pdfSrc, '_blank', 'noopener');
     };
 
+    // Modo multi-archivo: barra lateral de archivos si hay más de uno
+    const hasMulti = viewingEntregaArchivos && viewingEntregaArchivos.length > 0;
+
+    const downloadEntregaArchivo = async (f) => {
+      if(!f) return;
+      const full = f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`;
+      const name = f.original_nombre || f.archivo.split('/').pop();
+      await downloadViaBlob(full, name);
+    };
+    const downloadAllEntregaArchivos = () => {
+      viewingEntregaArchivos.forEach((f,idx)=> setTimeout(()=> downloadEntregaArchivo(f), idx*400));
+    };
+
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100 border-2 border-purple-200 flex flex-col" style={{ maxHeight: '70vh' }}>
-          <h2 className="text-xl sm:text-2xl font-bold mb-4 text-purple-700">Visualizar Actividad</h2>
-          <p className="mb-4 text-gray-700 text-sm sm:text-base">
-            Actividad: <span className="font-semibold text-purple-600">{selectedActividad.nombre}</span>
-          </p>
-          {pdfSrc && esPDF ? (
-            <>
-              <div className="flex-grow w-full h-64 sm:h-96 bg-gray-100 rounded-lg overflow-hidden mb-4 border border-gray-300 flex items-center justify-center relative">
-                {isMobile ? (
-                  <span className="text-gray-500 text-center text-xs px-2">En móvil usa "Ver en nueva pestaña" para mejor experiencia.</span>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-start px-2 pt-24 md:pt-28 pb-4 z-50" onClick={closeModals}>
+        <div className="bg-white rounded-t-2xl md:rounded-xl shadow-2xl w-full max-w-5xl h-[calc(100vh-7rem)] md:h-[82vh] flex flex-col overflow-hidden" onClick={e=>e.stopPropagation()}>
+          <div className="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+            <h2 className="font-semibold text-lg truncate flex-1 pr-2">Entrega: {selectedActividad.nombre}</h2>
+            {hasMulti && isMobile && (
+              <button
+                onClick={() => setShowMobileFileList(v=>!v)}
+                className="mr-2 px-3 py-1.5 text-xs rounded-md bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20"
+              >{showMobileFileList ? 'Ocultar' : 'Lista'}</button>
+            )}
+            <button onClick={closeModals} className="text-white/80 hover:text-white">✕</button>
+          </div>
+          <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+            {/* Sidebar archivos entrega */}
+            <div className={`w-full md:w-64 md:border-r border-b md:border-b-0 overflow-y-auto p-3 space-y-2 bg-gray-50 ${hasMulti ? (isMobile ? (showMobileFileList ? 'block max-h-48' : 'hidden') : 'block') : 'hidden md:block'} md:max-h-none flex-shrink-0`}>
+              {viewingArchivosLoading && <div className="text-xs text-gray-500">Cargando...</div>}
+              {viewingArchivosError && <div className="text-xs text-red-600">{viewingArchivosError}</div>}
+              {!viewingArchivosLoading && !viewingArchivosError && viewingEntregaArchivos.map(f => {
+                const active = f.id === viewingSelectedArchivoId;
+                const display = f.original_nombre || f.archivo.split('/').pop();
+                return (
+                  <div key={f.id} className={`group rounded-lg border p-2 text-xs cursor-pointer transition-colors ${active ? 'border-purple-500 bg-white shadow-sm' : 'border-gray-200 bg-white hover:bg-purple-50'}`} onClick={()=> { setViewingSelectedArchivoId(f.id); const src = f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`; setViewingActivityFile(src); }}>
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-purple-500" />
+                      <span className="truncate" title={display}>{display}</span>
+                    </div>
+                    <div className="mt-1 flex gap-2">
+                      <button className="text-blue-600 hover:underline" onClick={(e)=> { e.stopPropagation(); downloadEntregaArchivo(f); }}>Descargar</button>
+                      <button className="text-gray-500 hover:underline" onClick={(e)=> { e.stopPropagation(); setViewingSelectedArchivoId(f.id); const src = f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`; setViewingActivityFile(src); }}>Ver</button>
+                    </div>
+                  </div>
+                );
+              })}
+              {!viewingArchivosLoading && !viewingArchivosError && viewingEntregaArchivos.length === 0 && (
+                <div className="text-xs text-gray-400">Sin archivos.</div>
+              )}
+            </div>
+            {/* Panel visor */}
+            <div className="flex-1 flex flex-col">
+              <div className="p-3 border-b flex flex-wrap gap-2 items-center justify-between">
+                <div className="text-sm font-medium truncate max-w-[60%]">
+                  {hasMulti ? (viewingEntregaArchivos.find(f=>f.id===viewingSelectedArchivoId)?.original_nombre || viewingEntregaArchivos.find(f=>f.id===viewingSelectedArchivoId)?.archivo?.split('/').pop() || 'Selecciona un archivo') : (pdfSrc ? pdfSrc.split('/').pop() : 'Sin archivo')}
+                </div>
+                <div className="flex gap-2">
+                  {hasMulti && viewingEntregaArchivos.length > 1 && (
+                    <button onClick={downloadAllEntregaArchivos} className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md">Descargar todo</button>
+                  )}
+                  {pdfSrc && esPDF && (
+                    <button onClick={()=> { if(viewingSelectedArchivoId){ const f=viewingEntregaArchivos.find(x=>x.id===viewingSelectedArchivoId); downloadEntregaArchivo(f); } else { handleOpenPdfInNewTab(); } }} className="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">Descargar actual</button>
+                  )}
+                  {pdfSrc && esPDF && !isMobile && (
+                    <button onClick={handleOpenPdfInNewTab} className="px-3 py-1.5 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded-md">Abrir pestaña</button>
+                  )}
+                  <button onClick={closeModals} className="px-3 py-1.5 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded-md">Cerrar</button>
+                </div>
+              </div>
+              <div className={`flex-1 bg-gray-100 m-2 md:m-3 rounded-lg flex items-center justify-center overflow-hidden relative ${isMobile && showMobileFileList ? 'hidden' : 'flex'}`}>
+                {pdfSrc && esPDF ? (
+                  isMobile ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center text-gray-600 text-xs gap-3">
+                      <div className="font-medium">Abrir documento</div>
+                      <div className="text-[11px] text-gray-500 max-w-xs">En móvil se abrirá fuera del sitio para mejor lectura.</div>
+                      <button onClick={()=> window.open(pdfSrc,'_blank','noopener')} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-xs w-full max-w-[200px]">Abrir PDF</button>
+                      <button onClick={()=> window.location.href = pdfSrc} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs w-full max-w-[200px]">Forzar descarga</button>
+                      <button onClick={()=> setUseAltViewer(v=>!v)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs w-full max-w-[200px]">{useAltViewer ? 'Cerrar visor alterno' : 'Visor alterno'}</button>
+                      {useAltViewer && (
+                        <iframe
+                          key={pdfSrc+'alt-simple'}
+                          src={`https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(pdfSrc)}`}
+                          title="Entrega PDF (Alt)"
+                          className="w-full h-full border-none mt-2 bg-white"
+                          onError={()=> setUseAltViewer(false)}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <iframe key={pdfSrc} src={pdfSrc} title="Entrega PDF" className="w-full h-full border-none" />
+                  )
                 ) : (
-                  <iframe
-                    key={pdfSrc}
-                    src={pdfSrc}
-                    title="Visor de PDF"
-                    className="w-full h-full border-none"
-                    onError={(e) => { e.currentTarget.outerHTML = '<div class="w-full h-full flex items-center justify-center text-xs text-red-500">Error cargando PDF</div>'; }}
-                  />
+                  <div className="text-xs text-gray-500">No hay PDF para visualizar.</div>
                 )}
               </div>
-              <p className="text-[10px] sm:text-xs text-gray-500 text-center mb-2 truncate px-2">
-                Ruta: {pdfSrc ? pdfSrc.replace(/^https?:\/\/[^/]+/, '') : ''}
-              </p>
-            </>
-          ) : (
-            <p className="mb-6 text-gray-700 text-sm sm:text-base text-center">
-              No hay archivo PDF para visualizar.
-            </p>
-          )}
-          <div className="flex flex-col sm:flex-row justify-end gap-2 mt-auto">
-            {pdfSrc && esPDF && !isMobile && (
-              <button
-                onClick={handleOpenPdfInNewTab}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm"
-              >
-                Ver en nueva pestaña
-              </button>
-            )}
-            <button
-              onClick={closeModals}
-              className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-300 text-sm"
-            >
-              Cerrar
-            </button>
+              <div className="px-4 pb-2">
+                <p className="text-[10px] sm:text-xs text-gray-500 truncate">Ruta: {pdfSrc ? pdfSrc.replace(/^https?:\/\/[^/]+/, '') : ''}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1353,11 +1477,17 @@ export function Actividades_Alumno_comp() {
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-start px-2 pt-24 md:pt-28 pb-4 z-50" onClick={closeResourcesModal}>
         <div className="bg-white rounded-t-2xl md:rounded-xl shadow-2xl w-full max-w-4xl h-[calc(100vh-7rem)] md:h-[80vh] flex flex-col overflow-hidden" onClick={e=>e.stopPropagation()}>
           <div className="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-            <h2 className="font-semibold text-lg">Recursos de: {resourcesActividad.nombre}</h2>
+            <h2 className="font-semibold text-lg flex-1 pr-2 truncate">Recursos de: {resourcesActividad.nombre}</h2>
+            {isMobile && (
+              <button
+                onClick={() => setShowMobileFileList(v=>!v)}
+                className="mr-2 px-3 py-1.5 text-xs rounded-md bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20"
+              >{showMobileFileList ? 'Ocultar' : 'Lista'}</button>
+            )}
             <button onClick={closeResourcesModal} className="text-white/80 hover:text-white">✕</button>
           </div>
           <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
-      <div className="w-full md:w-64 md:border-r border-b md:border-b-0 overflow-y-auto p-3 space-y-2 bg-gray-50 max-h-40 md:max-h-none flex-shrink-0">
+      <div className={`w-full md:w-64 md:border-r border-b md:border-b-0 overflow-y-auto p-3 space-y-2 bg-gray-50 ${isMobile ? (showMobileFileList ? 'block max-h-48' : 'hidden') : 'block'} md:max-h-none flex-shrink-0`}>
               {recursos.map((r,idx)=> (
         <div key={idx} className={`group rounded-lg border p-2 text-xs cursor-pointer transition-colors ${previewRecurso===r ? 'border-blue-500 bg-white shadow-sm' : 'border-gray-200 bg-white hover:bg-blue-50'}`} onClick={()=> { setPreviewRecurso(r); setPreviewError(null); setPreviewLoading(true); setPreviewKey(c=>c+1); }}>
                   <div className="flex items-center gap-2">
@@ -1383,7 +1513,7 @@ export function Actividades_Alumno_comp() {
                   )}
                 </div>
               </div>
-              <div className="flex-1 bg-gray-100 m-2 md:m-3 rounded-lg flex items-center justify-center overflow-hidden relative">
+              <div className={`flex-1 bg-gray-100 m-2 md:m-3 rounded-lg flex items-center justify-center overflow-hidden relative ${isMobile && showMobileFileList ? 'hidden' : 'flex'}`}>
                 {current ? (
                   <>
                     {previewLoading && (
@@ -1399,14 +1529,31 @@ export function Actividades_Alumno_comp() {
                         <a className="text-blue-600 underline" href={baseUrl} target="_blank" rel="noopener">Abrir en nueva pestaña</a>
                       </div>
                     )}
-                    <iframe
-                      key={currentUrl}
-                      src={currentUrl}
-                      title="Recurso PDF"
-                      className="w-full h-full border-0"
-                      onLoad={()=> setPreviewLoading(false)}
-                      onError={()=> { setPreviewLoading(false); setPreviewError(true); }}
-                    />
+                    {(!canInlinePdf && isMobile && !useAltViewer) ? (
+                      <div className="flex flex-col items-center justify-center gap-3 text-center p-4 text-xs text-gray-600">
+                        <div>Vista previa limitada en este dispositivo.</div>
+                        <a href={baseUrl} target="_blank" rel="noopener" className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs">Abrir PDF</a>
+                        <button onClick={()=> setUseAltViewer(true)} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs">Visor alterno</button>
+                      </div>
+                    ) : useAltViewer ? (
+                      <iframe
+                        key={currentUrl+'alt'}
+                        src={`https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(baseUrl)}`}
+                        title="Recurso PDF (Alt)"
+                        className="w-full h-full border-0 bg-white"
+                        onLoad={()=> setPreviewLoading(false)}
+                        onError={()=> { setUseAltViewer(false); setPreviewError(true); }}
+                      />
+                    ) : (
+                      <iframe
+                        key={currentUrl}
+                        src={currentUrl}
+                        title="Recurso PDF"
+                        className="w-full h-full border-0"
+                        onLoad={()=> setPreviewLoading(false)}
+                        onError={()=> { setPreviewLoading(false); setPreviewError(true); }}
+                      />
+                    )}
                   </>
                 ) : (
                   <div className="text-sm text-gray-500">Selecciona un archivo para previsualizar.</div>
@@ -1835,6 +1982,7 @@ export function Actividades_Alumno_comp() {
                 )}
                 {!loading && !error && filteredActividades.map((actividad, index) => {
                   const vencida = !isWithinDeadline(actividad.fechaEntrega);
+                  // Bloqueado si ya fue revisada (calificada) o vencida
                   const puedeEditar = actividad.entregada && !vencida && actividad.estado !== 'revisada';
                   return (
                     <tr key={actividad.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
@@ -1879,16 +2027,22 @@ export function Actividades_Alumno_comp() {
                             <Upload className="w-4 h-4 mr-1" /> Subir
                           </button>
                         ) : (
-                          <button
-                            onClick={() => openUploadModal(actividad)}
-                            disabled={!puedeEditar}
-                            className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md shadow-sm ${
-                              puedeEditar ? 'text-white bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                            }`}
-                          >
-                            {puedeEditar ? <Upload className="w-4 h-4 mr-1" /> : null}
-                            {puedeEditar ? 'Editar' : 'Bloqueado'}
-                          </button>
+                          <div className="flex flex-col items-start">
+                            <button
+                              onClick={() => openUploadModal(actividad)}
+                              disabled={!puedeEditar}
+                              title={!puedeEditar && actividad.estado === 'revisada' ? 'Esta entrega ya fue calificada y no puede modificarse' : (!puedeEditar ? 'No disponible' : 'Editar entrega')}
+                              className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md shadow-sm ${
+                                puedeEditar ? 'text-white bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                              }`}
+                            >
+                              {puedeEditar ? <Upload className="w-4 h-4 mr-1" /> : null}
+                              {puedeEditar ? 'Editar' : 'Bloqueado'}
+                            </button>
+                            {!puedeEditar && actividad.estado === 'revisada' && (
+                              <span className="mt-1 text-[10px] font-medium text-purple-600">Ya calificada - no editable</span>
+                            )}
+                          </div>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

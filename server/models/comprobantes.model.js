@@ -14,22 +14,24 @@ export const createComprobante = async (data) => {
 export const getComprobantes = async (grupo, curso) => {
     const [rows] = await db.query(`
         SELECT 
-          estudiantes.id AS id_estudiante,
-          estudiantes.folio, 
-          estudiantes.nombre, 
-          estudiantes.apellidos, 
-          estudiantes.verificacion, 
-          comprobantes.comprobante, 
-          comprobantes.importe, 
-          comprobantes.metodo, 
-          comprobantes.motivo_rechazo AS motivoRechazo,
-          comprobantes.created_at, 
-          comprobantes.updated_at 
-        FROM comprobantes 
-        INNER JOIN estudiantes 
-          ON comprobantes.id_estudiante = estudiantes.id 
-        WHERE estudiantes.grupo = ?
-          AND estudiantes.curso = ?
+          e.id AS id_estudiante,
+          e.folio, 
+          e.nombre, 
+          e.apellidos, 
+          e.verificacion, 
+          c.comprobante, 
+          c.importe, 
+          c.metodo, 
+          c.motivo_rechazo AS motivoRechazo,
+          c.created_at, 
+          c.updated_at 
+        FROM comprobantes c
+        INNER JOIN estudiantes e
+          ON c.id_estudiante = e.id 
+        LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+        WHERE e.grupo = ?
+          AND e.curso = ?
+          AND sd.id IS NULL
     `, [grupo, curso]);
     return rows;
 };

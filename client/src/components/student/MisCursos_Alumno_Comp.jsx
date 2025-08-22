@@ -47,13 +47,14 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
   // BACKEND: Sistema de colores para categorías - estos valores deben coincidir 
   // con las categorías que manda el backend en el campo 'category' del curso
   const categoryColors = {
-    'programacion': 'bg-red-500',
-    'tecnologico': 'bg-blue-500', 
-    'psicoeducativo': 'bg-purple-500',
-    'idiomas': 'bg-green-500',
-    'exactas': 'bg-orange-500',
-    'admision': 'bg-indigo-500',
-    'universidad': 'bg-pink-500',
+    programacion: 'bg-red-500',
+    preparacion: 'bg-red-500',
+    tecnologico: 'bg-blue-500', 
+    psicoeducativo: 'bg-purple-500',
+    idiomas: 'bg-green-500',
+    exactas: 'bg-orange-500',
+    admision: 'bg-indigo-500',
+    universidad: 'bg-pink-500',
   };
 
   // BACKEND: Colores alternativos por tipo de curso
@@ -64,7 +65,6 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
 
   const badgeColor = categoryColors[category] || typeColors[type] || 'bg-gray-500';
 
-  // Estilos especiales para curso actual
   const currentCourseStyles = isCurrentCourse ? {
     border: 'border-2 border-blue-300',
     shadow: 'shadow-xl shadow-blue-500/20',

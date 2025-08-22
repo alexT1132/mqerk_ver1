@@ -23,10 +23,10 @@ export const listSubmissionsByStudent = async (id_estudiante, { limit = 100, off
 };
 
 export const versionSubmission = async (idPrev, newData) => {
-  // Marcar anterior como reemplazada
-  await db.query('UPDATE feedback_submissions SET replaced_by = ? WHERE id = ?', [null, idPrev]);
-  // Insertar nuevo (simple, la app podría mejorar tracking de replaced_by luego si se requiere)
-  return createSubmission({ ...newData, version: (newData.version || 1) + 1 });
+  // Inserta el nuevo registro y marca la anterior como reemplazada por el nuevo id
+  const newId = await createSubmission({ ...newData, version: (newData.version || 1) + 1 });
+  await db.query('UPDATE feedback_submissions SET replaced_by = ? WHERE id = ?', [newId, idPrev]);
+  return newId;
 };
 
 export const updateSubmissionGrade = async (id, puntos) => {
@@ -36,5 +36,20 @@ export const updateSubmissionGrade = async (id, puntos) => {
 
 export const getSubmissionById = async (id) => {
   const [rows] = await db.query('SELECT * FROM feedback_submissions WHERE id = ?', [id]);
+  return rows[0] || null;
+};
+
+export const setReplacedBy = async (prevId, newId) => {
+  const [res] = await db.query('UPDATE feedback_submissions SET replaced_by = ? WHERE id = ?', [newId, prevId]);
+  return res;
+};
+
+export const deleteSubmissionById = async (id) => {
+  const [res] = await db.query('DELETE FROM feedback_submissions WHERE id = ?', [id]);
+  return res;
+};
+
+export const getSubmissionByReplacedBy = async (replacedId) => {
+  const [rows] = await db.query('SELECT * FROM feedback_submissions WHERE replaced_by = ? ORDER BY created_at DESC LIMIT 1', [replacedId]);
   return rows[0] || null;
 };

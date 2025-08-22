@@ -21,6 +21,13 @@ dist-ssr/
 build/
 coverage/
 
+# Server uploads and generated files
+server/uploads/
+server/comprobantes/
+server/public/
+server/contratos/
+server/tokens/
+
 # Environment
 .env
 **/.env

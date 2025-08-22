@@ -326,28 +326,28 @@ function ListaAlumnos_Admin_comp() {
   const [gruposPorCurso, setGruposPorCurso] = useState({
    
     'EEAU': [
-  { id: 1, nombre: 'V1', tipo: 'vespertino', capacidad: 10, alumnosActuales: 0 },
-  { id: 2, nombre: 'V2', tipo: 'vespertino', capacidad: 10, alumnosActuales: 0 },
-  { id: 3, nombre: 'M1', tipo: 'matutino', capacidad: 15, alumnosActuales: 0 }
+  { id: 1, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
+  { id: 2, nombre: 'V2', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
+  { id: 3, nombre: 'M1', tipo: 'matutino', capacidad: 30, alumnosActuales: 0 }
     ],
     'EEAP': [
-  { id: 4, nombre: 'V1', tipo: 'vespertino', capacidad: 12, alumnosActuales: 0 },
-  { id: 5, nombre: 'S1', tipo: 'sabatino', capacidad: 20, alumnosActuales: 0 }
+  { id: 4, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
+  { id: 5, nombre: 'S1', tipo: 'sabatino', capacidad: 30, alumnosActuales: 0 }
     ],
     'DIGI-START': [
-  { id: 6, nombre: 'V1', tipo: 'vespertino', capacidad: 8, alumnosActuales: 0 },
-  { id: 7, nombre: 'M1', tipo: 'matutino', capacidad: 10, alumnosActuales: 0 }
+  { id: 6, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
+  { id: 7, nombre: 'M1', tipo: 'matutino', capacidad: 30, alumnosActuales: 0 }
     ],
     'MINDBRIDGE': [
-  { id: 8, nombre: 'V1', tipo: 'vespertino', capacidad: 6, alumnosActuales: 0 }
+  { id: 8, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 }
     ],
     'SPEAKUP': [
-  { id: 9, nombre: 'V1', tipo: 'vespertino', capacidad: 8, alumnosActuales: 0 },
-  { id: 10, nombre: 'V2', tipo: 'vespertino', capacidad: 8, alumnosActuales: 0 }
+  { id: 9, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
+  { id: 10, nombre: 'V2', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 }
     ],
     'PCE': [
-  { id: 11, nombre: 'M1', tipo: 'matutino', capacidad: 12, alumnosActuales: 0 },
-  { id: 12, nombre: 'S1', tipo: 'sabatino', capacidad: 15, alumnosActuales: 0 }
+  { id: 11, nombre: 'M1', tipo: 'matutino', capacidad: 30, alumnosActuales: 0 },
+  { id: 12, nombre: 'S1', tipo: 'sabatino', capacidad: 30, alumnosActuales: 0 }
     ]
   });
 
@@ -449,7 +449,7 @@ function ListaAlumnos_Admin_comp() {
           id: idx + 1,
           nombre: r.grupo,
           tipo: tipoFromNombre(r.grupo),
-          capacidad: (gruposPorCurso[curso]?.find(g => g.nombre === r.grupo)?.capacidad) || 10,
+          capacidad: (gruposPorCurso[curso]?.find(g => g.nombre === r.grupo)?.capacidad) || 30,
           alumnosActuales: Number(r.cantidad_estudiantes) || 0
         }));
       setGruposPorCurso(prev => ({ ...prev, [curso]: grupos }));
@@ -463,9 +463,12 @@ function ListaAlumnos_Admin_comp() {
   const deleteStudentFromBackend = async (folio) => {
     try {
       if (deleteStudent && typeof deleteStudent === 'function') {
-        await deleteStudent(folio); // ← AdminContext.jsx
-        await fetchAlumnos(); // Recargar lista después de eliminar
-        return { success: true, message: 'Estudiante eliminado exitosamente' };
+        const res = await deleteStudent({ folio }); // ← AdminContext.jsx
+        if (res?.success) {
+          await fetchAlumnos(); // Recargar lista después de eliminar
+          return { success: true, message: 'Estudiante eliminado (acceso revocado)' };
+        }
+        return { success: false, message: res?.message || 'No se pudo eliminar (soft delete)'};
       }
       throw new Error('Función de eliminación no disponible en AdminContext');
     } catch (error) {

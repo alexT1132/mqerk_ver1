@@ -108,7 +108,9 @@ export const getGruposConCantidad = async (curso, status = 'aprobados') => {
       `
         SELECT e.grupo AS grupo, COUNT(*) AS cantidad_estudiantes
         FROM estudiantes e
+        LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
         WHERE e.curso = ?
+          AND sd.id IS NULL
         GROUP BY e.grupo
       `,
       [curso]
@@ -121,8 +123,10 @@ export const getGruposConCantidad = async (curso, status = 'aprobados') => {
       `
         SELECT e.grupo AS grupo, COUNT(*) AS cantidad_estudiantes
         FROM estudiantes e
+        LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
         WHERE e.curso = ?
           AND e.verificacion = 1
+          AND sd.id IS NULL
         GROUP BY e.grupo
       `,
       [curso]
@@ -135,8 +139,10 @@ export const getGruposConCantidad = async (curso, status = 'aprobados') => {
       `
         SELECT e.grupo AS grupo, COUNT(*) AS cantidad_estudiantes
         FROM estudiantes e
+        LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
         WHERE e.curso = ?
           AND e.verificacion = 3
+          AND sd.id IS NULL
         GROUP BY e.grupo
       `,
       [curso]
@@ -157,8 +163,10 @@ export const getGruposConCantidad = async (curso, status = 'aprobados') => {
       ) lp ON lp.id_estudiante = e.id
       INNER JOIN comprobantes c 
         ON c.id_estudiante = lp.id_estudiante AND c.created_at = lp.latest
+      LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
       WHERE e.curso = ?
         AND e.verificacion = 2
+        AND sd.id IS NULL
       GROUP BY e.grupo
     `,
     [curso]

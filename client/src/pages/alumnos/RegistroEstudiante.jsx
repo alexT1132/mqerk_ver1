@@ -4,6 +4,7 @@ import { BtnForm } from "../../components/FormRegistroComp.jsx";
 import { TextField, } from "@mui/material";
 import SelectField from "../../components/shared/SelectField.jsx";
 import { useEstudiantes } from "../../context/EstudiantesContext.jsx";
+import { getGruposConCantidadRequest } from "../../api/estudiantes.js";
 import { useNavigate } from "react-router-dom";
 
 const RegistroEstudiante=()=>{
@@ -15,6 +16,7 @@ const RegistroEstudiante=()=>{
     const [email, setEmail] = useState('');
     const [perfil, setPerfil] = useState({ foto: null });
     const [grupo, setGrupo] = useState('');
+    const [gruposDisponibles, setGruposDisponibles] = useState([]);
     const [comunidad1, setComunidad1] = useState([]);
     const [comunidad2, setComunidad2] = useState('');
     const [telefono, setTelefono] = useState('');
@@ -120,6 +122,35 @@ const RegistroEstudiante=()=>{
         };
 
         const opciones = ["V1", "V2", "V3", "M1", "M2", "S1"];
+
+        // Cargar conteo de alumnos por grupo del curso seleccionado (desde datos.curso)
+        useEffect(() => {
+            const cargarGrupos = async () => {
+                try {
+                    const curso = datos?.curso;
+                    if (!curso) { setGruposDisponibles([]); return; }
+                    const res = await getGruposConCantidadRequest(curso, 'todos');
+                    const rows = Array.isArray(res?.data) ? res.data : (res?.data ? [res.data] : []);
+                    const capacidadPorDefecto = 30;
+                    const list = opciones.map((nombre) => {
+                        const r = rows.find(row => String(row.grupo).toUpperCase() === String(nombre).toUpperCase());
+                        const alumnosActuales = Number(r?.cantidad_estudiantes || 0);
+                        const capacidad = capacidadPorDefecto;
+                        const lleno = alumnosActuales >= capacidad;
+                        return {
+                            value: nombre,
+                            label: `${nombre}${lleno ? ' (LLENO)' : ''}`,
+                            disabled: lleno,
+                        };
+                    });
+                    setGruposDisponibles(list);
+                } catch (e) {
+                    // Si falla backend, mostrar opciones normales sin deshabilitar
+                    setGruposDisponibles(opciones.map(n => ({ value: n, label: n })));
+                }
+            };
+            cargarGrupos();
+        }, [datos?.curso]);
 
 
         const toggleComunidad = (comunidad) => {
@@ -363,7 +394,7 @@ const RegistroEstudiante=()=>{
                                 label="Selecciona tu grupo *"
                                 value={grupo}
                                 onChange={(e) => setGrupo(e.target.value)}
-                                options={opciones.map((o) => ({ label: o, value: o }))}
+                                options={gruposDisponibles.length ? gruposDisponibles : opciones.map((o) => ({ label: o, value: o }))}
                                 placeholder="Selecciona una opción"
                                 error={showErrors0 && !!errors.grupo}
                                 helperText={showErrors0 && errors.grupo ? errors.grupo : ""}

@@ -9,7 +9,7 @@ export const createNotification = async (n) => {
 };
 
 export const bulkCreateNotifications = async (list=[]) => {
-  if(!list.length) return 0;
+  if(!list.length) return { affectedRows:0, firstInsertId: null };
   const values = [];
   const placeholders = list.map(n => {
     values.push(n.student_id, n.type || 'other', n.title, n.message, n.action_url || null, n.metadata ? JSON.stringify(n.metadata) : null);
@@ -19,7 +19,7 @@ export const bulkCreateNotifications = async (list=[]) => {
     `INSERT INTO student_notifications (student_id,type,title,message,action_url,metadata) VALUES ${placeholders}`,
     values
   );
-  return res.affectedRows;
+  return { affectedRows: res.affectedRows, firstInsertId: res.insertId };
 };
 
 export const listNotifications = async (student_id, { limit=50, offset=0 } = {}) => {

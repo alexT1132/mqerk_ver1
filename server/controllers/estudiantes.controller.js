@@ -423,7 +423,9 @@ export const getApprovedStudents = async (req, res) => {
         GROUP BY id_estudiante
       ) lp ON lp.id_estudiante = e.id
       INNER JOIN comprobantes c ON c.id_estudiante = lp.id_estudiante AND c.created_at = lp.latest
+      LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
       WHERE e.verificacion = 2
+        AND sd.id IS NULL
         ${curso ? 'AND e.curso = ?' : ''}
         ${grupo ? 'AND e.grupo = ?' : ''}
       ORDER BY c.created_at DESC`;

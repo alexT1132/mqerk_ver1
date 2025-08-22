@@ -62,7 +62,7 @@ export const StudentNotificationProvider = ({ children }) => {
   // Estados principales
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(false); // Para WebSocket
+  const [isConnected, setIsConnected] = useState(false); // Estado lógico de conexión (reflejado por StudentContext)
   const [lastUpdated, setLastUpdated] = useState(null);
 
   // TODO: BACKEND - Mock data para testing (eliminar cuando se conecte al backend)
@@ -161,7 +161,22 @@ export const StudentNotificationProvider = ({ children }) => {
     try {
       const res = await axios.get('/student/notifications');
       const rows = res.data?.data || [];
-      setNotifications(rows.map(r => ({ ...r, timestamp: new Date(r.created_at) })));
+      // Normalizar y deduplicar (por id)
+      const seen = new Set();
+      const norm = [];
+      for (const r of rows) {
+        if (r.id && seen.has(r.id)) continue;
+        if (r.id) seen.add(r.id);
+        norm.push({ ...r, timestamp: new Date(r.created_at) });
+      }
+      setNotifications(prev => {
+        // Merge manteniendo existentes con cambios de is_read
+        const map = new Map();
+        for (const n of prev) map.set(n.id, n);
+        for (const n of norm) map.set(n.id, n);
+        // Ordenar desc por id (asumiendo autoincrement) o timestamp fallback
+        return Array.from(map.values()).sort((a,b) => (b.id||0)-(a.id||0) || b.timestamp - a.timestamp);
+      });
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error al cargar notificaciones:', error);
@@ -187,42 +202,41 @@ export const StudentNotificationProvider = ({ children }) => {
   // Eliminar todas las notificaciones leídas
   const deleteAllRead = async () => { try { await axios.delete('/student/notifications/delete-read'); setNotifications(prev => prev.filter(n => !n.is_read)); } catch(e){ console.error('deleteAllRead', e); } };
 
-  // TODO: BACKEND - Configurar WebSocket para notificaciones en tiempo real
-  const connectToNotifications = () => {
-    try {
-      // TODO: Implementar conexión WebSocket
-      // const studentId = getStudentId();
-      // const ws = new WebSocket(`wss://api.example.com/notifications/${studentId}`);
-      
-      // ws.onopen = () => {
-      //   setIsConnected(true);
-      //   console.log('🔌 Conectado a notificaciones en tiempo real');
-      // };
-      
-      // ws.onmessage = (event) => {
-      //   const newNotification = JSON.parse(event.data);
-      //   setNotifications(prev => [newNotification, ...prev]);
-      // };
-      
-      // ws.onclose = () => {
-      //   setIsConnected(false);
-      //   console.log('🔌 Desconectado de notificaciones en tiempo real');
-      // };
-      
-      // ws.onerror = (error) => {
-      //   console.error('Error en WebSocket de notificaciones:', error);
-      // };
-      
-      // return ws;
-      
-      // Mock para testing
-      console.log('🔌 Mock: Conectado a notificaciones en tiempo real');
-      setIsConnected(true);
-      
-    } catch (error) {
-      console.error('Error al conectar WebSocket:', error);
-    }
-  };
+  // Ya no abrimos un WebSocket propio aquí. Dejamos que StudentContext maneje la conexión
+  // y emitimos/recibimos mediante eventos del navegador. Reflejamos isConnected
+  // escuchando los eventos de conexión si fuera necesario en el futuro.
+
+  // Integración en tiempo real: escuchar eventos emitidos por StudentContext (event-driven)
+  useEffect(() => {
+    const handler = (e) => {
+      const data = e.detail;
+      if(!data) return;
+      if (data.type === 'welcome') {
+        setIsConnected(true);
+      }
+      if (data.type === 'notification' && data.payload) {
+        const p = data.payload;
+        setNotifications(prev => {
+          // Deduplicar por notif_id si viene, si no por combinación kind+entrega_id+actividad_id
+          const idKey = p.notif_id || `${p.kind}:${p.entrega_id || ''}:${p.actividad_id || ''}`;
+          if (prev.some(n => String(n.id) === String(p.notif_id) || n._runtimeKey === idKey)) return prev;
+          const instant = {
+            id: p.notif_id || undefined,
+            _runtimeKey: idKey,
+            type: p.kind || p.type || 'general',
+            title: p.kind === 'grade' ? 'Calificación publicada' : (p.title || 'Notificación'),
+            message: p.kind === 'grade' && p.calificacion !== undefined ? `Tu entrega fue calificada con ${p.calificacion}` : (p.message || ''),
+            is_read: 0,
+            timestamp: new Date(),
+            created_at: new Date().toISOString()
+          };
+            return [instant, ...prev].slice(0,200); // mantener límite razonable
+        });
+      }
+    };
+    window.addEventListener('student-ws-message', handler);
+    return () => window.removeEventListener('student-ws-message', handler);
+  }, []);
 
   // Añadir nueva notificación (para testing y WebSocket)
   const addNotification = (notification) => {
@@ -264,7 +278,6 @@ export const StudentNotificationProvider = ({ children }) => {
   // Cargar notificaciones al inicializar
   const { isAuthenticated, user } = useAuth();
   const pollRef = useRef(null);
-  const wsRef = useRef(null);
   useEffect(() => {
     // Si NO está autenticado como estudiante: asegurar limpieza (importante para evitar 401 tras logout)
     if(!(isAuthenticated && user?.role === 'estudiante')){
@@ -277,46 +290,8 @@ export const StudentNotificationProvider = ({ children }) => {
     loadNotifications();
     pollRef.current = setInterval(() => loadNotifications(), 60000);
 
-    // Construir URL WS a partir del baseURL de axios para no usar el puerto de Vite (5173)
-    let wsUrl;
-    try {
-      const base = new URL(axios.defaults.baseURL); // ej: http://localhost:1002/api
-      const proto = base.protocol === 'https:' ? 'wss:' : 'ws:'; // CORRECTO: http -> ws, https -> wss
-      wsUrl = `${proto}//${base.host}/ws/notifications`;
-    } catch(_e){
-      const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      wsUrl = `${proto}://${window.location.hostname}:1002/ws/notifications`;
-    }
-
-    try {
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-      ws.onopen = () => setIsConnected(true);
-      ws.onclose = () => setIsConnected(false);
-      ws.onerror = () => {};
-      ws.onmessage = (evt) => {
-        try {
-          const data = JSON.parse(evt.data);
-          if(data.type === 'notification' && data.payload){
-            const base = data.payload;
-            const temp = {
-              id: `temp-${Date.now()}`,
-              type: base.kind === 'grade' ? 'grade' : base.kind === 'assignment' ? 'assignment' : 'system',
-              title: base.kind === 'grade' ? 'Nueva calificación' : base.title || 'Notificación',
-              message: base.kind === 'grade' ? `Calificación: ${base.calificacion}` : (base.message || ''),
-              action_url: '/alumno/actividades',
-              is_read: 0,
-              timestamp: new Date()
-            };
-            setNotifications(prev => [temp, ...prev]);
-          }
-        } catch {}
-      };
-    } catch(_err) {}
-
     return () => {
       if(pollRef.current){ clearInterval(pollRef.current); pollRef.current = null; }
-      if(wsRef.current && wsRef.current.readyState === 1){ try { wsRef.current.close(); } catch(_){} }
     };
   }, [isAuthenticated, user]);
 

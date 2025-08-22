@@ -18,3 +18,4 @@ export const createSubmission = (formData) => api.post('/feedback/submissions', 
 export const listSubmissionsByStudent = (id_estudiante, params={}) => api.get(`/feedback/submissions/student/${id_estudiante}`, { params });
 export const listSubmissionsByTask = (id_task, params={}) => api.get(`/feedback/submissions/task/${id_task}`, { params });
 export const updateSubmissionGrade = (id, puntos) => api.put(`/feedback/submissions/${id}/grade`, { puntos });
+export const cancelSubmissionApi = (id) => api.delete(`/feedback/submissions/${id}`);

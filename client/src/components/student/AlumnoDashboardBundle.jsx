@@ -22,6 +22,7 @@ import CourseDetailDashboard from '../shared/CourseDetailDashboard.jsx';
 import { Actividades_Alumno_comp } from './Actividades_Alumno_comp.jsx';
 import { Simulaciones_Alumno_comp } from './Simulaciones_Alumno_comp.jsx';
 import { CerrarSesion_Alumno_comp } from './CerrarSesion_Alumno_comp.jsx';
+import { AccessGuard } from './AccessGuard.jsx';
 
 import { CourseProvider } from '../../context/CourseContext.jsx';
 
@@ -154,11 +155,11 @@ function StudentAwareLayout() {
           <Route path="/course-details" element={<CourseDetailDashboard />} />
           <Route path="/cursos" element={<MisCursos_Alumno_comp />} />
           <Route path="/mi-perfil" element={<Profile_Alumno_comp />} />
-          <Route path="/actividades" element={<Actividades_Alumno_comp />} />
-          <Route path="/simulaciones" element={<Simulaciones_Alumno_comp />} />
-          <Route path="/feedback" element={<Feedback_Alumno_Comp />} />
-          <Route path="/asistencia" element={<Asistencia_Alumno_comp />} />
-          <Route path="/calendario" element={<Calendar_Alumno_comp />} />
+          <Route path="/actividades" element={<AccessGuard><Actividades_Alumno_comp /></AccessGuard>} />
+          <Route path="/simulaciones" element={<AccessGuard><Simulaciones_Alumno_comp /></AccessGuard>} />
+          <Route path="/feedback" element={<AccessGuard><Feedback_Alumno_Comp /></AccessGuard>} />
+          <Route path="/asistencia" element={<AccessGuard><Asistencia_Alumno_comp /></AccessGuard>} />
+          <Route path="/calendario" element={<AccessGuard><Calendar_Alumno_comp /></AccessGuard>} />
           <Route path="/mis-pagos" element={<MisPagos_Alumno_comp />} />
           <Route path="/configuracion" element={<Configuracion_Alumno_comp />} />
           <Route path="/logout" element={<CerrarSesion_Alumno_comp />} />

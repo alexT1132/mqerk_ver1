@@ -950,6 +950,7 @@ export const TablaEstudiantes = ({ grupoAsesor, gruposAsesor = [] }) => {
   const [availableGroups, setAvailableGroups] = useState([]); // grupos detectados del asesor
   const [selectedGroup, setSelectedGroup] = useState('ALL');
   const [submissionsMap, setSubmissionsMap] = useState({});
+  const [filesModal, setFilesModal] = useState({ open:false, archivos:[], estudiante:null });
   const [loadingSubs, setLoadingSubs] = useState(false);
   // Cargar desde backend
   useEffect(()=> {
@@ -1006,12 +1007,12 @@ export const TablaEstudiantes = ({ grupoAsesor, gruposAsesor = [] }) => {
       try {
         const res = await apiListEntregasActividad(selectedActividadId);
         const entregas = Array.isArray(res.data?.data) ? res.data.data : [];
-        const map = {}; entregas.forEach(en => { map[en.id_estudiante] = en; });
+  const map = {}; entregas.forEach(en => { map[en.id_estudiante] = en; }); // No change
         setSubmissionsMap(map);
         setEstudiantes(prev=> prev.map(e=> {
           const ent = map[e.id_estudiante];
             if(!ent) return { ...e, entregado:false, archivoUrl:'#', calificacion:null };
-            return { ...e, entregado:true, archivoUrl: ent.archivo, calificacion: ent.calificacion };
+            return { ...e, entregado:true, archivoUrl: ent.archivo, calificacion: ent.calificacion, archivos: ent.archivos || [] };
         }));
       } catch(e){ console.error(e); }
       finally { setLoadingSubs(false); }
@@ -1130,23 +1131,21 @@ export const TablaEstudiantes = ({ grupoAsesor, gruposAsesor = [] }) => {
                   )}
                 </td>
                 <td className="flex py-2 px-4 justify-center gap-x-3">
-                  <a
-                    title="Descargar tarea"
-                    href={est.entregado ? est.archivoUrl : undefined}
-                    className={`bg-blue-500 flex items-center hover:bg-blue-700 px-3 py-1 rounded ${!est.entregado ? 'opacity-50 pointer-events-none':''}`}
-                    download
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#e3e3e3"><path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>
-                  </a>
-                  <a
-                    title="Visualizar tarea"
-                    href={est.entregado ? est.archivoUrl : undefined}
-                    className={`bg-green-500 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold transition ${!est.entregado ? "opacity-50 pointer-events-none" : ""}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#e3e3e3"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z"/></svg>
-                  </a>
+                  <button
+                    title="Ver archivos"
+                    disabled={!est.entregado}
+                    onClick={() => {
+                      if(!est.entregado) return;
+                      const archivos = (est.archivos && est.archivos.length)
+                        ? est.archivos
+                        : (est.archivoUrl && est.archivoUrl !== '#'
+                          ? [{ archivo: est.archivoUrl, original_nombre: est.archivoUrl.split('/').pop() }]
+                          : []);
+                      console.log('Abrir modal archivos', { estudiante: est.folio, archivos });
+                      setFilesModal({ open:true, archivos, estudiante: est });
+                    }}
+                    className={`bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded text-xs font-semibold transition inline-flex items-center justify-center ${!est.entregado ? 'opacity-50 pointer-events-none':''}`}
+                  >Ver</button>
                 </td>
               </tr>
             );
@@ -1156,6 +1155,46 @@ export const TablaEstudiantes = ({ grupoAsesor, gruposAsesor = [] }) => {
           )}
         </tbody>
       </table>
+      {filesModal.open && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-3 border-b">
+              <h3 className="text-sm sm:text-base font-semibold text-purple-700">Archivos de {filesModal.estudiante?.nombre || 'estudiante'}</h3>
+              <button
+                onClick={() => setFilesModal({ open:false, archivos:[], estudiante:null })}
+                className="p-1 rounded hover:bg-purple-100 text-purple-600"
+                title="Cerrar"
+              ><X size={18} /></button>
+            </div>
+            <div className="p-4 overflow-y-auto space-y-3">
+              {(!filesModal.archivos || !filesModal.archivos.length) && (
+                <div className="text-sm text-gray-500">No hay archivos para esta entrega.</div>
+              )}
+              {filesModal.archivos && filesModal.archivos.map((f,idx)=> {
+                const url = f.archivo || f.url || '';
+                const displayName = f.original_nombre || f.nombre_original || url.split('/').pop() || `Archivo ${idx+1}`;
+                const absoluteUrl = /^https?:/i.test(url) ? url : `${window.location.origin}${url.startsWith('/')? '': '/'}${url}`;
+                return (
+                  <div key={idx} className="flex items-center gap-3 border rounded-md p-3 group bg-gray-50 hover:bg-gray-100 transition">
+                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded bg-purple-200 text-purple-700 font-semibold text-xs">PDF</div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-sm font-medium text-gray-800 truncate" title={displayName}>{displayName}</span>
+                      {f.created_at && <span className="text-[10px] text-gray-500">{new Date(f.created_at).toLocaleString()}</span>}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <a href={absoluteUrl} target="_blank" rel="noopener noreferrer" className="px-2 py-1 text-xs rounded bg-green-600 hover:bg-green-700 text-white font-semibold" title="Abrir">Ver</a>
+                      <a href={absoluteUrl} download={displayName} className="px-2 py-1 text-xs rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold" title="Descargar">Descargar</a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="px-5 py-3 border-t flex justify-end">
+              <button onClick={() => setFilesModal({ open:false, archivos:[], estudiante:null })} className="px-4 py-1.5 rounded bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

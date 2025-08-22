@@ -74,6 +74,9 @@ export const AdminProvider = ({ children }) => {
   const [studentsData, setStudentsData] = useState(null);
   const [paymentsData, setPaymentsData] = useState(null);
   const [systemStatus, setSystemStatus] = useState('online');
+  // Estado de WS admin
+  const [wsStatus, setWsStatus] = useState('idle'); // idle|connecting|open|closed|error
+  const [wsAttempts, setWsAttempts] = useState(0);
 
   /**
    * Función para cargar métricas del dashboard principal
@@ -392,6 +395,47 @@ export const AdminProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, []);
 
+  // WebSocket para admins: mismo endpoint, autenticación por cookie token_admin
+  useEffect(() => {
+    let ws; let closedManually = false; let reconnectTimer;
+    async function openSocket(attempt){
+      setWsStatus('connecting');
+      // Reutilizamos helper para construir URL (sin importar Vite)
+      const { getWsNotificationsUrl, waitForBackendHealth } = await import('../utils/ws.js');
+      await waitForBackendHealth(1500).catch(()=>{});
+      const url = getWsNotificationsUrl();
+      try { ws = new WebSocket(url); } catch(err){ scheduleReconnect(attempt); return; }
+      ws.onopen = () => setWsStatus('open');
+      ws.onclose = () => { setWsStatus('closed'); if(!closedManually) scheduleReconnect(attempt+1); };
+      ws.onerror = () => setWsStatus('error');
+      ws.onmessage = (evt) => {
+        try {
+          const data = JSON.parse(evt.data);
+          // Reemitir como evento global para hooks/componentes (event-driven)
+          try { window.dispatchEvent(new CustomEvent('admin-ws-message', { detail: data })); } catch(_e) {}
+          // Eventos relevantes para admin
+          // 1) Nueva subida de comprobante por estudiante -> refrescar badge pendientes
+          if (data.type === 'student_status' && Number(data.payload?.verificacion) === 1) {
+            // No siempre se emite 1 desde el backend actual; si se emite, refrescamos
+            loadDashboardMetrics();
+          }
+          // 2) Evento explícito para admin: new_comprobante
+          if (data.type === 'new_comprobante') {
+            loadDashboardMetrics();
+          }
+        } catch(_e) {}
+      };
+    }
+    function scheduleReconnect(nextAttempt){
+      const backoff = Math.min(30000, 1000 * Math.pow(2, nextAttempt));
+      setWsAttempts(nextAttempt);
+      reconnectTimer = setTimeout(() => openSocket(nextAttempt), backoff);
+    }
+    openSocket(wsAttempts+1);
+    return () => { closedManually = true; try { ws && ws.close(); } catch(_){}; if(reconnectTimer) clearTimeout(reconnectTimer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /**
    * Generate contract for a payment
    */
@@ -476,37 +520,25 @@ export const AdminProvider = ({ children }) => {
   /**
    * Delete/Remove a student
    */
-  const deleteStudent = async (studentId) => {
+  const deleteStudent = async ({ id, folio, motivo } = {}) => {
     try {
-      // TODO: BACKEND - Reemplazar con endpoint real cuando esté disponible
-      // const response = await fetch(`/api/admin/students/${studentId}`, {
-      //   method: 'DELETE',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Error deleting student');
-      // }
-      
-      // return await response.json();
-      
-      // MOCK - Simular eliminación de estudiante
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      console.log(`🗑️ Estudiante ${studentId} eliminado (MOCK)`);
-      
-      return {
-        success: true,
-        message: 'Estudiante eliminado exitosamente',
-        studentId: studentId,
-        timestamp: new Date().toISOString()
-      };
+      let studentId = id;
+      // Resolver id por folio si no se pasó id
+      if (!studentId && folio) {
+        const { data } = await axios.get(`/admin/estudiantes/folio/${encodeURIComponent(folio)}`);
+        studentId = data?.data?.id;
+      }
+      if (!studentId) throw new Error('No se pudo determinar el ID del estudiante');
+
+      await axios.post(`/estudiantes/${studentId}/soft-delete`, {
+        reason: motivo || 'Eliminado por admin'
+      });
+
+      return { success: true };
     } catch (err) {
-      console.error('Error deleting student:', err);
-      throw err;
+      console.error('Delete student error:', err);
+      const msg = err?.response?.data?.message || err?.message || 'Error al eliminar estudiante';
+      return { success: false, message: msg };
     }
   };
 

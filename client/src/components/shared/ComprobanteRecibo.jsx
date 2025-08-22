@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import LoadingOverlay from './LoadingOverlay.jsx';
+import { exportApprovedComprobantesToExcel } from '../../utils/exportExcel.js';
 import { useEstudiantes } from "../../context/EstudiantesContext";
 import { useComprobante } from '../../context/ComprobantesContext';
 
@@ -159,6 +161,7 @@ function PdfZoomTip({ onDismiss }) {
 
 // COMPONENTE PRINCIPAL: Gestión de Comprobantes de Pago
 export function ComprobanteRecibo() {
+    const location = typeof window !== 'undefined' ? useLocation() : { search: '' };
     // ==================== ESTADOS DE LA APLICACIÓN ====================
     
     // Estados de navegación y UI
@@ -168,6 +171,8 @@ export function ComprobanteRecibo() {
     const [activeCategory, setActiveCategory] = useState('');
     const [activeVespertino, setActiveVespertino] = useState('');
     const [vistaActual, setVistaActual] = useState('pendientes'); // 'pendientes', 'aprobados', 'rechazados'
+    // Buscador solo para la tabla de aprobados
+    const [approvedSearchTerm, setApprovedSearchTerm] = useState(() => sessionStorage.getItem('compRecibo_aprobados_searchTerm') || '');
    
     // Estados de modales
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -345,7 +350,7 @@ export function ComprobanteRecibo() {
            id: 1, 
            nombre: "V1", 
            tipo: "vespertino", 
-           capacidad: 10,        ← DINÁMICO: Admin puede cambiar
+           capacidad: 30,        ← DINÁMICO: Admin puede cambiar
            alumnosActuales: 8    ← DINÁMICO: Se actualiza automáticamente
          }
        ]
@@ -647,8 +652,56 @@ export function ComprobanteRecibo() {
     // Derivar listas por estado/verificacion
     const pendientes = mergedArray.filter(c => Number(c.verificacion) === 1 || (!c.verificacion && c.estado !== 'rechazado' && c.estado !== 'aprobado'));
     const aprobados = mergedArray.filter(c => Number(c.verificacion) === 2 || c.estado === 'aprobado');
-    const rechazados = mergedArray.filter(c => Number(c.verificacion) === 3 || c.estado === 'rechazado');
+    const rechazados = mergedArray.filter(c => {
+        const v = Number(c.verificacion);
+        const estado = c.estado;
+        const motivo = (c.motivoRechazo ?? '').toString().trim();
+        // Considerar rechazados por:
+        // - verificacion=3
+        // - estado='rechazado' (override UI)
+        // - tiene motivoRechazo y NO está aprobado actualmente
+        return v === 3 || estado === 'rechazado' || (motivo !== '' && v !== 2);
+    });
     const currentList = vistaActual === 'aprobados' ? aprobados : vistaActual === 'rechazados' ? rechazados : pendientes;
+    
+    // Persistir el término de búsqueda de aprobados
+    useEffect(() => {
+        sessionStorage.setItem('compRecibo_aprobados_searchTerm', approvedSearchTerm || '');
+    }, [approvedSearchTerm]);
+
+    // Filtrar solo la lista de aprobados según el buscador
+    const displayedList = (() => {
+        if (vistaActual !== 'aprobados') return currentList;
+        const term = (approvedSearchTerm || '').trim().toLowerCase();
+        if (!term) return currentList;
+        const twoDigits = (() => {
+            const y = new Date().getFullYear() + 1;
+            return String(y).slice(-2);
+        })();
+        const safe = (v) => (v === undefined || v === null) ? '' : String(v).toLowerCase();
+        return currentList.filter(c => {
+            // Folio mostrado en tabla, y variaciones comunes
+            const folioRaw = String(c.folio ?? '').padStart(4, '0');
+            const folioShown = `m${(activeCategory||'').toUpperCase()}${twoDigits}-${folioRaw}`.toLowerCase();
+            const folioSimple = String(c.folio ?? '').toLowerCase();
+            // Nombre completo
+            const nombre = safe(c.nombre) + ' ' + safe(c.apellidos);
+            // Metodo e importe
+            const metodo = safe(c.metodoPago || c.metodo);
+            const importe = safe(c.importe);
+            // Correos si existieran en el objeto
+            const correo = safe(c.correo || c.correoElectronico);
+            return (
+                nombre.includes(term) ||
+                folioShown.includes(term) ||
+                folioRaw.includes(term) ||
+                folioSimple.includes(term) ||
+                metodo.includes(term) ||
+                importe.includes(term) ||
+                correo.includes(term)
+            );
+        });
+    })();
     const apiOrigin = (import.meta?.env?.VITE_API_URL || `http://${window.location.hostname}:1002/api`).replace(/\/api\/?$/, '');
 
     // Sincronizar estado base 'comprobantes' sólo cuando cambian datos del backend
@@ -666,7 +719,9 @@ export function ComprobanteRecibo() {
             setActiveCategory(categoria);
             setActiveVespertino('');
             setShowContent(false); 
-            getGrupo(categoria);
+            // Mostrar TODOS los grupos (incluyendo aquellos con solo rechazados o pendientes)
+            // Sigue excluyendo soft-deleted desde el backend
+            getGrupo(categoria, 'todos');
         }
     };
 
@@ -680,6 +735,46 @@ export function ComprobanteRecibo() {
             getComprobantes(vespertino, activeCategory);
         }
     };
+
+    // Deep-link: si hay ?curso=EEAU&grupo=V2 en la URL, preseleccionar y cargar
+    useEffect(() => {
+        try {
+            const params = new URLSearchParams(location?.search || window.location.search || '');
+            const cursoParam = params.get('curso');
+            const grupoParam = params.get('grupo');
+            if (cursoParam && cursosDisponibles.includes(cursoParam)) {
+                // Seleccionar curso y cargar grupos 'todos' para asegurar presencia aunque solo haya rechazados
+                setActiveCategory(cursoParam);
+                getGrupo(cursoParam, 'todos');
+                if (grupoParam) {
+                    // Pequeño delay para asegurar que gruposObtenidos se llene antes de pedir comprobantes
+                    setTimeout(() => {
+                        setActiveVespertino(grupoParam);
+                        setShowContent(true);
+                        getComprobantes(grupoParam, cursoParam);
+                    }, 50);
+                }
+            }
+        } catch(_) { /* noop */ }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Escuchar eventos WS del admin para refrescar en tiempo real la tabla si coincide curso/grupo
+    useEffect(() => {
+        const onAdminEvent = (e) => {
+            const data = e.detail;
+            if (!data) return;
+            if (data.type === 'new_comprobante') {
+                const p = data.payload || {};
+                if (p.curso === activeCategory && p.grupo === activeVespertino) {
+                    // Refrescar listado actual
+                    getComprobantes(activeVespertino, activeCategory);
+                }
+            }
+        };
+        window.addEventListener('admin-ws-message', onAdminEvent);
+        return () => window.removeEventListener('admin-ws-message', onAdminEvent);
+    }, [activeCategory, activeVespertino]);
 
     // Auto-ocultar overlay tras 2s para simular la carga inicial
     useEffect(() => {
@@ -1084,6 +1179,57 @@ export function ComprobanteRecibo() {
                             </div>
                             
                             <div className="overflow-x-auto">
+                                {vistaActual === 'aprobados' && (
+                                    <div className="px-4 xs:px-6 pt-4 pb-2 bg-white border-b border-gray-200">
+                                        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                            <div className="flex-1">
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Buscar en aprobados: nombre, folio, correo, método..."
+                                                        value={approvedSearchTerm}
+                                                        onChange={(e) => setApprovedSearchTerm(e.target.value)}
+                                                        className="w-full px-3 xs:px-4 py-2 xs:py-3 pl-8 xs:pl-10 pr-8 xs:pr-10 text-xs xs:text-sm border border-gray-300 rounded-md xs:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                                    />
+                                                    <div className="absolute inset-y-0 left-0 pl-2 xs:pl-3 flex items-center pointer-events-none">
+                                                        <svg className="h-4 xs:h-5 w-4 xs:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                        </svg>
+                                                    </div>
+                                                    {approvedSearchTerm && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setApprovedSearchTerm('')}
+                                                            className="absolute inset-y-0 right-0 pr-2 xs:pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                                            aria-label="Limpiar búsqueda"
+                                                            title="Limpiar"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 xs:h-5 xs:w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-10.293a1 1 0 00-1.414-1.414L10 8.586 7.707 6.293a1 1 0 10-1.414 1.414L8.586 10l-2.293 2.293a1 1 0 101.414 1.414L10 11.414l2.293 2.293a1 1 0 001.414-1.414L11.414 10l2.293-2.293z" clipRule="evenodd" />
+                                                            </svg>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                {approvedSearchTerm && (
+                                                    <div className="mt-1 text-right text-[11px] xs:text-xs text-gray-500">
+                                                        Mostrando {displayedList.length} resultado{displayedList.length === 1 ? '' : 's'}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-none">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => exportApprovedComprobantesToExcel(displayedList, { curso: activeCategory, grupo: activeVespertino, apiOrigin })}
+                                                    className="inline-flex items-center px-3 py-2 rounded-md text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors"
+                                                    title="Exportar tabla de aprobados a Excel"
+                                                >
+                                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v8m-4-4h8m4 4v3a2 2 0 01-2 2H6a2 2 0 01-2-2v-3m16-4V7a2 2 0 00-2-2h-3.5a2 2 0 01-1.4-.6l-1.9-1.9A2 2 0 008.9 2H6a2 2 0 00-2 2v7"/></svg>
+                                                    Exportar Excel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 <table className="w-full min-w-[1000px] xs:min-w-[1100px] sm:min-w-[1200px]">
                                     <thead>
                                         <tr className={`${vistaActual === 'aprobados' ? 'bg-gradient-to-r from-green-700 to-green-800' : 
@@ -1110,10 +1256,10 @@ export function ComprobanteRecibo() {
                                             {/* Sin columna extra de edición; edición inline */}
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {currentList.length === 0 && (
+                    <tbody className="bg-white divide-y divide-gray-200">
+                    {(vistaActual === 'aprobados' ? displayedList : currentList).length === 0 && (
                                             <tr>
-                                                <td colSpan={vistaActual === 'rechazados' ? '8' : vistaActual === 'aprobados' ? '7' : '7'} className="px-4 xs:px-6 py-12 xs:py-16 text-center text-gray-500">
+                        <td colSpan={vistaActual === 'rechazados' ? '8' : vistaActual === 'aprobados' ? '7' : '7'} className="px-4 xs:px-6 py-12 xs:py-16 text-center text-gray-500">
                                                     <div className="flex flex-col items-center">
                                                         <div className={`w-12 xs:w-16 h-12 xs:h-16 rounded-full flex items-center justify-center mb-3 xs:mb-4 ${
                                                             vistaActual === 'aprobados' ? 'bg-green-100' : 
@@ -1141,7 +1287,7 @@ export function ComprobanteRecibo() {
                                             </tr>
                                         )}
                                         {/* Renderizar lista actual (pendientes/aprobados/rechazados) */}
-                                        {currentList.map((comprobante) => (
+                    {(vistaActual === 'aprobados' ? displayedList : currentList).map((comprobante) => (
                                                 <tr key={comprobante.id_estudiante ?? `${comprobante.folio}-${comprobante.created_at}`}
                                                     className={`hover:bg-gray-50 transition-colors duration-150 ${
                                                     vistaActual === 'rechazados' ? 'bg-red-50/30' : 

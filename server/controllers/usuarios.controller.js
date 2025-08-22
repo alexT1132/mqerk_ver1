@@ -623,8 +623,11 @@ export const getPaymentReports = async (req, res) => {
     const user = await Usuarios.getUsuarioPorid(userId);
     if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
-    const startDate = req.query.startDate;
-    const endDate = req.query.endDate;
+  const startDate = req.query.startDate;
+  const endDate = req.query.endDate;
+  // Filtros opcionales para alinear vistas por curso/grupo
+  const cursoFilter = req.query.curso || null;
+  const grupoFilter = req.query.grupo || null;
     if (!startDate || !endDate) {
       return res.status(400).json({ message: 'startDate y endDate son obligatorios (YYYY-MM-DD)' });
     }
@@ -640,14 +643,24 @@ export const getPaymentReports = async (req, res) => {
     // =============================
 
     // 1) Conteos por estado (usando verificacion en estudiantes)
+    //    - Evitar sobreconteo por múltiples comprobantes del mismo alumno: contar DISTINCT e.id
+    //    - Excluir soft-deletes
+    //    - Para aprobados: asegurar que el comprobante tiene importe (aprobado real)
+    let whereBase = `c.created_at BETWEEN ? AND ?`;
+    const paramsBase = [from, to];
+    if (cursoFilter) { whereBase += ` AND e.curso = ?`; paramsBase.push(cursoFilter); }
+    if (grupoFilter) { whereBase += ` AND e.grupo = ?`; paramsBase.push(grupoFilter); }
+
     const [estadoRows] = await db.query(
       `SELECT 
-          SUM(CASE WHEN e.verificacion = 1 THEN 1 ELSE 0 END) AS pendientes,
-          SUM(CASE WHEN e.verificacion = 2 THEN 1 ELSE 0 END) AS aprobados,
-          SUM(CASE WHEN e.verificacion = 3 THEN 1 ELSE 0 END) AS rechazados
+          COUNT(DISTINCT CASE WHEN e.verificacion = 1 THEN e.id END) AS pendientes,
+          COUNT(DISTINCT CASE WHEN e.verificacion = 2 AND c.importe IS NOT NULL THEN e.id END) AS aprobados,
+          COUNT(DISTINCT CASE WHEN e.verificacion = 3 THEN e.id END) AS rechazados
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
-       WHERE c.created_at BETWEEN ? AND ?`, [from, to]
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+       WHERE ${whereBase}
+         AND sd.id IS NULL`, paramsBase
     );
 
     const pagosPendientes = Number(estadoRows?.[0]?.pendientes || 0);
@@ -660,22 +673,26 @@ export const getPaymentReports = async (req, res) => {
       `SELECT COALESCE(SUM(c.importe), 0) AS totalIngresos
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
        WHERE e.verificacion = 2
          AND c.importe IS NOT NULL
-         AND c.created_at BETWEEN ? AND ?`, [from, to]
+         AND ${whereBase}
+         AND sd.id IS NULL`, paramsBase
     );
     const totalIngresos = Number(ingRows?.[0]?.totalIngresos || 0);
 
     // 3) Pagos aprobados por curso
     const [cursoRows] = await db.query(
-      `SELECT e.curso AS curso, COUNT(c.id_estudiante) AS pagos, COALESCE(SUM(c.importe), 0) AS ingresos
+      `SELECT e.curso AS curso, COUNT(DISTINCT e.id) AS pagos, COALESCE(SUM(c.importe), 0) AS ingresos
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
        WHERE e.verificacion = 2
          AND c.importe IS NOT NULL
-         AND c.created_at BETWEEN ? AND ?
+         AND ${whereBase}
+         AND sd.id IS NULL
        GROUP BY e.curso
-       ORDER BY ingresos DESC`, [from, to]
+       ORDER BY ingresos DESC`, paramsBase
     );
 
     // 4) Ingresos por mes (solo aprobados)
@@ -686,11 +703,13 @@ export const getPaymentReports = async (req, res) => {
               COUNT(*) AS pagos
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
        WHERE e.verificacion = 2
          AND c.importe IS NOT NULL
-         AND c.created_at BETWEEN ? AND ?
+         AND ${whereBase}
+         AND sd.id IS NULL
        GROUP BY anio, mes_num
-       ORDER BY anio ASC, mes_num ASC`, [from, to]
+       ORDER BY anio ASC, mes_num ASC`, paramsBase
     );
 
     // 5) Métodos de pago (solo aprobados)
@@ -698,11 +717,13 @@ export const getPaymentReports = async (req, res) => {
       `SELECT c.metodo, COUNT(*) AS cantidad
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
        WHERE e.verificacion = 2
          AND c.importe IS NOT NULL
-         AND c.created_at BETWEEN ? AND ?
+         AND ${whereBase}
+         AND sd.id IS NULL
        GROUP BY c.metodo
-       ORDER BY cantidad DESC`, [from, to]
+       ORDER BY cantidad DESC`, paramsBase
     );
 
     // 6) Pagos detallados (incluye aprobados, pendientes y rechazados)
@@ -712,6 +733,7 @@ export const getPaymentReports = async (req, res) => {
               e.nombre,
               e.apellidos,
               e.curso,
+              e.grupo,
               e.verificacion,
               c.importe,
               c.metodo,
@@ -720,8 +742,10 @@ export const getPaymentReports = async (req, res) => {
               c.updated_at
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
-       WHERE c.created_at BETWEEN ? AND ?
-       ORDER BY c.created_at DESC`, [from, to]
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+       WHERE ${whereBase}
+         AND sd.id IS NULL
+       ORDER BY c.created_at DESC`, paramsBase
     );
 
     // 7) Ingresos por semana (solo aprobados). YEARWEEK con modo 1 (semana ISO)
@@ -734,11 +758,13 @@ export const getPaymentReports = async (req, res) => {
               COUNT(*) AS pagos
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
        WHERE e.verificacion = 2
          AND c.importe IS NOT NULL
-         AND c.created_at BETWEEN ? AND ?
+         AND ${whereBase}
+         AND sd.id IS NULL
        GROUP BY anio, semana
-       ORDER BY anio DESC, semana DESC`, [from, to]
+       ORDER BY anio DESC, semana DESC`, paramsBase
     );
 
     // 8) Ingresos por año (solo aprobados) - útil para visión macro.
@@ -748,8 +774,10 @@ export const getPaymentReports = async (req, res) => {
               COUNT(*) AS pagos
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
        WHERE e.verificacion = 2
          AND c.importe IS NOT NULL
+         AND sd.id IS NULL
        GROUP BY anio
        ORDER BY anio DESC`
     );
@@ -783,6 +811,7 @@ export const getPaymentReports = async (req, res) => {
       nombre: r.nombre,
       apellidos: r.apellidos,
       curso: r.curso,
+      grupo: r.grupo,
       estado: r.verificacion, // 1 pendiente, 2 aprobado, 3 rechazado
       importe: r.importe != null ? Number(r.importe) : null,
       metodo: r.metodo,

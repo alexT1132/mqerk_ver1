@@ -61,9 +61,34 @@ export function useAdminNotifications() {
     // start polling every 60s
     pollingRef.current = setInterval(fetchMetrics, 60000);
 
+    // Suscribirse a eventos WS del admin para actualización inmediata
+    const wsListener = (e) => {
+      const data = e.detail;
+      if (!data) return;
+      if (data.type === 'new_comprobante') {
+        // Actualizar métricas y badge
+        fetchMetrics();
+        const p = data.payload || {};
+        const folioTxt = p.folio != null ? `Folio ${String(p.folio).padStart(4,'0')}` : 'Folio N/D';
+        const cursoTxt = p.curso ? String(p.curso).toUpperCase() : 'CURSO';
+        const grupoTxt = p.grupo ? String(p.grupo).toUpperCase() : 'GRUPO';
+        const alumnoTxt = [p.nombre, p.apellidos].filter(Boolean).join(' ').trim();
+        const msg = alumnoTxt
+          ? `Nuevo comprobante: ${alumnoTxt} • ${cursoTxt}-${grupoTxt} • ${folioTxt}`
+          : `Nuevo comprobante recibido • ${cursoTxt}-${grupoTxt} • ${folioTxt}`;
+        // Insertar notificación visible con más contexto
+        setNotifications(prev => [
+          { id: `cmp-${Date.now()}`, timestamp: new Date(), isRead: false, priority: 'normal', type: 'payment_pending', message: msg, meta: { curso: p.curso, grupo: p.grupo, folio: p.folio, id_estudiante: p.id_estudiante } },
+          ...prev
+        ]);
+      }
+    };
+    window.addEventListener('admin-ws-message', wsListener);
+
     return () => {
       isMounted = false;
       if (pollingRef.current) clearInterval(pollingRef.current);
+      window.removeEventListener('admin-ws-message', wsListener);
     };
   }, []);
 

@@ -39,6 +39,12 @@ export const calificarEntrega = async (id, calificacion, comentarios) => {
   return res;
 };
 
+// Revertir estado "revisada" para permitir nuevas modificaciones antes de la fecha límite
+export const resetRevision = async (id) => {
+  const [res] = await db.query('UPDATE actividades_entregas SET estado = "entregada", calificacion = NULL, comentarios = NULL WHERE id = ?', [id]);
+  return res;
+};
+
 export const listEntregasActividad = async (id_actividad, { limit = 100, offset = 0 } = {}) => {
   const [rows] = await db.query('SELECT * FROM actividades_entregas WHERE id_actividad = ? ORDER BY id DESC LIMIT ? OFFSET ?', [id_actividad, Number(limit), Number(offset)]);
   return rows;

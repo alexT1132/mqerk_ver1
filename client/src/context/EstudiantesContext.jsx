@@ -52,10 +52,10 @@ export function EstudiantesProvider({ children }) {
         }
     }
 
-    const getGrupo = async (curso) => {
+    const getGrupo = async (curso, status = 'todos') => {
         try {
-            // En comprobantes necesitamos ver todos los estados (pendientes/aprobados/rechazados)
-            const res = await getGruposConCantidadRequest(curso, 'todos');
+            // Permite elegir el estado a contar (todos|pendientes|rechazados|aprobados)
+            const res = await getGruposConCantidadRequest(curso, status);
             if (Array.isArray(res.data)) {
                 if (res.data.length === 1) {
                 setGrupos(res.data[0]);  // solo el objeto

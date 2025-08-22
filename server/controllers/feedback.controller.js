@@ -7,10 +7,7 @@ import { upload } from '../middlewares/multer.js';
 export const feedbackUploadMiddleware = upload.single('archivo');
 
 // Middleware para tareas: campos 'recursos' (múltiples) e 'imagen'
-export const taskUploadMiddleware = upload.fields([
-  { name: 'recursos', maxCount: 10 },
-  { name: 'imagen', maxCount: 1 }
-]);
+export const taskUploadMiddleware = (req, _res, next) => next();
 
 export const createTask = async (req, res) => {
   try {
@@ -20,23 +17,12 @@ export const createTask = async (req, res) => {
     if (grupos) {
       try { gruposParsed = Array.isArray(grupos) ? grupos : JSON.parse(grupos); } catch { return res.status(400).json({ message:'grupos debe ser array JSON válido'}); }
     }
-    // Procesar archivos
-    const archivosRecursos = (req.files?.recursos || []).map(f => ({
-      nombre_original: f.originalname,
-      archivo: `/public/${f.filename}`,
-      mime: f.mimetype,
-      size: f.size
-    }));
-    const imagenPortada = req.files?.imagen?.[0] ? `/public/${req.files.imagen[0].filename}` : null;
-
     const id = await Tasks.createTask({
       nombre,
       descripcion,
       due_date,
       puntos: puntos || 10,
       grupos: gruposParsed,
-      archivos_json: archivosRecursos.length ? archivosRecursos : null,
-      imagen_portada: imagenPortada
     });
     const task = await Tasks.getTask(id);
     res.status(201).json({ data: task });
@@ -57,24 +43,13 @@ export const updateTask = async (req, res) => {
         try { gruposParsed = JSON.parse(grupos); } catch { return res.status(400).json({ message:'grupos JSON inválido'}); }
       }
     }
-    // Si llegan nuevos uploads, reemplazar
-    const archivosRecursos = (req.files?.recursos || []).map(f => ({
-      nombre_original: f.originalname,
-      archivo: `/public/${f.filename}`,
-      mime: f.mimetype,
-      size: f.size
-    }));
-    const imagenPortada = req.files?.imagen?.[0] ? `/public/${req.files.imagen[0].filename}` : undefined; // undefined si no enviada
-
     const resUpd = await Tasks.updateTask(id, {
       nombre,
       descripcion,
       due_date,
       puntos,
       activo,
-      grupos: gruposParsed,
-      archivos_json: archivosRecursos.length ? archivosRecursos : undefined,
-      imagen_portada: imagenPortada
+  grupos: gruposParsed,
     });
     if(!resUpd.affectedRows) return res.status(400).json({ message:'Sin cambios' });
     const refreshed = await Tasks.getTask(id);
@@ -108,19 +83,33 @@ export const createOrReplaceSubmission = async (req, res) => {
       return res.status(400).json({ message: 'PDF excede 1.5MB' });
     }
 
-    // Siempre puntaje automático (10) según requerimiento actual
-    const id = await Subs.createSubmission({
-      id_task,
-      id_estudiante,
-      archivo: `/public/${req.file.filename}`,
-      original_nombre: req.file.originalname,
-      mime_type: req.file.mimetype,
-      tamano: req.file.size,
-      puntos: task.puntos || 10,
-      version: 1,
-    });
+    // Si ya existe una entrega activa, crear versión y marcar la anterior como reemplazada
+    const prev = await Subs.getLatestSubmission(id_task, id_estudiante);
+    let newId;
+    if (prev) {
+      newId = await Subs.versionSubmission(prev.id, {
+        id_task,
+        id_estudiante,
+        archivo: `/public/${req.file.filename}`,
+        original_nombre: req.file.originalname,
+        mime_type: req.file.mimetype,
+        tamano: req.file.size,
+        puntos: task.puntos || 10,
+      });
+    } else {
+      newId = await Subs.createSubmission({
+        id_task,
+        id_estudiante,
+        archivo: `/public/${req.file.filename}`,
+        original_nombre: req.file.originalname,
+        mime_type: req.file.mimetype,
+        tamano: req.file.size,
+        puntos: task.puntos || 10,
+        version: 1,
+      });
+    }
 
-    const latest = await Subs.getLatestSubmission(id_task, id_estudiante);
+    const latest = await Subs.getSubmissionById(newId);
     res.status(201).json({ data: latest });
   } catch (e) { console.error('createOrReplaceSubmission error', e); res.status(500).json({ message: 'Error interno' }); }
 };
@@ -153,4 +142,23 @@ export const updateSubmissionGrade = async (req, res) => {
     const refreshed = await Subs.getSubmissionById(id);
     res.json({ data: refreshed });
   } catch(e){ console.error('updateSubmissionGrade error', e); res.status(500).json({ message:'Error interno'}); }
+};
+
+export const cancelSubmission = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sub = await Subs.getSubmissionById(id);
+    if(!sub) return res.status(404).json({ message:'Submission no encontrada'});
+    // Si este registro es referenciado por otros (replaced_by), impedir borrar para no romper historial
+    // Para simplificar, solo permitimos cancelar la última versión activa (la que no tiene replaced_by)
+    if (sub.replaced_by) return res.status(400).json({ message:'No se puede cancelar una versión reemplazada' });
+    // Reactivar la anterior si existe una versión previa que apuntaba a este id
+    const prev = await Subs.getSubmissionByReplacedBy(id);
+    if (prev) {
+      // Quitar el replaced_by para volverla activa
+      await Subs.setReplacedBy(prev.id, null);
+    }
+    await Subs.deleteSubmissionById(id);
+    res.json({ message: 'Eliminada' });
+  } catch(e){ console.error('cancelSubmission error', e); res.status(500).json({ message:'Error interno'}); }
 };

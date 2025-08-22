@@ -7,7 +7,8 @@ import { broadcastStudent } from '../ws.js';
 import * as Areas from '../models/areas.model.js';
 import { upload } from '../middlewares/multer.js';
 
-export const actividadUploadMiddleware = upload.single('archivo'); // para entregas PDF
+// Ahora soporta hasta 5 PDFs por envío inicial o append
+export const actividadUploadMiddleware = upload.array('archivos', 5);
 export const actividadAssetsUpload = upload.fields([
   { name:'recursos', maxCount:10 },
   { name:'imagen', maxCount:1 }
@@ -49,11 +50,18 @@ export const createActividad = async (req, res) => {
             action_url: '/alumno/actividades',
             metadata: { actividad_id: id }
           }));
-          await StudentNotifs.bulkCreateNotifications(list).catch(()=>{});
-          // Emitir en tiempo real
-          for (const r of rows) {
-            broadcastStudent(r.id, { type:'notification', payload: { kind:'assignment', actividad_id:id, title: 'Nueva actividad', message: act.titulo } });
+          const bulkRes = await StudentNotifs.bulkCreateNotifications(list).catch(()=>null);
+          let idMap = [];
+          if (bulkRes && bulkRes.affectedRows) {
+            const { firstInsertId, affectedRows } = bulkRes;
+            if (firstInsertId && affectedRows === rows.length) {
+              idMap = Array.from({ length: affectedRows }, (_,i)=> firstInsertId + i);
+            }
           }
+          // Emitir en tiempo real con notif_id si disponible
+          rows.forEach((r, idx) => {
+            broadcastStudent(r.id, { type:'notification', payload: { kind:'assignment', actividad_id:id, title: 'Nueva actividad', message: act.titulo, notif_id: idMap[idx] } });
+          });
         }
       }
     } catch(e){ console.error('notif createActividad', e); }
@@ -107,32 +115,58 @@ export const getActividad = async (req, res) => {
 export const crearOReemplazarEntrega = async (req, res) => {
   try {
     const { id } = req.params; const { id_estudiante } = req.body;
-    if(!id_estudiante) return res.status(400).json({ message:'id_estudiante requerido'});
+    if(!id_estudiante) {
+      console.warn('crearOReemplazarEntrega: id_estudiante ausente. body=', req.body, 'files len=', (req.files||[]).length);
+      return res.status(400).json({ message:'id_estudiante requerido'});
+    }
     const act = await Actividades.getActividad(id);
     if(!act || !act.activo) return res.status(404).json({ message:'Actividad no encontrada'});
     if(act.tipo !== 'actividad') return res.status(400).json({ message:'Tipo no soportado'});
     if(act.fecha_limite && new Date() > new Date(act.fecha_limite)) return res.status(400).json({ message:'Fecha límite vencida'});
     const est = await Estudiantes.getEstudianteById(id_estudiante); if(!est) return res.status(404).json({ message:'Estudiante no encontrado'});
-    if(!req.file) return res.status(400).json({ message:'Archivo PDF requerido'});
-    if(req.file.mimetype !== 'application/pdf') return res.status(400).json({ message:'Solo PDF permitido'});
-    if(req.file.size > 1.5 * 1024 * 1024) return res.status(400).json({ message:'PDF excede 1.5MB'});
+    const files = req.files || [];
+    if(!files.length) {
+      console.warn('crearOReemplazarEntrega: sin archivos recibidos. fieldName esperado=archivos. body keys=', Object.keys(req.body||{}));
+      return res.status(400).json({ message:'Al menos 1 PDF requerido'});
+    }
+    if(files.length > 5) return res.status(400).json({ message:'Máximo 5 PDFs por envío'});
+    let total = 0;
+    for(const f of files){
+      if(f.mimetype !== 'application/pdf') return res.status(400).json({ message:'Solo PDF permitido'});
+      total += f.size;
+      if(f.size > 5 * 1024 * 1024) return res.status(400).json({ message:`Archivo ${f.originalname} excede 5MB individuales`});
+    }
+    if(total > 20 * 1024 * 1024) return res.status(400).json({ message:'Tamaño combinado excede 20MB'});
     const activa = await Entregas.getEntregaActiva(id, id_estudiante);
     if (!activa) {
-      // Crear entrega base
-      const entregaId = await Entregas.createEntrega({ id_actividad:id, id_estudiante, archivo:`/public/${req.file.filename}`, original_nombre:req.file.originalname, mime_type:req.file.mimetype, tamano:req.file.size });
-      // Guardar también en archivos anexos para unificar gestión
-      await EntregaArchivos.addArchivo({ entrega_id:entregaId, archivo:`/public/${req.file.filename}`, original_nombre:req.file.originalname, mime_type:req.file.mimetype, tamano:req.file.size });
+      // Crear entrega base con primer archivo como principal
+      const first = files[0];
+      const entregaId = await Entregas.createEntrega({ id_actividad:id, id_estudiante, archivo:`/public/${first.filename}`, original_nombre:first.originalname, mime_type:first.mimetype, tamano:first.size });
+      // Guardar todos los archivos en la tabla anexos
+      for(const f of files){
+        await EntregaArchivos.addArchivo({ entrega_id:entregaId, archivo:`/public/${f.filename}`, original_nombre:f.originalname, mime_type:f.mimetype, tamano:f.size });
+      }
       const entrega = await Entregas.getEntregaById(entregaId);
       const archivos = await EntregaArchivos.listArchivosEntrega(entregaId);
       return res.status(201).json({ data: { ...entrega, archivos }, created:true });
     } else {
       if (activa.estado === 'revisada') return res.status(400).json({ message:'Entrega revisada, no se pueden agregar archivos'});
-      // Dentro de fecha límite y no revisada: agregar archivo
-      await EntregaArchivos.addArchivo({ entrega_id:activa.id, archivo:`/public/${req.file.filename}`, original_nombre:req.file.originalname, mime_type:req.file.mimetype, tamano:req.file.size });
+      // Dentro de fecha límite y no revisada: agregar archivos (validar acumulado)
+      const existentes = await EntregaArchivos.listArchivosEntrega(activa.id);
+      if (existentes.length + files.length > 5) return res.status(400).json({ message:'Máximo 5 PDFs por entrega'});
+      let totalExistente = existentes.reduce((s,a)=> s + (a.tamano||0), 0);
+      for(const f of files){ totalExistente += f.size; }
+      if(totalExistente > 20 * 1024 * 1024) return res.status(400).json({ message:'Tamaño combinado excede 20MB'});
+      for(const f of files){
+        await EntregaArchivos.addArchivo({ entrega_id:activa.id, archivo:`/public/${f.filename}`, original_nombre:f.originalname, mime_type:f.mimetype, tamano:f.size });
+      }
       const archivos = await EntregaArchivos.listArchivosEntrega(activa.id);
       return res.status(201).json({ data: { ...activa, archivos }, appended:true });
     }
-  } catch(e){ console.error('crearOReemplazarEntrega', e); res.status(500).json({ message:'Error interno'}); }
+  } catch(e){
+    console.error('crearOReemplazarEntrega ERROR', e?.message, e);
+    res.status(500).json({ message:'Error interno', debug: e?.message });
+  }
 };
 
 export const getEntregaActual = async (req, res) => {
@@ -153,15 +187,15 @@ export const calificarEntrega = async (req, res) => {
     const refreshed = await Entregas.getEntregaById(id);
     try {
       if (entrega.id_estudiante) {
-  const notifId = await StudentNotifs.createNotification({
+        const notifId = await StudentNotifs.createNotification({
           student_id: entrega.id_estudiante,
           type: 'grade',
           title: 'Calificación publicada',
           message: `Tu entrega fue calificada con ${calificacion}`,
           action_url: '/alumno/actividades',
           metadata: { entrega_id: entrega.id, actividad_id: entrega.id_actividad, calificacion }
-  }).catch(()=>{});
-  broadcastStudent(entrega.id_estudiante, { type:'notification', payload: { kind:'grade', entrega_id: entrega.id, actividad_id: entrega.id_actividad, calificacion } });
+        }).catch(()=>null);
+        broadcastStudent(entrega.id_estudiante, { type:'notification', payload: { kind:'grade', entrega_id: entrega.id, actividad_id: entrega.id_actividad, calificacion, notif_id: notifId } });
       }
     } catch(e){ console.error('notif calificarEntrega', e); }
     res.json({ data: refreshed });
@@ -170,7 +204,16 @@ export const calificarEntrega = async (req, res) => {
 };
 
 export const listEntregasActividad = async (req, res) => {
-  try { res.set('Cache-Control','no-store'); res.set('Pragma','no-cache'); const rows = await Entregas.listEntregasActividad(req.params.id, req.query); res.json({ data: rows }); }
+  try {
+    res.set('Cache-Control','no-store'); res.set('Pragma','no-cache');
+    const rows = await Entregas.listEntregasActividad(req.params.id, req.query);
+    // Adjuntar archivos de cada entrega
+    const enriched = await Promise.all(rows.map(async r => {
+      try { r.archivos = await EntregaArchivos.listArchivosEntrega(r.id); } catch { r.archivos = []; }
+      return r;
+    }));
+    res.json({ data: enriched });
+  }
   catch(e){ console.error('listEntregasActividad', e); res.status(500).json({ message:'Error interno'}); }
 };
 
@@ -211,16 +254,27 @@ export const addArchivoEntrega = async (req, res) => {
     const { entregaId } = req.params;
     const entrega = await Entregas.getEntregaById(entregaId);
     if(!entrega) return res.status(404).json({ message:'Entrega no encontrada'});
-    if(entrega.estado === 'revisada') return res.status(400).json({ message:'Entrega revisada; no se pueden agregar archivos'});
-    const act = await Actividades.getActividad(entrega.id_actividad);
-    if(act.fecha_limite && new Date() > new Date(act.fecha_limite)) return res.status(400).json({ message:'Fecha límite vencida'});
-    if(!req.file) return res.status(400).json({ message:'Archivo PDF requerido'});
-    if(req.file.mimetype !== 'application/pdf') return res.status(400).json({ message:'Solo PDF permitido'});
-    if(req.file.size > 1.5 * 1024 * 1024) return res.status(400).json({ message:'PDF excede 1.5MB'});
-    const idArchivo = await EntregaArchivos.addArchivo({ entrega_id: entrega.id, archivo:`/public/${req.file.filename}`, original_nombre:req.file.originalname, mime_type:req.file.mimetype, tamano:req.file.size });
+  if(entrega.estado === 'revisada') return res.status(400).json({ message:'Entrega revisada; no se pueden agregar archivos'});
+  const act = await Actividades.getActividad(entrega.id_actividad);
+  if(act.fecha_limite && new Date() > new Date(act.fecha_limite)) return res.status(400).json({ message:'Fecha límite vencida'});
+    const files = req.files || (req.file ? [req.file] : []);
+  if(!files.length) { console.warn('addArchivoEntrega: sin archivos. body=', req.body); return res.status(400).json({ message:'Al menos 1 PDF requerido'}); }
+    const existentes = await EntregaArchivos.listArchivosEntrega(entrega.id);
+    if (existentes.length + files.length > 5) return res.status(400).json({ message:'Máximo 5 PDFs por entrega'});
+    let total = existentes.reduce((s,a)=> s + (a.tamano||0), 0);
+    for(const f of files){
+      if(f.mimetype !== 'application/pdf') return res.status(400).json({ message:'Solo PDF permitido'});
+      if(f.size > 5 * 1024 * 1024) return res.status(400).json({ message:`Archivo ${f.originalname} excede 5MB individuales`});
+      total += f.size;
+    }
+    if(total > 20 * 1024 * 1024) return res.status(400).json({ message:'Tamaño combinado excede 20MB'});
+    let lastId = null;
+    for(const f of files){
+      lastId = await EntregaArchivos.addArchivo({ entrega_id: entrega.id, archivo:`/public/${f.filename}`, original_nombre:f.originalname, mime_type:f.mimetype, tamano:f.size });
+    }
     const archivos = await EntregaArchivos.listArchivosEntrega(entrega.id);
-    res.status(201).json({ data: archivos, added: idArchivo });
-  } catch(e){ console.error('addArchivoEntrega', e); res.status(500).json({ message:'Error interno'}); }
+    res.status(201).json({ data: archivos, added: lastId });
+  } catch(e){ console.error('addArchivoEntrega ERROR', e?.message, e); res.status(500).json({ message:'Error interno'}); }
 };
 
 export const deleteArchivoEntrega = async (req, res) => {
@@ -228,11 +282,11 @@ export const deleteArchivoEntrega = async (req, res) => {
     const { entregaId, archivoId } = req.params;
     const entrega = await Entregas.getEntregaById(entregaId);
     if(!entrega) return res.status(404).json({ message:'Entrega no encontrada'});
-    if(entrega.estado === 'revisada') return res.status(400).json({ message:'Entrega revisada; no se pueden eliminar archivos'});
+  if(entrega.estado === 'revisada') return res.status(400).json({ message:'Entrega revisada; no se pueden eliminar archivos'});
     const ok = await EntregaArchivos.deleteArchivo(archivoId, entregaId);
     if(!ok) return res.status(404).json({ message:'Archivo no encontrado'});
     const archivos = await EntregaArchivos.listArchivosEntrega(entregaId);
-    res.json({ data: archivos, deleted: Number(archivoId) });
+  res.json({ data: archivos, deleted: Number(archivoId) });
   } catch(e){ console.error('deleteArchivoEntrega', e); res.status(500).json({ message:'Error interno'}); }
 };
 

@@ -408,46 +408,51 @@ export function Header_Alumno_comp({
               <div className="max-h-64 overflow-y-auto">
                 {displayedNotifications.length > 0 ? (
                   <ul className="py-1">
-                    {displayedNotifications.map((notification) => (
-                      <li
-                        key={notification.id}
-                        className="px-4 py-3 text-sm hover:bg-gray-100/60 transition-colors duration-150 border-l-4"
-                        style={{
-                          borderLeftColor: notification.priority === 'urgent' ? '#ef4444' : 
-                                          notification.priority === 'high' ? '#f97316' : 
-                                          notification.priority === 'medium' ? '#3b82f6' : '#6b7280'
-                        }}
-                      >
-                        <div className="flex items-start gap-3">
-                          {/* Icono de tipo de notificación */}
-                          <div className="text-lg mt-0.5 flex-shrink-0">
-                            {getNotificationIcon(notification.type)}
-                          </div>
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <p className={`font-medium text-sm truncate ${getPriorityColor(notification.priority)}`}>
-                                {notification.title}
+                    {displayedNotifications.map((notification) => {
+                      const unread = !notification.is_read;
+                      return (
+                        <li
+                          key={notification.id || notification._runtimeKey}
+                          onClick={() => { if(unread && notification.id) { try { markAsRead(notification.id); } catch(_){} } }}
+                          className={`relative px-4 py-3 text-sm transition-colors duration-150 border-l-4 cursor-pointer group
+                            ${unread ? 'bg-gradient-to-r from-purple-50 to-transparent hover:from-purple-100 hover:bg-purple-50' : 'hover:bg-gray-100/60'}
+                            ${unread ? 'border-purple-500' : 'border-gray-300'}`}
+                        >
+                          {unread && (
+                            <span className="absolute top-2 right-3 w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
+                          )}
+                          <div className="flex items-start gap-3">
+                            <div className={`text-lg mt-0.5 flex-shrink-0 ${unread ? 'text-purple-600' : ''}`}>
+                              {getNotificationIcon(notification.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <p className={`truncate text-sm ${unread ? 'font-semibold text-gray-900' : 'font-medium'} ${getPriorityColor(notification.priority)}`}>
+                                  {notification.title}
+                                </p>
+                                {notification.priority === 'urgent' && (
+                                  <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse flex-shrink-0"></span>
+                                )}
+                              </div>
+                              <p className={`text-xs leading-relaxed ${unread ? 'text-gray-700' : 'text-gray-600'}`}>
+                                {notification.message}
                               </p>
-                              {/* Indicador de prioridad */}
-                              {notification.priority === 'urgent' && (
-                                <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse flex-shrink-0"></span>
-                              )}
-                            </div>
-                            <p className="text-gray-600 text-xs leading-relaxed">
-                              {notification.message}
-                            </p>
-                            
-                            {/* Tiempo transcurrido */}
-                            <div className="flex items-center justify-between mt-2">
-                              <span className="text-xs text-gray-400">
-                                {formatTimeAgo(notification.timestamp)}
-                              </span>
+                              <div className="flex items-center justify-between mt-2">
+                                <span className={`text-[10px] uppercase tracking-wide ${unread ? 'text-purple-500 font-semibold' : 'text-gray-400'}`}>
+                                  {formatTimeAgo(notification.timestamp)}
+                                </span>
+                                {unread && notification.id && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); markAsRead(notification.id); }}
+                                    className="text-[10px] text-purple-600 hover:text-purple-800 font-medium"
+                                  >Marcar leído</button>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </li>
-                    ))}
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <div className="px-4 py-8 text-center bg-gray-100/60">
