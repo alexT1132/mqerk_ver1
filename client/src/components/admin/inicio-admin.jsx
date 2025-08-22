@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrencyMXN } from '../../utils/formatters.js';
 import { useAdminNotificationContext } from '../../context/AdminNotificationContext.jsx';
+import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 
 // INTEGRACIÓN BACKEND - ¡Contexto admin listo!
 import { useAdminContext } from '../../context/AdminContext.jsx';
@@ -336,7 +337,10 @@ function DashboardMetrics() {
     const metricsData = getMetricsData();
 
     return (
-        <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-gradient-to-br from-gray-50 via-white to-indigo-50">
+        <div className="relative w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-gradient-to-br from-gray-50 via-white to-indigo-50">
+            {isLoading && (
+                <LoadingOverlay message="Cargando métricas del dashboard..." />
+            )}
             {/* Header con información de actualización */}
             <div className="pt-2 xs:pt-4 sm:pt-6 lg:pt-8 pb-0 px-3 xs:px-4 sm:px-6">
                 <div className="w-full max-w-7xl mx-auto">

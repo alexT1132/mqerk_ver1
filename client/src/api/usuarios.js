@@ -14,6 +14,10 @@ export const adminBootstrapRegister = (formData) => axios.post('/admin/register-
 
 export const loginRequest = user => axios.post(`/login`, user);
 
+// NOTE: Avoid sending non-simple headers here to prevent an unnecessary CORS preflight (OPTIONS)
+// which in algunos entornos estaba quedando sin lanzar correctamente el GET subsiguiente y
+// mantenía la app en estado "Loading...". Si necesitas forzar no-cache, hazlo del lado servidor
+// con Cache-Control: no-store (ya se agrega en el controlador verifyToken) o usa params únicos.
 export const verifyTokenRequest = () => axios.get('/verify');
 
 export const logoutRequest = () => axios.post('/logout');
@@ -33,3 +37,6 @@ export const softDeleteAdminSelfRequest = (data) => axios.post('/admin/soft-dele
 // Admin security configuration
 export const getAdminConfigRequest = () => axios.get('/admin/config');
 export const updateAdminConfigRequest = (data) => axios.put('/admin/config', data);
+
+// Admin dashboard metrics (includes pagosPendientes)
+export const getAdminDashboardMetricsRequest = () => axios.get('/admin/dashboard/metrics');

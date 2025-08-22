@@ -4,15 +4,22 @@
 // 2. Lista de materias específicas del área
 // 3. Botones de Actividades y Quiz por materia
 // 4. Tabla de actividades específicas con funcionalidad completa
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { getAreasCatalog } from '../../api/areas';
+import { AREAS_CATALOG_CACHE } from '../../utils/catalogCache';
+import { styleForArea } from '../common/areaStyles.jsx';
+import UnifiedCard from '../common/UnifiedCard.jsx';
+import { resumenActividadesEstudiante, crearOReemplazarEntrega, addArchivoEntrega, listArchivosEntrega, deleteArchivoEntrega } from '../../api/actividades';
+import { resumenQuizzesEstudiante, crearIntentoQuiz, listIntentosQuizEstudiante } from '../../api/quizzes';
+import { useAuth } from '../../context/AuthContext';
 import { useStudent } from '../../context/StudentContext'; // BACKEND: Control de acceso a módulos
+import { useStudentNotifications } from '../../context/StudentNotificationContext';
 import { 
   Upload, 
   Eye, 
   CheckCircle, 
   XCircle, 
   Download, 
-  Edit, 
   ArrowLeft, 
   BookOpen, 
   FileText, 
@@ -43,6 +50,16 @@ import {
   Hourglass  // BACKEND: Icono para estado pendiente
 } from 'lucide-react';
 
+// BACKEND: Resolver URLs absolutas a archivos estáticos del backend (puerto API) evitando 404 al intentar cargar desde 5173
+const RAW_API_BASE = (import.meta?.env?.VITE_API_URL) || (typeof window !== 'undefined' ? `http://${window.location.hostname}:1002/api` : '');
+const API_ORIGIN = RAW_API_BASE.replace(/\/api\/?$/, '');
+const resolveFileUrl = (p) => {
+  if (!p) return null;
+  if (/^https?:/i.test(p)) return p; // ya es absoluta
+  if (p.startsWith('/')) return API_ORIGIN + p; // ruta absoluta en backend
+  return API_ORIGIN + '/' + p; // relativa
+};
+
 /**
  * BACKEND: Componente de actividades con navegación simple
  * Flujo: áreas/módulos/materias -> botones (actividades/quiz) -> tabla
@@ -72,12 +89,33 @@ export function Actividades_Alumno_comp() {
   
   // Estados para modales (inspirado en Feedback)
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [entregaArchivos, setEntregaArchivos] = useState([]); // archivos actuales de la entrega seleccionada
   const [selectedActividad, setSelectedActividad] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  // Eliminado modal de edición separado; se usa un único modal para subir / reemplazar
   const [viewingActivityFile, setViewingActivityFile] = useState('');
+  const [viewingEntregaArchivos, setViewingEntregaArchivos] = useState([]); // archivos de la entrega para modal de vista
+  const [viewingSelectedArchivoId, setViewingSelectedArchivoId] = useState(null);
+  const [viewingArchivosLoading, setViewingArchivosLoading] = useState(false);
+  const [viewingArchivosError, setViewingArchivosError] = useState('');
+  // Multi-upload: lista de archivos seleccionados en el modal
+  const [uploadSelectedFiles, setUploadSelectedFiles] = useState([]); // File[]
+  const [uploadError, setUploadError] = useState('');
+  const [pdfError, setPdfError] = useState(false); // Error de carga de PDF en visor
+  // Estados para manejar inline PDF en móviles (detección y fallback)
+  const [mobilePdfLoading, setMobilePdfLoading] = useState(false);
+  const [mobilePdfFailed, setMobilePdfFailed] = useState(false);
+  const [useAltViewer, setUseAltViewer] = useState(false); // visor alterno (Google Docs) en móvil
+  // UI: menú de recursos múltiples por actividad
+  const [openResourceMenu, setOpenResourceMenu] = useState(null); // (legacy dropdown) mantengo por compatibilidad (ya no se usa)
+  const [showResourcesModal, setShowResourcesModal] = useState(false);
+  const [resourcesActividad, setResourcesActividad] = useState(null); // actividad seleccionada para recursos
+  const [previewRecurso, setPreviewRecurso] = useState(null); // recurso seleccionado para vista previa
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(null);
+  const [previewKey, setPreviewKey] = useState(0); // para forzar recarga
   
-  // Estados para modal de historial de quizzes (como en simulaciones)
+  // Estados para modal de historial de quizzes
   const [showHistorialModal, setShowHistorialModal] = useState(false);
   const [selectedQuizHistorial, setSelectedQuizHistorial] = useState(null);
   
@@ -93,6 +131,34 @@ export function Actividades_Alumno_comp() {
     message: '',
     type: 'success' // 'success', 'info', 'warning', 'error'
   });
+  // BACKEND: Trigger para refrescar actividades al recibir nueva calificación vía WebSocket
+  const { notifications } = useStudentNotifications?.() || {};
+  const lastGradeNotifRef = useRef(null);
+  const [gradeRefreshKey, setGradeRefreshKey] = useState(0);
+  useEffect(() => {
+    if (!notifications || !Array.isArray(notifications)) return;
+    // Asumimos que notifications viene ordenado con la más reciente primero
+  const latestGrade = notifications.find(n => n.type === 'grade');
+    if (latestGrade && latestGrade.id !== lastGradeNotifRef.current) {
+      lastGradeNotifRef.current = latestGrade.id;
+      // Refrescar sólo si actualmente estamos viendo actividades
+      if (selectedType === 'actividades') {
+        setGradeRefreshKey(k => k + 1);
+        // Si payload contiene id de actividad y calificación, actualizamos optimísticamente
+  // Aceptar formatos: "Calificación: 10" o "Tu entrega fue calificada con 10"
+  const calMatch = /(?:Calificación:|calificada\s+con)\s*(\d+)/i.exec(latestGrade.message || '');
+        const calValue = calMatch ? parseInt(calMatch[1],10) : null;
+        if (calValue !== null && latestGrade.metadata?.actividadId) {
+          setActividades(prev => prev.map(a => a.id === latestGrade.metadata.actividadId ? { ...a, score: calValue, mejorPuntaje: calValue, estado: 'revisada' } : a));
+        }
+      }
+    }
+  }, [notifications, selectedType]);
+  // UI: Reintentos y fallback
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 2;
+  // Altura fija uniforme para tarjetas (áreas y módulos) en todas las resoluciones
+  const CARD_HEIGHT_PX = 230; // ajustar si se requiere más espacio
 
   // Función para obtener el componente de icono basado en el nombre
   const getIconComponent = (iconName) => {
@@ -126,394 +192,65 @@ export function Actividades_Alumno_comp() {
     }
   };
 
-  // BACKEND: TODO - Conectar con API para módulos específicos
-  // Datos para módulos específicos de exámenes de ingreso (12 módulos completos)
-  const modulosEspecificos = [
-    {
-      id: 1,
-      titulo: "Ciencias Exactas",
-      color: "from-blue-500 to-cyan-600",
-      icono: <BarChart3 className="w-6 h-6" />,
-      descripcion: "Matemáticas, Física, Química y disciplinas afines",
-      bgColor: "bg-gradient-to-br from-blue-50 to-cyan-50",
-      borderColor: "border-blue-200"
-    },
-    {
-      id: 2,
-      titulo: "Ciencias Sociales",
-      color: "from-purple-500 to-indigo-600",
-      icono: <Users className="w-6 h-6" />,
-      descripcion: "Sociología, Psicología, Antropología y áreas relacionadas",
-      bgColor: "bg-gradient-to-br from-purple-50 to-indigo-50",
-      borderColor: "border-purple-200"
-    },
-    {
-      id: 3,
-      titulo: "Humanidades y Artes",
-      color: "from-rose-500 to-pink-600",
-      icono: <BookOpen className="w-6 h-6" />,
-      descripcion: "Literatura, Historia, Filosofía y expresiones artísticas",
-      bgColor: "bg-gradient-to-br from-rose-50 to-pink-50",
-      borderColor: "border-rose-200"
-    },
-    {
-      id: 4,
-      titulo: "Ciencias Naturales y de la Salud",
-      color: "from-emerald-500 to-green-600",
-      icono: <Heart className="w-6 h-6" />,
-      descripcion: "Biología, Medicina, Enfermería y ciencias de la vida",
-      bgColor: "bg-gradient-to-br from-emerald-50 to-green-50",
-      borderColor: "border-emerald-200"
-    },
-    {
-      id: 5,
-      titulo: "Ingeniería y Tecnología",
-      color: "from-orange-500 to-amber-600",
-      icono: <Cog className="w-6 h-6" />,
-      descripcion: "Ingenierías, Tecnología, Sistemas y áreas técnicas",
-      bgColor: "bg-gradient-to-br from-orange-50 to-amber-50",
-      borderColor: "border-orange-200"
-    },
-    {
-      id: 6,
-      titulo: "Ciencias Económico-Administrativas",
-      color: "from-teal-500 to-cyan-600",
-      icono: <TrendingUp className="w-6 h-6" />,
-      descripcion: "Administración, Economía, Contaduría y Negocios",
-      bgColor: "bg-gradient-to-br from-teal-50 to-cyan-50",
-      borderColor: "border-teal-200"
-    },
-    {
-      id: 7,
-      titulo: "Educación y Deportes",
-      color: "from-violet-500 to-purple-600",
-      icono: <GraduationCap className="w-6 h-6" />,
-      descripcion: "Pedagogía, Educación Física y ciencias del deporte",
-      bgColor: "bg-gradient-to-br from-violet-50 to-purple-50",
-      borderColor: "border-violet-200"
-    },
-    {
-      id: 8,
-      titulo: "Agropecuarias",
-      color: "from-lime-500 to-green-600",
-      icono: <Leaf className="w-6 h-6" />,
-      descripcion: "Agronomía, Veterinaria, Zootecnia y ciencias agropecuarias",
-      bgColor: "bg-gradient-to-br from-lime-50 to-green-50",
-      borderColor: "border-lime-200"
-    },
-    {
-      id: 9,
-      titulo: "Turismo",
-      color: "from-blue-400 to-sky-600",
-      icono: <Globe className="w-6 h-6" />,
-      descripcion: "Gestión turística, hotelería y servicios de viajes",
-      bgColor: "bg-gradient-to-br from-blue-50 to-sky-50",
-      borderColor: "border-blue-200"
-    },
-    {
-      id: 10,
-      titulo: "Núcleo UNAM / IPN",
-      color: "from-yellow-500 to-amber-600",
-      icono: <GraduationCap className="w-6 h-6" />,
-      descripcion: "Materias esenciales para exámenes de admisión UNAM e IPN",
-      bgColor: "bg-gradient-to-br from-yellow-50 to-amber-50",
-      borderColor: "border-yellow-200"
-    },
-    {
-      id: 11,
-      titulo: "Militar, Naval y Náutica Mercante",
-      color: "from-slate-500 to-gray-600",
-      icono: <Anchor className="w-6 h-6" />,
-      descripcion: "Preparación para instituciones militares, navales y marinas mercantes",
-      bgColor: "bg-gradient-to-br from-slate-50 to-gray-50",
-      borderColor: "border-slate-200"
-    },
-    {
-      id: 12,
-      titulo: "Módulo Transversal: Análisis Psicométrico",
-      color: "from-purple-400 to-indigo-500",
-      icono: <Brain className="w-6 h-6" />,
-      descripcion: "Preparación para exámenes psicométricos y evaluaciones de aptitud",
-      bgColor: "bg-gradient-to-br from-purple-50 to-indigo-50",
-      borderColor: "border-purple-200"
-    }
-  ];
-  // Datos de prueba para las áreas/materias (sin nivel intermedio)
-  const areasData = [
-    {
-      id: 1,
-      titulo: "Español y redacción indirecta",
-      color: "from-amber-500 to-orange-600",
-      icono: <FileText className="w-6 h-6" />,
-      descripcion: "Competencias comunicativas y lingüísticas",
-      bgColor: "bg-gradient-to-br from-amber-50 to-orange-50",
-      borderColor: "border-amber-200"
-    },
-    {
-      id: 2,
-      titulo: "Matemáticas y pensamiento analítico",
-      color: "from-blue-500 to-indigo-600",
-      icono: <BarChart3 className="w-6 h-6" />,
-      descripcion: "Razonamiento lógico y matemático",
-      bgColor: "bg-gradient-to-br from-blue-50 to-indigo-50",
-      borderColor: "border-blue-200"
-    },
-    {
-      id: 3,
-      titulo: "Habilidades transversales",
-      color: "from-emerald-500 to-green-600",
-      icono: <Users className="w-6 h-6" />,
-      descripcion: "Competencias interpersonales y sociales",
-      bgColor: "bg-gradient-to-br from-emerald-50 to-green-50",
-      borderColor: "border-emerald-200"
-    },
-    {
-      id: 4,
-      titulo: "Lengua extranjera",
-      color: "from-purple-500 to-violet-600",
-      icono: <BookOpen className="w-6 h-6" />,
-      descripcion: "Comunicación en idioma extranjero",
-      bgColor: "bg-gradient-to-br from-purple-50 to-violet-50",
-      borderColor: "border-purple-200"
-    },
-    {
-      id: 5,
-      titulo: "Módulos específicos",
-      color: "from-rose-500 to-pink-600",
-      icono: <Award className="w-6 h-6" />,
-      descripcion: "Conocimientos especializados",
-      bgColor: "bg-gradient-to-br from-rose-50 to-pink-50",
-      borderColor: "border-rose-200"
-    }
-  ];
+  const [areasData, setAreasData] = useState([]); // desde API (generales)
+  const [modulosEspecificos, setModulosEspecificos] = useState([]); // desde API (modulos)
+  const [loadingCatalog, setLoadingCatalog] = useState(false);
+  const [catalogError, setCatalogError] = useState('');
+  // Usar styleForArea compartido
+  const styleFor = styleForArea;
 
-  // BACKEND: TODO - Conectar con API /api/students/quizzes/{areaId}
-  // Datos específicos para simulaciones/quiz con historial de intentos
-  const quizzesData = [
-    {
-      id: 1,
-      nombre: "Simulador de Álgebra Básica",
-      descripcion: "Evaluación de conceptos fundamentales de álgebra",
-      fechaEntrega: "2024-02-15",
-      completado: true,
-      fechaCompletado: "2024-02-14",
-      score: 92,
-      maxScore: 100,
-      intentos: [
-        {
-          id: 1,
-          numero: 1,
-          fecha: "2024-02-13T10:30:00Z",
-          puntaje: 85,
-          tiempoEmpleado: 40,
-          respuestasCorrectas: 17,
-          totalPreguntas: 20,
-          comentarios: "Buen manejo de ecuaciones lineales"
-        },
-        {
-          id: 2,
-          numero: 2,
-          fecha: "2024-02-14T14:15:00Z",
-          puntaje: 92,
-          tiempoEmpleado: 38,
-          respuestasCorrectas: 18,
-          totalPreguntas: 20,
-          comentarios: "Excelente mejora en factorización"
-        }
-      ],
-      totalIntentos: 2,
-      mejorPuntaje: 92,
-      maxIntentos: 3,
-      tiempoLimite: "45 minutos",
-      estado: "completado", // disponible, completado, vencido
-      entregada: true,
-      areaId: 2, // Matemáticas
-      tipo: "quiz"
-    },
-    {
-      id: 2,
-      nombre: "Simulador de Geometría",
-      descripcion: "Evaluación de conceptos geométricos básicos",
-      fechaEntrega: "2024-02-20",
-      completado: false,
-      fechaCompletado: null,
-      score: null,
-      maxScore: 100,
-      intentos: [],
-      totalIntentos: 0,
-      mejorPuntaje: null,
-      maxIntentos: 2,
-      tiempoLimite: "60 minutos",
-      estado: "disponible",
-      entregada: false,
-      areaId: 2, // Matemáticas
-      tipo: "quiz"
-    },
-    {
-      id: 3,
-      nombre: "Quiz de Comprensión Lectora",
-      descripcion: "Evaluación de habilidades de comprensión textual",
-      fechaEntrega: "2025-07-18",
-      completado: true,
-      fechaCompletado: "2025-07-19",
-      score: 78,
-      maxScore: 100,
-      intentos: [
-        {
-          id: 1,
-          numero: 1,
-          fecha: "2025-07-19T11:45:00Z",
-          puntaje: 78,
-          tiempoEmpleado: 28,
-          respuestasCorrectas: 23,
-          totalPreguntas: 30,
-          comentarios: "Buena comprensión general, mejorar análisis crítico"
-        }
-      ],
-      totalIntentos: 1,
-      mejorPuntaje: 78,
-      maxIntentos: 3,
-      tiempoLimite: "30 minutos",
-      estado: "completado",
-      entregada: true,
-      areaId: 1, // Español
-      tipo: "quiz"
-    },
-    {
-      id: 4,
-      nombre: "Simulador de Redacción",
-      descripcion: "Evaluación de habilidades de escritura y redacción",
-      fechaEntrega: "2025-07-20",
-      completado: false,
-      fechaCompletado: null,
-      score: null,
-      maxScore: 100,
-      intentos: [],
-      totalIntentos: 0,
-      mejorPuntaje: null,
-      maxIntentos: 1,
-      tiempoLimite: "90 minutos",
-      estado: "disponible",
-      entregada: false,
-      areaId: 1, // Español
-      tipo: "quiz"
+  useEffect(()=> {
+    let cancel=false;
+    const fromCache = AREAS_CATALOG_CACHE.get();
+    if (fromCache?.data) {
+      const payload = fromCache.data;
+      const generales = Array.isArray(payload.generales) ? payload.generales : [];
+      const modulos = Array.isArray(payload.modulos) ? payload.modulos : [];
+      const mappedGenerales = generales.map(a=> ({ id:a.id, titulo:a.nombre, descripcion:a.descripcion, ...styleFor(a.id) }));
+      if (payload.contenedor) {
+        mappedGenerales.push({ id: payload.contenedor.id, titulo: payload.contenedor.nombre, descripcion: payload.contenedor.descripcion, ...styleFor(payload.contenedor.id) });
+      }
+      setAreasData(mappedGenerales);
+      setModulosEspecificos(modulos.map(m=> ({ id:m.id, titulo:m.nombre, descripcion:m.descripcion, ...styleFor(m.id) })));
+      // Si está fresco y no stale evitamos refetch
+      if (!fromCache.stale) return; // stale-while-revalidate: mostramos y luego revalidamos abajo
     }
-  ];
+    const load = async (silent=false)=> {
+      if(!silent) { setLoadingCatalog(true); setCatalogError(''); }
+      try {
+        const res = await getAreasCatalog();
+        const payload = res.data?.data || res.data || {};
+        AREAS_CATALOG_CACHE.set(payload);
+        const generales = Array.isArray(payload.generales) ? payload.generales : [];
+        const modulos = Array.isArray(payload.modulos) ? payload.modulos : [];
+        if(cancel) return;
+        const mappedGenerales = generales.map(a=> ({ id:a.id, titulo:a.nombre, descripcion:a.descripcion, ...styleFor(a.id) }));
+        if (payload.contenedor) {
+          mappedGenerales.push({ id: payload.contenedor.id, titulo: payload.contenedor.nombre, descripcion: payload.contenedor.descripcion, ...styleFor(payload.contenedor.id) });
+        }
+        setAreasData(mappedGenerales);
+        setModulosEspecificos(modulos.map(m=> ({ id:m.id, titulo:m.nombre, descripcion:m.descripcion, ...styleFor(m.id) })));
+      } catch(e){ if(!cancel){ setCatalogError('No se pudo cargar catálogo de áreas'); }}
+      finally { if(!cancel) setLoadingCatalog(false); }
+    };
+    // Si venía de cache y era stale, revalidar en segundo plano (silent true)
+    load(fromCache?.data ? true : false);
+    return ()=> { cancel=true; };
+  },[]);
 
-  // BACKEND: TODO - Conectar con API /api/students/activities/{areaId}
-  // Datos mejorados para actividades con historial de intentos
-  const actividadesData = [
-    {
-      id: 1,
-      nombre: "Operaciones fundamentales",
-      descripcion: "Ejercicios básicos de suma, resta, multiplicación y división",
-      fechaEntrega: "2024-02-12",
-      fechaSubida: null,
-      archivo: null,
-      entregada: false,
-      score: null,
-      maxScore: 100,
-      estado: "pendiente", // pendiente, entregada, revisada
-      areaId: 2, // Matemáticas
-      tipo: "actividades",
-      intentos: [], // Historial de intentos
-      totalIntentos: 0, // Contador total de intentos
-      mejorPuntaje: null // Mejor puntaje obtenido
-    },
-    {
-      id: 2,
-      nombre: "Expresiones algebraicas",
-      descripcion: "Simplificación y evaluación de expresiones algebraicas",
-      fechaEntrega: "2024-02-12", 
-      fechaSubida: "2024-02-10",
-      archivo: "/sample-algebra.pdf",
-      entregada: true,
-      score: 85,
-      maxScore: 100,
-      estado: "revisada",
-      areaId: 2, // Matemáticas
-      tipo: "actividades",
-      intentos: [
-        {
-          numero: 1,
-          fecha: "2024-02-08",
-          puntaje: 72,
-          archivo: "/sample-algebra-v1.pdf",
-          comentarios: "Buen trabajo, pero necesita mejorar en factorización"
-        },
-        {
-          numero: 2,
-          fecha: "2024-02-10",
-          puntaje: 85,
-          archivo: "/sample-algebra-v2.pdf",
-          comentarios: "Excelente mejora en la comprensión de conceptos"
-        }
-      ],
-      totalIntentos: 2,
-      mejorPuntaje: 85
-    },
-    {
-      id: 3,
-      nombre: "Ensayo sobre literatura moderna",
-      descripcion: "Análisis crítico de obras contemporráneas",
-      fechaEntrega: "2024-02-20",
-      fechaSubida: null,
-      archivo: null,
-      entregada: false,
-      score: null,
-      maxScore: 100,
-      estado: "pendiente",
-      areaId: 1, // Español
-      tipo: "actividades",
-      intentos: [],
-      totalIntentos: 0,
-      mejorPuntaje: null
-    },
-    {
-      id: 4,
-      nombre: "Redacción Argumentativa",
-      descripcion: "Escritura de ensayos con estructura argumentativa",
-      fechaEntrega: "2025-08-15",
-      fechaSubida: "2025-07-05",
-      archivo: "/sample-essay.pdf",
-      entregada: true,
-      score: 88,
-      maxScore: 100,
-      estado: "revisada",
-      areaId: 1, // Español
-      tipo: "actividades",
-      intentos: [
-        {
-          numero: 1,
-          fecha: "2025-06-20",
-          puntaje: 70,
-          archivo: "/essay-v1.pdf",
-          comentarios: "Buena estructura pero falta evidencia"
-        },
-        {
-          numero: 2,
-          fecha: "2025-06-28",
-          puntaje: 82,
-          archivo: "/essay-v2.pdf",
-          comentarios: "Mejora en argumentación, refinar conclusión"
-        },
-        {
-          numero: 3,
-          fecha: "2025-07-05",
-          puntaje: 88,
-          archivo: "/essay-v3.pdf",
-          comentarios: "Excelente trabajo final, muy bien estructurado"
-        }
-      ],
-      totalIntentos: 3,
-      mejorPuntaje: 88
-    }
-  ];
+  // Datos reales se cargarán desde la API según área y tipo seleccionado
+  const { user } = useAuth() || {}; // user debe contener id_estudiante
+  const estudianteId = user?.id_estudiante || user?.id || null;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Hook para detectar si es móvil (debe declararse antes de cualquier uso en efectos)
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
 
   // Meses como ordinales (como en Feedback)
   const months = [
     'Primero', 'Segundo', 'Tercero', 'Cuarto', 'Quinto', 'Sexto',
-    'Séptimo', 'Octavo', 'Noveno',
+    'Séptimo', 'Octavo',,
   ];
 
   // BACKEND: Inicializar con al menos un área permitida si es el primer acceso
@@ -524,44 +261,116 @@ export function Actividades_Alumno_comp() {
     }
   }, [allowedActivityAreas.length, addAllowedActivityArea]);
 
-  // Efecto para simular algunos reintentos de prueba
+  // Cargar resumen de actividades/quizzes desde la API según el tipo seleccionado
   useEffect(() => {
-    // Simular que el usuario ya ha realizado algunos intentos en ciertas actividades
-    const actividadesConIntentos = actividades.map(act => {
-      if (act.id === 1 && act.totalIntentos === 0) {
-        // Simular intentos para "Operaciones fundamentales"
-        return {
-          ...act,
-          entregada: true,
-          estado: 'revisada',
-          score: 75,
-          mejorPuntaje: 75,
-          totalIntentos: 2,
-          intentos: [
-            {
-              numero: 1,
-              fecha: "2024-02-10",
-              puntaje: 65,
-              archivo: "/operations-v1.pdf",
-              comentarios: "Buen trabajo inicial, pero necesita mejorar en divisiones"
-            },
-            {
-              numero: 2,
-              fecha: "2024-02-12",
-              puntaje: 75,
-              archivo: "/operations-v2.pdf",
-              comentarios: "Mejora notable, sigue practicando"
+    const fetchData = async () => {
+      if (!estudianteId || !selectedType || !selectedArea) return;
+      setLoading(true); setError('');
+      try {
+        if (selectedType === 'actividades') {
+          const { data } = await resumenActividadesEstudiante(estudianteId);
+          const rows = (data?.data || data || []).filter(a => {
+            if(!a.id_area) return true; // sin asignación específica
+            if(selectedArea.id === 5) { // contenedor de módulos específicos
+              if(!selectedModulo) return false; // aún no se eligió uno
+              return a.id_area === selectedModulo.id; // coincide con módulo específico 101..112
             }
-          ]
-        };
-      }
-      return act;
-    });
-    
-    if (JSON.stringify(actividades) !== JSON.stringify(actividadesConIntentos)) {
-      setActividades(actividadesConIntentos);
-    }
-  }, []);
+            return a.id_area === selectedArea.id; // áreas generales 1..4
+          });
+  const mapped = rows.map(r => {
+            // Parsear recursos_json (nuevo campo que reemplaza a 'plantilla')
+            let recursos = [];
+            if (r.recursos_json) {
+              try {
+                recursos = typeof r.recursos_json === 'string' ? JSON.parse(r.recursos_json) : r.recursos_json;
+                if (!Array.isArray(recursos)) recursos = [];
+              } catch { recursos = []; }
+            }
+            const firstRecurso = recursos[0];
+              const cal = r.calificacion ?? r.entrega_calificacion ?? null;
+              const estadoCalc = (r.estado_revision || r.entrega_estado || 'pendiente');
+              return {
+              id: r.id,
+              nombre: r.titulo,
+              descripcion: r.descripcion || '',
+              fechaEntrega: r.fecha_limite,
+              fechaSubida: r.entrega_estado ? (r.entregada_at ? new Date(r.entregada_at).toISOString().split('T')[0] : null) : null,
+              archivo: r.archivo || null,
+              entregada: !!r.entrega_estado,
+                // score puede venir null aunque calificacion exista: mantenemos cal como score para mostrarla
+                score: cal,
+              maxScore: r.puntos_max || 100,
+                estado: cal !== null ? 'revisada' : estadoCalc,
+              areaId: r.id_area,
+              tipo: 'actividades',
+              intentos: [],
+              totalIntentos: r.version || (r.entrega_estado ? 1 : 0),
+                mejorPuntaje: cal,
+              // Compatibilidad: usamos 'plantilla' para mostrar el botón de descarga con el primer recurso
+              plantilla: r.plantilla || (firstRecurso ? firstRecurso.archivo : null),
+              recursos,
+              entrega_id: r.entrega_id || r.entregaId || null,
+            };
+          });
+          setActividades(mapped);
+        } else if (selectedType === 'quiz') {
+          const { data } = await resumenQuizzesEstudiante(estudianteId);
+          const rows = (data?.data || data || []).filter(q => {
+            if(!q.id_area) return true;
+            if(selectedArea.id === 5) {
+              if(!selectedModulo) return false;
+              return q.id_area === selectedModulo.id;
+            }
+            return q.id_area === selectedArea.id;
+          });
+          const mapped = rows.map(q => ({
+            id: q.id,
+            nombre: q.titulo,
+            descripcion: q.descripcion || '',
+            fechaEntrega: q.fecha_limite,
+            fechaSubida: null,
+            archivo: null,
+            entregada: q.total_intentos > 0,
+            score: q.ultimo_puntaje ?? null,
+            maxScore: q.puntos_max || 100,
+            estado: q.total_intentos ? 'realizado' : 'pendiente',
+            areaId: q.id_area,
+            tipo: 'quiz',
+            intentos: [],
+            totalIntentos: q.total_intentos || 0,
+            mejorPuntaje: q.mejor_puntaje ?? null,
+            plantilla: null
+          }));
+          setActividades(mapped);
+        }
+      } catch (e) {
+        console.error(e);
+        setError('Error cargando datos');
+        if (retryCount < MAX_RETRIES) {
+          setRetryCount(c=>c+1);
+        }
+      } finally { setLoading(false); }
+    };
+    fetchData();
+  }, [estudianteId, selectedType, selectedArea, retryCount, gradeRefreshKey]);
+
+  // Efecto: cuando cambia el PDF a visualizar en móvil intentamos inline y medimos si carga
+  useEffect(() => {
+    if (!showViewModal) return;
+    if (!isMobile) return; // sólo móviles
+    if (!viewingActivityFile) return;
+    setMobilePdfLoading(true); setMobilePdfFailed(false);
+    const timer = setTimeout(()=> {
+      // Si después de 3s no terminó onLoad asumimos que fallará inline
+      setMobilePdfLoading(l => {
+        if (l) { setMobilePdfFailed(true); return false; }
+        return l;
+      });
+    }, 3000);
+    return ()=> clearTimeout(timer);
+  }, [viewingActivityFile, showViewModal, isMobile]);
+
+  const manualRetry = () => { setRetryCount(c=>c+1); };
 
   // Efecto para calcular el puntaje total (como en Feedback)
   useEffect(() => {
@@ -569,8 +378,79 @@ export function Actividades_Alumno_comp() {
     setTotalScore(calculatedTotal);
   }, [actividades]);
 
-  // Hook para detectar si es móvil (como en Feedback)
-  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+  // Enriquecer calificaciones faltantes: algunas actividades entregadas vienen sin calificación;
+  // consultamos el endpoint de entregas para obtenerla.
+  const gradeEnrichmentRef = useRef(false);
+  useEffect(() => {
+    if (gradeEnrichmentRef.current) return; // evitar reentradas mientras corre
+    if (!estudianteId) return;
+    const missing = actividades.filter(a => selectedType === 'actividades' && a.entregada && (a.score === null || a.score === undefined));
+    if (missing.length === 0) return;
+    gradeEnrichmentRef.current = true;
+    (async () => {
+      try {
+        const mod = await import('../../api/actividades');
+        const fetchOne = async (act) => {
+          try {
+            const resp = await mod.listEntregasActividad(act.id);
+            const list = Array.isArray(resp.data?.data) ? resp.data.data : [];
+            const mine = list.find(e => String(e.id_estudiante) === String(estudianteId));
+            if (mine && (mine.calificacion !== null && mine.calificacion !== undefined)) {
+              setActividades(prev => prev.map(p => p.id === act.id ? { ...p, score: mine.calificacion, mejorPuntaje: mine.calificacion, estado: 'revisada' } : p));
+            }
+          } catch { /* silencioso */ }
+        };
+        // Limitar concurrencia básica
+        for (const act of missing) { // pequeño retardo para no saturar
+          // eslint-disable-next-line no-await-in-loop
+          await fetchOne(act);
+        }
+      } finally { gradeEnrichmentRef.current = false; }
+    })();
+  }, [actividades, estudianteId, selectedType]);
+
+  // Polling ligero para casos donde el docente califica después de que el alumno ya abrió la vista y no llegó notificación.
+  useEffect(() => {
+    if (selectedType !== 'actividades') return;
+    if (!estudianteId) return;
+    const hasMissing = actividades.some(a => a.entregada && (a.score === null || a.score === undefined));
+    if (!hasMissing) return; // nada que hacer
+    const interval = setInterval(async () => {
+      // Cada 12s reconsulta solo las actividades aún sin score
+      const pending = actividades.filter(a => a.entregada && (a.score === null || a.score === undefined));
+      if (pending.length === 0) return;
+      try {
+        const mod = await import('../../api/actividades');
+        for (const act of pending) { // eslint-disable-next-line no-await-in-loop
+          try {
+            const resp = await mod.listEntregasActividad(act.id);
+            const list = Array.isArray(resp.data?.data) ? resp.data.data : [];
+            const mine = list.find(e => String(e.id_estudiante) === String(estudianteId));
+            if (mine && (mine.calificacion !== null && mine.calificacion !== undefined)) {
+              setActividades(prev => prev.map(p => p.id === act.id ? { ...p, score: mine.calificacion, mejorPuntaje: mine.calificacion, estado: 'revisada' } : p));
+            }
+          } catch {/* ignore */}
+        }
+      } catch {/* ignore */}
+    }, 12000); // 12s balancea frescura y carga
+    return () => clearInterval(interval);
+  }, [actividades, selectedType, estudianteId]);
+
+  // Estados y detección para optimizar vista móvil de PDFs y listas de archivos
+  const [showMobileFileList, setShowMobileFileList] = useState(false); // toggle de lista lateral en móviles
+  const [canInlinePdf, setCanInlinePdf] = useState(true); // heurística simple de si podemos intentar inline
+  useEffect(() => {
+    if (!isMobile) { setCanInlinePdf(true); return; }
+    try {
+      const ua = navigator.userAgent || '';
+      // Heurísticas básicas donde el inline PDF suele fallar o es incómodo
+      if (/FBAN|FBAV|Instagram|Line\//i.test(ua)) { setCanInlinePdf(false); return; }
+      // WebView genéricas
+      if (/wv\)/i.test(ua)) { setCanInlinePdf(false); return; }
+      // Por defecto permitir
+      setCanInlinePdf(true);
+    } catch { setCanInlinePdf(true); }
+  }, [isMobile]);
 
   // Función para manejar la selección de área/materia
   const handleSelectArea = (area) => {
@@ -637,18 +517,9 @@ export function Actividades_Alumno_comp() {
   // Función para manejar la selección de tipo (actividades/quiz)
   const handleSelectType = (type) => {
     setSelectedType(type);
-    setCurrentLevel('table'); // Ir directamente a la tabla
-    
-    // BACKEND: TODO - Cargar actividades o quiz según el área y tipo seleccionado
-    if (type === 'quiz') {
-      const filteredQuizzes = quizzesData.filter(quiz => quiz.areaId === selectedArea.id);
-      setActividades(filteredQuizzes);
-    } else {
-      const filteredActividades = actividadesData.filter(
-        act => act.areaId === selectedArea.id && act.tipo === type
-      );
-      setActividades(filteredActividades);
-    }
+    setCurrentLevel('table');
+    // Para actividades el efecto useEffect hará la carga real.
+  // quizzes se cargan en efecto general
   };
 
   // Función para regresar al nivel anterior
@@ -672,67 +543,105 @@ export function Actividades_Alumno_comp() {
     }
   };
 
-  // Función para manejar subida de archivos (mejorada con historial de intentos)
-  const handleFileUpload = (actividadId, file) => {
-    // BACKEND: Validar que el archivo sea PDF antes de enviar al servidor
-    // Esta validación debe replicarse en el backend para seguridad
-    if (!file || file.type !== 'application/pdf') {
-      showNotification(
-        'Archivo no válido',
-        'Por favor, selecciona únicamente archivos PDF.',
-        'warning'
-      );
-      return;
+  // Función para manejar subida multi-archivo
+  const handleFileUpload = async (actividadId, files) => {
+    if (!files || !files.length) { showNotification('Sin archivos','Selecciona al menos un PDF.','warning'); return; }
+    if (!Array.isArray(files)) files = [files];
+    // Validaciones ya se hacen previo, pero reforzamos
+    let totalBytes = 0;
+    for (const f of files) {
+      if (f.type !== 'application/pdf') { showNotification('Solo PDF', `El archivo ${f.name} no es PDF.`, 'warning'); return; }
+      if (f.size > MAX_FILE_SIZE_BYTES) { showNotification('Archivo grande', `${f.name} supera 5MB.`, 'warning'); return; }
+      totalBytes += f.size;
     }
-    
-    // BACKEND: TODO - Enviar archivo al servidor con validación adicional de tipo MIME
-    const fileUrl = file ? URL.createObjectURL(file) : null;
-    
-    // Para actividades: no simular puntaje inmediato, va a revisión
+    if (totalBytes > MAX_TOTAL_BYTES) { showNotification('Límite excedido','Los archivos combinados superan 20MB.','warning'); return; }
+    if (!estudianteId) { showNotification('Sesión requerida','No se encontró ID de estudiante','error'); return; }
     const esTipoActividad = selectedType === 'actividades';
-    
-    // Actualizar estado local y agregar al historial de intentos
-    setActividades(prev => prev.map(act => {
-      if (act.id === actividadId) {
-        const nuevoIntento = {
-          numero: act.totalIntentos + 1,
-          fecha: new Date().toISOString().split('T')[0],
-          puntaje: esTipoActividad ? null : Math.floor(Math.random() * 30) + 70, // Solo para quiz
-          archivo: fileUrl,
-          comentarios: `Intento ${act.totalIntentos + 1} - Entregado el ${new Date().toLocaleDateString('es-ES')}`
-        };
-        
-        const nuevosIntentos = [...act.intentos, nuevoIntento];
-        
-        return {
-          ...act,
-          archivo: fileUrl,
-          entregada: true,
-          fechaSubida: new Date().toISOString().split('T')[0],
-          estado: esTipoActividad ? 'entregada' : 'revisada', // Actividades van a revisión
-          score: esTipoActividad ? null : nuevoIntento.puntaje, // Sin puntaje inmediato para actividades
-          intentos: nuevosIntentos,
-          totalIntentos: act.totalIntentos + 1,
-          mejorPuntaje: esTipoActividad ? null : Math.max(act.mejorPuntaje || 0, nuevoIntento.puntaje)
-        };
+    try {
+      if (esTipoActividad) {
+        const fd = new FormData();
+        files.forEach(f => fd.append('archivos', f));
+        fd.append('id_estudiante', estudianteId);
+        if (selectedActividad?.entrega_id) {
+          await addArchivoEntrega(selectedActividad.entrega_id, fd);
+        } else {
+          await crearOReemplazarEntrega(actividadId, fd);
+        }
+        // refrescar lista actividades
+        const { data } = await resumenActividadesEstudiante(estudianteId);
+        const rows = (data?.data || data || []).filter(a => {
+          if(!a.id_area) return true;
+          if(selectedArea.id === 5){ if(!selectedModulo) return false; return a.id_area === selectedModulo.id; }
+          return a.id_area === selectedArea.id;
+        });
+        const mapped = rows.map(r => {
+          let recursos = [];
+            if (r.recursos_json) {
+              try {
+                recursos = typeof r.recursos_json === 'string' ? JSON.parse(r.recursos_json) : r.recursos_json;
+                if (!Array.isArray(recursos)) recursos = [];
+              } catch { recursos = []; }
+            }
+            const firstRecurso = recursos[0];
+            return {
+              id: r.id,
+              nombre: r.titulo,
+              descripcion: r.descripcion || '',
+              fechaEntrega: r.fecha_limite,
+              fechaSubida: r.entregada_at ? new Date(r.entregada_at).toISOString().split('T')[0] : null,
+              archivo: r.archivo || null,
+              entregada: !!r.entrega_estado,
+              score: r.calificacion ?? null,
+              maxScore: r.puntos_max || 100,
+              estado: r.entrega_estado || 'pendiente',
+              areaId: r.id_area,
+              tipo: 'actividades',
+              intentos: [],
+              totalIntentos: r.version || (r.entrega_estado ? 1 : 0),
+              mejorPuntaje: r.calificacion ?? null,
+              plantilla: r.plantilla || (firstRecurso ? firstRecurso.archivo : null),
+              recursos,
+              entrega_id: r.entrega_id || r.entregaId || null,
+            };
+          });
+        setActividades(mapped);
+      } else {
+        // Quiz (placeholder existente)
+        const randomScore = Math.floor(Math.random() * 41) + 60;
+        await crearIntentoQuiz(actividadId, { id_estudiante: estudianteId, puntaje: randomScore });
+        const { data } = await resumenQuizzesEstudiante(estudianteId);
+        const rows = (data?.data || data || []).filter(q => {
+          if(!q.id_area) return true;
+          if(selectedArea.id === 5){ if(!selectedModulo) return false; return q.id_area === selectedModulo.id; }
+          return q.id_area === selectedArea.id;
+        });
+        const mapped = rows.map(q => ({
+          id: q.id,
+          nombre: q.titulo,
+          descripcion: q.descripcion || '',
+          fechaEntrega: q.fecha_limite,
+          fechaSubida: null,
+          archivo: null,
+          entregada: q.total_intentos > 0,
+          score: q.ultimo_puntaje ?? null,
+          maxScore: q.puntos_max || 100,
+          estado: q.total_intentos ? 'realizado' : 'pendiente',
+          areaId: q.id_area,
+          tipo: 'quiz',
+          intentos: [],
+          totalIntentos: q.total_intentos || 0,
+          mejorPuntaje: q.mejor_puntaje ?? null,
+          plantilla: null
+        }));
+        setActividades(mapped);
       }
-      return act;
-    }));
-    
-    // Cerrar modal y mostrar efectos visuales
-    setShowUploadModal(false);
-    setSelectedActividad(null);
-    
-    // Efectos de celebración diferentes para actividades vs quiz
-    if (esTipoActividad) {
-      setConfettiScore(0); // 0 indica "en revisión"
-    } else {
-      const puntajeSimulado = Math.floor(Math.random() * 30) + 70;
-      setConfettiScore(puntajeSimulado);
+      setShowUploadModal(false); setSelectedActividad(null);
+      setConfettiScore(esTipoActividad ? 0 : actividades.find(a=>a.id===actividadId)?.score || 0);
+      setShowConfetti(true); setTimeout(()=> setShowConfetti(false),3000);
+    } catch(e) {
+      console.error(e);
+      showNotification('Error','No se pudieron subir los archivos','error');
     }
-    
-    setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 3000);
   };
 
   // Funciones para modales (mejoradas como en Feedback)
@@ -743,32 +652,112 @@ export function Actividades_Alumno_comp() {
 
   const openViewModal = (actividad) => {
     setSelectedActividad(actividad);
-    setViewingActivityFile(actividad.archivo);
+    setViewingEntregaArchivos([]);
+    setViewingSelectedArchivoId(null);
+    setViewingArchivosError('');
+  setMobilePdfFailed(false); setMobilePdfLoading(false);
+  setUseAltViewer(false);
+    // Si la actividad tiene registro de entrega múltiple, obtener lista
+    if (actividad.entrega_id) {
+      setViewingArchivosLoading(true);
+      listArchivosEntrega(actividad.entrega_id)
+        .then(resp => {
+          const arr = resp.data?.data || [];
+          setViewingEntregaArchivos(arr);
+          if (arr.length) {
+            setViewingSelectedArchivoId(arr[0].id);
+            const firstSrc = arr[0].archivo.startsWith('http') ? arr[0].archivo : `${window.location.origin}${arr[0].archivo}`;
+            setViewingActivityFile(firstSrc);
+          } else {
+            setViewingActivityFile(resolveFileUrl(actividad.archivo));
+          }
+        })
+        .catch(()=> { setViewingArchivosError('No se pudieron cargar los archivos de la entrega'); setViewingActivityFile(resolveFileUrl(actividad.archivo)); })
+        .finally(()=> setViewingArchivosLoading(false));
+    } else {
+      setViewingActivityFile(resolveFileUrl(actividad.archivo));
+    }
+    setPdfError(false);
     setShowViewModal(true);
   };
 
-  const openEditModal = (actividad) => {
-    setSelectedActividad(actividad);
-    setShowEditModal(true);
-  };
-
   const closeModals = () => {
-    setShowUploadModal(false);
+  setShowUploadModal(false);
+  setEntregaArchivos([]); // limpiar archivos al cerrar
     setShowViewModal(false);
-    setShowEditModal(false);
     setSelectedActividad(null);
     setViewingActivityFile('');
+  setViewingEntregaArchivos([]);
+  setViewingSelectedArchivoId(null);
+  setUploadSelectedFiles([]);
+  setUploadError('');
+    setPdfError(false);
+  setShowMobileFileList(false);
+  setUseAltViewer(false);
   };
 
   // Función para descargar actividad
   const handleDownload = (actividadId) => {
-    // BACKEND: TODO - Descargar archivo de actividad
-    console.log('Descargando actividad:', actividadId);
-    // Por ahora, simular descarga
-    const link = document.createElement('a');
-    link.href = '/sample-activity.pdf';
-    link.download = `actividad_${actividadId}.pdf`;
-    link.click();
+    const actividad = actividades.find(a => a.id === actividadId);
+    if (!actividad) return;
+    // Prioriza primer recurso si existen múltiples
+    const target = actividad.recursos?.[0] || (actividad.plantilla ? { archivo: actividad.plantilla } : null);
+    if (!target) return;
+  const full = resolveFileUrl(target.archivo || target);
+  const name = (target.nombre || (target.archivo || target).split('/').pop() || `actividad_${actividadId}.pdf`);
+  downloadViaBlob(full, name);
+  };
+
+  const handleDownloadRecurso = (actividadId, recurso) => {
+    if (!recurso) return;
+  const full = resolveFileUrl(recurso.archivo);
+  const name = recurso.nombre || recurso.archivo.split('/').pop();
+  downloadViaBlob(full, name);
+  };
+
+  const openResourcesModal = (actividad) => {
+    setResourcesActividad(actividad);
+    setPreviewRecurso(actividad.recursos?.[0] || null);
+  setPreviewError(null); setPreviewLoading(false); setPreviewKey(c=>c+1);
+    setShowResourcesModal(true);
+  };
+
+  const closeResourcesModal = () => {
+    setShowResourcesModal(false);
+    setResourcesActividad(null);
+    setPreviewRecurso(null);
+  };
+
+  const downloadAllRecursos = () => {
+    if (!resourcesActividad?.recursos?.length) return;
+    resourcesActividad.recursos.forEach((r, idx) => {
+      setTimeout(()=> handleDownloadRecurso(resourcesActividad.id, r), idx * 300); // separación mayor para evitar saturar
+    });
+  };
+
+  // Utilidad: forzar descarga usando fetch -> blob para evitar abrir nueva pestaña
+  const downloadViaBlob = async (url, filename) => {
+    try {
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error('HTTP '+res.status);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename || 'archivo.pdf';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=> { URL.revokeObjectURL(blobUrl); a.remove(); }, 1000);
+    } catch (e) {
+      // Fallback: abrir en nueva pestaña si no se pudo forzar descarga
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
   };
 
   // Filtrado por mes (como en Feedback)
@@ -795,7 +784,7 @@ export function Actividades_Alumno_comp() {
     return now < due;
   };
 
-  // Funciones específicas para Quiz/Simulaciones
+  // Funciones específicas para Quizzes
   const handleIniciarSimulacion = (quizId) => {
     // BACKEND: TODO - Verificar si está dentro de la fecha y redirigir a la página de simulación
     console.log('Iniciando simulación:', quizId);
@@ -840,34 +829,21 @@ export function Actividades_Alumno_comp() {
     return item.completado && item.intentos < item.maxIntentos && item.estado === 'completado';
   };
 
-  // Función para agregar un nuevo intento al historial
-  const agregarIntento = (actividadId, puntaje, archivo, comentarios = null) => {
-    setActividades(prev => prev.map(actividad => {
-      if (actividad.id === actividadId) {
-        const nuevoIntento = {
-          numero: actividad.totalIntentos + 1,
-          fecha: new Date().toISOString().split('T')[0],
-          puntaje: puntaje,
-          archivo: archivo,
-          comentarios: comentarios
-        };
-        
-        const nuevosIntentos = [...actividad.intentos, nuevoIntento];
-        const nuevoMejorPuntaje = Math.max(actividad.mejorPuntaje || 0, puntaje);
-        
-        return {
-          ...actividad,
-          intentos: nuevosIntentos,
-          totalIntentos: actividad.totalIntentos + 1,
-          mejorPuntaje: nuevoMejorPuntaje,
-          score: nuevoMejorPuntaje, // El score actual es el mejor puntaje
-          fechaSubida: new Date().toISOString().split('T')[0],
-          entregada: true,
-          estado: 'revisada'
-        };
-      }
-      return actividad;
-    }));
+  // Límites multi-archivo
+  const MAX_FILES = 5;
+  const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB individuales
+  const MAX_TOTAL_BYTES = 20 * 1024 * 1024; // 20MB combinados
+
+  // Confirmar subida multi-archivo
+  const handleConfirmUpload = () => {
+    if (!uploadSelectedFiles.length) { setUploadError('Selecciona al menos un PDF.'); return; }
+    const anyNonPdf = uploadSelectedFiles.some(f => f.type !== 'application/pdf');
+    if (anyNonPdf) { setUploadError('Solo archivos PDF.'); return; }
+    const anyTooBig = uploadSelectedFiles.some(f => f.size > MAX_FILE_SIZE_BYTES);
+    if (anyTooBig) { setUploadError('Uno o más archivos superan 5MB.'); return; }
+    const total = uploadSelectedFiles.reduce((s,f)=> s + f.size, 0);
+    if (total > MAX_TOTAL_BYTES) { setUploadError('Tamaño combinado > 20MB.'); return; }
+    handleFileUpload(selectedActividad.id, uploadSelectedFiles);
   };
 
   // Función para reintentar una actividad
@@ -954,7 +930,7 @@ export function Actividades_Alumno_comp() {
     }
   };
 
-  // Funciones para el modal de historial de quizzes (como en simulaciones)
+  // Funciones para el modal de historial de quizzes
   const handleVerHistorial = (quiz) => {
     setSelectedQuizHistorial(quiz);
     setShowHistorialModal(true);
@@ -986,63 +962,139 @@ export function Actividades_Alumno_comp() {
   const getBestScore = (itemId) => {
     const item = actividades.find(q => q.id === itemId);
     if (!item) return 0;
-    
-    // Para actividades que no tienen puntaje asignado aún
-    if (selectedType === 'actividades' && item.score === null) {
-      return 'En revisión';
+    if (selectedType === 'actividades') {
+      if (item.score === null || item.score === undefined) {
+        // Si está marcada como revisada pero score null, mostrar 0 (o placeholder) y no 'En revisión'
+        if (item.estado === 'revisada') return item.mejorPuntaje ?? 0;
+        return 'En revisión';
+      }
+      return item.score;
     }
-    
     return item.mejorPuntaje || 0;
   };
 
-  // Modal para subir archivos
+  // Efecto para cargar archivos de la entrega cuando se abre el modal (no hooks dentro de render condicional)
+  useEffect(() => {
+    if (!showUploadModal || !selectedActividad) return;
+    const isEdit = selectedActividad.entregada && selectedActividad.estado !== 'revisada';
+    const blocked = selectedActividad.entregada && selectedActividad.estado === 'revisada';
+    if (selectedActividad.entrega_id && entregaArchivos.length === 0 && isEdit && !blocked) {
+      (async () => {
+        try {
+          const resp = await listArchivosEntrega(selectedActividad.entrega_id);
+          setEntregaArchivos(resp.data?.data || []);
+        } catch {}
+      })();
+    }
+  }, [showUploadModal, selectedActividad, entregaArchivos.length]);
+
+  // Modal para gestionar archivos (multi-archivo estilo Classroom)
   const renderUploadModal = () => {
     if (!showUploadModal || !selectedActividad) return null;
 
+    const isEdit = selectedActividad.entregada && selectedActividad.estado !== 'revisada';
+    const blocked = selectedActividad.entregada && selectedActividad.estado === 'revisada';
+
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-          {/* Header del modal */}
-          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 text-center">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+          {/* Header */}
+          <div className={`p-6 text-center ${blocked ? 'bg-gradient-to-r from-gray-400 to-gray-500' : isEdit ? 'bg-gradient-to-r from-indigo-500 to-purple-600' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} text-white`}>
             <Upload className="w-12 h-12 text-white mx-auto mb-4" />
-            <h2 className="text-xl font-bold">Subir Actividad</h2>
+            <h2 className="text-xl font-bold">
+              {blocked ? 'Entrega Finalizada' : isEdit ? 'Gestionar Archivos' : 'Subir Archivos'}
+            </h2>
+            <p className="text-indigo-100 mt-1 text-sm">
+              {blocked ? 'La actividad ya fue revisada. No puedes subir más archivos.' : isEdit ? 'Agrega o elimina PDFs antes de la revisión.' : 'Sube un PDF (podrás agregar más luego).' }
+            </p>
           </div>
 
-          {/* Contenido del modal */}
-          <div className="p-6">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {selectedActividad.nombre}
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Selecciona el archivo de tu actividad completada
-              </p>
+          {/* Contenido */}
+          <div className="p-6 space-y-5">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">{selectedActividad.nombre}</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">{selectedActividad.descripcion}</p>
+              <div className="mt-2 text-xs text-gray-500 flex flex-col gap-1">
+                <span>Fecha límite: {new Date(selectedActividad.fechaEntrega).toLocaleDateString('es-ES')}</span>
+                {selectedActividad.entregada && (
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4 text-green-500" /> Entregado el {selectedActividad.fechaSubida || '—'}
+                  </span>
+                )}
+                {selectedActividad.estado === 'revisada' && selectedActividad.score !== null && (
+                  <span className="flex items-center gap-1 text-green-600 font-medium">Calificación: {selectedActividad.score}%</span>
+                )}
+              </div>
             </div>
 
-            <div className="mb-6">
+            <div className={`border-2 ${uploadError ? 'border-red-300 bg-red-50' : 'border-dashed border-gray-300 bg-gray-50'} rounded-xl p-4 transition-colors`}>
               <input
                 type="file"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                accept=".pdf,.doc,.docx,.txt"
+                accept="application/pdf"
+                multiple
+                name="archivos"
+                disabled={blocked}
+                onChange={(e) => {
+                  setUploadError('');
+                  const fileList = Array.from(e.target.files || []);
+                  if (!fileList.length) { setUploadSelectedFiles([]); return; }
+                  if (fileList.length > MAX_FILES) { setUploadError(`Máximo ${MAX_FILES} PDFs por envío.`); setUploadSelectedFiles([]); return; }
+                  let total = 0;
+                  for (const f of fileList) {
+                    if (f.type !== 'application/pdf') { setUploadError('Todos los archivos deben ser PDF.'); setUploadSelectedFiles([]); return; }
+                    if (f.size > MAX_FILE_SIZE_BYTES) { setUploadError(`${f.name} supera 5MB.`); setUploadSelectedFiles([]); return; }
+                    total += f.size;
+                  }
+                  if (total > MAX_TOTAL_BYTES) { setUploadError('Tamaño combinado > 20MB.'); setUploadSelectedFiles([]); return; }
+                  setUploadSelectedFiles(fileList);
+                }}
+                className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
               />
+              <p className="mt-2 text-xs text-gray-500">
+                Solo PDF. Máx {MAX_FILES} archivos, 5MB c/u, 20MB total. ¿Comprimir?{' '}
+                <a
+                  href="https://www.ilovepdf.com/compress_pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  Comprimir PDF
+                </a>
+              </p>
+              {!!uploadSelectedFiles.length && !uploadError && (
+                <ul className="mt-2 text-xs text-green-600 space-y-1 max-h-28 overflow-auto pr-1">
+                  {uploadSelectedFiles.map(f => (
+                    <li key={f.name} className="flex items-center gap-1"><CheckCircle className="w-4 h-4" /> {f.name} ({(f.size/1024).toFixed(1)} KB)</li>
+                  ))}
+                </ul>
+              )}
+              {uploadError && (
+                <div className="mt-2 text-xs text-red-600 font-medium flex items-center gap-1">
+                  <AlertTriangle className="w-4 h-4" /> {uploadError}
+                </div>
+              )}
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={closeModals}
-                className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  // Lógica para subir archivo
-                  closeModals();
-                }}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-              >
-                Subir
-              </button>
+            {isEdit && (
+              <div className="mt-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Archivos actuales</h4>
+                <ul className="space-y-2 max-h-40 overflow-auto pr-1">
+                  {entregaArchivos.map(f => (
+                    <li key={f.id} className="flex items-center justify-between bg-gray-100 rounded-lg px-3 py-2 text-xs">
+                      <span className="truncate" title={f.original_nombre || f.archivo}>{(f.original_nombre || f.archivo.split('/').pop())}</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => window.open(f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`,'_blank')} className="text-blue-600 hover:underline">Ver</button>
+                        {!blocked && <button onClick={async () => { try { const resp = await deleteArchivoEntrega(selectedActividad.entrega_id, f.id); setEntregaArchivos(resp.data?.data || []); } catch { showNotification('Error','No se pudo eliminar','error'); } }} className="text-red-500 hover:text-red-700">Eliminar</button>}
+                      </div>
+                    </li>
+                  ))}
+                  {entregaArchivos.length === 0 && <li className="text-xs text-gray-500">Sin archivos todavía.</li>}
+                </ul>
+              </div>
+            )}
+            <div className="flex gap-3 pt-4">
+              <button onClick={closeModals} className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">Cerrar</button>
+              {!blocked && <button onClick={() => { if (!uploadSelectedFiles.length) { setUploadError('Selecciona archivos.'); return; } handleConfirmUpload(); }} className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors text-white shadow ${isEdit ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'}`}>{isEdit ? 'Agregar Archivos' : 'Subir Archivos'}</button>}
             </div>
           </div>
         </div>
@@ -1050,49 +1102,116 @@ export function Actividades_Alumno_comp() {
     );
   };
 
-  // Modal para ver archivos
+  // Modal para ver archivo estilo compacto (inspirado en snippet proporcionado)
   const renderViewModal = () => {
     if (!showViewModal || !selectedActividad) return null;
+    const pdfSrc = viewingActivityFile;
+    const esPDF = pdfSrc && pdfSrc.toLowerCase().endsWith('.pdf');
+
+    const handleOpenPdfInNewTab = () => {
+      if (pdfSrc) window.open(pdfSrc, '_blank', 'noopener');
+    };
+
+    // Modo multi-archivo: barra lateral de archivos si hay más de uno
+    const hasMulti = viewingEntregaArchivos && viewingEntregaArchivos.length > 0;
+
+    const downloadEntregaArchivo = async (f) => {
+      if(!f) return;
+      const full = f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`;
+      const name = f.original_nombre || f.archivo.split('/').pop();
+      await downloadViaBlob(full, name);
+    };
+    const downloadAllEntregaArchivos = () => {
+      viewingEntregaArchivos.forEach((f,idx)=> setTimeout(()=> downloadEntregaArchivo(f), idx*400));
+    };
 
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden">
-          {/* Header del modal */}
-          <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold">Ver Actividad</h2>
-                <p className="text-purple-100 mt-1">{selectedActividad.nombre}</p>
-              </div>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-start px-2 pt-24 md:pt-28 pb-4 z-50" onClick={closeModals}>
+        <div className="bg-white rounded-t-2xl md:rounded-xl shadow-2xl w-full max-w-5xl h-[calc(100vh-7rem)] md:h-[82vh] flex flex-col overflow-hidden" onClick={e=>e.stopPropagation()}>
+          <div className="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+            <h2 className="font-semibold text-lg truncate flex-1 pr-2">Entrega: {selectedActividad.nombre}</h2>
+            {hasMulti && isMobile && (
               <button
-                onClick={closeModals}
-                className="text-white hover:text-gray-200 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Contenido del modal */}
-          <div className="p-6">
-            {selectedActividad.archivo ? (
-              <div className="text-center">
-                <Eye className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">
-                  Archivo: {selectedActividad.archivo || 'archivo.pdf'}
-                </p>
-                <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
-                  <Download className="w-4 h-4 inline mr-2" />
-                  Descargar
-                </button>
-              </div>
-            ) : (
-              <div className="text-center text-gray-500 py-8">
-                <p>No hay archivo disponible para esta actividad.</p>
-              </div>
+                onClick={() => setShowMobileFileList(v=>!v)}
+                className="mr-2 px-3 py-1.5 text-xs rounded-md bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20"
+              >{showMobileFileList ? 'Ocultar' : 'Lista'}</button>
             )}
+            <button onClick={closeModals} className="text-white/80 hover:text-white">✕</button>
+          </div>
+          <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+            {/* Sidebar archivos entrega */}
+            <div className={`w-full md:w-64 md:border-r border-b md:border-b-0 overflow-y-auto p-3 space-y-2 bg-gray-50 ${hasMulti ? (isMobile ? (showMobileFileList ? 'block max-h-48' : 'hidden') : 'block') : 'hidden md:block'} md:max-h-none flex-shrink-0`}>
+              {viewingArchivosLoading && <div className="text-xs text-gray-500">Cargando...</div>}
+              {viewingArchivosError && <div className="text-xs text-red-600">{viewingArchivosError}</div>}
+              {!viewingArchivosLoading && !viewingArchivosError && viewingEntregaArchivos.map(f => {
+                const active = f.id === viewingSelectedArchivoId;
+                const display = f.original_nombre || f.archivo.split('/').pop();
+                return (
+                  <div key={f.id} className={`group rounded-lg border p-2 text-xs cursor-pointer transition-colors ${active ? 'border-purple-500 bg-white shadow-sm' : 'border-gray-200 bg-white hover:bg-purple-50'}`} onClick={()=> { setViewingSelectedArchivoId(f.id); const src = f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`; setViewingActivityFile(src); }}>
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-purple-500" />
+                      <span className="truncate" title={display}>{display}</span>
+                    </div>
+                    <div className="mt-1 flex gap-2">
+                      <button className="text-blue-600 hover:underline" onClick={(e)=> { e.stopPropagation(); downloadEntregaArchivo(f); }}>Descargar</button>
+                      <button className="text-gray-500 hover:underline" onClick={(e)=> { e.stopPropagation(); setViewingSelectedArchivoId(f.id); const src = f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`; setViewingActivityFile(src); }}>Ver</button>
+                    </div>
+                  </div>
+                );
+              })}
+              {!viewingArchivosLoading && !viewingArchivosError && viewingEntregaArchivos.length === 0 && (
+                <div className="text-xs text-gray-400">Sin archivos.</div>
+              )}
+            </div>
+            {/* Panel visor */}
+            <div className="flex-1 flex flex-col">
+              <div className="p-3 border-b flex flex-wrap gap-2 items-center justify-between">
+                <div className="text-sm font-medium truncate max-w-[60%]">
+                  {hasMulti ? (viewingEntregaArchivos.find(f=>f.id===viewingSelectedArchivoId)?.original_nombre || viewingEntregaArchivos.find(f=>f.id===viewingSelectedArchivoId)?.archivo?.split('/').pop() || 'Selecciona un archivo') : (pdfSrc ? pdfSrc.split('/').pop() : 'Sin archivo')}
+                </div>
+                <div className="flex gap-2">
+                  {hasMulti && viewingEntregaArchivos.length > 1 && (
+                    <button onClick={downloadAllEntregaArchivos} className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md">Descargar todo</button>
+                  )}
+                  {pdfSrc && esPDF && (
+                    <button onClick={()=> { if(viewingSelectedArchivoId){ const f=viewingEntregaArchivos.find(x=>x.id===viewingSelectedArchivoId); downloadEntregaArchivo(f); } else { handleOpenPdfInNewTab(); } }} className="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">Descargar actual</button>
+                  )}
+                  {pdfSrc && esPDF && !isMobile && (
+                    <button onClick={handleOpenPdfInNewTab} className="px-3 py-1.5 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded-md">Abrir pestaña</button>
+                  )}
+                  <button onClick={closeModals} className="px-3 py-1.5 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded-md">Cerrar</button>
+                </div>
+              </div>
+              <div className={`flex-1 bg-gray-100 m-2 md:m-3 rounded-lg flex items-center justify-center overflow-hidden relative ${isMobile && showMobileFileList ? 'hidden' : 'flex'}`}>
+                {pdfSrc && esPDF ? (
+                  isMobile ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center text-gray-600 text-xs gap-3">
+                      <div className="font-medium">Abrir documento</div>
+                      <div className="text-[11px] text-gray-500 max-w-xs">En móvil se abrirá fuera del sitio para mejor lectura.</div>
+                      <button onClick={()=> window.open(pdfSrc,'_blank','noopener')} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-xs w-full max-w-[200px]">Abrir PDF</button>
+                      <button onClick={()=> window.location.href = pdfSrc} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs w-full max-w-[200px]">Forzar descarga</button>
+                      <button onClick={()=> setUseAltViewer(v=>!v)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs w-full max-w-[200px]">{useAltViewer ? 'Cerrar visor alterno' : 'Visor alterno'}</button>
+                      {useAltViewer && (
+                        <iframe
+                          key={pdfSrc+'alt-simple'}
+                          src={`https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(pdfSrc)}`}
+                          title="Entrega PDF (Alt)"
+                          className="w-full h-full border-none mt-2 bg-white"
+                          onError={()=> setUseAltViewer(false)}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <iframe key={pdfSrc} src={pdfSrc} title="Entrega PDF" className="w-full h-full border-none" />
+                  )
+                ) : (
+                  <div className="text-xs text-gray-500">No hay PDF para visualizar.</div>
+                )}
+              </div>
+              <div className="px-4 pb-2">
+                <p className="text-[10px] sm:text-xs text-gray-500 truncate">Ruta: {pdfSrc ? pdfSrc.replace(/^https?:\/\/[^/]+/, '') : ''}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1346,10 +1465,130 @@ export function Actividades_Alumno_comp() {
     );
   };
 
+  // Modal de recursos múltiples (descarga y vista previa)
+  const renderResourcesModal = () => {
+    if (!showResourcesModal || !resourcesActividad) return null;
+  const recursos = resourcesActividad.recursos || [];
+  const current = previewRecurso;
+  const baseUrl = current ? resolveFileUrl(current.archivo) : null;
+  const currentUrl = baseUrl ? baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'v=' + previewKey : null; // cache-bust
+  // BACKEND: Asesores solo pueden subir PDFs, así que asumimos siempre PDF y simplificamos la lógica
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-start px-2 pt-24 md:pt-28 pb-4 z-50" onClick={closeResourcesModal}>
+        <div className="bg-white rounded-t-2xl md:rounded-xl shadow-2xl w-full max-w-4xl h-[calc(100vh-7rem)] md:h-[80vh] flex flex-col overflow-hidden" onClick={e=>e.stopPropagation()}>
+          <div className="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+            <h2 className="font-semibold text-lg flex-1 pr-2 truncate">Recursos de: {resourcesActividad.nombre}</h2>
+            {isMobile && (
+              <button
+                onClick={() => setShowMobileFileList(v=>!v)}
+                className="mr-2 px-3 py-1.5 text-xs rounded-md bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20"
+              >{showMobileFileList ? 'Ocultar' : 'Lista'}</button>
+            )}
+            <button onClick={closeResourcesModal} className="text-white/80 hover:text-white">✕</button>
+          </div>
+          <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+      <div className={`w-full md:w-64 md:border-r border-b md:border-b-0 overflow-y-auto p-3 space-y-2 bg-gray-50 ${isMobile ? (showMobileFileList ? 'block max-h-48' : 'hidden') : 'block'} md:max-h-none flex-shrink-0`}>
+              {recursos.map((r,idx)=> (
+        <div key={idx} className={`group rounded-lg border p-2 text-xs cursor-pointer transition-colors ${previewRecurso===r ? 'border-blue-500 bg-white shadow-sm' : 'border-gray-200 bg-white hover:bg-blue-50'}`} onClick={()=> { setPreviewRecurso(r); setPreviewError(null); setPreviewLoading(true); setPreviewKey(c=>c+1); }}>
+                  <div className="flex items-center gap-2">
+                    <Download className="w-4 h-4 text-blue-500" />
+                    <span className="truncate" title={r.nombre || r.archivo}>{r.nombre || r.archivo.split('/').pop()}</span>
+                  </div>
+                  <div className="mt-1 flex gap-2">
+          <button className="text-blue-600 hover:underline" onClick={(e)=> { e.stopPropagation(); handleDownloadRecurso(resourcesActividad.id,r); }}>Descargar</button>
+          <button className="text-gray-500 hover:underline" onClick={(e)=> { e.stopPropagation(); setPreviewRecurso(r); setPreviewError(null); setPreviewLoading(true); setPreviewKey(c=>c+1); }}>Ver</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex-1 flex flex-col">
+              <div className="p-3 border-b flex flex-wrap gap-2 items-center justify-between">
+                <div className="text-sm font-medium truncate max-w-[70%]">
+                  {current ? (current.nombre || current.archivo.split('/').pop()) : 'Selecciona un recurso'}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={downloadAllRecursos} className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md">Descargar todo</button>
+                  {current && (
+                    <button onClick={()=> handleDownloadRecurso(resourcesActividad.id,current)} className="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">Descargar actual</button>
+                  )}
+                </div>
+              </div>
+              <div className={`flex-1 bg-gray-100 m-2 md:m-3 rounded-lg flex items-center justify-center overflow-hidden relative ${isMobile && showMobileFileList ? 'hidden' : 'flex'}`}>
+                {current ? (
+                  <>
+                    {previewLoading && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-xs text-gray-600 bg-white/60 backdrop-blur-sm">
+                        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        Cargando PDF...
+                      </div>
+                    )}
+                    {previewError && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center p-4 text-xs text-red-600 bg-white">
+                        <div>ERROR al cargar el PDF</div>
+                        <button className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs" onClick={()=> { setPreviewError(null); setPreviewLoading(true); setPreviewKey(c=>c+1); }}>Reintentar</button>
+                        <a className="text-blue-600 underline" href={baseUrl} target="_blank" rel="noopener">Abrir en nueva pestaña</a>
+                      </div>
+                    )}
+                    {(!canInlinePdf && isMobile && !useAltViewer) ? (
+                      <div className="flex flex-col items-center justify-center gap-3 text-center p-4 text-xs text-gray-600">
+                        <div>Vista previa limitada en este dispositivo.</div>
+                        <a href={baseUrl} target="_blank" rel="noopener" className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs">Abrir PDF</a>
+                        <button onClick={()=> setUseAltViewer(true)} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs">Visor alterno</button>
+                      </div>
+                    ) : useAltViewer ? (
+                      <iframe
+                        key={currentUrl+'alt'}
+                        src={`https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(baseUrl)}`}
+                        title="Recurso PDF (Alt)"
+                        className="w-full h-full border-0 bg-white"
+                        onLoad={()=> setPreviewLoading(false)}
+                        onError={()=> { setUseAltViewer(false); setPreviewError(true); }}
+                      />
+                    ) : (
+                      <iframe
+                        key={currentUrl}
+                        src={currentUrl}
+                        title="Recurso PDF"
+                        className="w-full h-full border-0"
+                        onLoad={()=> setPreviewLoading(false)}
+                        onError={()=> { setPreviewLoading(false); setPreviewError(true); }}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <div className="text-sm text-gray-500">Selecciona un archivo para previsualizar.</div>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="px-4 md:px-6 py-3 border-t flex justify-end bg-gray-50">
+            <button onClick={closeResourcesModal} className="px-4 py-2 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-md w-full md:w-auto">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Función para renderizar las áreas principales
   const renderAreas = () => (
     <div className="min-h-screen bg-white p-4 lg:p-8">
       <div className="max-w-7xl mx-auto">
+        {error && !loading && (
+          <div className="mb-4 p-4 rounded-xl border border-red-200 bg-red-50 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1 text-sm text-red-700">
+              {error} {retryCount>0 && retryCount<=MAX_RETRIES && `(reintento ${retryCount}/${MAX_RETRIES})`}
+            </div>
+            <div className="flex gap-2">
+              {retryCount <= MAX_RETRIES && (
+                <button onClick={manualRetry} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 active:scale-95">Reintentar</button>
+              )}
+              <button onClick={()=> window.location.reload()} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 active:scale-95">Recargar</button>
+            </div>
+          </div>
+        )}
+        {catalogError && (
+          <div className="mb-4 p-3 rounded-xl bg-yellow-50 border border-yellow-200 text-sm text-yellow-800">{catalogError}</div>
+        )}
         {/* Header */}
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-8">
           <div className="px-6 py-8">
@@ -1399,25 +1638,24 @@ export function Actividades_Alumno_comp() {
           </div>
         </div>
 
-        {/* Grid de áreas con el mismo estilo que simulaciones */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+  {/* Grid de áreas */}
+  {/* Grid responsive mejorado: 2 columnas en móviles, 3 en tablets, 4 en desktop */}
+  <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-fr gap-3 sm:gap-5">
+          {(loadingCatalog || loading) && areasData.length===0 && (
+            <div className="col-span-full py-8 text-center text-sm text-gray-500">Cargando áreas...</div>
+          )}
           {areasData.map((area) => (
-            <div key={area.id} onClick={() => handleSelectArea(area)}>
-              <div className={`${area.bgColor} ${area.borderColor} border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group p-6 flex flex-col h-full cursor-pointer`}>
-                <div className="text-center flex-grow">
-                  <div className={`w-16 h-16 bg-gradient-to-br ${area.color} rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
-                    {area.icono}
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{area.titulo}</h3>
-                  <p className="text-gray-700 text-sm mb-4 leading-relaxed">{area.descripcion}</p>
-                </div>
-                <div className="text-center mt-auto pt-4">
-                  <div className="inline-flex items-center text-gray-600 font-medium text-sm">
-                    <span>Explorar área</span>
-                    <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </div>
+            <div key={area.id} className="[tap-highlight-color:transparent]">
+              <UnifiedCard
+                title={area.titulo}
+                description={area.descripcion}
+                icon={area.icono}
+                containerClasses={`${area.bgColor} ${area.borderColor} bg-gradient-to-br`}
+                iconWrapperClass={`bg-gradient-to-br ${area.color}`}
+                minHeight={CARD_HEIGHT_PX}
+                onClick={() => handleSelectArea(area)}
+                footer={<div className="inline-flex items-center text-gray-600 font-medium tracking-wide"><span className="group-hover:text-gray-800 transition-colors text-xs sm:text-sm">Explorar área</span><ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
+              />
             </div>
           ))}
         </div>
@@ -1463,7 +1701,11 @@ export function Actividades_Alumno_comp() {
           </div>
 
           {/* Grid de módulos específicos con lógica de acceso y estilo restaurado */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {/* Grid responsive para módulos específicos */}
+          <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-fr gap-3 sm:gap-5">
+            {(loadingCatalog || loading) && modulosEspecificos.length===0 && (
+              <div className="col-span-full py-6 text-center text-sm text-gray-500">Cargando módulos...</div>
+            )}
             {modulosEspecificos.map((modulo) => {
               const isAllowed = allowedActivityAreas.includes(modulo.id);
               const request = activityRequests.find(req => req.areaId === modulo.id);
@@ -1471,7 +1713,7 @@ export function Actividades_Alumno_comp() {
 
               let actionHandler = () => {};
               let footerContent;
-              let cardClassName = `${modulo.bgColor} ${modulo.borderColor} border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group p-6 flex flex-col h-full`;
+              let cardClassName = `${modulo.bgColor} ${modulo.borderColor} border rounded-2xl shadow-md hover:shadow-xl transition-all duration-200 group px-4 py-5 sm:px-6 sm:py-6 flex flex-col select-none`;
               let isClickable = false;
 
               if (hasInitialArea) {
@@ -1518,22 +1760,25 @@ export function Actividades_Alumno_comp() {
               }
 
               return (
-                <div key={modulo.id} onClick={isClickable ? actionHandler : undefined}>
-                  <div className={cardClassName}>
-                    <div className="text-center flex-grow">
-                      <div className={`w-16 h-16 bg-gradient-to-br ${modulo.color} rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
-                        {getIconComponent(modulo.icono?.type?.name || 'BookOpen')}
-                      </div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-2">{modulo.titulo}</h3>
-                      <p className="text-gray-700 text-sm mb-4 leading-relaxed">{modulo.descripcion}</p>
-                    </div>
-                    <div className="text-center mt-auto pt-4">
-                      {footerContent}
-                    </div>
-                  </div>
+                <div key={modulo.id} className="[tap-highlight-color:transparent]">
+                  <UnifiedCard
+                    title={modulo.titulo}
+                    description={modulo.descripcion}
+                    icon={getIconComponent(modulo.icono?.type?.name || 'BookOpen')}
+                    containerClasses={`${modulo.bgColor} ${modulo.borderColor} bg-gradient-to-br`}
+                    iconWrapperClass={`bg-gradient-to-br ${modulo.color}`}
+                    minHeight={CARD_HEIGHT_PX}
+                    onClick={isClickable ? actionHandler : undefined}
+                    interactive={isClickable}
+                    pending={isPending}
+                    footer={<div className="text-xs sm:text-sm">{footerContent}</div>}
+                  />
                 </div>
               );
             })}
+            {!loadingCatalog && !catalogError && modulosEspecificos.length===0 && (
+              <div className="col-span-full text-center text-xs sm:text-sm text-gray-500 py-6">No hay módulos específicos disponibles.</div>
+            )}
           </div>
         </div>
       </div>
@@ -1588,7 +1833,7 @@ export function Actividades_Alumno_comp() {
               
               <div className="flex flex-col items-center">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
-                  TIPOS DE CONTENIDO
+                  Actividades y Quizzes
                 </h2>
                 <div className="flex items-center space-x-2 mt-1">
                   <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
@@ -1599,55 +1844,60 @@ export function Actividades_Alumno_comp() {
           </div>
         </div>
 
-        {/* Tarjetas de tipos de contenido */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Botón de Actividades */}
-          <div
-            onClick={() => handleSelectType('actividades')}
-            className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
-          >
-            <div className="p-8 text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                <FileText className="w-10 h-10 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Actividades</h3>
-              <h4 className="text-lg font-semibold text-blue-700 mb-4">Tareas y ejercicios</h4>
-              <p className="text-gray-700 mb-6 leading-relaxed">
-                Tareas y ejercicios prácticos para reforzar tu aprendizaje
-              </p>
-              <div className="inline-flex items-center text-blue-600 font-medium text-sm">
-                <span>ACCEDER</span>
-                <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
+        {/* Tarjetas tipo (responsive + altura uniforme usando UnifiedCard) */}
+        <div className="mx-auto w-full">
+          {/* En desktop mostramos exactamente dos tarjetas grandes centradas */}
+          <div className="hidden lg:flex justify-center gap-10 max-w-6xl mx-auto">
+            <UnifiedCard
+              title="Actividades"
+              description="Tareas y ejercicios prácticos para reforzar tu aprendizaje"
+              icon={<FileText className="w-6 h-6 text-white" />}
+              containerClasses="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 lg:w-[380px] xl:w-[420px]"
+              iconWrapperClass="bg-gradient-to-br from-blue-500 to-indigo-600"
+              minHeight={CARD_HEIGHT_PX+40}
+              onClick={() => handleSelectType('actividades')}
+              footer={<div className="inline-flex items-center text-blue-600 font-medium text-xs sm:text-sm"><span>ACCEDER</span><ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
+            />
+            <UnifiedCard
+              title="Quizzes"
+              description="Cuestionarios y evaluaciones en línea"
+              icon={<Brain className="w-6 h-6 text-white" />}
+              containerClasses="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 lg:w-[380px] xl:w-[420px]"
+              iconWrapperClass="bg-gradient-to-br from-purple-500 to-pink-600"
+              minHeight={CARD_HEIGHT_PX+40}
+              onClick={() => handleSelectType('quiz')}
+              footer={<div className="inline-flex items-center text-purple-600 font-medium text-xs sm:text-sm"><span>ACCEDER</span><ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
+            />
           </div>
-
-          {/* Botón de Quiz/Simulaciones */}
-          <div
-            onClick={() => handleSelectType('quiz')}
-            className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
-          >
-            <div className="p-8 text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                <Brain className="w-10 h-10 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Quiz y Simulaciones</h3>
-              <h4 className="text-lg font-semibold text-purple-700 mb-4">Evaluaciones</h4>
-              <p className="text-gray-700 mb-6 leading-relaxed">
-                Evaluaciones interactivas y simuladores de examen
-              </p>
-              <div className="inline-flex items-center text-purple-600 font-medium text-sm">
-                <span>ACCEDER</span>
-                <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
+          {/* Mobile / tablet grid (mantener responsive compacto) */}
+          <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 lg:hidden auto-rows-fr gap-3 sm:gap-5 max-w-5xl mx-auto">
+            <UnifiedCard
+              title="Actividades"
+              description="Tareas y ejercicios prácticos para reforzar tu aprendizaje"
+              icon={<FileText className="w-6 h-6 text-white" />}
+              containerClasses="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200"
+              iconWrapperClass="bg-gradient-to-br from-blue-500 to-indigo-600"
+              minHeight={CARD_HEIGHT_PX}
+              onClick={() => handleSelectType('actividades')}
+              footer={<div className="inline-flex items-center text-blue-600 font-medium text-[10px] xs:text-xs sm:text-sm"><span>ACCEDER</span><ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 ml-1 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
+            />
+            <UnifiedCard
+              title="Quizzes"
+              description="Cuestionarios y evaluaciones en línea"
+              icon={<Brain className="w-6 h-6 text-white" />}
+              containerClasses="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200"
+              iconWrapperClass="bg-gradient-to-br from-purple-500 to-pink-600"
+              minHeight={CARD_HEIGHT_PX}
+              onClick={() => handleSelectType('quiz')}
+              footer={<div className="inline-flex items-center text-purple-600 font-medium text-[10px] xs:text-xs sm:text-sm"><span>ACCEDER</span><ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 ml-1 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
+            />
           </div>
         </div>
       </div>
     </div>
   );
 
-    // Función para renderizar tabla de actividades
+    // Función para renderizar tabla de actividades (versión unificada single-submission)
     const renderTablaActividades = () => (
       <div className="p-6">
         <div className="mb-8">
@@ -1663,7 +1913,6 @@ export function Actividades_Alumno_comp() {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Actividades</h1>
               <p className="text-gray-600">{selectedArea?.titulo}</p>
             </div>
-            
             {/* Filtro por mes */}
             <div className="relative">
               <button
@@ -1674,7 +1923,6 @@ export function Actividades_Alumno_comp() {
                 <span className="text-gray-700">{getSelectedMonthName()}</span>
                 <ChevronDown className={`w-4 h-4 ml-2 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
-              
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-30">
                   <div className="py-1">
@@ -1700,113 +1948,134 @@ export function Actividades_Alumno_comp() {
           </div>
         </div>
 
-        {/* Tabla de actividades */}
+        {/* Nueva tabla single-submission */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gradient-to-r from-blue-500 to-indigo-600">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Actividad
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Fecha Límite
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Puntaje
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Intentos
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-medium text-white uppercase tracking-wider">
-                    Acciones
-                  </th>
+                  <th className="px-4 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">No.</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Actividad</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Recursos</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Fecha Límite</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Subir / Editar</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Entregado</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Visualizar</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Calificación</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredActividades.map((actividad, index) => (
-                  <tr key={actividad.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{actividad.nombre}</div>
-                        <div className="text-sm text-gray-500">{actividad.descripcion}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {new Date(actividad.fechaEntrega).toLocaleDateString('es-ES')}
-                      </div>
-                      <div className={`text-xs ${isWithinDeadline(actividad.fechaEntrega) ? 'text-green-600' : 'text-red-600'}`}>
-                        {isWithinDeadline(actividad.fechaEntrega) ? 'A tiempo' : 'Vencida'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        actividad.estado === 'revisada' ? 'bg-green-100 text-green-800' :
-                        actividad.estado === 'entregada' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {actividad.estado === 'revisada' ? 'Revisada' :
-                         actividad.estado === 'entregada' ? 'Entregada' :
-                         'Pendiente'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {actividad.score !== null ? `${actividad.score}%` : 'Sin calificar'}
-                      </div>
-                      {actividad.mejorPuntaje && (
-                        <div className="text-xs text-gray-500">
-                          Mejor: {actividad.mejorPuntaje}%
+                {loading && (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">Cargando actividades...</td>
+                  </tr>
+                )}
+                {!loading && error && (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-8 text-center text-sm text-red-600">{error}</td>
+                  </tr>
+                )}
+                {!loading && !error && filteredActividades.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">No hay actividades.</td>
+                  </tr>
+                )}
+                {!loading && !error && filteredActividades.map((actividad, index) => {
+                  const vencida = !isWithinDeadline(actividad.fechaEntrega);
+                  // Bloqueado si ya fue revisada (calificada) o vencida
+                  const puedeEditar = actividad.entregada && !vencida && actividad.estado !== 'revisada';
+                  return (
+                    <tr key={actividad.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="px-4 py-4 text-sm text-gray-700 font-medium">{index + 1}</td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{actividad.nombre}</div>
+                          <div className="text-xs text-gray-500">{actividad.descripcion}</div>
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{actividad.totalIntentos}</div>
-                      {actividad.totalIntentos > 0 && (
-                        <button
-                          onClick={() => mostrarHistorial(actividad.id)}
-                          className="text-xs text-blue-600 hover:text-blue-800"
-                        >
-                          Ver historial
-                        </button>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center space-x-2">
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {actividad.recursos && actividad.recursos.length > 0 && (
+                          <button
+                            onClick={() => openResourcesModal(actividad)}
+                            className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200"
+                          >
+                            <Download className="w-4 h-4 mr-1" /> {actividad.recursos.length} PDF{actividad.recursos.length>1?'s':''}
+                          </button>
+                        )}
+                        {!actividad.recursos?.length && actividad.plantilla && (
+                          <button
+                            onClick={() => handleDownload(actividad.id)}
+                            className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200"
+                          >
+                            <Download className="w-4 h-4 mr-1" /> PDF
+                          </button>
+                        )}
+                        {!actividad.plantilla && (!actividad.recursos || actividad.recursos.length === 0) && (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{new Date(actividad.fechaEntrega).toLocaleDateString('es-ES')}</div>
+                        <div className={`text-xs ${vencida ? 'text-red-600' : 'text-green-600'}`}>{vencida ? 'Vencida' : 'A tiempo'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         {!actividad.entregada ? (
                           <button
                             onClick={() => openUploadModal(actividad)}
-                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Subir actividad"
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm"
                           >
-                            <Upload className="w-4 h-4" />
+                            <Upload className="w-4 h-4 mr-1" /> Subir
                           </button>
                         ) : (
-                          <>
+                          <div className="flex flex-col items-start">
                             <button
-                              onClick={() => openViewModal(actividad)}
-                              className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
-                              title="Ver actividad"
+                              onClick={() => openUploadModal(actividad)}
+                              disabled={!puedeEditar}
+                              title={!puedeEditar && actividad.estado === 'revisada' ? 'Esta entrega ya fue calificada y no puede modificarse' : (!puedeEditar ? 'No disponible' : 'Editar entrega')}
+                              className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md shadow-sm ${
+                                puedeEditar ? 'text-white bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                              }`}
                             >
-                              <Eye className="w-4 h-4" />
+                              {puedeEditar ? <Upload className="w-4 h-4 mr-1" /> : null}
+                              {puedeEditar ? 'Editar' : 'Bloqueado'}
                             </button>
-                            <button
-                              onClick={() => handleReintentar(actividad.id)}
-                              className="p-2 text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded-lg transition-colors"
-                              title="Reintentar"
-                            >
-                              <RotateCcw className="w-4 h-4" />
-                            </button>
-                          </>
+                            {!puedeEditar && actividad.estado === 'revisada' && (
+                              <span className="mt-1 text-[10px] font-medium text-purple-600">Ya calificada - no editable</span>
+                            )}
+                          </div>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {actividad.entregada ? (
+                          <CheckCircle className="w-5 h-5 text-green-500" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-500" />
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => openViewModal(actividad)}
+                          disabled={!actividad.entregada}
+                          className={`p-2 rounded-md ${actividad.entregada ? 'text-green-600 hover:text-green-800 hover:bg-green-50' : 'text-gray-400 cursor-not-allowed'} transition-colors`}
+                          title="Ver entrega"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {actividad.entregada ? (
+                          actividad.estado === 'revisada' ? (
+                            <span className="font-medium text-gray-900">{actividad.score !== null && actividad.score !== undefined ? actividad.score : (actividad.mejorPuntaje ?? 0)}</span>
+                          ) : (
+                            <span className="text-xs text-yellow-600 font-medium">En revisión</span>
+                          )
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -1814,7 +2083,7 @@ export function Actividades_Alumno_comp() {
       </div>
     );
 
-    // Función para renderizar tabla de quiz/simulaciones
+  // Función para renderizar tabla de quizzes
     const renderTablaQuiz = () => (
       <div className="p-6">
         <div className="mb-8">
@@ -1827,7 +2096,7 @@ export function Actividades_Alumno_comp() {
           </button>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Quiz y Simulaciones</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Quizzes</h1>
               <p className="text-gray-600">{selectedArea?.titulo}</p>
             </div>
             
@@ -2000,9 +2269,9 @@ export function Actividades_Alumno_comp() {
       {/* Modales */}
       {renderUploadModal()}
       {renderViewModal()}
-      {renderEditModal()}
       {renderHistorialModal()}
       {renderNotificationModal()}
+  {renderResourcesModal()}
 
       {/* Overlay para cerrar dropdown */}
       {isDropdownOpen && (

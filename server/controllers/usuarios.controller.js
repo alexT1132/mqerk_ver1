@@ -1,8 +1,11 @@
 import * as Usuarios from "../models/usuarios.model.js";
 import * as AdminProfiles from "../models/admin_profiles.model.js";
+import * as AsesorPerfiles from "../models/asesor_perfiles.model.js";
 import * as Estudiantes from "../models/estudiantes.model.js";
 import bcrypt from "bcryptjs";
-import { createAccessToken } from "../libs/jwt.js";
+import { createAccessToken, createRefreshToken } from "../libs/jwt.js";
+import { findAccessToken, findRefreshToken, issueTokenCookies, maybeSlideAccess } from '../libs/authTokens.js';
+import { isRevoked } from '../libs/tokenStore.js';
 import jwt from "jsonwebtoken";
 import { TOKEN_SECRET } from "../config.js";
 import * as SoftDeletes from "../models/soft_deletes.model.js";
@@ -91,21 +94,13 @@ export const login = async (req, res) => {
       // jwt exp format: s or string like "60m"; usamos minutos
       exp = `${Math.max(5, Math.min(7*24*60, minutos))}m`;
     } catch {}
-    const token = await createAccessToken({ id: usuarioFound.id }, exp);
-    const isProd = process.env.NODE_ENV === 'production';
-    const cookieOptions = {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: isProd,
-      path: '/',
-    };
-    if (rememberMe) {
-      // 30 días persistente
-      cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000;
-    }
-    res.cookie("token", token, cookieOptions);
+  const role = (usuarioFound.role || '').toLowerCase();
+  const expMinutes = parseInt(exp.replace(/m$/,''),10) || 60;
+  const { accessName, refreshName } = await issueTokenCookies(res, usuarioFound.id, role, { accessMins: expMinutes, refreshDays: 30, remember: rememberMe });
+  if(process.env.NODE_ENV !== 'production') console.log(`[LOGIN] role=${usuarioFound.role} accessCookie=${accessName} refreshCookie=${refreshName} remember=${rememberMe?'yes':'no'}`);
 
-  if(usuarioFound.role === 'estudiante'){
+  const userRoleLower = (usuarioFound.role || '').toLowerCase();
+  if(userRoleLower === 'estudiante'){
 
       const estudiante = await Estudiantes.getEstudianteById(usuarioFound.id_estudiante);
       const softByEst = await SoftDeletes.getByEstudianteId(estudiante?.id);
@@ -116,8 +111,20 @@ export const login = async (req, res) => {
           estudiante: estudiante
         });
 
+  } else if (userRoleLower === 'asesor') {
+        let perfilAsesor = await AsesorPerfiles.getByUserId(usuarioFound.id).catch(()=>null);
+        // Fallback: si no está vinculado y existe exactamente un perfil sin usuario, vincularlo (migración suave)
+        if(!perfilAsesor){
+          try {
+            const [candidatos] = await db.query('SELECT preregistro_id FROM asesor_perfiles WHERE usuario_id IS NULL LIMIT 2');
+            if(candidatos.length === 1){
+              await db.query('UPDATE asesor_perfiles SET usuario_id=? WHERE preregistro_id=?',[usuarioFound.id, candidatos[0].preregistro_id]);
+              perfilAsesor = await AsesorPerfiles.getByUserId(usuarioFound.id).catch(()=>null);
+            }
+          } catch(_e) {}
+        }
+      return res.json({ usuario: usuarioFound, asesor_profile: perfilAsesor || null });
     } else {
-      // role admin: adjuntar perfil si existe
       const perfil = await AdminProfiles.getByUserId(usuarioFound.id).catch(() => null);
       return res.json({ usuario: usuarioFound, admin_profile: perfil || null });
     }
@@ -130,45 +137,85 @@ export const login = async (req, res) => {
 
 // Logout
 export const logout = async (req, res) => {
-
+  // Permitir logout aunque no haya req.user (token vencido) para limpiar cookies client-side
   const userId = req.user?.id;
-
-  if (!userId) {
-    return res.status(400).json({ message: "Usuario no autenticado" });
+  if (userId) {
+    Usuarios.marcarComoLogout(userId, (err) => {
+      if (err) console.error("Error al marcar logout:", err);
+    });
   }
 
-  // Marcar al usuario como logueado
-  Usuarios.marcarComoLogout(userId, (err) => {
-    if (err) {
-      console.error("Error al marcar como logueado:", err);
+  // Revocar JTIs actuales (best effort)
+  try {
+    const cookies = req.cookies || {};
+    const names = Object.keys(cookies).filter(n => /^(token_|rtoken_|access_token|refresh_token|token$|rtoken$)/.test(n));
+    for (const name of names) {
+      try {
+        const decoded = jwt.decode(cookies[name]);
+        if (decoded?.jti) {
+          const { revokeJti } = await import('../libs/tokenStore.js');
+          revokeJti(decoded.jti);
+        }
+      } catch { /* noop */ }
     }
-  });
+  } catch { /* noop */ }
 
-  res.cookie("token", "", {
-    expires: new Date(0),
-  });
-  
+  const expire = { expires: new Date(0), httpOnly: true, sameSite: 'lax', path: '/' };
+  ['token','rtoken','token_admin','rtoken_admin','token_asesor','rtoken_asesor','token_estudiante','rtoken_estudiante','access_token','refresh_token']
+    .forEach(c=> { try { res.cookie(c,'',expire); } catch {} });
   return res.sendStatus(200);
 };
 
 // VerifyToken
 export const verifyToken = async (req, res) => {
-  const { token } = req.cookies;
-
-  if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-  jwt.verify(token, TOKEN_SECRET, async (err, user) => {
-    if (err) return res.status(401).json({ message: "Unauthorized" });
+  try { res.set('Cache-Control','no-store'); res.set('Pragma','no-cache'); } catch {}
+  const { value: candidate } = findAccessToken(req.cookies);
+  if (!candidate) {
+    const { value: rtoken, role: rrole } = findRefreshToken(req.cookies);
+    if (rtoken) {
+      try {
+        const decoded = jwt.verify(rtoken, TOKEN_SECRET);
+        const userId = decoded?.id;
+        if (userId) {
+          const newAccess = await createAccessToken({ id: userId, role: rrole }, '60m');
+          const accessName = rrole ? `token_${rrole}` : 'token';
+          const isProd = process.env.NODE_ENV === 'production';
+          res.cookie(accessName, newAccess, { httpOnly: true, sameSite: 'lax', secure: isProd, path: '/' });
+          if (process.env.NODE_ENV !== 'production') console.log('[VERIFY] minted access from refresh role=%s', rrole);
+          return verifyToken(req, res);
+        }
+      } catch(e) {
+        if (process.env.NODE_ENV !== 'production') console.log('[VERIFY] refresh fallback failed: %s', e.name);
+      }
+    }
+    if (process.env.NODE_ENV !== 'production') console.log('[VERIFY] no-token cookies=%o', Object.keys(req.cookies||{}));
+    return res.status(401).json({ message: 'Unauthorized', reason: 'no-token' });
+  }
+  jwt.verify(candidate, TOKEN_SECRET, async (err, user) => {
+    if (err) {
+      if (process.env.NODE_ENV !== 'production') console.log('[VERIFY] jwt error %s', err.name);
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: "Unauthorized", reason: 'expired' });
+      }
+      return res.status(401).json({ message: "Unauthorized", reason: 'invalid-token' });
+    }
+    if (isRevoked(user.jti)) {
+      return res.status(401).json({ message: 'Unauthorized', reason: 'revoked' });
+    }
 
   const userFound = await Usuarios.getUsuarioPorid(user.id);
   const soft = await SoftDeletes.getByUsuarioId(userFound?.id);
-  if (soft) return res.status(401).json({ message: "Unauthorized" });
+  if (soft) return res.status(401).json({ message: "Unauthorized", reason: 'soft-deleted' });
 
-    if (!userFound) return res.status(401).json({ message: "Unauthorized" });
+    if (!userFound) return res.status(401).json({ message: "Unauthorized", reason: 'user-not-found' });
 
-    console.log(userFound);
+  console.log(userFound);
 
-  if(userFound.role === 'estudiante'){
+  // Sliding expiration: renovar si queda <20%% del tiempo
+  await maybeSlideAccess(res, user, candidate, { thresholdPct: 20, accessMins: 60 });
+
+  const roleLower = (userFound.role || '').toLowerCase();
+  if(roleLower === 'estudiante'){
 
       const estudiante = await Estudiantes.getEstudianteById(userFound.id_estudiante);
 
@@ -177,6 +224,18 @@ export const verifyToken = async (req, res) => {
           estudiante: estudiante
         });
 
+  } else if (roleLower === 'asesor') {
+        let perfilAsesor = await AsesorPerfiles.getByUserId(userFound.id).catch(()=>null);
+        if(!perfilAsesor){
+          try {
+            const [candidatos] = await db.query('SELECT preregistro_id FROM asesor_perfiles WHERE usuario_id IS NULL LIMIT 2');
+            if(candidatos.length === 1){
+              await db.query('UPDATE asesor_perfiles SET usuario_id=? WHERE preregistro_id=?',[userFound.id, candidatos[0].preregistro_id]);
+              perfilAsesor = await AsesorPerfiles.getByUserId(userFound.id).catch(()=>null);
+            }
+          } catch(_e) {}
+        }
+      return res.json({ usuario: userFound, asesor_profile: perfilAsesor || null });
     } else {
       const perfil = await AdminProfiles.getByUserId(userFound.id).catch(() => null);
       return res.json({ usuario: userFound, admin_profile: perfil || null });
@@ -283,7 +342,8 @@ export const registrarAdminBootstrap = async (req, res) => {
       const minutos = cfg?.sesion_maxima || 1440;
       exp = `${Math.max(5, Math.min(7*24*60, minutos))}m`;
     } catch {}
-    const token = await createAccessToken({ id: userId }, exp);
+  const token = await createAccessToken({ id: userId }, exp);
+  const rtoken = await createRefreshToken({ id: userId }, "30d");
     const isProd = process.env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
@@ -291,7 +351,8 @@ export const registrarAdminBootstrap = async (req, res) => {
       secure: isProd,
       path: '/',
     };
-    res.cookie('token', token, cookieOptions);
+  res.cookie('token', token, cookieOptions);
+  res.cookie('rtoken', rtoken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
 
     return res.status(201).json({ usuario: { id: userId, usuario, role: 'admin' }, admin_profile: perfil });
   } catch (error) {
@@ -304,13 +365,14 @@ export const registrarAdminBootstrap = async (req, res) => {
 export const getAdminProfile = async (req, res) => {
   try {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-    const user = await Usuarios.getUsuarioPorid(userId);
-    if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+  if (!userId) return res.status(401).json({ message: 'Unauthorized', reason:'no-token-user' });
+  const user = await Usuarios.getUsuarioPorid(userId);
+  if (!user) return res.status(401).json({ message:'Unauthorized', reason:'user-not-found' });
+  if (user.role !== 'admin') return res.status(403).json({ message: 'Forbidden', reason:'not-admin' });
     const perfil = await AdminProfiles.getByUserId(userId);
     return res.status(200).json({ usuario: { id: user.id, usuario: user.usuario, role: user.role }, admin_profile: perfil });
   } catch (e) {
-    return res.status(500).json({ message: 'Error interno del servidor' });
+  return res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
 
@@ -438,7 +500,14 @@ export const getAdminConfig = async (req, res) => {
       sesionMaxima: cfg?.sesion_maxima ?? 480,
       intentosLogin: cfg?.intentos_login ?? 3,
       cambioPasswordObligatorio: cfg?.cambio_password_obligatorio ?? 90,
-      autenticacionDosFactor: (cfg?.autenticacion_dos_factor ?? 0) === 1
+      autenticacionDosFactor: (cfg?.autenticacion_dos_factor ?? 0) === 1,
+      // Campos generales
+      nombreInstitucion: cfg?.nombre_institucion || null,
+      emailAdministrativo: cfg?.email_administrativo || null,
+      telefonoContacto: cfg?.telefono_contacto || null,
+      direccion: cfg?.direccion || null,
+      sitioWeb: cfg?.sitio_web || null,
+      horarioAtencion: cfg?.horario_atencion || null
     }});
   } catch (e) {
     console.error('getAdminConfig error:', e);
@@ -459,7 +528,14 @@ export const updateAdminConfig = async (req, res) => {
       sesion_maxima: Number.isInteger(body.sesionMaxima) ? body.sesionMaxima : undefined,
       intentos_login: Number.isInteger(body.intentosLogin) ? body.intentosLogin : undefined,
       cambio_password_obligatorio: Number.isInteger(body.cambioPasswordObligatorio) ? body.cambioPasswordObligatorio : undefined,
-      autenticacion_dos_factor: typeof body.autenticacionDosFactor === 'boolean' ? (body.autenticacionDosFactor ? 1 : 0) : undefined
+      autenticacion_dos_factor: typeof body.autenticacionDosFactor === 'boolean' ? (body.autenticacionDosFactor ? 1 : 0) : undefined,
+      // Generales (strings opcionales)
+      nombre_institucion: typeof body.nombreInstitucion === 'string' ? body.nombreInstitucion : undefined,
+      email_administrativo: typeof body.emailAdministrativo === 'string' ? body.emailAdministrativo : undefined,
+      telefono_contacto: typeof body.telefonoContacto === 'string' ? body.telefonoContacto : undefined,
+      direccion: typeof body.direccion === 'string' ? body.direccion : undefined,
+      sitio_web: typeof body.sitioWeb === 'string' ? body.sitioWeb : undefined,
+      horario_atencion: typeof body.horarioAtencion === 'string' ? body.horarioAtencion : undefined
     };
     await AdminConfig.updateConfig(payload);
     const cfg = await AdminConfig.getConfig();
@@ -547,8 +623,11 @@ export const getPaymentReports = async (req, res) => {
     const user = await Usuarios.getUsuarioPorid(userId);
     if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
-    const startDate = req.query.startDate;
-    const endDate = req.query.endDate;
+  const startDate = req.query.startDate;
+  const endDate = req.query.endDate;
+  // Filtros opcionales para alinear vistas por curso/grupo
+  const cursoFilter = req.query.curso || null;
+  const grupoFilter = req.query.grupo || null;
     if (!startDate || !endDate) {
       return res.status(400).json({ message: 'startDate y endDate son obligatorios (YYYY-MM-DD)' });
     }
@@ -564,14 +643,24 @@ export const getPaymentReports = async (req, res) => {
     // =============================
 
     // 1) Conteos por estado (usando verificacion en estudiantes)
+    //    - Evitar sobreconteo por múltiples comprobantes del mismo alumno: contar DISTINCT e.id
+    //    - Excluir soft-deletes
+    //    - Para aprobados: asegurar que el comprobante tiene importe (aprobado real)
+    let whereBase = `c.created_at BETWEEN ? AND ?`;
+    const paramsBase = [from, to];
+    if (cursoFilter) { whereBase += ` AND e.curso = ?`; paramsBase.push(cursoFilter); }
+    if (grupoFilter) { whereBase += ` AND e.grupo = ?`; paramsBase.push(grupoFilter); }
+
     const [estadoRows] = await db.query(
       `SELECT 
-          SUM(CASE WHEN e.verificacion = 1 THEN 1 ELSE 0 END) AS pendientes,
-          SUM(CASE WHEN e.verificacion = 2 THEN 1 ELSE 0 END) AS aprobados,
-          SUM(CASE WHEN e.verificacion = 3 THEN 1 ELSE 0 END) AS rechazados
+          COUNT(DISTINCT CASE WHEN e.verificacion = 1 THEN e.id END) AS pendientes,
+          COUNT(DISTINCT CASE WHEN e.verificacion = 2 AND c.importe IS NOT NULL THEN e.id END) AS aprobados,
+          COUNT(DISTINCT CASE WHEN e.verificacion = 3 THEN e.id END) AS rechazados
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
-       WHERE c.created_at BETWEEN ? AND ?`, [from, to]
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+       WHERE ${whereBase}
+         AND sd.id IS NULL`, paramsBase
     );
 
     const pagosPendientes = Number(estadoRows?.[0]?.pendientes || 0);
@@ -584,22 +673,26 @@ export const getPaymentReports = async (req, res) => {
       `SELECT COALESCE(SUM(c.importe), 0) AS totalIngresos
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
        WHERE e.verificacion = 2
          AND c.importe IS NOT NULL
-         AND c.created_at BETWEEN ? AND ?`, [from, to]
+         AND ${whereBase}
+         AND sd.id IS NULL`, paramsBase
     );
     const totalIngresos = Number(ingRows?.[0]?.totalIngresos || 0);
 
     // 3) Pagos aprobados por curso
     const [cursoRows] = await db.query(
-      `SELECT e.curso AS curso, COUNT(c.id_estudiante) AS pagos, COALESCE(SUM(c.importe), 0) AS ingresos
+      `SELECT e.curso AS curso, COUNT(DISTINCT e.id) AS pagos, COALESCE(SUM(c.importe), 0) AS ingresos
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
        WHERE e.verificacion = 2
          AND c.importe IS NOT NULL
-         AND c.created_at BETWEEN ? AND ?
+         AND ${whereBase}
+         AND sd.id IS NULL
        GROUP BY e.curso
-       ORDER BY ingresos DESC`, [from, to]
+       ORDER BY ingresos DESC`, paramsBase
     );
 
     // 4) Ingresos por mes (solo aprobados)
@@ -610,11 +703,13 @@ export const getPaymentReports = async (req, res) => {
               COUNT(*) AS pagos
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
        WHERE e.verificacion = 2
          AND c.importe IS NOT NULL
-         AND c.created_at BETWEEN ? AND ?
+         AND ${whereBase}
+         AND sd.id IS NULL
        GROUP BY anio, mes_num
-       ORDER BY anio ASC, mes_num ASC`, [from, to]
+       ORDER BY anio ASC, mes_num ASC`, paramsBase
     );
 
     // 5) Métodos de pago (solo aprobados)
@@ -622,11 +717,13 @@ export const getPaymentReports = async (req, res) => {
       `SELECT c.metodo, COUNT(*) AS cantidad
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
        WHERE e.verificacion = 2
          AND c.importe IS NOT NULL
-         AND c.created_at BETWEEN ? AND ?
+         AND ${whereBase}
+         AND sd.id IS NULL
        GROUP BY c.metodo
-       ORDER BY cantidad DESC`, [from, to]
+       ORDER BY cantidad DESC`, paramsBase
     );
 
     // 6) Pagos detallados (incluye aprobados, pendientes y rechazados)
@@ -636,6 +733,7 @@ export const getPaymentReports = async (req, res) => {
               e.nombre,
               e.apellidos,
               e.curso,
+              e.grupo,
               e.verificacion,
               c.importe,
               c.metodo,
@@ -644,8 +742,10 @@ export const getPaymentReports = async (req, res) => {
               c.updated_at
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
-       WHERE c.created_at BETWEEN ? AND ?
-       ORDER BY c.created_at DESC`, [from, to]
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+       WHERE ${whereBase}
+         AND sd.id IS NULL
+       ORDER BY c.created_at DESC`, paramsBase
     );
 
     // 7) Ingresos por semana (solo aprobados). YEARWEEK con modo 1 (semana ISO)
@@ -658,11 +758,13 @@ export const getPaymentReports = async (req, res) => {
               COUNT(*) AS pagos
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
        WHERE e.verificacion = 2
          AND c.importe IS NOT NULL
-         AND c.created_at BETWEEN ? AND ?
+         AND ${whereBase}
+         AND sd.id IS NULL
        GROUP BY anio, semana
-       ORDER BY anio DESC, semana DESC`, [from, to]
+       ORDER BY anio DESC, semana DESC`, paramsBase
     );
 
     // 8) Ingresos por año (solo aprobados) - útil para visión macro.
@@ -672,8 +774,10 @@ export const getPaymentReports = async (req, res) => {
               COUNT(*) AS pagos
        FROM comprobantes c
        INNER JOIN estudiantes e ON e.id = c.id_estudiante
+       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
        WHERE e.verificacion = 2
          AND c.importe IS NOT NULL
+         AND sd.id IS NULL
        GROUP BY anio
        ORDER BY anio DESC`
     );
@@ -707,6 +811,7 @@ export const getPaymentReports = async (req, res) => {
       nombre: r.nombre,
       apellidos: r.apellidos,
       curso: r.curso,
+      grupo: r.grupo,
       estado: r.verificacion, // 1 pendiente, 2 aprobado, 3 rechazado
       importe: r.importe != null ? Number(r.importe) : null,
       metodo: r.metodo,

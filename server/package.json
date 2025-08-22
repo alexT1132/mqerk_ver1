@@ -4,8 +4,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-  "dev": "nodemon index.js",
-  "migrate": "node ./scripts/run-migrations.js"
+    "dev": "nodemon index.js",
+    "simulate": "node ./scripts/simular_tests.js",
+    "seed:asesor": "node ./scripts/seed-asesor-sample.js"
   },
   "keywords": [],
   "author": "",
@@ -15,11 +16,17 @@
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "express": "^5.1.0",
+  "express": "^5.1.0",
+  "dotenv": "^16.4.5",
+    "googleapis": "^155.0.1",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^2.0.1",
-    "mysql2": "^3.14.1"
+    "mysql2": "^3.14.1",
+  "pdf-lib": "^1.17.1",
+  "node-fetch": "^3.3.2",
+  "ws": "^8.18.0",
+  "cookie": "^0.6.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

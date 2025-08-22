@@ -70,15 +70,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
     <div className="min-h-screen bg-white relative">
       {/* Header principal */}
       {HeaderComponent && (
-        <HeaderComponent
-          isNotificationsOpen={isNotificationsOpen}
-          toggleNotifications={toggleNotifications}
-          markAllAsRead={markAllAsRead}
-          notifications={notifications}
-          unreadCount={unreadCount}
-          setIsNotificationsOpen={setIsNotificationsOpen}
-          toggleMenu={toggleMenu}
-        />
+        <HeaderComponent />
       )}
 
       {/* Sidebar para pantallas grandes */}

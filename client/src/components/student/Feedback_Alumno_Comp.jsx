@@ -1,56 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown } from 'lucide-react';
+import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown, RefreshCcw, PlusCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { listTasks, listSubmissionsByStudent, createSubmission, createTask, updateTask, cancelSubmissionApi } from '../../api/feedback.js';
 
 const Feedback_Alumno_Comp = () => {
-  // Estado para gestionar la lista de tareas
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      name: 'Operaciones fundamentales',
-      dueDate: '2025-12-02T23:59:59', // Fecha actualizada al futuro
-      submittedPdf: null,
-      isSubmitted: false,
-      score: null,
-    },
-    {
-      id: 2,
-      name: 'Expresiones Algebraicas',
-      dueDate: '2025-12-02T23:59:59', // Fecha actualizada al futuro
-      submittedPdf: null,
-      isSubmitted: false,
-      score: null,
-    },
-    {
-      id: 3,
-      name: 'Geometría Básica',
-      dueDate: '2025-07-15T23:59:59', // Fecha actualizada al futuro (cercana para probar)
-      submittedPdf: null,
-      isSubmitted: false,
-      score: null,
-    },
-    {
-      id: 4,
-      name: 'Cálculo Diferencial',
-      dueDate: '2025-08-01T23:59:59', // Fecha actualizada al futuro
-      submittedPdf: null,
-      isSubmitted: false,
-      score: null,
-    },
-  ]);
+  // Auth
+  const { alumno } = useAuth();
+  const alumnoId = alumno?.id;
+
+  // Estado para tareas desde backend
+  const [tasks, setTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [loadingUpload, setLoadingUpload] = useState(false);
+  const [fetchError, setFetchError] = useState("");
 
   // Estados
   const [showModal, setShowModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  // Crear actividad abierta por el alumno
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskError, setNewTaskError] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiScore, setConfettiScore] = useState(0);
   // showMotivationalMessage state is not directly used for visual display in the confetti effect anymore
   const [showMotivationalMessage, setShowMotivationalMessage] = useState(false); 
   const [selectedMonth, setSelectedMonth] = useState('all');
+  // Depende de selectedMonth, así que calcúlalo después de declararlo
+  const isPastSelectedMonth = React.useMemo(() => {
+    if (selectedMonth === 'all') return false;
+    const now = new Date();
+    const nm = now.getMonth();
+    const sm = parseInt(selectedMonth);
+    // asumimos año actual; si el seleccionado es menor al actual, es pasado
+    return sm < nm;
+  }, [selectedMonth]);
   const [showViewTaskModal, setShowViewTaskModal] = useState(false);
   const [viewingTaskName, setViewingTaskName] = useState('');
   const [viewingTaskPdf, setViewingTaskPdf] = useState('');
   const [totalPoints, setTotalPoints] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const TASKS_PER_PAGE = 20;
+  // Errores de archivo
+  const [fileError, setFileError] = useState("");
+  const MAX_FILE_SIZE_BYTES = 1.5 * 1024 * 1024; // 1.5MB
+  // Búsqueda
+  const [searchTerm, setSearchTerm] = useState("");
+  // Conteo de tareas creadas por el alumno (límite 20)
+  const studentOwnedCount = tasks.filter(t => t._isStudentOwned).length;
+  // Límite global del curso (8 meses, 14,440 entregas)
+  const COURSE_MONTHS = 8;
+  const TOTAL_MAX_SUBMISSIONS = 14440;
+  const perMonthCap = Math.floor(TOTAL_MAX_SUBMISSIONS / COURSE_MONTHS);
+  const [monthlyCountThisMonth, setMonthlyCountThisMonth] = useState(0);
+  const [monthlyCapReached, setMonthlyCapReached] = useState(false);
 
   // Palabras motivacionales
   const motivationalWords = [
@@ -71,6 +76,12 @@ const Feedback_Alumno_Comp = () => {
     "¡Tu constancia da frutos!"
   ];
   const [motivationalWord, setMotivationalWord] = useState("");
+  // Subidas consecutivas (streak en la sesión)
+  const [consecutiveUploads, setConsecutiveUploads] = useState(0);
+  const [showTripleEffect, setShowTripleEffect] = useState(false);
+  // Tamaño último archivo elegido (para feedback rápido)
+  const [lastSelectedSizeMB, setLastSelectedSizeMB] = useState(null);
+  const formatMB = (bytes) => (bytes / (1024*1024)).toFixed(2);
 
   // Efecto para calcular los puntos totales
   useEffect(() => {
@@ -78,42 +89,161 @@ const Feedback_Alumno_Comp = () => {
     setTotalPoints(calculatedTotalPoints);
   }, [tasks]);
 
-  // Función para manejar la subida de archivos
-  const handleFileUpload = (taskId, file) => {
-    // TODO: Backend - Aquí tu compañero debe enviar el archivo al backend y guardar la URL recibida
-    // Simulación: usamos un objeto URL temporal para mostrar el PDF subido
-    const fileUrl = file ? URL.createObjectURL(file) : null;
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId
-          ? { ...task, submittedPdf: fileUrl, isSubmitted: true, score: 10 }
-          : task
-      )
-    );
-    setShowModal(false);
-    setSelectedTask(null);
+  // Cargar tareas y entregas del alumno
+  useEffect(() => {
+    if (!alumnoId) return;
+    let cancel = false;
+    async function loadData() {
+      setLoadingTasks(true); setFetchError("");
+      try {
+        const [tasksRes, subsRes] = await Promise.all([
+          listTasks({ activo: 1 }),
+          listSubmissionsByStudent(alumnoId, { limit: 10000 }).catch(() => ({ data: { data: [] }}))
+        ]);
+        if (cancel) return;
+        const tasksRaw = Array.isArray(tasksRes?.data?.data) ? tasksRes.data.data : [];
+        const subs = Array.isArray(subsRes?.data?.data) ? subsRes.data.data : [];
+        // Calcular conteo mensual (por mes calendario basado en created_at)
+        const byMonth = subs.reduce((acc, s) => {
+          if (s?.replaced_by) return acc; // solo las vigentes
+          const created = s?.created_at ? new Date(s.created_at) : null;
+          const m = created ? created.getMonth() : null;
+          if (m !== null) acc[m] = (acc[m] || 0) + 1;
+          return acc;
+        }, {});
+        const nowM = new Date().getMonth();
+        const usedThisMonth = byMonth[nowM] || 0;
+        setMonthlyCountThisMonth(usedThisMonth);
+        setMonthlyCapReached(usedThisMonth >= perMonthCap);
+  const origin = `${window.location.protocol}//${window.location.hostname}:1002`;
+        // Filtrar: mostrar tareas globales (sin grupos) y tareas propias (grupos contiene alumnoId)
+        const filtered = tasksRaw.filter(t => {
+          const g = Array.isArray(t.grupos) ? t.grupos : null;
+          return !g || g.includes(alumnoId);
+        });
+        const mapped = filtered.map(t => {
+          const sub = subs.find(s => s.id_task === t.id && !s.replaced_by);
+          const rel = sub?.archivo || null;
+            // Si ya viene con http lo dejamos
+          const fullUrl = rel ? (rel.startsWith('http') ? rel : `${origin}${rel}`) : null;
+          return {
+            id: t.id,
+            name: t.nombre,
+            dueDate: t.due_date,
+            submittedPdf: fullUrl,
+            isSubmitted: !!sub,
+            score: sub ? (sub.puntos || 10) : null,
+            _subId: sub?.id || null,
+            _isStudentOwned: Array.isArray(t.grupos) && t.grupos.includes(alumnoId),
+          };
+        });
+        setTasks(mapped);
+      } catch (e) {
+        console.error('Error cargando tareas feedback', e);
+        setFetchError('No se pudieron cargar las tareas');
+      } finally {
+        if (!cancel) setLoadingTasks(false);
+      }
+    }
+    loadData();
+    return () => { cancel = true; };
+  }, [alumnoId]);
 
-    // Activar confeti y mensaje motivacional
-    setConfettiScore(10);
-    // Elegir palabra motivacional aleatoria
-    const randomWord = motivationalWords[Math.floor(Math.random() * motivationalWords.length)];
-    setMotivationalWord(randomWord);
-    setShowConfetti(true);
-    // Aumenta el tiempo del setTimeout para que coincida o supere la duración máxima de la animación del confeti (5s + 4s = 9s máximo)
-    setTimeout(() => setShowConfetti(false), 9500); // 9.5 segundos para asegurar que todas las partículas terminen
+  // Subir archivo (crea submission)
+  const handleFileUpload = async (taskId, file) => {
+    // Validaciones
+    const current = tasks.find(x => x.id === taskId);
+    const replacingExisting = !!current?.isSubmitted;
+    if (monthlyCapReached && !replacingExisting) {
+      setFileError(`Has alcanzado el máximo mensual (${perMonthCap}). Inténtalo el próximo mes.`);
+      return;
+    }
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      setFileError('Solo se permiten archivos PDF.');
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setFileError('El PDF supera el límite de 1.5MB. Por favor comprímelo antes de subirlo.');
+      return;
+    }
+    setFileError('');
+    if (!alumnoId) { setFileError('Alumno no autenticado'); return; }
+    try {
+      setLoadingUpload(true);
+      const fd = new FormData();
+      fd.append('archivo', file);
+      fd.append('id_task', taskId);
+      fd.append('id_estudiante', alumnoId);
+      // Si es una actividad creada por el alumno, actualizar due_date al momento de subir
+      const t = tasks.find(x => x.id === taskId);
+      try {
+        if (t?._isStudentOwned) {
+          await updateTask(taskId, { due_date: new Date().toISOString() });
+        }
+      } catch { /* silencioso */ }
+      const res = await createSubmission(fd);
+      const sub = res?.data?.data;
+      if (sub) {
+  const origin = `${window.location.protocol}//${window.location.hostname}:1002`;
+  const rel = sub.archivo;
+  const fullUrl = rel.startsWith('http') ? rel : `${origin}${rel}`;
+  setTasks(prev => prev.map(t => {
+    if (t.id !== taskId) return t;
+    const newDue = t._isStudentOwned ? new Date().toISOString() : t.dueDate;
+    return { ...t, submittedPdf: fullUrl, isSubmitted: true, score: sub.puntos || 10, _subId: sub.id, dueDate: newDue };
+  }));
+        setConfettiScore(sub.puntos || 10);
+        const randomWord = motivationalWords[Math.floor(Math.random() * motivationalWords.length)];
+        setMotivationalWord(randomWord);
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 9500);
+        // Actualizar streak
+        setConsecutiveUploads(prev => {
+          const next = prev + 1;
+          if (next === 3) {
+            setShowTripleEffect(true);
+            // Ocultar después de 6s
+            setTimeout(() => setShowTripleEffect(false), 6000);
+          }
+          return next;
+        });
+      }
+      setShowModal(false);
+      setSelectedTask(null);
+    } catch (e) {
+      console.error('Error al subir PDF', e);
+      setFileError(e?.response?.data?.message || 'Error al subir archivo');
+    } finally {
+      setLoadingUpload(false);
+    }
   };
 
   // Función para cancelar entrega
-  const handleCancelSubmission = (taskId) => {
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId
-          ? { ...task, submittedPdf: null, isSubmitted: false, score: null }
-          : task
-      )
-    );
-    setShowModal(false);
-    setSelectedTask(null);
+  const handleCancelSubmission = async (taskId) => {
+    try {
+      const t = tasks.find(x => x.id === taskId);
+      const subId = t?._subId;
+      if (!subId) throw new Error('Sin entrega activa');
+      await cancelSubmissionApi(subId);
+      setTasks(prevTasks => prevTasks.map(task => task.id === taskId ? { ...task, submittedPdf: null, isSubmitted: false, score: null, _subId: null } : task));
+      // Ajustar contador mensual si aplica
+      try {
+        const dueM = t?.dueDate ? new Date(t.dueDate).getMonth() : null;
+        const nowM = new Date().getMonth();
+        if (dueM !== null && dueM === nowM) {
+          setMonthlyCountThisMonth(prev => {
+            const next = Math.max(0, prev - 1);
+            setMonthlyCapReached(next >= perMonthCap);
+            return next;
+          });
+        }
+      } catch {}
+      setShowModal(false);
+      setSelectedTask(null);
+    } catch (e) {
+      setFileError(e?.response?.data?.message || 'No se pudo cancelar la entrega');
+    }
   };
 
   // Funciones de modal
@@ -127,9 +257,64 @@ const Feedback_Alumno_Comp = () => {
     setSelectedTask(null);
   };
 
+  // Crear nueva actividad (abierta)
+  const openCreateTask = () => { setNewTaskName(''); setNewTaskError(''); setShowCreateTaskModal(true); };
+  const closeCreateTask = () => { setShowCreateTaskModal(false); setNewTaskName(''); setNewTaskError(''); };
+  const confirmCreateTask = async () => {
+    const name = (newTaskName || '').trim();
+    if (!name) { setNewTaskError('Escribe un nombre'); return; }
+    if (name.length > 100) { setNewTaskError('Máximo 100 caracteres'); return; }
+    if (!alumnoId) { setNewTaskError('Sesión inválida'); return; }
+    if (isPastSelectedMonth) { setNewTaskError('No puedes crear actividades en meses pasados'); return; }
+    try {
+      setNewTaskError('');
+      // Establece due_date al inicio del mes seleccionado si no es 'all'; de lo contrario, hoy
+      let due = new Date();
+      if (selectedMonth !== 'all') {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = parseInt(selectedMonth);
+        due = new Date(y, m, 1, 12, 0, 0);
+      }
+      const body = { nombre: name, due_date: due.toISOString(), puntos: 10, grupos: JSON.stringify([alumnoId]), activo: 1 };
+      await createTask(body);
+      // Refrescar lista
+        const [tasksRes, subsRes] = await Promise.all([
+        listTasks({ activo: 1 }),
+        listSubmissionsByStudent(alumnoId, { limit: 10000 }).catch(() => ({ data: { data: [] }}))
+      ]);
+      const tasksRaw = Array.isArray(tasksRes?.data?.data) ? tasksRes.data.data : [];
+      const subs = Array.isArray(subsRes?.data?.data) ? subsRes.data.data : [];
+      // Actualizar conteo mensual tras crear
+      const byMonth2 = subs.reduce((acc, s) => {
+        if (s?.replaced_by) return acc;
+        const created = s?.created_at ? new Date(s.created_at) : null;
+        const m = created ? created.getMonth() : null;
+        if (m !== null) acc[m] = (acc[m] || 0) + 1;
+        return acc;
+      }, {});
+      const nowM2 = new Date().getMonth();
+      const usedThisMonth2 = byMonth2[nowM2] || 0;
+      setMonthlyCountThisMonth(usedThisMonth2);
+      setMonthlyCapReached(usedThisMonth2 >= perMonthCap);
+      const origin = `${window.location.protocol}//${window.location.hostname}:1002`;
+      const filtered = tasksRaw.filter(t => { const g = Array.isArray(t.grupos) ? t.grupos : null; return !g || g.includes(alumnoId); });
+      const mapped = filtered.map(t => {
+        const sub = subs.find(s => s.id_task === t.id && !s.replaced_by);
+        const rel = sub?.archivo || null; const fullUrl = rel ? (rel.startsWith('http') ? rel : `${origin}${rel}`) : null;
+        return { id: t.id, name: t.nombre, dueDate: t.due_date, submittedPdf: fullUrl, isSubmitted: !!sub, score: sub ? (sub.puntos || 10) : null, _subId: sub?.id || null, _isStudentOwned: Array.isArray(t.grupos) && t.grupos.includes(alumnoId) };
+      });
+      setTasks(mapped);
+      closeCreateTask();
+    } catch (e) {
+      console.error('crear actividad abierta', e);
+  setNewTaskError(e?.response?.data?.message || 'No se pudo crear la actividad');
+    }
+  };
+
   const openViewTaskModal = (task) => {
     setViewingTaskName(task.name);
-    setViewingTaskPdf(task.submittedPdf);
+  setViewingTaskPdf(task.submittedPdf);
     setShowViewTaskModal(true);
   };
 
@@ -149,7 +334,7 @@ const Feedback_Alumno_Comp = () => {
     }
   }, [tasks]);
 
-  // Filtrado de tareas
+  // Filtrado por mes
   const filteredTasks = tasks.filter(task => {
     if (selectedMonth === 'all') {
       return true;
@@ -158,15 +343,98 @@ const Feedback_Alumno_Comp = () => {
     return taskMonth === parseInt(selectedMonth);
   });
 
+  // Progreso mensual (respecto a tareas del mes sin considerar búsqueda)
+  const monthTotal = filteredTasks.length;
+  const monthSubmitted = filteredTasks.filter(t => t.isSubmitted).length;
+  const monthProgress = monthTotal === 0 ? 0 : Math.round((monthSubmitted / monthTotal) * 100);
+
+  // Contador visible de entregas del mes mostrado:
+  // - Si estás en "Todos los meses", mostramos el conteo del mes actual.
+  // - Si seleccionas un mes específico, mostramos el conteo de ese mes (según las tareas visibles).
+  const displayMonthlyCount = React.useMemo(() => {
+    try {
+      if (selectedMonth === 'all') {
+        const cm = new Date().getMonth();
+        return tasks.reduce((acc, t) => {
+          if (!t?.isSubmitted) return acc;
+          const d = t?.dueDate ? new Date(t.dueDate) : null;
+          if (d && !isNaN(d?.getTime?.()) && d.getMonth() === cm) return acc + 1;
+          return acc;
+        }, 0);
+      }
+      // Mes específico: usamos lo que está en la tabla filtrada
+      return filteredTasks.filter(t => t.isSubmitted).length;
+    } catch {
+      return 0;
+    }
+  }, [tasks, filteredTasks, selectedMonth]);
+
+  // Filtrado por búsqueda
+  const searchedTasks = filteredTasks.filter(t =>
+    t.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
+  );
+
+  // Ajustar página actual si el filtro reduce el número de páginas
+  const totalPages = Math.max(1, Math.ceil(searchedTasks.length / TASKS_PER_PAGE));
+  if (currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
+  const indexOfLast = currentPage * TASKS_PER_PAGE;
+  const indexOfFirst = indexOfLast - TASKS_PER_PAGE;
+  const paginatedTasks = searchedTasks.slice(indexOfFirst, indexOfLast);
+
+  const goToPage = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+
+  // Paginación compacta (mostrar primeras, últimas y vecinas)
+  const buildPageList = () => {
+    const pages = [];
+    const neighbors = 1;
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - neighbors && i <= currentPage + neighbors) ||
+        (currentPage <= 2 && i <= 3) ||
+        (currentPage >= totalPages - 1 && i >= totalPages - 2)
+      ) {
+        pages.push(i);
+      } else if (pages[pages.length - 1] !== '...') {
+        pages.push('...');
+      }
+    }
+    return pages;
+  };
+
   // Verificar fecha límite
   const isWithinDeadline = (dueDate) => {
-    const now = new Date();
+    if (!dueDate) return true; // si no hay fecha, no bloquear
     const due = new Date(dueDate);
-    return now < due;
+    if (isNaN(due?.getTime?.())) return true;
+    return Date.now() < due.getTime();
+  };
+
+  // Permisos por mes: permitir gestionar/subir si la tarea es del mes actual o futuro.
+  // Bloquear solo si la tarea pertenece a un mes pasado (comparando año y mes).
+  const canActOnTask = (task) => {
+    try {
+      const now = new Date();
+      const ny = now.getFullYear();
+      const nm = now.getMonth();
+      const due = task?.dueDate ? new Date(task.dueDate) : now; // sin fecha => tratar como mes actual
+      if (isNaN(due?.getTime?.())) return true;
+      const y = due.getFullYear();
+      const m = due.getMonth();
+      if (y < ny) return false;
+      if (y === ny && m < nm) return false;
+      return true; // mes actual o futuro
+    } catch { return true; }
   };
 
   const months = [
-    'Primero', 'Segundo', 'Tercero', 'Cuarto', 'Quinto', 'Sexto', 'Séptimo', 'Octavo', 'Noveno', 'Décimo'
+    'Primero', 'Segundo', 'Tercero', 'Cuarto', 'Quinto', 'Sexto', 'Séptimo', 'Octavo'
   ];
 
   const handleMonthSelect = (monthValue, monthName) => {
@@ -189,24 +457,84 @@ const Feedback_Alumno_Comp = () => {
     }
   };
 
-  // Hook para detectar si es móvil
-  const isMobile = window.innerWidth < 768;
+  // Hooks responsivos y preferencias de movimiento reducido
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 768 : false));
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const motionMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleResize = () => setIsMobile(mq.matches);
+    const handleMotion = () => setReducedMotion(motionMq.matches);
+    handleResize(); handleMotion();
+    mq.addEventListener('change', handleResize);
+    motionMq.addEventListener('change', handleMotion);
+    window.addEventListener('orientationchange', handleResize, { passive: true });
+    return () => {
+      mq.removeEventListener('change', handleResize);
+      motionMq.removeEventListener('change', handleMotion);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
+
+  // Urgencia según horas restantes (solo mostrar si NO se ha entregado y la fecha está próxima o vencida)
+  // Reglas:
+  //  - No mostrar nada si la tarea ya fue entregada.
+  //  - Mostrar "Urgente" si faltan <=24h.
+  //  - Mostrar "Atención" si faltan <=72h (y >24h).
+  //  - Mostrar "Vencido" si ya pasó la fecha y no está entregada.
+  //  - No mostrar "Tranquilo" para evitar ruido visual cuando falta mucho tiempo.
+  const getUrgencyInfo = (dueDate, isSubmitted) => {
+    if (isSubmitted) return null; // Ya entregada: no se muestra indicador.
+    if (!dueDate) return null;
+    const due = new Date(dueDate);
+    if (isNaN(due?.getTime?.())) return null;
+    const diffMs = due.getTime() - Date.now();
+    const hours = diffMs / (1000 * 60 * 60);
+    if (hours < 0) return { label: 'Vencido', color: 'bg-gray-300 text-gray-700', ring: 'ring-gray-300' };
+    if (hours <= 24) return { label: 'Urgente', color: 'bg-red-100 text-red-600', ring: 'ring-red-300' };
+    if (hours <= 72) return { label: 'Atención', color: 'bg-yellow-100 text-yellow-700', ring: 'ring-yellow-300' };
+    return null; // Lejano: sin badge
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 p-3 sm:p-6 font-sans text-gray-800 flex flex-col items-center relative overflow-hidden">
+    <div className="min-h-screen bg-white p-3 sm:p-6 font-sans text-gray-800 flex flex-col items-center relative overflow-hidden">
       {/* Título responsivo */}
-      <h1 className="text-3xl sm:text-5xl font-extrabold mb-4 sm:mb-8 text-purple-700 drop-shadow-lg text-center">
+  <h1 className="text-2xl xs:text-3xl sm:text-5xl font-extrabold mb-4 sm:mb-8 text-purple-700 drop-shadow-lg text-center tracking-tight">
         FEEDBACK
       </h1>
+      {/* Cuota mensual */}
+      <div className="w-full max-w-3xl -mt-2 mb-3 flex items-center justify-end">
+        <span className="text-[11px] sm:text-xs text-purple-700 bg-purple-50 border border-purple-200 rounded-lg px-3 py-1">
+          Mes: {displayMonthlyCount}/{perMonthCap}
+        </span>
+      </div>
 
-      {/* Sección de Puntos Totales - Responsive */}
-      <div className="bg-gradient-to-r from-purple-100 to-indigo-100 border-2 border-purple-200 rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-8 flex items-center justify-center space-x-3 w-full max-w-sm">
-        <Star className="w-8 h-8 sm:w-12 sm:h-12 text-yellow-500 drop-shadow-lg" fill="currentColor" />
-        <div className="text-center">
-          <p className="text-base sm:text-xl font-semibold text-purple-700">Puntos Totales:</p>
-          <p className="text-2xl sm:text-4xl font-bold text-purple-800 drop-shadow-lg">{totalPoints} pts</p>
+      {/* Puntos + Progreso */}
+      <div className="bg-gradient-to-r from-purple-100 to-indigo-100 border-2 border-purple-200 rounded-xl shadow-lg p-5 sm:p-6 mb-4 sm:mb-8 flex flex-col sm:flex-row gap-5 sm:items-center w-full max-w-3xl">
+        <div className="flex items-center gap-4">
+          <Star className="w-10 h-10 sm:w-12 sm:h-12 text-yellow-500 drop-shadow-lg" fill="currentColor" />
+          <div>
+            <p className="text-base sm:text-xl font-semibold text-purple-700">Puntos Totales</p>
+            <p className="text-3xl sm:text-4xl font-bold text-purple-800 drop-shadow-lg">{totalPoints} pts</p>
+          </div>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-semibold text-purple-700">Progreso mensual</span>
+            <span className="text-xs font-bold text-purple-800">{monthProgress}%</span>
+          </div>
+          <div className="w-full h-3 bg-purple-200 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 transition-all duration-500" style={{ width: `${monthProgress}%` }} />
+          </div>
+          <p className="mt-1 text-[10px] text-purple-600 text-right">{monthSubmitted}/{monthTotal} entregadas</p>
         </div>
       </div>
+      {fetchError && (
+        <div className="w-full max-w-3xl mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{fetchError}</div>
+      )}
+      {loadingTasks && (
+        <div className="w-full max-w-3xl mb-4 text-sm text-purple-700 bg-purple-50 border border-purple-200 rounded-lg p-3 flex items-center gap-2"><RefreshCcw className="w-4 h-4 animate-spin"/>Cargando...</div>
+      )}
 
       {/* Animación de confeti y felicitaciones */}
       {showConfetti && (
@@ -215,7 +543,7 @@ const Feedback_Alumno_Comp = () => {
           <div className="fixed inset-0 bg-black/20 backdrop-blur-sm pointer-events-none z-40"></div>
           <div className="fixed inset-0 pointer-events-none overflow-hidden z-40">
             {/* Confeti: menos cantidad y sin sombra en móvil */}
-            {Array.from({ length: isMobile ? 80 : 400 }).map((_, i) => {
+            {Array.from({ length: reducedMotion ? 25 : (isMobile ? 70 : 320) }).map((_, i) => {
               const size = 6 + Math.random() * 18;
               const left = Math.random() * 100;
               const delay = Math.random() * 2.5;
@@ -274,19 +602,49 @@ const Feedback_Alumno_Comp = () => {
             </div>
           </div>
           {/* Sonido de celebración (opcional, descomenta si quieres usarlo y tienes un archivo .mp3 en public/) */}
-          {/* <audio autoPlay src="/celebration.mp3" /> */}
+          <audio autoPlay src="/public/A1.mp3" />
         </>
       )}
 
-      {/* Dropdown personalizado para filtro de mes */}
-      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full max-w-md">
+      {/* Efecto especial al llegar a 3 subidas consecutivas */}
+      {showTripleEffect && (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-start justify-center pt-24">
+          <div className="relative flex flex-col items-center animate-fade-in">
+            <div className="relative">
+              <div className="w-40 h-40 sm:w-52 sm:h-52 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-300 to-orange-400 blur-xl opacity-60 animate-pulse"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-xs sm:text-sm font-semibold tracking-widest text-amber-700 bg-white/70 px-3 py-1 rounded-full backdrop-blur border border-amber-300 shadow">RACHA</span>
+                  <span className="text-4xl sm:text-6xl font-black bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent drop-shadow">x3</span>
+                  <span className="text-sm sm:text-base font-bold text-amber-700">¡Triple Entrega!</span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 flex gap-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: `${i * 0.12}s` }} />
+              ))}
+            </div>
+          </div>
+          <style>{`
+            @keyframes fadeInScale {0%{opacity:0;transform:scale(.6)}50%{opacity:1}100%{opacity:1;transform:scale(1)}}
+            .animate-fade-in{animation:fadeInScale .8s cubic-bezier(.34,1.56,.64,1) forwards}
+          `}</style>
+        </div>
+      )}
+
+  {/* Filtros: Mes + Búsqueda */}
+  <div className="mb-4 sm:mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full max-w-3xl lg:static sticky top-0 z-30 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 px-1 pt-2 rounded-xl">
         <label className="text-sm sm:text-lg font-medium text-purple-700 drop-shadow-sm text-center sm:text-left">
           Feedback del mes:
         </label>
         <div className="relative w-full sm:w-auto">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full sm:min-w-[200px] p-3 pr-10 rounded-lg bg-white border-2 border-purple-200 text-purple-700 shadow-lg focus:ring-2 focus:ring-purple-400 focus:outline-none focus:border-purple-400 flex items-center justify-between"
+            className="w-full sm:min-w-[200px] p-3 pr-10 rounded-lg bg-white border-2 border-purple-200 text-purple-700 shadow-lg focus:ring-2 focus:ring-purple-400 focus:outline-none focus:border-purple-400 flex items-center justify-between text-sm sm:text-base"
+            aria-haspopup="listbox"
+            aria-expanded={isDropdownOpen}
+            aria-label="Seleccionar mes"
           >
             <span className="truncate">{getSelectedMonthName()}</span>
             <ChevronDown className={`w-5 h-5 text-purple-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -312,10 +670,31 @@ const Feedback_Alumno_Comp = () => {
             </div>
           )}
         </div>
+        <div className="flex-1">
+          <input
+            type="text"
+            placeholder="Buscar tarea..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="w-full p-3 rounded-lg bg-white border-2 border-purple-200 text-purple-700 shadow-lg focus:ring-2 focus:ring-purple-400 focus:outline-none focus:border-purple-400 placeholder-purple-300 text-sm sm:text-base"
+            aria-label="Buscar tarea"
+          />
+        </div>
+        <div className="flex items-center justify-end">
+          <button
+            onClick={openCreateTask}
+            disabled={studentOwnedCount >= 20 || isPastSelectedMonth}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg border-2 ${(studentOwnedCount >= 20 || isPastSelectedMonth) ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 text-white border-purple-700'}`}
+            title={studentOwnedCount >= 20 ? 'Has alcanzado el límite de 20 actividades' : (isPastSelectedMonth ? 'No puedes crear actividades en meses pasados' : 'Crear nueva actividad')}
+          >
+            <PlusCircle className="w-5 h-5" />
+            Nueva actividad
+          </button>
+        </div>
       </div>
 
-      {/* Vista de escritorio - Tabla */}
-      <div className="hidden lg:block bg-purple-100 bg-opacity-70 backdrop-blur-sm border-2 border-purple-300 rounded-2xl shadow-xl overflow-hidden w-full max-w-6xl">
+  {/* Vista de escritorio - Tabla */}
+  <div className="hidden lg:block bg-purple-100 bg-opacity-70 backdrop-blur-sm border-2 border-purple-300 rounded-2xl shadow-xl overflow-hidden w-full max-w-6xl">
         <table className="min-w-full">
           <thead className="bg-gradient-to-r from-purple-500 to-indigo-600">
             <tr>
@@ -329,41 +708,38 @@ const Feedback_Alumno_Comp = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-purple-300 bg-purple-100 bg-opacity-50">
-            {filteredTasks.length > 0 ? (
-              filteredTasks.map((task, index) => (
+            {paginatedTasks.length > 0 ? (
+              paginatedTasks.map((task, index) => (
                 <tr key={task.id} className="hover:bg-purple-200 hover:bg-opacity-70 transition-all duration-200">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-purple-700">{index + 1}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-purple-700">{indexOfFirst + index + 1}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">{task.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm flex justify-center items-center">
-                    {task.isSubmitted && isWithinDeadline(task.dueDate) ? (
-                      <button
-                        onClick={() => openModal(task)}
-                        className="flex items-center px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-300"
-                      >
-                        <Upload className="w-5 h-5 mr-2" />
-                        Gestionar Entrega
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => openModal(task)}
-                        disabled={task.isSubmitted && !isWithinDeadline(task.dueDate)}
-                        className={`flex items-center px-4 py-2 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 ${
-                          task.isSubmitted && !isWithinDeadline(task.dueDate)
-                            ? 'bg-gray-400 cursor-not-allowed text-white'
-                            : 'bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-300'
-                        }`}
-                      >
-                        <Upload className="w-5 h-5 mr-2" />
-                        Subir Tarea
-                      </button>
-                    )}
+                    <button
+                      onClick={() => openModal(task)}
+                      disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
+                      className={`flex items-center px-4 py-2 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 ${
+                        (!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
+                          ? 'bg-gray-400 cursor-not-allowed text-white'
+                          : (task.isSubmitted
+                              ? 'bg-purple-500 hover:bg-purple-600 text-white focus:ring-purple-300'
+                              : 'bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-300')
+                      }`}
+                    >
+                      <Upload className="w-5 h-5 mr-2" />
+                      {task.isSubmitted ? 'Gestionar Entrega' : (monthlyCapReached ? 'Límite mensual' : 'Subir Tarea')}
+                    </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {new Date(task.dueDate).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
+                    <div className="flex flex-col gap-1">
+                      <span>{(task._isStudentOwned && !task.isSubmitted) ? 'Se genera al subir' : new Date(task.dueDate).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}</span>
+                      {(() => { if (task._isStudentOwned && !task.isSubmitted) return null; const u = getUrgencyInfo(task.dueDate, task.isSubmitted); return u ? (
+                        <span className={`inline-block px-2 py-0.5 text-[10px] font-semibold rounded-full ring-1 ${u.color} ${u.ring}`}>{u.label}</span>
+                      ) : null; })()}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm flex justify-center items-center">
                     <button
@@ -401,13 +777,43 @@ const Feedback_Alumno_Comp = () => {
             )}
           </tbody>
         </table>
+        {/* Controles de paginación escritorio */}
+        {filteredTasks.length > TASKS_PER_PAGE && (
+          <div className="flex items-center justify-between px-6 py-4 bg-white border-t border-purple-300">
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded-md text-sm font-medium border ${currentPage === 1 ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+            >
+              Anterior
+            </button>
+            <div className="flex items-center gap-1 flex-wrap justify-center">
+              {buildPageList().map((p, idx) => (
+                p === '...'
+                  ? <span key={idx} className="px-2 py-1 text-sm text-gray-500 select-none">...</span>
+                  : <button
+                      key={p}
+                      onClick={() => goToPage(p)}
+                      className={`w-8 h-8 rounded-md text-sm font-medium border flex items-center justify-center transition ${p === currentPage ? 'bg-purple-600 text-white border-purple-600' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+                    >{p}</button>
+              ))}
+            </div>
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded-md text-sm font-medium border ${currentPage === totalPages ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Vista móvil - Cards en 2 columnas */}
       <div className="lg:hidden w-full max-w-4xl">
-        {filteredTasks.length > 0 ? (
+    {paginatedTasks.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {filteredTasks.map((task, index) => (
+      {paginatedTasks.map((task, index) => (
               <div
                 key={task.id}
                 className="relative bg-gradient-to-br from-purple-100 via-indigo-100 to-white border-2 border-purple-200 rounded-3xl shadow-2xl p-6 flex flex-col gap-3 transition-transform duration-200 hover:scale-[1.03] hover:shadow-purple-300/60"
@@ -418,22 +824,25 @@ const Feedback_Alumno_Comp = () => {
                 </span>
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-1">
-                  <span className="bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">#{index + 1}</span>
-                  <h3 className="font-extrabold text-purple-800 text-lg flex-1 leading-tight">{task.name}</h3>
+                  <span className="bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">#{indexOfFirst + index + 1}</span>
+                  <h3 className="font-extrabold text-purple-800 text-lg flex-1 leading-tight break-words">{task.name}</h3>
                 </div>
                 {/* Puntaje */}
                 <div className="flex items-center gap-2 mb-1">
                   <Star className="w-5 h-5 text-yellow-400 drop-shadow" fill="currentColor" />
                   <span className="text-lg font-bold text-purple-700">{task.score !== null ? `${task.score} pts` : '-'}</span>
                 </div>
-                {/* Fecha de entrega */}
-                <div className="flex items-center gap-2 text-xs text-gray-600 font-medium mb-2">
+                {/* Fecha de entrega + urgencia */}
+                <div className="flex items-center gap-2 text-xs text-gray-600 font-medium mb-2 flex-wrap">
                   <span className="bg-purple-200 text-purple-700 px-2 py-1 rounded-lg">Entrega:</span>
-                  <span className="text-gray-700">{new Date(task.dueDate).toLocaleDateString('es-ES', {
+                  <span className="text-gray-700">{(task._isStudentOwned && !task.isSubmitted) ? 'Se genera al subir' : new Date(task.dueDate).toLocaleDateString('es-ES', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
                   })}</span>
+                  {(() => { if (task._isStudentOwned && !task.isSubmitted) return null; const u = getUrgencyInfo(task.dueDate, task.isSubmitted); return u ? (
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${u.color} ring-1 ${u.ring}`}>{u.label}</span>
+                  ) : null; })()}
                 </div>
                 {/* Estado visual */}
                 <div className="flex items-center gap-2 mb-2">
@@ -446,28 +855,19 @@ const Feedback_Alumno_Comp = () => {
                 </div>
                 {/* Botones de acción */}
                 <div className="flex gap-2 mt-auto">
-                  {task.isSubmitted && isWithinDeadline(task.dueDate) ? (
-                    <button
-                      onClick={() => openModal(task)}
-                      className="flex-1 flex items-center justify-center px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg shadow-md transition-all duration-200 text-xs font-semibold gap-1"
-                    >
-                      <Upload className="w-4 h-4" />
-                      Gestionar
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => openModal(task)}
-                      disabled={task.isSubmitted && !isWithinDeadline(task.dueDate)}
-                      className={`flex-1 flex items-center justify-center px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold gap-1 ${
-                        task.isSubmitted && !isWithinDeadline(task.dueDate)
-                          ? 'bg-gray-400 cursor-not-allowed text-white'
-                          : 'bg-blue-500 hover:bg-blue-600 text-white'
-                      }`}
-                    >
-                      <Upload className="w-4 h-4" />
-                      Subir
-                    </button>
-                  )}
+                  <button
+                    onClick={() => openModal(task)}
+                    disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
+                    className={`flex-1 flex items-center justify-center px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold gap-1 ${
+                      (!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
+                        ? 'bg-gray-400 cursor-not-allowed text-white'
+                        : (task.isSubmitted ? 'bg-purple-500 hover:bg-purple-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white')
+                    }`}
+                    aria-label={task.isSubmitted ? 'Gestionar entrega' : 'Subir tarea'}
+                  >
+                    <Upload className="w-4 h-4" />
+                    {task.isSubmitted ? 'Gestionar' : (monthlyCapReached ? 'Límite mensual' : 'Subir')}
+                  </button>
                   <button
                     onClick={() => openViewTaskModal(task)}
                     disabled={!task.submittedPdf}
@@ -476,6 +876,7 @@ const Feedback_Alumno_Comp = () => {
                         ? 'bg-green-500 hover:bg-green-600 text-white'
                         : 'bg-gray-400 cursor-not-allowed text-white'
                     }`}
+                    aria-label="Ver tarea"
                   >
                     <Eye className="w-4 h-4" />
                     Ver
@@ -491,6 +892,32 @@ const Feedback_Alumno_Comp = () => {
             </p>
           </div>
         )}
+        {/* Controles de paginación móvil */}
+        {filteredTasks.length > TASKS_PER_PAGE && (
+          <div className="flex items-center justify-between mt-6 bg-white border border-purple-200 rounded-xl p-4 shadow-md">
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`px-3 py-2 rounded-lg text-xs font-medium border ${currentPage === 1 ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+            >Anterior</button>
+            <div className="flex items-center gap-1 flex-wrap justify-center text-xs">
+              {buildPageList().map((p, idx) => (
+                p === '...'
+                  ? <span key={idx} className="px-2 py-1 text-gray-500 select-none">...</span>
+                  : <button
+                      key={p}
+                      onClick={() => goToPage(p)}
+                      className={`w-7 h-7 rounded-md border flex items-center justify-center ${p === currentPage ? 'bg-purple-600 text-white border-purple-600' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+                    >{p}</button>
+              ))}
+            </div>
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-2 rounded-lg text-xs font-medium border ${currentPage === totalPages ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+            >Siguiente</button>
+          </div>
+        )}
       </div>
 
       {/* Modal para Subir/Cancelar */}
@@ -500,6 +927,11 @@ const Feedback_Alumno_Comp = () => {
             <h2 className="text-xl sm:text-2xl font-bold mb-4 text-purple-700">
               {selectedTask.isSubmitted ? 'Gestionar Entrega' : 'Subir Tarea'}
             </h2>
+            {monthlyCapReached && (
+              <div className="mb-3 text-xs sm:text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                Límite mensual alcanzado ({perMonthCap}). Podrás subir nuevamente el próximo mes.
+              </div>
+            )}
             <p className="mb-6 text-gray-700 text-sm sm:text-base">
               Tarea: <span className="font-semibold text-purple-600">{selectedTask.name}</span>
             </p>
@@ -507,6 +939,14 @@ const Feedback_Alumno_Comp = () => {
             {selectedTask.isSubmitted ? (
               <>
                 <p className="mb-4 text-gray-700 text-sm sm:text-base">Ya has subido un archivo. ¿Deseas cancelarlo o subir uno nuevo?</p>
+                {fileError && (
+                  <div className="mb-4 text-xs sm:text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+                    {fileError} {' '}
+                    {fileError.includes('1.5MB') && (
+                      <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Comprimir PDF</a>
+                    )}
+                  </div>
+                )}
                 <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
                   <button
                     onClick={() => handleCancelSubmission(selectedTask.id)}
@@ -515,33 +955,55 @@ const Feedback_Alumno_Comp = () => {
                     Cancelar Entrega
                   </button>
                   <label className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm cursor-pointer">
-                    Subir Nuevo PDF
+                    {loadingUpload ? 'Subiendo...' : 'Subir Nuevo PDF'}
                     <input
                       type="file"
                       accept=".pdf"
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
-                          handleFileUpload(selectedTask.id, e.target.files[0]);
+                          const f = e.target.files[0];
+                          setLastSelectedSizeMB(formatMB(f.size));
+                          handleFileUpload(selectedTask.id, f);
                         }
                       }}
                       className="hidden"
+                      disabled={loadingUpload}
                     />
                   </label>
+                </div>
+                <div className="mt-3 text-[11px] sm:text-xs text-gray-600 leading-snug">
+                  Límite: <span className="font-semibold">1.5MB</span>. {lastSelectedSizeMB && (<span>Archivo elegido: {lastSelectedSizeMB} MB. </span>)}
+                  ¿Pesa más? <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Comprimir PDF</a>
                 </div>
               </>
             ) : (
               <>
                 <p className="mb-4 text-gray-700 text-sm sm:text-base">Por favor, sube tu tarea en formato PDF.</p>
+                {fileError && (
+                  <div className="mb-4 text-xs sm:text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+                    {fileError} {' '}
+                    {fileError.includes('1.5MB') && (
+                      <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Comprimir PDF</a>
+                    )}
+                  </div>
+                )}
                 <input
                   type="file"
                   accept=".pdf"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
-                      handleFileUpload(selectedTask.id, e.target.files[0]);
+                      const f = e.target.files[0];
+                      setLastSelectedSizeMB(formatMB(f.size));
+                      handleFileUpload(selectedTask.id, f);
                     }
                   }}
-                  className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 file:shadow-md mb-4"
+                  className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 file:shadow-md mb-2"
+                  disabled={loadingUpload}
                 />
+                <div className="mb-4 text-[11px] sm:text-xs text-gray-600 leading-snug">
+                  Límite: <span className="font-semibold">1.5MB</span>. {lastSelectedSizeMB && (<span>Archivo elegido: {lastSelectedSizeMB} MB. </span>)}
+                  ¿Pesa más? <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Comprimir PDF</a>
+                </div>
                 <div className="flex justify-end">
                   <button
                     onClick={closeModal}
@@ -567,26 +1029,21 @@ const Feedback_Alumno_Comp = () => {
             </p>
             {viewingTaskPdf ? (
               <>
-                {isMobile ? (
-                  <>
-                    <div className="flex-grow w-full h-40 bg-gray-100 rounded-lg overflow-hidden mb-4 border border-gray-300 flex items-center justify-center">
-                      <span className="text-gray-500 text-center text-xs px-2">Vista previa no soportada en móvil. Usa el botón para abrir el PDF en una nueva pestaña.</span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex-grow w-full h-64 sm:h-96 bg-gray-100 rounded-lg overflow-hidden mb-4 border border-gray-300">
+                <div className="flex-grow w-full h-64 sm:h-96 bg-gray-100 rounded-lg overflow-hidden mb-4 border border-gray-300 flex items-center justify-center relative">
+                  {isMobile ? (
+                    <span className="text-gray-500 text-center text-xs px-2">En móvil, usa "Ver en nueva pestaña" para mejor experiencia.</span>
+                  ) : (
                     <iframe
+                      key={viewingTaskPdf}
                       src={viewingTaskPdf}
                       title="Visor de PDF"
                       className="w-full h-full border-none"
-                      style={{ minHeight: '100%' }}
-                    >
-                      Este navegador no soporta la visualización de PDFs. Puedes descargarlo aquí.
-                    </iframe>
-                  </div>
-                )}
-                <p className="text-xs sm:text-sm text-gray-600 text-center mb-4">
-                  (Simulación: En una aplicación real, aquí se cargaría el PDF subido por el alumno desde el backend.)
+                      onError={(e) => { e.currentTarget.outerHTML = '<div class=\'w-full h-full flex items-center justify-center text-xs text-red-500\'>Error cargando PDF</div>'; }}
+                    />
+                  )}
+                </div>
+                <p className="text-[10px] sm:text-xs text-gray-500 text-center mb-2">
+                  Ruta: {viewingTaskPdf?.replace(window.location.origin,'')}
                 </p>
               </>
             ) : (
@@ -620,6 +1077,30 @@ const Feedback_Alumno_Comp = () => {
           className="fixed inset-0 z-20"
           onClick={() => setIsDropdownOpen(false)}
         ></div>
+      )}
+
+      {/* Modal: Crear nueva actividad */}
+      {showCreateTaskModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100 border-2 border-purple-200">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-purple-700">Nueva actividad</h2>
+            <p className="text-sm text-gray-700 mb-3">Crea una actividad con el nombre que prefieras. La fecha de entrega se generará cuando subas tu PDF.</p>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Nombre de la actividad</label>
+            <input
+              type="text"
+              value={newTaskName}
+              onChange={(e)=> setNewTaskName(e.target.value)}
+              maxLength={100}
+              className="w-full p-3 rounded-lg bg-white border-2 border-purple-200 text-purple-700 shadow focus:ring-2 focus:ring-purple-400 focus:outline-none focus:border-purple-400"
+              placeholder="Ej. Lectura capítulo 1"
+            />
+            {newTaskError && <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-md p-2">{newTaskError}</div>}
+            <div className="mt-6 flex justify-end gap-2">
+              <button onClick={closeCreateTask} className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg shadow text-sm">Cancelar</button>
+              <button onClick={confirmCreateTask} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow text-sm">Crear</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

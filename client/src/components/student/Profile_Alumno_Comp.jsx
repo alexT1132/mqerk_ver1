@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useStudent } from '../../context/StudentContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { getEstudianteByIdRequest, updateEstudianteRequest } from '../../api/estudiantes.js';
+import { buildStaticUrl, getApiOrigin } from '../../utils/url';
 
 // Componente para input con validaciones completas restauradas
 const InputField = ({ name, type = "text", placeholder, value, onChange, className, isAcademic = false, isCourse = false, helpText = null, errors = {}, maxLength = null }) => {
@@ -521,14 +522,7 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
   const { alumno } = useAuth();
 
   // Helper: construir URL absoluta para archivos servidos por el backend
-  const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
-  const apiUrl = (import.meta?.env?.VITE_API_URL) || `http://${host}:1002/api`;
-  const apiOrigin = apiUrl.replace(/\/api\/?$/, '');
-  const buildStaticUrl = (p) => {
-    if (!p) return null;
-    if (/^https?:\/\//i.test(p)) return p;
-    return `${apiOrigin}${p.startsWith('/') ? '' : '/'}${p}`;
-  };
+  const apiOrigin = getApiOrigin();
   
   // BACKEND: Estructura base del perfil - se poblará desde la API
   const defaultProfileData = {
@@ -542,16 +536,20 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
       tutorPhoneNumber: alumno?.tel_tutor || "",
     },
     academic: {
-      academy: alumno?.academico1 || "",
-      bachillerato: alumno?.academico2 || "",
+  // Siempre mostrar la academia institucional fija
+  academy:  "MQerKAcademy",
+  // El bachillerato actual proviene del backend; si no hay academico2, usar academico1
+  bachillerato: alumno?.academico2 || alumno?.academico1 || "",
       licenciaturaOption: alumno?.orientacion || "",
       universityOption: alumno?.universidades1 || "",
     },
     course: {
       activeCourse: currentCourse?.title || (alumno?.curso || ""),
-      advisor: "",
+  // Asesor fijo por ahora (luego será dinámico)
+  advisor: "Kélvil Valentín Gómez Ramírez",
       group: alumno?.grupo || "",
-      modality: alumno?.plan || "",
+      // Modalidad fija por ahora
+      modality: "Presencial",
     }
   };
 
@@ -573,11 +571,18 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
           phoneNumber: alumno?.telefono ?? prev.personal.phoneNumber,
           tutorPhoneNumber: alumno?.tel_tutor ?? prev.personal.tutorPhoneNumber,
         },
+        academic: {
+          ...prev.academic,
+          // Mantener fija la academia institucional
+          academy: "MQerKAcademy",
+          bachillerato: alumno?.academico2 ?? alumno?.academico1 ?? prev.academic.bachillerato,
+        },
         course: {
           ...prev.course,
           activeCourse: currentCourse?.title || (alumno?.curso || ""),
+          advisor: "Kélvil Valentín Gómez Ramírez",
           group: alumno?.grupo ?? prev.course.group,
-          modality: alumno?.plan ?? prev.course.modality,
+          modality: "Presencial",
         }
       }));
     }
@@ -603,16 +608,20 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
             tutorPhoneNumber: est.tel_tutor || '',
           },
           academic: {
-            academy: est.academico1 || '',
-            bachillerato: est.academico2 || '',
+            // Forzar academia institucional fija
+            academy: 'MQerKAcademy',
+            // Bachillerato actual: preferir academico2; fallback a academico1
+            bachillerato: est.academico2 || est.academico1 || '',
             licenciaturaOption: est.orientacion || '',
             universityOption: est.universidades1 || '',
           },
           course: {
             activeCourse: currentCourse?.title || est.curso || '',
-            advisor: '',
+            // Asesor fijo por ahora
+            advisor: 'Kélvil Valentín Gómez Ramírez',
             group: est.grupo || '',
-            modality: est.plan || '',
+            // Modalidad fija por ahora
+            modality: 'Presencial',
           }
         };
         setCurrentProfileData(uiProfile);
@@ -682,8 +691,10 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
           },
           academic: {
             ...prev.academic,
-            academy: est.academico1 ?? prev.academic.academy,
-            bachillerato: est.academico2 ?? prev.academic.bachillerato,
+            // Mantener fija la academia institucional
+            academy: 'MQerKAcademy',
+            // Refrescar bachillerato con preferencia academico2
+            bachillerato: (est.academico2 ?? est.academico1) ?? prev.academic.bachillerato,
             licenciaturaOption: est.orientacion ?? prev.academic.licenciaturaOption,
             universityOption: est.universidades1 ?? prev.academic.universityOption,
           },

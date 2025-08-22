@@ -2,7 +2,7 @@ import db from '../db.js'; // ya no ejecutes connectDB()
 
 // Crear datos del alumno
 export const createEstudiante = async (data) => {
-  const sql = 'INSERT INTO estudiantes (nombre, apellidos, email, foto, grupo, comunidad1, comunidad2, telefono, fecha_nacimiento, nombre_tutor, tel_tutor, academico1, academico2, semestre, alergia, alergia2, discapacidad1, discapacidad2, orientacion, universidades1, universidades2, postulacion, comentario1, comentario2, curso, plan, anio, folio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  const sql = 'INSERT INTO estudiantes (nombre, apellidos, email, foto, grupo, comunidad1, comunidad2, telefono, fecha_nacimiento, nombre_tutor, tel_tutor, academico1, academico2, semestre, alergia, alergia2, discapacidad1, discapacidad2, orientacion, universidades1, universidades2, postulacion, modalidad, comentario1, comentario2, curso, turno, plan, academia, anio, folio, asesor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
   const values = [
     data.nombre, 
     data.apellidos, 
@@ -24,14 +24,18 @@ export const createEstudiante = async (data) => {
     data.discapacidad2, 
     data.orientacion, 
     data.universidades1, 
-    data.universidades2, 
-    data.postulacion, 
+  data.universidades2, 
+  data.postulacion, 
+  data.modalidad,
     data.comentario1, 
     data.comentario2, 
-    data.curso, 
-    data.plan, 
+  data.curso, 
+  data.turno,
+  data.plan, 
+  data.academia,
     data.anio, 
-    data.folio
+  data.folio,
+  data.asesor
   ];
   const [result] = await db.query(sql, values);
   return result;
@@ -52,6 +56,12 @@ export const getEstudianteById = async (id) => {
 // Obtener un estudiante por folio
 export const getEstudianteByFolio = async (folio) => {
   const [rows] = await db.query('SELECT * FROM estudiantes WHERE folio = ? LIMIT 1', [folio]);
+  return rows[0] || null;
+};
+
+// Obtener un estudiante por folio_formateado
+export const getEstudianteByFolioFormateado = async (folioFormateado) => {
+  const [rows] = await db.query('SELECT * FROM estudiantes WHERE folio_formateado = ? LIMIT 1', [folioFormateado]);
   return rows[0] || null;
 };
 
@@ -90,14 +100,78 @@ export const obtenerUltimoFolio = async () => {
   }
 };
 
-export const getGruposConCantidad = async (curso) => {
-    const [rows] = await db.query(`
-        SELECT grupo, COUNT(*) AS cantidad_estudiantes
-        FROM estudiantes
-        WHERE curso = ?
-        GROUP BY grupo
-    `, [curso]);
+export const getGruposConCantidad = async (curso, status = 'aprobados') => {
+  const st = String(status || 'aprobados').toLowerCase();
+  if (st === 'todos') {
+    // Todos los estudiantes del curso por grupo (independiente del estado)
+    const [rows] = await db.query(
+      `
+        SELECT e.grupo AS grupo, COUNT(*) AS cantidad_estudiantes
+        FROM estudiantes e
+        LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+        WHERE e.curso = ?
+          AND sd.id IS NULL
+        GROUP BY e.grupo
+      `,
+      [curso]
+    );
     return rows;
+  }
+
+  if (st === 'pendientes') {
+    const [rows] = await db.query(
+      `
+        SELECT e.grupo AS grupo, COUNT(*) AS cantidad_estudiantes
+        FROM estudiantes e
+        LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+        WHERE e.curso = ?
+          AND e.verificacion = 1
+          AND sd.id IS NULL
+        GROUP BY e.grupo
+      `,
+      [curso]
+    );
+    return rows;
+  }
+
+  if (st === 'rechazados') {
+    const [rows] = await db.query(
+      `
+        SELECT e.grupo AS grupo, COUNT(*) AS cantidad_estudiantes
+        FROM estudiantes e
+        LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+        WHERE e.curso = ?
+          AND e.verificacion = 3
+          AND sd.id IS NULL
+        GROUP BY e.grupo
+      `,
+      [curso]
+    );
+    return rows;
+  }
+
+  // 'aprobados' por defecto: alineado con getApprovedStudents
+  const [rows] = await db.query(
+    `
+      SELECT e.grupo AS grupo, COUNT(DISTINCT e.id) AS cantidad_estudiantes
+      FROM estudiantes e
+      INNER JOIN (
+        SELECT id_estudiante, MAX(created_at) AS latest
+        FROM comprobantes
+        WHERE importe IS NOT NULL
+        GROUP BY id_estudiante
+      ) lp ON lp.id_estudiante = e.id
+      INNER JOIN comprobantes c 
+        ON c.id_estudiante = lp.id_estudiante AND c.created_at = lp.latest
+      LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+      WHERE e.curso = ?
+        AND e.verificacion = 2
+        AND sd.id IS NULL
+      GROUP BY e.grupo
+    `,
+    [curso]
+  );
+  return rows;
 };
 
 // Actualizar estudiante con campos parciales

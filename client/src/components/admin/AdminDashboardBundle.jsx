@@ -13,7 +13,9 @@ import { ReportesPagos_Admin_comp } from './ReportesPagos_Admin_comp.jsx';
 import { Calendario_Admin_comp } from './Calendario_Admin_comp.jsx';
 import  Email_Admin_comp  from './Email_Admin_comp.jsx';
 import { Configuracion_Admin_comp } from './Configuracion_Admin_comp.jsx';
+import AdministrarAsesores from './AdministrarAsesores.jsx';
 import StudentProfilePage from '../../pages/Admin/StudentProfilePage.jsx';
+
 
 
 export function AdminDashboardBundle() {
@@ -34,8 +36,10 @@ export function AdminDashboardBundle() {
         <Route path="/comprobantes-recibo" element={<ComprobantesAdmin />} />
         {/* Gestión de estudiantes */}
         <Route path="/lista-alumnos" element={<ListaAlumnosAdmin />} />
-        {/* Perfil individual de estudiante */}
-        <Route path="/student/:folio" element={<StudentProfilePage />} />
+  {/* Perfil individual de estudiante (completo) */}
+  <Route path="/student/:folio" element={<StudentProfilePage />} />
+  {/* Perfil simplificado de diagnóstico */}
+
         {/* Generar contrato */}
         <Route path="/generar-contrato" element={<GenerarContratoAdmin />} />
         {/* Reportes financieros */}
@@ -46,6 +50,8 @@ export function AdminDashboardBundle() {
         <Route path="/email" element={<EmailAdmin />} />
         {/* Configuración del sistema */}
         <Route path="/configuracion" element={<ConfiguracionAdmin />} />
+  {/* Administración de asesores */}
+  <Route path="/asesores" element={<AdministrarAsesores />} />
       </Routes>
     </AdminLayout>
   );

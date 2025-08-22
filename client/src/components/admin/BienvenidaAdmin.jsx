@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useAdminContext } from '../../context/AdminContext.jsx';
-import { useAdminNotifications } from '../../hooks/useAdminNotifications.js';
+import { useAdminNotificationContext } from '../../context/AdminNotificationContext.jsx';
+import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 
 // ============================================================================
 // DATOS MOTIVACIONALES (SOLO FRONTEND)
@@ -80,17 +81,15 @@ const InfoCard = memo(({ title, icon, content, color }) => {
   return (
     <div className={`
       relative text-center 
-      p-3 xs:p-4 sm:p-5 md:p-6 lg:p-7 xl:p-8
+      p-2 xs:p-3 sm:p-5 md:p-6 lg:p-7 xl:p-8
       ${bgColor} 
       rounded-lg xs:rounded-xl sm:rounded-2xl lg:rounded-3xl 
       border-2 ${borderColor} 
       flex flex-col items-center justify-center
       shadow-md xs:shadow-lg sm:shadow-xl lg:shadow-2xl ${shadowColor}
       backdrop-blur-sm
-      transform transition-all duration-300 ease-in-out
-      hover:scale-[1.02] xs:hover:scale-105 hover:shadow-xl xs:hover:shadow-2xl hover:shadow-${color}-300/60
-      hover:-translate-y-0.5 xs:hover:-translate-y-1
-      min-h-[100px] xs:min-h-[120px] sm:min-h-[140px] md:min-h-[150px] lg:min-h-[160px] xl:min-h-[180px]
+      transition-all duration-300 ease-in-out
+      min-h-[88px] xs:min-h-[110px] sm:min-h-[140px] md:min-h-[150px] lg:min-h-[160px] xl:min-h-[180px]
       w-full
       group
     `}>
@@ -100,7 +99,7 @@ const InfoCard = memo(({ title, icon, content, color }) => {
       
       <div className={`
         relative z-10 
-        w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 xl:w-18 xl:h-18
+        w-7 h-7 xs:w-9 xs:h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 xl:w-18 xl:h-18
         ${bgIconColor} 
         rounded-full flex items-center justify-center mx-auto 
         mb-2 xs:mb-3 sm:mb-4 md:mb-5 lg:mb-6
@@ -156,13 +155,13 @@ const GreetingHeader = memo(({ greeting, adminName }) => {
 
       <div className="relative z-10 text-center">
       
-        <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold mb-1 xs:mb-1 sm:mb-2 md:mb-3 lg:mb-4 leading-tight animate-slide-down">
+  <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold mb-1 sm:mb-2 md:mb-3 lg:mb-4 leading-tight animate-slide-down">
           {greeting}
           <span className="block absolute left-1/2 -translate-x-1/2 bottom-0 w-2/3 h-0.5 bg-gradient-to-r from-indigo-500/80 to-purple-500/80 rounded-full origin-center scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></span>
         </h1>
         
        
-        <h2 className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-light mb-1 xs:mb-2 sm:mb-3 md:mb-4 lg:mb-5 opacity-90 leading-tight animate-slide-up">
+  <h2 className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-light mb-1 sm:mb-3 md:mb-4 lg:mb-5 opacity-90 leading-tight animate-slide-up">
           Admin <span className="font-semibold text-yellow-200">{adminName}</span>
         </h2>
         
@@ -365,12 +364,11 @@ function Bienvenida_Admin1() {
     error: adminError
   } = useAdminContext();
 
-  // Notificaciones vienen directamente del hook useAdminNotifications
+  // Notificaciones: usa el contexto compartido del header para evitar doble polling
   const { 
     notifications, 
-    unreadCount,
-    isLoading: notificationsLoading
-  } = useAdminNotifications();
+    unreadCount
+  } = useAdminNotificationContext();
 
   // Datos del admin con respaldo (por si no llega nada del contexto)
   const name = adminData?.name || adminData?.fullName || FALLBACK_ADMIN_DATA.name;
@@ -416,12 +414,8 @@ function Bienvenida_Admin1() {
   // (puedes quitar esto si no quieres pantalla de carga)
   if (adminLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-md mx-auto">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Cargando Panel de Administración</h2>
-          <p className="text-gray-600">Preparando tu espacio de trabajo...</p>
-        </div>
+      <div className="relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50">
+        <LoadingOverlay message="Cargando panel de administración..." />
       </div>
     );
   }
@@ -450,8 +444,8 @@ function Bienvenida_Admin1() {
   }
 
   return (
-    <div className="flex flex-col w-full h-full p-2 xs:p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 font-sans min-h-screen ultra-small-padding bg-gradient-to-br from-gray-50 via-white to-indigo-50">
-      <div className="bg-white rounded-lg xs:rounded-xl sm:rounded-2xl md:rounded-3xl lg:rounded-3xl shadow-xl hover:shadow-2xl transition-shadow duration-300 overflow-hidden max-w-xs xs:max-w-sm sm:max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl mx-auto w-full landscape-compact border-2 border-gray-200/80 hover:border-indigo-200/80">
+    <div className="flex flex-col w-full min-h-screen p-3 sm:p-6 md:p-8 lg:p-10 font-sans bg-gradient-to-br from-gray-50 via-white to-indigo-50">
+      <div className="bg-white rounded-xl sm:rounded-2xl md:rounded-3xl shadow-xl hover:shadow-2xl transition-shadow duration-300 overflow-hidden w-full max-w-full sm:max-w-3xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl mx-auto border-2 border-gray-200/80 hover:border-indigo-200/80">
 
         {/* Header con saludo y nombre (GreetingHeader solo muestra lo que le pasas) */}
         <GreetingHeader 
@@ -460,8 +454,8 @@ function Bienvenida_Admin1() {
         />
 
         {/* Tarjetas con info - los datos vienen de los contextos/hooks */}
-        <div className="px-3 py-4 xs:px-4 xs:py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10 lg:py-10 xl:px-12 xl:py-12 bg-white ultra-small-padding landscape-compact">
-          <div className="grid grid-cols-1 gap-3 xs:gap-4 sm:grid-cols-2 md:grid-cols-3 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8 max-w-xs xs:max-w-sm sm:max-w-3xl md:max-w-6xl lg:max-w-7xl xl:max-w-8xl mx-auto ultra-small-gap">
+        <div className="px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10 lg:py-10 bg-white">
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8 w-full max-w-full md:max-w-6xl mx-auto">
 
             {/* Tarjeta de Fecha (esto se queda en frontend) */}
             <InfoCard
@@ -501,7 +495,8 @@ function Bienvenida_Admin1() {
                 unreadCount: unreadCount,
                 totalToday: notifications?.filter(n => {
                   const today = new Date().toDateString();
-                  return new Date(n.createdAt).toDateString() === today;
+                  const ts = n?.timestamp ? new Date(n.timestamp) : null;
+                  return ts && ts.toDateString() === today;
                 }).length || 0,
                 latest: notifications?.[0]?.message || "No hay notificaciones"
               }}

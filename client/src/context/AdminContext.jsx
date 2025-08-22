@@ -18,7 +18,40 @@ const AdminContext = createContext();
 export const useAdminContext = () => {
   const context = useContext(AdminContext);
   if (!context) {
-    throw new Error('useAdminContext debe usarse dentro de AdminProvider');
+    // Fallback seguro para evitar romper la UI si un componente se monta fuera del provider
+    if (typeof window !== 'undefined') {
+      console.warn('[AdminContext] useAdminContext usado fuera de AdminProvider. Devolviendo valores por defecto.');
+    }
+    return {
+      // Estados mínimos
+      isLoading: false,
+      error: null,
+      lastUpdated: null,
+      systemStatus: 'online',
+      dashboardData: null,
+      adminProfile: null,
+      adminData: null,
+      studentsData: null,
+      paymentsData: null,
+      // No-op functions para evitar errores
+      refreshDashboard: async () => {},
+      loadDashboardMetrics: async () => {},
+      loadAdminProfile: async () => {},
+      loadStudentsData: async () => [],
+      deleteStudent: async () => {},
+      updateStudent: async () => {},
+      loadPaymentsData: async () => [],
+      approvePayment: async () => {},
+      rejectPayment: async () => {},
+      generateContract: async () => {},
+      uploadContract: async () => {},
+      loadFinancialReports: async () => ({}),
+      exportToExcel: async () => {},
+      exportToPDF: async () => {},
+      uploadAdminAvatar: async () => {},
+      updateAdminProfile: async () => {},
+      removeAdminAvatar: async () => {},
+    };
   }
   return context;
 };
@@ -41,6 +74,9 @@ export const AdminProvider = ({ children }) => {
   const [studentsData, setStudentsData] = useState(null);
   const [paymentsData, setPaymentsData] = useState(null);
   const [systemStatus, setSystemStatus] = useState('online');
+  // Estado de WS admin
+  const [wsStatus, setWsStatus] = useState('idle'); // idle|connecting|open|closed|error
+  const [wsAttempts, setWsAttempts] = useState(0);
 
   /**
    * Función para cargar métricas del dashboard principal
@@ -136,13 +172,73 @@ export const AdminProvider = ({ children }) => {
       if (curso) params.curso = curso;
       if (turno) params.grupo = turno;
       const { data } = await axios.get('/admin/estudiantes/aprobados', { params });
-      const list = Array.isArray(data?.data) ? data.data : [];
+      const listRaw = Array.isArray(data?.data) ? data.data : [];
+      // Normalizar claves snake_case del backend a las esperadas por la UI
+      const list = listRaw.map(est => {
+        if (!est || typeof est !== 'object') return est;
+        const folioFormateado = est.folio_formateado || est.folioFormateado || null;
+        const folioNumero = est.folio; // número original
+        return {
+          ...est,
+          folioNumero,
+          folio_formateado: folioFormateado,
+          folio: folioFormateado || est.folio, // para compatibilidad con componentes existentes
+          // nombres / apellidos
+          nombres: est.nombres ?? est.nombre ?? '',
+            apellidos: est.apellidos ?? '',
+          // contacto
+          correoElectronico: est.correoElectronico ?? est.email ?? '',
+          municipioComunidad: est.municipioComunidad ?? est.comunidad1 ?? '',
+          telefonoAlumno: est.telefonoAlumno ?? est.telefono ?? '',
+          nombreTutor: est.nombreTutor ?? est.nombre_tutor ?? '',
+          telefonoTutor: est.telefonoTutor ?? est.tel_tutor ?? '',
+          // académico
+          nivelAcademico: est.nivelAcademico ?? est.academico1 ?? est.estudios ?? '',
+          bachillerato: est.bachillerato ?? est.academico2 ?? est.institucion ?? '',
+          gradoSemestre: est.gradoSemestre ?? est.semestre ?? '',
+          universidadesPostula: est.universidadesPostula ?? est.universidades1 ?? est.universidades2 ?? '',
+          licenciaturaPostula: est.licenciaturaPostula ?? est.orientacion ?? est.universidades1 ?? '',
+          orientacionVocacional: est.orientacionVocacional ?? est.orientacion ?? '',
+          // curso / turno / grupo
+          curso: est.curso ?? '',
+          turno: est.turno ?? est.grupo ?? '',
+          grupo: est.grupo ?? est.turno ?? '',
+          modalidad: est.modalidad ?? est.postulacion ?? '',
+          // pago
+          planCurso: est.planCurso || est.plan || null,
+          pagoCurso: est.pago?.importe != null ? `$${Number(est.pago.importe).toLocaleString('es-MX',{ minimumFractionDigits:2 })}` : null,
+          metodoPago: est.pago?.metodo || null,
+          pagoFechaISO: est.pago?.fecha || null,
+          // estatus derivado si no existe
+          estatus: est.estatus ?? (est.verificacion === 2 ? 'Activo' : 'Pendiente'),
+          fechaRegistro: est.fechaRegistro ?? (est.created_at ? new Date(est.created_at).toISOString().split('T')[0] : ''),
+        };
+      });
       setStudentsData(list);
       return list;
     } catch (err) {
       console.error('Students data error:', err);
       setStudentsData([]);
       throw err;
+    }
+  };
+
+  // Cargar grupos dinámicos por curso (aprobados)
+  const loadCourseGroups = async (curso, status = 'aprobados') => {
+    try {
+      if (!curso) return [];
+      const { data } = await axios.get(`/grupos/${encodeURIComponent(curso)}`, { params: { status } });
+      const inferTipo = (g) => (/^M/i.test(g) ? 'matutino' : /^V/i.test(g) ? 'vespertino' : /^S/i.test(g) ? 'sabatino' : 'otro');
+      return (data || []).map(row => ({
+        id: `${curso}-${row.grupo}`,
+        nombre: row.grupo,
+        tipo: inferTipo(row.grupo),
+        capacidad: row.cantidad_estudiantes,
+        alumnosActuales: row.cantidad_estudiantes
+      }));
+    } catch (err) {
+      console.error('Error loading course groups:', err);
+      return [];
     }
   };
 
@@ -299,6 +395,47 @@ export const AdminProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, []);
 
+  // WebSocket para admins: mismo endpoint, autenticación por cookie token_admin
+  useEffect(() => {
+    let ws; let closedManually = false; let reconnectTimer;
+    async function openSocket(attempt){
+      setWsStatus('connecting');
+      // Reutilizamos helper para construir URL (sin importar Vite)
+      const { getWsNotificationsUrl, waitForBackendHealth } = await import('../utils/ws.js');
+      await waitForBackendHealth(1500).catch(()=>{});
+      const url = getWsNotificationsUrl();
+      try { ws = new WebSocket(url); } catch(err){ scheduleReconnect(attempt); return; }
+      ws.onopen = () => setWsStatus('open');
+      ws.onclose = () => { setWsStatus('closed'); if(!closedManually) scheduleReconnect(attempt+1); };
+      ws.onerror = () => setWsStatus('error');
+      ws.onmessage = (evt) => {
+        try {
+          const data = JSON.parse(evt.data);
+          // Reemitir como evento global para hooks/componentes (event-driven)
+          try { window.dispatchEvent(new CustomEvent('admin-ws-message', { detail: data })); } catch(_e) {}
+          // Eventos relevantes para admin
+          // 1) Nueva subida de comprobante por estudiante -> refrescar badge pendientes
+          if (data.type === 'student_status' && Number(data.payload?.verificacion) === 1) {
+            // No siempre se emite 1 desde el backend actual; si se emite, refrescamos
+            loadDashboardMetrics();
+          }
+          // 2) Evento explícito para admin: new_comprobante
+          if (data.type === 'new_comprobante') {
+            loadDashboardMetrics();
+          }
+        } catch(_e) {}
+      };
+    }
+    function scheduleReconnect(nextAttempt){
+      const backoff = Math.min(30000, 1000 * Math.pow(2, nextAttempt));
+      setWsAttempts(nextAttempt);
+      reconnectTimer = setTimeout(() => openSocket(nextAttempt), backoff);
+    }
+    openSocket(wsAttempts+1);
+    return () => { closedManually = true; try { ws && ws.close(); } catch(_){}; if(reconnectTimer) clearTimeout(reconnectTimer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /**
    * Generate contract for a payment
    */
@@ -383,37 +520,25 @@ export const AdminProvider = ({ children }) => {
   /**
    * Delete/Remove a student
    */
-  const deleteStudent = async (studentId) => {
+  const deleteStudent = async ({ id, folio, motivo } = {}) => {
     try {
-      // TODO: BACKEND - Reemplazar con endpoint real cuando esté disponible
-      // const response = await fetch(`/api/admin/students/${studentId}`, {
-      //   method: 'DELETE',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Error deleting student');
-      // }
-      
-      // return await response.json();
-      
-      // MOCK - Simular eliminación de estudiante
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      console.log(`🗑️ Estudiante ${studentId} eliminado (MOCK)`);
-      
-      return {
-        success: true,
-        message: 'Estudiante eliminado exitosamente',
-        studentId: studentId,
-        timestamp: new Date().toISOString()
-      };
+      let studentId = id;
+      // Resolver id por folio si no se pasó id
+      if (!studentId && folio) {
+        const { data } = await axios.get(`/admin/estudiantes/folio/${encodeURIComponent(folio)}`);
+        studentId = data?.data?.id;
+      }
+      if (!studentId) throw new Error('No se pudo determinar el ID del estudiante');
+
+      await axios.post(`/estudiantes/${studentId}/soft-delete`, {
+        reason: motivo || 'Eliminado por admin'
+      });
+
+      return { success: true };
     } catch (err) {
-      console.error('Error deleting student:', err);
-      throw err;
+      console.error('Delete student error:', err);
+      const msg = err?.response?.data?.message || err?.message || 'Error al eliminar estudiante';
+      return { success: false, message: msg };
     }
   };
 
@@ -681,6 +806,7 @@ export const AdminProvider = ({ children }) => {
     rejectPayment,
     generateContract,
     uploadContract,
+  loadCourseGroups,
     
     // Funciones de reportes
   loadFinancialReports,

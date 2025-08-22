@@ -1,9 +1,10 @@
 // HeaderAdmin.jsx
 import React, { useRef, useEffect, useState } from "react"; 
-import { Link, useLocation } from "react-router-dom"; 
+import { Link, useLocation, useNavigate } from "react-router-dom"; 
 import MQerkLogo from "../../assets/MQerK_logo.png";
 import { Logos } from "../../pages/public/IndexComp.jsx"; 
 import { useAdminContext } from "../../context/AdminContext.jsx";
+import { useAdminNotificationContext } from "../../context/AdminNotificationContext.jsx";
 
 /**
  * Componente de encabezado de administrador con sistema de notificaciones y avatar de perfil
@@ -17,16 +18,10 @@ import { useAdminContext } from "../../context/AdminContext.jsx";
  * - Diseño responsivo para móvil y escritorio
  * - Indicador de estado en línea para administrador
  */
-export function HeaderAdmin({
-  isNotificationsOpen,
-  toggleNotifications,
-  markAllAsRead, 
-  notifications, 
-  unreadCount,   
-  setIsNotificationsOpen 
-}) {
+export function HeaderAdmin() {
   
   const location = useLocation(); // Hook para obtener la ruta actual
+  const navigate = useNavigate(); // Navegación programática para deep-link desde notificaciones
   const { adminProfile } = useAdminContext(); // Obtener perfil de administrador del contexto
   
   // Estado para menú desplegable de perfil
@@ -64,6 +59,16 @@ export function HeaderAdmin({
   // Referencias para detectar clics fuera de los menús desplegables
   const notificationRef = useRef(null);
   const profileRef = useRef(null);
+  const {
+    notifications,
+    unreadNotifications,
+    unreadCount,
+    isNotificationsOpen,
+    setIsNotificationsOpen,
+    toggleNotifications,
+    markAllAsRead,
+  markAsRead,
+  } = useAdminNotificationContext();
 
   /**
    * Efecto para cerrar menús desplegables al hacer clic fuera
@@ -132,7 +137,7 @@ export function HeaderAdmin({
   };
 
   // Filtrar notificaciones no leídas para mostrar en el menú desplegable
-  const displayedNotifications = notifications.filter(notif => !notif.isRead);
+  const displayedNotifications = unreadNotifications;
 
   /**
    * Obtener iniciales del administrador para avatar de respaldo
@@ -267,12 +272,29 @@ export function HeaderAdmin({
                     {displayedNotifications.map((notification) => ( 
                       <li 
                         key={notification.id}
-                        className="px-4 py-3 text-sm text-gray-800 hover:bg-gray-100/50 transition-colors duration-150 border-l-4 border-l-blue-500 bg-blue-50/50"
+                        className="px-0"
                       >
-                        <div className="flex items-start gap-3">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                          <p className="text-gray-800 font-medium">{notification.message}</p>
-                        </div>
+                        <button
+                          onClick={() => {
+                            // Deep-link solo si hay meta con curso/grupo
+                            const meta = notification.meta || {};
+                            if (meta.curso) {
+                              const params = new URLSearchParams();
+                              params.set('curso', String(meta.curso));
+                              if (meta.grupo) params.set('grupo', String(meta.grupo));
+                              navigate(`/administrativo/comprobantes-recibo?${params.toString()}`);
+                              setIsNotificationsOpen(false);
+                            }
+                            // Marcar como leída al hacer click
+                            try { markAsRead(notification.id); } catch(_) {}
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-800 hover:bg-gray-100/50 transition-colors duration-150 border-l-4 border-l-blue-500 bg-blue-50/50"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <p className="text-gray-800 font-medium">{notification.message}</p>
+                          </div>
+                        </button>
                       </li>
                     ))}
                   </ul>

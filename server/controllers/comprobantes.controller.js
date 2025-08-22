@@ -1,5 +1,6 @@
 import * as Comprobantes from "../models/comprobantes.model.js";
 import * as Estudiantes from "../models/estudiantes.model.js";
+import { broadcastStudent, broadcastAdmins } from '../ws.js';
 
 // Crear un nuevo estudiante
 export const crear = async (req, res) => {
@@ -22,10 +23,31 @@ export const crear = async (req, res) => {
       comprobante: url
     };
 
-    const result = await Comprobantes.createComprobante(comprobanteGenerado);
+  const result = await Comprobantes.createComprobante(comprobanteGenerado);
 
     // Actualizar la verificación del estudiante a "enviado"
     await Estudiantes.updateComprobante(id_estudiante, { verificacion: 1 });
+
+    // Obtener datos básicos del estudiante para enriquecer el evento
+    let alumno = null;
+    try { alumno = await Estudiantes.getEstudianteById?.(id_estudiante); } catch(_e) {}
+
+    // Notificar a panel admin en tiempo real que hay un nuevo comprobante pendiente
+    try {
+      broadcastAdmins({
+        type: 'new_comprobante',
+        payload: {
+          id_estudiante,
+          url,
+          curso: alumno?.curso || null,
+          grupo: alumno?.grupo || null,
+          folio: alumno?.folio || null,
+          nombre: alumno?.nombre || null,
+          apellidos: alumno?.apellidos || null,
+          timestamp: Date.now()
+        }
+      });
+    } catch {}
 
     return res.status(201).json({
       message: "Comprobante creado exitosamente",
@@ -78,9 +100,10 @@ export const GetEnableVerificacion = async (req, res) => {
           await Comprobantes.actualizarComprobante(estudiante.id, { importe, metodo });
         }
 
-        const resultAcceso = await Comprobantes.verificarAcceso(estudiante.id);
-
-        res.status(200).json({ mensaje: 'Verificación actualizada correctamente' });
+  const resultAcceso = await Comprobantes.verificarAcceso(estudiante.id);
+  // Aviso en tiempo real al estudiante aprobado (verificacion=2)
+  try { broadcastStudent(estudiante.id, { type:'student_status', payload:{ verificacion:2, aprobado:true, timestamp: Date.now() } }); } catch {}
+  res.status(200).json({ mensaje: 'Verificación actualizada correctamente', verificacion:2 });
 
     } catch (error) {
         console.error("Error al obtener verificación del comprobante:", error);
@@ -110,9 +133,9 @@ export const RejectVerificacion = async (req, res) => {
     }
 
     // Setear verificación = 3 (rechazado) en estudiante
-    await Estudiantes.updateComprobante(estudiante.id, { verificacion: 3 });
-
-    return res.status(200).json({ mensaje: 'Comprobante rechazado correctamente', folio, verificacion: 3, motivo });
+  await Estudiantes.updateComprobante(estudiante.id, { verificacion: 3 });
+  try { broadcastStudent(estudiante.id, { type:'student_status', payload:{ verificacion:3, aprobado:false, motivo, timestamp: Date.now() } }); } catch {}
+  return res.status(200).json({ mensaje: 'Comprobante rechazado correctamente', folio, verificacion: 3, motivo });
   } catch (error) {
     console.error('Error al rechazar comprobante:', error);
     res.status(500).json({ mensaje: 'Error interno del servidor' });

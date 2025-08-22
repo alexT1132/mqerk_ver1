@@ -9,10 +9,10 @@ import { useStudent } from '../../context/StudentContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 // Componentes de páginas
-import Profile_Alumno_comp from './Profile_Alumno_comp.jsx';
+import Profile_Alumno_comp from './Profile_Alumno_Comp.jsx';
 import { Calendar_Alumno_comp } from './Calendar_Alumno_comp.jsx';
 import MisCursos_Alumno_comp from './MisCursos_Alumno_Comp.jsx';
-import MisPagos_Alumno_comp from './MisPagos_Alumno_comp.jsx';
+import MisPagos_Alumno_comp from './MisPagos_Alumno_Comp.jsx';
 import { Configuracion_Alumno_comp } from './Configuracion_Alumno_Comp.jsx';
 import Feedback_Alumno_Comp from './Feedback_Alumno_Comp.jsx';
 import { Asistencia_Alumno_comp } from './Asistencia_Alumno_comp.jsx';
@@ -22,6 +22,7 @@ import CourseDetailDashboard from '../shared/CourseDetailDashboard.jsx';
 import { Actividades_Alumno_comp } from './Actividades_Alumno_comp.jsx';
 import { Simulaciones_Alumno_comp } from './Simulaciones_Alumno_comp.jsx';
 import { CerrarSesion_Alumno_comp } from './CerrarSesion_Alumno_comp.jsx';
+import { AccessGuard } from './AccessGuard.jsx';
 
 import { CourseProvider } from '../../context/CourseContext.jsx';
 
@@ -42,7 +43,7 @@ export function AlumnoDashboardBundle() {
 // BACKEND: Layout con contexto de estudiante
 
 function StudentAwareLayout() {
-  const { isVerified, hasPaid, currentCourse, isLoading } = useStudent();
+  const { isVerified, hasPaid, currentCourse, isLoading, hasContentAccess, refreshOverdueAccess } = useStudent();
   const { alumno } = useAuth();
   const location = useLocation();
   const isCoursesRoute = location.pathname.startsWith('/alumno/cursos');
@@ -61,13 +62,15 @@ function StudentAwareLayout() {
   const shouldShowSidebar = (
     isConfigRoute || (
       !!currentCourse && (
-        (isVerified && hasPaid) || isApproved
+    ((isVerified && hasPaid) || isApproved) && hasContentAccess
       )
     )
   );
 
   // Redirección temprana para evitar parpadeo del dashboard sin curso seleccionado
   const shouldRedirectToCourses = isApproved && !currentCourse && !isCoursesRoute;
+  // Redirección por bloqueo global de acceso
+  const shouldRedirectToWelcome = !hasContentAccess && location.pathname !== '/alumno' && location.pathname !== '/alumno/dashboard' && location.pathname !== '/alumno/';
 
   // BACKEND: El botón de logout se muestra cuando NO hay sidebar
   const showLogoutButton = !shouldShowSidebar;
@@ -99,6 +102,12 @@ function StudentAwareLayout() {
     return () => clearTimeout(timer);
   }, [currentCourse, isVerified, hasPaid]);
 
+  // Recalcular acceso global al montar y cuando cambie alumno
+  useEffect(() => {
+    refreshOverdueAccess();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alumno?.plan, alumno?.plan_type, alumno?.folio, alumno?.id, alumno?.created_at]);
+
   // ✅ FORZAR RE-RENDER cuando cambie currentCourse
   useEffect(() => {
     if (currentCourse) {
@@ -126,6 +135,9 @@ function StudentAwareLayout() {
   if (shouldRedirectToCourses) {
     return <Navigate to="/alumno/cursos" replace />;
   }
+  if (shouldRedirectToWelcome) {
+    return <Navigate to="/alumno" replace />;
+  }
 
   // BACKEND: Renderizado del layout principal
   // - Utiliza componentes de sidebar según el estado del estudiante
@@ -143,11 +155,11 @@ function StudentAwareLayout() {
           <Route path="/course-details" element={<CourseDetailDashboard />} />
           <Route path="/cursos" element={<MisCursos_Alumno_comp />} />
           <Route path="/mi-perfil" element={<Profile_Alumno_comp />} />
-          <Route path="/actividades" element={<Actividades_Alumno_comp />} />
-          <Route path="/simulaciones" element={<Simulaciones_Alumno_comp />} />
-          <Route path="/feedback" element={<Feedback_Alumno_Comp />} />
-          <Route path="/asistencia" element={<Asistencia_Alumno_comp />} />
-          <Route path="/calendario" element={<Calendar_Alumno_comp />} />
+          <Route path="/actividades" element={<AccessGuard><Actividades_Alumno_comp /></AccessGuard>} />
+          <Route path="/simulaciones" element={<AccessGuard><Simulaciones_Alumno_comp /></AccessGuard>} />
+          <Route path="/feedback" element={<AccessGuard><Feedback_Alumno_Comp /></AccessGuard>} />
+          <Route path="/asistencia" element={<AccessGuard><Asistencia_Alumno_comp /></AccessGuard>} />
+          <Route path="/calendario" element={<AccessGuard><Calendar_Alumno_comp /></AccessGuard>} />
           <Route path="/mis-pagos" element={<MisPagos_Alumno_comp />} />
           <Route path="/configuracion" element={<Configuracion_Alumno_comp />} />
           <Route path="/logout" element={<CerrarSesion_Alumno_comp />} />

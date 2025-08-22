@@ -10,13 +10,18 @@ export function Bienvenida() {
 
     const navigate = useNavigate();
 
-    const {datos1} = useAsesor();
+    const { datos1, preregistroId, loadPreRegistro } = useAsesor();
 
     useEffect(() => {
-        if (datos1.length === 0) {
+        // Si no hay datos aún pero existe preregistroId, intentar cargar
+        if(!datos1 && preregistroId){
+            loadPreRegistro();
+        }
+        // Si no hay preregistroId ni datos, ir a preregistro
+        if(!datos1 && !preregistroId){
             navigate('/pre_registro');
         }
-    }, []);
+    }, [datos1, preregistroId]);
 
   return (
     <div>
@@ -24,7 +29,7 @@ export function Bienvenida() {
         <div className="flex justify-center items-center overflow-hidden">
                 {/* <!-- Tarjeta para móviles --> */}
                 <div className="p-8 rounded-3xl md:hidden mb-5">
-                <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">¡Bienvenido(a) {datos1.nombres} {datos1.apellidos} a MQerKAcademy!</h2>
+                <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">¡Bienvenido(a) {datos1 ? `${datos1.nombres} ${datos1.apellidos}` : '...'} a MQerKAcademy!</h2>
                 <p className='text-justify mb-10'>Estamos muy emocionados de contar contigo como parte de nuestro proceso de selección. Tu talento y experiencia son clave para seguir construyendo una academia disruptiva y que prepare a los estudiantes para enfrentar los retos del futuro.</p>
                     <div className='border-4 border-[#3818c3]'>
                         <p className='text-justify mt-5 ml-3 mr-3 mb-6'>Una vez culminado la entrevista en Recursos Humanos, ahora necesitamos que completes algunos pasos importantes:</p>
@@ -44,7 +49,7 @@ export function Bienvenida() {
               
                 {/* <!-- Tarjeta para computadoras --> */}
                 <div className="hidden md:flex p-8 d-flex w-330 flex-col">
-                    <h2 className="text-3xl font-semibold text-center text-gray-900 mb-10">¡Bienvenido(a) {datos1.nombres} {datos1.apellidos} a MQerKAcademy!</h2>
+                    <h2 className="text-3xl font-semibold text-center text-gray-900 mb-10">¡Bienvenido(a) {datos1 ? `${datos1.nombres} ${datos1.apellidos}` : '...'} a MQerKAcademy!</h2>
                     <p className='text-center mb-10'>Estamos muy emocionados de contar contigo como parte de nuestro proceso de selección. Tu talento y experiencia son clave para seguir construyendo una academia disruptiva y que prepare a los estudiantes para enfrentar los retos del futuro.</p>
                     <div className='border-4 border-[#3818c3]'>
                         <p className='text-center mt-5'>Una vez culminado la entrevista en Recursos Humanos, ahora necesitamos que completes algunos pasos importantes:</p>

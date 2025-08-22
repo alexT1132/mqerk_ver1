@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlumnoDashboardMetrics } from './Metrics_dash_alumnos_comp.jsx';
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useComprobante } from "../../context/ComprobantesContext.jsx";
+import { resolvePlanType, getActivationDate, generatePaymentSchedule } from '../../utils/payments.js';
 
 // BACKEND: Frases motivacionales que se muestran de forma rotativa diariamente
 // Estas frases se pueden personalizar desde el backend o mantener como están
@@ -151,6 +152,27 @@ const InicioAlumnoDashboard = ({
   const { user, alumno: DatosAlumno } = useAuth();
 
     const { crearComprobante } = useComprobante();
+
+  // --- REGLAS DE BLOQUEO POR PAGO VENCIDO (tolerancia 3 días para mensual/start) ---
+  // Detecta si hay pagos vencidos según el plan y la fecha de activación, para re-bloquear acceso
+  const [bloqueoPorPago, setBloqueoPorPago] = useState(false);
+  const [planDetectado, setPlanDetectado] = useState('mensual');
+
+  // Calcular y mantener el bloqueo por pago
+  useEffect(() => {
+    try {
+  const planType = resolvePlanType(DatosAlumno?.plan || DatosAlumno?.plan_type);
+  setPlanDetectado(planType);
+  const activationDate = getActivationDate(DatosAlumno);
+  const schedule = generatePaymentSchedule({ startDate: activationDate, planType, now: new Date() });
+      const anyOverdue = schedule.some(p => p.isOverdue);
+      setBloqueoPorPago(anyOverdue);
+    } catch (e) {
+      console.warn('No se pudo calcular bloqueo por pago:', e);
+      setBloqueoPorPago(false);
+    }
+    // Recalcular al cambiar alumno
+  }, [DatosAlumno?.plan, DatosAlumno?.plan_type, DatosAlumno?.folio, DatosAlumno?.id, DatosAlumno?.created_at]);
   
   // BACKEND: Combinar datos de props con datos del contexto
   // Priorizar props si existen, sino usar datos del contexto
@@ -311,16 +333,26 @@ const InicioAlumnoDashboard = ({
       try {
         await crearComprobante(datosCompletos);
         // Marcar localmente que está en revisión para reflejarlo inmediatamente en UI
-        // Si disponemos de DatosAlumno, emulamos el cambio de verificación a 1
-        if (DatosAlumno) {
-          // Evitar mutaciones no reactivas; usar estado local
-          DatosAlumno.verificacion = 1;
+        // Si es verificación inicial (nunca aprobado), setear a 1; si es bloqueo por pago, no tocar verificación
+        if ((verifLocal ?? estadoVerificacion) < 2) {
+          if (DatosAlumno) {
+            // Evitar mutaciones no reactivas; usar estado local
+            DatosAlumno.verificacion = 1;
+          }
+          setVerifLocal(1);
         }
-        setVerifLocal(1);
         // Forzar re-render del estado verificación
         setShowUploadProgress(false);
         setShowDestello(true);
         setTimeout(() => setShowDestello(false), 2000);
+        // Mantener bloqueo hasta verificación admin si el motivo era pago vencido
+        if (bloqueoPorPago) {
+          try {
+            const activationDate = getActivationDate(DatosAlumno);
+            const schedule = generatePaymentSchedule({ startDate: activationDate, planType: planDetectado, now: new Date() });
+            setBloqueoPorPago(schedule.some(p => p.isOverdue));
+          } catch {}
+        }
       } catch (err) {
         console.error('Error subiendo comprobante', err);
         setShowUploadProgress(false);
@@ -333,7 +365,7 @@ const InicioAlumnoDashboard = ({
   // SEGURIDAD: Se muestra cuando el estudiante no ha pagado O no está verificado
   // IMPORTANTE: No depende de isFirstAccess para evitar bypasses de seguridad
   // Bloquear si no ha subido o no aprobado; cuando verificación=0 mostrar invitación a subir
-  const mostrarBloqueo = (verifLocal ?? estadoVerificacion) < 2;
+  const mostrarBloqueo = ((verifLocal ?? estadoVerificacion) < 2) || bloqueoPorPago;
   
   const tieneNumCursoValido = currentCourse && 
                             currentCourse.title && 
@@ -491,7 +523,7 @@ const InicioAlumnoDashboard = ({
                         {/* Contenido cuando está en modo bloqueo (pago) */}
                         {mostrarBloqueo && (
                           <>
-                            {estadoVerificacion === 0 ? (
+                            {(estadoVerificacion === 0 && !bloqueoPorPago) ? (
                               <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-3 lg:gap-4">
                                 <div className="bg-yellow-400 rounded-full p-2 sm:p-3 md:p-2 lg:p-3 animate-pulse group-hover:animate-bounce">
                                   <AlertTriangle size={24} className="sm:w-8 sm:h-8 md:w-6 md:h-6 lg:w-8 lg:h-8 text-yellow-900 animate-pulse" style={{
@@ -506,6 +538,18 @@ const InicioAlumnoDashboard = ({
                                     📋 Sube tu comprobante de pago para continuar
                                   </p>
                                 </div>
+                              </div>
+                            ) : bloqueoPorPago ? (
+                              <div className="bg-gradient-to-r from-red-500/20 via-rose-500/20 to-orange-500/20 backdrop-blur-lg rounded-2xl p-6 border border-red-300/30 shadow-xl animate-fadeIn">
+                                <div className="flex items-center justify-center gap-3 mb-2">
+                                  <div className="bg-red-400 rounded-full p-2 animate-pulse">
+                                    <AlertTriangle size={28} className="text-white" />
+                                  </div>
+                                  <span className="font-extrabold text-xl text-red-100">Acceso bloqueado por pago vencido</span>
+                                </div>
+                                <p className="text-red-100 font-semibold text-base sm:text-lg leading-relaxed">
+                                  Tu pago se encuentra vencido. Por favor realiza tu pago y sube el comprobante para reactivar el acceso.
+                                </p>
                               </div>
                             ) : (
                               <div className="bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-teal-500/20 backdrop-blur-lg rounded-2xl p-6 border border-green-300/30 shadow-xl animate-fadeIn">
@@ -561,10 +605,10 @@ const InicioAlumnoDashboard = ({
                     </div>
 
                     {/* Botones solo cuando está en modo bloqueo */}
-                    {mostrarBloqueo && (
+          {mostrarBloqueo && (
                       <>
                         {/* Botón de subir comprobante mejorado */}
-                        {DatosAlumno?.verificacion === 0 && (
+            {(DatosAlumno?.verificacion === 0 || bloqueoPorPago) && (
                           <div className="group mx-auto">
                             {isMobile ? (
                               <div className="w-full flex justify-center">
@@ -783,15 +827,23 @@ const InicioAlumnoDashboard = ({
                       <div className="text-xs sm:text-sm space-y-0.5">
                         <div>
                           <span className="text-green-600">Dir:</span> 
-                          <div className="font-semibold">Calle Juarez entre Av. Independencia y 5 de mayo C.P. 68300. En altos de COMPUMAX, Tuxtepec, Oaxaca</div>
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('Calle Benito Juárez #25, Col. Centro, entre Av. Independencia y 20 de Noviembre, C.P. 68300. En altos de COMPUMAX, Tuxtepec, Oaxaca')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-semibold text-blue-600 hover:underline break-words"
+                            title="Abrir en Google Maps"
+                          >
+                            Calle Benito Juárez #25, Col. Centro, entre Av. Independencia y 20 de Noviembre, C.P. 68300. En altos de COMPUMAX, Tuxtepec, Oaxaca
+                          </a>
                         </div>
                         <div>
                           <span className="text-green-600">Horario:</span> 
-                          <span className="font-semibold"> L-V 9-18h</span>
+                          <span className="font-semibold"> Lunes a Viernes, 9:00 a 17:00 h</span>
                         </div>
                         <div>
                           <span className="text-green-600">Tel:</span> 
-                          <span className="font-semibold"> 287-151-5760</span>
+                          <span className="font-semibold"> 287-181-1231</span>
                         </div>
                       </div>
                       
