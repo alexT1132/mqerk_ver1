@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react'
+import {useState, useEffect} from 'react'
 import Navbar from '../../../components/mqerk/Navbar'
 import Uno from "../../../assets/mqerk/Fotos Estudiantes/talleres.png";
 import Dos from "../../../assets/mqerk/Fotos Estudiantes/talleres (2).png";
@@ -14,6 +14,7 @@ import Quinto from "../../../assets/mqerk/veranotx/05.png";
 import Sexto from "../../../assets/mqerk/veranotx/06.png";
 import Septimo from "../../../assets/mqerk/veranotx/07.png";
 import { Link } from "react-router-dom";
+import Footer from "../../footer";
 
 function Talleres() {
 
@@ -181,7 +182,6 @@ function Talleres() {
 
         </div>
 
-
       </div>
 
       {/* MOVILE */}
@@ -311,7 +311,7 @@ function Talleres() {
         </div>
 
       </div>
-
+      <Footer />
     </div>
   )
 }

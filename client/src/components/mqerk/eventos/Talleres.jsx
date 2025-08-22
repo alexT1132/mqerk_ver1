@@ -11,6 +11,7 @@ import Ocho from "../../../assets/mqerk/talleres/8.png";
 import Nueve from "../../../assets/mqerk/talleres/9.png";
 import Diez from "../../../assets/mqerk/talleres/10.png";
 import { Link } from "react-router-dom";
+import Footer from "../../footer";
 
 function Talleres() {
   return (
@@ -206,7 +207,6 @@ function Talleres() {
           </div>
 
         </div>
-
       </div>
 
       {/* MOVILE */}
@@ -216,7 +216,7 @@ function Talleres() {
 
         <div className='grid grid-cols-1 px-10 gap-10 mt-8'>
 
-          <Link to='/mqerk/talleres/ia_para_la_enseñanza' className='flex flex-col rounded-2xl shadow-2xl py-2'>
+          <Link to='/talleres/ia_para_la_enseñanza' className='flex flex-col rounded-2xl shadow-2xl py-2'>
             <div className='flex justify-center mb-6'>
               <h1 className='font-bold text-xl text-[#401454]'>IA para la enseñanza en el aula</h1>
             </div>
@@ -233,7 +233,7 @@ function Talleres() {
             </div>
           </Link>
 
-          <Link to='/mqerk/talleres/ia_en_la_salud' className='flex flex-col rounded-2xl shadow-2xl py-2'>
+          <Link to='/talleres/ia_en_la_salud' className='flex flex-col rounded-2xl shadow-2xl py-2'>
             <div className="flex justify-center mb-6">
               <h1 className='font-bold text-xl text-[#401454] text-center'>IA en la salud</h1>
             </div>
@@ -248,7 +248,7 @@ function Talleres() {
             </div>
           </Link>
 
-          <Link to='/mqerk/talleres/ia_en_la_gestion_emp' className='flex flex-col rounded-2xl shadow-2xl py-2'>
+          <Link to='/talleres/ia_en_la_gestion_emp' className='flex flex-col rounded-2xl shadow-2xl py-2'>
             <h1 className='font-bold text-xl text-[#401454] text-center mb-6'>IA en la gestión  empresarial</h1>
             <img src={Tres} className='px-5' />
             <div>
@@ -261,7 +261,7 @@ function Talleres() {
             </div>
           </Link>
 
-          <Link to='/mqerk/talleres/tecnomate' className='flex flex-col rounded-2xl shadow-2xl py-2'>
+          <Link to='/talleres/tecnomate' className='flex flex-col rounded-2xl shadow-2xl py-2'>
             <div className="flex justify-center mb-6">
               <h1 className='font-bold text-xl text-[#401454] text-center'>TecnoMate</h1>
             </div>
@@ -282,7 +282,7 @@ function Talleres() {
 
         <div className='grid grid-cols-1 px-10 gap-10 mt-8'>
 
-          <Link to='/mqerk/talleres/orientacion_vocacional_y_psicoeducativa' className='flex flex-col rounded-2xl shadow-2xl py-2'>
+          <Link to='/talleres/orientacion_vocacional_y_psicoeducativa' className='flex flex-col rounded-2xl shadow-2xl py-2'>
             <div className='flex justify-center mb-6'>
               <h1 className='font-bold text-center text-xl text-[#401454]'>Orientación vocacional y psicoeducativa</h1>
             </div>
@@ -300,7 +300,7 @@ function Talleres() {
             </div>
           </Link>
 
-          <Link to='/mqerk/talleres/orientacion_vocacional' className='flex flex-col rounded-2xl shadow-2xl py-2'>
+          <Link to='/talleres/orientacion_vocacional' className='flex flex-col rounded-2xl shadow-2xl py-2'>
             <div className="flex justify-center mb-6">
               <h1 className='font-bold text-xl text-[#401454] text-center'>Orientación vocacional</h1>
             </div>
@@ -316,7 +316,7 @@ function Talleres() {
             </div>
           </Link>
 
-          <Link to='/mqerk/talleres/apoyo_a_la_ciencia_y_la_tecnologia' className='flex flex-col rounded-2xl shadow-2xl py-2'>
+          <Link to='/talleres/apoyo_a_la_ciencia_y_la_tecnologia' className='flex flex-col rounded-2xl shadow-2xl py-2'>
             <h1 className='font-bold text-xl text-[#401454] text-center mb-6'>Apoyo a la ciencia y tecnologia</h1>
             <img src={Siete} className='px-5' />
             <div>
@@ -335,7 +335,7 @@ function Talleres() {
 
         <div className='grid grid-cols-1 px-10 gap-10 mt-8'>
 
-          <Link to='/mqerk/talleres/transformar_la_educacion' className='flex flex-col rounded-2xl shadow-2xl py-2'>
+          <Link to='/talleres/transformar_la_educacion' className='flex flex-col rounded-2xl shadow-2xl py-2'>
             <div className="flex justify-center mb-6">
               <h1 className='font-bold text-xl text-[#401454] text-center'>Cambiar el mundo, transformar la educacion</h1>
             </div>
@@ -351,7 +351,7 @@ function Talleres() {
             </div>
           </Link>
 
-          <Link to='/mqerk/talleres/educacion_disruptiva' className='flex flex-col rounded-2xl shadow-2xl py-2'>
+          <Link to='/talleres/educacion_disruptiva' className='flex flex-col rounded-2xl shadow-2xl py-2'>
             <h1 className='font-bold text-xl text-[#401454] text-center mb-6'>Educacion disruptiva, transformando mentes</h1>
             <img src={Nueve} className='px-3' />
             <div>
@@ -370,7 +370,7 @@ function Talleres() {
 
         <div className='grid grid-cols-1 px-10 gap-10 mt-8 mb-10'>
 
-          <Link to='/mqerk/talleres/tecnologia_artificial' className='flex flex-col rounded-2xl shadow-2xl py-2'>
+          <Link to='/talleres/tecnologia_artificial' className='flex flex-col rounded-2xl shadow-2xl py-2'>
             <div className="flex justify-center mb-6">
               <h1 className='font-bold text-xl text-[#401454] text-center'>Tecnología Artificial Aplicada en la Educación</h1>
             </div>
@@ -389,7 +389,7 @@ function Talleres() {
         </div>
 
       </div>
-
+      <Footer />
     </div>
   )
 }

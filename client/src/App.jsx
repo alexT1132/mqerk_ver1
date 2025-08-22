@@ -51,6 +51,10 @@ import Profesiografica from "./components/mqerk/exporientas/Profesiografica.jsx"
 import ExporientaEducativa from "./components/mqerk/exporientas/ExporientaEducativa.jsx";
 import { AdminDashboardBundle } from './components/admin/AdminDashboardBundle.jsx';
 import SetupAdmin from './components/admin/SetupAdmin.jsx';
+import Terminos from './pages/web/T&C.jsx'
+import Politicas from './pages/web/Politicas.jsx'
+import AdministradorGeneral from "./pages/AdminGeneral/PanelAdmin.jsx";
+import DashboardAdminGeneral from "./pages/AdminGeneral/Dashboard.jsx";
 
 export default function App(){
     return(
@@ -69,6 +73,8 @@ export default function App(){
                     <Route path='/index' element={<Index />} />
                     <Route path='/blog' element={<Blog />} />
                     <Route path='/acerca_de' element={<About />} />
+                    <Route path='/terminos_y_condiciones' element={<Terminos />} />
+                    <Route path='/politicas_de_privacidad' element={<Politicas />} />
                     <Route path='/entrenamiento_examen_admision_universidad' element={<Eeau />} />
                     <Route path='/entrenamiento_examen_admision_preparatoria' element={<Eeap />} />
 
@@ -83,16 +89,16 @@ export default function App(){
                     <Route path="/bootcamps/ecat" element={<Ecat />} />
 
                     {/* MQERK Talleres */}
-                    <Route path="/mqerk/talleres/ia_para_la_enseñanza" element={<IaParaLaEnseñanza />} />
-                    <Route path="/mqerk/talleres/ia_en_la_salud" element={<IaEnLaSalud />} />
-                    <Route path="/mqerk/talleres/ia_en_la_gestion_emp" element={<IaEnLaGestionEmp />} />
-                    <Route path="/mqerk/talleres/tecnomate" element={<Tecnomate />} />
-                    <Route path="/mqerk/talleres/orientacion_vocacional_y_psicoeducativa" element={<OrientacionVocacional />} />
-                    <Route path="/mqerk/talleres/orientacion_vocacional" element={<OrientacionVocacionalDos />} />
-                    <Route path="/mqerk/talleres/apoyo_a_la_ciencia_y_la_tecnologia" element={<ApoyoCienciayTecno />} />
-                    <Route path="/mqerk/talleres/transformar_la_educacion" element={<TransformarLaEducacion />} />
-                    <Route path="/mqerk/talleres/educacion_disruptiva" element={<EducacionDisruptiva />} />
-                    <Route path="/mqerk/talleres/tecnologia_artificial" element={<TecnologiaArtificial />} />
+                    <Route path="/talleres/ia_para_la_enseñanza" element={<IaParaLaEnseñanza />} />
+                    <Route path="/talleres/ia_en_la_salud" element={<IaEnLaSalud />} />
+                    <Route path="/talleres/ia_en_la_gestion_emp" element={<IaEnLaGestionEmp />} />
+                    <Route path="/talleres/tecnomate" element={<Tecnomate />} />
+                    <Route path="/talleres/orientacion_vocacional_y_psicoeducativa" element={<OrientacionVocacional />} />
+                    <Route path="/talleres/orientacion_vocacional" element={<OrientacionVocacionalDos />} />
+                    <Route path="/talleres/apoyo_a_la_ciencia_y_la_tecnologia" element={<ApoyoCienciayTecno />} />
+                    <Route path="/talleres/transformar_la_educacion" element={<TransformarLaEducacion />} />
+                    <Route path="/talleres/educacion_disruptiva" element={<EducacionDisruptiva />} />
+                    <Route path="/talleres/tecnologia_artificial" element={<TecnologiaArtificial />} />
 
                     {/* MQERK Exporientas */}
                     <Route path="/mqerk/exporientas/feria_profesiografica" element={<Profesiografica />} />
@@ -142,6 +148,9 @@ export default function App(){
 
                       <Route path="/administrativo/*" element={<AdminDashboardBundle />} />
 
+                      {/* Administrador general */}
+                      <Route path="/administrador" element={<AdministradorGeneral />} />
+                      <Route path="/administrador_dashboard" element={<DashboardAdminGeneral />} />
                     </Route>
 
                   </Routes>

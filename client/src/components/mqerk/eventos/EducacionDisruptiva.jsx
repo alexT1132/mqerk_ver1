@@ -13,6 +13,7 @@ import Septimo from "../../../assets/mqerk/veranotx/07.png";
 import { Link } from "react-router-dom";
 import Ocho from "../../../assets/mqerk/talleres/8.png";
 import Nueve from "../../../assets/mqerk/talleres/9.png";
+import Footer from "../../footer";
 
 function Talleres() {
 
@@ -152,7 +153,6 @@ function Talleres() {
                   </Link>
         
                 </div>
-
       </div>
 
       {/* MOVILE */}
@@ -255,7 +255,7 @@ function Talleres() {
                 </div>
 
       </div>
-
+            <Footer />
     </div>
   )
 }

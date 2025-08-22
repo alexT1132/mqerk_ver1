@@ -3,7 +3,7 @@ import Navbar from '../../../components/mqerk/Navbar'
 import Uno from "../../../assets/mqerk/exporientas/1.png";
 import Dos from "../../../assets/mqerk/exporientas/2.png";
 import { Link } from "react-router-dom";
-
+import Footer from "../../footer";
 
 function Talleres() {
   return (
@@ -69,7 +69,6 @@ function Talleres() {
           </div>
 
         </div>
-
       </div>
 
       {/* MOVILE */}
@@ -118,6 +117,7 @@ function Talleres() {
         </div>
 
       </div>
+              <Footer />
     </div>
   )
 }

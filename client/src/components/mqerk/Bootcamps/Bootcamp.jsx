@@ -3,6 +3,7 @@ import Navbar from '../../../components/mqerk/Navbar'
 import Uno from "../../../assets/mqerk/bootcamp/1.png";
 import Dos from "../../../assets/mqerk/bootcamp/2.png";
 import { Link } from "react-router-dom";
+import Footer from "../../footer";
 
 function Talleres() {
   return (
@@ -53,18 +54,17 @@ function Talleres() {
           </div>
 
         </div>
-
       </div>
 
       {/* MOVILE */}
       <div className='block md:hidden'>
-        <h1 className='mt-25 text-center font-bold text-[#401454] text-4xl'>BOOTCAMP</h1>
+        <h1 className='mt-18 text-center font-bold text-[#401454] text-4xl'>BOOTCAMP</h1>
 
         <h1 className='mt-10 text-center text-[#401454] text-4xl font-bold'>2024</h1>
 
         <div className='grid grid-cols-1 px-10 gap-10 mt-8'>
 
-          <Link to='/mqerk/bootcamps/veranoTX' className='flex flex-col rounded-2xl shadow-2xl py-2'>
+          <Link to='/bootcamps/veranoTX' className='flex flex-col rounded-2xl shadow-2xl py-2'>
             <div className="flex justify-center mb-6 px-5">
               <h1 className='font-bold text-xl text-[#401454] text-center'>Verano misión TX 2024 </h1>
             </div>
@@ -79,7 +79,7 @@ function Talleres() {
             </div>
           </Link>
 
-          <Link to='/mqerk/bootcamps/ecat' className='flex flex-col rounded-2xl shadow-2xl py-2'>
+          <Link to='/bootcamps/ecat' className='flex flex-col rounded-2xl shadow-2xl py-2'>
             <h1 className='font-bold text-xl text-[#401454] text-center mb-6'>ECAT 2024</h1>
             <img src={Dos} className='px-3 h-40' />
             <div>
@@ -99,6 +99,8 @@ function Talleres() {
         </div>
       </div>
 
+      <Footer />
+    
     </div>
   )
 }

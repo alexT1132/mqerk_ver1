@@ -8,7 +8,6 @@ import { FaRegCircleUser } from "react-icons/fa6";
 const Navbar = () => {
 
   const [isOpen, setIsOpen] = useState(false);
-  const [submenu, setSubmenu] = useState(false);
   const [submenu2, setSubmenu2] = useState(false);
 
   const [movil, setMovil] = useState(false);
@@ -42,7 +41,7 @@ const Navbar = () => {
           <div className="flex space-x-4 justify-center items-center gap-6 mqerk-dis" style={{color: '#401454'}}>
               <Link onClick={scrollToInicio} to='/' className="text-lg text-white p-2 rounded-2xl ">Inicio</Link>
               <Link to='/acerca_de' className="text-lg text-white p-2 rounded-2xl ">Acerca de</Link>
-              <Link onClick={scrollToCursos} className="text-lg text-white gap-1 p-2 flex justify-center items-center rounded-2xl">
+              <Link to='/' onClick={scrollToCursos} className="text-lg text-white gap-1 p-2 flex justify-center items-center rounded-2xl">
                 Cursos
               </Link>
 
@@ -113,160 +112,8 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Tablet */}
-      <div className="hidden sm:block md:hidden">
-      <div className="flex justify-between items-center">
-        <Link to='/'>
-          <div className='flex gap-1 items-center justify-center'>
-            <img className='w-13 h-10' src={Logo} />
-          </div>
-        </Link>
-        <div className="flex space-x-3 justify-center items-center gap-6">
-            <button onClick={() => setIsOpen(!isOpen)} className='text-white font-bold w-13 h-10 rounded-lg flex justify-center items-center'>
-              <TiThMenu className='text-3xl' style={{color: '#ffffff'}}/>
-            </button>
-        </div>
-
-
-       {/* Panel lateral derecho */}
-      <div
-        className={`fixed top-0 right-0 h-full w-46 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-40 ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <div className="p-4">
-          <div className="flex gap-10 items-center mb-4">
-          <button
-              onClick={() => setIsOpen(false)}
-              className="text-2xl" style={{ color: '#401454' }}
-            >
-              <IoMdArrowRoundBack />
-            </button>
-            <h2 className="text-lg font-semibold" style={{ color: '#401454' }}>Menu</h2>
-          </div>
-          <div>
-            <ul className="space-y-4">
-              <Link to='http://192.168.0.18:5000/login'>
-                <button className='bg-[#3c24ba] text-white rounded-lg w-full font-bold h-8'>Iniciar sesión</button>
-              </Link>
-              <hr className='mt-3' />
-              <li className="text-lg font-semibold py-2"><Link style={{ color: '#401454' }}>Acerca de</Link></li>
-
-              <Link tabIndex={0} onBlur={() => setMovil(false)} onClick={() => setMovil(!movil)} className="font-bold py-2 gap-2 flex rounded-2xl" style={{ color: '#401454' }}>
-              Cursos
-              <svg
-                className={`w-4 h-4 mt-[5px] transition-transform ${
-                  movil ? "rotate-180" : "rotate-0"
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-              </Link>
-
-              {movil && (
-              <div className="relative w-40 z-10">
-                <a
-                href="#"
-                className="block py-2 text-gray-700"
-                >
-                  Reto Secundaria
-                </a>
-                <a
-                href="#"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Reto Preparatoria
-                </a>
-                <a
-                href="#"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Reto Universitario
-                </a>
-                <a
-                href="#"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Profesional
-                </a>
-                </div>
-              )}
-
-              <Link tabIndex={0} onBlur={() => setMovil2(false)} onClick={() => setMovil2(!movil2)} className="font-bold py-2 gap-2 flex rounded-2xl" style={{ color: '#401454' }}>
-              Eventos
-              <svg
-                className={`w-4 h-4 mt-[5px] transition-transform ${
-                  movil2 ? "rotate-180" : "rotate-0"
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-              </Link>
-
-              {movil2 && (
-              <div className="relative w-40 z-10">
-                <Link
-                to="/bootcamps"
-                className="block py-2 text-gray-700"
-                >
-                  Bootcamp
-                </Link>
-                <Link
-                to="/talleres"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Talleres
-                </Link>
-                <Link
-                to="/exporientas"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Exporientes
-                </Link>
-                <Link
-                to="https://open.spotify.com/user/mvn8ly2def6rlqnbgrck8p85h?si=possNo4YSyqJ8ADW34LShw"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Podcast
-                </Link>
-                <Link
-                to="/online"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Online
-                </Link>
-                </div>
-              )}
-
-              <Link to='/blog' tabIndex={0} onBlur={() => setMovil3(false)} onClick={() => setMovil3(!movil3)} className="font-bold py-2 gap-2 flex rounded-2xl" style={{ color: '#401454' }}>
-                Blog
-              </Link>
-              
-            </ul>
-          </div>
-        </div>
-      </div>
-        </div>
-      </div>
-
       {/* Mobile Navbar */}
-      <div className="block sm:hidden">
+      <div className="block md:hidden">
         <div className="flex justify-between items-center">
         <Link to='/'>
           <div className='flex gap-1 items-center justify-center'>
@@ -302,57 +149,13 @@ const Navbar = () => {
                 <button className='bg-[#3c24ba] text-white rounded-lg w-full font-bold h-8'>Iniciar sesión</button>
               </Link>
               <hr className='mt-3' />
-              <li className="text-lg font-semibold py-2"><Link style={{ color: '#401454' }}>Acerca de</Link></li>
+              <li className="text-lg font-semibold py-2"><Link to='/acerca_de' style={{ color: '#401454' }}>Acerca de</Link></li>
 
-              <Link tabIndex={0} onBlur={() => setMovil(false)} onClick={() => setMovil(!movil)} className="font-bold py-2 gap-2 flex rounded-2xl" style={{ color: '#401454' }}>
-              Cursos
-              <svg
-                className={`w-4 h-4 mt-[5px] transition-transform ${
-                  movil ? "rotate-180" : "rotate-0"
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              <Link to='/' state={{ ejecutarFuncion: true }} className="font-bold py-2 gap-2 flex rounded-2xl" style={{ color: '#401454' }}>
+                Cursos
               </Link>
 
-              {movil && (
-              <div className="relative w-40 z-10">
-                <a
-                href="#"
-                className="block py-2 text-gray-700"
-                >
-                  Reto Secundaria
-                </a>
-                <a
-                href="#"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Reto Preparatoria
-                </a>
-                <a
-                href="#"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Reto Universitario
-                </a>
-                <a
-                href="#"
-                className="block py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Profesional
-                </a>
-                </div>
-              )}
-
-              <Link tabIndex={0} onBlur={() => setMovil2(false)} onClick={() => setMovil2(!movil2)} className="font-bold py-2 gap-2 flex rounded-2xl" style={{ color: '#401454' }}>
+              <Link onClick={() => setMovil2(!movil2)} className="font-bold py-2 gap-2 flex rounded-2xl" style={{ color: '#401454' }}>
               Eventos
               <svg
                 className={`w-4 h-4 mt-[5px] transition-transform ${

@@ -10,6 +10,7 @@ import Ocho from "../../../assets/mqerk/online/8.png";
 import Nueve from "../../../assets/mqerk/online/9.png";
 import Diez from "../../../assets/mqerk/online/10.png";
 import { Link } from 'react-router-dom'
+import Footer from "../../footer";
 
 function Talleres() {
   return (
@@ -229,7 +230,6 @@ function Talleres() {
                   </Link>
         
                 </div>        
-
       </div>
 
       {/* MOVILE */}
@@ -419,6 +419,7 @@ function Talleres() {
         
               </div> 
       </div>
+        <Footer />
     </div>
   )
 }

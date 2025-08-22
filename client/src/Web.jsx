@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import Logo from "./assets/mqerk/mqerk.png";
+import { Link, useLocation } from "react-router-dom";
+import Footer from "./components/footer";
 import Navbar from "./components/mqerk/Navbar";
 import Video from "./assets/mqerk/video.mp4";
 import Uno from "./assets/mqerk/1.png";
@@ -19,10 +19,7 @@ import Siete7 from "./assets/7.png";
 import Ocho8 from "./assets/8.png";
 import { FaTrophy } from "react-icons/fa";
 import { ImUsers } from "react-icons/im";
-import { FaFacebook } from "react-icons/fa";
-import { FaInstagram } from "react-icons/fa";
-import { FaYoutube } from "react-icons/fa";
-import { AiFillTikTok } from "react-icons/ai";
+
 import { FaUsers } from "react-icons/fa6";
 import { LiaChalkboardTeacherSolid } from "react-icons/lia";
 import { CgSandClock } from "react-icons/cg";
@@ -196,6 +193,8 @@ function Web() {
       Foto8
     ];
 
+    const location = useLocation();
+
     const [currentIndex, setCurrentIndex] = useState(0);
     const [forward, setForward] = useState(true);
 
@@ -230,6 +229,12 @@ function Web() {
       }
     };
 
+    useEffect(() => {
+    if (location.state?.ejecutarFuncion) {
+      scrollToCursos();
+    }
+  }, [location.state]);
+
   return (
     <div className="min-h-screen flex flex-col" id="inicio" >
         <Navbar />
@@ -252,11 +257,11 @@ function Web() {
                     <h1 className="text-white text-md font-bold mt-5">igual mentes que transforman el mundo.</h1>
                     <h1 className="text-white text-xl font-bold mt-5" style={{color: '#fff50c'}}>¡Da el primer paso hacia tu</h1>
                     <h1 className="text-white text-xl font-bold" style={{color: '#fff50c'}}>éxito académico!</h1>
-                    <button className='bg-[#3c24ba] font-bold text-lg text-white mt-6 px-6 py-3 rounded-4xl'>¡Regístrate aquí!</button>
+                    <button onClick={scrollToCursos} className='bg-[#3c24ba] font-bold text-lg text-white mt-6 px-6 py-3 rounded-4xl'>¡Regístrate aquí!</button>
                 </div>
             </div>
 
-            <div className='text-center mt-10 text-2xl font-bold mb-6' style={{color: '#f4138a'}}>Nuestros cursos</div>
+            <div className='text-center mt-10 text-2xl font-bold mb-6' id="cursos" style={{color: '#f4138a'}}>Nuestros cursos</div>
             <hr className='mx-8 text-[#3c24ba] border-1' />
 
             <div className='text-center mt-6 text-lg px-6 font-bold' style={{color: '#3c24ba'}}>Asesores Especializados en la Enseñanza de las Ciencias y Tecnología</div>
@@ -577,31 +582,6 @@ function Web() {
               </div>
               </div>
           </div>
-
-          <div className='flex flex-row p-3 gap-5'>
-                      <div className='w-[30%]'>
-                        <p className='font-bold text-md mt-10' style={{color: '#483dc7'}}>Redes sociales</p>
-                        <p className='text-[10px] ml-1' style={{color: '#483dc7'}}>@MQerKAcademy</p>
-                        <div className='flex flex-row gap-2 '>
-                          <FaFacebook className='w-15 h-15 ' style={{color: '#483dc7'}}/>
-                          <FaInstagram className='w-15 h-15 ' style={{color: '#483dc7'}}/>
-                          <FaYoutube className='w-15 h-15 ' style={{color: '#483dc7'}}/>
-                          <AiFillTikTok className='w-15 h-15 ' style={{color: '#483dc7'}}/>
-                        </div>
-                      </div>
-                      <div className='mt-15  gap-4 w-30' style={{color: '#483dc7'}}>
-                        <p className='text-[10px] text-center'>Términos y condiciones</p>
-                        <hr />
-                        <p className='text-[10px] text-center'>Políticas de privacidad</p>
-                      </div>
-                      <div className='w-[30%]'>
-                        <div className='flex justify-center items-center mt-13'>
-                          <img src={Logo} className='w-10 h-7' />
-                        </div>
-                        <p className='text-[10px] mt-3' style={{color: '#483dc7'}}>Copyright © MQerKAcademy 2025</p>
-                      </div>
-                    </div>
-
         </div>
 
         {/* desktop */}
@@ -957,40 +937,8 @@ function Web() {
               <p className='text-white'>English Teacher</p>
             </div>
           </div>
-
-          <div className='flex flex-row p-6'>
-                      <div className='ml-10 w-[35%]'>
-                        <p className='font-bold text-3xl mt-10' style={{color: '#483dc7'}}>Redes sociales</p>
-                        <p className='text-xl' style={{color: '#483dc7'}}>@MQerKAcademy</p>
-                        <div className='flex flex-row gap-3 mt-2'>
-                          <Link target="_blank" rel="noopener noreferrer" to='https://www.facebook.com/MQerKAcademy'>
-                            <FaFacebook className='text-3xl mt-4' style={{color: '#483dc7'}}/>
-                          </Link>
-                          <Link target="_blank" rel="noopener noreferrer" to='https://www.instagram.com/mqerkacademy/profilecard/?igsh=aDJ1bWpvd21seWVp'>
-                            <FaInstagram className='text-3xl mt-4 ml-4' style={{color: '#483dc7'}}/>                          
-                          </Link>
-                          <Link target="_blank" rel="noopener noreferrer" to='https://youtube.com/@mqerkacademy?si=qf26NkQV14VQm04Z'>
-                            <FaYoutube className='text-3xl mt-4 ml-4' style={{color: '#483dc7'}}/>
-                          </Link>
-                          <Link target="_blank" rel="noopener noreferrer" to='https://www.tiktok.com/@mqerkacademy?_t=ZM-8vakwNtkmaV&_r=1'>
-                            <AiFillTikTok className='text-3xl mt-4 ml-4' style={{color: '#483dc7'}}/>
-                          </Link>
-                        </div>
-                      </div>
-                      <div className='flex justify-center items-center w-full gap-10 mt-10'>
-                        <p className='text-[#483dc7]'>Términos y condiciones</p>
-                        <p className='text-[#483dc7]'>|</p>
-                        <p className='text-[#483dc7]'>Políticas de privacidad</p>
-                      </div>
-                      <div className='w-[42%]'>
-                        <div className='flex justify-start items-center mt-13'>
-                          <img src={Logo} className='w-20 h-15' />
-                        </div>
-                        <p className='text-[13px] mt-3 text-[#483dc7]'>Copyright © MQerKAcademy 2025 - Todos los derechos reservados</p>
-                      </div>
-          </div>
-
         </div>
+        <Footer />
     </div>
   )
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import Navbar from "../../components/mqerk/Navbar";
-import Logo from "../../assets/mqerk/mqerk.png";
 import Uno from "../../assets/mqerk/blog/1.jpg";
 import Dos from "../../assets/mqerk/blog/2.jpg";
 import Tres from "../../assets/mqerk/blog/3.jpg";
@@ -23,11 +22,7 @@ import Diecinueve from "../../assets/mqerk/blog/9.jpg";
 import Veinte from "../../assets/mqerk/blog/12.jpg";
 import { FaTag } from "react-icons/fa";
 import { IoMdEye } from "react-icons/io";
-import { FaFacebook } from "react-icons/fa";
-import { FaInstagram } from "react-icons/fa";
-import { FaYoutube } from "react-icons/fa";
-import { AiFillTikTok } from "react-icons/ai";
-import { Link } from "react-router-dom";
+import Footer from "../../components/footer";
 
   const categorias = ["Todos", "Admisión", "Educación", "STEM", "Salud", "Ambiental"];
 
@@ -255,30 +250,8 @@ function Blog() {
                       </div>
                     </div>
                   ))}
-                          <div className='flex flex-row gap-4'>
-                                                <div className='w-[30%]'>
-                                                  <p className='font-bold text-md mt-10' style={{color: '#483dc7'}}>Redes sociales</p>
-                                                  <p className='text-[10px] ml-1' style={{color: '#483dc7'}}>@MQerKAcademy</p>
-                                                  <div className='flex flex-row gap-2 '>
-                                                    <FaFacebook className='w-15 h-15 ' style={{color: '#483dc7'}}/>
-                                                    <FaInstagram className='w-15 h-15 ' style={{color: '#483dc7'}}/>
-                                                    <FaYoutube className='w-15 h-15 ' style={{color: '#483dc7'}}/>
-                                                    <AiFillTikTok className='w-15 h-15 ' style={{color: '#483dc7'}}/>
-                                                  </div>
-                                                </div>
-                                                <div className='mt-15  gap-4 w-30' style={{color: '#483dc7'}}>
-                                                  <p className='text-[10px] text-center'>Términos y condiciones</p>
-                                                  <hr />
-                                                  <p className='text-[10px] text-center'>Políticas de privacidad</p>
-                                                </div>
-                                                <div className='w-[30%]'>
-                                                  <div className='flex justify-center items-center mt-13'>
-                                                    <img src={Logo} className='w-10 h-7' />
-                                                  </div>
-                                                  <p className='text-[10px] mt-3' style={{color: '#483dc7'}}>Copyright © MQerKAcademy 2025</p>
-                                                </div>
-                                              </div>
                 </div>
+            <Footer />
             </div>
         </div>
         {/* Desktop */}
@@ -330,37 +303,7 @@ function Blog() {
                     </div>
                   ))}
                 </div>
-            <div className='flex flex-row p-6'>
-                                  <div className='ml-10 w-[35%]'>
-                                    <p className='font-bold text-3xl mt-10' style={{color: '#483dc7'}}>Redes sociales</p>
-                                    <p className='text-xl' style={{color: '#483dc7'}}>@MQerKAcademy</p>
-                                    <div className='flex flex-row gap-3 mt-2'>
-                                      <Link target="_blank" rel="noopener noreferrer" to='https://www.facebook.com/MQerKAcademy'>
-                                        <FaFacebook className='text-3xl mt-4' style={{color: '#483dc7'}}/>
-                                      </Link>
-                                      <Link target="_blank" rel="noopener noreferrer" to='https://www.instagram.com/mqerkacademy/profilecard/?igsh=aDJ1bWpvd21seWVp'>
-                                        <FaInstagram className='text-3xl mt-4 ml-4' style={{color: '#483dc7'}}/>                          
-                                      </Link>
-                                      <Link target="_blank" rel="noopener noreferrer" to='https://youtube.com/@mqerkacademy?si=qf26NkQV14VQm04Z'>
-                                        <FaYoutube className='text-3xl mt-4 ml-4' style={{color: '#483dc7'}}/>
-                                      </Link>
-                                      <Link target="_blank" rel="noopener noreferrer" to='https://www.tiktok.com/@mqerkacademy?_t=ZM-8vakwNtkmaV&_r=1'>
-                                        <AiFillTikTok className='text-3xl mt-4 ml-4' style={{color: '#483dc7'}}/>
-                                      </Link>
-                                    </div>
-                                  </div>
-                                  <div className='flex justify-center items-center w-full gap-10 mt-10'>
-                                    <p className='text-[#483dc7]'>Términos y condiciones</p>
-                                    <p className='text-[#483dc7]'>|</p>
-                                    <p className='text-[#483dc7]'>Políticas de privacidad</p>
-                                  </div>
-                                  <div className='w-[42%]'>
-                                    <div className='flex justify-start items-center mt-13'>
-                                      <img src={Logo} className='w-20 h-15' />
-                                    </div>
-                                    <p className='text-[13px] mt-3 text-[#483dc7]'>Copyright © MQerKAcademy 2025 - Todos los derechos reservados</p>
-                                  </div>
-            </div>
+                <Footer />
             </div>
         </div>
     </div>

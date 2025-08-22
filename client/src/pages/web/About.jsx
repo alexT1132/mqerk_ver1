@@ -18,6 +18,7 @@ import { FaInstagram } from "react-icons/fa";
 import { FaYoutube } from "react-icons/fa";
 import { AiFillTikTok } from "react-icons/ai";
 import { Link } from "react-router-dom";
+import Footer from "../../components/footer";
 
 function About() {
   return (
@@ -91,10 +92,10 @@ function About() {
         <div className="about w-200 flex justify-center items-center flex-col text-center py-2 rounded-2xl">
           <p className="text-white text-2xl px-10">Formamos estudiantes creativos y críticos, preparados para destacar en un mundo impulsado por la ciencia y la tecnología.</p>
           <p className="text-white text-2xl px-10">Ofrecemos un servicio integral, humano y transparente, apoyado en tecnologías educativas disruptivas para su éxito profesional y ciudadano.</p>
-          <div className="flex justify-center gap-40">
-            <img src={Siete} className="w-40" />
-            <img src={Ocho} className="w-40" />
-            <img src={Nueve} className="w-40" />
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-10 md:gap-16 lg:gap-20">
+            <img src={Siete} className="w-24 sm:w-32 md:w-40" />
+            <img src={Ocho} className="w-24 sm:w-32 md:w-40" />
+            <img src={Nueve} className="w-24 sm:w-32 md:w-40" />
           </div>
         </div>
       </div>
@@ -124,45 +125,15 @@ function About() {
         <p className="text-3xl mt-5">CEO y Fundador</p>
       </div>
       <div className="flex justify-center items-center flex-col">
-        <p className="text-center w-350 sm:w-150 md:w-200 lg:w-350 text-xl sm:text-md md:text-lg lg:text-xl mt-10">MQerKAcademy se fundo por el asesor Kelvin Ramírez. La trayectoria comenzó en 2013 bajo el nombre de “Asesorías en Ciencias Exactas”, un pequeño espacio creado con la intención de apoyar a estudiantes en el área de matemáticas, física y química. Lo que inició como una iniciativa local y modesta fue, poco a poco, ganando la confianza de más estudiantes y familias, gracias a su enfoque claro, cercano y orientado al fortalecimiento académico.</p>
-        <p className="text-center w-350 sm:w-150 md:w-200 lg:w-350 text-xl sm:text-md md:text-lg lg:text-xl mt-10">En 2016, ante el crecimiento sostenido y la necesidad de ofrecer una propuesta más estructurada e innovadora, surgió MQerKAcademy, una evolución que reflejaba una visión más amplia: formar estudiantes críticos, creativos y con habilidades científicas sólidas. Esta transformación también implicó la adopción de metodologías más disruptivas y sostenibles, centradas en el desarrollo integral del estudiante.</p>
-        <p className="text-center w-350 sm:w-150 md:w-200 lg:w-350 text-xl sm:text-md md:text-lg lg:text-xl mt-10">En 2021, la academia fue registrada formalmente como institución educativa, consolidando así años de experiencia y compromiso con la formación académica de calidad. En su proceso continuo de mejora, se incorporó el componente de psicoeducación como parte fundamental del modelo pedagógico. Esta integración respondió a la detección de diversas problemáticas emocionales y afectivas que los estudiantes presentaban al ingresar, muchas de ellas derivadas de experiencias previas en sus contextos escolares de origen. Reconociendo que dichas condiciones impactaban directamente en su desempeño y permanencia, MQerKAcademy fortaleció su enfoque integral, desarrollando estrategias que promueven el bienestar mental y emocional, garantizando así un entorno de aprendizaje saludable, empático y consciente.</p>
-        <p className="text-center w-350 text-2xl mt-10 font-bold">“Cambiar el rumbo, transformar la educación”</p>
+        <p className="text-center text-base sm:text-lg md:text-xl mt-4 max-w-xl">MQerKAcademy se fundo por el asesor Kelvin Ramírez. La trayectoria comenzó en 2013 bajo el nombre de “Asesorías en Ciencias Exactas”, un pequeño espacio creado con la intención de apoyar a estudiantes en el área de matemáticas, física y química. Lo que inició como una iniciativa local y modesta fue, poco a poco, ganando la confianza de más estudiantes y familias, gracias a su enfoque claro, cercano y orientado al fortalecimiento académico.</p>
+        <p className="text-center text-base sm:text-lg md:text-xl mt-4 max-w-xl">En 2016, ante el crecimiento sostenido y la necesidad de ofrecer una propuesta más estructurada e innovadora, surgió MQerKAcademy, una evolución que reflejaba una visión más amplia: formar estudiantes críticos, creativos y con habilidades científicas sólidas. Esta transformación también implicó la adopción de metodologías más disruptivas y sostenibles, centradas en el desarrollo integral del estudiante.</p>
+        <p className="text-center text-base sm:text-lg md:text-xl mt-4 max-w-xl">En 2021, la academia fue registrada formalmente como institución educativa, consolidando así años de experiencia y compromiso con la formación académica de calidad. En su proceso continuo de mejora, se incorporó el componente de psicoeducación como parte fundamental del modelo pedagógico. Esta integración respondió a la detección de diversas problemáticas emocionales y afectivas que los estudiantes presentaban al ingresar, muchas de ellas derivadas de experiencias previas en sus contextos escolares de origen. Reconociendo que dichas condiciones impactaban directamente en su desempeño y permanencia, MQerKAcademy fortaleció su enfoque integral, desarrollando estrategias que promueven el bienestar mental y emocional, garantizando así un entorno de aprendizaje saludable, empático y consciente.</p>
+        <p className="text-center text-lg sm:text-xl md:text-2xl mt-6 font-bold max-w-xl">“Cambiar el rumbo, transformar la educación”</p>
       </div>
       <div className="flex justify-center items-center mt-5">
         <img src={Trece} className="w-40" />
       </div>
-      <div className='flex flex-row p-6'>
-        <div className='ml-10 w-[35%]'>
-          <p className='font-bold text-3xl mt-10' style={{color: '#483dc7'}}>Redes sociales</p>
-          <p className='text-xl' style={{color: '#483dc7'}}>@MQerKAcademy</p>
-          <div className='flex flex-row gap-3 mt-2'>
-            <Link target="_blank" rel="noopener noreferrer" to='https://www.facebook.com/MQerKAcademy'>
-              <FaFacebook className='text-3xl mt-4' style={{color: '#483dc7'}}/>
-            </Link>
-            <Link target="_blank" rel="noopener noreferrer" to='https://www.instagram.com/mqerkacademy/profilecard/?igsh=aDJ1bWpvd21seWVp'>
-              <FaInstagram className='text-3xl mt-4 ml-4' style={{color: '#483dc7'}}/>                          
-            </Link>
-            <Link target="_blank" rel="noopener noreferrer" to='https://youtube.com/@mqerkacademy?si=qf26NkQV14VQm04Z'>
-              <FaYoutube className='text-3xl mt-4 ml-4' style={{color: '#483dc7'}}/>
-            </Link>
-            <Link target="_blank" rel="noopener noreferrer" to='https://www.tiktok.com/@mqerkacademy?_t=ZM-8vakwNtkmaV&_r=1'>
-              <AiFillTikTok className='text-3xl mt-4 ml-4' style={{color: '#483dc7'}}/>
-            </Link>
-          </div>
-        </div>
-        <div className='flex justify-center items-center w-full gap-10 mt-10'>
-          <p className='text-[#483dc7]'>Términos y condiciones</p>
-          <p className='text-[#483dc7]'>|</p>
-          <p className='text-[#483dc7]'>Políticas de privacidad</p>
-        </div>
-        <div className='w-[42%]'>
-          <div className='flex justify-start items-center mt-13'>
-            <img src={Logo} className='w-20 h-15' />
-          </div>
-          <p className='text-[13px] mt-3 text-[#483dc7]'>Copyright © MQerKAcademy 2025 - Todos los derechos reservados</p>
-        </div>
-      </div>
+      <Footer />  
     </div>
   )
 }

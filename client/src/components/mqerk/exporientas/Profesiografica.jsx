@@ -10,6 +10,7 @@ import Cuarto from "../../../assets/mqerk/veranotx/04.png";
 import Quinto from "../../../assets/mqerk/veranotx/05.png";
 import Sexto from "../../../assets/mqerk/veranotx/06.png";
 import Septimo from "../../../assets/mqerk/veranotx/07.png";
+import Footer from "../../footer";
 
 function Exporientas() {
 
@@ -123,7 +124,6 @@ function Exporientas() {
                 </div>
             </div>
         </div>
-
       </div>
 
       {/* MOVILE */}
@@ -200,7 +200,7 @@ function Exporientas() {
             </div>
 
       </div>
-
+        <Footer />
     </div>
   )
 }

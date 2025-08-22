@@ -11,6 +11,7 @@ import Quinto from "../../../assets/mqerk/veranotx/05.png";
 import Sexto from "../../../assets/mqerk/veranotx/06.png";
 import Septimo from "../../../assets/mqerk/veranotx/07.png";
 import ReactPlayer from 'react-player/youtube';
+import Footer from "../../footer";
 
 function Online() {
 
@@ -138,7 +139,6 @@ function Online() {
                 </div>
             </div>
         </div>
-
       </div>
 
       {/* MOVILE */}
@@ -229,7 +229,7 @@ function Online() {
             </div>
 
       </div>
-
+        <Footer />
     </div>
   )
 }

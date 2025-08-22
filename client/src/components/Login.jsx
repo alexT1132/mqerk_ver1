@@ -26,7 +26,7 @@ const ResponsivePage = () => {
       if (!isAuthenticated) return;
 
       const role = (user?.role || '').toLowerCase();
-      if (role === 'admin' || role === 'administrador' || role === 'administrativo') {
+      if (role === 'admin' || role === 'administrativo') {
         // En tu App.jsx el bundle del admin está en "/administrativo/*"
         navigate('/administrativo', { replace: true });
         return;
@@ -37,6 +37,10 @@ const ResponsivePage = () => {
       }
       if (role === 'asesor') {
         navigate('/asesor/dashboard', { replace: true });
+        return;
+      }
+      if (role === 'administrador') {
+        navigate('/administrador', { replace: true });
         return;
       }
       // Rol desconocido: fallback seguro

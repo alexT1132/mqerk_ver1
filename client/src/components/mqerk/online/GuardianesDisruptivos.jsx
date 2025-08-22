@@ -14,6 +14,7 @@ import ReactPlayer from 'react-player/youtube';
 import { Link } from 'react-router-dom';
 import Ocho from "../../../assets/mqerk/online/2.png";
 import Nueve from "../../../assets/mqerk/online/3.png";
+import Footer from "../../footer";
 
 function Online() {
 
@@ -136,7 +137,6 @@ function Online() {
                 </div>
             </div>
         </div>
-
       </div>
 
       {/* MOVILE */}
@@ -223,7 +223,7 @@ function Online() {
             </div>
 
       </div>
-
+        <Footer />
     </div>
   )
 }
