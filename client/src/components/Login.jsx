@@ -36,14 +36,13 @@ const ResponsivePage = () => {
         return;
       }
       if (role === 'asesor') {
-        navigate('/asesor/dashboard', { replace: true });
+        navigate('/asesor', { replace: true });
         return;
       }
       if (role === 'administrador') {
         navigate('/administrador', { replace: true });
         return;
       }
-      // Rol desconocido: fallback seguro
       navigate('/', { replace: true });
     }, [isAuthenticated, user, navigate])
 
@@ -73,7 +72,8 @@ const ResponsivePage = () => {
                 type="text"
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Introduce tu correo electrónico"
-                {...register("usuario", { required: true })}
+                {...register("usuario")}
+                required
               />
             </div>
       
@@ -82,13 +82,14 @@ const ResponsivePage = () => {
               <input
                 type="password"
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                {...register("contraseña", { required: true })}
+                {...register("contraseña")}
                 placeholder="Introduce tu contraseña"
+                required
               />
             </div>
 
             <label className="inline-flex items-center gap-2 text-sm text-gray-500 mb-4">
-              <input type="checkbox" className="accent-blue-500" {...register("rememberMe")} />
+              <input type="checkbox" className="accent-blue-500" {...register("rememberMe")}/>
               Recuérdame en este dispositivo
             </label>
       

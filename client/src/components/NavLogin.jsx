@@ -1,15 +1,18 @@
 import Logo from "../assets/MQerK_logo.png";
 import Guardianes from "../assets/guardianes.png";
+import { Link } from "react-router-dom";
 
 const DesktopTopbar = () => {
     return (
       <div className="hidden md:flex w-full border-b-2 border-white p-4 items-center justify-between shadow-md md:px-8" style={{ backgroundColor: "#3818c3" }}>
         {/* Imagen a la izquierda */}
-        <img
+        <Link to='/'>
+          <img
             src={Logo}
             alt="Logo"
             className="w-20 h-16"
-        />
+          />
+        </Link>
   
         {/* Título en el centro */}
         <h1 className="text-white text-3xl font-semibold text-center flex-1">

@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { registerRequest, loginRequest, verifyTokenRequest, logoutRequest } from "../api/usuarios.js";
-import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 
 export const AuthContext = createContext();
@@ -40,6 +39,7 @@ export const AuthProvider = ({children}) => {
     const signin = async (formData) => {
         try {
             const res = await loginRequest(formData);
+            console.log(formData);
             const usuarioResp = res.data.usuario;
             // Adjuntar perfil asesor si viene
             if (res.data.asesor_profile) {

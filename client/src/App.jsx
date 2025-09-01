@@ -7,11 +7,19 @@ import Blog from "./pages/web/Blog.jsx";
 import About from "./pages/web/About.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import { DashboardAdm, ListaAsesores, ListaColaboradores } from './pages/admin/Panel.jsx';
-import { DashboardAsesor } from "./pages/Asesor/Asesor.jsx";
+import Asesor from "./pages/Asesor/Asesor.jsx";
+import DashboardAsesor from "./pages/Asesor/Dashboard.jsx";
+import AsesorCursos from "./pages/Asesor/Cursos.jsx";
+import AsesorConfig from "./pages/Asesor/Configuraciones.jsx";
+import FeedbackAsesor from "./pages/Asesor/Feedback.jsx";
 // Asesor additional section components
-import { PerfilAsesor, Actividades, Quizt, Simuladores, DashboardCurso, Asesorias } from "./pages/Asesor/Asesor.jsx";
 import { PreRegAsesor } from "./pages/Asesor/PreRegAsesor.jsx";
 import { Bienvenida } from "./pages/Asesor/Bienvenida.jsx";
+import AsesorSimuladores from "./pages/Asesor/Simuladores.jsx";
+import AsesorSimulacionesGen from "./pages/Asesor/SimulacionesGenerales.jsx";
+import SimulacionesEspecificas from "./pages/Asesor/SimulacionesEspecificas.jsx";
+import ModuloSeleccionado from "./pages/Asesor/ModuloSeleccionado.jsx";
+import PerfilAsesor from "./pages/Asesor/PerfilAsesor.jsx";
 // Eliminados módulos de tests (Test, Resultado) para flujo simplificado
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { AsesorProvider } from "./context/AsesorContext.jsx";
@@ -56,6 +64,7 @@ import Terminos from './pages/web/T&C.jsx'
 import Politicas from './pages/web/Politicas.jsx'
 import AdministradorGeneral from "./pages/AdminGeneral/PanelAdmin.jsx";
 import DashboardAdminGeneral from "./pages/AdminGeneral/Dashboard.jsx";
+import AdminGenCursos from "./pages/AdminGeneral/cursos/cursos.jsx";
 
 export default function App(){
     return(
@@ -143,13 +152,17 @@ export default function App(){
                       <Route path='/admin/colaboradores' element={<ListaColaboradores />} />
 
                       {/* Dashboard Asesores */}
-                      <Route path='/asesor/dashboard' element={<DashboardAsesor/>} />
-                      <Route path='/asesor/perfil' element={<PerfilAsesor />} />
-                      <Route path='/asesor/actividades' element={<Actividades />} />
-                      <Route path='/asesorias-asesor' element={<Asesorias />} />
-                      <Route path='/asesor/quizt' element={<Quizt />} />
-                      <Route path='/asesor/simuladores' element={<Simuladores />} />
-                      <Route path='/cursos-asesor' element={<DashboardCurso />} />
+                      <Route path='/asesor' element={<Asesor/>} />
+                      <Route path='/asesor_dashboard' element={<DashboardAsesor />} />
+                      <Route path='/asesor_simuladores' element={<AsesorSimuladores />} />
+                      <Route path='/asesor_simuladores/generales' element={<AsesorSimulacionesGen />} />
+                      <Route path='/asesor_simuladores/especificos' element={<SimulacionesEspecificas />} />
+                      <Route path='/asesor_simuladores/modulo' element={<ModuloSeleccionado />} />
+                      <Route path='/asesor_perfil' element={<PerfilAsesor />} />
+                      <Route path='/asesor_cursos' element={<AsesorCursos />} />
+                      <Route path='/asesor_configuraciones' element={<AsesorConfig />} />
+                      <Route path='/asesor_feedback' element={<FeedbackAsesor />} />
+
                       {/* Fallback redirect if accessed within protected group */}
                       <Route path='/asesor/registro_asesor' element={<Navigate to='/registro_asesor' replace />} />
 
@@ -161,6 +174,7 @@ export default function App(){
                       {/* Administrador general */}
                       <Route path="/administrador" element={<AdministradorGeneral />} />
                       <Route path="/administrador_dashboard" element={<DashboardAdminGeneral />} />
+                      <Route path="/administrador_cursos" element={<AdminGenCursos />} />
                     </Route>
 
                     {/* 404 Not Found */}

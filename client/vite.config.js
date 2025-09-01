@@ -9,10 +9,7 @@ export default defineConfig({
   ],
   server:{
     host: true,
-<<<<<<< HEAD
     port: 5001,
-=======
-    port: 5173,
     // Proxy para evitar que fetch('/api/...') devuelva index.html del dev server (causando '<!doctype' en JSON)
     proxy: {
       '/api': {
@@ -42,6 +39,5 @@ export default defineConfig({
         secure: false,
       }
     }
->>>>>>> ee21e856ea1319a49641a4636a567bcd761e4961
   }
 })

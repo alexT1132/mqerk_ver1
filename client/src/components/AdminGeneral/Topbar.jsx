@@ -1,25 +1,15 @@
-import { useNavigate } from "react-router-dom";
 import LogoBlanco from "../../assets/MQerK_logo.png"; // ajusta la ruta
 
 export default function Topbar({
-  title = "Asesores en Ciencias y Tecnología",
+  title = "Asesores Especializados en la Enseñanza de las Ciencias y Tecnología",
 }) {
-  const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-50 h-14 md:h-16 w-full shadow-md">
       <div className="relative flex h-full items-center bg-gradient-to-r from-indigo-700 via-violet-700 to-fuchsia-700 text-white px-3 md:px-4">
         {/* IZQ: Flecha + logo */}
         <div className="flex items-center gap-2 md:gap-3">
-          <button
-            onClick={() => navigate(-1)}   // <- FUNCIONA: atrás
-            aria-label="Regresar"
-            className="p-2 rounded-full hover:bg-white/10 transition"
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+          
 
           {/* Logo oculto en móvil */}
           <img

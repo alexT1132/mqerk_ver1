@@ -4,6 +4,7 @@ import { FaUser, FaLock, FaArrowRight } from 'react-icons/fa';
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 function Register() {
 
@@ -15,8 +16,6 @@ function Register() {
 
     const datosRegistro = JSON.parse(localStorage.getItem('datosRegistro'));
     const datosRole = JSON.parse(localStorage.getItem('role')); 
-
-    console.log(datosRole);
 
     const onsubmite = handleSubmit((data) => {
         const datosCompletos = {
@@ -67,6 +66,34 @@ function Register() {
                     autoComplete="off"
                     className="w-full border border-gray-300 px-4 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
+                </div>
+
+                <div>
+                  <div className="flex items-center mb-5">
+                    <input
+                      type="checkbox"
+                      id="terminos"
+                      name="terminos"
+                      required
+                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                    <label htmlFor="terminos" className="ml-2 block text-sm text-gray-700">
+                      Acepto los <Link to='/terminos_y_condiciones' target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">Términos y Condiciones</Link>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center mb-5">
+                    <input
+                      type="checkbox"
+                      id="privacidad"
+                      name="privacidad"
+                      required
+                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                    <label htmlFor="privacidad" className="ml-2 block text-sm text-gray-700">
+                      Acepto las <Link to='/politicas_de_privacidad' target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">Políticas de Privacidad</Link>
+                    </label>
+                  </div>
                 </div>
 
                 {/* Botón */}

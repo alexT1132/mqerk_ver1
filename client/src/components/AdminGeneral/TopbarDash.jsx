@@ -12,7 +12,7 @@ export default function Topbar({
         {/* IZQ: Flecha + logo */}
         <div className="flex items-center gap-2 md:gap-3">
           <button
-            onClick={() => navigate(-1)}   // <- FUNCIONA: atrás
+            onClick={() => navigate('/administrador')}   // <- FUNCIONA: atrás
             aria-label="Regresar"
             className="p-2 rounded-full hover:bg-white/10 transition"
           >
