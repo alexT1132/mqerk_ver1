@@ -7,9 +7,15 @@ import Blog from "./pages/web/Blog.jsx";
 import About from "./pages/web/About.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import { DashboardAdm, ListaAsesores, ListaColaboradores } from './pages/admin/Panel.jsx';
-import { DashboardAsesor } from "./pages/Asesor/Asesor.jsx";
-// Asesor additional section components
-import { PerfilAsesor, Actividades, Quizt, Simuladores, DashboardCurso, Asesorias } from "./pages/Asesor/Asesor.jsx";
+// Asesor pages (each file exports default component)
+import DashboardAsesor from "./pages/Asesor/Dashboard.jsx";
+import PerfilAsesor from "./pages/Asesor/PerfilAsesor.jsx";
+import Simuladores from "./pages/Asesor/Simuladores.jsx";
+import DashboardCurso from "./pages/Asesor/Cursos.jsx";
+// Stubs for routes not yet implemented in detail
+import Actividades from "./pages/Asesor/Actividades.jsx";
+import Quizt from "./pages/Asesor/Quizt.jsx";
+import Asesorias from "./pages/Asesor/Asesorias.jsx";
 import { PreRegAsesor } from "./pages/Asesor/PreRegAsesor.jsx";
 import Feedback from "./pages/Asesor/Feedback.jsx";
 import { Bienvenida } from "./pages/Asesor/Bienvenida.jsx";
