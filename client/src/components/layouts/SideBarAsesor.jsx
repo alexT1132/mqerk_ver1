@@ -49,8 +49,8 @@ const rutasEstudiante = {
     toReportes: "/reportes-asesor",
     toRecursosEducativos: "/recursos-asesor",
     toMisPagos: "/pagos-asesor",
-    toAutenticacion: "/autenticacion-asesor",
-    toFeedback: "/feedback-asesor",
+  toAutenticacion: "/autenticacion-asesor",
+  toFeedback: "/asesor_feedback",
     toConfiguracion: "/configuracion-asesor",
     toCerrarSesion: "/login"
   };

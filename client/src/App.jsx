@@ -11,9 +11,9 @@ import { DashboardAsesor } from "./pages/Asesor/Asesor.jsx";
 // Asesor additional section components
 import { PerfilAsesor, Actividades, Quizt, Simuladores, DashboardCurso, Asesorias } from "./pages/Asesor/Asesor.jsx";
 import { PreRegAsesor } from "./pages/Asesor/PreRegAsesor.jsx";
-import FeedbackAsesor from "./pages/Asesor/FeedbackAsesor.jsx";
+import Feedback from "./pages/Asesor/Feedback.jsx";
 import { Bienvenida } from "./pages/Asesor/Bienvenida.jsx";
-// Eliminados módulos de tests (Test, Resultado) para flujo simplificado
+// Eliminados módulos de tests (Test, Resultado)
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { AsesorProvider } from "./context/AsesorContext.jsx";
 import { EstudiantesProvider } from "./context/EstudiantesContext.jsx";
@@ -144,7 +144,10 @@ export default function App(){
                       <Route path='/asesorias-asesor' element={<Asesorias />} />
                       <Route path='/asesor/quizt' element={<Quizt />} />
                       <Route path='/asesor/simuladores' element={<Simuladores />} />
-                      <Route path='/feedback-asesor' element={<FeedbackAsesor />} />
+                      {/* Feedback (nuevo nombre y ruta) */}
+                      <Route path='/asesor_feedback' element={<Feedback />} />
+                      {/* Compatibilidad con ruta antigua */}
+                      <Route path='/feedback-asesor' element={<Navigate to='/asesor_feedback' replace />} />
                       <Route path='/cursos-asesor' element={<DashboardCurso />} />
                       {/* Fallback redirect if accessed within protected group */}
                       <Route path='/asesor/registro_asesor' element={<Navigate to='/registro_asesor' replace />} />
