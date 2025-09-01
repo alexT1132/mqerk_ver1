@@ -5,10 +5,26 @@ import Cookies from "js-cookie";
 
 export const AuthContext = createContext();
 
+// Safe fallback to avoid crashes if hook is used before provider mounts (e.g., HMR/StrictMode edge cases)
+const defaultAuthContext = {
+    signup: async () => {},
+    signin: async () => {},
+    logout: async () => {},
+    isVerde: false,
+    errors: [],
+    user: null,
+    alumno: null,
+    setAlumno: () => {},
+    isAuthenticated: false,
+    loading: false,
+    remember: () => false,
+};
+
 export const useAuth = () => {
-    const context = useContext(AuthContext)
+    const context = useContext(AuthContext);
     if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
+        try { console.warn('useAuth used outside AuthProvider. Using fallback to prevent crash.'); } catch {}
+        return defaultAuthContext;
     }
     return context;
 }

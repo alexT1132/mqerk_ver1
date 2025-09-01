@@ -5,6 +5,7 @@ import MQerkLogo from "../../assets/MQerK_logo.png";
 import { Logos } from "../../pages/public/IndexComp.jsx"; 
 import { useAdminContext } from "../../context/AdminContext.jsx";
 import { useAdminNotificationContext } from "../../context/AdminNotificationContext.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 /**
  * Componente de encabezado de administrador con sistema de notificaciones y avatar de perfil
@@ -23,6 +24,7 @@ export function HeaderAdmin() {
   const location = useLocation(); // Hook para obtener la ruta actual
   const navigate = useNavigate(); // Navegación programática para deep-link desde notificaciones
   const { adminProfile } = useAdminContext(); // Obtener perfil de administrador del contexto
+  const { logout } = useAuth();
   
   // Estado para menú desplegable de perfil
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -116,23 +118,13 @@ export function HeaderAdmin() {
    */
   const handleLogout = async () => {
     try {
-      // TODO: BACKEND - Llamar endpoint de cierre de sesión
-      // await fetch('/api/admin/logout', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-      
-      // Limpiar almacenamiento local
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminProfile');
-      
-      // Redirigir al login
-      window.location.href = '/login';
+      // Usa el logout global: limpia cookies httpOnly (token_*) en el backend y estado en cliente
+      await logout();
     } catch (error) {
       console.error('Error de cierre de sesión:', error);
+    } finally {
+      setIsProfileOpen(false);
+      navigate('/login', { replace: true });
     }
   };
 

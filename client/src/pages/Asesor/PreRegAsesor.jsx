@@ -56,6 +56,7 @@ export function PreRegAsesor() {
               <input
                 type="text"
                 {...register("nombres", { required: "Nombre obligatorio" })}
+                id="nombre"
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Introduce tu nombre"
                 required
@@ -78,6 +79,7 @@ export function PreRegAsesor() {
                 {...register("apellidos", {
                   required: "Apellidos obligatorios",
                 })}
+                id="apellidos"
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Introduce tus apellidos"
                 required
@@ -104,6 +106,7 @@ export function PreRegAsesor() {
                     message: "Formato de correo inválido",
                   },
                 })}
+                id="correo"
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Introduce tu correo"
                 required
@@ -130,6 +133,7 @@ export function PreRegAsesor() {
                     message: "Teléfono inválido",
                   },
                 })}
+                id="telefono"
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Introduce tu numero de telefono"
                 required
@@ -142,13 +146,14 @@ export function PreRegAsesor() {
             </div>
             <div className="mb-6">
               <label
-                htmlFor="pais"
+                htmlFor="area"
                 className="block text-sm font-medium text-gray-900"
               >
                 Area de especialización
               </label>
               <select
                 {...register("area", { required: "Área obligatoria" })}
+                id="area"
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
@@ -174,7 +179,7 @@ export function PreRegAsesor() {
             </div>
             <div className="mb-6">
               <label
-                htmlFor="pais"
+                htmlFor="estudios"
                 className="block text-sm font-medium text-gray-900"
               >
                 Grado de estudio
@@ -183,6 +188,7 @@ export function PreRegAsesor() {
                 {...register("estudios", {
                   required: "Grado de estudios obligatorio",
                 })}
+                id="estudios"
                 className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
@@ -248,6 +254,7 @@ export function PreRegAsesor() {
                 <input
                   type="text"
                   {...register("nombres", { required: "Nombre obligatorio" })}
+                  id="nombre"
                   className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Introduce tu nombre"
                   required
@@ -272,6 +279,7 @@ export function PreRegAsesor() {
                   {...register("apellidos", {
                     required: "Apellidos obligatorios",
                   })}
+                  id="apellidos"
                   className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Introduce tus apellidos"
                   required
@@ -301,6 +309,7 @@ export function PreRegAsesor() {
                       message: "Formato de correo inválido",
                     },
                   })}
+                  id="correo"
                   className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Introduce tu correo"
                   required
@@ -329,6 +338,7 @@ export function PreRegAsesor() {
                       message: "Teléfono inválido",
                     },
                   })}
+                  id="telefono"
                   className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Introduce tu numero de telefono"
                   required
@@ -343,13 +353,14 @@ export function PreRegAsesor() {
             <div className="hidden md:flex space-x-20 mb-6">
               <div className="flex-1">
                 <label
-                  htmlFor="pais"
+                  htmlFor="area"
                   className="block text-sm font-medium text-gray-600"
                 >
                   Area de especialización
                 </label>
                 <select
                   {...register("area", { required: "Área obligatoria" })}
+                  id="area"
                   className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
@@ -376,7 +387,7 @@ export function PreRegAsesor() {
 
               <div className="flex-1">
                 <label
-                  htmlFor="pais"
+                  htmlFor="estudios"
                   className="block text-sm font-medium text-gray-600"
                 >
                   Grado de estudio
@@ -385,6 +396,7 @@ export function PreRegAsesor() {
                   {...register("estudios", {
                     required: "Grado de estudios obligatorio",
                   })}
+                  id="estudios"
                   className="mt-2 p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >

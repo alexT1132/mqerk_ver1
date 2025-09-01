@@ -1,6 +1,5 @@
 import api from './axios';
 
-// API feedback extendida con soporte de grupos para actividades
 export const listTasks = (params={}) => api.get('/feedback/tasks', { params });
 export const createTask = (data) => {
 	if (data instanceof FormData) {

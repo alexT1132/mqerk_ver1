@@ -29,10 +29,54 @@ import { computeOverdueState } from '../utils/payments.js';
 // Context para manejar el estado del estudiante
 const StudentContext = createContext();
 
+// Fallback seguro para cuando el hook se usa fuera del provider (evita crasheos en rutas o HMR)
+const defaultStudentContext = {
+  // Flags y datos básicos
+  isVerified: false,
+  hasPaid: false,
+  isFirstAccess: true,
+  hasContentAccess: true,
+  overdueDays: 0,
+  studentData: null,
+  enrolledCourses: [],
+  currentCourse: null,
+  activeSection: null,
+  wsStatus: 'idle',
+  wsAttempts: 0,
+
+  // Funciones no-op
+  simulateVerification: () => {},
+  resetStudentState: () => {},
+  forceCompleteReset: () => {},
+  goToStart: () => {},
+  loadEnrolledCourses: () => {},
+  selectCourse: () => {},
+  clearCourse: () => {},
+  enrollInCourse: () => {},
+  updateCourseProgress: () => {},
+  setActiveSectionHandler: () => {},
+  goToWelcome: () => {},
+  addAllowedSimulationArea: () => {},
+  requestNewSimulationAreaAccess: () => {},
+  addAllowedActivityArea: () => {},
+  requestNewActivityAreaAccess: () => {},
+  addAllowedArea: () => {},
+  requestNewAreaAccess: () => {},
+  clearAreas: () => {},
+  checkPaymentStatus: async () => ({ hasAccess: true, overdueDays: 0 }),
+  updatePaymentStatus: () => {},
+  refreshOverdueAccess: () => ({ hasAccess: true, overdueDays: 0 }),
+
+  // UI prefs
+  headerPrefs: { showQuickLinks: true, links: ['cursos','calendario','pagos'] },
+  updateHeaderPrefs: () => {},
+};
+
 export const useStudent = () => {
   const context = useContext(StudentContext);
   if (!context) {
-    throw new Error('useStudent must be used within a StudentProvider');
+    try { console.warn('useStudent used outside StudentProvider. Using fallback context.'); } catch {}
+    return defaultStudentContext;
   }
   return context;
 };
@@ -64,6 +108,20 @@ export const StudentProvider = ({ children }) => {
     matricula: "XXXX", // TODO: Obtener desde backend
     email: "XXXX" // TODO: Obtener desde backend
   });
+
+  // Preferencias de UI (accesos rápidos del header, etc.)
+  const defaultHeaderPrefs = {
+    showQuickLinks: true,
+    links: ['cursos', 'calendario', 'pagos'], // orden base
+  };
+  const [headerPrefs, setHeaderPrefs] = useState(defaultHeaderPrefs);
+  const updateHeaderPrefs = (partialOrFn) => {
+    setHeaderPrefs((prev) => {
+      const next = typeof partialOrFn === 'function' ? partialOrFn(prev) : { ...prev, ...partialOrFn };
+      try { localStorage.setItem('studentHeaderPrefs', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   // TODO: BACKEND - Cursos matriculados/inscritos del estudiante específico
   // Estructura esperada: GET /api/students/{id}/enrolled-courses
@@ -414,6 +472,18 @@ export const StudentProvider = ({ children }) => {
     const storedAreaRequests = localStorage.getItem('areaRequests');
     if (storedAreaRequests) setAreaRequests(JSON.parse(storedAreaRequests));
 
+    // Cargar preferencias de UI
+    try {
+      const rawHeader = localStorage.getItem('studentHeaderPrefs');
+      if (rawHeader) {
+        const parsed = JSON.parse(rawHeader);
+        // Merge con defaults para tolerar cambios futuros
+        setHeaderPrefs({ ...defaultHeaderPrefs, ...(parsed || {}) });
+      } else {
+        setHeaderPrefs(defaultHeaderPrefs);
+      }
+    } catch { setHeaderPrefs(defaultHeaderPrefs); }
+
   }, []);
 
   useEffect(() => {
@@ -423,7 +493,7 @@ export const StudentProvider = ({ children }) => {
   }, [isAuthenticated]);
 
   // WebSocket robusto (notificaciones + estado verificación) con reconexión exponencial
-  const [wsStatus, setWsStatus] = useState('idle'); // idle|connecting|open|closed|error
+  const [wsStatus, setWsStatus] = useState('idle'); // idle|connecting|open|closed|error|unavailable
   const [wsAttempts, setWsAttempts] = useState(0);
   // WebSocket con helper de URL y pre-chequeo de backend
   useEffect(() => {
@@ -436,7 +506,10 @@ export const StudentProvider = ({ children }) => {
       const { getWsNotificationsUrl, waitForBackendHealth } = await import('../utils/ws.js');
       const healthy = await waitForBackendHealth(2500);
       if(!healthy){
-        console.warn('[WS] Backend no responde health todavía, intentando igualmente abrir WS');
+        console.warn('[WS] Backend no responde health; no se abrirá WS aún');
+        setWsStatus('unavailable');
+        scheduleReconnect(attempt);
+        return;
       }
       const url = getWsNotificationsUrl();
       lastUrl = url;
@@ -640,6 +713,10 @@ export const StudentProvider = ({ children }) => {
   refreshOverdueAccess,
   wsStatus,
   wsAttempts,
+
+  // Preferencias UI
+  headerPrefs,
+  updateHeaderPrefs,
   };
 
   return (

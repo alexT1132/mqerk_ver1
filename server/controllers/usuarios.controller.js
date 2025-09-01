@@ -70,7 +70,7 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Usuario y contraseña son obligatorios" });
     }
 
-    const usuarioFound = await Usuarios.getUsuarioPorusername(usuario);
+  const usuarioFound = await Usuarios.getUsuarioPorusername(usuario);
 
     if (!usuarioFound) {
       return res.status(404).json({ message: "Usuario no encontrado" });
@@ -80,16 +80,32 @@ export const login = async (req, res) => {
   const soft = await SoftDeletes.getByUsuarioId(usuarioFound.id);
   if (soft) return res.status(403).json({ message: "Cuenta desactivada" });
 
-  const isMatch = await bcrypt.compare(contraseña, usuarioFound.contraseña);
+    // Security: check lockout before verifying password
+    const cfg = await AdminConfig.getConfig().catch(() => null);
+    const maxAttempts = Number(cfg?.intentos_login ?? 3) || 3;
+    const lockMinutesBase = 15; // base lock time
+    if (usuarioFound.locked_until && new Date(usuarioFound.locked_until) > new Date()) {
+      const until = new Date(usuarioFound.locked_until).toISOString();
+      return res.status(429).json({ message: 'Cuenta bloqueada temporalmente', locked_until: until });
+    }
+
+    const isMatch = await bcrypt.compare(contraseña, usuarioFound.contraseña);
 
     if (!isMatch) {
+      // Increment failed attempts and maybe lock
+      await Usuarios.registerFailedAttempt(usuarioFound.id).catch(()=>{});
+      const refreshed = await Usuarios.getUsuarioPorid(usuarioFound.id).catch(()=>null);
+      const attempts = Number(refreshed?.failed_attempts ?? (usuarioFound.failed_attempts ?? 0));
+      if (attempts >= maxAttempts) {
+        await Usuarios.lockUserUntil(usuarioFound.id, lockMinutesBase).catch(()=>{});
+        return res.status(429).json({ message: 'Cuenta bloqueada por múltiples intentos fallidos. Intenta más tarde.' });
+      }
       return res.status(401).json({ message: "Contraseña incorrecta" });
     }
 
     // Token expiry según configuración
     let exp = "1d";
     try {
-      const cfg = await (await import('../models/admin_config.model.js')).getConfig();
       const minutos = cfg?.sesion_maxima || 1440;
       // jwt exp format: s or string like "60m"; usamos minutos
       exp = `${Math.max(5, Math.min(7*24*60, minutos))}m`;
@@ -99,10 +115,17 @@ export const login = async (req, res) => {
   const { accessName, refreshName } = await issueTokenCookies(res, usuarioFound.id, role, { accessMins: expMinutes, refreshDays: 30, remember: rememberMe });
   if(process.env.NODE_ENV !== 'production') console.log(`[LOGIN] role=${usuarioFound.role} accessCookie=${accessName} refreshCookie=${refreshName} remember=${rememberMe?'yes':'no'}`);
 
+  // Reset security counters after successful login
+  await Usuarios.resetLoginSecurity(usuarioFound.id).catch(()=>{});
+
   const userRoleLower = (usuarioFound.role || '').toLowerCase();
   if(userRoleLower === 'estudiante'){
 
       const estudiante = await Estudiantes.getEstudianteById(usuarioFound.id_estudiante);
+      // Bloquear login si el estudiante está suspendido
+      if (estudiante && estudiante.estatus === 'Suspendido') {
+        return res.status(403).json({ message: 'Cuenta suspendida', reason: 'suspended' });
+      }
       const softByEst = await SoftDeletes.getByEstudianteId(estudiante?.id);
       if (softByEst) return res.status(403).json({ message: "Cuenta desactivada" });
 
@@ -218,6 +241,10 @@ export const verifyToken = async (req, res) => {
   if(roleLower === 'estudiante'){
 
       const estudiante = await Estudiantes.getEstudianteById(userFound.id_estudiante);
+      // Bloquear acceso si el estudiante está suspendido
+      if (estudiante && estudiante.estatus === 'Suspendido') {
+        return res.status(401).json({ message: 'Unauthorized', reason: 'suspended' });
+      }
 
         return res.json({
           usuario: userFound,
@@ -554,23 +581,15 @@ export const getDashboardMetrics = async (req, res) => {
     const user = await Usuarios.getUsuarioPorid(userId);
     if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
-    // Consultas paralelas
+    // Consultas paralelas (todas salvo ingresos, que requiere una pequeña lógica de fallback)
     const [
-      ingresosRows,
       pagosPendRows,
       nuevosAluRows,
       cursosActRows,
-      accesosHoyRows
+      accesosHoyRows,
+      ingresosMesActualRows,
+      ultimoMesConIngresosRows
     ] = await Promise.all([
-      // Ingresos del mes actual a partir de comprobantes con importe
-      db.query(
-        `SELECT COALESCE(SUM(importe), 0) AS total
-         FROM comprobantes
-         WHERE importe IS NOT NULL
-           AND YEAR(created_at) = YEAR(CURDATE())
-           AND MONTH(created_at) = MONTH(CURDATE())`
-      ).then(r => r[0]),
-
       // Pagos pendientes: estudiantes con verificacion = 1 (enviado esperando validación)
       db.query(`SELECT COUNT(*) AS total FROM estudiantes WHERE verificacion = 1`).then(r => r[0]),
 
@@ -589,17 +608,81 @@ export const getDashboardMetrics = async (req, res) => {
          WHERE verificacion = 2`
       ).then(r => r[0]),
 
-      // Accesos activados hoy: comprobantes actualizados hoy con importe (se actualiza created_at en verificación)
+      // Accesos activados hoy: comprobantes creados hoy con importe (aprobados previamente)
       db.query(
         `SELECT COUNT(*) AS total
-         FROM comprobantes
-         WHERE importe IS NOT NULL
-           AND DATE(created_at) = CURDATE()`
+         FROM comprobantes c
+         INNER JOIN estudiantes e ON e.id = c.id_estudiante
+         LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+         WHERE c.importe IS NOT NULL
+           AND e.verificacion = 2
+           AND DATE(c.created_at) = CURDATE()
+           AND sd.id IS NULL`
+      ).then(r => r[0]),
+
+      // Ingresos del mes actual: solo aprobados (verificacion=2) y excluyendo soft-deletes
+      db.query(
+        `SELECT COALESCE(SUM(c.importe), 0) AS total
+         FROM comprobantes c
+         INNER JOIN estudiantes e ON e.id = c.id_estudiante
+         LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+         WHERE e.verificacion = 2
+           AND c.importe IS NOT NULL
+           AND YEAR(c.created_at) = YEAR(CURDATE())
+           AND MONTH(c.created_at) = MONTH(CURDATE())
+           AND sd.id IS NULL`
+      ).then(r => r[0]),
+
+      // Último mes (más reciente) con ingresos aprobados > 0 para usar como fallback visual
+      db.query(
+        `SELECT YEAR(c.created_at) AS anio,
+                MONTH(c.created_at) AS mes,
+                COALESCE(SUM(c.importe),0) AS total
+         FROM comprobantes c
+         INNER JOIN estudiantes e ON e.id = c.id_estudiante
+         LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+         WHERE e.verificacion = 2
+           AND c.importe IS NOT NULL
+           AND sd.id IS NULL
+         GROUP BY anio, mes
+         HAVING total > 0
+         ORDER BY anio DESC, mes DESC
+         LIMIT 1`
       ).then(r => r[0])
     ]);
 
+    // Resolver ingresos y etiqueta del período
+    const mesesES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const totalMesActual = Number(ingresosMesActualRows[0]?.total || 0);
+    let ingresos = totalMesActual;
+    let ingresosPeriodo = null;
+    if (totalMesActual > 0) {
+      const hoy = new Date();
+      ingresosPeriodo = {
+        anio: hoy.getFullYear(),
+        mes: hoy.getMonth() + 1,
+        etiqueta: `${mesesES[hoy.getMonth()]} ${hoy.getFullYear()}`,
+        isFallback: false
+      };
+    } else {
+      const row = ultimoMesConIngresosRows?.[0];
+      const anio = Number(row?.anio || 0);
+      const mes = Number(row?.mes || 0);
+      const total = Number(row?.total || 0);
+      ingresos = total;
+      if (anio && mes) {
+        ingresosPeriodo = {
+          anio,
+          mes,
+          etiqueta: `${mesesES[mes - 1]} ${anio}`,
+          isFallback: true
+        };
+      }
+    }
+
     const data = {
-      ingresos: Number(ingresosRows[0]?.total || 0),
+      ingresos,
+      ingresosPeriodo, // Información del periodo usado para calcular "ingresos"
       pagosPendientes: Number(pagosPendRows[0]?.total || 0),
       nuevosAlumnos: Number(nuevosAluRows[0]?.total || 0),
       cursosActivos: Number(cursosActRows[0]?.total || 0),

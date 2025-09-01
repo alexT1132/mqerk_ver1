@@ -88,7 +88,7 @@ import {
   LineChart, Line
 } from 'recharts';
 import { useAdminContext } from '../../context/AdminContext.jsx';
-import { exportReportToExcel } from '../../utils/exportExcel.js';
+import { exportReportToExcel, exportReportToExcelWithCharts } from '../../utils/exportExcel.js';
 import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 
 export function ReportesPagos_Admin_comp() {
@@ -162,7 +162,21 @@ export function ReportesPagos_Admin_comp() {
     try {
       // Asegurar datos frescos del rango
       const data = await loadFinancialReports(fechaInicio, fechaFin);
-      exportReportToExcel(data || reportes, `reportes_pagos_${fechaInicio}_${fechaFin}.xlsx`);
+      // Intentar exportar con gráficas; si algo falla, el util genera al menos el Excel con datos
+      await exportReportToExcelWithCharts(
+        data || reportes,
+        `reportes_pagos_${fechaInicio}_${fechaFin}.xlsx`,
+        {
+          startDate: fechaInicio,
+          endDate: fechaFin,
+          generatedAt: new Date(),
+          selectors: {
+            ingresosMes: '[data-chart="ingresos-mes"] svg',
+            pagosCurso: '[data-chart="pagos-curso"] svg',
+            metodos: '[data-chart="metodos-pago"] svg',
+          }
+        }
+      );
     } catch (error) {
       console.error('❌ Error exportando a Excel:', error);
       alert(`❌ Error exportando a Excel: ${error.message}`);
@@ -283,13 +297,13 @@ export function ReportesPagos_Admin_comp() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="px-6 pt-0 pb-6 bg-white min-h-screen">
       {(showLoadingScreen || isLoading) && (
         <LoadingOverlay message="Cargando reportes de pagos..." />
       )}
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-xl shadow-2xl p-6 mb-6 border border-gray-200">
+  {/* Header (sticky) */}
+  <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-6 mb-6 border border-gray-200 sticky top-0 z-30">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Reportes de Pagos</h1>
@@ -474,7 +488,7 @@ export function ReportesPagos_Admin_comp() {
 
         {/* Gráficas principales */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
+          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col" data-chart="ingresos-mes">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Ingresos por Mes</h3>
             <div className="text-xs text-gray-500 mb-4">Solo pagos aprobados</div>
             <div className="flex-1 min-h-[240px]">
@@ -490,7 +504,7 @@ export function ReportesPagos_Admin_comp() {
             </div>
           </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
+            <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col" data-chart="pagos-curso">
               <h3 className="text-lg font-medium text-gray-900 mb-2">Pagos por Curso</h3>
               <div className="text-xs text-gray-500 mb-4">Cantidad de pagos aprobados</div>
               <div className="flex-1 min-h-[240px]">
@@ -509,7 +523,7 @@ export function ReportesPagos_Admin_comp() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
+            <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col" data-chart="metodos-pago">
               <h3 className="text-lg font-medium text-gray-900 mb-2">Distribución por Método</h3>
               <div className="text-xs text-gray-500 mb-4">Métodos de pago (aprobados)</div>
               <div className="flex-1 min-h-[240px]">

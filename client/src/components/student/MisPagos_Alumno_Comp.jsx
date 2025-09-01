@@ -63,24 +63,24 @@ const X = ({ className }) => (
 
 // Componentes de iconos para los métodos de pago disponibles
 const IconoTarjeta = () => (
-  <div className="w-12 h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-3">
-    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+  <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-2 sm:mb-3">
+    <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
       <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
     </svg>
   </div>
 );
 
 const IconoTransferencia = () => (
-  <div className="w-12 h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-3">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 text-white">
+  <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-2 sm:mb-3">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 sm:w-7 sm:h-7 text-white">
       <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h18M16.5 3L21 7.5m0 0L16.5 12M21 7.5H3" />
     </svg>
   </div>
 );
 
 const IconoEfectivo = () => (
-  <div className="w-12 h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-3">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white">
+  <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-2 sm:mb-3">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 sm:w-8 sm:h-8 text-white">
       <path d="M21 6H3c-1.1 0-2 .9-2 2v8a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2zm0 10H3V8h18v8zM7 10h2v2H7v-2zm0 3h2v2H7v-2z" />
     </svg>
   </div>
@@ -206,20 +206,27 @@ function PaymentMethodCard({ method, onClick }) {
       onClick={handleClick}
       className={`relative cursor-pointer bg-gradient-to-br ${methodColors[method.id]} 
       rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out
-      p-4 md:p-5 flex flex-col items-center justify-center text-center min-h-[160px] group border border-gray-100`}
+      p-3.5 md:p-5 flex flex-col items-center justify-center text-center min-h-[130px] md:min-h-[160px] group border border-gray-100`}
     >
       <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-2xl"></div>
-      {method.icon}
-      <h3 className="text-white text-sm md:text-base font-bold mt-1 leading-tight relative z-10">
+  {method.icon}
+  <h3 className="text-white text-[11px] sm:text-sm md:text-base font-bold mt-1 leading-tight relative z-10 px-1">
         {method.title}
       </h3>
-      <p className="text-white/80 text-xs mt-2 relative z-10">
+  <p className="hidden sm:block text-white/80 text-xs mt-2 relative z-10">
         Haz clic para ver detalles
       </p>
       {method.id === 'card' && showComingSoon && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-700/95 to-violet-900/95 rounded-2xl z-30 border-4 border-yellow-400 shadow-2xl">
-          <span className="text-yellow-300 text-xl font-extrabold mb-2 drop-shadow-lg text-center">¡Muy pronto disponible!</span>
-          <span className="text-white text-base font-semibold text-center max-w-xs">Estamos trabajando para ofrecerte pagos con tarjeta de forma segura y rápida. ¡Gracias por tu paciencia!</span>
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-700/95 to-violet-900/95 rounded-2xl z-30 border-2 sm:border-4 border-yellow-400 shadow-2xl p-3 sm:p-5 gap-1.5 sm:gap-2"
+          role="status" aria-live="polite"
+        >
+          <span className="text-yellow-300 text-base sm:text-xl font-extrabold mb-1 sm:mb-2 drop-shadow-lg text-center leading-tight px-1">
+            ¡Muy pronto disponible!
+          </span>
+          <span className="text-white text-xs sm:text-base font-semibold text-center max-w-[220px] sm:max-w-xs leading-snug px-1">
+            Estamos trabajando para ofrecerte pagos con tarjeta de forma segura y rápida. ¡Gracias por tu paciencia!
+          </span>
         </div>
       )}
     </div>
@@ -1178,20 +1185,20 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6 border border-gray-200">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6">
         <div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">📋 Plan Elegido</h3>
-          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-            <span className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full font-bold shadow-md">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">📋 Plan Elegido</h3>
+          <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+            <span className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold shadow-md">
               ✨ {currentPlan.name}
             </span>
-            <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium">
+            <span className="bg-green-100 text-green-800 px-2.5 py-1 rounded-full font-medium">
               💰 {formatCurrencyMXN(currentPlan.paymentAmount)} {currentPlan.frequency}
             </span>
-            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
+            <span className="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-medium">
               📅 Inicio: {currentPlan.startDate.toLocaleDateString('es-ES')}
             </span>
-            <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-medium">
+            <span className="bg-purple-100 text-purple-800 px-2.5 py-1 rounded-full font-medium">
               🎯 Total: {formatCurrencyMXN(currentPlan.totalAmount)}
             </span>
           </div>
@@ -1211,15 +1218,15 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
           </div>
         )}
 
-        <table className="w-full">
+        <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">Pago</th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">Periodo</th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">Monto</th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">Fecha Límite</th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">Estado</th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">Acciones</th>
+            <tr className="border-b border-gray-200 text-xs sm:text-sm">
+              <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-700">Pago</th>
+              <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-700">Periodo</th>
+              <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-700">Monto</th>
+              <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-700">Fecha Límite</th>
+              <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-700">Estado</th>
+              <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-700">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -1230,7 +1237,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                   payment.isOverdue ? 'bg-red-50' : ''
                 } ${allPaymentsPaid ? 'bg-green-50/30' : ''}`}
               >
-                <td className="py-4 px-4">
+                <td className="py-3 sm:py-4 px-2 sm:px-4">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                       payment.status === 'paid' ? 'bg-green-500 text-white' :
@@ -1248,16 +1255,16 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                     </span>
                   </div>
                 </td>
-                <td className="py-4 px-4 text-gray-700">
+                <td className="py-3 sm:py-4 px-2 sm:px-4 text-gray-700">
 
                   {payment.month}
                 </td>
-                <td className="py-4 px-4">
-                  <span className="font-bold text-lg text-gray-800">
+                <td className="py-3 sm:py-4 px-2 sm:px-4">
+                  <span className="font-bold text-base sm:text-lg text-gray-800">
                     {formatCurrencyMXN(payment.amount)}
                   </span>
                 </td>
-                <td className="py-4 px-4 text-gray-700">
+                <td className="py-3 sm:py-4 px-2 sm:px-4 text-gray-700">
                   <div className="space-y-1">
                     <div>📅 {payment.paymentDate.toLocaleDateString('es-MX')}</div>
                     <div className={`text-xs ${payment.isOverdue ? 'text-red-600 font-bold' : 'text-gray-500'}`}>
@@ -1265,7 +1272,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                     </div>
                   </div>
                 </td>
-                <td className="py-4 px-4">
+                <td className="py-3 sm:py-4 px-2 sm:px-4">
                   <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border ${
                     getStatusColor(payment.status, payment.isOverdue)
                   }`}>
@@ -1273,12 +1280,12 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                     {getStatusLabel(payment.status, payment.isOverdue)}
                   </div>
                 </td>
-                <td className="py-4 px-4">
+                <td className="py-3 sm:py-4 px-2 sm:px-4">
       {payment.status === 'paid' ? (
                     <div className="flex gap-2">
                       <button 
         onClick={() => onViewScheduleReceipt && onViewScheduleReceipt(payment)}
-                        className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200 transition flex items-center gap-1"
+                        className="text-xs sm:text-sm bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-200 transition flex items-center gap-1"
                       >
                         <Eye className="w-3 h-3" />
                         Ver comprobante
@@ -1288,7 +1295,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                     <div className="flex gap-2">
                       <button 
                         onClick={() => handlePayment(payment.id)}
-                        className={`text-sm px-3 py-1 rounded-lg transition flex items-center gap-1 ${
+                        className={`text-xs sm:text-sm px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${
                           payment.isOverdue 
                             ? 'bg-red-500 text-white hover:bg-red-600' 
                             : 'bg-green-500 text-white hover:bg-green-600'
@@ -1308,14 +1315,14 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
       </div>
 
       {/* Resumen del plan - MEJORADO */}
-      <div className={`mt-6 p-4 rounded-xl border-2 ${
+  <div className={`mt-5 sm:mt-6 p-3.5 sm:p-4 rounded-xl border-2 ${
         allPaymentsPaid 
           ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300' 
           : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
       }`}>
         {/* Header del resumen */}
-        <div className="flex items-center justify-between mb-4">
-          <h4 className={`font-bold text-lg ${allPaymentsPaid ? 'text-green-800' : 'text-blue-800'}`}>
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h4 className={`font-bold text-base sm:text-lg ${allPaymentsPaid ? 'text-green-800' : 'text-blue-800'}`}>
             {allPaymentsPaid ? '🎉 Resumen Final' : '📊 Progreso del Plan'}
           </h4>
           {allPaymentsPaid && (
@@ -1325,8 +1332,8 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-          <div className={`${allPaymentsPaid ? 'bg-green-100' : 'bg-white'} rounded-lg p-3 border`}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-center">
+          <div className={`${allPaymentsPaid ? 'bg-green-100' : 'bg-white'} rounded-lg p-2.5 sm:p-3 border`}>
             <div className={`text-sm font-medium mb-1 ${allPaymentsPaid ? 'text-green-600' : 'text-blue-600'}`}>
               Pagos Realizados
             </div>
@@ -1338,7 +1345,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
             )}
           </div>
 
-          <div className={`${allPaymentsPaid ? 'bg-green-100' : 'bg-white'} rounded-lg p-3 border`}>
+          <div className={`${allPaymentsPaid ? 'bg-green-100' : 'bg-white'} rounded-lg p-2.5 sm:p-3 border`}>
             <div className={`text-sm font-medium mb-1 ${allPaymentsPaid ? 'text-green-600' : 'text-green-600'}`}>
               Monto Pagado
             </div>
@@ -1350,7 +1357,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
             )}
           </div>
 
-          <div className={`${allPaymentsPaid ? 'bg-green-100' : 'bg-white'} rounded-lg p-3 border`}>
+          <div className={`${allPaymentsPaid ? 'bg-green-100' : 'bg-white'} rounded-lg p-2.5 sm:p-3 border`}>
             <div className={`text-sm font-medium mb-1 ${allPaymentsPaid ? 'text-green-600' : 'text-yellow-600'}`}>
               {allPaymentsPaid ? 'Total Invertido' : 'Pendiente'}
             </div>
@@ -1365,7 +1372,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
             )}
           </div>
 
-          <div className={`${allPaymentsPaid ? 'bg-green-100' : 'bg-white'} rounded-lg p-3 border`}>
+          <div className={`${allPaymentsPaid ? 'bg-green-100' : 'bg-white'} rounded-lg p-2.5 sm:p-3 border`}>
             <div className={`text-sm font-medium mb-1 ${allPaymentsPaid ? 'text-green-600' : 'text-purple-600'}`}>
               Progreso
             </div>
@@ -1929,7 +1936,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
           priority: NOTIFICATION_PRIORITIES.HIGH,
           title: 'Tu pago vence en 3 días',
           message: `Tu próximo pago de ${formatCurrencyMXN(nextPayment.amount)} vence el ${due.toLocaleDateString('es-MX')}. Realízalo a tiempo para evitar recargos.`,
-          actionUrl: '/mis-pagos',
+          actionUrl: '/alumno/mis-pagos',
           metadata: {
             amount: nextPayment.amount,
             dueDate: due.toISOString(),
@@ -1956,7 +1963,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
         // 
         // if (!data.hasPaid) {
         //   // Si no ha pagado, redirigir a la página de pagos
-        //   window.location.href = '/mis-pagos';
+  //   window.location.href = '/alumno/mis-pagos';
         // }
         
         // MOCK - Remover cuando conectes el backend
@@ -1996,19 +2003,19 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
   }
 
   return (
-    <div className="min-h-screen bg-white p-3 md:p-6">
+  <div className="min-h-screen bg-white p-2.5 sm:p-3 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Título principal y navegación por tabs */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <h1 className="text-3xl xs:text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 md:mb-0">
+          <h1 className="text-2xl xs:text-3xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 md:mb-0">
             MIS PAGOS
           </h1>
           
           {/* Tabs de navegación mejorados */}
-          <div className="flex bg-white rounded-xl p-1 shadow-lg border border-gray-200">
+      <div className="flex bg-white rounded-xl p-1 shadow-lg border border-gray-200">
             <button
               onClick={() => setActiveTab('current')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
+        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
                 activeTab === 'current'
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
@@ -2018,7 +2025,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
+        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
                 activeTab === 'history'
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
@@ -2033,20 +2040,20 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
         {activeTab === 'current' ? (
           <div className="space-y-6">
             {/* Información del próximo pago (dinámica) */}
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-4 md:p-6 text-white shadow-xl border border-gray-100">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-3 sm:p-4 md:p-6 text-white shadow-xl border border-gray-100">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
-                  <h3 className="text-lg font-bold mb-1">Próximo Pago</h3>
-                  <p className="text-blue-100 text-sm mb-2">
+                  <h3 className="text-base sm:text-lg font-bold mb-0.5">Próximo Pago</h3>
+                  <p className="text-blue-100 text-xs sm:text-sm mb-1 sm:mb-2">
                     {nextPayment ? `Mes de ${nextPayment.month}` : 'Sin pagos próximos'}
                   </p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-xl sm:text-2xl font-bold">
                     {nextPayment ? formatCurrencyMXN(nextPayment.amount) : formatCurrencyMXN(0, { minDecimals: 2, maxDecimals: 2 })}
                   </p>
                 </div>
                 <div className="mt-4 md:mt-0">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3">
-                    <p className="text-xs text-blue-200 mb-1">Fecha límite de pago</p>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2.5 sm:p-3">
+                    <p className="text-[11px] sm:text-xs text-blue-200 mb-0.5 sm:mb-1">Fecha límite de pago</p>
                     <p className="font-semibold">
                       {nextPayment ? nextPayment.dueDate.toLocaleDateString('es-ES') : '--/--/----'}
                     </p>
@@ -2058,7 +2065,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
             {/* Opciones de métodos de pago */}
             <div>
               <h3 className="text-lg font-bold text-gray-800 mb-4">Métodos de pago</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                 {paymentMethods.map(method => (
                   <PaymentMethodCard
                     key={method.id}

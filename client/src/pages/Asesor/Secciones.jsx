@@ -244,6 +244,17 @@ export const ActividadesAsesor = () => {
         <h2 className="bg-linear-to-r from-pink-500 to-violet-500 bg-clip-text w-fit text-transparent text-xl font-bold uppercase text-start">
           Actividades
         </h2>
+        {/* Toggle rápido: mostrar/ocultar Feedback en sidebar asesor (solo cliente) */}
+        <div className="ml-auto flex items-center gap-2 text-xs text-gray-600">
+          <label className="flex items-center gap-1 select-none">
+            <input
+              type="checkbox"
+              defaultChecked={typeof window !== 'undefined' ? (localStorage.getItem('advisorFeedbackEnabled') !== 'false') : true}
+              onChange={(e)=> { if (typeof window !== 'undefined') { localStorage.setItem('advisorFeedbackEnabled', e.target.checked ? 'true' : 'false'); location.reload(); } }}
+            />
+            Feedback visible
+          </label>
+        </div>
         <ModalCursos onClick={() => setIsModalOpen(true)} />
         <ActivityModal
           isOpen={isModalOpen}

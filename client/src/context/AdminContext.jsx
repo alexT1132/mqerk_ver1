@@ -89,6 +89,7 @@ export const AdminProvider = ({ children }) => {
       const { data } = await axios.get('/admin/dashboard/metrics');
       setDashboardData({
         ingresos: Number(data?.ingresos || 0),
+        ingresosPeriodo: data?.ingresosPeriodo || null,
         pagosPendientes: Number(data?.pagosPendientes || 0),
         nuevosAlumnos: Number(data?.nuevosAlumnos || 0),
         cursosActivos: Number(data?.cursosActivos || 0),
@@ -209,7 +210,7 @@ export const AdminProvider = ({ children }) => {
           pagoCurso: est.pago?.importe != null ? `$${Number(est.pago.importe).toLocaleString('es-MX',{ minimumFractionDigits:2 })}` : null,
           metodoPago: est.pago?.metodo || null,
           pagoFechaISO: est.pago?.fecha || null,
-          // estatus derivado si no existe
+          // estatus del backend (Activo|Suspendido) o derivado como fallback
           estatus: est.estatus ?? (est.verificacion === 2 ? 'Activo' : 'Pendiente'),
           fechaRegistro: est.fechaRegistro ?? (est.created_at ? new Date(est.created_at).toISOString().split('T')[0] : ''),
         };
@@ -545,39 +546,24 @@ export const AdminProvider = ({ children }) => {
   /**
    * Update student information
    */
-  const updateStudent = async (studentId, studentData) => {
+  const updateStudent = async (studentIdOrFolio, studentData) => {
     try {
-      // TODO: BACKEND - Reemplazar con endpoint real cuando esté disponible
-      // const response = await fetch(`/api/admin/students/${studentId}`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify(studentData)
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Error updating student');
-      // }
-      
-      // return await response.json();
-      
-      // MOCK - Simular actualización de estudiante
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      console.log(`✏️ Estudiante ${studentId} actualizado (MOCK)`);
-      
-      return {
-        success: true,
-        message: 'Estudiante actualizado exitosamente',
-        studentId: studentId,
-        updatedData: studentData,
-        timestamp: new Date().toISOString()
-      };
+      // Resolver ID si recibimos folio
+      let studentId = studentIdOrFolio;
+      if (!/^[0-9]+$/.test(String(studentIdOrFolio))) {
+        try {
+          const { data } = await axios.get(`/admin/estudiantes/folio/${encodeURIComponent(studentIdOrFolio)}`);
+          studentId = data?.data?.id || studentIdOrFolio;
+        } catch {}
+      }
+      // Enviar únicamente campos permitidos; passthrough si ya están normalizados
+      const payload = { ...studentData };
+      const { data } = await axios.put(`/estudiantes/${studentId}`, payload);
+      return { success: true, data: data?.data };
     } catch (err) {
       console.error('Error updating student:', err);
-      throw err;
+      const msg = err?.response?.data?.message || err?.message || 'Error al actualizar estudiante';
+      return { success: false, message: msg };
     }
   };
 

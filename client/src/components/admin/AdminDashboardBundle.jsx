@@ -15,6 +15,7 @@ import  Email_Admin_comp  from './Email_Admin_comp.jsx';
 import { Configuracion_Admin_comp } from './Configuracion_Admin_comp.jsx';
 import AdministrarAsesores from './AdministrarAsesores.jsx';
 import StudentProfilePage from '../../pages/Admin/StudentProfilePage.jsx';
+import StudentPaymentsPage from '../../pages/Admin/StudentPaymentsPage.jsx';
 
 
 
@@ -39,6 +40,8 @@ export function AdminDashboardBundle() {
   {/* Perfil individual de estudiante (completo) */}
   <Route path="/student/:folio" element={<StudentProfilePage />} />
   {/* Perfil simplificado de diagnóstico */}
+  {/* Vista de pagos del estudiante para administradores */}
+  <Route path="/student/:folio/pagos" element={<StudentPaymentsPage />} />
 
         {/* Generar contrato */}
         <Route path="/generar-contrato" element={<GenerarContratoAdmin />} />

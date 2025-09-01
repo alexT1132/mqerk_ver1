@@ -358,15 +358,13 @@ export function Configuracion_Admin_comp() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-white p-2 sm:p-4 lg:p-6">
       {(showInitialOverlay || isLoading || contextLoading) && (
         <LoadingOverlay message="Cargando configuración..." subMessage="Por favor espera..." />
       )}
       <div className="max-w-7xl mx-auto">
         {/* Header Principal */}
-        <div className="bg-gradient-to-br from-white via-blue-50 to-indigo-100 rounded-2xl sm:rounded-3xl shadow-xl shadow-blue-200/30 border-2 border-blue-200/50 p-6 sm:p-8 mb-6 sm:mb-8 backdrop-blur-sm relative overflow-hidden">
-          {/* Efecto de brillo sutil */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-2xl sm:rounded-3xl"></div>
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-blue-200/30 border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6 relative">
           
           <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center space-x-4">
@@ -382,7 +380,7 @@ export function Configuracion_Admin_comp() {
                 </p>
               </div>
             </div>
-            <div className="mt-4 sm:mt-0">
+            <div className="mt-3 sm:mt-0">
               <button 
                 onClick={handleGuardarConfiguracion}
                 disabled={saving}
@@ -411,14 +409,11 @@ export function Configuracion_Admin_comp() {
 
         {/* Mensaje de éxito/error */}
         {message && (
-          <div className={`bg-gradient-to-r ${
+          <div className={`bg-white ${
             message.includes('exitosamente') 
-              ? 'from-green-50 via-green-100 to-emerald-100 border-green-300/50 text-green-800' 
-              : 'from-red-50 via-red-100 to-pink-100 border-red-300/50 text-red-800'
-          } border-2 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 shadow-lg backdrop-blur-sm relative overflow-hidden transform transition-all duration-300 hover:scale-[1.02]`}>
-            {/* Efecto de brillo sutil */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-2xl"></div>
-            
+              ? 'border-green-200 text-green-700' 
+              : 'border-red-200 text-red-700'
+          } border rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 shadow-lg relative transform transition-all duration-300 hover:scale-[1.01]`}>
             <div className="relative z-10 flex items-center">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center mr-4 ${
                 message.includes('exitosamente') 
@@ -441,9 +436,7 @@ export function Configuracion_Admin_comp() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Sidebar de navegación */}
           <div className="lg:col-span-1">
-            <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 rounded-2xl sm:rounded-3xl shadow-xl shadow-gray-200/40 border-2 border-gray-200/50 p-6 sm:p-8 backdrop-blur-sm relative overflow-hidden">
-              {/* Efecto de brillo sutil */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-2xl sm:rounded-3xl"></div>
+            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-gray-200/40 border border-gray-200 p-6 sm:p-8 relative">
               
               <div className="relative z-10">
                 <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-6 flex items-center">
@@ -490,9 +483,7 @@ export function Configuracion_Admin_comp() {
 
           {/* Contenido principal */}
           <div className="lg:col-span-3">
-            <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 rounded-2xl sm:rounded-3xl shadow-xl shadow-gray-200/40 border-2 border-gray-200/50 p-6 sm:p-8 backdrop-blur-sm relative overflow-hidden">
-              {/* Efecto de brillo sutil */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-2xl sm:rounded-3xl"></div>
+            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-gray-200/40 border border-gray-200 p-6 sm:p-8 relative">
               
               <div className="relative z-10">
                 {/* Mi Perfil */}
@@ -514,8 +505,7 @@ export function Configuracion_Admin_comp() {
                     
                     {/* Foto de perfil */}
                     <div className="mb-8">
-                      <div className="bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 rounded-2xl p-6 sm:p-8 border-2 border-purple-200/50 shadow-lg shadow-purple-200/30 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-2xl"></div>
+                      <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-lg relative">
                         
                         <div className="relative z-10">
                           <div className="flex items-center mb-6">
@@ -799,15 +789,13 @@ export function Configuracion_Admin_comp() {
                             {configuration.seguridad.autenticacionDosFactor ? 'Activado' : 'Desactivado'}
                           </span>
                         </div>
-                          <p className="text-xs text-gray-500">Nota: esta función aún no está habilitada.</p>
+                        {/* 2FA toggle is persisted via /admin/config; enforcement can be added later */}
                       </div>
                     </div>
 
                     {/* Sección para cambiar contraseña */}
                     <div className="mb-10">
-                      <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 rounded-2xl p-6 sm:p-8 border-2 border-orange-200/50 shadow-lg shadow-orange-200/30 relative overflow-hidden">
-                        {/* Efecto de brillo sutil */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-2xl"></div>
+                      <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-lg relative">
                         
                         <div className="relative z-10">
                           <div className="flex items-center mb-6">

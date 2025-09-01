@@ -24,9 +24,37 @@ const COORDENADAS_CAMPOS = {
   // Datos del curso
   monto: { x: 350, y: 553 }, // Campo del monto principal en rojo
   planCurso: { x: 400, y: 418 }, // Plan Básico - 6 meses
+  // Folio original visible (ajustar según cabecera de la plantilla)
+  folioOriginal: { x: 480, y: 770 },
   
   // Fechas y firma
   fechaGeneracion: { x: 100, y: 100 }, // Fecha de generación del contrato
+};
+
+// Overrides dinámicos (localStorage) para calibración sin tocar código
+const LS_KEY = 'contractCoordsOverrides';
+let COORD_OVERRIDES = {};
+try {
+  const raw = typeof window !== 'undefined' ? window.localStorage.getItem(LS_KEY) : null;
+  if (raw) COORD_OVERRIDES = JSON.parse(raw);
+} catch (_) {}
+
+const saveOverrides = () => {
+  try { if (typeof window !== 'undefined') window.localStorage.setItem(LS_KEY, JSON.stringify(COORD_OVERRIDES)); } catch (_) {}
+};
+
+export const setCoordOverride = (campo, x, y) => {
+  COORD_OVERRIDES = { ...COORD_OVERRIDES, [campo]: { x: Number(x)||0, y: Number(y)||0 } };
+  saveOverrides();
+};
+
+export const clearCoordOverrides = () => { COORD_OVERRIDES = {}; saveOverrides(); };
+export const getCoordOverrides = () => ({ ...COORD_OVERRIDES });
+
+const getCoords = (campo) => {
+  const ov = COORD_OVERRIDES[campo];
+  if (ov && typeof ov.x === 'number' && typeof ov.y === 'number') return ov;
+  return COORDENADAS_CAMPOS[campo];
 };
 
 // Configuración de colores
@@ -111,9 +139,71 @@ export const procesarDatosAlumno = (alumno) => {
 /**
  * Rellena los campos específicos del PDF con los datos del alumno
  */
-export const rellenarCamposPDF = async (pdfDoc, datosAlumno) => {
+// Helper para dibujar texto con opciones (alineación, maxWidth) y marcadores en modo debug
+const drawTextAt = (page, text, coords, opts) => {
+  const {
+    font,
+    fontBold,
+    size = FUENTES.tamaño.normal,
+    color = COLORES.camposVariables,
+    align = 'left', // left | center | right
+    maxWidth = undefined,
+    debug = false,
+    bold = false,
+    yAdjust = 0, // ajustar si se quiere alinear visualmente con media altura
+  } = opts || {};
+
+  const f = bold && fontBold ? fontBold : font;
+  if (!f) return;
+  let x = coords.x;
+  let y = coords.y + yAdjust;
+  let txt = String(text ?? '').trim();
+  if (!txt) return;
+
+  // Calcular ancho y ajustar por alineación
+  let width = f.widthOfTextAtSize(txt, size);
+  if (maxWidth && width > maxWidth) {
+    // Estrategia simple: reducir tamaño hasta que quepa o llegar a 7pt
+    let s = size;
+    while (s > 7 && f.widthOfTextAtSize(txt, s) > maxWidth) s -= 0.5;
+    // Si aún no cabe, truncar con '…'
+    if (f.widthOfTextAtSize(txt, s) > maxWidth) {
+      while (txt.length > 0 && f.widthOfTextAtSize(txt + '…', s) > maxWidth) {
+        txt = txt.slice(0, -1);
+      }
+      txt = txt + '…';
+    }
+    width = f.widthOfTextAtSize(txt, s);
+    // aplicar nuevo size
+    page.drawText(txt, { x: 0, y: 0, size: s, font: f, color }); // dummy para usar s abajo
+    // drawText real más abajo; actualizamos opts size
+    opts.size = s;
+  }
+
+  if (align === 'center') x = x - width / 2;
+  if (align === 'right') x = x - width;
+
+  if (debug) {
+    // Marcar punto y caja de referencia
+    page.drawCircle({ x: coords.x, y: coords.y, size: 2, color: rgb(1, 0, 0) });
+    if (maxWidth) {
+      page.drawRectangle({ x: coords.x, y: coords.y - (opts.size || size), width: maxWidth, height: (opts.size || size) + 4, borderColor: rgb(1, 0, 0), borderWidth: 0.5 });
+    }
+  }
+
+  page.drawText(txt, {
+    x,
+    y,
+    size: opts.size || size,
+    font: f,
+    color,
+  });
+};
+
+export const rellenarCamposPDF = async (pdfDoc, datosAlumno, opciones = {}) => {
   const pages = pdfDoc.getPages();
   const firstPage = pages[0];
+  const debug = Boolean(opciones.debug);
   
   // Cargar fuentes
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -124,115 +214,40 @@ export const rellenarCamposPDF = async (pdfDoc, datosAlumno) => {
   
   try {
     // Rellenar campos del estudiante
-    if (datosAlumno.nombre) {
-      firstPage.drawText(datosAlumno.nombre, {
-        x: COORDENADAS_CAMPOS.nombre.x,
-        y: COORDENADAS_CAMPOS.nombre.y,
-        size: FUENTES.tamaño.normal,
-        font: font,
-        color: COLORES.camposVariables,
-      });
-    }
+  if (datosAlumno.nombre) drawTextAt(firstPage, datosAlumno.nombre, getCoords('nombre'), { font, fontBold, color: COLORES.camposVariables, size: FUENTES.tamaño.normal, debug, maxWidth: 360 });
     
-    if (datosAlumno.apellidos) {
-      firstPage.drawText(datosAlumno.apellidos, {
-        x: COORDENADAS_CAMPOS.apellidos.x,
-        y: COORDENADAS_CAMPOS.apellidos.y,
-        size: FUENTES.tamaño.normal,
-        font: font,
-        color: COLORES.camposVariables,
-      });
-    }
+  if (datosAlumno.apellidos) drawTextAt(firstPage, datosAlumno.apellidos, getCoords('apellidos'), { font, fontBold, color: COLORES.camposVariables, size: FUENTES.tamaño.normal, debug, maxWidth: 180 });
     
-    if (datosAlumno.nivelAcademico) {
-      firstPage.drawText(datosAlumno.nivelAcademico, {
-        x: COORDENADAS_CAMPOS.nivelAcademico.x,
-        y: COORDENADAS_CAMPOS.nivelAcademico.y,
-        size: FUENTES.tamaño.normal,
-        font: font,
-        color: COLORES.camposVariables,
-      });
-    }
+  if (datosAlumno.nivelAcademico) drawTextAt(firstPage, datosAlumno.nivelAcademico, getCoords('nivelAcademico'), { font, fontBold, color: COLORES.camposVariables, size: FUENTES.tamaño.normal, debug, maxWidth: 300 });
     
-    if (datosAlumno.correoElectronico) {
-      firstPage.drawText(datosAlumno.correoElectronico, {
-        x: COORDENADAS_CAMPOS.correoElectronico.x,
-        y: COORDENADAS_CAMPOS.correoElectronico.y,
-        size: FUENTES.tamaño.normal,
-        font: font,
-        color: COLORES.camposVariables,
-      });
-    }
+  if (datosAlumno.correoElectronico) drawTextAt(firstPage, datosAlumno.correoElectronico, getCoords('correoElectronico'), { font, fontBold, color: COLORES.camposVariables, size: FUENTES.tamaño.normal, debug, maxWidth: 420 });
     
-    if (datosAlumno.telefono) {
-      firstPage.drawText(datosAlumno.telefono, {
-        x: COORDENADAS_CAMPOS.telefono.x,
-        y: COORDENADAS_CAMPOS.telefono.y,
-        size: FUENTES.tamaño.normal,
-        font: font,
-        color: COLORES.camposVariables,
-      });
-    }
+  if (datosAlumno.telefono) drawTextAt(firstPage, datosAlumno.telefono, getCoords('telefono'), { font, fontBold, color: COLORES.camposVariables, size: FUENTES.tamaño.normal, debug, maxWidth: 140, align: 'left' });
     
-    if (datosAlumno.nombreTutor) {
-      firstPage.drawText(datosAlumno.nombreTutor, {
-        x: COORDENADAS_CAMPOS.nombreTutor.x,
-        y: COORDENADAS_CAMPOS.nombreTutor.y,
-        size: FUENTES.tamaño.normal,
-        font: font,
-        color: COLORES.camposVariables,
-      });
-    }
+  if (datosAlumno.nombreTutor) drawTextAt(firstPage, datosAlumno.nombreTutor, getCoords('nombreTutor'), { font, fontBold, color: COLORES.camposVariables, size: FUENTES.tamaño.normal, debug, maxWidth: 300 });
     
-    if (datosAlumno.telefonoTutor) {
-      firstPage.drawText(datosAlumno.telefonoTutor, {
-        x: COORDENADAS_CAMPOS.telefonoTutor.x,
-        y: COORDENADAS_CAMPOS.telefonoTutor.y,
-        size: FUENTES.tamaño.normal,
-        font: font,
-        color: COLORES.camposVariables,
-      });
-    }
+  if (datosAlumno.telefonoTutor) drawTextAt(firstPage, datosAlumno.telefonoTutor, getCoords('telefonoTutor'), { font, fontBold, color: COLORES.camposVariables, size: FUENTES.tamaño.normal, debug, maxWidth: 140 });
     
-    if (datosAlumno.alergias) {
-      firstPage.drawText(datosAlumno.alergias, {
-        x: COORDENADAS_CAMPOS.alergias.x,
-        y: COORDENADAS_CAMPOS.alergias.y,
-        size: FUENTES.tamaño.normal,
-        font: font,
-        color: COLORES.camposVariables,
-      });
-    }
+  if (datosAlumno.alergias) drawTextAt(firstPage, datosAlumno.alergias, getCoords('alergias'), { font, fontBold, color: COLORES.camposVariables, size: FUENTES.tamaño.normal, debug, maxWidth: 420 });
     
     // Seguimiento psicológico
-    firstPage.drawText(datosAlumno.seguimientoPsicologico, {
-      x: COORDENADAS_CAMPOS.seguimientoPsicologico.x,
-      y: COORDENADAS_CAMPOS.seguimientoPsicologico.y,
-      size: FUENTES.tamaño.normal,
-      font: fontBold,
-      color: COLORES.camposVariables,
-    });
+    drawTextAt(firstPage, datosAlumno.seguimientoPsicologico, COORDENADAS_CAMPOS.seguimientoPsicologico, { font, fontBold, bold: true, color: COLORES.camposVariables, size: FUENTES.tamaño.normal, debug });
     
     // Monto del curso (campo destacado en rojo)
-    if (datosAlumno.pagoCurso) {
-      firstPage.drawText(datosAlumno.pagoCurso, {
-        x: COORDENADAS_CAMPOS.monto.x,
-        y: COORDENADAS_CAMPOS.monto.y,
-        size: FUENTES.tamaño.destacado,
-        font: fontBold,
-        color: COLORES.camposVariables,
-      });
-    }
+  if (datosAlumno.pagoCurso) drawTextAt(firstPage, datosAlumno.pagoCurso, getCoords('monto'), { font, fontBold, bold: true, color: COLORES.camposVariables, size: FUENTES.tamaño.destacado, debug, maxWidth: 180 });
     
     // Plan del curso
-    if (datosAlumno.planCurso) {
-      firstPage.drawText(datosAlumno.planCurso, {
-        x: COORDENADAS_CAMPOS.planCurso.x,
-        y: COORDENADAS_CAMPOS.planCurso.y,
-        size: FUENTES.tamaño.normal,
-        font: font,
-        color: COLORES.camposVariables,
-      });
+  if (datosAlumno.planCurso) drawTextAt(firstPage, datosAlumno.planCurso, getCoords('planCurso'), { font, fontBold, color: COLORES.camposVariables, size: FUENTES.tamaño.normal, debug, maxWidth: 360 });
+
+    // Folio original (si viene del alumno), anclado al margen derecho
+    if (datosAlumno.folio) {
+      const { width, height } = firstPage.getSize();
+      const folioClean = String(datosAlumno.folio).replace(/\s+/g, '');
+      const pos = {
+        x: width - (typeof opciones.folioRightMargin === 'number' ? opciones.folioRightMargin : 40),
+        y: typeof opciones.folioTopY === 'number' ? opciones.folioTopY : (height - 50),
+      };
+      drawTextAt(firstPage, `Folio original: ${folioClean}`, pos, { font, fontBold, color: COLORES.textoNormal, size: FUENTES.tamaño.pequeño, debug, align: 'right', maxWidth: 240 });
     }
     
     // Fecha de generación
@@ -242,13 +257,7 @@ export const rellenarCamposPDF = async (pdfDoc, datosAlumno) => {
       day: 'numeric'
     });
     
-    firstPage.drawText(`Generado el: ${fechaActual}`, {
-      x: COORDENADAS_CAMPOS.fechaGeneracion.x,
-      y: COORDENADAS_CAMPOS.fechaGeneracion.y,
-      size: FUENTES.tamaño.pequeño,
-      font: font,
-      color: COLORES.textoNormal,
-    });
+  drawTextAt(firstPage, `Generado el: ${fechaActual}`, getCoords('fechaGeneracion'), { font, fontBold, color: COLORES.textoNormal, size: FUENTES.tamaño.pequeño, debug });
     
     console.log('✅ Campos PDF rellenados correctamente');
     return folio;
@@ -262,7 +271,7 @@ export const rellenarCamposPDF = async (pdfDoc, datosAlumno) => {
 /**
  * Genera el contrato PDF completo desde la plantilla oficial
  */
-export const generarContratoPDF = async (alumno) => {
+export const generarContratoPDF = async (alumno, opciones = {}) => {
   try {
     console.log('🔄 Iniciando generación de contrato PDF para:', alumno.alumno);
     
@@ -281,7 +290,7 @@ export const generarContratoPDF = async (alumno) => {
     const datosAlumno = procesarDatosAlumno(alumno);
     
     // 3. Rellenar campos del PDF
-    const folio = await rellenarCamposPDF(pdfDoc, datosAlumno);
+  const folio = await rellenarCamposPDF(pdfDoc, datosAlumno, opciones);
     
     // 4. Generar el PDF final
     const pdfBytes = await pdfDoc.save();
@@ -293,7 +302,7 @@ export const generarContratoPDF = async (alumno) => {
     
     console.log('✅ Contrato PDF generado exitosamente:', nombreArchivo);
     
-    return {
+  return {
       url,
       nombreArchivo,
       folio,
@@ -328,13 +337,13 @@ export const descargarPDF = (url, nombreArchivo) => {
 /**
  * Función principal que orquesta todo el proceso
  */
-export const generarYDescargarContrato = async (alumno) => {
+export const generarYDescargarContrato = async (alumno, opciones = {}) => {
   try {
     // Generar el contrato
-    const resultado = await generarContratoPDF(alumno);
+  const resultado = await generarContratoPDF(alumno, opciones);
     
     // Descargar automáticamente
-    descargarPDF(resultado.url, resultado.nombreArchivo);
+  descargarPDF(resultado.url, resultado.nombreArchivo);
     
     return resultado;
     

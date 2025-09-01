@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown, RefreshCcw, PlusCircle } from 'lucide-react';
+import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown, RefreshCcw, PlusCircle, Info } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { listTasks, listSubmissionsByStudent, createSubmission, createTask, updateTask, cancelSubmissionApi } from '../../api/feedback.js';
+import { buildStaticUrl } from '../../utils/url.js';
 
 const Feedback_Alumno_Comp = () => {
   // Auth
@@ -23,7 +24,6 @@ const Feedback_Alumno_Comp = () => {
   const [newTaskError, setNewTaskError] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiScore, setConfettiScore] = useState(0);
-  // showMotivationalMessage state is not directly used for visual display in the confetti effect anymore
   const [showMotivationalMessage, setShowMotivationalMessage] = useState(false); 
   const [selectedMonth, setSelectedMonth] = useState('all');
   // Depende de selectedMonth, así que calcúlalo después de declararlo
@@ -38,21 +38,47 @@ const Feedback_Alumno_Comp = () => {
   const [showViewTaskModal, setShowViewTaskModal] = useState(false);
   const [viewingTaskName, setViewingTaskName] = useState('');
   const [viewingTaskPdf, setViewingTaskPdf] = useState('');
+  const isPdfIframeBlocked = React.useMemo(() => {
+    try {
+      if (!viewingTaskPdf) return false;
+      const u = new URL(viewingTaskPdf);
+      const host = u.hostname.toLowerCase();
+      return host.includes('docs.google.com') || host.includes('drive.google.com');
+    } catch {
+      return false;
+    }
+  }, [viewingTaskPdf]);
   const [totalPoints, setTotalPoints] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const TASKS_PER_PAGE = 20;
+  const TASKS_PER_PAGE = 10;
   // Errores de archivo
   const [fileError, setFileError] = useState("");
-  const MAX_FILE_SIZE_BYTES = 1.5 * 1024 * 1024; // 1.5MB
+  const MAX_FILE_SIZE_BYTES = 1.5 * 1024 * 1024; // limite maximo de cada archivo pdf 1.5MB
   // Búsqueda
   const [searchTerm, setSearchTerm] = useState("");
-  // Conteo de tareas creadas por el alumno (límite 20)
+
+  // Conteo global de tareas creadas por el alumno (informativo)
   const studentOwnedCount = tasks.filter(t => t._isStudentOwned).length;
-  // Límite global del curso (8 meses, 14,440 entregas)
+  // Conteo mensual de tareas creadas por el alumno (para límite mensual = perMonthCap)
+  const studentOwnedCountThisMonth = React.useMemo(() => {
+    try {
+      const now = new Date();
+      const targetMonth = selectedMonth === 'all' ? now.getMonth() : parseInt(selectedMonth);
+      return tasks.filter(t => {
+        if (!t._isStudentOwned) return false;
+        const d = t?.dueDate ? new Date(t.dueDate) : null;
+        if (!d || isNaN(d.getTime())) return false;
+        return d.getMonth() === targetMonth;
+      }).length;
+    } catch {
+      return 0;
+    }
+  }, [tasks, selectedMonth]);
+  // Límite global del curso (8 meses, 240 entregas) 
   const COURSE_MONTHS = 8;
-  const TOTAL_MAX_SUBMISSIONS = 14440;
+  const TOTAL_MAX_SUBMISSIONS = 240;
   const perMonthCap = Math.floor(TOTAL_MAX_SUBMISSIONS / COURSE_MONTHS);
   const [monthlyCountThisMonth, setMonthlyCountThisMonth] = useState(0);
   const [monthlyCapReached, setMonthlyCapReached] = useState(false);
@@ -101,7 +127,7 @@ const Feedback_Alumno_Comp = () => {
           listSubmissionsByStudent(alumnoId, { limit: 10000 }).catch(() => ({ data: { data: [] }}))
         ]);
         if (cancel) return;
-        const tasksRaw = Array.isArray(tasksRes?.data?.data) ? tasksRes.data.data : [];
+  const tasksRaw = Array.isArray(tasksRes?.data?.data) ? tasksRes.data.data : [];
         const subs = Array.isArray(subsRes?.data?.data) ? subsRes.data.data : [];
         // Calcular conteo mensual (por mes calendario basado en created_at)
         const byMonth = subs.reduce((acc, s) => {
@@ -115,7 +141,6 @@ const Feedback_Alumno_Comp = () => {
         const usedThisMonth = byMonth[nowM] || 0;
         setMonthlyCountThisMonth(usedThisMonth);
         setMonthlyCapReached(usedThisMonth >= perMonthCap);
-  const origin = `${window.location.protocol}//${window.location.hostname}:1002`;
         // Filtrar: mostrar tareas globales (sin grupos) y tareas propias (grupos contiene alumnoId)
         const filtered = tasksRaw.filter(t => {
           const g = Array.isArray(t.grupos) ? t.grupos : null;
@@ -124,8 +149,7 @@ const Feedback_Alumno_Comp = () => {
         const mapped = filtered.map(t => {
           const sub = subs.find(s => s.id_task === t.id && !s.replaced_by);
           const rel = sub?.archivo || null;
-            // Si ya viene con http lo dejamos
-          const fullUrl = rel ? (rel.startsWith('http') ? rel : `${origin}${rel}`) : null;
+          const fullUrl = rel ? buildStaticUrl(rel) : null;
           return {
             id: t.id,
             name: t.nombre,
@@ -185,9 +209,8 @@ const Feedback_Alumno_Comp = () => {
       const res = await createSubmission(fd);
       const sub = res?.data?.data;
       if (sub) {
-  const origin = `${window.location.protocol}//${window.location.hostname}:1002`;
   const rel = sub.archivo;
-  const fullUrl = rel.startsWith('http') ? rel : `${origin}${rel}`;
+  const fullUrl = rel ? buildStaticUrl(rel) : null;
   setTasks(prev => prev.map(t => {
     if (t.id !== taskId) return t;
     const newDue = t._isStudentOwned ? new Date().toISOString() : t.dueDate;
@@ -204,7 +227,7 @@ const Feedback_Alumno_Comp = () => {
           if (next === 3) {
             setShowTripleEffect(true);
             // Ocultar después de 6s
-            setTimeout(() => setShowTripleEffect(false), 6000);
+            setTimeout(() => setShowTripleEffect(false), 5000);
           }
           return next;
         });
@@ -266,6 +289,10 @@ const Feedback_Alumno_Comp = () => {
     if (name.length > 100) { setNewTaskError('Máximo 100 caracteres'); return; }
     if (!alumnoId) { setNewTaskError('Sesión inválida'); return; }
     if (isPastSelectedMonth) { setNewTaskError('No puedes crear actividades en meses pasados'); return; }
+    if (studentOwnedCountThisMonth >= perMonthCap) {
+      setNewTaskError(`Has alcanzado el límite mensual de ${perMonthCap} actividades creadas.`);
+      return;
+    }
     try {
       setNewTaskError('');
       // Establece due_date al inicio del mes seleccionado si no es 'all'; de lo contrario, hoy
@@ -276,7 +303,7 @@ const Feedback_Alumno_Comp = () => {
         const m = parseInt(selectedMonth);
         due = new Date(y, m, 1, 12, 0, 0);
       }
-      const body = { nombre: name, due_date: due.toISOString(), puntos: 10, grupos: JSON.stringify([alumnoId]), activo: 1 };
+  const body = { nombre: name, due_date: due.toISOString(), puntos: 10, grupos: JSON.stringify([alumnoId]), activo: 1 };
       await createTask(body);
       // Refrescar lista
         const [tasksRes, subsRes] = await Promise.all([
@@ -297,11 +324,10 @@ const Feedback_Alumno_Comp = () => {
       const usedThisMonth2 = byMonth2[nowM2] || 0;
       setMonthlyCountThisMonth(usedThisMonth2);
       setMonthlyCapReached(usedThisMonth2 >= perMonthCap);
-      const origin = `${window.location.protocol}//${window.location.hostname}:1002`;
       const filtered = tasksRaw.filter(t => { const g = Array.isArray(t.grupos) ? t.grupos : null; return !g || g.includes(alumnoId); });
       const mapped = filtered.map(t => {
         const sub = subs.find(s => s.id_task === t.id && !s.replaced_by);
-        const rel = sub?.archivo || null; const fullUrl = rel ? (rel.startsWith('http') ? rel : `${origin}${rel}`) : null;
+  const rel = sub?.archivo || null; const fullUrl = rel ? buildStaticUrl(rel) : null;
         return { id: t.id, name: t.nombre, dueDate: t.due_date, submittedPdf: fullUrl, isSubmitted: !!sub, score: sub ? (sub.puntos || 10) : null, _subId: sub?.id || null, _isStudentOwned: Array.isArray(t.grupos) && t.grupos.includes(alumnoId) };
       });
       setTasks(mapped);
@@ -476,6 +502,14 @@ const Feedback_Alumno_Comp = () => {
     };
   }, []);
 
+  // Vista rápida del nombre completo en móvil
+  const [showFullNameId, setShowFullNameId] = useState(null);
+  useEffect(() => {
+    if (!showFullNameId) return;
+    const t = setTimeout(() => setShowFullNameId(null), 2500);
+    return () => clearTimeout(t);
+  }, [showFullNameId]);
+
   // Urgencia según horas restantes (solo mostrar si NO se ha entregado y la fecha está próxima o vencida)
   // Reglas:
   //  - No mostrar nada si la tarea ya fue entregada.
@@ -502,12 +536,7 @@ const Feedback_Alumno_Comp = () => {
   <h1 className="text-2xl xs:text-3xl sm:text-5xl font-extrabold mb-4 sm:mb-8 text-purple-700 drop-shadow-lg text-center tracking-tight">
         FEEDBACK
       </h1>
-      {/* Cuota mensual */}
-      <div className="w-full max-w-3xl -mt-2 mb-3 flex items-center justify-end">
-        <span className="text-[11px] sm:text-xs text-purple-700 bg-purple-50 border border-purple-200 rounded-lg px-3 py-1">
-          Mes: {displayMonthlyCount}/{perMonthCap}
-        </span>
-      </div>
+     
 
       {/* Puntos + Progreso */}
       <div className="bg-gradient-to-r from-purple-100 to-indigo-100 border-2 border-purple-200 rounded-xl shadow-lg p-5 sm:p-6 mb-4 sm:mb-8 flex flex-col sm:flex-row gap-5 sm:items-center w-full max-w-3xl">
@@ -602,7 +631,7 @@ const Feedback_Alumno_Comp = () => {
             </div>
           </div>
           {/* Sonido de celebración (opcional, descomenta si quieres usarlo y tienes un archivo .mp3 en public/) */}
-          <audio autoPlay src="/public/A1.mp3" />
+          {!reducedMotion && (<audio autoPlay src="/A1.mp3" />)}
         </>
       )}
 
@@ -683,9 +712,9 @@ const Feedback_Alumno_Comp = () => {
         <div className="flex items-center justify-end">
           <button
             onClick={openCreateTask}
-            disabled={studentOwnedCount >= 20 || isPastSelectedMonth}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg border-2 ${(studentOwnedCount >= 20 || isPastSelectedMonth) ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 text-white border-purple-700'}`}
-            title={studentOwnedCount >= 20 ? 'Has alcanzado el límite de 20 actividades' : (isPastSelectedMonth ? 'No puedes crear actividades en meses pasados' : 'Crear nueva actividad')}
+            disabled={studentOwnedCountThisMonth >= perMonthCap || isPastSelectedMonth}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg border-2 ${(studentOwnedCountThisMonth >= perMonthCap || isPastSelectedMonth) ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 text-white border-purple-700'}`}
+            title={studentOwnedCountThisMonth >= perMonthCap ? `Has alcanzado el límite mensual de ${perMonthCap} actividades creadas` : (isPastSelectedMonth ? 'No puedes crear actividades en meses pasados' : 'Crear nueva actividad')}
           >
             <PlusCircle className="w-5 h-5" />
             Nueva actividad
@@ -809,32 +838,53 @@ const Feedback_Alumno_Comp = () => {
         )}
       </div>
 
-      {/* Vista móvil - Cards en 2 columnas */}
-      <div className="lg:hidden w-full max-w-4xl">
+  {/* Vista móvil - Cards en 2 columnas */}
+  <div className="lg:hidden w-full max-w-4xl">
     {paginatedTasks.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
       {paginatedTasks.map((task, index) => (
               <div
                 key={task.id}
-                className="relative bg-gradient-to-br from-purple-100 via-indigo-100 to-white border-2 border-purple-200 rounded-3xl shadow-2xl p-6 flex flex-col gap-3 transition-transform duration-200 hover:scale-[1.03] hover:shadow-purple-300/60"
+                className="relative bg-gradient-to-br from-purple-100 via-indigo-100 to-white border-2 border-purple-200 rounded-3xl shadow-2xl p-4 sm:p-6 flex flex-col gap-2 transition-transform duration-200 hover:scale-[1.02] hover:shadow-purple-300/60"
               >
-                {/* Badge de estado */}
-                <span className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-md z-10 ${task.isSubmitted ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-red-100 text-red-600 border border-red-300'}`}>
-                  {task.isSubmitted ? 'Entregado' : 'Pendiente'}
-                </span>
-                {/* Header */}
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">#{indexOfFirst + index + 1}</span>
-                  <h3 className="font-extrabold text-purple-800 text-lg flex-1 leading-tight break-words">{task.name}</h3>
+                {/* Header con badge alineado (sin superponer) */}
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md shrink-0">#{indexOfFirst + index + 1}</span>
+                    <h3
+                      className="font-bold text-purple-800 text-sm sm:text-base leading-snug break-words line-clamp-2 min-w-0"
+                      title={task.name}
+                    >
+                      {task.name}
+                    </h3>
+                    <button
+                      type="button"
+                      className="sm:hidden inline-flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 text-purple-700 border border-purple-200 shrink-0"
+                      aria-label="Ver nombre completo"
+                      title="Ver nombre completo"
+                      onClick={() => setShowFullNameId(task.id)}
+                    >
+                      <Info className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm ${task.isSubmitted ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-red-100 text-red-600 border border-red-300'}`}>
+                    {task.isSubmitted ? 'Entregado' : 'Pendiente'}
+                  </span>
                 </div>
+                {/* Overlay con nombre completo (solo móvil) */}
+                {showFullNameId === task.id && (
+                  <div className="lg:hidden absolute left-2 right-2 top-10 z-20 bg-white/95 border border-purple-200 rounded-lg shadow-xl p-2 text-[13px] text-purple-800 break-words">
+                    {task.name}
+                  </div>
+                )}
                 {/* Puntaje */}
-                <div className="flex items-center gap-2 mb-1">
-                  <Star className="w-5 h-5 text-yellow-400 drop-shadow" fill="currentColor" />
-                  <span className="text-lg font-bold text-purple-700">{task.score !== null ? `${task.score} pts` : '-'}</span>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Star className="w-4 h-4 text-yellow-400 drop-shadow" fill="currentColor" />
+                  <span className="text-sm sm:text-base font-bold text-purple-700">{task.score !== null ? `${task.score} pts` : '-'}</span>
                 </div>
                 {/* Fecha de entrega + urgencia */}
-                <div className="flex items-center gap-2 text-xs text-gray-600 font-medium mb-2 flex-wrap">
-                  <span className="bg-purple-200 text-purple-700 px-2 py-1 rounded-lg">Entrega:</span>
+                <div className="flex items-center gap-1.5 text-[11px] text-gray-600 font-medium mb-2 flex-wrap">
+                  <span className="bg-purple-200 text-purple-700 px-2 py-0.5 rounded-lg">Entrega:</span>
                   <span className="text-gray-700">{(task._isStudentOwned && !task.isSubmitted) ? 'Se genera al subir' : new Date(task.dueDate).toLocaleDateString('es-ES', {
                     year: 'numeric',
                     month: 'short',
@@ -845,41 +895,45 @@ const Feedback_Alumno_Comp = () => {
                   ) : null; })()}
                 </div>
                 {/* Estado visual */}
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-1.5 mb-2">
                   {task.isSubmitted ? (
-                    <CheckCircle className="w-6 h-6 text-green-500" />
+                    <CheckCircle className="w-5 h-5 text-green-500" />
                   ) : (
-                    <XCircle className="w-6 h-6 text-red-500" />
+                    <XCircle className="w-5 h-5 text-red-500" />
                   )}
-                  <span className={`font-semibold text-sm ${task.isSubmitted ? 'text-green-600' : 'text-red-500'}`}>{task.isSubmitted ? '¡Entregado!' : 'Sin entregar'}</span>
+                  <span className={`font-semibold text-xs ${task.isSubmitted ? 'text-green-600' : 'text-red-500'}`}>{task.isSubmitted ? '¡Entregado!' : 'Sin entregar'}</span>
                 </div>
                 {/* Botones de acción */}
-                <div className="flex gap-2 mt-auto">
+                <div className="grid grid-cols-2 gap-2 mt-auto">
                   <button
                     onClick={() => openModal(task)}
                     disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
-                    className={`flex-1 flex items-center justify-center px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold gap-1 ${
+                    className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold gap-1 ${
                       (!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
                         ? 'bg-gray-400 cursor-not-allowed text-white'
                         : (task.isSubmitted ? 'bg-purple-500 hover:bg-purple-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white')
                     }`}
                     aria-label={task.isSubmitted ? 'Gestionar entrega' : 'Subir tarea'}
+                    title={task.isSubmitted ? 'Gestionar entrega' : (monthlyCapReached ? 'Límite mensual' : 'Subir tarea')}
                   >
-                    <Upload className="w-4 h-4" />
-                    {task.isSubmitted ? 'Gestionar' : (monthlyCapReached ? 'Límite mensual' : 'Subir')}
+                    <Upload className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">
+                      {task.isSubmitted ? 'Gestionar' : (monthlyCapReached ? 'Límite mensual' : 'Subir')}
+                    </span>
                   </button>
                   <button
                     onClick={() => openViewTaskModal(task)}
                     disabled={!task.submittedPdf}
-                    className={`flex items-center justify-center px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold ${
+                    className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold ${
                       task.submittedPdf
                         ? 'bg-green-500 hover:bg-green-600 text-white'
                         : 'bg-gray-400 cursor-not-allowed text-white'
                     }`}
                     aria-label="Ver tarea"
+                    title={task.submittedPdf ? 'Ver' : 'Sin archivo'}
                   >
-                    <Eye className="w-4 h-4" />
-                    Ver
+                    <Eye className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">Ver</span>
                   </button>
                 </div>
               </div>
@@ -1027,10 +1081,10 @@ const Feedback_Alumno_Comp = () => {
             <p className="mb-4 text-gray-700 text-sm sm:text-base">
               Tarea: <span className="font-semibold text-purple-600">{viewingTaskName}</span>
             </p>
-            {viewingTaskPdf ? (
+    {viewingTaskPdf ? (
               <>
                 <div className="flex-grow w-full h-64 sm:h-96 bg-gray-100 rounded-lg overflow-hidden mb-4 border border-gray-300 flex items-center justify-center relative">
-                  {isMobile ? (
+      {(isMobile || isPdfIframeBlocked) ? (
                     <span className="text-gray-500 text-center text-xs px-2">En móvil, usa "Ver en nueva pestaña" para mejor experiencia.</span>
                   ) : (
                     <iframe

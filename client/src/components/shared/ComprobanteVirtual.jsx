@@ -1,48 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useStudent } from '../../context/StudentContext.jsx';
+import mqerkLogo from '../../assets/mqerk/mqerk.png';
 
-/*
-EJEMPLO DE USO CON BACKEND:
-
-// Datos que vienen del backend
-const paymentDataFromBackend = {
-  id: 1234,
-  date: "2025-07-15T10:30:00Z",
-  amount: 5000.00,
-  baseAmount: 5000.00,
-  discount: 0,
-  penalty: 0,
-  method: "Efectivo",
-  status: "paid",
-  plan: "Plan Mensual - Pago 1",
-  cashReceived: 5000.00,
-  transactionId: "TXN-2025-07-15-001",
-  verificationDate: "2025-07-15T10:35:00Z"
-};
-
-const studentDataFromBackend = {
-  id: 567,
-  name: "Juan Carlos Pérez López",
-  address: "Av. Independencia #123, Col. Centro, Tuxtepec, Oaxaca",
-  group: "Matutino",
-  phone: "287-123-4567",
-  email: "juan.perez@email.com",
-  studentCode: "STU-2025-567"
-};
-
-// Uso del componente
-<ComprobanteVirtual
-  isOpen={showReceipt}
-  onClose={() => setShowReceipt(false)}
-  paymentData={paymentDataFromBackend}
-  studentData={studentDataFromBackend}
-/>
-
-// ENDPOINTS RECOMENDADOS PARA EL BACKEND:
-// GET /api/payments/{paymentId}/receipt-data
-// GET /api/students/{studentId}/receipt-data
-// POST /api/receipts/generate (para generar y guardar el comprobante)
-*/
 
 // Iconos SVG
 const X = ({ className }) => (
@@ -110,52 +69,26 @@ export default function ComprobanteVirtual({
     return null;
   }
 
-  // BACKEND INTEGRATION: Estructura esperada para paymentData
-  /*
-  paymentData = {
-    id: number,                    // ID único del pago
-    date: string,                  // Fecha del pago (ISO format)
-    amount: number,                // Monto total a pagar
-    baseAmount: number,            // Monto base (opcional)
-    discount: number,              // Descuento aplicado (opcional)
-    penalty: number,               // Recargo por mora (opcional)
-    method: string,                // Método de pago (ej: "Efectivo", "Tarjeta", "Transferencia")
-    status: string,                // Estado del pago ("paid", "pending", "failed")
-    plan: string,                  // Plan de pago (ej: "Mensual", "Semanal")
-    verificationDate: string,      // Fecha de verificación (opcional)
-    cashReceived: number,          // Efectivo recibido (opcional, por defecto 700.00)
-    transactionId: string,         // ID de transacción (opcional)
-    paymentReference: string,      // Referencia de pago (opcional)
-  }
-  */
-
-  // BACKEND INTEGRATION: Estructura esperada para studentData
-  /*
-  studentData = {
-    id: number,                    // ID único del estudiante
-    name: string,                  // Nombre completo del estudiante
-    address: string,               // Dirección completa
-    phone: string,                 // Teléfono (opcional)
-    email: string,                 // Email (opcional)
-    group: string,                 // Grupo asignado (ej: "Matutino", "Vespertino")
-    enrollmentDate: string,        // Fecha de inscripción (opcional)
-    studentCode: string,           // Código de estudiante (opcional)
-  }
-  */
+ 
 
   // Información del curso: derivada del contexto (currentCourse) si está disponible
-  const courseInfo = currentCourse
-    ? {
-        id: currentCourse.id,
-        name: currentCourse.title || currentCourse.name,
-        duration: currentCourse.duration,
-        level: currentCourse.level || currentCourse.category || 'Elemental',
-        price: currentCourse.price,
-        startDate: currentCourse.startDate,
-        endDate: currentCourse.endDate,
-        instructor: currentCourse.instructor,
-      }
-    : {};
+  const courseInfo = (() => {
+    // Preferir nombre de curso pasado por props si existe
+    const nameFromProps = propStudentData?.courseName;
+    if (currentCourse || nameFromProps) {
+      return {
+        id: currentCourse?.id,
+        name: nameFromProps || currentCourse?.title || currentCourse?.name,
+        duration: currentCourse?.duration,
+        level: currentCourse?.level || currentCourse?.category || 'Elemental',
+        price: currentCourse?.price,
+        startDate: currentCourse?.startDate,
+        endDate: currentCourse?.endDate,
+        instructor: currentCourse?.instructor,
+      };
+    }
+    return {};
+  })();
 
   // Función para generar el folio único
   const generateFolio = (paymentId, date) => {
@@ -358,8 +291,25 @@ export default function ComprobanteVirtual({
         yPosition += lineHeight + 2; // Más espacio después de líneas
       };
       
-      // Header
-      addCenteredText('MQerKAcademy', 12, true);
+      // Header con logo (PDF)
+      try {
+        const res = await fetch(mqerkLogo);
+        const blob = await res.blob();
+        const dataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+        const logoW = 28; // mm aprox
+        const logoH = 12; // mm aprox
+        const x = (80 - logoW) / 2;
+        // Dibujar logo y avanzar posición
+        doc.addImage(dataUrl, 'PNG', x, yPosition - 4, logoW, logoH, undefined, 'FAST');
+        yPosition += logoH + 2;
+      } catch (e) {
+        // Fallback a texto si falla la carga del logo
+        addCenteredText('MQerKAcademy', 12, true);
+      }
       addCenteredText('Asesores Especializados en la');
       addCenteredText('Enseñanza de las Cien y Tec');
   addCenteredText('Calle Benito Juárez #25, Col. Centro', 9, true);
@@ -897,8 +847,25 @@ export default function ComprobanteVirtual({
         yPos += lineHeight + 5; // Más espacio entre líneas
       };
       
-      // Header
-      addText('MQerKAcademy', 22, 'center', true);
+      // Header con logo (Canvas)
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = mqerkLogo;
+        });
+        const maxW = 240; // px
+        const scale = Math.min(1, maxW / img.width);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        ctx.drawImage(img, centerX - w / 2, yPos - (h + 10), w, h);
+        yPos += h - 10; // ajustar separación tras el logo
+      } catch (e) {
+        // Fallback a texto si no carga el logo
+        addText('MQerKAcademy', 22, 'center', true);
+      }
       addText('Asesores Especializados en la', 16);
       addText('Enseñanza de las Cien y Tec', 16);
   addText('Calle Benito Juárez #25, Col. Centro', 16, 'center', true);
@@ -1180,11 +1147,7 @@ export default function ComprobanteVirtual({
   );
 
   const displayPaymentNumber = (
-    typeof paymentData?.paymentNumber === 'number'
-      ? paymentData.paymentNumber
-      : normalizedPlanType === 'premium' ? 8
-  : normalizedPlanType === 'start' ? 2
-      : 1
+    typeof paymentData?.paymentNumber === 'number' ? paymentData.paymentNumber : 1
   );
 
   const sesionesLabel = '24 hrs';
@@ -1226,7 +1189,10 @@ export default function ComprobanteVirtual({
             
             {/* Header de la empresa */}
             <div className="text-center space-y-1 pb-2">
-              <div className="font-bold text-lg tracking-wide">MQerKAcademy</div>
+              <div className="flex items-center justify-center mb-1">
+                <img src={mqerkLogo} alt="MQerKAcademy" className="h-25 object-contain" />
+              </div>
+              {/* <div className="font-bold text-lg tracking-wide">MQerKAcademy</div> */}
               <div className="text-xs space-y-0.5 text-gray-700">
                 <div>Asesores Especializados en la</div>
                 <div>Enseñanza de las Cien y Tec</div>

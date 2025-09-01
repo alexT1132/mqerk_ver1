@@ -1,43 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom'; // Importa createPortal
+import { useAuth } from '../../context/AuthContext.jsx';
+import { useStudent } from '../../context/StudentContext.jsx';
+import { resumenActividadesEstudiante } from '../../api/actividades.js';
+import { resumenQuizzesEstudiante } from '../../api/quizzes.js';
+import { resolvePlanType, getActivationDate, generatePaymentSchedule } from '../../utils/payments.js';
+import { listReminders, createReminder } from '../../api/reminders.js';
 
 /**
- * Componente de la Modal para mostrar opciones de pago.
+ * Componente de la Modal para mostrar información del pago (sin redirección).
  */
-function PaymentModal({ isOpen, onClose, paymentDetails, onConfirmPayment }) {
-  // Estado para controlar la visibilidad y el objetivo del mensaje de "copiado"
-  const [copiedMessage, setCopiedMessage] = useState({ visible: false, target: '' });
+function PaymentModal({ isOpen, onClose, paymentDetails }) {
+  const { hasContentAccess } = useStudent?.() || { hasContentAccess: true };
 
   // Si la modal no está abierta, no renderizamos nada
   if (!isOpen) return null;
 
-  // Función para manejar la copia de texto al portapapeles
-  const handleCopy = (text, targetId) => { // Ahora recibe un ID para saber qué botón fue presionado
-    // Intentar usar la API moderna del portapapeles
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedMessage({ visible: true, target: targetId });
-      // Ocultar el mensaje después de 3 segundos
-      setTimeout(() => setCopiedMessage({ visible: false, target: '' }), 3000);
-    }).catch(err => {
-      console.error('Error al copiar (API moderna): ', err);
-      // Fallback para navegadores más antiguos o si la API moderna falla
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select(); // Seleccionar el texto en el textarea
-      try {
-        // Intentar copiar usando document.execCommand
-        document.execCommand('copy');
-        setCopiedMessage({ visible: true, target: targetId });
-        setTimeout(() => setCopiedMessage({ visible: false, target: '' }), 3000);
-      } catch (err) {
-        console.error('Error al copiar (execCommand): ', err);
-      } finally {
-        // Asegurarse de remover el textarea creado
-        document.body.removeChild(textarea);
-      }
-    });
-  };
+  const target = typeof document !== 'undefined' ? document.getElementById('modal-root') : null;
+  if (!target) return null;
 
   // Renderizamos la modal usando createPortal para que esté directamente bajo #modal-root
   return createPortal(
@@ -48,14 +28,9 @@ function PaymentModal({ isOpen, onClose, paymentDetails, onConfirmPayment }) {
         .payment-modal-content { scrollbar-width: none; }
       `}} />
       <div className="bg-white rounded-md sm:rounded-2xl lg:rounded-3xl shadow-2xl p-1 sm:p-4 lg:p-6 w-full max-w-[95vw] sm:max-w-sm lg:max-w-md max-h-[60vh] sm:max-h-[85vh] lg:max-h-[500px] overflow-y-auto border border-gray-100 flex-shrink-0 my-auto payment-modal-content">
-        {/* Header mejorado - más compacto */}
+        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-md sm:rounded-xl lg:rounded-2xl p-2 sm:p-3 lg:p-5 mb-2 sm:mb-4 lg:mb-6 -mx-2 sm:-mx-4 lg:-mx-6 -mt-2 sm:-mt-4 lg:-mt-6">
-          <h2 className="text-base sm:text-lg lg:text-xl font-bold text-white text-center flex items-center justify-center">
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 mr-2 sm:mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-            </svg>
-            Detalles de Pago
-          </h2>
+          <h2 className="text-base sm:text-lg lg:text-xl font-bold text-white text-center">Pago pendiente</h2>
         </div>
 
         <div className="space-y-3 sm:space-y-4 lg:space-y-5 text-gray-700">
@@ -65,178 +40,32 @@ function PaymentModal({ isOpen, onClose, paymentDetails, onConfirmPayment }) {
             <p className="text-xs sm:text-sm lg:text-base text-blue-600">Monto: <span className="font-bold text-base sm:text-lg lg:text-2xl text-blue-800">{paymentDetails.amount}</span></p>
           </div>
 
-          {/* Transferencia Bancaria - más compacta */}
           <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl p-2 sm:p-3 lg:p-4 shadow-lg border border-gray-100">
-            <h3 className="text-xs sm:text-sm lg:text-base font-bold text-purple-700 mb-2 lg:mb-3 flex items-center">
-              <svg className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 lg:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-              </svg>
-              Transferencia Bancaria
-            </h3>
-            <div className="bg-gray-50 p-2 sm:p-3 lg:p-4 rounded-md sm:rounded-lg lg:rounded-xl text-xs lg:text-sm space-y-2 lg:space-y-3">
-              <div className="grid grid-cols-1 gap-1 sm:gap-2 lg:gap-3">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-gray-600">Banco:</span>
-                  <span className="font-bold text-gray-800">BANCOMER</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-gray-600">Beneficiario:</span>
-                  <span className="font-bold text-gray-800 text-right text-xs sm:text-sm">MQERK S.A. DE C.V.</span>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 pt-2 lg:pt-3 space-y-2 lg:space-y-3">
-                {/* Contenedor de Número de Cuenta - más compacto */}
-                <div className="flex flex-col gap-2 bg-white rounded-md sm:rounded-lg lg:rounded-xl p-2 lg:p-3 border border-gray-200 shadow-sm relative">
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-600 text-xs mb-1">Número de Cuenta:</p>
-                    <p className="font-mono font-bold text-gray-900 text-xs sm:text-sm break-all">1234567890</p>
-                  </div>
-                  <div className="relative w-full">
-                    <button
-                      onClick={() => handleCopy('1234567890', 'account')}
-                      className="w-full px-3 py-2 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                    >
-                      Copiar
-                    </button>
-                    {copiedMessage.visible && copiedMessage.target === 'account' && (
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-green-600 text-white px-3 py-1 rounded-md shadow-lg text-xs animate-bounce border border-green-500 whitespace-nowrap z-10">
-                        <span className="flex items-center space-x-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                          </svg>
-                          <span>Copiado!</span>
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Contenedor de CLABE Interbancaria - más compacto */}
-                <div className="flex flex-col gap-2 bg-white rounded-md sm:rounded-lg lg:rounded-xl p-2 lg:p-3 border border-gray-200 shadow-sm relative">
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-600 text-xs mb-1">CLABE Interbancaria:</p>
-                    <p className="font-mono font-bold text-gray-900 text-xs sm:text-sm break-all">002180033600000000</p>
-                  </div>
-                  <div className="relative w-full">
-                    <button
-                      onClick={() => handleCopy('002180033600000000', 'clabe')}
-                      className="w-full px-3 py-2 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                    >
-                      Copiar
-                    </button>
-                    {copiedMessage.visible && copiedMessage.target === 'clabe' && (
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-green-600 text-white px-3 py-1 rounded-md shadow-lg text-xs animate-bounce border border-green-500 whitespace-nowrap z-10">
-                        <span className="flex items-center space-x-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                          </svg>
-                          <span>Copiado!</span>
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pago en Efectivo - más compacto */}
-          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl p-2 sm:p-3 lg:p-4 shadow-lg border border-gray-100">
-            <h3 className="text-xs sm:text-sm lg:text-base font-bold text-purple-700 mb-2 lg:mb-3 flex items-center">
-              <svg className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 lg:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-              </svg>
-              Pago en Efectivo
-            </h3>
-            <div className="bg-gray-50 p-2 sm:p-3 lg:p-4 rounded-md sm:rounded-lg lg:rounded-xl text-xs lg:text-sm space-y-2 lg:space-y-3">
-              <div>
-                <p className="font-semibold mb-1 lg:mb-2 text-gray-700 flex items-center">
-                  <svg className="w-3 h-3 lg:w-4 lg:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                  </svg>
-                  Dirección:
-                </p>
-                <p className="text-gray-800 ml-4 lg:ml-5 text-xs">Calle Falsa 123, Colonia Inventada, Ciudad Ejemplo</p>
-              </div>
-              <div>
-                <p className="font-semibold mb-1 lg:mb-2 text-gray-700 flex items-center">
-                  <svg className="w-3 h-3 lg:w-4 lg:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  Horario:
-                </p>
-                <p className="text-gray-800 ml-4 lg:ml-5 text-xs">Lunes a Viernes, 9:00 AM - 5:00 PM</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Instrucciones adicionales - más compactas */}
-          <div className="bg-amber-50 rounded-lg sm:rounded-xl lg:rounded-2xl p-2 sm:p-3 lg:p-4 border border-amber-200 text-center">
-            <p className="text-xs lg:text-sm text-amber-800 flex items-center justify-center flex-wrap">
-              <svg className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 lg:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-              </svg>
-              <span>Envía tu comprobante a:</span>
-              <span className="font-bold ml-1 break-all text-xs">pagos@mqerk.com</span>
+            <p className="text-sm text-gray-700">
+              Para ver métodos de pago y subir tu comprobante, dirígete a la sección <span className="font-semibold">Mis Pagos</span>.
             </p>
           </div>
         </div>
 
-        {/* Botones de acción - más compactos y tipo botón real en móviles */}
-        <div className="flex flex-row justify-center sm:flex-row gap-2 sm:gap-3 mt-3 sm:mt-4 lg:mt-6 pt-3 lg:pt-4 border-t border-gray-200">
+        {/* Botón de cierre únicamente */}
+        <div className="flex justify-center mt-3 sm:mt-4 lg:mt-6 pt-3 lg:pt-4 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="min-w-fit px-3 py-1 text-xs rounded-md border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors duration-200 sm:flex-1 sm:px-3 sm:py-2 sm:rounded-lg lg:rounded-xl sm:border-2 sm:text-sm order-2 sm:order-1"
-            style={{maxWidth: '120px'}}
+            className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors duration-200"
           >
             Cerrar
-          </button>
-          <button
-            onClick={onConfirmPayment}
-            className="min-w-fit px-3 py-1 text-xs rounded-md bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl sm:flex-1 sm:px-3 sm:py-2 sm:rounded-lg lg:rounded-xl order-1 sm:order-2 sm:text-sm"
-            style={{maxWidth: '120px'}}
-          >
-            <svg className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 inline mr-1 lg:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-            Ya pagué
           </button>
         </div>
       </div>
     </div>,
-    document.getElementById('modal-root')
+  target
   );
 }
 
 /**
  * Componente de la Modal de confirmación de pago compacto.
  */
-function PaymentConfirmationModal({ isOpen, onClose, message }) {
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 z-[1000]">
-      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center border border-gray-100">
-        <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-          </svg>
-        </div>
-        <h3 className="text-2xl font-bold text-gray-800 mb-4">¡Gracias!</h3>
-        <p className="text-gray-600 mb-8 text-sm leading-relaxed">{message}</p>
-        <button
-          onClick={onClose}
-          className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-        >
-          Cerrar
-        </button>
-      </div>
-    </div>,
-    document.getElementById('modal-root')
-  );
-}
+// Modal de confirmación eliminada (ya no se usa)
 
 /**
  * Componente de la Modal para crear un nuevo recordatorio.
@@ -276,6 +105,8 @@ function ReminderCreationModal({ isOpen, onClose, onSaveReminder }) {
   };
 
   if (!isOpen) return null;
+  const target = typeof document !== 'undefined' ? document.getElementById('modal-root') : null;
+  if (!target) return null;
 
   return createPortal(
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 z-[1000]">
@@ -377,7 +208,7 @@ function ReminderCreationModal({ isOpen, onClose, onSaveReminder }) {
         </div>
       </div>
     </div>,
-    document.getElementById('modal-root')
+  target
   );
 }
 
@@ -386,6 +217,8 @@ function ReminderCreationModal({ isOpen, onClose, onSaveReminder }) {
  */
 function ReminderNotificationModal({ isOpen, onClose, reminder, onDismissReminder }) {
   if (!isOpen || !reminder) return null;
+  const target = typeof document !== 'undefined' ? document.getElementById('modal-root') : null;
+  if (!target) return null;
 
   const getTextColorForBackground = (bgColorClass) => {
     if (bgColorClass.includes('yellow') || bgColorClass.includes('green') || bgColorClass.includes('orange') || bgColorClass.includes('teal')) {
@@ -437,7 +270,7 @@ function ReminderNotificationModal({ isOpen, onClose, reminder, onDismissReminde
         </div>
       </div>
     </div>,
-    document.getElementById('modal-root')
+  target
   );
 }
 
@@ -446,6 +279,8 @@ function ReminderNotificationModal({ isOpen, onClose, reminder, onDismissReminde
  */
 function MobileEventsModal({ isOpen, onClose, dayData, legendDotColors }) {
   if (!isOpen || !dayData) return null;
+  const target = typeof document !== 'undefined' ? document.getElementById('modal-root') : null;
+  if (!target) return null;
 
   return createPortal(
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 z-[1000]">
@@ -486,14 +321,40 @@ function MobileEventsModal({ isOpen, onClose, dayData, legendDotColors }) {
                     
                     {/* Información adicional */}
                     <div className="space-y-1">
-                      {event.isReminder && event.createdBy === 'admin' && (
-                        <div className="flex items-center text-xs text-yellow-600">
-                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.38-2.454a1 1 0 00-1.175 0l-3.38 2.454c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.05 9.394c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.967z"/>
-                          </svg>
-                          Recordatorio de Administración
-                        </div>
-                      )}
+                      {/* Origen */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {event.isPayment ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Sistema
+                          </span>
+                        ) : event.isReminder && event.createdBy === 'student' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-800 border border-green-200">
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            Alumno
+                          </span>
+                        ) : (event.type === 'Actividades / Tareas' || event.type === 'Exámenes / Evaluaciones' || event.type === 'Asesorías') ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-100 text-indigo-800 border border-indigo-200">
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16v10H6l-2 2V6z M8 10h8m-8 4h6" />
+                            </svg>
+                            Asesor
+                          </span>
+                        ) : event.isReminder && event.createdBy === 'admin' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.38-2.454a1 1 0 00-1.175 0l-3.38 2.454c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.05 9.394c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.967z"/>
+                            </svg>
+                            Admin
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {/* Importe para pagos */}
                       {event.isPayment && (
                         <div className="text-sm text-green-600 font-medium">
                           💰 Monto: {event.amount}
@@ -523,7 +384,7 @@ function MobileEventsModal({ isOpen, onClose, dayData, legendDotColors }) {
         </div>
       </div>
     </div>,
-    document.getElementById('modal-root')
+  target
   );
 }
 
@@ -533,6 +394,9 @@ function MobileEventsModal({ isOpen, onClose, dayData, legendDotColors }) {
  */
 export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = null }) {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const { alumno } = useAuth();
+  const [localLoading, setLocalLoading] = useState(false);
+  const [localError, setLocalError] = useState(null);
 
   const eventTypeColors = {
     "Actividades / Tareas": "bg-yellow-200 border-yellow-400 text-yellow-900",
@@ -554,28 +418,10 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
     "Recordatorio": "bg-teal-500",
   };
 
-  const initialMockEvents = [
-    { id: 'e1', date: '2025-09-01', description: 'Inicio de nuevo módulo', type: 'Actividades / Tareas', isPayment: false, isReminder: false, dismissed: false },
-    { id: 'e2', date: '2025-09-05', description: 'Examen de Física I', type: 'Exámenes / Evaluaciones', isPayment: false, isReminder: false, dismissed: false },
-    { id: 'e3', date: '2025-09-10', description: 'Asesoría de Matemáticas', type: 'Asesorías', isPayment: false, isReminder: false, dismissed: false },
-    { id: 'e4', date: '2025-09-12', description: 'Conferencia sobre Programación', type: 'Conferencias / talleres', isPayment: false, isReminder: false, dismissed: false },
-    { id: 'e5', date: '2025-09-29', description: 'Fecha de pago mensual', type: 'Fecha de pago', isPayment: true, paid: false, amount: '500 MXN', isReminder: false, dismissed: false },
-    { id: 'e6', date: '2025-11-05', description: 'PAGO CORRESPONDIENTE DEL MES', type: 'Fecha de pago', isPayment: true, paid: false, amount: '1500 MXN', isReminder: false, dismissed: false },
-    { id: 'e7', date: '2025-11-01', description: 'Descripción de la actividad y horario', type: 'Actividades / Tareas', isPayment: false, isReminder: false, dismissed: false },
-    { id: 'e8', date: '2025-11-02', description: 'Simulador de Cálculo', type: 'Simuladores', isPayment: false, isReminder: false, dismissed: false },
-    { id: 'e9', date: '2025-11-15', description: 'Cuota de Noviembre', type: 'Fecha de pago', isPayment: true, paid: false, amount: '750 MXN', isReminder: false, dismissed: false },
-    // Recordatorios que aparecen en el calendario
-    { id: 'r1', date: '2025-06-30', name: 'Recordatorio de Prueba', description: 'Revisar documentación del proyecto.', type: 'Recordatorio', isPayment: false, isReminder: true, dismissed: false, priorityColor: 'bg-red-500', createdBy: 'student' },
-    { id: 'r2', date: '2025-06-29', name: 'Examen Final', description: 'Examen programado por administración.', type: 'Recordatorio', isPayment: false, isReminder: true, dismissed: false, priorityColor: 'bg-blue-500', createdBy: 'admin' },
-    { id: 'r3', date: '2025-09-15', name: 'Recordatorio Personal', description: 'Estudiar para examen.', type: 'Recordatorio', isPayment: false, isReminder: true, dismissed: false, priorityColor: 'bg-green-500', createdBy: 'student' },
-    { id: 'r4', date: '2025-09-20', name: 'Evaluación Oficial', description: 'Examen programado por administración.', type: 'Recordatorio', isPayment: false, isReminder: true, dismissed: false, priorityColor: 'bg-purple-500', createdBy: 'admin' },
-    { id: 'r5', date: '2025-09-23', name: 'Tarea Personal', description: 'Completar proyecto.', type: 'Recordatorio', isPayment: false, isReminder: true, dismissed: false, priorityColor: 'bg-pink-500', createdBy: 'student' },
-  ];
-
-  const [currentEvents, setCurrentEvents] = useState(eventsData || initialMockEvents);
+  const [currentEvents, setCurrentEvents] = useState(eventsData || []);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPaymentEvent, setSelectedPaymentEvent] = useState(null);
-  const [isConfirmationModalOpen, setIsConfirmationModal] = useState(false);
+  // Modal de confirmación eliminada
 
   const [isReminderCreationModalOpen, setIsReminderCreationModalOpen] = useState(false);
   const [isReminderNotificationModalOpen, setIsReminderNotificationModalOpen] = useState(false);
@@ -590,8 +436,123 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
     }
   }, [eventsData]);
 
+  // Helper para YYYY-MM-DD local
+  const toLocalYMD = (d) => {
+    const dt = d instanceof Date ? d : new Date(d);
+    if (isNaN(dt)) return null;
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  // Cargar automáticamente: actividades, quizzes y pagos próximos si no se suministra eventsData
   useEffect(() => {
-    if (isPaymentModalOpen || isConfirmationModalOpen || isReminderCreationModalOpen || isReminderNotificationModalOpen || isMobileEventsModalOpen) {
+    let cancelled = false;
+    const load = async () => {
+      if (eventsData) return; // si vienen por props, no autoload
+      if (!alumno?.id) return;
+      try {
+        setLocalLoading(true); setLocalError(null);
+        // Fetch actividades y quizzes en paralelo
+        const [actsRes, quizRes] = await Promise.allSettled([
+          resumenActividadesEstudiante(alumno.id),
+          resumenQuizzesEstudiante(alumno.id)
+        ]);
+
+        const actsRows = actsRes.status === 'fulfilled' ? (actsRes.value?.data?.data || actsRes.value?.data || []) : [];
+        const quizRows = quizRes.status === 'fulfilled' ? (quizRes.value?.data?.data || quizRes.value?.data || []) : [];
+
+        const mapActividadEvent = (r) => {
+          const date = (r.fecha_limite || '').slice(0,10);
+          if (!date) return null;
+          const title = r.titulo || r.nombre || 'Actividad asignada';
+          return {
+            id: `act-${r.id}`,
+            date,
+            description: title,
+            type: 'Actividades / Tareas',
+            isPayment: false,
+            isReminder: false,
+            dismissed: false,
+          };
+        };
+
+        const mapQuizEvent = (q) => {
+          const date = (q.fecha_limite || '').slice(0,10);
+          if (!date) return null;
+          const title = q.titulo || q.nombre || 'Evaluación programada';
+          return {
+            id: `quiz-${q.id}`,
+            date,
+            description: title,
+            type: 'Exámenes / Evaluaciones',
+            isPayment: false,
+            isReminder: false,
+            dismissed: false,
+          };
+        };
+
+        // Pagos próximos según plan
+        const planType = resolvePlanType(alumno?.plan || alumno?.plan_type);
+        const activationDate = getActivationDate(alumno);
+        const schedule = generatePaymentSchedule({ startDate: activationDate, planType });
+        const paymentEvents = schedule
+          .filter(p => p.status !== 'paid')
+          .map(p => ({
+            id: `pay-${p.index}`,
+            date: toLocalYMD(p.dueDate),
+            description: planType === 'mensual' ? `Fecha de pago mensual #${p.index}` : `Pago #${p.index}`,
+            type: 'Fecha de pago',
+            isPayment: true,
+            paid: p.status === 'paid',
+            amount: `${p.amount} MXN`,
+            isReminder: false,
+            dismissed: false,
+          }))
+          .filter(Boolean);
+
+        const actEvents = actsRows.map(mapActividadEvent).filter(Boolean);
+        const quizEvents = quizRows.map(mapQuizEvent).filter(Boolean);
+
+        // Cargar recordatorios personales desde API
+        let reminderEvents = [];
+        try {
+          const rem = await listReminders();
+          const rows = rem?.data?.data || [];
+          reminderEvents = rows.map(r => ({
+            id: `rem-${r.id}`,
+            date: r.date,
+            description: r.description || '',
+            name: r.title,
+            type: 'Recordatorio',
+            isPayment: false,
+            isReminder: true,
+            dismissed: false,
+            priorityColor: mapPriorityToColor(r.priority),
+            createdBy: 'student',
+            _serverId: r.id,
+          }));
+        } catch(err){ console.warn('No se pudieron cargar recordatorios', err?.message || err); }
+
+  // Conservar SOLO recordatorios creados por el alumno (si existían)
+  const existingReminders = (Array.isArray(currentEvents) ? currentEvents : []).filter(e => e.isReminder && e.createdBy === 'student');
+
+        const merged = [...actEvents, ...quizEvents, ...paymentEvents, ...reminderEvents, ...existingReminders];
+        if (!cancelled) setCurrentEvents(merged);
+      } catch (e) {
+        console.error('Error cargando calendario del alumno', e);
+        if (!cancelled) setLocalError('No se pudo cargar el calendario');
+      } finally {
+        if (!cancelled) setLocalLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [alumno?.id, alumno?.plan, alumno?.plan_type, eventsData]);
+
+  useEffect(() => {
+    if (isPaymentModalOpen || isReminderCreationModalOpen || isReminderNotificationModalOpen || isMobileEventsModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -599,7 +560,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isPaymentModalOpen, isConfirmationModalOpen, isReminderCreationModalOpen, isReminderNotificationModalOpen, isMobileEventsModalOpen]);
+  }, [isPaymentModalOpen, isReminderCreationModalOpen, isReminderNotificationModalOpen, isMobileEventsModalOpen]);
 
   // CORREGIDO: Obtener la fecha de hoy en zona horaria local de manera más precisa
   const getLocalDateString = () => {
@@ -694,32 +655,60 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
     setCurrentDate(prevDate => new Date(prevDate.getFullYear(), prevDate.getMonth() + 1, 1));
   };
 
-  const handleMarkAsPaid = (eventId) => {
-    console.log(`Pago para el evento ID ${eventId} marcado como iniciado por el usuario.`);
-    setIsPaymentModalOpen(false);
-    setIsConfirmationModal(true);
-  };
+  // Sin redirección desde la modal de pago
 
   const handleOpenPaymentModal = (event) => {
     setSelectedPaymentEvent(event);
     setIsPaymentModalOpen(true);
   };
 
-  const handleSaveReminder = ({ name, description, date, priorityColor }) => {
-    const newReminder = {
-      id: `r${Date.now()}`,
-      date: date,
-      description: description,
-      name: name,
-      type: 'Recordatorio',
-      isPayment: false,
-      isReminder: true,
-      dismissed: false,
-      priorityColor: priorityColor,
-      createdBy: 'student',
+  const mapColorToPriority = (color) => {
+    if(color.includes('red')) return 'red';
+    if(color.includes('orange')) return 'orange';
+    if(color.includes('yellow')) return 'yellow';
+    if(color.includes('green')) return 'green';
+    if(color.includes('purple')) return 'purple';
+    return 'blue';
+  };
+
+  const mapPriorityToColor = (priority) => {
+    switch(priority){
+      case 'red': return 'bg-red-500';
+      case 'orange': return 'bg-orange-500';
+      case 'yellow': return 'bg-yellow-500';
+      case 'green': return 'bg-green-500';
+      case 'purple': return 'bg-purple-500';
+      default: return 'bg-blue-500';
+    }
+  };
+
+  const handleSaveReminder = async ({ name, description, date, priorityColor }) => {
+    const payload = {
+      title: name,
+      description,
+      date,
+      priority: mapColorToPriority(priorityColor)
     };
-    setCurrentEvents(prevEvents => [...prevEvents, newReminder]);
-    console.log('Recordatorio guardado:', newReminder);
+    try {
+      const res = await createReminder(payload);
+      const r = res?.data?.data;
+      const newReminder = {
+        id: `rem-${r?.id ?? Date.now()}`,
+        date,
+        description: description,
+        name: name,
+        type: 'Recordatorio',
+        isPayment: false,
+        isReminder: true,
+        dismissed: false,
+        priorityColor: priorityColor,
+        createdBy: 'student',
+        _serverId: r?.id
+      };
+      setCurrentEvents(prevEvents => [...prevEvents, newReminder]);
+    } catch(err){
+      console.error('Error creando recordatorio', err);
+    }
   };
 
   const handleDismissReminder = (reminderId) => {
@@ -745,28 +734,12 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
   };
 
-  useEffect(() => {
-    const hasAdminReminder = currentEvents.some(e => e.isReminder && e.createdBy === 'admin' && e.date.startsWith('2025-09'));
-    if (!hasAdminReminder) {
-      setCurrentEvents(prev => [
-        ...prev,
-        {
-          id: 'admin-test',
-          date: '2025-09-10',
-          name: 'Recordatorio Admin Prueba',
-          description: 'Este es un recordatorio de admin para depuración',
-          type: 'Recordatorio',
-          isPayment: false,
-          isReminder: true,
-          dismissed: false,
-          priorityColor: 'bg-yellow-500',
-          createdBy: 'admin',
-        }
-      ]);
-    }
-  }, []);
+  // Sin inyecciones de prueba en desarrollo
 
-  if (isLoading) {
+  const effectiveLoading = isLoading || localLoading;
+  const effectiveError = error || localError;
+
+  if (effectiveLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
@@ -777,38 +750,38 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
     );
   }
 
-  if (error) {
+  if (effectiveError) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-red-50">
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-red-200 text-center">
           <div className="text-4xl mb-4">📅</div>
-          <p className="text-lg font-medium text-red-600">Error al cargar el calendario: {error}</p>
+          <p className="text-lg font-medium text-red-600">Error al cargar el calendario: {effectiveError}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-100 p-4 sm:p-6 font-inter text-gray-800">
-      <div id="modal-root"></div>
+    <div className="min-h-screen bg-white p-3 sm:p-6 font-inter text-gray-800">
+  {/* Portal root se declara en client/index.html */}
       
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               AGENDA / CALENDARIO
             </h2>
             
             <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-visible">
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
-                <button onClick={goToPrevMonth} className="p-2 rounded-full hover:bg-white/20 transition-colors duration-200">
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
+                <button onClick={goToPrevMonth} className="p-1.5 sm:p-2 rounded-full hover:bg-white/20 transition-colors duration-200">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
                   </svg>
                 </button>
-                <h4 className="text-lg font-bold">{currentMonthName} {currentYear}</h4>
-                <button onClick={goToNextMonth} className="p-2 rounded-full hover:bg-white/20 transition-colors duration-200">
+                <h4 className="text-base sm:text-lg font-bold">{currentMonthName} {currentYear}</h4>
+                <button onClick={goToNextMonth} className="p-1.5 sm:p-2 rounded-full hover:bg-white/20 transition-colors duration-200">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
                   </svg>
@@ -817,7 +790,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
               
               <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
                 {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(day => (
-                  <div key={day} className="p-3 text-center text-sm font-bold text-gray-600">
+                  <div key={day} className="p-2 sm:p-3 text-center text-xs sm:text-sm font-bold text-gray-600">
                     {day}
                   </div>
                 ))}
@@ -839,7 +812,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                   const eventsOnDay = currentEvents.filter(event => event.date === cellDateString);
                   const isToday = cellDateString === todayString;
 
-                  let dayClasses = `p-3 h-12 flex items-center justify-center border border-gray-100 relative group cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md hover:z-10`;
+                  let dayClasses = `p-2 sm:p-3 h-10 sm:h-12 flex items-center justify-center border border-gray-100 relative group cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md hover:z-10`;
                   let hasEventColor = false;
                   
                   const paymentEventOnDay = eventsOnDay.find(event => event.type === "Fecha de pago");
@@ -884,12 +857,12 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                       className={dayClasses}
                       onClick={() => isMobile() ? handleDayClick(eventsOnDay, cellDateString) : null}
                     >
-                      <span className="font-medium relative">
+          <span className="font-medium text-sm sm:text-base relative">
                         {day.date}
                         {/* Estrella para recordatorios de admin - Posicionada en esquina superior izquierda */}
                         {eventsOnDay.some(event => event.isReminder && event.createdBy === 'admin') && (
                           <span className="absolute top-0 left-0 z-20 transform -translate-x-1/2 -translate-y-1/2" title="Recordatorio de administración">
-                            <svg className="w-3 h-3 text-yellow-400 filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-yellow-400 filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.38-2.454a1 1 0 00-1.175 0l-3.38 2.454c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.05 9.394c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.967z"/>
                             </svg>
                           </span>
@@ -939,14 +912,36 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                                         <span className="px-2 py-1 bg-white/20 rounded-full text-xs">
                                           {event.type}
                                         </span>
-                                        {event.isReminder && event.createdBy === 'admin' && (
+                                        {/* Origen */}
+                                        {event.isPayment ? (
+                                          <span className="flex items-center space-x-1 text-gray-300">
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <span className="text-xs">Sistema</span>
+                                          </span>
+                                        ) : event.isReminder && event.createdBy === 'student' ? (
+                                          <span className="flex items-center space-x-1 text-green-300">
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                            </svg>
+                                            <span className="text-xs">Alumno</span>
+                                          </span>
+                                        ) : (event.type === 'Actividades / Tareas' || event.type === 'Exámenes / Evaluaciones' || event.type === 'Asesorías') ? (
+                                          <span className="flex items-center space-x-1 text-indigo-300">
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16v10H6l-2 2V6z M8 10h8m-8 4h6"/>
+                                            </svg>
+                                            <span className="text-xs">Asesor</span>
+                                          </span>
+                                        ) : event.isReminder && event.createdBy === 'admin' ? (
                                           <span className="flex items-center space-x-1 text-yellow-300">
                                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.38-2.454a1 1 0 00-1.175 0l-3.38 2.454c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.05 9.394c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.967z"/>
                                             </svg>
                                             <span className="text-xs">Admin</span>
                                           </span>
-                                        )}
+                                        ) : null}
                                         {event.isPayment && (
                                           <span className="text-green-300 text-xs">
                                             💰 {event.amount}
@@ -984,7 +979,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
               <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-center">
                 <button
                   onClick={() => setIsReminderCreationModalOpen(true)}
-                  className="px-4 py-2 bg-gradient-to-r from-teal-400 to-cyan-500 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md hover:from-teal-500 hover:to-cyan-600 transition-all duration-200 flex items-center"
+                  className="px-3 py-2 sm:px-4 bg-gradient-to-r from-teal-400 to-cyan-500 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md hover:from-teal-500 hover:to-cyan-600 transition-all duration-200 flex items-center"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
@@ -1020,13 +1015,13 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
             </div>
           </div>
 
-          <div className="space-y-6">
-            {/* Título con layout responsive */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-              <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <div className="space-y-4 sm:space-y-6">
+            {/* Título completo y contador fijo a la derecha */}
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] items-end gap-2 sm:gap-3">
+              <h2 className="text-xl sm:text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                 EVENTOS Y ACTIVIDADES IMPORTANTES
               </h2>
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full w-fit">
+              <span className="inline-flex items-center justify-self-start sm:justify-self-end px-2.5 py-1 bg-blue-100 text-blue-700 text-xs sm:text-sm font-medium rounded-full w-fit whitespace-nowrap">
                 {importantEvents.length} pendiente{importantEvents.length !== 1 ? 's' : ''}
               </span>
             </div>
@@ -1057,20 +1052,20 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
               `}} />
               
               {importantEvents.length > 0 ? (
-                <div className="max-h-[400px] sm:max-h-[450px] overflow-y-auto divide-y divide-gray-100 events-scroll-container">
+                <div className="max-h-[360px] sm:max-h-[450px] overflow-y-auto divide-y divide-gray-100 events-scroll-container">
                   {importantEvents.map((event, index) => (
                     <div key={event.id} className="p-3 sm:p-4 hover:bg-gray-50 transition-colors duration-200">
-                      <div className="flex items-start gap-3 sm:gap-4">
+                      <div className="flex items-start gap-2.5 sm:gap-4">
                         {/* Fecha con color - responsive */}
                         <div className="flex-shrink-0">
-                          <div className={`text-center min-w-[60px] sm:min-w-[70px] p-2 sm:p-3 rounded-lg ${
+                          <div className={`text-center min-w-[52px] sm:min-w-[70px] p-1.5 sm:p-3 rounded-lg ${
                             event.isPayment && !event.paid 
                               ? 'bg-red-50 border border-red-200' 
                               : event.isReminder 
                                 ? `${event.priorityColor.replace('bg-', 'bg-')}-50 border border-${event.priorityColor.replace('bg-', '')}-200`
                                 : 'bg-blue-50 border border-blue-200'
                           }`}>
-                            <div className={`text-xs font-medium uppercase ${
+                            <div className={`text-[11px] sm:text-xs font-medium uppercase ${
                               event.isPayment && !event.paid 
                                 ? 'text-red-600' 
                                 : event.isReminder 
@@ -1079,7 +1074,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                             }`}>
                               {new Date(event.date + 'T00:00:00').toLocaleString('es-ES', { month: 'short' }).replace('.', '')}
                             </div>
-                            <div className={`text-xl sm:text-2xl font-bold ${
+                            <div className={`text-lg sm:text-2xl font-bold ${
                               event.isPayment && !event.paid 
                                 ? 'text-red-700' 
                                 : event.isReminder 
@@ -1088,7 +1083,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                             }`}>
                               {new Date(event.date + 'T00:00:00').getDate()}
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-[10px] sm:text-xs text-gray-500">
                               {new Date(event.date + 'T00:00:00').toLocaleString('es-ES', { year: 'numeric' })}
                             </div>
                           </div>
@@ -1099,16 +1094,16 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3 mb-1">
                             <div className="flex-1">
                               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
-                                <h3 className="font-semibold text-gray-900 text-sm leading-tight">
+                                <h3 className="font-semibold text-gray-900 text-[13px] sm:text-sm leading-tight">
                                   {event.description || event.name}
                                 </h3>
-                                {/* Identificadores de origen - CORREGIDO: Todos los eventos no-recordatorios son de Admin */}
-                                {(event.isReminder && event.createdBy === 'admin') || (!event.isReminder) ? (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200 w-fit">
-                                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.38-2.454a1 1 0 00-1.175 0l-3.38 2.454c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.05 9.394c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.967z"/>
+                                {/* Identificadores de origen */}
+                                {event.isPayment ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200 w-fit">
+                                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
-                                    Admin
+                                    Sistema
                                   </span>
                                 ) : event.isReminder && event.createdBy === 'student' ? (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 w-fit">
@@ -1116,6 +1111,20 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                     </svg>
                                     Alumno
+                                  </span>
+                                ) : (event.type === 'Actividades / Tareas' || event.type === 'Exámenes / Evaluaciones' || event.type === 'Asesorías') ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200 w-fit">
+                                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16v10H6l-2 2V6z M8 10h8m-8 4h6" />
+                                    </svg>
+                                    Asesor
+                                  </span>
+                                ) : event.isReminder && event.createdBy === 'admin' ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200 w-fit">
+                                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.38-2.454a1 1 0 00-1.175 0l-3.38 2.454c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.05 9.394c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.967z"/>
+                                    </svg>
+                                    Admin
                                   </span>
                                 ) : null}
                               </div>
@@ -1226,14 +1235,9 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         paymentDetails={selectedPaymentEvent ? { description: selectedPaymentEvent.description, amount: selectedPaymentEvent.amount || 'N/A' } : {}}
-        onConfirmPayment={() => handleMarkAsPaid(selectedPaymentEvent.id)}
       />
 
-      <PaymentConfirmationModal
-        isOpen={isConfirmationModalOpen}
-        onClose={() => setIsConfirmationModal(false)}
-        message="Su pago ha sido registrado. Los administradores revisarán su situación lo más pronto posible. ¡Su enseñanza es importante para nosotros!"
-      />
+  {/* Modal de confirmación eliminada */}
 
       <ReminderCreationModal
         isOpen={isReminderCreationModalOpen}

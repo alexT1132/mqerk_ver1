@@ -11,6 +11,7 @@ import { DashboardAsesor } from "./pages/Asesor/Asesor.jsx";
 // Asesor additional section components
 import { PerfilAsesor, Actividades, Quizt, Simuladores, DashboardCurso, Asesorias } from "./pages/Asesor/Asesor.jsx";
 import { PreRegAsesor } from "./pages/Asesor/PreRegAsesor.jsx";
+import FeedbackAsesor from "./pages/Asesor/FeedbackAsesor.jsx";
 import { Bienvenida } from "./pages/Asesor/Bienvenida.jsx";
 // Eliminados módulos de tests (Test, Resultado) para flujo simplificado
 import { AuthProvider } from "./context/AuthContext.jsx";
@@ -143,6 +144,7 @@ export default function App(){
                       <Route path='/asesorias-asesor' element={<Asesorias />} />
                       <Route path='/asesor/quizt' element={<Quizt />} />
                       <Route path='/asesor/simuladores' element={<Simuladores />} />
+                      <Route path='/feedback-asesor' element={<FeedbackAsesor />} />
                       <Route path='/cursos-asesor' element={<DashboardCurso />} />
                       {/* Fallback redirect if accessed within protected group */}
                       <Route path='/asesor/registro_asesor' element={<Navigate to='/registro_asesor' replace />} />

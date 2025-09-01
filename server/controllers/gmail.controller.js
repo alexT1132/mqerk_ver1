@@ -1,11 +1,22 @@
 import { generateAuthUrl, getTokensFromCode, getGmailClient, getOAuth2Client } from '../libs/gmail.js';
-import { getGmailTokens, saveGmailTokens } from '../models/admin_config.model.js';
+import { getGmailTokens, saveGmailTokens, clearGmailTokens } from '../models/admin_config.model.js';
 
 // Mantenemos un pequeño cache en memoria, pero la fuente de verdad es DB
 let TOKENS_CACHE = null; // { access_token, refresh_token, expiry_date }
 
+// Helper: check minimal env configuration to avoid throwing inside libs
+function isGmailEnvConfigured() {
+  const dequote = (v) => (v || '').toString().trim().replace(/^['"]|['"]$/g, '');
+  const id = dequote(process.env.GOOGLE_CLIENT_ID);
+  const secret = dequote(process.env.GOOGLE_CLIENT_SECRET);
+  return !!(id && secret);
+}
+
 export const gmailAuthUrl = async (req, res) => {
   try {
+    if (!isGmailEnvConfigured()) {
+      return res.status(400).json({ ok: false, message: 'Gmail no está configurado en el servidor (faltan GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET)' });
+    }
     const url = generateAuthUrl();
     res.json({ ok: true, url });
   } catch (e) {
@@ -42,6 +53,9 @@ export const gmailOAuthCallback = async (req, res) => {
 
 export const gmailListInbox = async (req, res) => {
   try {
+    if (!isGmailEnvConfigured()) {
+      return res.status(400).json({ ok: false, message: 'Gmail no está configurado en el servidor (faltan GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET)' });
+    }
     // Obtener tokens desde cache o DB
     if (!TOKENS_CACHE) TOKENS_CACHE = await getGmailTokens();
     const tokens = TOKENS_CACHE;
@@ -59,7 +73,12 @@ export const gmailListInbox = async (req, res) => {
           // Google no siempre devuelve nueva expiry; conservamos la previa si existe
           await saveGmailTokens({ access_token: tokens.access_token });
         }
-      } catch {}
+      } catch (err) {
+        // Refresh falló probablemente por invalid_grant => forzar re-vinculación limpia
+        try { await clearGmailTokens(); } catch {}
+        TOKENS_CACHE = null;
+        return res.status(401).json({ ok: false, message: 'Autorización Gmail inválida o expirada. Vuelve a vincular tu cuenta.' });
+      }
     }
     const gmail = getGmailClient(tokens);
     const { data } = await gmail.users.messages.list({ userId: 'me', q: '', maxResults: 10, labelIds: ['INBOX'] });
@@ -82,13 +101,29 @@ export const gmailListInbox = async (req, res) => {
     }
     res.json({ ok: true, data: detailed });
   } catch (e) {
-    console.error('gmailListInbox', e);
+    // Intenta mapear errores comunes a respuestas más claras
+    const status = e?.response?.status || e?.code;
+    const msg = e?.message || e?.response?.data?.error || 'Error listando Gmail';
+    console.error('gmailListInbox', msg);
+    // Invalid or insufficient auth => pedir re-vinculación
+    if (status === 401 || status === 403 || /invalid_grant|unauthorized|insufficient/i.test(msg)) {
+      try { await clearGmailTokens(); } catch {}
+      TOKENS_CACHE = null;
+      return res.status(401).json({ ok: false, message: 'No autorizado en Gmail. Vuelve a vincular tu cuenta.' });
+    }
+    // Errores de red conocidos
+    if (/ENOTFOUND|ECONNREFUSED|EAI_AGAIN|network/i.test(String(status) + ' ' + msg)) {
+      return res.status(502).json({ ok: false, message: 'No se pudo contactar al servicio de Gmail (red).' });
+    }
     res.status(500).json({ ok: false, message: 'Error listando Gmail' });
   }
 };
 
 export const gmailSend = async (req, res) => {
   try {
+    if (!isGmailEnvConfigured()) {
+      return res.status(400).json({ ok: false, message: 'Gmail no está configurado en el servidor (faltan GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET)' });
+    }
     if (!TOKENS_CACHE) TOKENS_CACHE = await getGmailTokens();
     const tokens = TOKENS_CACHE;
     if (!tokens || (!tokens.access_token && !tokens.refresh_token)) {
@@ -104,7 +139,11 @@ export const gmailSend = async (req, res) => {
           tokens.access_token = refreshed.token;
           await saveGmailTokens({ access_token: tokens.access_token });
         }
-      } catch {}
+      } catch (err) {
+        try { await clearGmailTokens(); } catch {}
+        TOKENS_CACHE = null;
+        return res.status(401).json({ ok: false, message: 'Autorización Gmail inválida o expirada. Vuelve a vincular tu cuenta.' });
+      }
     }
     const { to, subject, text } = req.body;
     if (!to || !subject || !text) return res.status(400).json({ ok: false, message: 'to, subject y text son requeridos' });
@@ -121,7 +160,14 @@ export const gmailSend = async (req, res) => {
     await gmail.users.messages.send({ userId: 'me', requestBody: { raw: encodedMessage } });
     res.json({ ok: true });
   } catch (e) {
-    console.error('gmailSend', e);
+    const status = e?.response?.status || e?.code;
+    const msg = e?.message || e?.response?.data?.error || 'Error enviando Gmail';
+    console.error('gmailSend', msg);
+    if (status === 401 || status === 403 || /invalid_grant|unauthorized|insufficient/i.test(msg)) {
+      try { await clearGmailTokens(); } catch {}
+      TOKENS_CACHE = null;
+      return res.status(401).json({ ok: false, message: 'No autorizado en Gmail. Vuelve a vincular tu cuenta.' });
+    }
     res.status(500).json({ ok: false, message: 'Error enviando correo Gmail' });
   }
 };
@@ -131,8 +177,10 @@ export const gmailStatus = async (req, res) => {
     if (!TOKENS_CACHE) TOKENS_CACHE = await getGmailTokens();
     const t = TOKENS_CACHE;
     const linked = !!(t && (t.refresh_token || t.access_token));
-    return res.json({ ok: true, linked, email: t?.email || null });
+  const envOk = isGmailEnvConfigured();
+  return res.json({ ok: true, linked, email: t?.email || null, envOk });
   } catch (e) {
-    return res.status(500).json({ ok: false, linked: false });
+  const envOk = isGmailEnvConfigured();
+  return res.status(500).json({ ok: false, linked: false, envOk });
   }
 };

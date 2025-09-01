@@ -204,6 +204,9 @@ const InicioAlumnoDashboard = ({
   const [copiedMessage, setCopiedMessage] = useState({ visible: false, target: '' });
   // Estado local reactivo para verificación, evita UI vieja por mutación no reactiva
   const [verifLocal, setVerifLocal] = useState(estadoVerificacion);
+  // Aviso de vencimiento/tolerancia de pagos (modal preventivo)
+  const [showPagoAviso, setShowPagoAviso] = useState(false);
+  const [pagoAviso, setPagoAviso] = useState(null);
   
   const audioRef = useRef(null);
   const sliderRef = useRef(null);
@@ -277,6 +280,91 @@ const InicioAlumnoDashboard = ({
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
+  // Mostrar modal de aviso 3 días antes del vencimiento hasta fin de tolerancia (mensual/start)
+  useEffect(() => {
+    try {
+      if (!DatosAlumno) return;
+      // Evitar mostrar aviso cuando el alumno está bloqueado o aún no verificado (ya hay otra UI)
+      if (bloqueoPorPago || (verifLocal ?? estadoVerificacion) < 2) {
+        setShowPagoAviso(false);
+        return;
+      }
+      const now = new Date();
+      const planType = resolvePlanType(DatosAlumno?.plan || DatosAlumno?.plan_type);
+      const activationDate = getActivationDate(DatosAlumno);
+      const schedule = generatePaymentSchedule({ startDate: activationDate, planType, now });
+      // Buscar el siguiente pago no pagado (upcoming o en tolerancia) del plan actual
+      const next = schedule.find(p => p.status === 'upcoming' || p.status === 'pending');
+      if (!next) {
+        setShowPagoAviso(false);
+        return;
+      }
+      const dueDate = new Date(next.dueDate);
+      const startWindow = new Date(dueDate);
+      startWindow.setDate(startWindow.getDate() - 3);
+      const endWindow = new Date(dueDate);
+      endWindow.setDate(endWindow.getDate() + (next.toleranceDays ?? 0));
+
+      // Mostrar solo si estamos en la ventana [due-3, due+tolerancia]
+      if (now < startWindow || now > endWindow) {
+        setShowPagoAviso(false);
+        return;
+      }
+
+      // Control de "no mostrar hoy"
+      const alumnoKey = DatosAlumno?.folio || DatosAlumno?.id || 'anon';
+      const dueKey = dueDate.toISOString().slice(0, 10);
+      const warnKey = `paymentWarn:${alumnoKey}:${next.index}:${dueKey}`;
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const dismissedOn = localStorage.getItem(warnKey);
+      if (dismissedOn === todayKey) {
+        setShowPagoAviso(false);
+        return;
+      }
+
+      // Construir mensaje contextual
+      const msPerDay = 1000 * 60 * 60 * 24;
+      let title = 'Aviso de pago';
+      let message = '';
+      if (now <= dueDate) {
+        const daysToDue = Math.ceil((dueDate - now) / msPerDay);
+        if (daysToDue > 1) message = `Tu pago vence en ${daysToDue} días.`;
+        else if (daysToDue === 1) message = 'Tu pago vence mañana.';
+        else message = 'Tu pago vence hoy.';
+        title = 'Próximo vencimiento';
+      } else {
+        const daysIntoTol = Math.floor((now - dueDate) / msPerDay);
+        const tol = next.toleranceDays ?? 0;
+        const remaining = Math.max(0, tol - daysIntoTol);
+        if (daysIntoTol === 0) {
+          title = 'Pago vencido (tolerancia activa)';
+          message = `Tu pago venció hoy. Tienes ${tol} días de tolerancia para regularizar.`;
+        } else if (remaining > 1) {
+          title = 'Pago vencido (tolerancia activa)';
+          message = `Pago vencido. Te quedan ${remaining} días de tolerancia. Al finalizar, tu acceso se bloqueará.`;
+        } else if (remaining === 1) {
+          title = 'Último día de tolerancia';
+          message = 'Último día de tolerancia. Al finalizar el día tu acceso se bloqueará.';
+        } else {
+          title = 'Fin de tolerancia';
+          message = 'El periodo de tolerancia termina hoy; evita el bloqueo regularizando tu pago.';
+        }
+      }
+
+      setPagoAviso({
+        title,
+        message,
+        dueDate,
+        amount: next.amount,
+        index: next.index,
+        toleranceDays: next.toleranceDays,
+      });
+      setShowPagoAviso(true);
+    } catch (e) {
+      // Silencioso
+    }
+  }, [DatosAlumno, verifLocal, estadoVerificacion, bloqueoPorPago]);
 
   // Estado de conexión
   useEffect(() => {
@@ -436,6 +524,70 @@ const InicioAlumnoDashboard = ({
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
+      {/* Modal de aviso de pago cercano/tolerancia */}
+      {showPagoAviso && pagoAviso && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-amber-200">
+            <div className="px-5 py-4 bg-gradient-to-r from-amber-100 to-yellow-100 border-b border-amber-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="text-amber-600" size={20} />
+                <h3 className="text-amber-900 font-bold text-base">{pagoAviso.title}</h3>
+              </div>
+              <button
+                className="p-1 rounded hover:bg-black/5"
+                onClick={() => setShowPagoAviso(false)}
+                aria-label="Cerrar aviso"
+              >
+                <X size={18} className="text-amber-900" />
+              </button>
+            </div>
+            <div className="p-5 space-y-3">
+              <p className="text-gray-800 font-medium">{pagoAviso.message}</p>
+              <div className="text-sm text-gray-600">
+                <div><span className="font-semibold">Fecha límite:</span> {pagoAviso.dueDate.toLocaleDateString('es-ES')}</div>
+                <div><span className="font-semibold">Pago:</span> #{pagoAviso.index} • ${pagoAviso.amount?.toLocaleString('es-MX')}</div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button
+                  className="flex-1 py-2 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold"
+                  onClick={() => {
+                    setShowPagoAviso(false);
+                    try { window.location.href = '/alumno/mis-pagos'; } catch {}
+                  }}
+                >
+                  Ir a Mis Pagos
+                </button>
+                <button
+                  className="flex-1 py-2 px-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                  onClick={() => {
+                    setShowPagoAviso(false);
+                    setShowModal(true);
+                  }}
+                >
+                  Subir comprobante
+                </button>
+              </div>
+              <div className="pt-1">
+                <button
+                  className="text-xs text-gray-500 hover:text-gray-700 underline"
+                  onClick={() => {
+                    try {
+                      const alumnoKey = DatosAlumno?.folio || DatosAlumno?.id || 'anon';
+                      const dueKey = pagoAviso.dueDate.toISOString().slice(0, 10);
+                      const warnKey = `paymentWarn:${alumnoKey}:${pagoAviso.index}:${dueKey}`;
+                      const todayKey = new Date().toISOString().slice(0, 10);
+                      localStorage.setItem(warnKey, todayKey);
+                    } catch {}
+                    setShowPagoAviso(false);
+                  }}
+                >
+                  No mostrar de nuevo hoy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Progreso de carga */}
       <UploadProgress show={showUploadProgress} progress={uploadProgress} />

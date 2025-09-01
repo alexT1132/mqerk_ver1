@@ -17,6 +17,7 @@ import ActividadesRoutes from "./routes/actividades.routes.js";
 import QuizzesRoutes from "./routes/quizzes.routes.js";
 import AreasRoutes from "./routes/areas.routes.js";
 import StudentNotificationsRoutes from "./routes/student_notifications.routes.js";
+import StudentRemindersRoutes from "./routes/student_reminders.routes.js";
 import EEAURoutes from "./routes/eeau.routes.js";
 
 const app = express();
@@ -79,6 +80,7 @@ app.use("/api", ActividadesRoutes);
 app.use("/api", QuizzesRoutes);
 app.use("/api", AreasRoutes);
 app.use("/api", StudentNotificationsRoutes);
+app.use("/api", StudentRemindersRoutes);
 app.use("/api", EEAURoutes);
 
 export default app;

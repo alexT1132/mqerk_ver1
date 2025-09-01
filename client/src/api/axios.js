@@ -39,11 +39,20 @@ instance.interceptors.response.use(
         const status = error?.response?.status;
     // Evitar intentar refresh si es 403 not-admin (rol insuficiente) para no entrar en loop
         const apiReason = error?.response?.data?.reason;
-        const isAuthLike = status === 401 || status === 403;
+    const isAuthLike = status === 401 || status === 403;
         // Razones que nunca intentan refresh vía interceptor (logout directo)
         const terminalReasons = new Set(['invalid-token','soft-deleted','user-not-found','no-token','no-rtoken','expired-rtoken']);
         // Solo refrescamos automáticamente si el access token expiró explícitamente
         const shouldRefresh = isAuthLike && apiReason === 'expired' && !original?._retry;
+        // Suspended: limpiar sesión y redirigir a login o página informativa
+        if (isAuthLike && apiReason === 'suspended') {
+            try { localStorage.removeItem('adminToken'); localStorage.removeItem('adminProfile'); } catch {}
+            if (typeof window !== 'undefined') {
+                const path = window.location?.pathname || '';
+                if (!path.startsWith('/login')) window.location.href = '/login?reason=suspended';
+            }
+            return Promise.reject(error);
+        }
 
         if (shouldRefresh) {
             original._retry = true;

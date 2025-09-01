@@ -480,7 +480,8 @@ function ListaAlumnos_Admin_comp() {
   const updateStudentInBackend = async (folio, updatedData) => {
     try {
       if (updateStudent && typeof updateStudent === 'function') {
-        await updateStudent(folio, updatedData); // ← AdminContext.jsx
+        const res = await updateStudent(folio, updatedData); // ← AdminContext.jsx
+        if (!res?.success) throw new Error(res?.message || 'Fallo al actualizar');
         await fetchAlumnos(); // Recargar lista después de actualizar
         return { success: true, message: 'Estudiante actualizado exitosamente' };
       }
@@ -943,7 +944,7 @@ function ListaAlumnos_Admin_comp() {
                         <span>Estado</span>
                       </div>
                     </th>
-                    <th className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-center text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider w-28 sm:w-32 md:w-36">
+                    <th className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-center text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider w-40 sm:w-44 md:w-52">
                       <div className="flex flex-col space-y-1">
                         <span>Acciones</span>
                         <span className="text-gray-500 font-normal">Gestionar</span>
@@ -1042,18 +1043,7 @@ function ListaAlumnos_Admin_comp() {
                                     ✅ Activar
                                   </button>
                                 )}
-                                {alumno.estatus !== 'Inactivo' && (
-                                  <button
-                                    role="menuitem"
-                                    onClick={async () => {
-                                      await handleCambiarEstatus(alumno, 'Inactivo');
-                                      setOpenStatusMenu(null);
-                                    }}
-                                    className="block w-full text-left px-3 py-1.5 text-xs text-yellow-700 hover:bg-yellow-50"
-                                  >
-                                    ⏸️ Inactivar
-                                  </button>
-                                )}
+                                {/* Inactivar eliminado: dejamos solo Activar y Suspender */}
                                 {alumno.estatus !== 'Suspendido' && (
                                   <button
                                     role="menuitem"
@@ -1073,27 +1063,46 @@ function ListaAlumnos_Admin_comp() {
                       </td>
                       
                       {/* Columna Acciones */}
-                      <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-center w-28 sm:w-32 md:w-36">
-                        <div className="flex flex-col space-y-1 items-center">
-                          <button 
+                      <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-center w-40 sm:w-44 md:w-52">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap">
+                          <button
                             onClick={() => handleVerPerfil(alumno)}
-                            className="inline-flex w-fit items-center justify-center px-2.5 py-1.5 bg-blue-600 text-white text-[11px] rounded-md hover:bg-blue-700 transition-colors duration-200 shadow-sm hover:shadow-md"
+                            className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
                             title="Ver perfil completo del estudiante"
                           >
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
-                            Ver Perfil
+                            <span className="hidden xs:inline">Ver Perfil</span>
                           </button>
-                          <button 
-                            onClick={() => handleEliminarAlumno(alumno)}
-                            className="inline-flex w-fit items-center justify-center px-2.5 py-1.5 bg-red-600 text-white text-[11px] rounded-md hover:bg-red-700 transition-colors duration-200 shadow-sm hover:shadow-md"
-                            title="Eliminar estudiante"
+
+                          <button
+                            onClick={() => {
+                              sessionStorage.setItem('listAlumnos_scrollPosition', window.pageYOffset.toString());
+                              navigate(`/administrativo/student/${alumno.folio}/pagos`);
+                            }}
+                            className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-medium bg-green-700 text-white hover:bg-green-800 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+                            title="Ver plan de pagos y recibo"
                           >
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                              {/* Billete de dinero */}
+                              <rect x="3" y="7" width="18" height="10" rx="2" ry="2" strokeWidth={2} />
+                              {/* Símbolo de dólar  */}
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v4" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.5 11.5a2 2 0 013 0m-3 1a2 2 0 003 0" />
+                            </svg>
+                            <span className="hidden xs:inline">Ver Pagos</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleEliminarAlumno(alumno)}
+                            className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-medium bg-red-600 text-white hover:bg-red-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                            title="Dar de baja (eliminar)"
+                          >
+                            <svg className="w-4 h-4 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
-                            Eliminar
+                            <span className="hidden xs:inline">Eliminar</span>
                           </button>
                         </div>
                       </td>
