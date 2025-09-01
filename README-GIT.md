@@ -66,6 +66,14 @@ Guía corta para subir cambios, traer cambios remotos, resolver conflictos y tra
 - git checkout -b rama-de-otro otro/rama-de-otro
 - git push -u origin rama-de-otro
 
+## Copiar una carpeta de componentes a otra (PowerShell)
+Ejemplo: copiar todo de client/src/components/Asesores a client/src/components/Asesor
+- New-Item -ItemType Directory -Force -Path "client/src/components/Asesor"
+- Copy-Item -Path "client/src/components/Asesores/*" -Destination "client/src/components/Asesor" -Recurse -Force
+
+Mover (en lugar de copiar):
+- Move-Item -Path "client/src/components/Asesores/*" -Destination "client/src/components/Asesor" -Force
+
 ## Consejos
 - Commits pequeños con mensajes claros.
 - Siempre hacer pull/fetch antes de comenzar a trabajar.
