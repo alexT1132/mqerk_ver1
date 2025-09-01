@@ -2,7 +2,6 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Servidor: 127.0.0.1
 -- Tiempo de generación: 01-09-2025 a las 18:33:37
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.0.30
@@ -936,11 +935,13 @@ ALTER TABLE `usuarios`
 --
 ALTER TABLE `actividades`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `actividades_entregas`
 --
 ALTER TABLE `actividades_entregas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
@@ -1019,6 +1020,7 @@ ALTER TABLE `estudiantes`
 -- AUTO_INCREMENT de la tabla `estudiantes_config`
 --
 ALTER TABLE `estudiantes_config`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
