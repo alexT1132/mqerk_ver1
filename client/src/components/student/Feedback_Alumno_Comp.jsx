@@ -369,6 +369,19 @@ const Feedback_Alumno_Comp = () => {
     return taskMonth === parseInt(selectedMonth);
   });
 
+  // Ordenar por más reciente a más antiguo (por dueDate)
+  const sortedTasks = React.useMemo(() => {
+    try {
+      return [...filteredTasks].sort((a, b) => {
+        const ta = a?.dueDate ? new Date(a.dueDate).getTime() : 0;
+        const tb = b?.dueDate ? new Date(b.dueDate).getTime() : 0;
+        return tb - ta; // descendente: más reciente primero
+      });
+    } catch {
+      return filteredTasks;
+    }
+  }, [filteredTasks]);
+
   // Progreso mensual (respecto a tareas del mes sin considerar búsqueda)
   const monthTotal = filteredTasks.length;
   const monthSubmitted = filteredTasks.filter(t => t.isSubmitted).length;
@@ -396,7 +409,7 @@ const Feedback_Alumno_Comp = () => {
   }, [tasks, filteredTasks, selectedMonth]);
 
   // Filtrado por búsqueda
-  const searchedTasks = filteredTasks.filter(t =>
+  const searchedTasks = sortedTasks.filter(t =>
     t.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
   );
 
