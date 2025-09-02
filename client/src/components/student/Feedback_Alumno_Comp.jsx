@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown, RefreshCcw, PlusCircle, Info } from 'lucide-react';
+import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown, RefreshCcw, PlusCircle, Info, MessageSquareText, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { listTasks, listSubmissionsByStudent, createSubmission, createTask, updateTask, cancelSubmissionApi } from '../../api/feedback.js';
+import { listTasks, listSubmissionsByStudent, createSubmission, createTask, updateTask, cancelSubmissionApi, getSubmissionNote } from '../../api/feedback.js';
 import { buildStaticUrl } from '../../utils/url.js';
 
 const Feedback_Alumno_Comp = () => {
@@ -25,16 +25,7 @@ const Feedback_Alumno_Comp = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiScore, setConfettiScore] = useState(0);
   const [showMotivationalMessage, setShowMotivationalMessage] = useState(false); 
-  const [selectedMonth, setSelectedMonth] = useState('all');
-  // Depende de selectedMonth, así que calcúlalo después de declararlo
-  const isPastSelectedMonth = React.useMemo(() => {
-    if (selectedMonth === 'all') return false;
-    const now = new Date();
-    const nm = now.getMonth();
-    const sm = parseInt(selectedMonth);
-    // asumimos año actual; si el seleccionado es menor al actual, es pasado
-    return sm < nm;
-  }, [selectedMonth]);
+  const [selectedMonth, setSelectedMonth] = useState('all'); // 'all' o etiqueta ordinal ('Octavo', ...)
   const [showViewTaskModal, setShowViewTaskModal] = useState(false);
   const [viewingTaskName, setViewingTaskName] = useState('');
   const [viewingTaskPdf, setViewingTaskPdf] = useState('');
@@ -58,24 +49,13 @@ const Feedback_Alumno_Comp = () => {
   const MAX_FILE_SIZE_BYTES = 1.5 * 1024 * 1024; // limite maximo de cada archivo pdf 1.5MB
   // Búsqueda
   const [searchTerm, setSearchTerm] = useState("");
+  // Notas del asesor por submission
+  const [notesBySubmission, setNotesBySubmission] = useState({}); // { subId: 'texto' }
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteView, setNoteView] = useState({ text: '', taskName: '' });
 
   // Conteo global de tareas creadas por el alumno (informativo)
   const studentOwnedCount = tasks.filter(t => t._isStudentOwned).length;
-  // Conteo mensual de tareas creadas por el alumno (para límite mensual = perMonthCap)
-  const studentOwnedCountThisMonth = React.useMemo(() => {
-    try {
-      const now = new Date();
-      const targetMonth = selectedMonth === 'all' ? now.getMonth() : parseInt(selectedMonth);
-      return tasks.filter(t => {
-        if (!t._isStudentOwned) return false;
-        const d = t?.dueDate ? new Date(t.dueDate) : null;
-        if (!d || isNaN(d.getTime())) return false;
-        return d.getMonth() === targetMonth;
-      }).length;
-    } catch {
-      return 0;
-    }
-  }, [tasks, selectedMonth]);
   // Límite global del curso (8 meses, 240 entregas) 
   const COURSE_MONTHS = 8;
   const TOTAL_MAX_SUBMISSIONS = 240;
@@ -162,6 +142,21 @@ const Feedback_Alumno_Comp = () => {
           };
         });
         setTasks(mapped);
+        // Prefetch de notas del asesor para las tareas con entrega
+        const withSub = mapped.filter(t => t._subId);
+        if (withSub.length) {
+          const pairs = await Promise.all(withSub.map(async t => {
+            try {
+              const res = await getSubmissionNote(t._subId);
+              return [t._subId, res?.data?.data?.nota || ''];
+            } catch { return [t._subId, '']; }
+          }));
+          const map = {};
+          for (const [sid, txt] of pairs) map[sid] = txt;
+          setNotesBySubmission(map);
+        } else {
+          setNotesBySubmission({});
+        }
       } catch (e) {
         console.error('Error cargando tareas feedback', e);
         setFetchError('No se pudieron cargar las tareas');
@@ -201,11 +196,8 @@ const Feedback_Alumno_Comp = () => {
       fd.append('id_estudiante', alumnoId);
       // Si es una actividad creada por el alumno, actualizar due_date al momento de subir
       const t = tasks.find(x => x.id === taskId);
-      try {
-        if (t?._isStudentOwned) {
-          await updateTask(taskId, { due_date: new Date().toISOString() });
-        }
-      } catch { /* silencioso */ }
+  // No modificar due_date aquí: mantener el mes asignado al crear para que el agrupado sea consistente
+  try { /* antes se actualizaba due_date aquí; se elimina para evitar mover la tarea de mes */ } catch {}
       const res = await createSubmission(fd);
       const sub = res?.data?.data;
       if (sub) {
@@ -213,8 +205,8 @@ const Feedback_Alumno_Comp = () => {
   const fullUrl = rel ? buildStaticUrl(rel) : null;
   setTasks(prev => prev.map(t => {
     if (t.id !== taskId) return t;
-    const newDue = t._isStudentOwned ? new Date().toISOString() : t.dueDate;
-    return { ...t, submittedPdf: fullUrl, isSubmitted: true, score: sub.puntos || 10, _subId: sub.id, dueDate: newDue };
+    // Mantener dueDate sin cambios para no mover la tarea de mes al subir
+    return { ...t, submittedPdf: fullUrl, isSubmitted: true, score: sub.puntos || 10, _subId: sub.id, dueDate: t.dueDate };
   }));
         setConfettiScore(sub.puntos || 10);
         const randomWord = motivationalWords[Math.floor(Math.random() * motivationalWords.length)];
@@ -295,13 +287,14 @@ const Feedback_Alumno_Comp = () => {
     }
     try {
       setNewTaskError('');
-      // Establece due_date al inicio del mes seleccionado si no es 'all'; de lo contrario, hoy
+      // Establece due_date según el mes seleccionado (ordinal → calendar)
       let due = new Date();
       if (selectedMonth !== 'all') {
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = parseInt(selectedMonth);
-        due = new Date(y, m, 1, 12, 0, 0);
+        const mk = monthKeyByOrdinal[selectedMonth];
+        if (mk) {
+          const [y, m] = mk.split('-').map(Number);
+          due = new Date(y, (m - 1), 1, 12, 0, 0);
+        }
       }
   const body = { nombre: name, due_date: due.toISOString(), puntos: 10, grupos: JSON.stringify([alumnoId]), activo: 1 };
       await createTask(body);
@@ -344,6 +337,13 @@ const Feedback_Alumno_Comp = () => {
     setShowViewTaskModal(true);
   };
 
+  const openNoteModal = (task) => {
+    const text = task?._subId ? (notesBySubmission[task._subId] || '') : '';
+    setNoteView({ text, taskName: task?.name || 'Actividad' });
+    setShowNoteModal(true);
+  };
+  const closeNoteModal = () => { setShowNoteModal(false); setNoteView({ text: '', taskName: '' }); };
+
   const closeViewTaskModal = () => {
     setShowViewTaskModal(false);
     setViewingTaskName('');
@@ -360,13 +360,51 @@ const Feedback_Alumno_Comp = () => {
     }
   }, [tasks]);
 
-  // Filtrado por mes
+  // Helpers y mapeo de meses (igual que vista del asesor)
+  const monthKey = (d) => {
+    const dt = new Date(d);
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+  };
+  const distinctMonths = React.useMemo(() => {
+    const set = new Set();
+    for (const t of tasks) { if (t?.dueDate) set.add(monthKey(t.dueDate)); }
+    return Array.from(set).sort((a,b)=> new Date(b+"-01") - new Date(a+"-01"));
+  }, [tasks]);
+  const REVERSED_ORDINALS = ['Octavo','Séptimo','Sexto','Quinto','Cuarto','Tercero','Segundo','Primero'];
+  const monthKeyByOrdinal = React.useMemo(() => {
+    const map = {};
+    distinctMonths.forEach((mk, idx) => { if (idx < REVERSED_ORDINALS.length) map[REVERSED_ORDINALS[idx]] = mk; });
+    return map;
+  }, [distinctMonths]);
+
+  // Recalcular el conteo de creadas por el alumno para el mes seleccionado (ordinal)
+  const studentOwnedCountForSelected = React.useMemo(() => {
+    try {
+      const mk = selectedMonth === 'all' ? (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })() : monthKeyByOrdinal[selectedMonth];
+      if (!mk) return 0;
+      return tasks.filter(t => t._isStudentOwned && t?.dueDate && monthKey(t.dueDate) === mk).length;
+    } catch { return 0; }
+  }, [tasks, selectedMonth, monthKeyByOrdinal]);
+  // Conteo mensual de tareas creadas por el alumno (para límite mensual = perMonthCap)
+  const studentOwnedCountThisMonth = studentOwnedCountForSelected;
+  // selectedMonth en pasado
+  const isPastSelectedMonth = React.useMemo(() => {
+    if (selectedMonth === 'all') return false;
+    const mk = monthKeyByOrdinal[selectedMonth];
+    if (!mk) return false;
+    const [y, m] = mk.split('-').map(Number);
+    const now = new Date();
+    if (y < now.getFullYear()) return true;
+    if (y === now.getFullYear() && (m-1) < now.getMonth()) return true;
+    return false;
+  }, [selectedMonth, monthKeyByOrdinal]);
+
+  // Filtrado por mes usando etiquetas ordinales
   const filteredTasks = tasks.filter(task => {
-    if (selectedMonth === 'all') {
-      return true;
-    }
-    const taskMonth = new Date(task.dueDate).getMonth();
-    return taskMonth === parseInt(selectedMonth);
+    if (selectedMonth === 'all') return true;
+    const mk = monthKeyByOrdinal[selectedMonth];
+    if (!mk || !task?.dueDate) return false;
+    return monthKey(task.dueDate) === mk;
   });
 
   // Ordenar por más reciente a más antiguo (por dueDate)
@@ -472,9 +510,8 @@ const Feedback_Alumno_Comp = () => {
     } catch { return true; }
   };
 
-  const months = [
-    'Primero', 'Segundo', 'Tercero', 'Cuarto', 'Quinto', 'Sexto', 'Séptimo', 'Octavo'
-  ];
+  // Opciones de meses a mostrar (ordinales, mismo orden que en asesor)
+  const months = REVERSED_ORDINALS;
 
   const handleMonthSelect = (monthValue, monthName) => {
     setSelectedMonth(monthValue);
@@ -483,7 +520,7 @@ const Feedback_Alumno_Comp = () => {
 
   const getSelectedMonthName = () => {
     if (selectedMonth === 'all') return 'Todos los meses';
-    return months[parseInt(selectedMonth)];
+    return selectedMonth; // etiqueta ordinal
   };
 
   // Función para abrir el PDF en una nueva pestaña
@@ -532,7 +569,6 @@ const Feedback_Alumno_Comp = () => {
   //  - No mostrar "Tranquilo" para evitar ruido visual cuando falta mucho tiempo.
   const getUrgencyInfo = (dueDate, isSubmitted) => {
     if (isSubmitted) return null; // Ya entregada: no se muestra indicador.
-    if (!dueDate) return null;
     const due = new Date(dueDate);
     if (isNaN(due?.getTime?.())) return null;
     const diffMs = due.getTime() - Date.now();
@@ -700,10 +736,10 @@ const Feedback_Alumno_Comp = () => {
               >
                 Todos los meses
               </div>
-              {months.map((month, index) => (
+        {months.map((month, index) => (
                 <div
                   key={index}
-                  onClick={() => handleMonthSelect(index.toString(), month)}
+          onClick={() => handleMonthSelect(month, month)}
                   className="px-4 py-3 hover:bg-purple-50 cursor-pointer text-purple-700 border-b border-purple-100 last:border-b-0"
                 >
                   {month}
@@ -736,17 +772,30 @@ const Feedback_Alumno_Comp = () => {
       </div>
 
   {/* Vista de escritorio - Tabla */}
-  <div className="hidden lg:block bg-purple-100 bg-opacity-70 backdrop-blur-sm border-2 border-purple-300 rounded-2xl shadow-xl overflow-hidden w-full max-w-6xl">
-        <table className="min-w-full">
+  {/* Contenedor más ancho y con scroll horizontal para evitar que el contenido se mueva o se corte */}
+  <div className="hidden lg:block w-full max-w-7xl">
+    <div className="bg-purple-100 bg-opacity-70 backdrop-blur-sm border-2 border-purple-300 rounded-2xl shadow-xl overflow-x-auto">
+      <table className="min-w-[1100px] table-fixed">
+          <colgroup>
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '36%' }} />
+            <col style={{ width: '16%' }} />
+            <col style={{ width: '16%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '6%' }} />
+          </colgroup>
           <thead className="bg-gradient-to-r from-purple-500 to-indigo-600">
             <tr>
-              <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">No.</th>
-              <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">Nombre de la tarea</th>
-              <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Cargar mi actividad</th>
-              <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">Fecha de entrega</th>
-              <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Visualizar</th>
-              <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">Entregado</th>
-              <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">Puntaje</th>
+      <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">No.</th>
+      <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">Nombre de la tarea</th>
+      <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Cargar mi actividad</th>
+      <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">Fecha de entrega</th>
+      <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Visualizar</th>
+      <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Nota</th>
+      <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Entregado</th>
+      <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Puntaje</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-purple-300 bg-purple-100 bg-opacity-50">
@@ -754,8 +803,9 @@ const Feedback_Alumno_Comp = () => {
               paginatedTasks.map((task, index) => (
                 <tr key={task.id} className="hover:bg-purple-200 hover:bg-opacity-70 transition-all duration-200">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-purple-700">{indexOfFirst + index + 1}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">{task.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm flex justify-center items-center">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium truncate" title={task.name}>{task.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex justify-center items-center">
                     <button
                       onClick={() => openModal(task)}
                       disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
@@ -770,6 +820,7 @@ const Feedback_Alumno_Comp = () => {
                       <Upload className="w-5 h-5 mr-2" />
                       {task.isSubmitted ? 'Gestionar Entrega' : (monthlyCapReached ? 'Límite mensual' : 'Subir Tarea')}
                     </button>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                     <div className="flex flex-col gap-1">
@@ -783,7 +834,8 @@ const Feedback_Alumno_Comp = () => {
                       ) : null; })()}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm flex justify-center items-center">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex justify-center items-center">
                     <button
                       onClick={() => openViewTaskModal(task)}
                       disabled={!task.submittedPdf}
@@ -795,9 +847,29 @@ const Feedback_Alumno_Comp = () => {
                     >
                       <Eye className="w-5 h-5" />
                     </button>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <div className="flex justify-center">
+                    <div className="flex justify-center items-center">
+                    {task._subId ? (
+                      (notesBySubmission[task._subId] ? (
+                        <button
+                          onClick={() => openNoteModal(task)}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow"
+                          title="Ver nota del asesor"
+                        >
+                          <MessageSquareText className="w-4 h-4"/> Nota
+                        </button>
+                      ) : (
+                        <span className="text-gray-500">Sin nota</span>
+                      ))
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex justify-center items-center">
                       {task.isSubmitted ? (
                         <CheckCircle className="w-7 h-7 text-green-500 drop-shadow-lg" />
                       ) : (
@@ -805,20 +877,21 @@ const Feedback_Alumno_Comp = () => {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-700 font-semibold">
-                    {task.score !== null ? `${task.score} pts` : '-'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="text-purple-700 font-semibold text-center">{task.score !== null ? `${task.score} pts` : '-'}</div>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="px-6 py-8 text-center text-gray-600 text-lg font-medium">
+                <td colSpan="8" className="px-6 py-8 text-center text-gray-600 text-lg font-medium">
                   No hay tareas para el mes seleccionado.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+    </div>
         {/* Controles de paginación escritorio */}
         {filteredTasks.length > TASKS_PER_PAGE && (
           <div className="flex items-center justify-between px-6 py-4 bg-white border-t border-purple-300">
@@ -854,7 +927,7 @@ const Feedback_Alumno_Comp = () => {
   {/* Vista móvil - Cards en 2 columnas */}
   <div className="lg:hidden w-full max-w-4xl">
     {paginatedTasks.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
       {paginatedTasks.map((task, index) => (
               <div
                 key={task.id}
@@ -917,7 +990,7 @@ const Feedback_Alumno_Comp = () => {
                   <span className={`font-semibold text-xs ${task.isSubmitted ? 'text-green-600' : 'text-red-500'}`}>{task.isSubmitted ? '¡Entregado!' : 'Sin entregar'}</span>
                 </div>
                 {/* Botones de acción */}
-                <div className="grid grid-cols-2 gap-2 mt-auto">
+                <div className={`grid ${notesBySubmission[task._subId] ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mt-auto`}>
                   <button
                     onClick={() => openModal(task)}
                     disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
@@ -948,6 +1021,17 @@ const Feedback_Alumno_Comp = () => {
                     <Eye className="w-4 h-4 shrink-0" />
                     <span className="hidden sm:inline">Ver</span>
                   </button>
+                  {notesBySubmission[task._subId] && (
+                    <button
+                      onClick={() => openNoteModal(task)}
+                      className="w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white"
+                      aria-label="Ver nota"
+                      title="Ver nota del asesor"
+                    >
+                      <MessageSquareText className="w-4 h-4 shrink-0" />
+                      <span className="hidden sm:inline">Nota</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -1133,6 +1217,27 @@ const Feedback_Alumno_Comp = () => {
               >
                 Cerrar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Ver nota del asesor */}
+      {showNoteModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeNoteModal}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border-2 border-purple-200" onClick={(e)=> e.stopPropagation()}>
+            <div className="px-4 py-3 bg-[#3d18c3] text-white flex items-center justify-between">
+              <div className="font-semibold text-sm truncate">Nota del asesor · {noteView.taskName}</div>
+              <button onClick={closeNoteModal} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white text-xs">
+                <X className="w-3.5 h-3.5"/> Cerrar
+              </button>
+            </div>
+            <div className="p-4">
+              {noteView.text ? (
+                <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">{noteView.text}</p>
+              ) : (
+                <p className="text-sm text-slate-500">No hay nota disponible para esta entrega.</p>
+              )}
             </div>
           </div>
         </div>

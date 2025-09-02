@@ -19,6 +19,7 @@ import Quizt from "./pages/Asesor/Quizt.jsx";
 import Asesorias from "./pages/Asesor/Asesorias.jsx";
 import { PreRegAsesor } from "./pages/Asesor/PreRegAsesor.jsx";
 import Feedback from "./pages/Asesor/Feedback.jsx";
+import FeedbackDetail from "./pages/Asesor/FeedbackDetail.jsx";
 import { Bienvenida } from "./pages/Asesor/Bienvenida.jsx";
 // Contextos de aplicación (autenticación, asesor, estudiantes, comprobantes, alumno)
 import { AuthProvider } from "./context/AuthContext.jsx";
@@ -60,6 +61,8 @@ import Profesiografica from "./components/mqerk/exporientas/Profesiografica.jsx"
 import ExporientaEducativa from "./components/mqerk/exporientas/ExporientaEducativa.jsx";
 import { AdminDashboardBundle } from './components/admin/AdminDashboardBundle.jsx';
 import SetupAdmin from './components/admin/SetupAdmin.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
+import { Error404, Error500 } from './pages/Error/ErrorPages.jsx';
 
 export default function App(){
     return(
@@ -72,6 +75,7 @@ export default function App(){
               <StudentProvider>
                 <BrowserRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
                   <ScrollToTop />
+                  <ErrorBoundary fallback={<Error500 />}> 
                   <Routes>
 
                     {/*
@@ -156,8 +160,9 @@ export default function App(){
                       <Route path='/asesorias-asesor' element={<Asesorias />} />
                       <Route path='/asesor/quizt' element={<Quizt />} />
                       <Route path='/asesor/simuladores' element={<Simuladores />} />
-                      {/* Feedback del asesor (ruta unificada) */}
+                      {/* Feedback del asesor */}
                       <Route path='/asesor_feedback' element={<Feedback />} />
+                      <Route path='/asesor_feedback/:studentId' element={<FeedbackDetail />} />
                       {/* Compatibilidad con ruta antigua */}
                       <Route path='/feedback-asesor' element={<Navigate to='/asesor_feedback' replace />} />
                       <Route path='/cursos-asesor' element={<DashboardCurso />} />
@@ -173,9 +178,10 @@ export default function App(){
                     </Route>
 
                     {/* Página 404 por defecto */}
-                    <Route path='*' element={<div style={{padding:'4rem', textAlign:'center'}}><h2>404 - Página no encontrada</h2><p>La ruta solicitada no existe.</p></div>} />
+                    <Route path='*' element={<Error404 />} />
 
                   </Routes>
+                  </ErrorBoundary>
                 </BrowserRouter>
               </StudentProvider>
             </ComprobanteProvider>

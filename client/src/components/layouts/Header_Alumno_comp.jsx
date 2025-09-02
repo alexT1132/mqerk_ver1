@@ -264,7 +264,7 @@ export function Header_Alumno_comp({
         {showLogoutButton && (
           <button
             onClick={showLogoutConfirmation}
-            className="hidden md:flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white hover:scale-105 hover:bg-red-600 hover:bg-opacity-30 rounded-full transition-all duration-200 relative group"
+            className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white hover:scale-105 hover:bg-red-600 hover:bg-opacity-30 rounded-full transition-all duration-200 relative group"
             aria-label="Cerrar sesión"
             title="Cerrar sesión"
           >
@@ -448,7 +448,10 @@ export function Header_Alumno_comp({
                         src={finalPhoto}
                         className="w-full h-full object-cover object-center"
                         onError={() => setAvatarError(true)}
-                        loading="lazy"
+                        loading="eager"
+                        decoding="async"
+                        width={80}
+                        height={80}
                         alt="Foto de perfil"
                       />
                     );

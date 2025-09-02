@@ -30,7 +30,8 @@ router.get('/debug/cookies', (req,res)=>{
 });
 
 // Cerrar sesión (borra cookie token en servidor)
-router.post("/logout", authREquired, logout);
+// Público para permitir cerrar sesión incluso si el access token expiró
+router.post("/logout", logout);
 
 // Perfil admin actual
 router.get('/admin/profile', authREquired, getAdminProfile);

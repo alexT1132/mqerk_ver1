@@ -246,18 +246,10 @@ function ListaAlumnos_Admin_comp() {
   const navigate = useNavigate();
   // Bandera temporal para usar el perfil simplificado de diagnóstico
   const USE_SIMPLIFIED_PROFILE = false; // Cambiado a false para usar la página completa de perfil
-  const [showLoadingScreen, setShowLoadingScreen] = useState(() => {
-    const hasState = sessionStorage.getItem('listAlumnos_activeCategory') && 
-                     sessionStorage.getItem('listAlumnos_activeTurno');
-    return !hasState;
-  });
+  const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   // Restaurar curso (categoría) si estaba guardado para que al volver del perfil no se reinicie
-  const [activeCategory, setActiveCategory] = useState(() => {
-    return sessionStorage.getItem('listAlumnos_activeCategory') || null;
-  });
-  const [activeTurno, setActiveTurno] = useState(() => {
-    return sessionStorage.getItem('listAlumnos_activeTurno') || null;
-  });
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeTurno, setActiveTurno] = useState(null);
   const [alumnos, setAlumnos] = useState([]);
   const [isFetching, setIsFetching] = useState(false);
   const [searchTerm, setSearchTerm] = useState(() => {
@@ -507,17 +499,7 @@ function ListaAlumnos_Admin_comp() {
     }
   }, [activeCategory, activeTurno]);
 
-  // Guardar estado en sessionStorage cuando cambie
-  // Eliminado: ya no persistimos selección para que siempre inicie oculto
-
-  useEffect(() => {
-    if (activeTurno) sessionStorage.setItem('listAlumnos_activeTurno', activeTurno); else sessionStorage.removeItem('listAlumnos_activeTurno');
-  }, [activeTurno]);
-
-  // Persistir categoría seleccionada
-  useEffect(() => {
-    if (activeCategory) sessionStorage.setItem('listAlumnos_activeCategory', activeCategory); else sessionStorage.removeItem('listAlumnos_activeCategory');
-  }, [activeCategory]);
+  // No persistimos selección para que siempre inicie oculto (requiere elegir curso y grupo)
 
   useEffect(() => {
     sessionStorage.setItem('listAlumnos_searchTerm', searchTerm);
