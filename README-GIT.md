@@ -78,3 +78,38 @@ Mover (en lugar de copiar):
 - Commits pequeños con mensajes claros.
 - Siempre hacer pull/fetch antes de comenzar a trabajar.
 - En conflictos, conserva el esquema más reciente y prueba el proyecto antes de subir.
+
+---
+
+## Caso práctico: subir a otra rama remota y manejar “non-fast-forward”
+Escenario real: subir tu trabajo a la rama `Miguel-el-Angel` en un remoto alterno llamado `darian` (GitHub: alexT1132/mqerk_ver1).
+
+1) Verifica remotos y trae refs actualizadas
+- git remote -v
+- git fetch darian --prune
+
+2) Intenta subir tu HEAD actual a esa rama remota
+- git push darian HEAD:refs/heads/Miguel-el-Angel
+
+3) Si aparece rechazo “non-fast-forward”, tienes opciones:
+
+Opción A) Integrar cambios remotos y luego subir
+- git merge --no-edit darian/Miguel-el-Angel
+# Resolver conflictos (archivos con <<<<<<< ======= >>>>>>>)
+- git status
+- git diff --name-only --diff-filter=U   # ver archivos en conflicto
+- git add -A
+- git commit -m "Resuelve conflictos de merge desde darian/Miguel-el-Angel"
+- git push darian HEAD:refs/heads/Miguel-el-Angel
+
+Opción B) Abortas el merge si decides no mezclar (vuelves al estado previo)
+- git merge --abort
+
+Opción C) Reemplazas el historial remoto con tu HEAD (útil si acordado con el equipo)
+- git push --force-with-lease darian HEAD:refs/heads/Miguel-el-Angel
+
+Notas:
+- Prefiere `--force-with-lease` en lugar de `--force` para evitar sobrescribir cambios ajenos por accidente.
+- Si estabas haciendo rebase en vez de merge y hubo conflictos:
+  - Tras resolver: `git add archivo` y `git rebase --continue`
+  - Para cancelar: `git rebase --abort`
