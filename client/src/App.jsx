@@ -12,6 +12,8 @@ import DashboardAsesor from "./pages/Asesor/Dashboard.jsx";
 import AsesorCursos from "./pages/Asesor/Cursos.jsx";
 import AsesorConfig from "./pages/Asesor/Configuraciones.jsx";
 import FeedbackAsesor from "./pages/Asesor/Feedback.jsx";
+import NuevoSimulador from "./pages/Asesor/SeccionesSimGeneral.jsx";
+import FormBuilderEspañol from "./pages/Asesor/FormBuilderEspañol.jsx";
 // Asesor additional section components
 import { PreRegAsesor } from "./pages/Asesor/PreRegAsesor.jsx";
 import { Bienvenida } from "./pages/Asesor/Bienvenida.jsx";
@@ -20,6 +22,9 @@ import AsesorSimulacionesGen from "./pages/Asesor/SimulacionesGenerales.jsx";
 import SimulacionesEspecificas from "./pages/Asesor/SimulacionesEspecificas.jsx";
 import ModuloSeleccionado from "./pages/Asesor/ModuloSeleccionado.jsx";
 import PerfilAsesor from "./pages/Asesor/PerfilAsesor.jsx";
+import  Actividades  from "./pages/Asesor/Actividades.jsx";
+import ActividadeEspecificosAsesor from "./pages/Asesor/ActividadesEspecificos.jsx";
+import AgendaAsesor from "./pages/Asesor/AgendaAsesor.jsx";
 // Eliminados módulos de tests (Test, Resultado) para flujo simplificado
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { AsesorProvider } from "./context/AsesorContext.jsx";
@@ -162,6 +167,11 @@ export default function App(){
                       <Route path='/asesor_cursos' element={<AsesorCursos />} />
                       <Route path='/asesor_configuraciones' element={<AsesorConfig />} />
                       <Route path='/asesor_feedback' element={<FeedbackAsesor />} />
+                      <Route path='/asesor/nuevo_simulador' element={<NuevoSimulador />} />
+                      <Route path='/asesor/nuevo_simulador/español' element={<FormBuilderEspañol />} />
+                      <Route path='/asesor/actividades' element={<Actividades />} />
+                      <Route path='/asesor/actividades/modulos_especificos' element={<ActividadeEspecificosAsesor />} />
+                      <Route path='/asesor/agenda' element={<AgendaAsesor />} />
 
                       {/* Fallback redirect if accessed within protected group */}
                       <Route path='/asesor/registro_asesor' element={<Navigate to='/registro_asesor' replace />} />
