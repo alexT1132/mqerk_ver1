@@ -11,7 +11,7 @@ import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 // eso si,se tendra que borrar algunos datos mock y solo dejar las frases
 import { 
   MOCK_EDUCATIONAL_QUOTES
-} from '../../data/mockData';
+} from '../../data/mockData.js';
 
 // ============================================================================
 // DATOS DE RESPALDO (SOLO FRONTEND)
@@ -140,7 +140,7 @@ const GreetingHeader = memo(({ greeting, adminName }) => {
   }, []);
 
   return (
-    <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 px-3 py-4 xs:px-4 xs:py-6 sm:px-6 sm:py-8 md:px-8 md:py-10 lg:px-10 lg:py-12 xl:px-12 xl:py-16 text-white relative overflow-hidden">
+    <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 px-0 py-4 xs:px-0 xs:py-6 sm:px-0 sm:py-8 md:px-0 md:py-10 lg:px-0 lg:py-12 xl:px-0 xl:py-16 text-white relative overflow-hidden">
      
       <div className="absolute top-0 right-0 w-16 h-16 xs:w-24 xs:h-24 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-64 lg:h-64 xl:w-80 xl:h-80 bg-white bg-opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 animate-pulse"></div>
      
@@ -444,8 +444,8 @@ function Bienvenida_Admin1() {
   }
 
   return (
-    <div className="flex flex-col w-full min-h-screen p-3 sm:p-6 md:p-8 lg:p-10 font-sans bg-gradient-to-br from-gray-50 via-white to-indigo-50">
-      <div className="bg-white rounded-xl sm:rounded-2xl md:rounded-3xl shadow-xl hover:shadow-2xl transition-shadow duration-300 overflow-hidden w-full max-w-full sm:max-w-3xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl mx-auto border-2 border-gray-200/80 hover:border-indigo-200/80">
+    <div className="flex flex-col w-full min-h-screen p-0 sm:p-0 md:p-0 lg:p-0 font-sans bg-gradient-to-br from-gray-50 via-white to-indigo-50">
+      <div className="bg-white rounded-none sm:rounded-none md:rounded-xl shadow-xl hover:shadow-2xl transition-shadow duration-300 overflow-hidden w-full max-w-full mx-auto border-0 md:border-2 md:rounded-3xl md:border-gray-200/80 md:hover:border-indigo-200/80">
 
         {/* Header con saludo y nombre (GreetingHeader solo muestra lo que le pasas) */}
         <GreetingHeader 
@@ -454,7 +454,7 @@ function Bienvenida_Admin1() {
         />
 
         {/* Tarjetas con info - los datos vienen de los contextos/hooks */}
-        <div className="px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10 lg:py-10 bg-white">
+  <div className="px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10 lg:py-10 bg-white">
           <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8 w-full max-w-full md:max-w-6xl mx-auto">
 
             {/* Tarjeta de Fecha (esto se queda en frontend) */}

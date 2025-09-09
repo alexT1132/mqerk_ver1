@@ -324,8 +324,14 @@ export const listarEstudiantesAsesor = async (req, res) => {
       } catch (_e) {}
     }
     const gruposArr = perfil?.grupos_asesor || (perfil?.grupo_asesor ? [perfil.grupo_asesor] : []);
-    const grupo = gruposArr[0] || null; // compat antiguo
-    if (!grupo) return res.status(200).json({ data: [], grupo: null, grupos_asesor: [] });
+    const allGroups = Array.isArray(gruposArr) ? gruposArr : [];
+    // grupo opcional por query; si no viene, preferir primero para compat
+    const requested = (req.query?.grupo || '').toString().trim();
+    const grupo = requested || (allGroups[0] || null);
+    if (!grupo || !allGroups.includes(grupo)) {
+      // Si no hay grupo aún asignado, devolvemos solo metadatos
+      return res.status(200).json({ data: [], grupo: null, grupos_asesor: allGroups });
+    }
 
     // Alinear con Admin: solo aprobados (verificacion=2), sin soft-deletes, y con pago aprobado (comprobante con importe)
     const sql = `
@@ -347,7 +353,7 @@ export const listarEstudiantesAsesor = async (req, res) => {
         AND TRIM(e.grupo) = TRIM(?)
       ORDER BY c.created_at DESC`;
 
-    const [rows] = await db.query(sql, [grupo]);
+  const [rows] = await db.query(sql, [grupo]);
     const data = rows.map((r) => ({
       id: r.id,
       folio: r.folio,
@@ -367,7 +373,7 @@ export const listarEstudiantesAsesor = async (req, res) => {
         fecha: r.pago_fecha ? new Date(r.pago_fecha).toISOString() : null,
       },
     }));
-    return res.json({ data, grupo, grupos_asesor: gruposArr });
+  return res.json({ data, grupo, grupos_asesor: allGroups });
   } catch (err) {
     console.error('Error listarEstudiantesAsesor', err);
     res.status(500).json({ message: 'Error interno' });

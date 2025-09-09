@@ -16,6 +16,12 @@ import { Configuracion_Admin_comp } from './Configuracion_Admin_comp.jsx';
 import AdministrarAsesores from './AdministrarAsesores.jsx';
 import StudentProfilePage from '../../pages/Admin/StudentProfilePage.jsx';
 import StudentPaymentsPage from '../../pages/Admin/StudentPaymentsPage.jsx';
+import FinanzasHome from './Finanzas.jsx';
+import FinanzasIngresos from './FinanzasIngresos.jsx';
+import FinanzasEgresos from './FinanzasEgresos.jsx';
+import FinanzasEgresosFijos from './FinanzasEgresosFijos.jsx';
+import FinanzasEgresosVariables from './FinanzasEgresosVariables.jsx';
+import FinanzasEgresosPresupuesto from './FinanzasEgresosPresupuesto.jsx';
 
 
 
@@ -55,6 +61,13 @@ export function AdminDashboardBundle() {
         <Route path="/configuracion" element={<ConfiguracionAdmin />} />
   {/* Administración de asesores */}
   <Route path="/asesores" element={<AdministrarAsesores />} />
+  {/* Finanzas */}
+  <Route path="/finanzas" element={<FinanzasHome />} />
+  <Route path="/finanzas/ingresos" element={<FinanzasIngresos />} />
+  <Route path="/finanzas/egresos" element={<FinanzasEgresos />} />
+  <Route path="/finanzas/egresos/fijos" element={<FinanzasEgresosFijos />} />
+  <Route path="/finanzas/egresos/variables" element={<FinanzasEgresosVariables />} />
+  <Route path="/finanzas/egresos/presupuesto" element={<FinanzasEgresosPresupuesto />} />
       </Routes>
     </AdminLayout>
   );

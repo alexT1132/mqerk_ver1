@@ -63,6 +63,12 @@ export const updateEvent = async (id, userId, updates) => {
 };
 
 export const deleteEvent = async (id, userId) => {
-  const [result] = await db.query(`DELETE FROM calendar_events WHERE id = ? AND user_id = ?`, [id, userId]);
+  // Bloquear eliminación si existe un ingreso vinculado a este evento
+  const [result] = await db.query(
+    `DELETE ce FROM calendar_events AS ce
+     WHERE ce.id = ? AND ce.user_id = ?
+       AND NOT EXISTS (SELECT 1 FROM ingresos i WHERE i.calendar_event_id = ce.id)`,
+    [id, userId]
+  );
   return result.affectedRows > 0;
 };

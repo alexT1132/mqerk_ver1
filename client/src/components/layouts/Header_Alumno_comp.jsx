@@ -322,14 +322,14 @@ export function Header_Alumno_comp({
 
               {/* Contenedor de Notificaciones Desplegable (se muestra condicionalmente) */}
               {isNotificationsOpen && (
-                <div className="absolute top-full mt-2 w-80 bg-white/60 border border-gray-200/60 rounded-lg shadow-xl z-50 overflow-hidden backdrop-blur-xl
-                                max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:w-[calc(100vw-32px)] sm:right-0 sm:max-w-xs">
+                <div className="fixed top-14 right-2 left-auto w-[50vw] max-w-[92vw] bg-white/60 border border-gray-200/60 rounded-lg shadow-xl z-[100] overflow-hidden backdrop-blur-xl
+                                sm:absolute sm:top-full sm:mt-2 sm:right-0 sm:left-auto sm:w-80 sm:max-w-xs">
                   {/* Header del dropdown */}
-                  <div className="bg-gradient-to-r from-purple-600/60 to-purple-800/60 text-white px-4 py-3">
+                  <div className="bg-gradient-to-r from-purple-600/60 to-purple-800/60 text-white px-3 py-1.5 sm:px-4 sm:py-3">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-lg">Notificaciones</h3>
+            <h3 className="font-semibold text-base sm:text-lg">Notificaciones</h3>
                       {unreadCount > 0 && (
-                        <span className="bg-purple-500/60 text-white px-2 py-1 rounded-full text-xs font-medium">
+            <span className="bg-purple-500/60 text-white px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium">
                           {unreadCount} nuevas
                         </span>
                       )}
@@ -338,10 +338,10 @@ export function Header_Alumno_comp({
 
                   {/* Botón de marcar como leídas */}
                   {unreadCount > 0 && (
-                    <div className="px-4 py-2 bg-gray-50/60 border-b border-gray-200/60">
+                    <div className="hidden sm:block px-4 py-2 bg-gray-50/60 border-b border-gray-200/60">
                       <button
                         onClick={markAllAsRead}
-                        className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150"
+            className="flex items-center gap-2 text-[12px] sm:text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150"
                       >
                         {/* Icono de doble check estilo WhatsApp */}
                         <svg
@@ -364,7 +364,7 @@ export function Header_Alumno_comp({
                   )}
 
                   {/* Lista de notificaciones */}
-                  <div className="max-h-64 overflow-y-auto">
+                  <div className="max-h-[30vh] sm:max-h-64 overflow-y-auto">
                     {displayedNotifications.length > 0 ? (
                       <ul className="py-1">
                         {displayedNotifications.map((notification) => {
@@ -373,7 +373,7 @@ export function Header_Alumno_comp({
                             <li
                               key={notification.id || notification._runtimeKey}
                               onClick={() => { if(unread && notification.id) { try { markAsRead(notification.id); } catch(_){} } }}
-                              className={`relative px-4 py-3 text-sm transition-colors duration-150 border-l-4 cursor-pointer group
+                              className={`relative px-3 py-1.5 text-[13px] sm:text-sm transition-colors duration-150 border-l-4 cursor-pointer group
                                 ${unread ? 'bg-gradient-to-r from-purple-50 to-transparent hover:from-purple-100 hover:bg-purple-50' : 'hover:bg-gray-100/60'}
                                 ${unread ? 'border-purple-500' : 'border-gray-300'}`}
                             >
@@ -381,19 +381,19 @@ export function Header_Alumno_comp({
                                 <span className="absolute top-2 right-3 w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
                               )}
                               <div className="flex items-start gap-3">
-                                <div className={`text-lg mt-0.5 flex-shrink-0 ${unread ? 'text-purple-600' : ''}`}>
+                                <div className={`text-base sm:text-lg mt-0.5 flex-shrink-0 ${unread ? 'text-purple-600' : ''}`}>
                                   {getNotificationIcon(notification.type)}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between mb-1">
-                                    <p className={`truncate text-sm ${unread ? 'font-semibold text-gray-900' : 'font-medium'} ${getPriorityColor(notification.priority)}`}>
+                                    <p className={`truncate text-xs sm:text-sm ${unread ? 'font-semibold text-gray-900' : 'font-medium'} ${getPriorityColor(notification.priority)}`}>
                                       {notification.title}
                                     </p>
                                     {notification.priority === 'urgent' && (
                                       <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse flex-shrink-0"></span>
                                     )}
                                   </div>
-                                  <p className={`text-xs leading-relaxed ${unread ? 'text-gray-700' : 'text-gray-600'}`}>
+                                  <p className={`text-[11px] sm:text-xs leading-relaxed ${unread ? 'text-gray-700' : 'text-gray-600'}`}>
                                     {notification.message}
                                   </p>
                                   <div className="flex items-center justify-between mt-2">
@@ -414,21 +414,21 @@ export function Header_Alumno_comp({
                         })}
                       </ul>
                     ) : (
-                      <div className="px-4 py-8 text-center bg-gray-100/60">
-                        <div className="w-12 h-12 mx-auto mb-3 text-gray-400">
+                      <div className="px-3 py-6 sm:px-4 sm:py-8 text-center bg-gray-100/60">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 text-gray-400">
                           <svg fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                           </svg>
                         </div>
-                        <p className="text-gray-600 text-sm font-medium">¡Todo al día!</p>
-                        <p className="text-gray-500 text-xs">No tienes notificaciones pendientes</p>
+                        <p className="text-gray-600 text-[13px] sm:text-sm font-medium">¡Todo al día!</p>
+                        <p className="text-gray-500 text-[11px] sm:text-xs">No tienes notificaciones pendientes</p>
                       </div>
                     )}
                   </div>
 
                   {/* Footer del dropdown */}
-                  <div className="px-4 py-2 bg-gray-50/60 border-t border-gray-200/60">
-                    <button className="text-xs text-gray-600 hover:text-gray-800 transition-colors duration-150">
+                  <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-50/60 border-t border-gray-200/60">
+                    <button className="text-[11px] sm:text-xs text-gray-600 hover:text-gray-800 transition-colors duration-150">
                       Ver todas las notificaciones
                     </button>
                   </div>

@@ -19,6 +19,7 @@ import AreasRoutes from "./routes/areas.routes.js";
 import StudentNotificationsRoutes from "./routes/student_notifications.routes.js";
 import StudentRemindersRoutes from "./routes/student_reminders.routes.js";
 import EEAURoutes from "./routes/eeau.routes.js";
+import FinanzasRoutes from "./routes/finanzas.routes.js";
 
 const app = express();
 
@@ -82,5 +83,6 @@ app.use("/api", AreasRoutes);
 app.use("/api", StudentNotificationsRoutes);
 app.use("/api", StudentRemindersRoutes);
 app.use("/api", EEAURoutes);
+app.use("/api", FinanzasRoutes);
 
 export default app;

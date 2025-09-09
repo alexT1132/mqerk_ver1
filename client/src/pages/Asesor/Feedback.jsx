@@ -13,9 +13,11 @@ export default function Layout() {
   const [estudiantes, setEstudiantes] = useState([]);
   const [hiddenCount, setHiddenCount] = useState(0);
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [gruposAPI, setGruposAPI] = useState([]);
   const navigate = useNavigate();
   const { studentId } = useParams();
 
+  // Carga inicial solo para conocer los grupos del asesor; no trae estudiantes aún.
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -24,37 +26,45 @@ export default function Layout() {
       try {
         const { data } = await getMisEstudiantes();
         if (!alive) return;
-        // API may return { data: [...] } or the array directly
-        const raw = data?.data ?? data ?? [];
-        // Excluir soft-deleted / inactivos / suspendidos según posibles nombres de campo
-        const isVisible = (e) => {
-          const deleted = e?.deleted_at || e?.deletedAt || e?.soft_deleted || e?.softDelete || e?.borrado_suave || e?.eliminado;
-          if (deleted) return false;
-          const isZero = (v) => v === 0 || v === '0' || v === false || v === 'false' || v === 'no';
-          const isOne = (v) => v === 1 || v === '1' || v === true || v === 'true' || v === 'si';
-          const numericInactive = [e?.activo, e?.active, e?.habilitado, e?.visible, e?.estado]
-            .some((v) => isZero(v));
-          if (numericInactive) return false;
-          const suspended = [e?.suspendido, e?.suspended, e?.suspension].some((v) => isOne(v));
-          if (suspended) return false;
-          const statusText = String(e?.estatus || e?.status || e?.estado || '').toLowerCase();
-          if (/(inactivo|desactivado|suspendido|baja|eliminado)/.test(statusText)) return false;
-          return true;
-        };
-        const list = Array.isArray(raw) ? raw : [];
-        const filtered = list.filter(isVisible);
-        setEstudiantes(filtered);
-        setHiddenCount(Math.max(0, list.length - filtered.length));
+        const grupos = data?.grupos_asesor || [];
+        setGruposAPI(Array.isArray(grupos) ? grupos : []);
+        // Si API ya envió estudiantes, normalizarlos (p. ej., cuando no se pasa grupo y backend decide devolver primero)
+        const raw = data?.data ?? [];
+        if (Array.isArray(raw) && raw.length) {
+          const filtered = raw; // backend ya devuelve solo aprobados/visibles
+          setEstudiantes(filtered);
+          setHiddenCount(0);
+        }
       } catch (e) {
-        if (alive) setError(e?.response?.data?.message || "Error cargando estudiantes");
+        if (alive) setError(e?.response?.data?.message || "Error cargando grupos del asesor");
       } finally {
         if (alive) setLoading(false);
       }
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
+
+  // Cuando el usuario elige un grupo, pedimos alumnos de ese grupo.
+  useEffect(() => {
+    if (!selectedGroup) return;
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data } = await getMisEstudiantes({ grupo: selectedGroup });
+        if (!alive) return;
+        const list = Array.isArray(data?.data) ? data.data : [];
+        setEstudiantes(list);
+        setHiddenCount(0);
+      } catch (e) {
+        if (alive) setError(e?.response?.data?.message || "Error cargando estudiantes del grupo");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, [selectedGroup]);
 
   // Página de lista: delega el detalle a la ruta /asesor_feedback/:studentId
 
@@ -95,17 +105,10 @@ export default function Layout() {
     []
   );
 
-  // Distinct groups available for this advisor (derived from visible students)
+  // Grupos disponibles provienen del backend (perfil del asesor)
   const gruposDisponibles = useMemo(() => {
-    const set = new Map();
-    for (const e of estudiantes) {
-      const raw = (e.grupo ?? e.turno ?? e.grado ?? '').toString().trim();
-      if (!raw) continue;
-      const key = raw.toUpperCase();
-      if (!set.has(key)) set.set(key, raw);
-    }
-    return Array.from(set.keys()); // show as uppercased labels: V1, V2, S, M, etc.
-  }, [estudiantes]);
+    return (gruposAPI || []).map((g) => String(g).toUpperCase());
+  }, [gruposAPI]);
 
   // Auto-select when only one group exists
   useEffect(() => {
