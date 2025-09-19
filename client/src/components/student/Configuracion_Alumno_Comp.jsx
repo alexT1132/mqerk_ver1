@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useStudent } from '../../context/StudentContext.jsx';
 import { buildStaticUrl, getApiOrigin } from '../../utils/url';
 import { getConfigRequest, upsertConfigRequest, changePasswordRequest, updateEstudianteRequest, updateFotoEstudianteRequest, softDeleteAlumnoRequest } from '../../api/estudiantes.js';
 import ConfirmModal from '../shared/ConfirmModal.jsx';
@@ -73,6 +74,7 @@ const isValidEmail = (email) => {
 
 export function Configuracion_Alumno_comp() {
     const { user, alumno, logout, setAlumno } = useAuth();
+    const { headerPrefs, updateHeaderPrefs } = useStudent();
     // Estados del componente
     // Helper para armar URL absoluta de fotos
     const apiOrigin = getApiOrigin();
@@ -141,6 +143,29 @@ export function Configuracion_Alumno_comp() {
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [saveProcessing, setSaveProcessing] = useState(false);
     const [photoError, setPhotoError] = useState(false);
+    // Tabs
+    const [activeTab, setActiveTab] = useState('perfil'); // 'perfil' | 'preferencias' | 'apariencia' | 'seguridad' | 'peligro'
+
+    // Viewport guard: hide Apariencia on mobile (md breakpoint = 768px)
+    const [isMdUp, setIsMdUp] = useState(() => {
+        if (typeof window === 'undefined') return true;
+        return window.matchMedia('(min-width: 768px)').matches;
+    });
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const mq = window.matchMedia('(min-width: 768px)');
+        const handler = (e) => setIsMdUp(e.matches);
+        try { mq.addEventListener('change', handler); } catch { mq.addListener(handler); }
+        return () => { try { mq.removeEventListener('change', handler); } catch { mq.removeListener(handler); } };
+    }, []);
+
+    // If on mobile and currently in 'apariencia', redirect to 'perfil'
+    useEffect(() => {
+        if (!isMdUp && activeTab === 'apariencia') {
+            setActiveTab('perfil');
+        }
+    }, [isMdUp, activeTab]);
 
     // Carga inicial de datos del usuario
     
@@ -314,6 +339,15 @@ export function Configuracion_Alumno_comp() {
         setShowSaveModal(true);
     };
 
+    // Helper: dividir nombre completo en nombre y apellidos
+    const splitFullName = (full) => {
+        const raw = String(full || '').trim().replace(/\s+/g, ' ');
+        if (!raw) return { nombre: '', apellidos: '' };
+        const parts = raw.split(' ');
+        if (parts.length === 1) return { nombre: parts[0], apellidos: '' };
+        return { nombre: parts[0], apellidos: parts.slice(1).join(' ') };
+    };
+
     const executeSaveChanges = async () => {
         setSaveProcessing(true);
         setIsLoading(true);
@@ -329,8 +363,11 @@ export function Configuracion_Alumno_comp() {
                 nivel_experiencia: learningPreferences.nivelExperiencia,
                 intereses: mergedInterests,
             };
-            // 2) Actualizar email/teléfono/fecha_nacimiento del estudiante
+            // 2) Actualizar datos del estudiante, incluyendo nombre completo separado
+            const { nombre: nombreBase, apellidos: apellidosBase } = splitFullName(profile.nombre);
             const estPayload = {
+                nombre: nombreBase || undefined,
+                apellidos: apellidosBase || undefined,
                 email: profile.email || undefined,
                 telefono: profile.telefono || undefined,
                 fecha_nacimiento: profile.fechaNacimiento || undefined,
@@ -338,10 +375,23 @@ export function Configuracion_Alumno_comp() {
             // Limpiar undefined
             Object.keys(estPayload).forEach((k) => estPayload[k] === undefined && delete estPayload[k]);
 
-            await Promise.all([
+            const [cfgRes, estRes] = await Promise.all([
                 upsertConfigRequest(alumno.id, prefPayload),
-                Object.keys(estPayload).length ? updateEstudianteRequest(alumno.id, estPayload) : Promise.resolve(),
+                Object.keys(estPayload).length ? updateEstudianteRequest(alumno.id, estPayload) : Promise.resolve({ data: null }),
             ]);
+
+            // Reflejar cambios en el contexto Auth si backend devolvió el registro actualizado
+            if (estRes && estRes.data && estRes.data.data) {
+                const updated = estRes.data.data;
+                setAlumno(prev => ({ ...(prev || {}), ...updated }));
+                setProfile(prev => ({
+                    ...prev,
+                    nombre: `${updated.nombre || nombreBase || ''} ${updated.apellidos || apellidosBase || ''}`.trim(),
+                    email: updated.email ?? prev.email,
+                    telefono: updated.telefono ?? prev.telefono,
+                    fechaNacimiento: formatDateForInput(updated.fecha_nacimiento) || prev.fechaNacimiento,
+                }));
+            }
             // Guardado exitoso: no mostrar alert bloqueante
         } catch (error) {
             alert('Error al guardar los cambios. Por favor, inténtalo de nuevo.');
@@ -437,11 +487,19 @@ export function Configuracion_Alumno_comp() {
 
     // Configuración de datos estáticos
 
+    // Secciones estilo admin para navegación lateral
+    const secciones = [
+        { id: 'perfil', nombre: 'Mi Perfil', icono: '👤', descripcion: 'Tu información personal' },
+        { id: 'preferencias', nombre: 'Preferencias', icono: '📚', descripcion: 'Aprendizaje' },
+        { id: 'apariencia', nombre: 'Apariencia', icono: '🎛️', descripcion: 'Barra superior' },
+        { id: 'seguridad', nombre: 'Seguridad', icono: '🔒', descripcion: 'Protege tu cuenta' },
+        { id: 'peligro', nombre: 'Zona de Peligro', icono: '⚠️', descripcion: 'Acciones irreversibles' },
+    ];
+
     // Render del componente
-    
     return (
-        <div className="min-h-screen bg-white py-8 px-6">
-            <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 p-3 sm:p-6 lg:p-8">
+            <div className="max-w-7xl mx-auto">
                 <ConfirmModal
                     isOpen={showDeleteModal}
                     variant="danger"
@@ -469,51 +527,130 @@ export function Configuracion_Alumno_comp() {
                     onConfirm={executeSaveChanges}
                     onCancel={() => !saveProcessing && setShowSaveModal(false)}
                 />
-                {/* Header */}
-                <div className="text-center mb-12">
-                    <div className="flex items-center justify-center gap-3 mb-4">
-                        <h1 className="text-3xl xs:text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                            CONFIGURACIÓN
-                        </h1>
-                        {isLoading && <IconoCargando />}
+                {/* Header estilo admin */}
+                <div className="bg-gradient-to-br from-white via-blue-50 to-indigo-100 rounded-xl sm:rounded-3xl shadow-xl shadow-blue-200/30 border border-blue-200/50 p-4 sm:p-8 mb-4 sm:mb-8 backdrop-blur-sm relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-2xl sm:rounded-3xl"></div>
+                    <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center space-x-3 sm:space-x-4">
+                            <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                                <span className="text-lg sm:text-2xl">👤</span>
+                            </div>
+                            <div>
+                                <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
+                                    Configuración de Cuenta
+                                </h1>
+                                <p className="mt-0.5 sm:mt-2 text-xs sm:text-base text-gray-600 opacity-80">
+                                    Personaliza tu perfil, preferencias y seguridad
+                                </p>
+                            </div>
+                        </div>
+                        {activeTab !== 'peligro' && (
+                            <div className="mt-4 sm:mt-0">
+                                <button
+                                    onClick={handleOpenSaveConfirm}
+                                    disabled={!emailValid || isLoading}
+                                    className="inline-flex items-center px-4 py-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-600/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Guardando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Guardar Cambios
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        )}
                     </div>
-                    <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-                        Personaliza tu experiencia de aprendizaje y mantén tu cuenta segura
-                    </p>
                     {errors.general && (
-                        <div className="mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-sm">
+                        <div className="relative z-10 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-sm">
                             {errors.general}
                         </div>
                     )}
                 </div>
+                {/* Layout con Sidebar estilo admin */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
+                    {/* Sidebar de navegación */}
+                    <div className="lg:col-span-1">
+                        <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 rounded-xl sm:rounded-3xl shadow-xl shadow-gray-200/40 border border-gray-200/50 p-4 sm:p-8 backdrop-blur-sm relative overflow-visible">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-2xl sm:rounded-3xl"></div>
+                            <div className="relative z-10">
+                                <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-6 flex items-center">
+                                    <span className="w-2 h-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mr-3"></span>
+                                    Secciones
+                                </h3>
+                                <nav className="space-y-3">
+                                    {secciones.map((s) => (
+                                        <button
+                                            key={s.id}
+                                            onClick={() => setActiveTab(s.id)}
+                                            className={`w-full text-left p-4 rounded-xl transition-all duration-300 flex items-center space-x-4 group relative overflow-hidden ${
+                                                activeTab === s.id
+                                                    ? 'bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white shadow-xl shadow-blue-500/40 transform scale-105'
+                                                    : 'text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:shadow-lg hover:scale-[1.02] hover:shadow-blue-200/30'
+                                            } ${s.id === 'apariencia' ? 'hidden md:flex' : ''}`}
+                                        >
+                                            {activeTab === s.id && (
+                                                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-xl"></div>
+                                            )}
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center relative z-10 ${
+                                                activeTab === s.id
+                                                    ? 'bg-white/20 shadow-lg'
+                                                    : 'bg-gradient-to-br from-blue-100 to-indigo-100 group-hover:from-blue-200 group-hover:to-indigo-200'
+                                            } transition-all duration-300`}>
+                                                <span className="text-lg">{s.icono}</span>
+                                            </div>
+                                            <div className="relative z-10 flex-1">
+                                                <span className="font-semibold text-base block">{s.nombre}</span>
+                                                <span className={`${activeTab === s.id ? 'text-blue-100' : 'text-gray-500'} text-xs opacity-75`}>{s.descripcion}</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
 
-                {/* Contenido principal en grid de 2 columnas */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* COLUMNA IZQUIERDA */}
-                    <div className="space-y-8">
+                    {/* Contenido principal */}
+                    <div className="lg:col-span-3">
+                        <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 rounded-xl sm:rounded-3xl shadow-xl shadow-gray-200/40 border border-gray-200/50 p-4 sm:p-8 backdrop-blur-sm relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-2xl sm:rounded-3xl"></div>
+                            <div className="relative z-10 space-y-8">
+                                {/* Contenido por pestaña */}
+                    {activeTab === 'perfil' && (
+                        <>
                         {/* Información Personal */}
-                        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-visible hover:shadow-3xl transition-all duration-300">
-                            <div className="p-8">
-                                <div className="flex items-center gap-4 mb-8">
-                                    <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl">
+                        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-visible hover:shadow-md transition-all duration-200">
+                            <div className="p-4 sm:p-5">
+                                <div className="flex items-center gap-3 mb-5 sm:mb-6">
+                                    <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-md sm:rounded-lg">
                                         <IconoUsuario />
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl font-bold text-gray-900">Información Personal</h2>
-                                        <p className="text-gray-600">Tu perfil público</p>
+                                        <h2 className="text-xl font-bold text-gray-900">Información Personal</h2>
+                                        <p className="text-gray-600 text-sm">Tu perfil público</p>
                                     </div>
                                 </div>
                                 
-                                <div className="space-y-8">
+                                <div className="space-y-6">
                                     {/* Foto de Perfil */}
                                     <div className="flex justify-center">
                                         <div className="relative group">
-                                            <div className="w-32 h-32 rounded-2xl overflow-hidden shadow-lg ring-4 ring-blue-100 transition-all duration-500 group-hover:ring-blue-200 group-hover:shadow-xl bg-gradient-to-br from-gray-100 to-gray-200 group-hover:scale-105">
+                                            <div className="w-28 h-28 sm:w-36 sm:h-36 lg:w-40 lg:h-40 rounded-full overflow-hidden shadow-lg ring-2 sm:ring-4 ring-blue-100 ring-offset-2 ring-offset-white transition-all duration-300 group-hover:ring-blue-200 group-hover:shadow-xl bg-gradient-to-br from-gray-100 to-gray-200">
                                                 {profile.fotoUrl && !photoError ? (
                                                     <img
                                                         src={profile.fotoUrl}
                                                         alt="Foto de Perfil"
-                                                        className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
+                                                        className="w-full h-full object-cover object-center"
                                                         onError={() => setPhotoError(true)}
                                                     />
                                                 ) : (
@@ -529,7 +666,7 @@ export function Configuracion_Alumno_comp() {
                                                 type="button"
                                                 onClick={handleChangeProfilePicture}
                                                 disabled={isLoading}
-                                                className="absolute -bottom-2 -right-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white p-3 rounded-xl shadow-lg transition-all duration-300 transform opacity-0 group-hover:opacity-100 hover:scale-110 hover:shadow-xl disabled:opacity-50"
+                                                className="absolute -bottom-2 -right-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white p-2.5 rounded-lg shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 disabled:opacity-50"
                                                 title="Cambiar foto de perfil"
                                             >
                                                 {isLoading ? <IconoCargando /> : <IconoCamara />}
@@ -538,7 +675,7 @@ export function Configuracion_Alumno_comp() {
                                     </div>
                                     
                                     {/* Campos del formulario */}
-                                    <div className="space-y-6">
+                                    <div className="space-y-3.5 sm:space-y-4">
                                         <div>
                                             <label htmlFor="nombre" className="block text-sm font-semibold text-gray-700 mb-2">
                                                 Nombre Completo
@@ -550,7 +687,7 @@ export function Configuracion_Alumno_comp() {
                                                 value={profile.nombre}
                                                 onChange={handleProfileChange}
                                                 disabled={isLoading}
-                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:bg-gray-100"
+                                                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm"
                                                 placeholder="Ingresa tu nombre completo"
                                             />
                                         </div>
@@ -566,7 +703,7 @@ export function Configuracion_Alumno_comp() {
                                                 value={profile.email}
                                                 onChange={handleProfileChange}
                                                 disabled={isLoading}
-                                                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:border-transparent transition-all duration-200 hover:bg-gray-100 ${
+                                                className={`w-full px-3 py-2.5 bg-white border rounded-lg focus:ring-2 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm ${
                                                     !emailValid && profile.email.length > 0 
                                                         ? 'border-rose-300 focus:ring-rose-500' 
                                                         : 'border-gray-200 focus:ring-blue-500'
@@ -581,7 +718,7 @@ export function Configuracion_Alumno_comp() {
                                             )}
                                         </div>
                                         
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
                                             <div>
                                                 <label htmlFor="telefono" className="block text-sm font-semibold text-gray-700 mb-2">
                                                     Teléfono
@@ -593,7 +730,7 @@ export function Configuracion_Alumno_comp() {
                                                     value={profile.telefono}
                                                     onChange={handleProfileChange}
                                                     disabled={isLoading}
-                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:bg-gray-100"
+                                                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm"
                                                     placeholder="(123) 456-7890"
                                                 />
                                             </div>
@@ -609,7 +746,7 @@ export function Configuracion_Alumno_comp() {
                                                     value={profile.fechaNacimiento}
                                                     onChange={handleProfileChange}
                                                     disabled={isLoading}
-                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:bg-gray-100"
+                                                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm"
                                                 />
                                             </div>
                                         </div>
@@ -617,120 +754,94 @@ export function Configuracion_Alumno_comp() {
                                 </div>
                             </div>
                         </div>
-                        
-                        {/* Zona de Peligro */}
-                        <div className="bg-gradient-to-br from-rose-50 to-red-50 rounded-2xl shadow-2xl border-2 border-rose-300 overflow-hidden hover:shadow-3xl transition-all duration-300">
-                            <div className="p-8">
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="p-3 bg-rose-200 rounded-xl">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h2 className="text-2xl font-bold text-rose-900">Zona de Peligro</h2>
-                                        <p className="text-rose-700">Acciones irreversibles</p>
-                                    </div>
-                                </div>
-                                
-                                <div className="bg-white/60 rounded-xl p-6 border border-rose-300/50">
-                                    <div className="flex items-start gap-3 mb-4">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-rose-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                        </svg>
-                                        <div>
-                                            <h3 className="font-bold text-rose-900 text-lg">Eliminar Acceso</h3>
-                                            <p className="text-rose-700 mt-1">
-                                                Esta acción eliminará permanentemente tu acceso a la cuenta. 
-                                                <span className="font-semibold"> NO se puede deshacer.</span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    
-                                    <button
-                                        type="button"
-                                        onClick={handleDeleteAccount}
-                                        disabled={isLoading}
-                                        className="w-full px-8 py-3 rounded-xl font-bold text-white shadow-lg transition-all duration-200 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50"
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            {isLoading ? <IconoCargando /> : <IconoTrash />}
-                                            {isLoading ? 'Procesando...' : 'Eliminar Acceso Permanentemente'}
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        </>
+                    )}
 
-                    {/* COLUMNA DERECHA */}
-                    <div className="space-y-8">
+                    {activeTab === 'preferencias' && (
+                        <>
                         {/* Preferencias de Aprendizaje */}
-                        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden hover:shadow-3xl transition-all duration-300">
-                            <div className="p-8">
-                                <div className="flex items-center gap-4 mb-8">
-                                    <div className="p-3 bg-gradient-to-br from-emerald-100 to-green-100 rounded-xl">
+                        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-visible hover:shadow-md transition-all duration-200">
+                            <div className="p-4 sm:p-5">
+                                <div className="flex items-center gap-3 mb-5 sm:mb-6">
+                                    <div className="p-2 bg-gradient-to-br from-emerald-100 to-green-100 rounded-md sm:rounded-lg">
                                         <IconoLibroAbierto />
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl font-bold text-gray-900">Preferencias de Aprendizaje</h2>
-                                        <p className="text-gray-600">Personaliza tu experiencia</p>
+                                        <h2 className="text-xl font-bold text-gray-900">Preferencias de Aprendizaje</h2>
+                                        <p className="text-gray-600 text-sm">Personaliza tu experiencia</p>
                                     </div>
                                 </div>
                                 
-                                <div className="space-y-8">
-                                    {/* Nivel de Experiencia */}
+                                <div className="space-y-6">
+                                    {/* Nivel de Experiencia - Segmented Control */}
                                     <div>
-                                        <label htmlFor="nivelExperiencia" className="block text-sm font-semibold text-gray-700 mb-3">
+                                        <label className="block text-sm font-semibold text-gray-700 mb-3">
                                             Nivel de Experiencia
                                         </label>
-                                        <select
-                                            id="nivelExperiencia"
-                                            name="nivelExperiencia"
-                                            value={learningPreferences.nivelExperiencia}
-                                            onChange={handleLearningPreferenceChange}
-                                            disabled={isLoading}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 hover:bg-gray-100"
-                                        >
-                                            <option value="">Selecciona tu nivel</option>
-                                            <option value="principiante">🌱 Principiante</option>
-                                            <option value="intermedio">📈 Intermedio</option>
-                                            <option value="avanzado">🚀 Avanzado</option>
-                                        </select>
+                                        <div role="radiogroup" aria-label="Nivel de experiencia" className="inline-flex rounded-lg border border-emerald-200 bg-white overflow-hidden">
+                                            {[
+                                                { key: 'principiante', label: '🌱 Principiante' },
+                                                { key: 'intermedio', label: '📈 Intermedio' },
+                                                { key: 'avanzado', label: '🚀 Avanzado' },
+                                            ].map((opt, i, arr) => {
+                                                const active = learningPreferences.nivelExperiencia === opt.key;
+                                                const isFirst = i === 0; const isLast = i === arr.length - 1;
+                                                return (
+                                                    <button
+                                                        key={opt.key}
+                                                        type="button"
+                                                        role="radio"
+                                                        aria-checked={active}
+                                                        disabled={isLoading}
+                                                        onClick={() => {
+                                                            setLearningPreferences(prev => ({ ...prev, nivelExperiencia: opt.key }));
+                                                            setNewSuggestionLevel(opt.key);
+                                                        }}
+                                                        className={`px-3.5 py-2 text-xs sm:text-sm font-medium transition-colors border-emerald-200 ${
+                                                            active
+                                                            ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-400'
+                                                            : 'bg-transparent text-emerald-700/80 hover:text-emerald-900 hover:bg-emerald-50'
+                                                        } ${isFirst ? 'rounded-l-lg' : ''} ${isLast ? 'rounded-r-lg' : 'border-l'}`}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                    
-                                    {/* Áreas de Interés */}
+
+                                    {/* Áreas de Interés - Toggle grid */}
                                     <div>
-                                        <h3 className="text-sm font-semibold text-gray-700 mb-4">Áreas de Interés</h3>
-                                        <div className="grid grid-cols-1 gap-3">
-                                            {Object.entries(interestLabels).map(([key, label]) => (
-                                                <label key={key} className="group cursor-pointer">
-                                                    <div className={`relative p-4 rounded-xl border-2 transition-all duration-300 ${
-                                                        learningPreferences.intereses.includes(key)
-                                                            ? 'border-emerald-500 bg-emerald-50 shadow-md'
-                                                            : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/30'
-                                                    }`}>
-                                                        <div className="flex items-center gap-3">
-                                                            <input
-                                                                type="checkbox"
-                                                                value={key}
-                                                                checked={learningPreferences.intereses.includes(key)}
-                                                                onChange={handleInterestsChange}
-                                                                disabled={isLoading}
-                                                                className="w-5 h-5 text-emerald-600 border-2 border-gray-300 rounded-lg focus:ring-emerald-500 focus:ring-2"
-                                                            />
-                                                            <span className="font-medium text-gray-700 group-hover:text-emerald-700 transition-colors">
-                                                                {label}
-                                                            </span>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h3 className="text-sm font-semibold text-gray-700">Áreas de Interés</h3>
+                                            <span className="text-xs text-gray-500">{learningPreferences.intereses.length} seleccionadas</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                            {Object.entries(interestLabels).map(([key, label]) => {
+                                                const selected = learningPreferences.intereses.includes(key);
+                                                return (
+                                                    <button
+                                                        key={key}
+                                                        type="button"
+                                                        disabled={isLoading}
+                                                        onClick={() => {
+                                                            setLearningPreferences(prev => ({
+                                                                ...prev,
+                                                                intereses: selected
+                                                                    ? prev.intereses.filter(i => i !== key)
+                                                                    : [...prev.intereses, key]
+                                                            }));
+                                                        }}
+                                                        className={`w-full text-left px-3 py-2 rounded-lg border transition ${selected ? 'border-emerald-400 bg-emerald-50 text-emerald-800 shadow-sm' : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/40 text-gray-700'}`}
+                                                        aria-pressed={selected}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`inline-flex h-4 w-4 items-center justify-center rounded ${selected ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-transparent'}`}>✓</span>
+                                                            <span className="text-sm font-medium">{label}</span>
                                                         </div>
-                                                        {learningPreferences.intereses.includes(key) && (
-                                                            <div className="absolute top-2 right-2 text-emerald-500">
-                                                                <IconoCheckCirculo />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </label>
-                                            ))}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
 
@@ -742,23 +853,23 @@ export function Configuracion_Alumno_comp() {
                                                 <span className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">{suggestions.length} sugerencia(s)</span>
                                             )}
                                         </div>
-                                        <p className="text-gray-500 text-sm mb-3">Cuéntanos qué temas te interesaría que impartamos y desde qué nivel te gustaría comenzar.</p>
+                                        <p className="text-gray-500 text-xs sm:text-sm mb-2.5">Cuéntanos qué temas te interesaría que impartamos y desde qué nivel te gustaría comenzar.</p>
 
-                    {/* Input + selector */}
-                    <div className="flex flex-col sm:flex-row sm:flex-wrap md:flex-nowrap gap-2 sm:gap-3 items-center w-full">
+                    {/* Input + selector: grid para mejor acomodo */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-2 items-stretch w-full">
                                             <input
                                                 type="text"
                                                 value={newSuggestionTitle}
                                                 onChange={(e) => setNewSuggestionTitle(e.target.value)}
                         placeholder="Ej. Robótica o Dibujo técnico"
                                                 disabled={isLoading}
-                        className="flex-1 max-w-full min-w-0 flex-[1_1_240px] px-4 h-11 sm:h-12 min-h-0 max-h-12 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-200 hover:bg-gray-100 placeholder:text-gray-400 text-sm sm:text-base leading-tight whitespace-nowrap overflow-hidden appearance-none"
+                        className="sm:col-span-7 lg:col-span-8 w-full px-3 h-10 sm:h-11 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-150 hover:bg-gray-50 placeholder:text-gray-400 text-sm appearance-none"
                                             />
                                             <select
                                                 value={newSuggestionLevel}
                                                 onChange={(e) => setNewSuggestionLevel(e.target.value)}
                                                 disabled={isLoading}
-                        className="w-full sm:w-56 md:w-64 sm:min-w-[220px] md:min-w-[260px] px-4 h-11 sm:h-12 min-h-0 max-h-12 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-200 hover:bg-gray-100 truncate shrink-0 text-sm sm:text-base leading-tight appearance-none"
+                        className="sm:col-span-3 lg:col-span-2 w-full px-3 h-10 sm:h-11 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-150 hover:bg-gray-50 text-sm appearance-none"
                                             >
                                                 <option value="principiante">🌱 Empezar en Principiante</option>
                                                 <option value="intermedio">📈 Empezar en Intermedio</option>
@@ -768,58 +879,121 @@ export function Configuracion_Alumno_comp() {
                                                 type="button"
                                                 onClick={addSuggestion}
                                                 disabled={isLoading || !newSuggestionTitle.trim()}
-                        className="w-full sm:w-auto shrink-0 md:ml-auto px-6 h-11 sm:h-12 min-h-0 max-h-12 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all duration-200 disabled:opacity-50 font-semibold shadow text-sm sm:text-base"
+                        className="sm:col-span-2 lg:col-span-2 w-full px-5 h-10 sm:h-11 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all duration-150 disabled:opacity-50 font-semibold shadow text-sm"
                                             >
                                                 Agregar
                                             </button>
                                         </div>
 
-                                        {/* Chips de sugerencias agregadas */}
+                                        {/* Lista de sugerencias agregadas */}
                                         {suggestions.length > 0 && (
-                                            <div className="mt-3 flex flex-wrap gap-2">
-                                                {suggestions.map((sug, idx) => (
-                                                    <div key={idx} className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full pl-3 pr-2 py-1 max-w-full">
-                                                        <span className="text-sm font-medium truncate max-w-[180px]" title={sug.titulo}>{sug.titulo}</span>
-                                                        <select
-                                                            value={sug.nivel}
-                                                            onChange={(e) => updateSuggestionLevel(idx, e.target.value)}
-                                                            className="text-xs bg-transparent border-0 focus:ring-0 outline-none cursor-pointer px-1"
-                                                        >
-                                                            <option value="principiante">Principiante</option>
-                                                            <option value="intermedio">Intermedio</option>
-                                                            <option value="avanzado">Avanzado</option>
-                                                        </select>
-                                                        <button
-                                                            type="button"
-                                                            className="ml-1 text-emerald-700 hover:text-emerald-900 p-0.5"
-                                                            onClick={() => removeSuggestion(idx)}
-                                                            aria-label="Eliminar sugerencia"
-                                                        >
-                                                            ×
-                                                        </button>
-                                                    </div>
-                                                ))}
+                                            <div className="mt-3">
+                                                <ul className="divide-y divide-emerald-100 border border-emerald-200 rounded-lg bg-emerald-50/30">
+                                                    {suggestions.map((sug, idx) => (
+                                                        <li key={idx} className="flex items-center justify-between gap-2 px-3 py-2">
+                                                            <span className="text-sm font-medium truncate" title={sug.titulo}>{sug.titulo}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <select
+                                                                    value={sug.nivel}
+                                                                    onChange={(e) => updateSuggestionLevel(idx, e.target.value)}
+                                                                    className="text-xs bg-white border border-emerald-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                                                >
+                                                                    <option value="principiante">Principiante</option>
+                                                                    <option value="intermedio">Intermedio</option>
+                                                                    <option value="avanzado">Avanzado</option>
+                                                                </select>
+                                                                <button
+                                                                    type="button"
+                                                                    className="text-emerald-700 hover:text-emerald-900 px-2 py-1 rounded"
+                                                                    onClick={() => removeSuggestion(idx)}
+                                                                    aria-label="Eliminar sugerencia"
+                                                                >
+                                                                    ✕
+                                                                </button>
+                                                            </div>
+                                                        </li>
+                                                    ))}
+                                                </ul>
                                             </div>
                                         )}
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        </>
+                    )}
 
+                                        {activeTab === 'apariencia' && isMdUp && (
+                                                <>
+                                                <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-visible hover:shadow-md transition-all duration-200">
+                                                        <div className="p-4 sm:p-5">
+                                                                <div className="flex items-center gap-3 mb-5 sm:mb-6">
+                                                                        <div className="p-2 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-md sm:rounded-lg">
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-2-2h-3l-2-2h-4L8 6H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/></svg>
+                                                                        </div>
+                                                                        <div>
+                                                                                <h2 className="text-xl font-bold text-gray-900">Barra superior</h2>
+                                                                                <p className="text-gray-600 text-sm">Configura los accesos rápidos del header</p>
+                                                                        </div>
+                                                                </div>
+
+                                                                <div className="space-y-6">
+                                                                        <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                                                                <div>
+                                                                                        <p className="font-medium text-gray-800 text-sm">Mostrar accesos rápidos</p>
+                                                                                        <p className="text-xs text-gray-500">Si lo desactivas, se mostrará solo el nombre de la academia</p>
+                                                                                </div>
+                                                                                <label className="inline-flex items-center cursor-pointer">
+                                                                                        <input type="checkbox" className="sr-only peer" checked={!!headerPrefs?.showQuickLinks} onChange={(e)=> updateHeaderPrefs({ showQuickLinks: e.target.checked })} />
+                                                                                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-indigo-600 transition-colors relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:after:translate-x-5"></div>
+                                                                                </label>
+                                                                        </div>
+
+                                                                        {headerPrefs?.showQuickLinks && (
+                                                                            <div>
+                                                                                <p className="text-sm font-semibold text-gray-700 mb-2">Orden de accesos</p>
+                                                                                <p className="text-xs text-gray-500 mb-3">Arrastra para reordenar o usa los botones</p>
+                                                                                <div className="space-y-2">
+                                                                                    {(headerPrefs?.links || ['cursos','calendario','pagos']).map((key, idx, arr)=>{
+                                                                                        const label = key==='cursos'?'Cursos': key==='calendario'?'Calendario':'Mis pagos';
+                                                                                        return (
+                                                                                            <div key={key} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2">
+                                                                                                <div className="flex items-center gap-2">
+                                                                                                    <span className="text-gray-400 cursor-grab">⋮⋮</span>
+                                                                                                    <span className="text-sm font-medium text-gray-800">{label}</span>
+                                                                                                </div>
+                                                                                                <div className="flex items-center gap-2">
+                                                                                                    <button type="button" disabled={idx===0} onClick={()=> updateHeaderPrefs(prev=>{ const links=[...prev.links]; [links[idx-1],links[idx]]=[links[idx],links[idx-1]]; return { ...prev, links }; })} className="px-2 py-1 text-xs border rounded disabled:opacity-40">↑</button>
+                                                                                                    <button type="button" disabled={idx===arr.length-1} onClick={()=> updateHeaderPrefs(prev=>{ const links=[...prev.links]; [links[idx+1],links[idx]]=[links[idx],links[idx+1]]; return { ...prev, links }; })} className="px-2 py-1 text-xs border rounded disabled:opacity-40">↓</button>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                </div>
+                                                        </div>
+                                                </div>
+                                                </>
+                                        )}
+
+                    {activeTab === 'seguridad' && (
+                        <>
                         {/* Seguridad de la Cuenta */}
-                        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden hover:shadow-3xl transition-all duration-300">
-                            <div className="p-8">
-                                <div className="flex items-center gap-4 mb-8">
-                                    <div className="p-3 bg-gradient-to-br from-rose-100 to-red-100 rounded-xl">
+                        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-visible hover:shadow-md transition-all duration-200">
+                            <div className="p-4 sm:p-5">
+                                <div className="flex items-center gap-3 mb-5 sm:mb-6">
+                                    <div className="p-2 bg-gradient-to-br from-rose-100 to-red-100 rounded-md sm:rounded-lg">
                                         <IconoCandado />
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl font-bold text-gray-900">Seguridad</h2>
-                                        <p className="text-gray-600">Protege tu cuenta</p>
+                                        <h2 className="text-xl font-bold text-gray-900">Seguridad</h2>
+                                        <p className="text-gray-600 text-sm">Protege tu cuenta</p>
                                     </div>
                                 </div>
                                 
-                                <div className="space-y-6">
+                                <div className="space-y-4">
                                     <div>
                                         <label htmlFor="currentPassword" className="block text-sm font-semibold text-gray-700 mb-2">
                                             Contraseña Actual
@@ -831,7 +1005,7 @@ export function Configuracion_Alumno_comp() {
                                             value={security.currentPassword}
                                             onChange={handleSecurityChange}
                                             disabled={isLoading}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 hover:bg-gray-100"
+                                            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm"
                                             placeholder="Tu contraseña actual"
                                         />
                                     </div>
@@ -847,7 +1021,7 @@ export function Configuracion_Alumno_comp() {
                                             value={security.newPassword}
                                             onChange={handleSecurityChange}
                                             disabled={isLoading}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 hover:bg-gray-100"
+                                            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm"
                                             placeholder="Nueva contraseña"
                                         />
                                     </div>
@@ -863,7 +1037,7 @@ export function Configuracion_Alumno_comp() {
                                             value={security.confirmNewPassword}
                                             onChange={handleSecurityChange}
                                             disabled={isLoading}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 hover:bg-gray-100"
+                                            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm"
                                             placeholder="Confirma tu nueva contraseña"
                                         />
                                         {security.newPassword.length > 0 && security.confirmNewPassword.length > 0 && (
@@ -885,9 +1059,9 @@ export function Configuracion_Alumno_comp() {
                                     
                                     {/* Requisitos de Contraseña */}
                                     {security.newPassword.length > 0 && (
-                                        <div className="bg-gray-50 rounded-xl p-6">
-                                            <h4 className="font-semibold text-gray-700 mb-4">Requisitos de Seguridad</h4>
-                                            <div className="space-y-2">
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <h4 className="font-semibold text-gray-700 mb-3 text-sm">Requisitos de Seguridad</h4>
+                                            <div className="space-y-1.5">
                                                 {[
                                                     { key: 'length', text: 'Al menos 8 caracteres' },
                                                     { key: 'uppercase', text: 'Una letra mayúscula' },
@@ -895,7 +1069,7 @@ export function Configuracion_Alumno_comp() {
                                                     { key: 'number', text: 'Un número' },
                                                     { key: 'specialChar', text: 'Un carácter especial' }
                                                 ].map(({ key, text }) => (
-                                                    <div key={key} className="flex items-center gap-2 text-sm">
+                                                    <div key={key} className="flex items-center gap-2 text-xs sm:text-sm">
                                                         {passwordValidation[key] ? <IconoCheckCirculo /> : <IconoAlertaCirculo />}
                                                         <span className={passwordValidation[key] ? 'text-emerald-600 font-medium' : 'text-gray-600'}>
                                                             {text}
@@ -910,7 +1084,7 @@ export function Configuracion_Alumno_comp() {
                                         type="button"
                                         onClick={handleChangePassword}
                                         disabled={!passwordValidation.isValid || !passwordValidation.match || security.newPassword === '' || isLoading}
-                                        className="w-full px-8 py-3 rounded-xl font-semibold text-white shadow-lg transition-all duration-200 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                        className="w-full px-6 py-2.5 rounded-lg font-semibold text-white shadow-md transition-all duration-150 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
                                     >
                                         <div className="flex items-center justify-center gap-2">
                                             {isLoading ? <IconoCargando /> : <IconoEscudo />}
@@ -920,37 +1094,62 @@ export function Configuracion_Alumno_comp() {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+                        </>
+                    )}
 
-                {/* Botón de Guardar General */}
-                <div className="mt-12 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl shadow-2xl border-2 border-blue-200 overflow-hidden hover:shadow-3xl transition-all duration-300">
-                    <div className="p-8">
-                        <div className="flex flex-col items-center gap-6 text-center">
-                            <div className="flex items-center gap-2 text-blue-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <p className="font-medium">
-                                    Los cambios se guardarán de forma segura y se aplicarán inmediatamente.
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={handleOpenSaveConfirm}
-                                disabled={!emailValid || isLoading}
-                                className="px-12 py-4 rounded-xl font-bold text-lg text-white shadow-lg transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl hover:scale-105 active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                            >
-                                <div className="flex items-center justify-center gap-3">
-                                    {isLoading ? <IconoCargando /> : <IconoGuardar />}
-                                    {isLoading ? 'Guardando...' : 'Guardar Cambios'}
+                    {activeTab === 'peligro' && (
+                        <>
+                        {/* Zona de Peligro */}
+                        <div className="bg-gradient-to-br from-rose-50 to-red-50 rounded-xl shadow-md border border-rose-200 overflow-hidden transition-all duration-200">
+                            <div className="p-5">
+                                <div className="flex items-center gap-3.5 mb-5">
+                                    <div className="p-2.5 bg-rose-200 rounded-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-rose-900">Zona de Peligro</h2>
+                                        <p className="text-rose-700 text-sm">Acciones irreversibles</p>
+                                    </div>
                                 </div>
-                            </button>
+                                
+                                <div className="bg-white/60 rounded-lg p-4 border border-rose-200">
+                                    <div className="flex items-start gap-3 mb-3.5">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-rose-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                        </svg>
+                                        <div>
+                                            <h3 className="font-bold text-rose-900 text-base">Eliminar Acceso</h3>
+                                            <p className="text-rose-700 mt-1 text-sm">
+                                                Esta acción eliminará permanentemente tu acceso a la cuenta. 
+                                                <span className="font-semibold"> NO se puede deshacer.</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <button
+                                        type="button"
+                                        onClick={handleDeleteAccount}
+                                        disabled={isLoading}
+                                        className="w-full px-6 py-2.5 rounded-lg font-bold text-white shadow-md transition-all duration-150 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 disabled:opacity-50 text-sm"
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            {isLoading ? <IconoCargando /> : <IconoTrash />}
+                                            {isLoading ? 'Procesando...' : 'Eliminar Acceso Permanentemente'}
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        </>
+                    )}
+                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
     );
 }
 

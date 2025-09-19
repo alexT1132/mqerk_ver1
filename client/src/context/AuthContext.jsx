@@ -4,10 +4,27 @@ import Cookies from "js-cookie";
 
 export const AuthContext = createContext();
 
+// Safe fallback to avoid crashes if hook is used before provider mounts (e.g., HMR/StrictMode edge cases)
+
+const defaultAuthContext = {
+    signup: async () => {},
+    signin: async () => {},
+    logout: async () => {},
+    isVerde: false,
+    errors: [],
+    user: null,
+    alumno: null,
+    setAlumno: () => {},
+    isAuthenticated: false,
+    loading: false,
+    remember: () => false,
+};
+
 export const useAuth = () => {
-    const context = useContext(AuthContext)
+    const context = useContext(AuthContext);
     if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
+        try { console.warn('useAuth used outside AuthProvider. Using fallback to prevent crash.'); } catch {}
+        return defaultAuthContext;
     }
     return context;
 }
@@ -80,15 +97,6 @@ export const AuthProvider = ({children}) => {
                         } catch {}
                 }
 
-    // const getUsuarios = async () => {
-    //     try {
-    //         const res = await ObtenerUsuarios();
-    //         setUsers(res.data.data);
-    //     } catch (error) {
-    //         console.log(error);
-    //     }
-    // }
-
     useEffect(() => {
         if (errors.length > 0) {
             const timer = setTimeout(() => {
@@ -160,7 +168,7 @@ export const AuthProvider = ({children}) => {
         const verifyFlow = async (label='initial') => {
             if (cancelled) return;
             // Si estamos en /login y no hay remember, no spamear /verify (evita 401 visibles)
-            if (!remember && currentPath.startsWith('/login')) {
+            if (!remember && currentPath.startsWith('/')) {
                 debug('skip verify (login route without remember)');
                 setLoading(false);
                 return;

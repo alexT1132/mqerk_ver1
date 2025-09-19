@@ -1,6 +1,7 @@
 
 import * as Estudiantes from "../models/estudiantes.model.js";
 import * as EstudiantesConfig from "../models/estudiantes_config.model.js";
+import { ensureEstatusColumn } from "../models/estudiantes.model.js";
 import * as Usuarios from "../models/usuarios.model.js";
 import bcrypt from 'bcryptjs';
 import * as SoftDeletes from "../models/soft_deletes.model.js";
@@ -216,6 +217,12 @@ export const actualizar = async (req, res) => {
   'comentario2'
   ];
 
+  // Incluir estatus si viene explícito desde el admin (Activo|Suspendido)
+  if (req.body && typeof req.body.estatus === 'string') {
+    const v = String(req.body.estatus);
+    if (v === 'Activo' || v === 'Suspendido') allowedFields.push('estatus');
+  }
+
   // Construir objeto con solo campos permitidos presentes en el body
   const data = {};
   for (const key of allowedFields) {
@@ -412,7 +419,8 @@ export const getApprovedStudents = async (req, res) => {
 
     // Subconsulta para último pago aprobado por estudiante
     const sql = `
-      SELECT e.id, e.folio, e.folio_formateado, e.nombre, e.apellidos, e.email, e.grupo, e.curso, e.plan, e.anio,
+  SELECT e.id, e.folio, e.folio_formateado, e.nombre, e.apellidos, e.email, e.grupo, e.curso, e.plan, e.anio,
+     e.estatus,
              e.created_at AS registrado_en,
              c.importe AS pago_importe, c.metodo AS pago_metodo, c.created_at AS pago_fecha
       FROM estudiantes e
@@ -448,7 +456,7 @@ export const getApprovedStudents = async (req, res) => {
       curso: r.curso,
       turno: r.grupo, // el componente usa 'turno' para el grupo seleccionado
   plan: r.plan, // incluir plan del curso para contratos/pagos
-      estatus: 'Activo',
+  estatus: r.estatus || 'Activo',
       fechaRegistro: r.registrado_en ? new Date(r.registrado_en).toISOString().split('T')[0] : null,
       pago: {
         importe: Number(r.pago_importe || 0),
@@ -481,7 +489,7 @@ export const getByFolioAdmin = async (req, res) => {
       }
     }
     if (!estudiante) return res.status(404).json({ message: 'Estudiante no encontrado' });
-    return res.status(200).json({ data: estudiante });
+  return res.status(200).json({ data: estudiante });
   } catch (error) {
     console.error('Error getByFolioAdmin:', error);
     return res.status(500).json({ message: 'Error interno del servidor' });
@@ -598,5 +606,67 @@ export const subirContrato = async (req, res) => {
   } catch (error) {
     console.error('Error subirContrato:', error);
     return res.status(500).json({ message: 'Error interno del servidor al subir contrato' });
+  }
+};
+
+// ===== Admin: obtener y actualizar cuenta (usuario/contraseña) del alumno =====
+export const getCuentaAlumno = async (req, res) => {
+  try {
+    const requesterId = req.user?.id;
+    const requester = requesterId ? await Usuarios.getUsuarioPorid(requesterId) : null;
+    if (!requester || requester.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+    const { id } = req.params; // id del estudiante
+    const estudiante = await Estudiantes.getEstudianteById(id);
+    if (!estudiante) return res.status(404).json({ message: 'Estudiante no encontrado' });
+    const usuario = await Usuarios.getUsuarioPorEstudianteId(estudiante.id);
+    if (!usuario) return res.status(404).json({ message: 'Cuenta no vinculada a este estudiante' });
+    return res.status(200).json({ data: { id_usuario: usuario.id, usuario: usuario.usuario } });
+  } catch (error) {
+    console.error('getCuentaAlumno error:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+export const updateCuentaAlumno = async (req, res) => {
+  try {
+    const requesterId = req.user?.id;
+    const requester = requesterId ? await Usuarios.getUsuarioPorid(requesterId) : null;
+    if (!requester || requester.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+    const { id } = req.params; // id del estudiante
+    const { usuario: nuevoUsuario } = req.body || {};
+    if (!nuevoUsuario || typeof nuevoUsuario !== 'string') return res.status(400).json({ message: 'usuario es requerido' });
+    const estudiante = await Estudiantes.getEstudianteById(id);
+    if (!estudiante) return res.status(404).json({ message: 'Estudiante no encontrado' });
+    // validar disponibilidad del username
+    const ya = await Usuarios.getUsuarioPorusername(nuevoUsuario);
+    if (ya && ya.id_estudiante !== estudiante.id) return res.status(409).json({ message: 'Usuario ya existe' });
+    const linked = await Usuarios.getUsuarioPorEstudianteId(estudiante.id);
+    if (!linked) return res.status(404).json({ message: 'Cuenta no vinculada a este estudiante' });
+    await Usuarios.updateUsername(linked.id, nuevoUsuario);
+    return res.status(200).json({ message: 'Usuario actualizado', data: { id_usuario: linked.id, usuario: nuevoUsuario } });
+  } catch (error) {
+    console.error('updateCuentaAlumno error:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+export const resetPasswordAlumno = async (req, res) => {
+  try {
+    const requesterId = req.user?.id;
+    const requester = requesterId ? await Usuarios.getUsuarioPorid(requesterId) : null;
+    if (!requester || requester.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+    const { id } = req.params; // id del estudiante
+    const { newPassword } = req.body || {};
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) return res.status(400).json({ message: 'newPassword mínimo 6 caracteres' });
+    const estudiante = await Estudiantes.getEstudianteById(id);
+    if (!estudiante) return res.status(404).json({ message: 'Estudiante no encontrado' });
+    const linked = await Usuarios.getUsuarioPorEstudianteId(estudiante.id);
+    if (!linked) return res.status(404).json({ message: 'Cuenta no vinculada a este estudiante' });
+    const hash = await bcrypt.hash(newPassword, 10);
+    await Usuarios.updatePassword(linked.id, hash);
+    return res.status(200).json({ message: 'Contraseña restablecida' });
+  } catch (error) {
+    console.error('resetPasswordAlumno error:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
   }
 };

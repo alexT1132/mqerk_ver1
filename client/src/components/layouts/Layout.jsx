@@ -15,6 +15,13 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
   // Ruta actual
   const location = useLocation();
   const isCoursesRoute = location.pathname.startsWith('/alumno/cursos');
+  // Ajuste fino: en Bienvenida queremos menos espacio superior bajo el header
+  const isBienvenidaRoute = (
+    location.pathname === '/administrativo/bienvenida' ||
+    location.pathname === '/admin1/dashboard' ||
+    location.pathname === '/admin1/inicio-admin' ||
+    location.pathname === '/administrativo/inicio-admin'
+  );
 
   // Cierre forzado del overlay para evitar que se quede abierto
   const forceCloseOverlay = () => {
@@ -67,7 +74,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
   }, [isCoursesRoute, isMenuOpen]);
 
   return (
-    <div className="min-h-screen bg-white relative">
+  <div className="min-h-screen bg-white relative">
       {/* Header principal */}
       {HeaderComponent && (
         <HeaderComponent />
@@ -119,13 +126,13 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       {/* Contenido principal de la página */}
       <main
         className={
-          `relative z-10 pt-4 pb-6 pl-5 pr-3 sm:px-6 lg:px-8 overflow-x-hidden ` +
+          `relative z-10 ${isBienvenidaRoute ? 'pt-16 sm:pt-20' : 'pt-24 sm:pt-28'} pb-6 pl-5 pr-3 sm:px-6 lg:px-8 overflow-x-hidden ` +
           (isDesktopSidebarOpen ? ' sm:ml-64' : ' sm:ml-20') +
           ' transition-[margin] duration-200'
         }
       >
         {/* Hacer que el main sea el único contenedor con scroll */}
-        <div className="min-h-[calc(100vh-80px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+        <div className="min-h-[calc(100vh-96px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
           {children}
         </div>
       </main>

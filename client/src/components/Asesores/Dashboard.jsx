@@ -1,5 +1,5 @@
 // CursoBienvenida.jsx
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 
 export default function CursoBienvenida() {
   const navigate = useNavigate();
@@ -50,7 +50,7 @@ export default function CursoBienvenida() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-1">
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-800">
                   Grupos asignados
@@ -58,20 +58,9 @@ export default function CursoBienvenida() {
                 <p className="mt-1 text-sm text-slate-600">
                   Aqui podras visualizar los grupos que se te han asignado.
                 </p>
-                <button className="mt-3 text-sm font-semibold text-indigo-600 hover:underline">
+                <Link to="/asesor/grupos" className="mt-3 text-sm font-semibold text-indigo-600 hover:underline">
                   Ver Grupos →
-                </button>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h3 className="text-sm font-semibold text-slate-800">
-                  Estudiantes
-                </h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  Revisa la lista y su progreso.
-                </p>
-                <button className="mt-3 text-sm font-semibold text-indigo-600 hover:underline">
-                  Ver estudiantes →
-                </button>
+                </Link>
               </div>
             </div>
           </section>

@@ -83,11 +83,18 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
       h-auto max-h-[300px] sm:max-h-[320px] md:max-h-[340px] lg:max-h-[420px] xl:max-h-[460px] 2xl:max-h-[500px]
       mx-auto ${isCurrentCourse ? 'transform scale-[1.01]' : 'hover:scale-[1.01]'}`}>
       {/* BACKEND: Imagen del curso - debe venir como URL desde la API */}
-      <div className="relative w-full h-16 sm:h-18 md:h-20 lg:h-32 xl:h-36 2xl:h-40 bg-gray-200 flex-shrink-0">
+    <div className="relative w-full h-16 sm:h-18 md:h-20 lg:h-32 xl:h-36 2xl:h-40 bg-gray-200 flex-shrink-0">
         <img
           src={image || "https://placehold.co/400x250/e0e0e0/555555?text=Curso"}
           alt={title}
-          className="w-full h-full object-cover"
+      className="w-full h-full object-cover"
+      loading="eager" 
+      decoding="async"
+      // Provide intrinsic sizes to avoid Chrome auto-lazy placeholder warning
+      width={640}
+      height={360}
+      // Prioritize image a bit more if es el curso actual
+          fetchPriority={isCurrentCourse ? "high" : "auto"}
           onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x250/e0e0e0/555555?text=Curso"; }}
         />
         {/* BACKEND: Badge con la categoría o tipo del curso */}

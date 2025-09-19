@@ -72,7 +72,7 @@ export default function Simuladores() {
           title="Simulador por"
           subtitle="áreas generales"
           desc="Visualiza y crea nuevas simulaciones."
-          to="/asesor_simuladores/generales"
+          to="/asesor/simuladores/generales"
           accent="violet"
         />
         <SimCard
@@ -80,7 +80,7 @@ export default function Simuladores() {
           title="Simulador por"
           subtitle="módulos específicos"
           desc="Visualiza y crea simulaciones especializadas por área de conocimiento y carrera."
-          to="/asesor_simuladores/especificos"
+          to="/asesor/simuladores/especificos"
           accent="indigo"
         />
       </section>

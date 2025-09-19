@@ -309,28 +309,52 @@ export const asignarAlumnosGrupoAsesor = async (req, res) => {
 export const listarEstudiantesAsesor = async (req, res) => {
   try {
     const userId = req.user?.id;
-    if(!userId) return res.status(401).json({ message:'No autenticado' });
+    if (!userId) return res.status(401).json({ message: 'No autenticado' });
     // Recuperar perfil por user id para conocer grupo asignado
-    let perfil = await AsesorPerfiles.getByUserId(userId).catch(()=>null);
-    if(!perfil){
+    let perfil = await AsesorPerfiles.getByUserId(userId).catch(() => null);
+    if (!perfil) {
       // fallback: si existe solo un perfil con grupo y sin usuario, usarlo (migración)
       try {
-        const [pRows] = await db.query('SELECT * FROM asesor_perfiles WHERE usuario_id IS NULL AND grupo_asesor IS NOT NULL AND grupo_asesor<>"" LIMIT 2');
-        if(pRows.length === 1){ perfil = pRows[0]; }
-      } catch(_e){}
+        const [pRows] = await db.query(
+          'SELECT * FROM asesor_perfiles WHERE usuario_id IS NULL AND grupo_asesor IS NOT NULL AND grupo_asesor<>"" LIMIT 2'
+        );
+        if (pRows.length === 1) {
+          perfil = pRows[0];
+        }
+      } catch (_e) {}
     }
-  const gruposArr = perfil?.grupos_asesor || (perfil?.grupo_asesor ? [perfil.grupo_asesor] : []);
-  const grupo = gruposArr[0] || null; // compat antiguo
-  if(!grupo) return res.status(200).json({ data: [], grupo: null, grupos_asesor: [] });
-    // Tomar solo estudiantes aprobados (verificacion=2) del grupo
+    const gruposArr = perfil?.grupos_asesor || (perfil?.grupo_asesor ? [perfil.grupo_asesor] : []);
+    const allGroups = Array.isArray(gruposArr) ? gruposArr : [];
+    // grupo opcional por query; si no viene, preferir primero para compat
+    const requested = (req.query?.grupo || '').toString().trim();
+    const grupo = requested || (allGroups[0] || null);
+    if (!grupo || !allGroups.includes(grupo)) {
+      // Si no hay grupo aún asignado, devolvemos solo metadatos
+      return res.status(200).json({ data: [], grupo: null, grupos_asesor: allGroups });
+    }
+
+    // Alinear con Admin: solo aprobados (verificacion=2), sin soft-deletes, y con pago aprobado (comprobante con importe)
     const sql = `
       SELECT e.id, e.folio, e.folio_formateado, e.nombre, e.apellidos, e.email, e.grupo, e.curso, e.plan, e.anio,
-             e.created_at AS registrado_en
+             e.estatus,
+             e.created_at AS registrado_en,
+             c.importe AS pago_importe, c.metodo AS pago_metodo, c.created_at AS pago_fecha
       FROM estudiantes e
-      WHERE e.verificacion = 2 AND TRIM(e.grupo)=TRIM(?)
-      ORDER BY e.created_at ASC`;
-    const [rows] = await db.query(sql, [grupo]);
-    const data = rows.map(r=>({
+      INNER JOIN (
+        SELECT id_estudiante, MAX(created_at) AS latest
+        FROM comprobantes
+        WHERE importe IS NOT NULL
+        GROUP BY id_estudiante
+      ) lp ON lp.id_estudiante = e.id
+      INNER JOIN comprobantes c ON c.id_estudiante = lp.id_estudiante AND c.created_at = lp.latest
+      LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+      WHERE e.verificacion = 2
+        AND sd.id IS NULL
+        AND TRIM(e.grupo) = TRIM(?)
+      ORDER BY c.created_at DESC`;
+
+  const [rows] = await db.query(sql, [grupo]);
+    const data = rows.map((r) => ({
       id: r.id,
       folio: r.folio,
       folio_formateado: r.folio_formateado || null,
@@ -341,12 +365,18 @@ export const listarEstudiantesAsesor = async (req, res) => {
       curso: r.curso,
       plan: r.plan,
       anio: r.anio,
-      fechaRegistro: r.registrado_en ? new Date(r.registrado_en).toISOString().split('T')[0] : null
+      estatus: r.estatus || 'Activo',
+      fechaRegistro: r.registrado_en ? new Date(r.registrado_en).toISOString().split('T')[0] : null,
+      pago: {
+        importe: Number(r.pago_importe || 0),
+        metodo: r.pago_metodo || null,
+        fecha: r.pago_fecha ? new Date(r.pago_fecha).toISOString() : null,
+      },
     }));
-  return res.json({ data, grupo, grupos_asesor: gruposArr });
-  } catch(err){
+  return res.json({ data, grupo, grupos_asesor: allGroups });
+  } catch (err) {
     console.error('Error listarEstudiantesAsesor', err);
-    res.status(500).json({ message:'Error interno' });
+    res.status(500).json({ message: 'Error interno' });
   }
 };
 

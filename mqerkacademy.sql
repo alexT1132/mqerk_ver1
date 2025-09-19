@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 22-08-2025 a las 20:15:48
+-- Tiempo de generación: 04-09-2025 a las 00:58:43
 -- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.2.12
+-- Versión de PHP: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -52,7 +52,7 @@ CREATE TABLE `actividades` (
   `creado_por` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `actividades`
@@ -85,7 +85,7 @@ CREATE TABLE `actividades_entregas` (
   `entregada_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `actividades_entregas`
@@ -153,7 +153,7 @@ CREATE TABLE `admin_config` (
 --
 
 INSERT INTO `admin_config` (`id`, `sesion_maxima`, `intentos_login`, `cambio_password_obligatorio`, `autenticacion_dos_factor`, `updated_at`, `nombre_institucion`, `email_administrativo`, `telefono_contacto`, `direccion`, `sitio_web`, `horario_atencion`, `gmail_email`, `gmail_refresh_token`, `gmail_access_token`, `gmail_expiry`) VALUES
-(1, 480, 5, 90, 0, '2025-08-22 17:12:32', 'MQerKAcademy', 'admin@mqerk.com', '+52 999 123 4567', 'Calle Principal #123, Mérida, Yucatán', 'https://mqerk.com', '8:00 AM - 6:00 PM', NULL, NULL, NULL, NULL);
+(1, 480, 6, 90, 0, '2025-09-01 17:11:43', 'MQerKAcademy', 'admin@mqerk.com', '+52 999 123 4567', 'Calle Principal #123, Mérida, Yucatán', 'https://mqerk.com', '8:00 AM - 6:00 PM', NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -329,7 +329,7 @@ CREATE TABLE `asesor_preregistros` (
 --
 
 INSERT INTO `asesor_preregistros` (`id`, `nombres`, `apellidos`, `correo`, `telefono`, `area`, `estudios`, `status`, `created_at`, `updated_at`) VALUES
-(1, 'Carlos', 'Pérez', 'carlos.perez@example.com', '2871000000', 'Tecnologia', 'Licenciatura', 'completed', '2025-08-17 00:26:43', '2025-08-17 23:26:43');
+(1, 'Carlos', 'Pérez', 'carlos.perez@example.com', '2871000000', 'Tecnologia', 'Licenciatura', 'testing', '2025-08-17 00:26:43', '2025-09-01 17:37:15');
 
 -- --------------------------------------------------------
 
@@ -412,7 +412,10 @@ CREATE TABLE `calendar_events` (
 --
 
 INSERT INTO `calendar_events` (`id`, `user_id`, `titulo`, `descripcion`, `fecha`, `hora`, `tipo`, `prioridad`, `recordar_minutos`, `completado`, `created_at`, `updated_at`) VALUES
-(2, 6, 'sxsx', 'sdsd', '2025-01-30', '16:00:00', 'academico', 'alta', 15, 0, '2025-08-21 18:24:55', '2025-08-21 18:24:55');
+(2, 6, 'sxsx', 'sdsd', '2025-01-30', '16:00:00', 'academico', 'alta', 15, 0, '2025-08-21 18:24:55', '2025-08-21 18:24:55'),
+(11, 6, 'Inicio asesoria de prueba - alumno de prueba', 'Asesor: Carlos Pérez | Método: Efectivo | Importe: $1,000.00 | Estatus: Pagado | Nota: sxsax', '2025-09-04', '15:16:00', 'trabajo', 'media', 30, 0, '2025-09-03 21:16:36', '2025-09-03 21:16:36'),
+(14, 6, 'Inicio Tencología Educativa 2 - Abelito Saenz Romero', 'Asesor: Carlos Pérez | Método: Efectivo | Importe: $1,500.00 | Estatus: Pagado | Nota: ESCEKLLEJLKEJLEJ', '2025-09-05', '14:00:00', 'trabajo', 'media', 30, 0, '2025-09-03 22:09:06', '2025-09-03 22:09:24'),
+(15, 6, 'Gasto fijo: RENTA', 'Proveedor: CIRO HERNANDEZ | Frecuencia: Mensual | Método: Efectivo | Importe: $6,000.00 | Estatus: Pendiente | Nota: PAGAR EN EFECTIVO', '2025-09-05', '16:00:00', 'finanzas', 'media', 30, 0, '2025-09-03 22:21:48', '2025-09-03 22:21:48');
 
 -- --------------------------------------------------------
 
@@ -442,6 +445,14 @@ INSERT INTO `comprobantes` (`id`, `id_estudiante`, `comprobante`, `importe`, `me
 (13, 71, '/comprobantes/1755028526990-ENTRENAMIENTO PARA EL EXAMEN UNIVERSIDAD 2025.png', 10500.00, 'efectivo', NULL, '2025-08-12 13:55:27', '2025-08-12 13:57:55'),
 (14, 72, '/comprobantes/1755029908064-Gemini_Generated_Image_14ox9014ox9014ox.png', 5500.00, 'transferencia', NULL, '2025-08-12 14:18:28', '2025-08-12 14:20:08'),
 (15, 73, '/comprobantes/1755800393550-ChatGPT Image 10 ago 2025, 18_11_50.png', 10500.00, 'efectivo', NULL, '2025-08-21 12:19:53', '2025-08-21 12:21:16');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `comprobantes_backup_20250811`
+--
+-- Error leyendo la estructura de la tabla mqerkacademy.comprobantes_backup_20250811: #1932 - Table 'mqerkacademy.comprobantes_backup_20250811' doesn't exist in engine
+-- Error leyendo datos de la tabla mqerkacademy.comprobantes_backup_20250811: #1064 - Algo está equivocado en su sintax cerca 'FROM `mqerkacademy`.`comprobantes_backup_20250811`' en la linea 1
 
 -- --------------------------------------------------------
 
@@ -526,6 +537,7 @@ CREATE TABLE `estudiantes` (
   `curso` varchar(200) NOT NULL,
   `turno` varchar(50) NOT NULL DEFAULT 'VESPERTINO',
   `plan` varchar(100) NOT NULL,
+  `estatus` enum('Activo','Suspendido') NOT NULL DEFAULT 'Activo',
   `academia` varchar(100) NOT NULL DEFAULT 'MQerKAcademy',
   `anio` int(11) NOT NULL,
   `folio` int(11) NOT NULL,
@@ -539,13 +551,13 @@ CREATE TABLE `estudiantes` (
 -- Volcado de datos para la tabla `estudiantes`
 --
 
-INSERT INTO `estudiantes` (`id`, `nombre`, `apellidos`, `email`, `foto`, `grupo`, `comunidad1`, `comunidad2`, `telefono`, `fecha_nacimiento`, `nombre_tutor`, `tel_tutor`, `academico1`, `academico2`, `semestre`, `alergia`, `alergia2`, `discapacidad1`, `discapacidad2`, `orientacion`, `universidades1`, `universidades2`, `postulacion`, `modalidad`, `comentario1`, `comentario2`, `curso`, `turno`, `plan`, `academia`, `anio`, `folio`, `verificacion`, `created_at`, `asesor`) VALUES
-(67, 'Miguel', 'Angel', 'isc20350265@gmail.com', '/public/1755139227661-abelito-83uin1.jfif', 'V1', 'SAN JUAN BAUTISTA TUXTEPEC', '', '2811975587', '2000-11-01', 'Rosa Isela', '2811975587', 'CBTis', 'CBTis', 'Concluido', 'Si', 'Antibioticos', 'Si', 'Autismo', 'No', 'NAVAL,TECNM', '', 'ISC', 'ISC', 'ok', 'bien', 'EEAU', 'VESPERTINO', 'Start', 'CBTis', 25, 1, 2, '2025-08-11 00:41:37', 'Carlos Pérez'),
-(69, 'Jessica', 'Fernandez', 'ige19350409@gmail.com', '/public/1754940987329-518323640_2494738954216624_926389333829993898_n.jpg', 'V1', 'SAN JUAN BAUTISTA TUXTEPEC', '', '2878819370', NULL, 'kelvin', '2874581265', 'CBTis', '', 'Concluido', 'No', '', 'No', '', 'No', 'TECNM', '', 'ige', 'ige', '...', '...', 'EEAU', 'VESPERTINO', 'Start', 'MQerKAcademy', 25, 3, 2, '2025-08-11 19:36:27', 'Carlos Pérez'),
-(70, 'Emir', 'cruz zamora', 'isc20350265@gmail.com', '/public/1754943896459-WhatsApp Image 2025-08-10 at 2.33.38 PM.jpeg', 'V2', 'LOMA BONITA', '', '281975587', NULL, 'Miguel Angel', '281975587', 'CBTis', '', '6° semestre', 'No', '', 'No', '', 'No', 'TECNM,NAVAL', '', 'ISC', 'ISC', 'xxx', 'xxx', 'EEAU', 'VESPERTINO', 'Mensual', 'MQerKAcademy', 25, 4, 3, '2025-08-11 20:24:56', 'Kélvil Valentín Gómez Ramírez'),
-(71, 'Gerardo ', 'Arcilla', 'gera@gmail.com', '/public/1755028421157-ChatGPT Image 10 ago 2025, 18_11_50.png', 'V1', 'SAN JOSÉ CHILTEPEC', '', '2871811232', NULL, 'Alejandro Lopez', '2871809089', 'CBTis', '', '5° semestre', 'Si', 'Antibioticos', 'Si', 'TDH', 'No', 'IPN,UAQ', '', 'Logistica', 'Logistica', 'educar', 'excelente', 'EEAU', 'VESPERTINO', 'Premium', 'MQerKAcademy', 25, 5, 2, '2025-08-12 19:53:41', 'Carlos Pérez'),
-(72, 'Andres', 'Saul Canelo', 'andy@gmail.com', '/public/1755029883708-file_000000007acc61f6a8019e5a25720850.png', 'V1', 'AYOTZINTEPEC', '', '2871811231', NULL, 'Aron Vazquez', '2878752825', 'COLEGIO AMÉRICA', 'cbtis', '6° semestre', 'si', 'Antibioticos', 'Si', 'Autismo', 'No', 'ANAHUAC', '', 'Medicina', 'Presencial', 'x', 'x', 'EEAU', 'VESPERTINO', 'Start', 'COLEGIO AMÉRICA', 25, 6, 2, '2025-08-12 20:18:03', 'Carlos Pérez'),
-(73, 'Juan ', 'Perez Del Rio ', 'juanperez8@gmail.com', '/public/1755800362156-5-7u6pqt.png', 'V1', '', 'Valle de bravo', '2871811233', NULL, 'Jessica Hernandez', '2871811234', '', 'CEBETIS', '5° semestre', 'Si', 'ANTIBIOTICOS', 'Si', 'Autismo', 'Si', '', '', '', 'Presencial', 'SSS', 'SSS', 'EEAU', 'VESPERTINO', 'Premium', 'MQerKAcademy', 25, 7, 2, '2025-08-21 18:19:22', 'Kélvil Valentín Gómez Ramírez');
+INSERT INTO `estudiantes` (`id`, `nombre`, `apellidos`, `email`, `foto`, `grupo`, `comunidad1`, `comunidad2`, `telefono`, `fecha_nacimiento`, `nombre_tutor`, `tel_tutor`, `academico1`, `academico2`, `semestre`, `alergia`, `alergia2`, `discapacidad1`, `discapacidad2`, `orientacion`, `universidades1`, `universidades2`, `postulacion`, `modalidad`, `comentario1`, `comentario2`, `curso`, `turno`, `plan`, `estatus`, `academia`, `anio`, `folio`, `verificacion`, `created_at`, `asesor`) VALUES
+(67, 'Miguel', 'Angel Cruz vargas', 'isc20350265@gmail.com', '/public/1755139227661-abelito-83uin1.jfif', 'V1', 'SAN JUAN BAUTISTA TUXTEPEC', '', '2811975587', '2000-11-01', 'Rosa Isela', '2811975587', 'CBTis', 'CBTis', 'Concluido', 'Si', 'Antibioticos', 'Si', 'Autismo', 'No', 'NAVAL,TECNM', '', 'ISC', 'ISC', 'ok', 'bien', 'EEAU', 'VESPERTINO', 'Start', 'Activo', 'CBTis', 25, 1, 2, '2025-08-11 00:41:37', 'Carlos Pérez'),
+(69, 'Jessica', 'Fernandez', 'ige19350409@gmail.com', '/public/1754940987329-518323640_2494738954216624_926389333829993898_n.jpg', 'V1', 'SAN JUAN BAUTISTA TUXTEPEC', '', '2878819370', NULL, 'kelvin', '2874581265', 'CBTis', '', 'Concluido', 'No', '', 'No', '', 'No', 'TECNM', '', 'ige', 'ige', '...', '...', 'EEAU', 'VESPERTINO', 'Start', 'Activo', 'MQerKAcademy', 25, 3, 2, '2025-08-11 19:36:27', 'Carlos Pérez'),
+(70, 'Emir', 'cruz zamora', 'isc20350265@gmail.com', '/public/1754943896459-WhatsApp Image 2025-08-10 at 2.33.38 PM.jpeg', 'V2', 'LOMA BONITA', '', '281975587', NULL, 'Miguel Angel', '281975587', 'CBTis', '', '6° semestre', 'No', '', 'No', '', 'No', 'TECNM,NAVAL', '', 'ISC', 'ISC', 'xxx', 'xxx', 'EEAU', 'VESPERTINO', 'Mensual', 'Activo', 'MQerKAcademy', 25, 4, 3, '2025-08-11 20:24:56', 'Kélvil Valentín Gómez Ramírez'),
+(71, 'Gerardo ', 'Arcilla', 'gera@gmail.com', '/public/1755028421157-ChatGPT Image 10 ago 2025, 18_11_50.png', 'V1', 'SAN JOSÉ CHILTEPEC', '', '2871811232', NULL, 'Alejandro Lopez', '2871809089', 'CBTis', '', '5° semestre', 'Si', 'Antibioticos', 'Si', 'TDH', 'No', 'IPN,UAQ', '', 'Logistica', 'Logistica', 'educar', 'excelente', 'EEAU', 'VESPERTINO', 'Premium', 'Activo', 'MQerKAcademy', 25, 5, 2, '2025-08-12 19:53:41', 'Carlos Pérez'),
+(72, 'Andres', 'Saul Canelo', 'andy@gmail.com', '/public/1755029883708-file_000000007acc61f6a8019e5a25720850.png', 'V1', 'AYOTZINTEPEC', '', '2871811231', NULL, 'Aron Vazquez', '2878752825', 'COLEGIO AMÉRICA', 'cbtis', '6° semestre', 'si', 'Antibioticos', 'Si', 'Autismo', 'No', 'ANAHUAC', '', 'Medicina', 'Presencial', 'x', 'x', 'EEAU', 'VESPERTINO', 'Start', 'Activo', 'COLEGIO AMÉRICA', 25, 6, 2, '2025-08-12 20:18:03', 'Carlos Pérez'),
+(73, 'Juan ', 'Perez Del Rio ', 'juanperez8@gmail.com', '/public/1755800362156-5-7u6pqt.png', 'V1', '', 'Valle de bravo', '2871811233', NULL, 'Jessica Hernandez', '2871811234', '', 'CEBETIS', '5° semestre', 'Si', 'ANTIBIOTICOS', 'Si', 'Autismo', 'Si', '', '', '', 'Presencial', 'SSS', 'SSS', 'EEAU', 'VESPERTINO', 'Premium', 'Activo', 'MQerKAcademy', 25, 7, 2, '2025-08-21 18:19:22', 'Kélvil Valentín Gómez Ramírez');
 
 -- --------------------------------------------------------
 
@@ -606,6 +618,28 @@ INSERT INTO `feedback_submissions` (`id`, `id_task`, `id_estudiante`, `archivo`,
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `feedback_submission_notes`
+--
+
+CREATE TABLE `feedback_submission_notes` (
+  `id` int(11) NOT NULL,
+  `id_submission` int(11) NOT NULL,
+  `id_asesor` int(11) DEFAULT NULL,
+  `nota` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `feedback_submission_notes`
+--
+
+INSERT INTO `feedback_submission_notes` (`id`, `id_submission`, `id_asesor`, `nota`, `created_at`, `updated_at`) VALUES
+(1, 5, NULL, 'muy bien pero el ejercicio 3 esta mal', '2025-09-01 21:56:06', '2025-09-01 21:56:36');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `feedback_tasks`
 --
 
@@ -630,7 +664,90 @@ INSERT INTO `feedback_tasks` (`id`, `nombre`, `descripcion`, `puntos`, `due_date
 (2, 'Expresiones Algebraicas', NULL, 10, '2025-08-22 16:37:50', NULL, 1, '2025-08-16 16:37:50', '2025-08-16 16:37:50'),
 (3, 'Geometría Básica', NULL, 10, '2025-08-25 16:37:50', NULL, 1, '2025-08-16 16:37:50', '2025-08-16 16:37:50'),
 (4, 'probando', NULL, 10, '2025-08-21 20:25:51', '[67]', 1, '2025-08-21 20:24:16', '2025-08-21 20:25:51'),
-(5, 'dsa', NULL, 10, '2025-08-21 20:59:22', '[67]', 1, '2025-08-21 20:47:30', '2025-08-21 20:59:22');
+(5, 'dsa', NULL, 10, '2025-08-21 20:59:22', '[67]', 1, '2025-08-21 20:47:30', '2025-08-21 20:59:22'),
+(6, 'adasdasd', NULL, 10, '2025-09-01 17:34:51', '[67]', 1, '2025-09-01 17:34:51', '2025-09-01 17:34:51');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `gastos_fijos`
+--
+
+CREATE TABLE `gastos_fijos` (
+  `id` int(11) NOT NULL,
+  `fecha` date NOT NULL,
+  `hora` time DEFAULT NULL,
+  `categoria` varchar(120) NOT NULL,
+  `descripcion` varchar(500) DEFAULT NULL,
+  `proveedor` varchar(180) DEFAULT NULL,
+  `frecuencia` enum('Diario','Semanal','Quincenal','Mensual','Semestral','Anual') NOT NULL DEFAULT 'Mensual',
+  `metodo` enum('Efectivo','Transferencia','Tarjeta') NOT NULL DEFAULT 'Efectivo',
+  `importe` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `estatus` enum('Pagado','Pendiente','Vencido') NOT NULL DEFAULT 'Pendiente',
+  `calendar_event_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `gastos_variables`
+--
+
+CREATE TABLE `gastos_variables` (
+  `id` int(11) NOT NULL,
+  `unidades` int(11) NOT NULL DEFAULT 1,
+  `producto` varchar(200) NOT NULL,
+  `descripcion` varchar(500) DEFAULT NULL,
+  `entidad` varchar(180) DEFAULT NULL,
+  `valor_unitario` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `metodo` enum('Efectivo','Transferencia','Tarjeta') NOT NULL DEFAULT 'Efectivo',
+  `importe` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `estatus` enum('Pagado','Pendiente','Vencido') NOT NULL DEFAULT 'Pendiente',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `ingresos`
+--
+
+CREATE TABLE `ingresos` (
+  `id` int(11) NOT NULL,
+  `estudiante_id` int(11) DEFAULT NULL,
+  `alumno_nombre` varchar(200) DEFAULT NULL,
+  `asesor_preregistro_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `asesor_nombre` varchar(180) DEFAULT NULL,
+  `curso` varchar(200) NOT NULL,
+  `fecha` date NOT NULL,
+  `hora` time DEFAULT NULL,
+  `metodo` enum('Efectivo','Transferencia','Tarjeta') NOT NULL DEFAULT 'Efectivo',
+  `importe` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `estatus` enum('Pagado','Pendiente','Vencido') NOT NULL DEFAULT 'Pagado',
+  `comprobante_id` int(11) DEFAULT NULL,
+  `notas` text DEFAULT NULL,
+  `descripcion` varchar(500) DEFAULT NULL,
+  `calendar_event_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `ingresos`
+--
+
+INSERT INTO `ingresos` (`id`, `estudiante_id`, `alumno_nombre`, `asesor_preregistro_id`, `asesor_nombre`, `curso`, `fecha`, `hora`, `metodo`, `importe`, `estatus`, `comprobante_id`, `notas`, `descripcion`, `calendar_event_id`, `created_at`, `updated_at`) VALUES
+(1, 67, 'Miguel Angel Cruz vargas', NULL, 'Carlos Pérez', 'EEAU', '2025-08-11', NULL, 'Efectivo', 1500.00, 'Pagado', 9, NULL, NULL, NULL, '2025-09-03 18:31:24', '2025-09-03 18:45:43'),
+(2, 69, 'Jessica Fernandez', NULL, 'Carlos Pérez', 'EEAU', '2025-08-11', NULL, 'Efectivo', 1200.00, 'Pagado', 11, NULL, NULL, NULL, '2025-09-03 18:31:24', '2025-09-03 18:45:43'),
+(3, 70, 'Emir cruz zamora', NULL, 'Kélvil Valentín Gómez Ramírez', 'EEAU', '2025-08-11', NULL, 'Transferencia', 0.00, 'Pendiente', 12, NULL, NULL, NULL, '2025-09-03 18:31:24', '2025-09-03 18:45:43'),
+(4, 71, 'Gerardo  Arcilla', NULL, 'Carlos Pérez', 'EEAU', '2025-08-12', NULL, 'Efectivo', 10500.00, 'Pagado', 13, NULL, NULL, NULL, '2025-09-03 18:31:24', '2025-09-03 18:45:43'),
+(5, 72, 'Andres Saul Canelo', NULL, 'Carlos Pérez', 'EEAU', '2025-08-12', NULL, 'Transferencia', 5500.00, 'Pagado', 14, NULL, NULL, NULL, '2025-09-03 18:31:24', '2025-09-03 18:45:43'),
+(6, 73, 'Juan  Perez Del Rio ', NULL, 'Kélvil Valentín Gómez Ramírez', 'EEAU', '2025-08-21', NULL, 'Efectivo', 10500.00, 'Pagado', 15, NULL, NULL, NULL, '2025-09-03 18:31:24', '2025-09-03 18:45:43'),
+(14, NULL, 'alumno de prueba', 1, 'Carlos Pérez', 'asesoria de prueba', '2025-09-04', '16:16:00', 'Efectivo', 1000.00, 'Pagado', NULL, '{\"asistencia\":{\"estado\":\"Impartida\",\"nota\":\"\",\"fecha\":\"2025-09-03 15:27:36\"}}', 'sxsax', 11, '2025-09-03 21:16:36', '2025-09-03 21:27:36'),
+(15, NULL, 'Abelito Saenz Romero', 1, 'Carlos Pérez', 'Tencología Educativa 2', '2025-09-05', '14:00:00', 'Efectivo', 1500.00, 'Pagado', NULL, '{\"asistencia\":{\"estado\":\"Impartida\",\"nota\":\"\",\"fecha\":\"2025-09-03 16:10:22\"}}', 'ESCEKLLEJLKEJLEJ', 14, '2025-09-03 22:09:06', '2025-09-03 22:10:21');
 
 -- --------------------------------------------------------
 
@@ -649,7 +766,7 @@ CREATE TABLE `quizzes_intentos` (
   `correctas` int(11) DEFAULT NULL,
   `detalle_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`detalle_json`)),
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -671,7 +788,8 @@ CREATE TABLE `soft_deletes` (
 
 INSERT INTO `soft_deletes` (`id`, `id_usuario`, `id_estudiante`, `reason`, `deleted_at`) VALUES
 (1, NULL, 72, 'Eliminado por admin', '2025-08-21 18:29:43'),
-(2, NULL, 72, 'Eliminado por admin', '2025-08-21 18:30:11');
+(2, NULL, 72, 'Eliminado por admin', '2025-08-21 18:30:11'),
+(3, NULL, 71, 'Eliminado por admin', '2025-09-01 17:24:44');
 
 -- --------------------------------------------------------
 
@@ -722,6 +840,9 @@ CREATE TABLE `usuarios` (
   `contraseña` varchar(255) NOT NULL,
   `must_change` tinyint(1) NOT NULL DEFAULT 1,
   `last_login_at` datetime DEFAULT NULL,
+  `password_changed_at` datetime DEFAULT NULL,
+  `failed_attempts` int(11) NOT NULL DEFAULT 0,
+  `locked_until` datetime DEFAULT NULL,
   `role` varchar(100) NOT NULL,
   `id_estudiante` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
@@ -731,12 +852,12 @@ CREATE TABLE `usuarios` (
 -- Volcado de datos para la tabla `usuarios`
 --
 
-INSERT INTO `usuarios` (`id`, `usuario`, `contraseña`, `must_change`, `last_login_at`, `role`, `id_estudiante`, `created_at`) VALUES
-(3, 'miguel', '$2b$10$JkGqmotlDUI4Kuutn3ywoesTpA3izIF6QjlJUygfyizNoO9xJpJye', 1, NULL, 'estudiante', 67, '2025-08-11 00:41:45'),
-(6, 'jesica_admin', '$2b$10$C9FZlnOw4.vJfjxh5E/H8OZu0S7g7ZF.dRiCopqNfz/8Hta1ta9VW', 1, NULL, 'admin', NULL, '2025-08-11 04:00:37'),
-(8, 'jessica.mqerk', '$2b$10$/.53BvJ4Vuh6E910koGzqOOHU7m5kvsR2x8q8gE.4iN7tEem93Une', 1, NULL, 'estudiante', 69, '2025-08-11 19:36:41'),
-(10, 'kelvincienytec', '$2b$10$A.Y8E73jINN6a0AWHDEId.lxAy6F4HBSz83NZhEvchCwAgGXfa7Oa', 1, NULL, 'asesor', NULL, '2025-08-11 22:48:41'),
-(20, 'juan8', '$2b$10$WY5sxiP7FVP5q6MxJHcsFeKo5P8Aah.9HvfqfWYkQF.ULEeBPewdC', 1, NULL, 'estudiante', 73, '2025-08-21 18:19:30');
+INSERT INTO `usuarios` (`id`, `usuario`, `contraseña`, `must_change`, `last_login_at`, `password_changed_at`, `failed_attempts`, `locked_until`, `role`, `id_estudiante`, `created_at`) VALUES
+(3, 'miguel', '$2b$10$JkGqmotlDUI4Kuutn3ywoesTpA3izIF6QjlJUygfyizNoO9xJpJye', 1, '2025-09-03 10:03:56', NULL, 0, NULL, 'estudiante', 67, '2025-08-11 00:41:45'),
+(6, 'jesica_admin', '$2b$10$C9FZlnOw4.vJfjxh5E/H8OZu0S7g7ZF.dRiCopqNfz/8Hta1ta9VW', 1, '2025-09-03 13:26:56', NULL, 0, NULL, 'admin', NULL, '2025-08-11 04:00:37'),
+(8, 'jessica.mqerk', '$2b$10$/.53BvJ4Vuh6E910koGzqOOHU7m5kvsR2x8q8gE.4iN7tEem93Une', 1, NULL, NULL, 0, NULL, 'estudiante', 69, '2025-08-11 19:36:41'),
+(10, 'kelvincienytec', '$2b$10$A.Y8E73jINN6a0AWHDEId.lxAy6F4HBSz83NZhEvchCwAgGXfa7Oa', 1, '2025-09-02 11:56:08', NULL, 0, NULL, 'asesor', NULL, '2025-08-11 22:48:41'),
+(20, 'juan8', '$2b$10$WY5sxiP7FVP5q6MxJHcsFeKo5P8Aah.9HvfqfWYkQF.ULEeBPewdC', 1, NULL, NULL, 0, NULL, 'estudiante', 73, '2025-08-21 18:19:30');
 
 --
 -- Índices para tablas volcadas
@@ -884,12 +1005,51 @@ ALTER TABLE `feedback_submissions`
   ADD KEY `fk_feedback_submissions_replaced` (`replaced_by`);
 
 --
+-- Indices de la tabla `feedback_submission_notes`
+--
+ALTER TABLE `feedback_submission_notes`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_submission` (`id_submission`);
+
+--
 -- Indices de la tabla `feedback_tasks`
 --
 ALTER TABLE `feedback_tasks`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_feedback_tasks_due_date` (`due_date`),
   ADD KEY `idx_feedback_tasks_activo` (`activo`);
+
+--
+-- Indices de la tabla `gastos_fijos`
+--
+ALTER TABLE `gastos_fijos`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_gastos_fijos_fecha` (`fecha`),
+  ADD KEY `idx_gastos_fijos_metodo` (`metodo`),
+  ADD KEY `idx_gastos_fijos_estatus` (`estatus`),
+  ADD KEY `idx_gastos_fijos_frecuencia` (`frecuencia`),
+  ADD KEY `idx_gastos_fijos_calendar_event_id` (`calendar_event_id`);
+
+--
+-- Indices de la tabla `gastos_variables`
+--
+ALTER TABLE `gastos_variables`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_gastos_variables_metodo` (`metodo`),
+  ADD KEY `idx_gastos_variables_estatus` (`estatus`);
+
+--
+-- Indices de la tabla `ingresos`
+--
+ALTER TABLE `ingresos`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_ingresos_fecha` (`fecha`),
+  ADD KEY `idx_ingresos_estudiante` (`estudiante_id`),
+  ADD KEY `idx_ingresos_metodo` (`metodo`),
+  ADD KEY `idx_ingresos_estatus` (`estatus`),
+  ADD KEY `fk_ingresos_asesor` (`asesor_preregistro_id`),
+  ADD KEY `fk_ingresos_comprobante` (`comprobante_id`),
+  ADD KEY `idx_ingresos_calendar_event_id` (`calendar_event_id`);
 
 --
 -- Indices de la tabla `quizzes_intentos`
@@ -934,13 +1094,13 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `actividades`
 --
 ALTER TABLE `actividades`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `actividades_entregas`
 --
 ALTER TABLE `actividades_entregas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `actividades_entregas_archivos`
@@ -988,7 +1148,7 @@ ALTER TABLE `asesor_tests_history`
 -- AUTO_INCREMENT de la tabla `calendar_events`
 --
 ALTER TABLE `calendar_events`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT de la tabla `comprobantes`
@@ -1018,7 +1178,7 @@ ALTER TABLE `estudiantes`
 -- AUTO_INCREMENT de la tabla `estudiantes_config`
 --
 ALTER TABLE `estudiantes_config`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `feedback_submissions`
@@ -1027,10 +1187,34 @@ ALTER TABLE `feedback_submissions`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
+-- AUTO_INCREMENT de la tabla `feedback_submission_notes`
+--
+ALTER TABLE `feedback_submission_notes`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
 -- AUTO_INCREMENT de la tabla `feedback_tasks`
 --
 ALTER TABLE `feedback_tasks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT de la tabla `gastos_fijos`
+--
+ALTER TABLE `gastos_fijos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `gastos_variables`
+--
+ALTER TABLE `gastos_variables`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `ingresos`
+--
+ALTER TABLE `ingresos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT de la tabla `quizzes_intentos`
@@ -1042,7 +1226,7 @@ ALTER TABLE `quizzes_intentos`
 -- AUTO_INCREMENT de la tabla `soft_deletes`
 --
 ALTER TABLE `soft_deletes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `student_notifications`
@@ -1130,6 +1314,20 @@ ALTER TABLE `feedback_submissions`
   ADD CONSTRAINT `fk_feedback_submissions_estudiante` FOREIGN KEY (`id_estudiante`) REFERENCES `estudiantes` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_feedback_submissions_replaced` FOREIGN KEY (`replaced_by`) REFERENCES `feedback_submissions` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_feedback_submissions_task` FOREIGN KEY (`id_task`) REFERENCES `feedback_tasks` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `feedback_submission_notes`
+--
+ALTER TABLE `feedback_submission_notes`
+  ADD CONSTRAINT `fk_notes_submission` FOREIGN KEY (`id_submission`) REFERENCES `feedback_submissions` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `ingresos`
+--
+ALTER TABLE `ingresos`
+  ADD CONSTRAINT `fk_ingresos_asesor` FOREIGN KEY (`asesor_preregistro_id`) REFERENCES `asesor_preregistros` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_ingresos_comprobante` FOREIGN KEY (`comprobante_id`) REFERENCES `comprobantes` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_ingresos_estudiante` FOREIGN KEY (`estudiante_id`) REFERENCES `estudiantes` (`id`) ON DELETE SET NULL;
 
 --
 -- Filtros para la tabla `quizzes_intentos`

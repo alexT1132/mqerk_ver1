@@ -1,5 +1,19 @@
 import db from '../db.js'; // ya no ejecutes connectDB()
 
+// Asegurar columna 'estatus' en estudiantes (Activo|Suspendido)
+export const ensureEstatusColumn = async () => {
+  try {
+    const [rows] = await db.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'estudiantes' AND COLUMN_NAME = 'estatus'`
+    );
+    if (!rows || rows.length === 0) {
+      await db.query(`ALTER TABLE estudiantes ADD COLUMN estatus ENUM('Activo','Suspendido') NOT NULL DEFAULT 'Activo' AFTER plan`);
+    }
+  } catch (e) {
+    console.error('ensureEstatusColumn error:', e?.message);
+  }
+};
+
 // Crear datos del alumno
 export const createEstudiante = async (data) => {
   const sql = 'INSERT INTO estudiantes (nombre, apellidos, email, foto, grupo, comunidad1, comunidad2, telefono, fecha_nacimiento, nombre_tutor, tel_tutor, academico1, academico2, semestre, alergia, alergia2, discapacidad1, discapacidad2, orientacion, universidades1, universidades2, postulacion, modalidad, comentario1, comentario2, curso, turno, plan, academia, anio, folio, asesor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';

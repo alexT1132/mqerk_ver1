@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon index.js",
     "simulate": "node ./scripts/simular_tests.js",
-    "seed:asesor": "node ./scripts/seed-asesor-sample.js"
+  "seed:asesor": "node ./scripts/seed-asesor-sample.js",
+  "migrate": "node ./scripts/run-migrations.js"
   },
   "keywords": [],
   "author": "",

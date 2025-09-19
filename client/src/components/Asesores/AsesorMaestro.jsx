@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 const CourseChip = ({ title, image, DEFAULT_USER, }) => {
   return (
     <Link
-      to={`/asesor_dashboard`}
+      to={`/asesor/dashboard`}
       state={{  curso: title }}
       className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >

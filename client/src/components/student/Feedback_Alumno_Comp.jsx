@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown, RefreshCcw, PlusCircle } from 'lucide-react';
+import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown, RefreshCcw, PlusCircle, Info, MessageSquareText, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { listTasks, listSubmissionsByStudent, createSubmission, createTask, updateTask, cancelSubmissionApi } from '../../api/feedback.js';
+import { listTasks, listSubmissionsByStudent, createSubmission, createTask, updateTask, cancelSubmissionApi, getSubmissionNote } from '../../api/feedback.js';
+import { buildStaticUrl } from '../../utils/url.js';
 
 const Feedback_Alumno_Comp = () => {
   // Auth
@@ -23,36 +24,41 @@ const Feedback_Alumno_Comp = () => {
   const [newTaskError, setNewTaskError] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiScore, setConfettiScore] = useState(0);
-  // showMotivationalMessage state is not directly used for visual display in the confetti effect anymore
   const [showMotivationalMessage, setShowMotivationalMessage] = useState(false); 
-  const [selectedMonth, setSelectedMonth] = useState('all');
-  // Depende de selectedMonth, así que calcúlalo después de declararlo
-  const isPastSelectedMonth = React.useMemo(() => {
-    if (selectedMonth === 'all') return false;
-    const now = new Date();
-    const nm = now.getMonth();
-    const sm = parseInt(selectedMonth);
-    // asumimos año actual; si el seleccionado es menor al actual, es pasado
-    return sm < nm;
-  }, [selectedMonth]);
+  const [selectedMonth, setSelectedMonth] = useState('all'); // 'all' o etiqueta ordinal ('Octavo', ...)
   const [showViewTaskModal, setShowViewTaskModal] = useState(false);
   const [viewingTaskName, setViewingTaskName] = useState('');
   const [viewingTaskPdf, setViewingTaskPdf] = useState('');
+  const isPdfIframeBlocked = React.useMemo(() => {
+    try {
+      if (!viewingTaskPdf) return false;
+      const u = new URL(viewingTaskPdf);
+      const host = u.hostname.toLowerCase();
+      return host.includes('docs.google.com') || host.includes('drive.google.com');
+    } catch {
+      return false;
+    }
+  }, [viewingTaskPdf]);
   const [totalPoints, setTotalPoints] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const TASKS_PER_PAGE = 20;
+  const TASKS_PER_PAGE = 10;
   // Errores de archivo
   const [fileError, setFileError] = useState("");
-  const MAX_FILE_SIZE_BYTES = 1.5 * 1024 * 1024; // 1.5MB
+  const MAX_FILE_SIZE_BYTES = 1.5 * 1024 * 1024; // limite maximo de cada archivo pdf 1.5MB
   // Búsqueda
   const [searchTerm, setSearchTerm] = useState("");
-  // Conteo de tareas creadas por el alumno (límite 20)
+  // Notas del asesor por submission
+  const [notesBySubmission, setNotesBySubmission] = useState({}); // { subId: 'texto' }
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteView, setNoteView] = useState({ text: '', taskName: '' });
+
+  // Conteo global de tareas creadas por el alumno (informativo)
   const studentOwnedCount = tasks.filter(t => t._isStudentOwned).length;
-  // Límite global del curso (8 meses, 14,440 entregas)
+  // Límite global del curso (8 meses, 240 entregas) 
   const COURSE_MONTHS = 8;
-  const TOTAL_MAX_SUBMISSIONS = 14440;
+  const TOTAL_MAX_SUBMISSIONS = 240;
   const perMonthCap = Math.floor(TOTAL_MAX_SUBMISSIONS / COURSE_MONTHS);
   const [monthlyCountThisMonth, setMonthlyCountThisMonth] = useState(0);
   const [monthlyCapReached, setMonthlyCapReached] = useState(false);
@@ -101,7 +107,7 @@ const Feedback_Alumno_Comp = () => {
           listSubmissionsByStudent(alumnoId, { limit: 10000 }).catch(() => ({ data: { data: [] }}))
         ]);
         if (cancel) return;
-        const tasksRaw = Array.isArray(tasksRes?.data?.data) ? tasksRes.data.data : [];
+  const tasksRaw = Array.isArray(tasksRes?.data?.data) ? tasksRes.data.data : [];
         const subs = Array.isArray(subsRes?.data?.data) ? subsRes.data.data : [];
         // Calcular conteo mensual (por mes calendario basado en created_at)
         const byMonth = subs.reduce((acc, s) => {
@@ -115,7 +121,6 @@ const Feedback_Alumno_Comp = () => {
         const usedThisMonth = byMonth[nowM] || 0;
         setMonthlyCountThisMonth(usedThisMonth);
         setMonthlyCapReached(usedThisMonth >= perMonthCap);
-  const origin = `${window.location.protocol}//${window.location.hostname}:1002`;
         // Filtrar: mostrar tareas globales (sin grupos) y tareas propias (grupos contiene alumnoId)
         const filtered = tasksRaw.filter(t => {
           const g = Array.isArray(t.grupos) ? t.grupos : null;
@@ -124,8 +129,7 @@ const Feedback_Alumno_Comp = () => {
         const mapped = filtered.map(t => {
           const sub = subs.find(s => s.id_task === t.id && !s.replaced_by);
           const rel = sub?.archivo || null;
-            // Si ya viene con http lo dejamos
-          const fullUrl = rel ? (rel.startsWith('http') ? rel : `${origin}${rel}`) : null;
+          const fullUrl = rel ? buildStaticUrl(rel) : null;
           return {
             id: t.id,
             name: t.nombre,
@@ -138,6 +142,21 @@ const Feedback_Alumno_Comp = () => {
           };
         });
         setTasks(mapped);
+        // Prefetch de notas del asesor para las tareas con entrega
+        const withSub = mapped.filter(t => t._subId);
+        if (withSub.length) {
+          const pairs = await Promise.all(withSub.map(async t => {
+            try {
+              const res = await getSubmissionNote(t._subId);
+              return [t._subId, res?.data?.data?.nota || ''];
+            } catch { return [t._subId, '']; }
+          }));
+          const map = {};
+          for (const [sid, txt] of pairs) map[sid] = txt;
+          setNotesBySubmission(map);
+        } else {
+          setNotesBySubmission({});
+        }
       } catch (e) {
         console.error('Error cargando tareas feedback', e);
         setFetchError('No se pudieron cargar las tareas');
@@ -177,21 +196,17 @@ const Feedback_Alumno_Comp = () => {
       fd.append('id_estudiante', alumnoId);
       // Si es una actividad creada por el alumno, actualizar due_date al momento de subir
       const t = tasks.find(x => x.id === taskId);
-      try {
-        if (t?._isStudentOwned) {
-          await updateTask(taskId, { due_date: new Date().toISOString() });
-        }
-      } catch { /* silencioso */ }
+  // No modificar due_date aquí: mantener el mes asignado al crear para que el agrupado sea consistente
+  try { /* antes se actualizaba due_date aquí; se elimina para evitar mover la tarea de mes */ } catch {}
       const res = await createSubmission(fd);
       const sub = res?.data?.data;
       if (sub) {
-  const origin = `${window.location.protocol}//${window.location.hostname}:1002`;
   const rel = sub.archivo;
-  const fullUrl = rel.startsWith('http') ? rel : `${origin}${rel}`;
+  const fullUrl = rel ? buildStaticUrl(rel) : null;
   setTasks(prev => prev.map(t => {
     if (t.id !== taskId) return t;
-    const newDue = t._isStudentOwned ? new Date().toISOString() : t.dueDate;
-    return { ...t, submittedPdf: fullUrl, isSubmitted: true, score: sub.puntos || 10, _subId: sub.id, dueDate: newDue };
+    // Mantener dueDate sin cambios para no mover la tarea de mes al subir
+    return { ...t, submittedPdf: fullUrl, isSubmitted: true, score: sub.puntos || 10, _subId: sub.id, dueDate: t.dueDate };
   }));
         setConfettiScore(sub.puntos || 10);
         const randomWord = motivationalWords[Math.floor(Math.random() * motivationalWords.length)];
@@ -204,7 +219,7 @@ const Feedback_Alumno_Comp = () => {
           if (next === 3) {
             setShowTripleEffect(true);
             // Ocultar después de 6s
-            setTimeout(() => setShowTripleEffect(false), 6000);
+            setTimeout(() => setShowTripleEffect(false), 5000);
           }
           return next;
         });
@@ -266,17 +281,22 @@ const Feedback_Alumno_Comp = () => {
     if (name.length > 100) { setNewTaskError('Máximo 100 caracteres'); return; }
     if (!alumnoId) { setNewTaskError('Sesión inválida'); return; }
     if (isPastSelectedMonth) { setNewTaskError('No puedes crear actividades en meses pasados'); return; }
+    if (studentOwnedCountThisMonth >= perMonthCap) {
+      setNewTaskError(`Has alcanzado el límite mensual de ${perMonthCap} actividades creadas.`);
+      return;
+    }
     try {
       setNewTaskError('');
-      // Establece due_date al inicio del mes seleccionado si no es 'all'; de lo contrario, hoy
+      // Establece due_date según el mes seleccionado (ordinal → calendar)
       let due = new Date();
       if (selectedMonth !== 'all') {
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = parseInt(selectedMonth);
-        due = new Date(y, m, 1, 12, 0, 0);
+        const mk = monthKeyByOrdinal[selectedMonth];
+        if (mk) {
+          const [y, m] = mk.split('-').map(Number);
+          due = new Date(y, (m - 1), 1, 12, 0, 0);
+        }
       }
-      const body = { nombre: name, due_date: due.toISOString(), puntos: 10, grupos: JSON.stringify([alumnoId]), activo: 1 };
+  const body = { nombre: name, due_date: due.toISOString(), puntos: 10, grupos: JSON.stringify([alumnoId]), activo: 1 };
       await createTask(body);
       // Refrescar lista
         const [tasksRes, subsRes] = await Promise.all([
@@ -297,11 +317,10 @@ const Feedback_Alumno_Comp = () => {
       const usedThisMonth2 = byMonth2[nowM2] || 0;
       setMonthlyCountThisMonth(usedThisMonth2);
       setMonthlyCapReached(usedThisMonth2 >= perMonthCap);
-      const origin = `${window.location.protocol}//${window.location.hostname}:1002`;
       const filtered = tasksRaw.filter(t => { const g = Array.isArray(t.grupos) ? t.grupos : null; return !g || g.includes(alumnoId); });
       const mapped = filtered.map(t => {
         const sub = subs.find(s => s.id_task === t.id && !s.replaced_by);
-        const rel = sub?.archivo || null; const fullUrl = rel ? (rel.startsWith('http') ? rel : `${origin}${rel}`) : null;
+  const rel = sub?.archivo || null; const fullUrl = rel ? buildStaticUrl(rel) : null;
         return { id: t.id, name: t.nombre, dueDate: t.due_date, submittedPdf: fullUrl, isSubmitted: !!sub, score: sub ? (sub.puntos || 10) : null, _subId: sub?.id || null, _isStudentOwned: Array.isArray(t.grupos) && t.grupos.includes(alumnoId) };
       });
       setTasks(mapped);
@@ -317,6 +336,13 @@ const Feedback_Alumno_Comp = () => {
   setViewingTaskPdf(task.submittedPdf);
     setShowViewTaskModal(true);
   };
+
+  const openNoteModal = (task) => {
+    const text = task?._subId ? (notesBySubmission[task._subId] || '') : '';
+    setNoteView({ text, taskName: task?.name || 'Actividad' });
+    setShowNoteModal(true);
+  };
+  const closeNoteModal = () => { setShowNoteModal(false); setNoteView({ text: '', taskName: '' }); };
 
   const closeViewTaskModal = () => {
     setShowViewTaskModal(false);
@@ -334,14 +360,65 @@ const Feedback_Alumno_Comp = () => {
     }
   }, [tasks]);
 
-  // Filtrado por mes
+  // Helpers y mapeo de meses (igual que vista del asesor)
+  const monthKey = (d) => {
+    const dt = new Date(d);
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+  };
+  const distinctMonths = React.useMemo(() => {
+    const set = new Set();
+    for (const t of tasks) { if (t?.dueDate) set.add(monthKey(t.dueDate)); }
+    return Array.from(set).sort((a,b)=> new Date(b+"-01") - new Date(a+"-01"));
+  }, [tasks]);
+  const REVERSED_ORDINALS = ['Octavo','Séptimo','Sexto','Quinto','Cuarto','Tercero','Segundo','Primero'];
+  const monthKeyByOrdinal = React.useMemo(() => {
+    const map = {};
+    distinctMonths.forEach((mk, idx) => { if (idx < REVERSED_ORDINALS.length) map[REVERSED_ORDINALS[idx]] = mk; });
+    return map;
+  }, [distinctMonths]);
+
+  // Recalcular el conteo de creadas por el alumno para el mes seleccionado (ordinal)
+  const studentOwnedCountForSelected = React.useMemo(() => {
+    try {
+      const mk = selectedMonth === 'all' ? (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })() : monthKeyByOrdinal[selectedMonth];
+      if (!mk) return 0;
+      return tasks.filter(t => t._isStudentOwned && t?.dueDate && monthKey(t.dueDate) === mk).length;
+    } catch { return 0; }
+  }, [tasks, selectedMonth, monthKeyByOrdinal]);
+  // Conteo mensual de tareas creadas por el alumno (para límite mensual = perMonthCap)
+  const studentOwnedCountThisMonth = studentOwnedCountForSelected;
+  // selectedMonth en pasado
+  const isPastSelectedMonth = React.useMemo(() => {
+    if (selectedMonth === 'all') return false;
+    const mk = monthKeyByOrdinal[selectedMonth];
+    if (!mk) return false;
+    const [y, m] = mk.split('-').map(Number);
+    const now = new Date();
+    if (y < now.getFullYear()) return true;
+    if (y === now.getFullYear() && (m-1) < now.getMonth()) return true;
+    return false;
+  }, [selectedMonth, monthKeyByOrdinal]);
+
+  // Filtrado por mes usando etiquetas ordinales
   const filteredTasks = tasks.filter(task => {
-    if (selectedMonth === 'all') {
-      return true;
-    }
-    const taskMonth = new Date(task.dueDate).getMonth();
-    return taskMonth === parseInt(selectedMonth);
+    if (selectedMonth === 'all') return true;
+    const mk = monthKeyByOrdinal[selectedMonth];
+    if (!mk || !task?.dueDate) return false;
+    return monthKey(task.dueDate) === mk;
   });
+
+  // Ordenar por más reciente a más antiguo (por dueDate)
+  const sortedTasks = React.useMemo(() => {
+    try {
+      return [...filteredTasks].sort((a, b) => {
+        const ta = a?.dueDate ? new Date(a.dueDate).getTime() : 0;
+        const tb = b?.dueDate ? new Date(b.dueDate).getTime() : 0;
+        return tb - ta; // descendente: más reciente primero
+      });
+    } catch {
+      return filteredTasks;
+    }
+  }, [filteredTasks]);
 
   // Progreso mensual (respecto a tareas del mes sin considerar búsqueda)
   const monthTotal = filteredTasks.length;
@@ -370,7 +447,7 @@ const Feedback_Alumno_Comp = () => {
   }, [tasks, filteredTasks, selectedMonth]);
 
   // Filtrado por búsqueda
-  const searchedTasks = filteredTasks.filter(t =>
+  const searchedTasks = sortedTasks.filter(t =>
     t.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
   );
 
@@ -433,9 +510,8 @@ const Feedback_Alumno_Comp = () => {
     } catch { return true; }
   };
 
-  const months = [
-    'Primero', 'Segundo', 'Tercero', 'Cuarto', 'Quinto', 'Sexto', 'Séptimo', 'Octavo'
-  ];
+  // Opciones de meses a mostrar (ordinales, mismo orden que en asesor)
+  const months = REVERSED_ORDINALS;
 
   const handleMonthSelect = (monthValue, monthName) => {
     setSelectedMonth(monthValue);
@@ -444,7 +520,7 @@ const Feedback_Alumno_Comp = () => {
 
   const getSelectedMonthName = () => {
     if (selectedMonth === 'all') return 'Todos los meses';
-    return months[parseInt(selectedMonth)];
+    return selectedMonth; // etiqueta ordinal
   };
 
   // Función para abrir el PDF en una nueva pestaña
@@ -476,6 +552,14 @@ const Feedback_Alumno_Comp = () => {
     };
   }, []);
 
+  // Vista rápida del nombre completo en móvil
+  const [showFullNameId, setShowFullNameId] = useState(null);
+  useEffect(() => {
+    if (!showFullNameId) return;
+    const t = setTimeout(() => setShowFullNameId(null), 2500);
+    return () => clearTimeout(t);
+  }, [showFullNameId]);
+
   // Urgencia según horas restantes (solo mostrar si NO se ha entregado y la fecha está próxima o vencida)
   // Reglas:
   //  - No mostrar nada si la tarea ya fue entregada.
@@ -485,7 +569,6 @@ const Feedback_Alumno_Comp = () => {
   //  - No mostrar "Tranquilo" para evitar ruido visual cuando falta mucho tiempo.
   const getUrgencyInfo = (dueDate, isSubmitted) => {
     if (isSubmitted) return null; // Ya entregada: no se muestra indicador.
-    if (!dueDate) return null;
     const due = new Date(dueDate);
     if (isNaN(due?.getTime?.())) return null;
     const diffMs = due.getTime() - Date.now();
@@ -502,12 +585,7 @@ const Feedback_Alumno_Comp = () => {
   <h1 className="text-2xl xs:text-3xl sm:text-5xl font-extrabold mb-4 sm:mb-8 text-purple-700 drop-shadow-lg text-center tracking-tight">
         FEEDBACK
       </h1>
-      {/* Cuota mensual */}
-      <div className="w-full max-w-3xl -mt-2 mb-3 flex items-center justify-end">
-        <span className="text-[11px] sm:text-xs text-purple-700 bg-purple-50 border border-purple-200 rounded-lg px-3 py-1">
-          Mes: {displayMonthlyCount}/{perMonthCap}
-        </span>
-      </div>
+     
 
       {/* Puntos + Progreso */}
       <div className="bg-gradient-to-r from-purple-100 to-indigo-100 border-2 border-purple-200 rounded-xl shadow-lg p-5 sm:p-6 mb-4 sm:mb-8 flex flex-col sm:flex-row gap-5 sm:items-center w-full max-w-3xl">
@@ -602,7 +680,7 @@ const Feedback_Alumno_Comp = () => {
             </div>
           </div>
           {/* Sonido de celebración (opcional, descomenta si quieres usarlo y tienes un archivo .mp3 en public/) */}
-          <audio autoPlay src="/public/A1.mp3" />
+          {!reducedMotion && (<audio autoPlay src="/A1.mp3" />)}
         </>
       )}
 
@@ -658,10 +736,10 @@ const Feedback_Alumno_Comp = () => {
               >
                 Todos los meses
               </div>
-              {months.map((month, index) => (
+        {months.map((month, index) => (
                 <div
                   key={index}
-                  onClick={() => handleMonthSelect(index.toString(), month)}
+          onClick={() => handleMonthSelect(month, month)}
                   className="px-4 py-3 hover:bg-purple-50 cursor-pointer text-purple-700 border-b border-purple-100 last:border-b-0"
                 >
                   {month}
@@ -683,9 +761,9 @@ const Feedback_Alumno_Comp = () => {
         <div className="flex items-center justify-end">
           <button
             onClick={openCreateTask}
-            disabled={studentOwnedCount >= 20 || isPastSelectedMonth}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg border-2 ${(studentOwnedCount >= 20 || isPastSelectedMonth) ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 text-white border-purple-700'}`}
-            title={studentOwnedCount >= 20 ? 'Has alcanzado el límite de 20 actividades' : (isPastSelectedMonth ? 'No puedes crear actividades en meses pasados' : 'Crear nueva actividad')}
+            disabled={studentOwnedCountThisMonth >= perMonthCap || isPastSelectedMonth}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg border-2 ${(studentOwnedCountThisMonth >= perMonthCap || isPastSelectedMonth) ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 text-white border-purple-700'}`}
+            title={studentOwnedCountThisMonth >= perMonthCap ? `Has alcanzado el límite mensual de ${perMonthCap} actividades creadas` : (isPastSelectedMonth ? 'No puedes crear actividades en meses pasados' : 'Crear nueva actividad')}
           >
             <PlusCircle className="w-5 h-5" />
             Nueva actividad
@@ -694,17 +772,30 @@ const Feedback_Alumno_Comp = () => {
       </div>
 
   {/* Vista de escritorio - Tabla */}
-  <div className="hidden lg:block bg-purple-100 bg-opacity-70 backdrop-blur-sm border-2 border-purple-300 rounded-2xl shadow-xl overflow-hidden w-full max-w-6xl">
-        <table className="min-w-full">
+  {/* Contenedor más ancho y con scroll horizontal para evitar que el contenido se mueva o se corte */}
+  <div className="hidden lg:block w-full max-w-7xl">
+    <div className="bg-purple-100 bg-opacity-70 backdrop-blur-sm border-2 border-purple-300 rounded-2xl shadow-xl overflow-x-auto">
+      <table className="min-w-[1100px] table-fixed">
+          <colgroup>
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '36%' }} />
+            <col style={{ width: '16%' }} />
+            <col style={{ width: '16%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '6%' }} />
+          </colgroup>
           <thead className="bg-gradient-to-r from-purple-500 to-indigo-600">
             <tr>
-              <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">No.</th>
-              <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">Nombre de la tarea</th>
-              <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Cargar mi actividad</th>
-              <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">Fecha de entrega</th>
-              <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Visualizar</th>
-              <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">Entregado</th>
-              <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">Puntaje</th>
+      <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">No.</th>
+      <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">Nombre de la tarea</th>
+      <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Cargar mi actividad</th>
+      <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">Fecha de entrega</th>
+      <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Visualizar</th>
+      <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Nota</th>
+      <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Entregado</th>
+      <th scope="col" className="px-6 py-4 text-center text-sm font-bold text-white uppercase tracking-wider">Puntaje</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-purple-300 bg-purple-100 bg-opacity-50">
@@ -712,8 +803,9 @@ const Feedback_Alumno_Comp = () => {
               paginatedTasks.map((task, index) => (
                 <tr key={task.id} className="hover:bg-purple-200 hover:bg-opacity-70 transition-all duration-200">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-purple-700">{indexOfFirst + index + 1}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">{task.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm flex justify-center items-center">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium truncate" title={task.name}>{task.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex justify-center items-center">
                     <button
                       onClick={() => openModal(task)}
                       disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
@@ -728,6 +820,7 @@ const Feedback_Alumno_Comp = () => {
                       <Upload className="w-5 h-5 mr-2" />
                       {task.isSubmitted ? 'Gestionar Entrega' : (monthlyCapReached ? 'Límite mensual' : 'Subir Tarea')}
                     </button>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                     <div className="flex flex-col gap-1">
@@ -741,7 +834,8 @@ const Feedback_Alumno_Comp = () => {
                       ) : null; })()}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm flex justify-center items-center">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex justify-center items-center">
                     <button
                       onClick={() => openViewTaskModal(task)}
                       disabled={!task.submittedPdf}
@@ -753,9 +847,29 @@ const Feedback_Alumno_Comp = () => {
                     >
                       <Eye className="w-5 h-5" />
                     </button>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <div className="flex justify-center">
+                    <div className="flex justify-center items-center">
+                    {task._subId ? (
+                      (notesBySubmission[task._subId] ? (
+                        <button
+                          onClick={() => openNoteModal(task)}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow"
+                          title="Ver nota del asesor"
+                        >
+                          <MessageSquareText className="w-4 h-4"/> Nota
+                        </button>
+                      ) : (
+                        <span className="text-gray-500">Sin nota</span>
+                      ))
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex justify-center items-center">
                       {task.isSubmitted ? (
                         <CheckCircle className="w-7 h-7 text-green-500 drop-shadow-lg" />
                       ) : (
@@ -763,20 +877,21 @@ const Feedback_Alumno_Comp = () => {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-700 font-semibold">
-                    {task.score !== null ? `${task.score} pts` : '-'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="text-purple-700 font-semibold text-center">{task.score !== null ? `${task.score} pts` : '-'}</div>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="px-6 py-8 text-center text-gray-600 text-lg font-medium">
+                <td colSpan="8" className="px-6 py-8 text-center text-gray-600 text-lg font-medium">
                   No hay tareas para el mes seleccionado.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+    </div>
         {/* Controles de paginación escritorio */}
         {filteredTasks.length > TASKS_PER_PAGE && (
           <div className="flex items-center justify-between px-6 py-4 bg-white border-t border-purple-300">
@@ -809,32 +924,53 @@ const Feedback_Alumno_Comp = () => {
         )}
       </div>
 
-      {/* Vista móvil - Cards en 2 columnas */}
-      <div className="lg:hidden w-full max-w-4xl">
+  {/* Vista móvil - Cards en 2 columnas */}
+  <div className="lg:hidden w-full max-w-4xl">
     {paginatedTasks.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
       {paginatedTasks.map((task, index) => (
               <div
                 key={task.id}
-                className="relative bg-gradient-to-br from-purple-100 via-indigo-100 to-white border-2 border-purple-200 rounded-3xl shadow-2xl p-6 flex flex-col gap-3 transition-transform duration-200 hover:scale-[1.03] hover:shadow-purple-300/60"
+                className="relative bg-gradient-to-br from-purple-100 via-indigo-100 to-white border-2 border-purple-200 rounded-3xl shadow-2xl p-4 sm:p-6 flex flex-col gap-2 transition-transform duration-200 hover:scale-[1.02] hover:shadow-purple-300/60"
               >
-                {/* Badge de estado */}
-                <span className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-md z-10 ${task.isSubmitted ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-red-100 text-red-600 border border-red-300'}`}>
-                  {task.isSubmitted ? 'Entregado' : 'Pendiente'}
-                </span>
-                {/* Header */}
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">#{indexOfFirst + index + 1}</span>
-                  <h3 className="font-extrabold text-purple-800 text-lg flex-1 leading-tight break-words">{task.name}</h3>
+                {/* Header con badge alineado (sin superponer) */}
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md shrink-0">#{indexOfFirst + index + 1}</span>
+                    <h3
+                      className="font-bold text-purple-800 text-sm sm:text-base leading-snug break-words line-clamp-2 min-w-0"
+                      title={task.name}
+                    >
+                      {task.name}
+                    </h3>
+                    <button
+                      type="button"
+                      className="sm:hidden inline-flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 text-purple-700 border border-purple-200 shrink-0"
+                      aria-label="Ver nombre completo"
+                      title="Ver nombre completo"
+                      onClick={() => setShowFullNameId(task.id)}
+                    >
+                      <Info className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm ${task.isSubmitted ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-red-100 text-red-600 border border-red-300'}`}>
+                    {task.isSubmitted ? 'Entregado' : 'Pendiente'}
+                  </span>
                 </div>
+                {/* Overlay con nombre completo (solo móvil) */}
+                {showFullNameId === task.id && (
+                  <div className="lg:hidden absolute left-2 right-2 top-10 z-20 bg-white/95 border border-purple-200 rounded-lg shadow-xl p-2 text-[13px] text-purple-800 break-words">
+                    {task.name}
+                  </div>
+                )}
                 {/* Puntaje */}
-                <div className="flex items-center gap-2 mb-1">
-                  <Star className="w-5 h-5 text-yellow-400 drop-shadow" fill="currentColor" />
-                  <span className="text-lg font-bold text-purple-700">{task.score !== null ? `${task.score} pts` : '-'}</span>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Star className="w-4 h-4 text-yellow-400 drop-shadow" fill="currentColor" />
+                  <span className="text-sm sm:text-base font-bold text-purple-700">{task.score !== null ? `${task.score} pts` : '-'}</span>
                 </div>
                 {/* Fecha de entrega + urgencia */}
-                <div className="flex items-center gap-2 text-xs text-gray-600 font-medium mb-2 flex-wrap">
-                  <span className="bg-purple-200 text-purple-700 px-2 py-1 rounded-lg">Entrega:</span>
+                <div className="flex items-center gap-1.5 text-[11px] text-gray-600 font-medium mb-2 flex-wrap">
+                  <span className="bg-purple-200 text-purple-700 px-2 py-0.5 rounded-lg">Entrega:</span>
                   <span className="text-gray-700">{(task._isStudentOwned && !task.isSubmitted) ? 'Se genera al subir' : new Date(task.dueDate).toLocaleDateString('es-ES', {
                     year: 'numeric',
                     month: 'short',
@@ -845,42 +981,57 @@ const Feedback_Alumno_Comp = () => {
                   ) : null; })()}
                 </div>
                 {/* Estado visual */}
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-1.5 mb-2">
                   {task.isSubmitted ? (
-                    <CheckCircle className="w-6 h-6 text-green-500" />
+                    <CheckCircle className="w-5 h-5 text-green-500" />
                   ) : (
-                    <XCircle className="w-6 h-6 text-red-500" />
+                    <XCircle className="w-5 h-5 text-red-500" />
                   )}
-                  <span className={`font-semibold text-sm ${task.isSubmitted ? 'text-green-600' : 'text-red-500'}`}>{task.isSubmitted ? '¡Entregado!' : 'Sin entregar'}</span>
+                  <span className={`font-semibold text-xs ${task.isSubmitted ? 'text-green-600' : 'text-red-500'}`}>{task.isSubmitted ? '¡Entregado!' : 'Sin entregar'}</span>
                 </div>
                 {/* Botones de acción */}
-                <div className="flex gap-2 mt-auto">
+                <div className={`grid ${notesBySubmission[task._subId] ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mt-auto`}>
                   <button
                     onClick={() => openModal(task)}
                     disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
-                    className={`flex-1 flex items-center justify-center px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold gap-1 ${
+                    className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold gap-1 ${
                       (!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
                         ? 'bg-gray-400 cursor-not-allowed text-white'
                         : (task.isSubmitted ? 'bg-purple-500 hover:bg-purple-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white')
                     }`}
                     aria-label={task.isSubmitted ? 'Gestionar entrega' : 'Subir tarea'}
+                    title={task.isSubmitted ? 'Gestionar entrega' : (monthlyCapReached ? 'Límite mensual' : 'Subir tarea')}
                   >
-                    <Upload className="w-4 h-4" />
-                    {task.isSubmitted ? 'Gestionar' : (monthlyCapReached ? 'Límite mensual' : 'Subir')}
+                    <Upload className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">
+                      {task.isSubmitted ? 'Gestionar' : (monthlyCapReached ? 'Límite mensual' : 'Subir')}
+                    </span>
                   </button>
                   <button
                     onClick={() => openViewTaskModal(task)}
                     disabled={!task.submittedPdf}
-                    className={`flex items-center justify-center px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold ${
+                    className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold ${
                       task.submittedPdf
                         ? 'bg-green-500 hover:bg-green-600 text-white'
                         : 'bg-gray-400 cursor-not-allowed text-white'
                     }`}
                     aria-label="Ver tarea"
+                    title={task.submittedPdf ? 'Ver' : 'Sin archivo'}
                   >
-                    <Eye className="w-4 h-4" />
-                    Ver
+                    <Eye className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">Ver</span>
                   </button>
+                  {notesBySubmission[task._subId] && (
+                    <button
+                      onClick={() => openNoteModal(task)}
+                      className="w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white"
+                      aria-label="Ver nota"
+                      title="Ver nota del asesor"
+                    >
+                      <MessageSquareText className="w-4 h-4 shrink-0" />
+                      <span className="hidden sm:inline">Nota</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -1027,10 +1178,10 @@ const Feedback_Alumno_Comp = () => {
             <p className="mb-4 text-gray-700 text-sm sm:text-base">
               Tarea: <span className="font-semibold text-purple-600">{viewingTaskName}</span>
             </p>
-            {viewingTaskPdf ? (
+    {viewingTaskPdf ? (
               <>
                 <div className="flex-grow w-full h-64 sm:h-96 bg-gray-100 rounded-lg overflow-hidden mb-4 border border-gray-300 flex items-center justify-center relative">
-                  {isMobile ? (
+      {(isMobile || isPdfIframeBlocked) ? (
                     <span className="text-gray-500 text-center text-xs px-2">En móvil, usa "Ver en nueva pestaña" para mejor experiencia.</span>
                   ) : (
                     <iframe
@@ -1066,6 +1217,27 @@ const Feedback_Alumno_Comp = () => {
               >
                 Cerrar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Ver nota del asesor */}
+      {showNoteModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeNoteModal}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border-2 border-purple-200" onClick={(e)=> e.stopPropagation()}>
+            <div className="px-4 py-3 bg-[#3d18c3] text-white flex items-center justify-between">
+              <div className="font-semibold text-sm truncate">Nota del asesor · {noteView.taskName}</div>
+              <button onClick={closeNoteModal} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white text-xs">
+                <X className="w-3.5 h-3.5"/> Cerrar
+              </button>
+            </div>
+            <div className="p-4">
+              {noteView.text ? (
+                <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">{noteView.text}</p>
+              ) : (
+                <p className="text-sm text-slate-500">No hay nota disponible para esta entrega.</p>
+              )}
             </div>
           </div>
         </div>

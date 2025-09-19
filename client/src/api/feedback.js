@@ -1,6 +1,5 @@
 import api from './axios';
 
-// API feedback extendida con soporte de grupos para actividades
 export const listTasks = (params={}) => api.get('/feedback/tasks', { params });
 export const createTask = (data) => {
 	if (data instanceof FormData) {
@@ -19,3 +18,6 @@ export const listSubmissionsByStudent = (id_estudiante, params={}) => api.get(`/
 export const listSubmissionsByTask = (id_task, params={}) => api.get(`/feedback/submissions/task/${id_task}`, { params });
 export const updateSubmissionGrade = (id, puntos) => api.put(`/feedback/submissions/${id}/grade`, { puntos });
 export const cancelSubmissionApi = (id) => api.delete(`/feedback/submissions/${id}`);
+// Submission notes
+export const getSubmissionNote = (id_submission) => api.get(`/feedback/submissions/${id_submission}/note`);
+export const upsertSubmissionNote = (id_submission, nota) => api.put(`/feedback/submissions/${id_submission}/note`, { nota });

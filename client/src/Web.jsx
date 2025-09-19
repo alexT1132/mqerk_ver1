@@ -19,7 +19,6 @@ import Siete7 from "./assets/7.png";
 import Ocho8 from "./assets/8.png";
 import { FaTrophy } from "react-icons/fa";
 import { ImUsers } from "react-icons/im";
-
 import { FaUsers } from "react-icons/fa6";
 import { LiaChalkboardTeacherSolid } from "react-icons/lia";
 import { CgSandClock } from "react-icons/cg";

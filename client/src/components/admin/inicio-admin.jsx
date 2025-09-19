@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { formatCurrencyMXN } from '../../utils/formatters.js';
 import { useAdminNotificationContext } from '../../context/AdminNotificationContext.jsx';
 import LoadingOverlay from '../shared/LoadingOverlay.jsx';
@@ -104,6 +105,7 @@ function DashboardMetrics() {
         refreshDashboard,
         lastUpdated 
     } = useAdminContext();
+    const navigate = useNavigate();
 
     // Obtener datos de notificaciones del contexto
     // AdminNotificationContext.jsx proporciona: unreadCount, toggleNotifications, notifications, etc.
@@ -198,10 +200,10 @@ function DashboardMetrics() {
         // Ejemplo de navegación condicional (nota: ya no es admin1 por órdenes superiores)
         switch(metricType) {
             case 'ingresos':
-                // navigate('/admin/reportes-financieros');
+                navigate('/administrativo/reportes-pagos');
                 break;
             case 'pagos-pendientes':
-                // navigate('/admin/validacion-pagos');
+                navigate('/administrativo/comprobantes-recibo');
                 break;
             case 'nuevos-alumnos':
                 // navigate('/admin/lista-alumnos');
@@ -244,12 +246,16 @@ function DashboardMetrics() {
     const getMetricsData = () => {
         if (!dashboardData) return [];
 
+        const periodo = dashboardData.ingresosPeriodo;
+        const descIngresos = periodo
+            ? `${periodo.isFallback ? 'Ingresos del último mes con pagos: ' : 'Ingresos del mes actual: '} ${periodo.etiqueta}`
+            : 'Ingresos acumulados del mes actual';
         return [
             {
                 id: 'ingresos',
                 title: "INGRESOS TOTALES",
                 value: isLoading ? '...' : formatCurrencyMXN(dashboardData.ingresos || 0), // ← AdminContext.jsx
-                description: "Ingresos acumulados del mes actual",
+                description: descIngresos,
                 icon: icons.ingresos,
                 isClickable: true,
                 onClick: () => handleCardClick('ingresos')
@@ -337,7 +343,7 @@ function DashboardMetrics() {
     const metricsData = getMetricsData();
 
     return (
-        <div className="relative w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-gradient-to-br from-gray-50 via-white to-indigo-50">
+        <div className="relative w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
             {isLoading && (
                 <LoadingOverlay message="Cargando métricas del dashboard..." />
             )}

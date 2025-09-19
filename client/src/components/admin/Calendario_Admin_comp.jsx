@@ -126,9 +126,20 @@ export function Calendario_Admin_comp() {
       setSelectedReminder(null);
     } catch (error) {
       console.error('Error eliminando recordatorio:', error);
-      setReminders(prev => prev.filter(r => r.id !== id));
-      setShowEditModal(false);
-      setSelectedReminder(null);
+      // Si el backend bloquea el borrado por estar vinculado a Ingresos, mostrar mensaje claro
+      const status = error?.response?.status;
+      if (status === 409) {
+        const backendMsg = error?.response?.data?.message;
+        setApiError(backendMsg || 'Este recordatorio está vinculado a un ingreso y solo se puede borrar desde Ingresos (Finanzas).');
+        // Mantener el recordatorio y cerrar el modal para que se vea el aviso
+        setShowEditModal(false);
+        setSelectedReminder(null);
+      } else {
+        // En otros errores, aplicar fallback optimista como antes
+        setReminders(prev => prev.filter(r => r.id !== id));
+        setShowEditModal(false);
+        setSelectedReminder(null);
+      }
     } finally {
       setIsLoading(false);
     }

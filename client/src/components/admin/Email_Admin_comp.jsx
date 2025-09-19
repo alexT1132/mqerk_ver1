@@ -8,7 +8,7 @@
  * - PUT /api/admin/emails/{id}/read - Marcar email como leído
  * - DELETE /api/admin/emails/{id} - Eliminar email
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAdminContext } from '../../context/AdminContext.jsx';
 import { getAdminEmails, sendAdminEmail, markEmailRead } from '../../api/emails';
 import { getGmailAuthUrl, listGmailInbox, sendGmail, getGmailStatus, getGmailEnvCheck } from '../../api/gmail';
@@ -37,6 +37,7 @@ function Email_Admin_comp() {
   const [gmailLinked, setGmailLinked] = useState(false);
   const [gmailEmail, setGmailEmail] = useState(null);
   const [isLinking, setIsLinking] = useState(false);
+  const linkPollRef = useRef(null);
 
   // Toast muy ligero en-local
   const [toast, setToast] = useState(null); // { msg, type: 'info'|'success'|'error' }
@@ -72,7 +73,27 @@ function Email_Admin_comp() {
       const url = await getGmailAuthUrl();
       if (url) {
         notify('Abriendo ventana de Google para vincular tu cuenta…', 'info');
+        // Abrir y comenzar un polling corto para reflejar estado
         window.open(url, '_blank');
+        if (linkPollRef.current) window.clearInterval(linkPollRef.current);
+        let attempts = 0;
+        linkPollRef.current = window.setInterval(async () => {
+          attempts += 1;
+          try {
+            const st = await getGmailStatus();
+            if (st?.linked) {
+              setGmailLinked(true);
+              setGmailEmail(st?.email || null);
+              notify('Gmail vinculado correctamente.', 'success');
+              window.clearInterval(linkPollRef.current);
+              linkPollRef.current = null;
+            }
+          } catch {}
+          if (attempts > 40) { // ~2 minutos si 3s
+            window.clearInterval(linkPollRef.current);
+            linkPollRef.current = null;
+          }
+        }, 3000);
       }
     } catch (e) { console.error(e); notify('No se pudo iniciar la vinculación', 'error'); }
     finally { setIsLinking(false); }
@@ -305,7 +326,14 @@ function Email_Admin_comp() {
                           const list = await listGmailInbox();
                           setEmails(list.map(e => ({ ...e })));
                           notify('Correos cargados desde Gmail', 'success');
-                        } catch (e) { console.error(e); notify('No se pudo cargar Gmail', 'error'); } finally { setIsGmailFetching(false); }
+                        } catch (e) {
+                          const status = e?.response?.status;
+                          const msg = e?.response?.data?.message || e?.message || 'No se pudo cargar Gmail';
+                          console.error('Gmail inbox error', status, msg);
+                          if (status === 401 || status === 403) notify('Sesión o vinculación de Gmail no autorizada o expirada. Vuelve a vincular.', 'error');
+                          else if (status === 400) notify(msg, 'error');
+                          else notify('No se pudo cargar Gmail', 'error');
+                        } finally { setIsGmailFetching(false); }
                       }}
                       disabled={!gmailLinked || isGmailFetching}
                       className={`inline-flex items-center gap-2 text-sm ${!gmailLinked || isGmailFetching ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-700'}`}

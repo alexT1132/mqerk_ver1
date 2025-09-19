@@ -1,6 +1,7 @@
 import * as Tasks from '../models/feedback_tasks.model.js';
 import * as Subs from '../models/feedback_submissions.model.js';
 import * as Estudiantes from '../models/estudiantes.model.js';
+import * as Notes from '../models/feedback_submission_notes.model.js';
 import { upload } from '../middlewares/multer.js';
 
 // Wrapper para usar en rutas para subir un PDF (reutiliza storage general)
@@ -161,4 +162,28 @@ export const cancelSubmission = async (req, res) => {
     await Subs.deleteSubmissionById(id);
     res.json({ message: 'Eliminada' });
   } catch(e){ console.error('cancelSubmission error', e); res.status(500).json({ message:'Error interno'}); }
+};
+
+// Notas de asesor por submission
+export const getSubmissionNote = async (req, res) => {
+  try {
+    const { id } = req.params; // id = id_submission
+    const sub = await Subs.getSubmissionById(id);
+    if (!sub) return res.status(404).json({ message: 'Submission no encontrada' });
+    const note = await Notes.getNoteBySubmissionId(id);
+    res.json({ data: note });
+  } catch (e) { console.error('getSubmissionNote error', e); res.status(500).json({ message: 'Error interno' }); }
+};
+
+export const upsertSubmissionNote = async (req, res) => {
+  try {
+    const { id } = req.params; // id = id_submission
+    const { nota } = req.body;
+    if (nota === undefined) return res.status(400).json({ message: 'nota requerida' });
+    const sub = await Subs.getSubmissionById(id);
+    if (!sub) return res.status(404).json({ message: 'Submission no encontrada' });
+    // FUTURO: obtener id_asesor desde auth; por ahora null
+    const saved = await Notes.upsertNote({ id_submission: Number(id), id_asesor: null, nota: String(nota).slice(0, 5000) });
+    res.json({ data: saved });
+  } catch (e) { console.error('upsertSubmissionNote error', e); res.status(500).json({ message: 'Error interno' }); }
 };

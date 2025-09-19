@@ -52,7 +52,7 @@ const SUBJECTS = [
     desc: "Comprensión, gramática y vocabulario.",
     gradient: "from-violet-500 to-fuchsia-500",
     Icon: IconBook,
-    to: '/asesor/nuevo_simulador/español'
+    to: '/asesor/nuevo_simulador/modulo'
   },
   {
     key: "matematicas",
@@ -60,7 +60,7 @@ const SUBJECTS = [
     desc: "Aritmética, álgebra y razonamiento.",
     gradient: "from-sky-500 to-indigo-500",
     Icon: IconCalculator,
-    to: '/asesor/nuevo_simulador/matematicas'
+    to: '/asesor/nuevo_simulador/modulo'
   },
   {
     key: "habilidades",
@@ -68,7 +68,7 @@ const SUBJECTS = [
     desc: "Pensamiento crítico, lógica y gestión.",
     gradient: "from-emerald-500 to-teal-500",
     Icon: IconSparkles,
-    to: '/asesor/nuevo_simulador/habilidades'
+    to: '/asesor/nuevo_simulador/modulo'
   },
   {
     key: "redaccion",
@@ -76,7 +76,7 @@ const SUBJECTS = [
     desc: "Estructura, estilo y claridad.",
     gradient: "from-amber-500 to-orange-500",
     Icon: IconPen,
-    to: '/asesor/nuevo_simulador/redaccion'
+    to: '/asesor/nuevo_simulador/modulo'
   },
   {
     key: "lenguas",
@@ -84,7 +84,7 @@ const SUBJECTS = [
     desc: "Inglés u otros idiomas.",
     gradient: "from-rose-500 to-pink-500",
     Icon: IconGlobe,
-    to: '/asesor/nuevo_simulador/lenguas'
+    to: '/asesor/nuevo_simulador/modulo'
   },
 ];
 

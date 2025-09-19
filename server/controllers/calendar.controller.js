@@ -1,5 +1,8 @@
 import * as Calendar from "../models/calendar_events.model.js";
 import * as Usuarios from "../models/usuarios.model.js";
+import * as Ingresos from "../models/ingresos.model.js";
+import * as GastosFijos from "../models/gastos_fijos.model.js";
+import * as GastosVariables from "../models/gastos_variables.model.js";
 
 export const listEvents = async (req, res) => {
   try {
@@ -123,6 +126,21 @@ export const deleteEvent = async (req, res) => {
     if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
     const { id } = req.params;
+    // Si el evento está vinculado a un ingreso/gasto, bloquear la eliminación directa
+    try {
+      const ingreso = await Ingresos.getIngresoByCalendarEventId(Number(id));
+      if (ingreso) {
+        return res.status(409).json({ message: 'Este evento está vinculado a un ingreso. Bórralo desde Ingresos.' });
+      }
+      const gastoF = await GastosFijos.getByCalendarEventId(Number(id));
+      if (gastoF) {
+        return res.status(409).json({ message: 'Este evento está vinculado a un gasto fijo. Bórralo desde Gastos fijos.' });
+      }
+      const gastoV = await GastosVariables.getByCalendarEventId(Number(id));
+      if (gastoV) {
+        return res.status(409).json({ message: 'Este evento está vinculado a un gasto variable. Bórralo desde Gastos variables.' });
+      }
+    } catch {}
     const ok = await Calendar.deleteEvent(Number(id), userId);
     if (!ok) return res.status(404).json({ message: 'No encontrado' });
     return res.sendStatus(204);

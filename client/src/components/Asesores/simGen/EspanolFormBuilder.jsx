@@ -2,16 +2,34 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import 'katex/dist/katex.min.css';
 import { InlineMath } from "react-katex";
 
+const genId = () => {
+  // Navegador moderno y https/localhost
+  if (typeof globalThis !== 'undefined' && globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+  // Fallback RFC4122 v4 con getRandomValues
+  if (typeof globalThis !== 'undefined' && globalThis.crypto?.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    globalThis.crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // versión 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variante
+    const h = [...bytes].map(b => b.toString(16).padStart(2, '0'));
+    return `${h.slice(0,4).join('')}-${h.slice(4,6).join('')}-${h.slice(6,8).join('')}-${h.slice(8,10).join('')}-${h.slice(10).join('')}`;
+  }
+  // Último recurso
+  return `id-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+};
+
 /* ----------------------- Utilidad: nueva pregunta ------------------------ */
 const newQuestion = (type = "multiple") => ({
-  id: crypto.randomUUID(),
+  id: genId(),
   type, // 'multiple' | 'tf' | 'short'
   text: "",
   points: 1,
   image: null, // { file, preview }
   options:
     type === "multiple"
-      ? [{ id: crypto.randomUUID(), text: "", correct: false, image: null }]
+      ? [{ id: genId(), text: "", correct: false, image: null }]
       : [],
   answer: type === "tf" ? "true" : "", // para tf/short
 });
@@ -273,26 +291,67 @@ function MathPalette({ open, onClose, onPick }) {
 
 /* -------------------------- Componente de Opción ------------------------- */
 function OptionRow({ option, onChange, onRemove }) {
+  const inputRef = useRef(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  const handlePick = (latexWithDelimiters) => {
+    insertAtCursor(inputRef.current, latexWithDelimiters, (next) =>
+      onChange({ ...option, text: next })
+    );
+    setPaletteOpen(false);
+  };
+
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-slate-200 p-3">
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
+        {/* marcar correcta */}
         <input
           type="checkbox"
           checked={option.correct}
           onChange={(e) => onChange({ ...option, correct: e.target.checked })}
-          className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+          className="mt-2 h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
           title="Marcar como correcta"
         />
-        <input
-          type="text"
-          value={option.text}
-          onChange={(e) => onChange({ ...option, text: e.target.value })}
-          placeholder="Texto de opción (puede contener $\\frac{a}{b}$)"
-          className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-        />
+
+        <div className="flex-1">
+          {/* >>> Vista previa del texto de la opción (LaTeX) */}
+          <div className="mb-1 min-h-[18px] pl-0 text-sm text-slate-700">
+            {option.text ? <MathText text={option.text} /> : null}
+          </div>
+
+          {/* input con botón calculadora */}
+          <div className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              value={option.text}
+              onChange={(e) => onChange({ ...option, text: e.target.value })}
+              placeholder="Texto de opción (puede contener $\\frac{a}{b}$)"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 pr-12 text-sm
+                         focus:outline-none focus:ring-2 focus:ring-violet-500"
+            />
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setPaletteOpen(true); }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 grid h-8 w-8 place-items-center
+                         rounded-lg border border-slate-200 bg-white text-slate-700
+                         hover:bg-slate-50 focus:outline-none"
+              title="Insertar fórmula"
+              aria-label="Insertar fórmula"
+            >
+              {/* ícono calculadora */}
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <rect x="4" y="3" width="16" height="18" rx="2" />
+                <path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* eliminar opción */}
         <button
           onClick={onRemove}
-          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+          className="self-start rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
         >
           Eliminar
         </button>
@@ -303,6 +362,13 @@ function OptionRow({ option, onChange, onRemove }) {
         value={option.image}
         onChange={(img) => onChange({ ...option, image: img })}
         label="Imagen de la opción (opcional)"
+      />
+
+      {/* Paleta LaTeX */}
+      <MathPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onPick={handlePick}
       />
     </div>
   );
@@ -319,7 +385,7 @@ function QuestionCard({ q, onChange, onRemove }) {
       base.options =
         q.options?.length
           ? q.options
-          : [{ id: crypto.randomUUID(), text: "", correct: false, image: null }];
+          : [{ id: genId(), text: "", correct: false, image: null }];
       base.answer = "";
     } else if (type === "tf") {
       base.options = [];
@@ -339,7 +405,7 @@ function QuestionCard({ q, onChange, onRemove }) {
       ...q,
       options: [
         ...q.options,
-        { id: crypto.randomUUID(), text: "", correct: false, image: null },
+        { id: genId(), text: "", correct: false, image: null },
       ],
     });
 
@@ -391,6 +457,11 @@ function QuestionCard({ q, onChange, onRemove }) {
         </div>
       </div>
 
+      {/* Vista previa en vivo del enunciado */}
+        <div className="mt-3 text-sm text-slate-700">
+          <MathText text={q.text} />
+        </div>
+
       {/* Enunciado + botón paleta */}
       <div className="mt-3">
         <div className="relative">
@@ -421,10 +492,6 @@ function QuestionCard({ q, onChange, onRemove }) {
               />
             </svg>
           </button>
-        </div>
-        {/* Vista previa en vivo del enunciado */}
-        <div className="mt-1 text-sm text-slate-700">
-          <MathText text={q.text} />
         </div>
       </div>
 
@@ -704,6 +771,10 @@ export default function EspanolFormBuilder() {
                   {q.points} pt{q.points > 1 ? "s" : ""}
                 </div>
 
+                <div className="font-medium text-slate-900">
+                  {q.text ? <MathText text={q.text} /> : <em className="text-slate-400">Sin consigna</em>}
+                </div>
+
                 {/* Imagen de la pregunta */}
                 {q.image?.preview && (
                   <img
@@ -712,10 +783,6 @@ export default function EspanolFormBuilder() {
                     className="mb-3 max-h-56 w-full rounded-lg border border-slate-200 object-contain"
                   />
                 )}
-
-                <div className="font-medium text-slate-900">
-                  {q.text ? <MathText text={q.text} /> : <em className="text-slate-400">Sin consigna</em>}
-                </div>
 
                 {q.type === "multiple" && (
                   <ul className="mt-3 space-y-2">

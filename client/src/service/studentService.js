@@ -10,12 +10,20 @@ function normalizeStudent(est) {
     // básicos y compat
     id: est.id,
     folio: est.folio,
+  // conservar plan para vistas que dependen del tipo de plan (Start/Mensual/Premium)
+  plan: est.plan || est.plan_type || '',
+  // conservar created_at para utilidades que calculan la activación del plan
+  created_at: est.created_at || null,
     nombres: est.nombre || '',
     apellidos: est.apellidos || '',
     fechaRegistro: est.created_at ? new Date(est.created_at).toISOString().split('T')[0] : '',
     // contacto
     correoElectronico: est.email || '',
-    municipioComunidad: est.comunidad1 || '',
+  // Preferir campo abierto (comunidad2) y luego la selección fija
+  municipioComunidad: est.comunidad2 || est.comunidad1 || est.municipio || est.localidad || '',
+  // Exponer campos crudos para vistas avanzadas
+  comunidad1: est.comunidad1 || '',
+  comunidad2: est.comunidad2 || '',
     telefonoAlumno: est.telefono || '',
     nombreTutor: est.nombre_tutor || '',
     telefonoTutor: est.tel_tutor || '',
@@ -26,12 +34,19 @@ function normalizeStudent(est) {
     gradoSemestre: est.semestre || '',
   // Aspiraciones académicas: usar orientacion como licenciatura, y universidades1 como lista principal
   universidadesPostula: est.universidades1 || est.universidades2 || '',
+  // Exponer listas crudas para poder combinarlas en el admin
+  universidades1: est.universidades1 || '',
+  universidades2: est.universidades2 || '',
   licenciaturaPostula: est.orientacion || est.universidades1 || '',
     // curso
   curso: est.curso || '',
-  turno: est.turno || est.grupo || '',
+  // Mantener turno y grupo como campos independientes
+  turno: est.turno || '',
+  // Exponer tanto 'group' como 'grupo' para compatibilidad en el Admin
+  group: est.grupo || est.group || '',
+  grupo: est.grupo || est.group || '',
   asesor: est.asesor || '',
-    grupo: est.grupo || '',
+    licenciaturaPostula: est.postulacion || est.carreraInteres || '',
   modalidad: est.modalidad || '',
   postulaciones: est.postulacion || '',
     // salud
@@ -44,8 +59,8 @@ function normalizeStudent(est) {
     // expectativas
     cambioQuiereLograr: est.comentario1 || '',
     comentarioEspera: est.comentario2 || '',
-    // estatus (no existe explícito; asumimos Activo si verificacion=2)
-    estatus: (est.verificacion === 2 ? 'Activo' : 'Pendiente'),
+  // estatus: preferir columna explícita del backend (Activo|Suspendido), fallback por verificación
+  estatus: est.estatus || (est.verificacion === 2 ? 'Activo' : 'Pendiente'),
     // foto
     foto: est.foto || null,
     fotoAbs,
@@ -181,8 +196,15 @@ export const studentService = {
   },
 
   async updateStatus(_folio, _newStatus) {
-    // No endpoint específico; dejamos como éxito ficticio por ahora
-    return { success: true };
+    try {
+      const res = await api.get(`/admin/estudiantes/folio/${encodeURIComponent(_folio)}`);
+      const est = res?.data?.data;
+      if (!est?.id) throw new Error('Estudiante no encontrado');
+      const { data } = await api.put(`/estudiantes/${est.id}`, { estatus: _newStatus });
+      return { success: true, data: normalizeStudent(data?.data || est) };
+    } catch (e) {
+      return { success: false, message: e?.response?.data?.message || e?.message || 'No se pudo cambiar el estatus' };
+    }
   },
 
   async deleteStudent(folio) {

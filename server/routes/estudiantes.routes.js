@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { crear, obtener, obtenerUno, actualizar, eliminar, getUltimoFolio, obtenerGruposConCantidad, getConfiguracion, upsertConfiguracion, changePassword, actualizarFoto, softDeleteCuenta, getApprovedStudents, getByFolioAdmin, generarContrato, subirContrato  } from "../controllers/estudiantes.controller.js";
+import { crear, obtener, obtenerUno, actualizar, eliminar, getUltimoFolio, obtenerGruposConCantidad, getConfiguracion, upsertConfiguracion, changePassword, actualizarFoto, softDeleteCuenta, getApprovedStudents, getByFolioAdmin, generarContrato, subirContrato, getCuentaAlumno, updateCuentaAlumno, resetPasswordAlumno  } from "../controllers/estudiantes.controller.js";
 import { uploadContrato } from "../middlewares/contratosMulter.js";
 import { authREquired } from "../middlewares/validateToken.js";
 import { upload } from "../middlewares/multer.js";
@@ -42,5 +42,10 @@ router.put("/estudiantes/:id/foto", authREquired, upload.single('foto'), actuali
 
 // Soft delete de cuenta del alumno
 router.post("/estudiantes/:id/soft-delete", authREquired, softDeleteCuenta);
+
+// Admin: gestión de cuenta del alumno (usuario/contraseña)
+router.get('/admin/estudiantes/:id/cuenta', authREquired, getCuentaAlumno);
+router.put('/admin/estudiantes/:id/cuenta', authREquired, updateCuentaAlumno);
+router.put('/admin/estudiantes/:id/password', authREquired, resetPasswordAlumno);
 
 export default router;

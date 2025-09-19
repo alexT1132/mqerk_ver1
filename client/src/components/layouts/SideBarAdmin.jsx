@@ -1,4 +1,5 @@
 import React from "react";
+import { BsGraphUp } from "react-icons/bs";
 import { Link, useLocation, useNavigate } from "react-router-dom"; // Importamos useLocation y useNavigate
 import { logoutRequest } from "../../api/usuarios.js";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -72,16 +73,11 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick }) 
         `}
       >
         <div className="flex-shrink-0">
-          {/* Clonamos el elemento SVG para poder cambiar su color dinámicamente */}
+          {/* Clonamos el icono para aplicar color dinámico; compatible con SVG personalizados y react-icons */}
           {React.cloneElement(Icono, {
-            // Si es el ícono de "Cerrar Sesión", siempre usa svgColorLogout (rojo)
-            // De lo contrario, el stroke será blanco si está activo, o svgColor si no.
+            color: to === "/login" ? svgColorLogout : (isActive ? "white" : svgColor),
             stroke: to === "/login" ? svgColorLogout : (isActive ? "white" : svgColor),
-            // Para el ícono de ALUMNOS (/administrativo/lista-alumnos):
-            // - Si está activo, se rellena de blanco.
-            // - Si NO está activo, no tiene relleno ('none').
-            // Para otros íconos, el fill es 'none' por defecto (a menos que el ícono lo defina).
-            fill: (to === "/administrativo/lista-alumnos" && isActive) ? "white" : "none"
+            ...(to === "/administrativo/lista-alumnos" && isActive ? { fill: "white" } : {})
           })}
         </div>
         {/*
@@ -198,6 +194,9 @@ const LogoLogOut = (
   </svg>
 );
 
+// Icono de Finanzas usando react-icons (gráfica ascendente)
+const LogoFinanzas = (<BsGraphUp size={28} />);
+
 /**
  * Componente de la barra lateral para escritorio (usando Flexbox ajustado).
  * Exportado como SideBarDesktop.
@@ -212,7 +211,7 @@ export function SideBarDesktop() {
         <ul className="p-4 h-full flex flex-col">
           {/* Grupo superior de elementos de navegación principales */}
           <div className="space-y-2">
-            {/* Los componentes ElementoSideBar ahora manejan la lógica de toggle y el resaltado */}
+       
             <ElementoSideBar to="/administrativo/bienvenida" Icono={LogoInicio} NombreElemento="Bienvenida" />
             <ElementoSideBar to="/administrativo/dashboard-metricas" Icono={LogoDashboard} NombreElemento="Dashboard" />
             <ElementoSideBar to="/administrativo/comprobantes-recibo" Icono={LogoComprobantes} NombreElemento="Comprobantes Recibidos" />
@@ -222,6 +221,8 @@ export function SideBarDesktop() {
             <ElementoSideBar to="/administrativo/calendario" Icono={LogoCalendario} NombreElemento="Calendario" />
             <ElementoSideBar to="/administrativo/email" Icono={LogoEmail} NombreElemento="Email" />
             <ElementoSideBar to="/administrativo/asesores" Icono={LogoAlumnos} NombreElemento="Asesores" />
+            {/* Nueva opción: Finanzas */}
+            <ElementoSideBar to="/administrativo/finanzas" Icono={LogoFinanzas} NombreElemento="Finanzas" />
           </div>
 
           {/* Espacio flexible que empuja los elementos inferiores */}
@@ -315,6 +316,13 @@ export function SideBarsm({ isMenuOpen, closeMenu }) {
                     to="/administrativo/asesores"
                     Icono={LogoAlumnos}
                     NombreElemento="Asesores"
+                    onClick={closeMenu}
+                  />
+                  {/* Nueva opción: Finanzas */}
+                  <ElementoSideBar
+                    to="/administrativo/finanzas"
+                    Icono={LogoFinanzas}
+                    NombreElemento="Finanzas"
                     onClick={closeMenu}
                   />
                 </div>

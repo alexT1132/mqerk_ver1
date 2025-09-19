@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createTask, updateTask, listTasks, createOrReplaceSubmission, listSubmissionsByStudent, listSubmissionsByTask, feedbackUploadMiddleware, taskUploadMiddleware, updateSubmissionGrade, cancelSubmission } from '../controllers/feedback.controller.js';
+import { createTask, updateTask, listTasks, createOrReplaceSubmission, listSubmissionsByStudent, listSubmissionsByTask, feedbackUploadMiddleware, taskUploadMiddleware, updateSubmissionGrade, cancelSubmission, getSubmissionNote, upsertSubmissionNote } from '../controllers/feedback.controller.js';
 
 const router = Router();
 
@@ -14,5 +14,8 @@ router.get('/feedback/submissions/student/:id_estudiante', listSubmissionsByStud
 router.get('/feedback/submissions/task/:id_task', listSubmissionsByTask);
 router.put('/feedback/submissions/:id/grade', updateSubmissionGrade);
 router.delete('/feedback/submissions/:id', cancelSubmission);
+// Notes
+router.get('/feedback/submissions/:id/note', getSubmissionNote);
+router.put('/feedback/submissions/:id/note', upsertSubmissionNote);
 
 export default router;

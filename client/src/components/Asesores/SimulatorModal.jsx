@@ -45,7 +45,7 @@ export default function SimulatorModal({ open, onClose, onCreate }) {
     step === 1 ? form.instrucciones.trim().length >= 10 : true;
 
   const canCreate =
-    form.nombre.trim().length >= 3 && form.horas > 0 && form.minutos > 0;
+    form.nombre.trim().length >= 3 && form.horas > 0 && form.minutos >= 0;
 
   const handleCreate = async () => {
     if (!canCreate) return;

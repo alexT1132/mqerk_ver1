@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import ScrollToTop from './components/ScrollToTop'; // Ajusta la ruta según tu estructura
+// Componente para forzar el scroll al inicio en cada navegación
+import ScrollToTop from './components/ScrollToTop';
 import Index from './Index.jsx';
 import Login from './pages/Login';
 import Web from "./Web.jsx";
@@ -12,8 +13,14 @@ import DashboardAsesor from "./pages/Asesor/Dashboard.jsx";
 import AsesorCursos from "./pages/Asesor/Cursos.jsx";
 import AsesorConfig from "./pages/Asesor/Configuraciones.jsx";
 import FeedbackAsesor from "./pages/Asesor/Feedback.jsx";
+import FeedbackDetail from "./pages/Asesor/FeedbackDetail.jsx";
 import NuevoSimulador from "./pages/Asesor/SeccionesSimGeneral.jsx";
 import FormBuilderEspañol from "./pages/Asesor/FormBuilderEspañol.jsx";
+import NuevoQuiztAsesor from "./pages/Asesor/NuevoQuizt.jsx";
+import AsesorQuiz from "./pages/Asesor/Quizt.jsx";
+import AsesorTablaQuiz from "./pages/Asesor/TablaQuizt.jsx";
+import AsesorGrupos from "./pages/Asesor/Grupos.jsx";
+import AsesorAlumnos from "./pages/Asesor/Alumnos.jsx";
 // Asesor additional section components
 import { PreRegAsesor } from "./pages/Asesor/PreRegAsesor.jsx";
 import { Bienvenida } from "./pages/Asesor/Bienvenida.jsx";
@@ -24,7 +31,9 @@ import ModuloSeleccionado from "./pages/Asesor/ModuloSeleccionado.jsx";
 import PerfilAsesor from "./pages/Asesor/PerfilAsesor.jsx";
 import  Actividades  from "./pages/Asesor/Actividades.jsx";
 import ActividadeEspecificosAsesor from "./pages/Asesor/ActividadesEspecificos.jsx";
+import PagosAsesor from "./pages/Asesor/Pagos.jsx";
 import AgendaAsesor from "./pages/Asesor/AgendaAsesor.jsx";
+import TablaActAsesor from "./pages/Asesor/TablaAct.jsx";
 // Eliminados módulos de tests (Test, Resultado) para flujo simplificado
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { AsesorProvider } from "./context/AsesorContext.jsx";
@@ -74,6 +83,7 @@ import AdminGenCursos from "./pages/AdminGeneral/cursos/cursos.jsx";
 export default function App(){
     return(
 
+      // Árbol de proveedores de contexto y enrutador principal
       <AsesorProvider>
         <AuthProvider>
           <EstudiantesProvider>
@@ -81,9 +91,13 @@ export default function App(){
               <StudentProvider>
                 <BrowserRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
                   <ScrollToTop />
+                  {/* <ErrorBoundary fallback={<Error500 />}>  */}
                   <Routes>
 
-                    {/* Index */}
+                    {/*
+                      Páginas públicas (sitio web)
+                      - Portada, blog, acerca de, páginas de campañas/previas y contenidos online
+                    */}
                     <Route path='/' element={<Web />} />
                     <Route path='/index' element={<Index />} />
                     <Route path='/blog' element={<Blog />} />
@@ -93,13 +107,13 @@ export default function App(){
                     <Route path='/entrenamiento_examen_admision_universidad' element={<Eeau />} />
                     <Route path='/entrenamiento_examen_admision_preparatoria' element={<Eeap />} />
 
-                    {/* MQERK Eventos */}
+                    {/* Catálogo de eventos y modalidades */}
                     <Route path="/talleres" element={<Talleres />} />
                     <Route path="/bootcamps" element={<Bootcamps />} />
                     <Route path="/exporientas" element={<Exporientas />} />
                     <Route path="/online" element={<Online />} />
 
-                    {/* Bootcamps */}
+                    {/* Subrutas de Bootcamps */}
                     <Route path="/bootcamps/veranoTX" element={<VeranoTX />} />
                     <Route path="/bootcamps/ecat" element={<Ecat />} />
 
@@ -115,11 +129,11 @@ export default function App(){
                     <Route path="/talleres/educacion_disruptiva" element={<EducacionDisruptiva />} />
                     <Route path="/talleres/tecnologia_artificial" element={<TecnologiaArtificial />} />
 
-                    {/* MQERK Exporientas */}
+                    {/* Subrutas de Exporientas */}
                     <Route path="/mqerk/exporientas/feria_profesiografica" element={<Profesiografica />} />
                     <Route path="/mqerk/exporientas/exporienta_educativa" element={<ExporientaEducativa />} />
 
-                    {/* MQERK ONLINE */}
+                    {/* Subrutas de contenidos online */}
                     <Route path="/mqerk/online/guardianes_disruptivos" element={<GuardianesDisruptivos />} />
                     <Route path="/mqerk/online/eeau23" element={<Eeau23 />} />
                     <Route path="/mqerk/online/todas_y_todos" element={<TodasyTodos />} />
@@ -129,56 +143,67 @@ export default function App(){
                     <Route path="/mqerk/online/ciencia_en_alimentos_fermentados" element={<Ciencia_en_alimentos />} />
                     <Route path="/mqerk/online/ingles_2021" element={<Ingles2021 />} />
 
-                    {/* Login */}
+                    {/* Autenticación */}
                     <Route path='/login' element={<Login />} />
 
-                    {/* Configuración inicial (bootstrap) */}
+                    {/* Configuración inicial del administrador (asistente de arranque) */}
                     <Route path='/setup' element={<SetupAdmin />} />
 
-                    {/* Asesor Registro Simplificado (sin tests) */}
+                    {/* Registro simplificado de asesor */}
                     <Route path='/pre_registro' element={<PreRegAsesor />} />
                     <Route path='/comunicado' element={<Bienvenida />} />
 
-                    {/* Asesor Registro */}
+                    {/* Registro formal de asesor */}
                     <Route path='/registro_asesor' element={<FormularioAsesor />} />
                     <Route path='/asesor/registro_asesor' element={<Navigate to='/registro_asesor' replace />} />
-                    {/* Debug direct access to formulario (omit approval gating) */}
+
+                    {/* Acceso directo de depuración al formulario (omite validaciones previas) */}
                     <Route path='/debug/registro_asesor' element={<FormularioAsesor debugBypass={true} />} />
 
-                    {/* Registro alumno */}
+                    {/* Registro de alumno */}
                     <Route path='/registro_alumno' element={<RegistroEstudiante />} />
                     <Route path='/usuario_alumno' element={<RegisterAlumno />} />
 
+                    {/* Rutas protegidas (requieren autenticación) */}
                     <Route element={<ProtectedRoute />}>
 
-                      {/* Inicio administrador */}
+                      {/* Panel administrativo */}
                       <Route path='/admin/dashboard' element={<DashboardAdm />} />
                       <Route path='/admin/asesores' element={<ListaAsesores />} />
                       <Route path='/admin/colaboradores' element={<ListaColaboradores />} />
 
                       {/* Dashboard Asesores */}
                       <Route path='/asesor' element={<Asesor/>} />
-                      <Route path='/asesor_dashboard' element={<DashboardAsesor />} />
-                      <Route path='/asesor_simuladores' element={<AsesorSimuladores />} />
-                      <Route path='/asesor_simuladores/generales' element={<AsesorSimulacionesGen />} />
-                      <Route path='/asesor_simuladores/especificos' element={<SimulacionesEspecificas />} />
-                      <Route path='/asesor_simuladores/modulo' element={<ModuloSeleccionado />} />
-                      <Route path='/asesor_perfil' element={<PerfilAsesor />} />
-                      <Route path='/asesor_cursos' element={<AsesorCursos />} />
-                      <Route path='/asesor_configuraciones' element={<AsesorConfig />} />
-                      <Route path='/asesor_feedback' element={<FeedbackAsesor />} />
+                      <Route path='/asesor/dashboard' element={<DashboardAsesor />} />
+                      <Route path='/asesor/simuladores' element={<AsesorSimuladores />} />
+                      <Route path='/asesor/simuladores/generales' element={<AsesorSimulacionesGen />} />
+                      <Route path='/asesor/simuladores/especificos' element={<SimulacionesEspecificas />} />
+                      <Route path='/asesor/simuladores/modulo' element={<ModuloSeleccionado />} />
+                      <Route path='/asesor/perfil' element={<PerfilAsesor />} />
+                      <Route path='/asesor/cursos' element={<AsesorCursos />} />
+                      <Route path='/asesor/configuraciones' element={<AsesorConfig />} />
+                      <Route path='/asesor/feedback' element={<FeedbackAsesor />} />
+                      <Route path='/asesor/feedback/:studentId' element={<FeedbackDetail />} />
                       <Route path='/asesor/nuevo_simulador' element={<NuevoSimulador />} />
-                      <Route path='/asesor/nuevo_simulador/español' element={<FormBuilderEspañol />} />
+                      <Route path='/asesor/nuevo_simulador/modulo' element={<FormBuilderEspañol />} />
                       <Route path='/asesor/actividades' element={<Actividades />} />
+                      <Route path='/asesor/actividades/modulo' element={<TablaActAsesor />} />
                       <Route path='/asesor/actividades/modulos_especificos' element={<ActividadeEspecificosAsesor />} />
                       <Route path='/asesor/agenda' element={<AgendaAsesor />} />
+                      <Route path='/asesor/areas' element={<AsesorQuiz />} />
+                      <Route path='/asesor/quizt' element={<AsesorTablaQuiz />} />
+                      <Route path='/asesor/nuevo_quizt' element={<NuevoQuiztAsesor />} />
+                      <Route path='/asesor/mis-pagos' element={<PagosAsesor />} />
+                      <Route path='/asesor/grupos' element={<AsesorGrupos />} />
+                      <Route path='/asesor/alumnos' element={<AsesorAlumnos />} />
 
                       {/* Fallback redirect if accessed within protected group */}
                       <Route path='/asesor/registro_asesor' element={<Navigate to='/registro_asesor' replace />} />
 
-                      {/* Dashboard Alumno */}
+                      {/* Panel de Alumno (bundle de rutas internas) */}
                       <Route path="/alumno/*" element={<AlumnoDashboardBundle />} />
 
+                      {/* Panel Administrativo moderno (bundle) */}
                       <Route path="/administrativo/*" element={<AdminDashboardBundle />} />
 
                       {/* Administrador general */}
@@ -187,10 +212,11 @@ export default function App(){
                       <Route path="/administrador_cursos" element={<AdminGenCursos />} />
                     </Route>
 
-                    {/* 404 Not Found */}
-                    <Route path='*' element={<div style={{padding:'4rem', textAlign:'center'}}><h2>404 - Página no encontrada</h2><p>La ruta solicitada no existe.</p></div>} />
+                    {/* Página 404 por defecto */}
+                    {/* <Route path='*' element={<Error404 />} /> */}
 
                   </Routes>
+                  {/* </ErrorBoundary> */}
                 </BrowserRouter>
               </StudentProvider>
             </ComprobanteProvider>

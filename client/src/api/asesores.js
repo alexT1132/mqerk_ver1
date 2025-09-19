@@ -13,4 +13,5 @@ export const uploadPerfilDocs = (preregistroId, formData) => axios.post(`/asesor
 // Finalizar proceso
 export const finalizarProceso = (preregistroId) => axios.post(`/asesores/finalizar/${preregistroId}`);
 // Estudiantes del asesor autenticado (aprobados)
-export const getMisEstudiantes = () => axios.get('/asesores/mis-estudiantes');
+// Acepta opcionalmente { grupo } para filtrar por un grupo específico del asesor
+export const getMisEstudiantes = (params) => axios.get('/asesores/mis-estudiantes', { params });

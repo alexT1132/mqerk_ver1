@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import axios from '../api/axios.js';
 import { useAuth } from './AuthContext.jsx';
+import { resolvePlanType, getActivationDate, generatePaymentSchedule } from '../utils/payments.js';
 
 /**
  * CONTEXTO PARA NOTIFICACIONES DEL ESTUDIANTE
@@ -276,7 +277,7 @@ export const StudentNotificationProvider = ({ children }) => {
   };
 
   // Cargar notificaciones al inicializar
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, alumno } = useAuth();
   const pollRef = useRef(null);
   useEffect(() => {
     // Si NO está autenticado como estudiante: asegurar limpieza (importante para evitar 401 tras logout)
@@ -294,6 +295,92 @@ export const StudentNotificationProvider = ({ children }) => {
       if(pollRef.current){ clearInterval(pollRef.current); pollRef.current = null; }
     };
   }, [isAuthenticated, user]);
+
+  // Generador automático de notificación de pagos (vencimiento/tolerancia)
+  useEffect(() => {
+    try {
+      if (!(isAuthenticated && user?.role === 'estudiante' && alumno)) return;
+
+      const now = new Date();
+      const planType = resolvePlanType(alumno?.plan || alumno?.plan_type);
+      const activationDate = getActivationDate(alumno);
+      const schedule = generatePaymentSchedule({ startDate: activationDate, planType, now });
+
+      // Siguiente pago no pagado: upcoming (antes del due) o pending (entre due y fin de tolerancia)
+      const next = schedule.find(p => p.status === 'upcoming' || p.status === 'pending');
+      if (!next) return;
+
+      const dueDate = new Date(next.dueDate);
+      const startWindow = new Date(dueDate); startWindow.setDate(startWindow.getDate() - 3);
+      const endWindow = new Date(dueDate); endWindow.setDate(endWindow.getDate() + (next.toleranceDays ?? 0));
+
+      // Solo notificar dentro de la ventana
+      if (now < startWindow || now > endWindow) return;
+
+      // De-dup: por id estable y por "no mostrar hoy"
+      const alumnoKey = alumno?.folio || alumno?.id || 'anon';
+      const dueKey = dueDate.toISOString().slice(0, 10);
+      const notifId = `paywarn:${alumnoKey}:${next.index}:${dueKey}`;
+      const already = notifications.some(n => String(n.id) === String(notifId));
+      if (already) return;
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const skipKey = `paymentWarn:${alumnoKey}:${next.index}:${dueKey}`;
+      const dismissedOn = localStorage.getItem(skipKey);
+      if (dismissedOn === todayKey) return;
+
+      // Mensaje contextual
+      const msPerDay = 1000 * 60 * 60 * 24;
+      let title = 'Aviso de pago';
+      let message = '';
+      let priority = NOTIFICATION_PRIORITIES.HIGH;
+      if (now <= dueDate) {
+        const daysToDue = Math.ceil((dueDate - now) / msPerDay);
+        if (daysToDue > 1) message = `Tu pago #${next.index} vence en ${daysToDue} días.`;
+        else if (daysToDue === 1) { message = `Tu pago #${next.index} vence mañana.`; priority = NOTIFICATION_PRIORITIES.URGENT; }
+        else { message = `Tu pago #${next.index} vence hoy.`; priority = NOTIFICATION_PRIORITIES.URGENT; }
+        title = 'Próximo vencimiento de pago';
+      } else {
+        const daysIntoTol = Math.floor((now - dueDate) / msPerDay);
+        const tol = next.toleranceDays ?? 0;
+        const remaining = Math.max(0, tol - daysIntoTol);
+        if (remaining > 1) {
+          title = 'Pago vencido (tolerancia activa)';
+          message = `Pago #${next.index} vencido. Te quedan ${remaining} días de tolerancia para evitar el bloqueo.`;
+          priority = NOTIFICATION_PRIORITIES.HIGH;
+        } else if (remaining === 1) {
+          title = 'Último día de tolerancia';
+          message = `Hoy es tu último día de tolerancia para el pago #${next.index}. Evita el bloqueo regularizando tu pago.`;
+          priority = NOTIFICATION_PRIORITIES.URGENT;
+        } else {
+          title = 'Fin de tolerancia';
+          message = `El periodo de tolerancia para el pago #${next.index} termina hoy.`;
+          priority = NOTIFICATION_PRIORITIES.URGENT;
+        }
+      }
+
+      const notif = {
+        id: notifId,
+        type: NOTIFICATION_TYPES.PAYMENT,
+        priority,
+        title,
+        message,
+        timestamp: new Date(),
+        is_read: 0,
+        actionUrl: '/alumno/mis-pagos',
+        metadata: {
+          amount: next.amount,
+          dueDate: dueKey,
+          paymentIndex: next.index,
+          toleranceDays: next.toleranceDays
+        }
+      };
+
+      setNotifications(prev => [notif, ...prev]);
+    } catch (e) {
+      // silencioso
+    }
+    // Re-evaluar cuando cambien insumos clave o al recargar
+  }, [isAuthenticated, user, alumno, notifications]);
 
   // Función para cargar datos mock (solo para testing)
   const loadMockNotifications = () => {

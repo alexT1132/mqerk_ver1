@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 
 // Componentes de páginas
 import Profile_Alumno_comp from './Profile_Alumno_Comp.jsx';
-import { Calendar_Alumno_comp } from './Calendar_Alumno_comp.jsx';
+import { Calendar_Alumno_comp } from './Calendar_Alumno_Comp.jsx';
 import MisCursos_Alumno_comp from './MisCursos_Alumno_Comp.jsx';
 import MisPagos_Alumno_comp from './MisPagos_Alumno_Comp.jsx';
 import { Configuracion_Alumno_comp } from './Configuracion_Alumno_Comp.jsx';
@@ -91,6 +91,7 @@ function StudentAwareLayout() {
     <Header_Alumno_comp
       {...props}
       showLogoutButton={showLogoutButton}
+  disableNavOptions={!shouldShowSidebar}
       onLogout={handleLogout}
     />
   );
@@ -160,7 +161,7 @@ function StudentAwareLayout() {
           <Route path="/feedback" element={<AccessGuard><Feedback_Alumno_Comp /></AccessGuard>} />
           <Route path="/asistencia" element={<AccessGuard><Asistencia_Alumno_comp /></AccessGuard>} />
           <Route path="/calendario" element={<AccessGuard><Calendar_Alumno_comp /></AccessGuard>} />
-          <Route path="/mis-pagos" element={<MisPagos_Alumno_comp />} />
+          <Route path="mis-pagos" element={<MisPagos_Alumno_comp />} />
           <Route path="/configuracion" element={<Configuracion_Alumno_comp />} />
           <Route path="/logout" element={<CerrarSesion_Alumno_comp />} />
         </Routes>
