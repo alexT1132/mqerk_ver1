@@ -113,3 +113,54 @@ Notas:
 - Si estabas haciendo rebase en vez de merge y hubo conflictos:
   - Tras resolver: `git add archivo` y `git rebase --continue`
   - Para cancelar: `git rebase --abort`
+
+## Comandos útiles adicionales (no quitar)
+Aquí hay comandos cortos que suelen ayudar en flujo diario o en emergencias. Agrégalos al README sin eliminar nada anterior.
+
+- Stash (guardar cambios temporales)
+  - Guardar: `git stash push -m "mensaje"`  # guarda cambios no comiteados
+  - Listar: `git stash list`
+  - Recuperar y borrar del stash: `git stash pop`
+
+- Deshacer el último commit pero conservar los cambios en el working tree:
+  - `git reset --soft HEAD~1`
+
+- Recuperar un archivo desde un commit anterior:
+  - `git restore --source <commit> -- path/to/file`  # (Git >= 2.23)
+
+- Cherry-pick (aplicar un commit concreto en tu rama):
+  - `git cherry-pick <commit>`
+
+- Ver ramas remotas ordenadas por actividad:
+  - `git fetch --all && git branch -r --sort=-committerdate`
+
+- Ver rápidamente archivos que están en conflicto:
+  - `git diff --name-only --diff-filter=U`
+
+## Notas y aclaraciones importantes
+- `git push origin $(git branch --show-current)` funciona en PowerShell; en cmd.exe la subexpresión no funciona igual. Alternativa cmd.exe:
+  - `for /f "tokens=*" %b in ('git branch --show-current') do git push origin %b`
+
+- `git restore` y `git switch` requieren Git >= 2.23. Si tu equipo usa versiones anteriores, usa `git checkout` y `git reset` en su lugar.
+
+- Antes de usar `git push --force-with-lease` asegura:
+  - Hacer `git fetch origin` y revisar `git log origin/<rama>..HEAD` para comprobar qué remotos tienen distinto historial.
+  - Avisar al equipo si vas a reescribir historial compartido.
+
+## Pequeños snippets PowerShell (opcional)
+Coloca esto en tu perfil de PowerShell (`$PROFILE`) para alias rápidos:
+
+```powershell
+# alias para checkout rápido
+function gco { param($b) git checkout $b }
+# alias para push a la rama actual
+function gpush { git push origin $(git branch --show-current) }
+# stash con mensaje
+function gstash { param($m) git stash push -m $m }
+```
+
+Añade estas líneas solo si quieres compartir helpers con tu equipo; documenta el perfil en el README si lo haces.
+
+---
+
+Estas líneas se añaden al final del README sin eliminar nada de lo que ya tenías arriba.

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown, RefreshCcw, PlusCircle, Info, MessageSquareText, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { listTasks, listSubmissionsByStudent, createSubmission, createTask, updateTask, cancelSubmissionApi, getSubmissionNote } from '../../api/feedback.js';
-import { buildStaticUrl } from '../../utils/url.js';
+import { buildStaticUrl, getApiOrigin } from '../../utils/url.js';
 
 const Feedback_Alumno_Comp = () => {
   // Auth
@@ -525,7 +525,6 @@ const Feedback_Alumno_Comp = () => {
 
   // Función para abrir el PDF en una nueva pestaña
   const handleOpenPdfInNewTab = () => {
-    // TODO: Backend - Aquí tu compañero debe usar la URL real del PDF desde el backend
     if (viewingTaskPdf) {
       window.open(viewingTaskPdf, '_blank');
     } else {
@@ -1194,7 +1193,22 @@ const Feedback_Alumno_Comp = () => {
                   )}
                 </div>
                 <p className="text-[10px] sm:text-xs text-gray-500 text-center mb-2">
-                  Ruta: {viewingTaskPdf?.replace(window.location.origin,'')}
+                  Ruta: {(() => {
+                    try {
+                      const origin = getApiOrigin();
+                      if (!viewingTaskPdf) return '';
+                      // Prefer stripping the backend origin; fallback to pathname if it's an absolute URL elsewhere
+                      if (viewingTaskPdf.startsWith(origin)) return viewingTaskPdf.slice(origin.length) || '/';
+                      try {
+                        const u = new URL(viewingTaskPdf);
+                        return (u.pathname || '/') + (u.search || '');
+                      } catch {
+                        return viewingTaskPdf;
+                      }
+                    } catch {
+                      return viewingTaskPdf || '';
+                    }
+                  })()}
                 </p>
               </>
             ) : (

@@ -5,11 +5,10 @@ import Cookies from "js-cookie";
 
 export const AuthContext = createContext();
 
-// Safe fallback to avoid crashes if hook is used before provider mounts (e.g., HMR/StrictMode edge cases)
 const defaultAuthContext = {
     signup: async () => {},
     signin: async () => {},
-    logout: async () => {},
+    logout: async () => {}, // función async que siempre resuelve
     isVerde: false,
     errors: [],
     user: null,
@@ -20,10 +19,17 @@ const defaultAuthContext = {
     remember: () => false,
 };
 
+let __authWarnShown = false; // avoid spamming console in dev
+
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
-        try { console.warn('useAuth used outside AuthProvider. Using fallback to prevent crash.'); } catch {}
+        try {
+            if (import.meta?.env?.DEV && !__authWarnShown) {
+                console.warn('useAuth used outside AuthProvider. Using fallback to prevent crash.');
+                __authWarnShown = true;
+            }
+        } catch {}
         return defaultAuthContext;
     }
     return context;
@@ -85,7 +91,7 @@ export const AuthProvider = ({children}) => {
                 const logout = async () => {
                         try { await logoutRequest().catch(()=>{}); } catch {}
                         // El backend ya borra todas, pero limpiamos manual para reflejar inmediatamente
-                        ['token','rtoken','token_admin','rtoken_admin','token_asesor','rtoken_asesor','token_estudiante','rtoken_estudiante']
+                        ['token','rtoken','token_admin','rtoken_admin','token_asesor','rtoken_asesor','token_estudiante','rtoken_estudiante','access_token','refresh_token']
                             .forEach(c=> Cookies.remove(c));
                         setIsAuthenticated(false);
                         setUser(null);
@@ -175,10 +181,11 @@ export const AuthProvider = ({children}) => {
 
         const verifyFlow = async (label='initial') => {
             if (cancelled) return;
-            // Si estamos en /login y no hay remember, no spamear /verify (evita 401 visibles)
-            if (!remember && currentPath.startsWith('/login')) {
-                debug('skip verify (login route without remember)');
-                setLoading(false);
+            // Si estamos en rutas públicas, siempre saltar /verify para evitar 401 visibles
+            const publicNoAuthRoutes = ['/login', '/pre_registro'];
+            if (publicNoAuthRoutes.some(r => currentPath.startsWith(r))) {
+                debug('skip verify (public route)');
+                setLoading(false); initRef.completed = true;
                 return;
             }
             try {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 
 const ConfirmModal = ({ 
   isOpen, 
@@ -45,13 +46,12 @@ const ConfirmModal = ({
     ? `${btnBase} text-white bg-rose-600 border-transparent hover:bg-rose-700 focus:ring-rose-500 disabled:opacity-60 disabled:cursor-not-allowed`
     : `${btnBase} text-white bg-blue-600 border-transparent hover:bg-blue-700 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed`;
 
-  return (
-    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-[5000]">
+  const modalContent = (
+    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-[5000]" role="dialog" aria-modal="true">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">{message || 'Confirmar Acción'}</h3>
         </div>
-        
         <div className="px-6 py-4">
           {details && (
             <p className="text-gray-600 text-sm">{details}</p>
@@ -72,7 +72,6 @@ const ConfirmModal = ({
             </div>
           )}
         </div>
-        
         <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
           <button className={cancelCls} onClick={handleCancel}>
             {cancelText}
@@ -84,6 +83,10 @@ const ConfirmModal = ({
       </div>
     </div>
   );
+
+  // Renderizar en portal (document.body) para aislar la capa modal
+  const container = typeof document !== 'undefined' ? document.body : null;
+  return container ? ReactDOM.createPortal(modalContent, container) : modalContent;
 };
 
 export default ConfirmModal;

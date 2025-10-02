@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   LineChart,
   Line,
@@ -79,6 +79,190 @@ function SimulacionGraficaHistorial({
   const [mostrarAnalisisIA, setMostrarAnalisisIA] = useState(false);
   const [recursos, setRecursos] = useState({});
   const [analisisDisponible, setAnalisisDisponible] = useState(esGeminiConfigurado());
+  // Métricas de efectividad del análisis de IA
+  const [metricasIA, setMetricasIA] = useState(null);
+  const [cooldownIA, setCooldownIA] = useState(0); // segundos de cooldown tras 429
+  const [ultimoAvisoIA, setUltimoAvisoIA] = useState(null);
+  const [firmaAnalisis, setFirmaAnalisis] = useState(null); // firma de datos usada
+  const [mensajeNoCambio, setMensajeNoCambio] = useState(null);
+  const enProcesoRef = useRef(false);
+  const [sugerenciasPersonalizadas, setSugerenciasPersonalizadas] = useState(null);
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(true);
+  const [insightsAvanzados, setInsightsAvanzados] = useState(null);
+
+  // Reducir cooldown cada segundo
+  useEffect(() => {
+    if (cooldownIA <= 0) return;
+    const t = setTimeout(() => setCooldownIA(cooldownIA - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldownIA]);
+
+  // Función para calcular métricas de efectividad comparando el análisis IA con reglas heurísticas locales
+  const calcularMetricasIA = (analisis, materiasPromedios) => {
+    if (!analisis || !materiasPromedios || materiasPromedios.length === 0) return null;
+
+    // Definir baseline heurístico
+    const debilidadesBaseline = new Set(
+      materiasPromedios.filter(m => m.promedio < 70).map(m => m.materia)
+    );
+    const fortalezasBaseline = new Set(
+      materiasPromedios.filter(m => m.promedio >= 80).map(m => m.materia)
+    );
+
+    // Extraer del análisis IA (normalizar nombres)
+    const debilidadesIA = new Set(
+      (analisis.debilidades || [])
+        .map(d => (d.materia || d.nombre || '').trim())
+        .filter(Boolean)
+    );
+    const fortalezasIA = new Set(
+      (analisis.fortalezas || [])
+        .map(f => (f.materia || f.nombre || '').trim())
+        .filter(Boolean)
+    );
+
+    // Función helper para métricas
+    const calcPRF1 = (predSet, realSet) => {
+      if (predSet.size === 0 && realSet.size === 0) {
+        return { precision: 1, recall: 1, f1: 1, tp: 0 };
+      }
+      let tp = 0;
+      predSet.forEach(v => { if (realSet.has(v)) tp++; });
+      const precision = predSet.size === 0 ? 0 : tp / predSet.size;
+      const recall = realSet.size === 0 ? 0 : tp / realSet.size;
+      const f1 = (precision + recall) === 0 ? 0 : (2 * precision * recall) / (precision + recall);
+      return { precision, recall, f1, tp };
+    };
+
+    const mDebilidades = calcPRF1(debilidadesIA, debilidadesBaseline);
+    const mFortalezas = calcPRF1(fortalezasIA, fortalezasBaseline);
+
+    // Cobertura: materias mencionadas por la IA / total
+    const materiasReferenciadas = new Set([
+      ...Array.from(debilidadesIA),
+      ...Array.from(fortalezasIA),
+      ...((analisis.planEstudio && analisis.planEstudio.prioridad) ? analisis.planEstudio.prioridad.map(p => p.materia) : [])
+    ].filter(Boolean));
+
+    const cobertura = materiasPromedios.length === 0 ? 0 : materiasReferenciadas.size / materiasPromedios.length;
+
+    // Puntaje global (promedio ponderado: F1 debilidades 60%, F1 fortalezas 30%, cobertura 10%)
+    const puntajeGlobal = (mDebilidades.f1 * 0.6) + (mFortalezas.f1 * 0.3) + (cobertura * 0.1);
+
+    return {
+      debilidades: { ...mDebilidades, pred: debilidadesIA.size, gold: debilidadesBaseline.size },
+      fortalezas: { ...mFortalezas, pred: fortalezasIA.size, gold: fortalezasBaseline.size },
+      cobertura: { valor: cobertura, materiasReferenciadas: materiasReferenciadas.size, total: materiasPromedios.length },
+      puntajeGlobal
+    };
+  };
+
+  // Generar sugerencias personalizadas basadas en datos locales + salida IA
+  const generarSugerenciasPersonalizadas = (analisis, materiasProm) => {
+    if (!analisis) return null;
+    const debiles = materiasProm.filter(m => m.promedio < 70).sort((a,b)=>a.promedio-b.promedio);
+    const fuertes = materiasProm.filter(m => m.promedio >= 80).sort((a,b)=>b.promedio-a.promedio);
+
+    const causas = debiles.map(d => ({
+      materia: d.materia,
+      causaProbable: d.promedio < 55 ? 'Déficit de fundamentos básicos' : d.promedio < 63 ? 'Baja consolidación conceptual' : 'Necesita más práctica aplicada',
+      recomendacion: d.promedio < 55 ? 'Reforzar definiciones y ejemplos base antes de ejercicios largos.' : d.promedio < 63 ? 'Construir mapas conceptuales y resolver mini-quizzes.' : 'Aumentar volumen de ejercicios cronometrados y revisión de errores.'
+    }));
+
+    const plan7Dias = [];
+    const dias = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    dias.forEach((dia, idx) => {
+      const materiaObjetivo = debiles[idx % (debiles.length || 1)];
+      if (materiaObjetivo) {
+        plan7Dias.push({
+          dia,
+          materia: materiaObjetivo.materia,
+          foco: idx < 2 ? 'Fundamentos' : idx < 4 ? 'Práctica guiada' : idx < 6 ? 'Simulacro corto' : 'Repaso + autoevaluación',
+          duracion: materiaObjetivo.promedio < 60 ? '45-50 min' : '30-40 min'
+        });
+      } else {
+        plan7Dias.push({ dia, materia: 'General', foco: 'Lectura activa / descanso activo', duracion: '25-30 min'});
+      }
+    });
+
+    const apalancarFortalezas = fuertes.slice(0,2).map(f => ({
+      materia: f.materia,
+      estrategia: 'Usar tu dominio para explicar a otro estudiante 1 concepto diario y detectar huecos cognitivos ocultos.'
+    }));
+
+    const quickTips = [
+      'Ancla cada concepto nuevo a un ejemplo real (efecto de codificación dual).',
+      'Después de estudiar 25 min, escribe (sin mirar) 3 puntos clave: promueve recuperación activa.',
+      'Registra tus errores recurrentes en una libreta rápida y revísala antes de iniciar un nuevo bloque.'
+    ];
+
+    return {
+      causas,
+      plan7Dias,
+      apalancarFortalezas,
+      quickTips,
+      timestamp: new Date().toISOString()
+    };
+  };
+
+  // Métricas avanzadas cuantitativas para priorizar acciones
+  const calcularInsightsAvanzados = (materiasProm) => {
+    if (!materiasProm || materiasProm.length === 0) return null;
+
+    // Funciones auxiliares
+    const slope = (serie) => {
+      if (serie.length < 2) return 0;
+      const n = serie.length;
+      const xs = Array.from({length:n}, (_,i)=>i+1);
+      const xMean = xs.reduce((a,b)=>a+b,0)/n;
+      const yMean = serie.reduce((a,b)=>a+b,0)/n;
+      let num=0, den=0;
+      for (let i=0;i<n;i++){ num += (xs[i]-xMean)*(serie[i]-yMean); den += Math.pow(xs[i]-xMean,2);} 
+      return den===0?0:num/den; // pendiente simple
+    };
+    const stdev = (arr) => {
+      if (arr.length < 2) return 0;
+      const m = arr.reduce((a,b)=>a+b,0)/arr.length;
+      return Math.sqrt(arr.reduce((a,b)=>a+Math.pow(b-m,2),0)/arr.length);
+    };
+
+    const materiasDetalladas = materiasProm.map(m => {
+      const serie = m.puntajes || [];
+      const pend = slope(serie);
+      const vol = stdev(serie);
+      const severidad = m.promedio < 55 ? 'crítica' : m.promedio < 65 ? 'alta' : m.promedio < 70 ? 'media' : m.promedio < 80 ? 'moderada' : 'baja';
+      const momentum = pend > 1 ? 'acelerando' : pend > 0.3 ? 'mejorando' : pend < -1 ? 'retroceso fuerte' : pend < -0.3 ? 'bajando' : 'plano';
+      const estabilidad = vol < 3 ? 'muy estable' : vol < 6 ? 'estable' : vol < 10 ? 'variable' : 'volátil';
+      const horasSugeridasSemana = severidad==='crítica' ? 4 : severidad==='alta' ? 3 : severidad==='media' ? 2 : severidad==='moderada' ? 1.5 : 1;
+      return {
+        materia: m.materia,
+        promedio: m.promedio,
+        severidad,
+        momentum,
+        estabilidad,
+        horasSugeridasSemana,
+        pendiente: pend,
+        volatilidad: vol
+      };
+    });
+
+    // Priorización: severidad > momentum negativo > menor promedio
+    const ordenSeveridad = { 'crítica':5,'alta':4,'media':3,'moderada':2,'baja':1 };
+    const ordenMomentum = { 'retroceso fuerte':4,'bajando':3,'plano':2,'mejorando':1,'acelerando':0 };
+    const priorizadas = [...materiasDetalladas].sort((a,b)=>{
+      const s = ordenSeveridad[b.severidad]-ordenSeveridad[a.severidad];
+      if (s!==0) return s;
+      const mo = ordenMomentum[b.momentum]-ordenMomentum[a.momentum];
+      if (mo!==0) return mo;
+      return a.promedio - b.promedio;
+    }).map((m,i)=>({ prioridad:i+1, ...m }));
+
+    // Sugerencia total horas (suma y ajuste a múltiplos de 0.5)
+    let totalHoras = materiasDetalladas.reduce((a,b)=>a + b.horasSugeridasSemana,0);
+    totalHoras = Math.round(totalHoras*2)/2;
+
+    return { materias: priorizadas, totalHoras, timestamp: new Date().toISOString() };
+  };
   
   useEffect(() => {
     const checkDevice = () => {
@@ -112,15 +296,40 @@ function SimulacionGraficaHistorial({
     };
   }, []);
 
-  // Función para generar análisis con IA
+  // Función para generar análisis con IA (optimizada con firma y lock)
   const generarAnalisisIA = async () => {
     if (!analisisDisponible) {
       setErrorIA('Servicio de IA no configurado');
       return;
     }
+    if (cooldownIA > 0) {
+      setErrorIA(`Espera ${cooldownIA}s antes de solicitar de nuevo el análisis.`);
+      return;
+    }
+    if (enProcesoRef.current) return; // prevenir doble click
+
+    // Construir firma de datos relevantes
+    try {
+      const firmaNueva = JSON.stringify({
+        intentos: historial.intentos.map(i => ({ p: i.puntaje || 0, t: i.tiempoEmpleado || 0 })).slice(-12),
+        totalIntentos: historial.intentos.length,
+        promedio: Number(promedioPuntaje.toFixed(2)),
+        materias: promediosPorMateria.map(m => ({ n: m.materia, pr: Number(m.promedio.toFixed(2)), ul: m.ultimoPuntaje, me: m.mejorPuntaje }))
+      });
+      if (firmaAnalisis && firmaAnalisis === firmaNueva && analisisIA) {
+        setMensajeNoCambio('No hubo cambios en los datos. Se reutiliza el último análisis.');
+        setMostrarAnalisisIA(true);
+        return;
+      }
+      setMensajeNoCambio(null);
+      setFirmaAnalisis(firmaNueva);
+    } catch(e) {
+      console.warn('No se pudo generar firma de análisis:', e);
+    }
 
     setCargandoIA(true);
     setErrorIA(null);
+    enProcesoRef.current = true;
     
     try {
       // Preparar datos para el análisis
@@ -158,6 +367,17 @@ function SimulacionGraficaHistorial({
 
       // Llamar al servicio de IA
       const analisis = await generarAnalisisConGemini(datosParaAnalisis);
+      if (analisis.esFallbackLocal) {
+        setUltimoAvisoIA('Mostrando análisis heurístico local (límite de cuota 429).');
+        setCooldownIA(60); // enfriar 1 minuto
+      } else if (analisis.desdeCache) {
+        setUltimoAvisoIA('Mostrando análisis previo desde cache por límite de cuota.');
+        setCooldownIA(45);
+      } else if (analisis.aviso) {
+        setUltimoAvisoIA(analisis.aviso);
+      } else {
+        setUltimoAvisoIA(null);
+      }
       
       // Obtener recursos recomendados para áreas débiles
       const recursosRecomendados = {};
@@ -168,12 +388,25 @@ function SimulacionGraficaHistorial({
       setAnalisisIA(analisis);
       setRecursos(recursosRecomendados);
       setMostrarAnalisisIA(true);
+      // Calcular métricas de efectividad
+      const m = calcularMetricasIA(analisis, promediosPorMateria);
+      setMetricasIA(m);
+  const sug = generarSugerenciasPersonalizadas(analisis, promediosPorMateria);
+  setSugerenciasPersonalizadas(sug);
+  const insights = calcularInsightsAvanzados(promediosPorMateria);
+  setInsightsAvanzados(insights);
       
     } catch (error) {
       console.error('Error generando análisis IA:', error);
-      setErrorIA('Error al generar análisis. Por favor, intenta nuevamente.');
+      if (error.message && error.message.includes('Límite de peticiones')) {
+        setErrorIA('Límite de peticiones excedido. Se intentó fallback local.');
+        setCooldownIA(60);
+      } else {
+        setErrorIA('Error al generar análisis. Por favor, intenta nuevamente.');
+      }
     } finally {
       setCargandoIA(false);
+      enProcesoRef.current = false;
     }
   };
 
@@ -242,163 +475,14 @@ function SimulacionGraficaHistorial({
     );
   }
 
-  // Datos simulados de materias evaluadas por tipo de simulación - 5 materias por simulación
-  const materiasPorSimulacion = {
-    // SIMULACIONES GENERALES
-    'Simulador EXANI II': [
-      { materia: 'Matemáticas', puntajes: [85, 90, 88, 92, 94], color: '#3B82F6', icon: '📐' },
-      { materia: 'Español', puntajes: [75, 78, 82, 85, 88], color: '#10B981', icon: '📚' },
-      { materia: 'Ciencias', puntajes: [60, 65, 70, 75, 78], color: '#8B5CF6', icon: '🔬' },
-      { materia: 'Ciencias Sociales', puntajes: [70, 72, 75, 78, 82], color: '#F59E0B', icon: '🌍' },
-      { materia: 'Inglés', puntajes: [55, 60, 65, 70, 74], color: '#EF4444', icon: '🗣️' }
-    ],
-    'Simulador CENEVAL': [
-      { materia: 'Razonamiento Lógico', puntajes: [80, 85, 87, 90, 92], color: '#3B82F6', icon: '🧠' },
-      { materia: 'Comprensión Lectora', puntajes: [70, 75, 80, 82, 85], color: '#10B981', icon: '📖' },
-      { materia: 'Conocimientos Generales', puntajes: [65, 70, 72, 75, 78], color: '#8B5CF6', icon: '📋' },
-      { materia: 'Habilidades Cuantitativas', puntajes: [55, 60, 65, 68, 72], color: '#F59E0B', icon: '🔢' },
-      { materia: 'Tecnologías de la Información', puntajes: [62, 66, 69, 73, 76], color: '#EF4444', icon: '💻' }
-    ],
-    'Simulador PAA': [
-      { materia: 'Razonamiento Verbal', puntajes: [78, 82, 85, 88, 90], color: '#3B82F6', icon: '💬' },
-      { materia: 'Razonamiento Matemático', puntajes: [72, 75, 78, 82, 85], color: '#10B981', icon: '🔢' },
-      { materia: 'Inglés', puntajes: [65, 70, 73, 76, 79], color: '#8B5CF6', icon: '🗣️' },
-      { materia: 'Redacción', puntajes: [60, 65, 68, 72, 75], color: '#F59E0B', icon: '✍️' },
-      { materia: 'Ciencias Naturales', puntajes: [67, 71, 74, 77, 80], color: '#EF4444', icon: '🔬' }
-    ],
-    'Pruebas Académicas Generales': [
-      { materia: 'Comprensión Lectora', puntajes: [75, 80, 82, 85, 87], color: '#3B82F6', icon: '📖' },
-      { materia: 'Matemáticas Básicas', puntajes: [70, 73, 76, 80, 83], color: '#10B981', icon: '🔢' },
-      { materia: 'Ciencias Generales', puntajes: [68, 72, 75, 78, 81], color: '#8B5CF6', icon: '🔬' },
-      { materia: 'Cultura General', puntajes: [65, 68, 70, 73, 76], color: '#F59E0B', icon: '🌍' },
-      { materia: 'Habilidades Analíticas', puntajes: [69, 72, 75, 78, 82], color: '#EF4444', icon: '🎯' }
-    ]
-  };
-
-  // Datos por módulos específicos - 5 materias esenciales por módulo
-  const materiasPorModulo = {
-    // Módulo 1: Ciencias Exactas
-    1: [
-      { materia: 'Cálculo', puntajes: [82, 85, 88, 90, 92], color: '#3B82F6', icon: '📐' },
-      { materia: 'Geometría Analítica', puntajes: [75, 78, 82, 85, 88], color: '#10B981', icon: '📊' },
-      { materia: 'Probabilidad y Estadística', puntajes: [70, 73, 76, 80, 83], color: '#8B5CF6', icon: '📈' },
-      { materia: 'Razonamiento Matemático', puntajes: [68, 72, 75, 78, 82], color: '#F59E0B', icon: '🧠' }
-    ],
-    // Módulo 2: Ciencias Sociales
-    2: [
-      { materia: 'Historia', puntajes: [85, 88, 90, 92, 94], color: '#3B82F6', icon: '📜' },
-      { materia: 'Lectura Crítica', puntajes: [78, 82, 85, 88, 90], color: '#10B981', icon: '�' },
-      { materia: 'Lógica', puntajes: [72, 75, 78, 82, 85], color: '#8B5CF6', icon: '🧠' },
-      { materia: 'Ciencias Sociales', puntajes: [70, 73, 76, 80, 83], color: '#F59E0B', icon: '🌍' },
-      { materia: 'Cultura General', puntajes: [74, 77, 80, 83, 86], color: '#EF4444', icon: '🎭' }
-    ],
-    // Módulo 3: Humanidades y Artes
-    3: [
-      { materia: 'Literatura', puntajes: [88, 90, 92, 94, 96], color: '#3B82F6', icon: '📚' },
-      { materia: 'Filosofía', puntajes: [82, 85, 88, 90, 92], color: '#10B981', icon: '�' },
-      { materia: 'Historia del Arte', puntajes: [75, 78, 82, 85, 88], color: '#8B5CF6', icon: '🎨' },
-      { materia: 'Redacción', puntajes: [70, 73, 76, 80, 83], color: '#F59E0B', icon: '✍️' },
-      { materia: 'Comprensión Lectora', puntajes: [76, 79, 82, 85, 88], color: '#EF4444', icon: '�' }
-    ],
-    // Módulo 4: Ciencias Naturales y de la Salud
-    4: [
-      { materia: 'Biología Celular y Molecular', puntajes: [80, 83, 86, 89, 91], color: '#3B82F6', icon: '🧬' },
-      { materia: 'Química General y Orgánica', puntajes: [75, 78, 82, 85, 88], color: '#10B981', icon: '⚗️' },
-      { materia: 'Anatomía', puntajes: [70, 73, 76, 80, 83], color: '#8B5CF6', icon: '🫀' },
-      { materia: 'Física', puntajes: [68, 72, 75, 78, 82], color: '#F59E0B', icon: '⚛️' }
-    ],
-    // Módulo 5: Ingeniería y Tecnología
-    5: [
-      { materia: 'Cálculo', puntajes: [85, 88, 90, 92, 94], color: '#3B82F6', icon: '�' },
-      { materia: 'Trigonometría', puntajes: [78, 82, 85, 88, 90], color: '#10B981', icon: '📏' },
-      { materia: 'Física', puntajes: [72, 75, 78, 82, 86], color: '#8B5CF6', icon: '⚛️' },
-      { materia: 'Química', puntajes: [70, 73, 76, 80, 84], color: '#F59E0B', icon: '🧪' },
-      { materia: 'Programación', puntajes: [74, 77, 80, 83, 87], color: '#EF4444', icon: '�' }
-    ],
-    // Módulo 6: Ciencias Económico-Administrativas
-    6: [
-      { materia: 'Matemáticas Financieras', puntajes: [83, 86, 89, 92, 94], color: '#3B82F6', icon: '📊' },
-      { materia: 'Estadística', puntajes: [78, 82, 85, 88, 90], color: '#10B981', icon: '📈' },
-      { materia: 'Economía', puntajes: [72, 75, 78, 82, 85], color: '#8B5CF6', icon: '💰' },
-      { materia: 'Lógica', puntajes: [75, 78, 81, 84, 87], color: '#EF4444', icon: '🧠' }
-    ],
-    // Módulo 7: Educación y Deportes
-    7: [
-      { materia: 'Psicología Educativa', puntajes: [86, 89, 92, 94, 96], color: '#3B82F6', icon: '🧠' },
-      { materia: 'Biología Humana', puntajes: [80, 83, 86, 89, 91], color: '#10B981', icon: '🔬' },
-      { materia: 'Ética', puntajes: [75, 78, 82, 85, 88], color: '#8B5CF6', icon: '⚖️' },
-      { materia: 'Sociología', puntajes: [72, 75, 78, 82, 85], color: '#F59E0B', icon: '👥' },
-      { materia: 'Fundamentos Educativos', puntajes: [77, 80, 83, 86, 89], color: '#EF4444', icon: '📚' }
-    ],
-    // Módulo 8: Agropecuarias
-    8: [
-      { materia: 'Biología Animal y Vegetal', puntajes: [81, 84, 87, 90, 92], color: '#3B82F6', icon: '🌱' },
-      { materia: 'Química', puntajes: [76, 79, 82, 85, 88], color: '#10B981', icon: '🧪' },
-      { materia: 'Ciencias de la Tierra', puntajes: [71, 74, 77, 80, 83], color: '#8B5CF6', icon: '🌍' },
-      { materia: 'Estadística', puntajes: [73, 76, 79, 82, 85], color: '#EF4444', icon: '📊' }
-    ],
-    // Módulo 9: Turismo
-    9: [
-      { materia: 'Administración de Servicios', puntajes: [79, 82, 85, 88, 91], color: '#3B82F6', icon: '🏨' },
-      { materia: 'Cultura Turística', puntajes: [77, 80, 83, 86, 89], color: '#10B981', icon: '🌐' },
-      { materia: 'Economía', puntajes: [72, 75, 78, 81, 84], color: '#8B5CF6', icon: '💰' },
-      { materia: 'Atención al Cliente', puntajes: [80, 83, 86, 89, 92], color: '#F59E0B', icon: '👥' }
-    ],
-    // Módulo 10: Núcleo UNAM / IPN
-    10: [
-      { materia: 'Biología', puntajes: [76, 79, 83, 86, 89], color: '#3B82F6', icon: '🧬' },
-      { materia: 'Geografía', puntajes: [74, 78, 82, 85, 88], color: '#10B981', icon: '🌍' },
-      { materia: 'Historia Universal', puntajes: [78, 81, 84, 87, 90], color: '#8B5CF6', icon: '🏛️' },
-      { materia: 'Historia de México', puntajes: [80, 83, 86, 89, 92], color: '#F59E0B', icon: '🇲🇽' },
-      { materia: 'Literatura', puntajes: [77, 80, 83, 87, 90], color: '#EF4444', icon: '📚' },
-      { materia: 'Filosofía', puntajes: [75, 79, 82, 85, 88], color: '#EC4899', icon: '💭' }
-    ],
-    // Módulo 11: Militar, Naval y Náutica Mercante
-    11: [
-      { materia: 'Matemáticas', puntajes: [78, 82, 85, 88, 92], color: '#3B82F6', icon: '🔢' },
-      { materia: 'Física', puntajes: [75, 79, 83, 86, 90], color: '#10B981', icon: '⚛️' },
-      { materia: 'Química', puntajes: [73, 77, 81, 85, 88], color: '#8B5CF6', icon: '🧪' },
-      { materia: 'Geografía', puntajes: [80, 83, 86, 89, 92], color: '#F59E0B', icon: '🌍' },
-      { materia: 'Historia de México', puntajes: [76, 80, 84, 87, 90], color: '#EF4444', icon: '🇲🇽' },
-      { materia: 'Razonamiento lógico', puntajes: [77, 81, 85, 88, 91], color: '#EC4899', icon: '🧠' }
-    ],
-    // Módulo 12: Módulo Transversal: Análisis Psicométrico
-    12: [
-      { materia: 'Razonamiento abstracto', puntajes: [82, 85, 88, 91, 94], color: '#3B82F6', icon: '🧩' },
-      { materia: 'Secuencias lógicas', puntajes: [80, 83, 87, 90, 93], color: '#10B981', icon: '📊' },
-      { materia: 'Habilidad espacial', puntajes: [75, 79, 83, 87, 90], color: '#8B5CF6', icon: '🔷' },
-      { materia: 'Atención y memoria', puntajes: [78, 82, 85, 89, 92], color: '#F59E0B', icon: '👁️' },
-      { materia: 'Test de matrices', puntajes: [77, 81, 84, 88, 91], color: '#EF4444', icon: '📋' },
-      { materia: 'Aptitud verbal y numérica', puntajes: [79, 83, 86, 90, 93], color: '#EC4899', icon: '🔤' },
-      { materia: 'Pruebas de personalidad simuladas', puntajes: [85, 87, 90, 92, 95], color: '#0EA5E9', icon: '👤' }
-    ]
-  };
-
-  // Función para obtener materias según el tipo de simulación
-  const obtenerMateriasSimulacion = () => {
-    if (tipo === 'generales') {
-      // Para simulaciones generales, buscar por nombre
-      return materiasPorSimulacion[simulacion.nombre] || [
-        { materia: 'Razonamiento Verbal', puntajes: [75, 80, 85, 88, 90], color: '#3B82F6', icon: '💬' },
-        { materia: 'Razonamiento Matemático', puntajes: [70, 75, 78, 82, 85], color: '#10B981', icon: '🔢' },
-        { materia: 'Conocimientos Generales', puntajes: [68, 72, 75, 78, 82], color: '#8B5CF6', icon: '📋' },
-        { materia: 'Comprensión Lectora', puntajes: [65, 70, 73, 76, 80], color: '#F59E0B', icon: '📖' },
-        { materia: 'Habilidades Analíticas', puntajes: [67, 71, 74, 77, 81], color: '#EF4444', icon: '🎯' }
-      ];
-    } else {
-      // Para simulaciones específicas, buscar por módulo
-      return materiasPorModulo[moduloId] || [
-        { materia: 'Área Especializada 1', puntajes: [75, 80, 85, 88, 90], color: '#3B82F6', icon: '🎯' },
-        { materia: 'Área Especializada 2', puntajes: [70, 75, 78, 82, 85], color: '#10B981', icon: '📚' },
-        { materia: 'Área Especializada 3', puntajes: [68, 72, 75, 78, 82], color: '#8B5CF6', icon: '🔬' },
-        { materia: 'Área Especializada 4', puntajes: [65, 70, 73, 76, 80], color: '#F59E0B', icon: '⚡' },
-        { materia: 'Área Especializada 5', puntajes: [67, 71, 74, 77, 81], color: '#EF4444', icon: '🎨' }
-      ];
-    }
-  };
-
-  // Obtener materias para la simulación actual
-  const materiasActuales = obtenerMateriasSimulacion();
+  // Reemplazado: se eliminan datos simulados de materias; ahora se derivan de analytics backend
+  const materiasActuales = (analytics?.materias || []).map(m => ({
+    materia: m.nombre,
+    promedio: m.ratio,
+    icon: '📘',
+    color: '#3B82F6',
+    puntajes: [] // pendiente evolución por materia real
+  }));
 
   // Calcular promedios por materia
   const promediosPorMateria = materiasActuales.map(materia => ({
@@ -614,12 +698,12 @@ function SimulacionGraficaHistorial({
     >
       {/* Header responsive */}
       <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+  <div className="max-w-full lg:max-w-7xl mx-auto px-0 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between py-3 sm:py-6">
             <div className="flex items-center space-x-2 sm:space-x-3 w-full">
               <button
                 onClick={onClose}
-                className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0 min-h-[44px] min-w-[44px]"
+                className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colores flex-shrink-0 min-h-[44px] min-w-[44px] active:scale-[0.98]"
                 style={{ touchAction: 'manipulation' }}
               >
                 <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -658,9 +742,9 @@ function SimulacionGraficaHistorial({
       </div>
 
       {/* Contenido principal */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-3 sm:py-6">
+  <div className="max-w-full lg:max-w-7xl mx-auto px-0 sm:px-4 lg:px-8 py-3 sm:py-6">
         {/* Estadísticas principales - Grid responsive optimizado */}
-        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6 lg:mb-8">
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6 lg:mb-8">
           <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg flex-shrink-0">
@@ -715,13 +799,13 @@ function SimulacionGraficaHistorial({
         </div>
 
         {/* Análisis por Materias/Áreas */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-6 mb-6 sm:mb-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-6 mb-6 sm:mb-8">
           <div className="flex items-center mb-4 sm:mb-6">
             <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 mr-2 flex-shrink-0" />
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">Análisis por Materias/Áreas</h3>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
             {promediosPorMateria.map((materia, index) => (
               <div key={index} className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
@@ -763,7 +847,7 @@ function SimulacionGraficaHistorial({
           <div className="bg-gray-50 rounded-lg p-3 sm:p-4 overflow-hidden">
             <h4 className="font-medium text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">Comparación de Rendimiento</h4>
             <div className="w-full overflow-x-auto scrollbar-hide" style={{WebkitOverflowScrolling: 'touch'}}>
-              <div className="min-w-[280px] sm:min-w-[400px]">
+              <div className="min-w-[320px] sm:min-w-[420px]">
                 <ResponsiveContainer width="100%" height={isSmallScreen ? 150 : isMobile ? 180 : isTablet ? 220 : 250}>
                   <BarChart data={datosMaterias}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -877,12 +961,18 @@ function SimulacionGraficaHistorial({
               <span className="ml-2 px-2 py-1 text-xs bg-indigo-100 text-indigo-800 rounded-full">
                 {analisisDisponible ? 'Disponible' : 'Demo'}
               </span>
+              {analisisIA && analisisIA.esFallbackLocal && (
+                <span className="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">Fallback Local</span>
+              )}
+              {analisisIA && analisisIA.desdeCache && (
+                <span className="ml-2 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">Cache</span>
+              )}
             </div>
             
             <button
               onClick={generarAnalisisIA}
-              disabled={cargandoIA}
-              className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg font-medium transition-colors text-sm"
+              disabled={cargandoIA || cooldownIA > 0}
+              className="flex items-center justify-center w-full sm:w-auto space-x-2 px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg font-medium transition-colores text-sm"
             >
               {cargandoIA ? (
                 <>
@@ -892,11 +982,22 @@ function SimulacionGraficaHistorial({
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>Generar Análisis</span>
+                  <span>{cooldownIA > 0 ? `Espera ${cooldownIA}s` : 'Generar Análisis'}</span>
                 </>
               )}
             </button>
           </div>
+
+          {ultimoAvisoIA && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <p className="text-xs text-yellow-700">{ultimoAvisoIA}</p>
+            </div>
+          )}
+          {mensajeNoCambio && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <p className="text-xs text-blue-700">{mensajeNoCambio}</p>
+            </div>
+          )}
 
           {/* Estado de carga */}
           {cargandoIA && (
@@ -929,6 +1030,203 @@ function SimulacionGraficaHistorial({
           {/* Análisis de IA */}
           {analisisIA && mostrarAnalisisIA && (
             <div className="space-y-4 sm:space-y-6">
+              {/* Sugerencias Personalizadas */}
+              {sugerenciasPersonalizadas && (
+                <div className="bg-white border border-blue-200 rounded-lg p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-blue-900 text-sm sm:text-base flex items-center">
+                      <Lightbulb className="w-4 h-4 mr-2 text-blue-500" />
+                      Sugerencias Inteligentes Personalizadas
+                    </h4>
+                    <button onClick={()=>setMostrarSugerencias(!mostrarSugerencias)} className="text-xs text-blue-600 hover:underline">
+                      {mostrarSugerencias ? 'Ocultar' : 'Mostrar'}
+                    </button>
+                  </div>
+                  {mostrarSugerencias && (
+                    <div className="space-y-5">
+                      <div>
+                        <p className="text-xs sm:text-sm text-blue-800 font-medium mb-2">Diagnóstico de Causas Probables</p>
+                        <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                          {sugerenciasPersonalizadas.causas.map((c,i)=>(
+                            <div key={i} className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                              <p className="text-xs font-semibold text-blue-700 truncate">{c.materia}</p>
+                              <p className="text-[11px] text-blue-600 mt-1"><span className="font-medium">Causa:</span> {c.causaProbable}</p>
+                              <p className="text-[11px] text-blue-600 mt-1"><span className="font-medium">Acción:</span> {c.recomendacion}</p>
+                            </div>
+                          ))}
+                          {sugerenciasPersonalizadas.causas.length === 0 && (
+                            <div className="text-xs text-blue-600">Sin áreas críticas; mantén consistencia.</div>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs sm:text-sm text-blue-800 font-medium mb-2">Plan de 7 Días (Ciclos Cortos)</p>
+                        <div className="overflow-x-auto scrollbar-hide">
+                          <div className="flex space-x-2">
+                            {sugerenciasPersonalizadas.plan7Dias.map((p,i)=>(
+                              <div key={i} className="min-w-[110px] bg-white border border-blue-100 rounded-lg p-2 shadow-sm">
+                                <p className="text-[10px] font-semibold text-blue-700">{p.dia}</p>
+                                <p className="text-[10px] text-blue-600 truncate">{p.materia}</p>
+                                <p className="text-[10px] text-blue-500 mt-1">{p.foco}</p>
+                                <p className="text-[10px] text-blue-400">{p.duracion}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs sm:text-sm text-blue-800 font-medium mb-2">Apalancar Fortalezas</p>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          {sugerenciasPersonalizadas.apalancarFortalezas.map((f,i)=>(
+                            <div key={i} className="bg-green-50 border border-green-100 rounded-lg p-3">
+                              <p className="text-xs font-semibold text-green-700">{f.materia}</p>
+                              <p className="text-[11px] text-green-600 mt-1 leading-snug">{f.estrategia}</p>
+                            </div>
+                          ))}
+                          {sugerenciasPersonalizadas.apalancarFortalezas.length === 0 && (
+                            <div className="text-xs text-green-600">Se generará cuando exista al menos una materia ≥ 80%.</div>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs sm:text-sm text-blue-800 font-medium mb-2">Quick Tips Cognitivos</p>
+                        <ul className="list-disc pl-4 space-y-1">
+                          {sugerenciasPersonalizadas.quickTips.map((t,i)=>(
+                            <li key={i} className="text-[11px] text-blue-700 leading-snug">{t}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={()=>{
+                            try {
+                              const texto = JSON.stringify(sugerenciasPersonalizadas, null, 2);
+                              navigator.clipboard.writeText(texto);
+                              setUltimoAvisoIA('Plan copiado al portapapeles.');
+                            } catch(e) { console.warn('No se pudo copiar', e); }
+                          }}
+                          className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                        >Copiar Plan</button>
+                        <button
+                          onClick={()=>setMostrarSugerencias(false)}
+                          className="px-3 py-1.5 text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md"
+                        >Cerrar</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Panel Acciones Prioritarias */}
+              {insightsAvanzados && (
+                <div className="bg-white border border-rose-200 rounded-lg p-4 sm:p-6">
+                  <h4 className="font-semibold text-rose-900 text-sm sm:text-base mb-3 flex items-center">
+                    <Target className="w-4 h-4 mr-2 text-rose-500" />
+                    Acciones Prioritarias (Datos Cuantitativos)
+                  </h4>
+                  <p className="text-[11px] text-rose-700 mb-3">Priorización combinando severidad (nivel bajo), momentum (pendiente reciente) y estabilidad. Total horas sugeridas esta semana: <span className="font-semibold">{insightsAvanzados.totalHoras}h</span></p>
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <table className="min-w-[640px] w-full text-[11px]">
+                      <thead>
+                        <tr className="text-rose-800 text-left border-b border-rose-200">
+                          <th className="py-1 pr-2">#</th>
+                          <th className="py-1 pr-2">Materia</th>
+                          <th className="py-1 pr-2">Prom</th>
+                          <th className="py-1 pr-2">Severidad</th>
+                          <th className="py-1 pr-2">Momentum</th>
+                          <th className="py-1 pr-2">Estabilidad</th>
+                          <th className="py-1 pr-2">Horas/Sem</th>
+                          <th className="py-1 pr-2">Pend</th>
+                          <th className="py-1 pr-2">Vol</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {insightsAvanzados.materias.map(m => (
+                          <tr key={m.materia} className="border-b last:border-0 border-rose-100">
+                            <td className="py-1 pr-2 font-medium text-rose-700">{m.prioridad}</td>
+                            <td className="py-1 pr-2 text-rose-900">{m.materia}</td>
+                            <td className="py-1 pr-2 text-rose-700">{m.promedio.toFixed(1)}%</td>
+                            <td className="py-1 pr-2">{m.severidad}</td>
+                            <td className="py-1 pr-2">{m.momentum}</td>
+                            <td className="py-1 pr-2">{m.estabilidad}</td>
+                            <td className="py-1 pr-2 font-medium">{m.horasSugeridasSemana}h</td>
+                            <td className="py-1 pr-2">{m.pendiente.toFixed(2)}</td>
+                            <td className="py-1 pr-2">{m.volatilidad.toFixed(1)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      onClick={()=>{
+                        try {
+                          navigator.clipboard.writeText(JSON.stringify(insightsAvanzados,null,2));
+                          setUltimoAvisoIA('Métricas avanzadas copiadas.');
+                        } catch(e) {}
+                      }}
+                      className="px-3 py-1.5 text-xs bg-rose-600 hover:bg-rose-700 text-white rounded-md"
+                    >Copiar métricas</button>
+                    <button
+                      onClick={()=> setInsightsAvanzados(null)}
+                      className="px-3 py-1.5 text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md"
+                    >Ocultar</button>
+                  </div>
+                </div>
+              )}
+              {/* Métricas de efectividad del análisis IA */}
+              {metricasIA && (
+                <div className="bg-white border border-indigo-200 rounded-lg p-4 sm:p-6 shadow-inner">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-indigo-900 text-sm sm:text-base flex items-center">
+                      <Zap className="w-4 h-4 mr-2 text-indigo-500" />
+                      Efectividad del Análisis IA
+                    </h4>
+                    <span className="text-[10px] sm:text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-medium">
+                      Beta
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+                      <p className="text-xs font-medium text-indigo-800 mb-1">F1 Debilidades</p>
+                      <div className="w-full bg-white h-2 rounded overflow-hidden border border-indigo-200">
+                        <div style={{width: `${(metricasIA.debilidades.f1*100).toFixed(0)}%`}} className="h-full bg-indigo-500"></div>
+                      </div>
+                      <p className="text-[10px] mt-1 text-indigo-700">
+                        P {(metricasIA.debilidades.precision*100).toFixed(0)}% · R {(metricasIA.debilidades.recall*100).toFixed(0)}% · F1 {(metricasIA.debilidades.f1*100).toFixed(0)}%
+                      </p>
+                      <p className="text-[10px] text-indigo-600 mt-1">TP {metricasIA.debilidades.tp} / Pred {metricasIA.debilidades.pred} / Gold {metricasIA.debilidades.gold}</p>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                      <p className="text-xs font-medium text-green-800 mb-1">F1 Fortalezas</p>
+                      <div className="w-full bg-white h-2 rounded overflow-hidden border border-green-200">
+                        <div style={{width: `${(metricasIA.fortalezas.f1*100).toFixed(0)}%`}} className="h-full bg-green-500"></div>
+                      </div>
+                      <p className="text-[10px] mt-1 text-green-700">
+                        P {(metricasIA.fortalezas.precision*100).toFixed(0)}% · R {(metricasIA.fortalezas.recall*100).toFixed(0)}% · F1 {(metricasIA.fortalezas.f1*100).toFixed(0)}%
+                      </p>
+                      <p className="text-[10px] text-green-600 mt-1">TP {metricasIA.fortalezas.tp} / Pred {metricasIA.fortalezas.pred} / Gold {metricasIA.fortalezas.gold}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                      <p className="text-[10px] font-medium text-yellow-800">Cobertura</p>
+                      <p className="text-sm font-semibold text-yellow-700">{(metricasIA.cobertura.valor*100).toFixed(0)}%</p>
+                      <p className="text-[10px] text-yellow-600">{metricasIA.cobertura.materiasReferenciadas}/{metricasIA.cobertura.total} materias</p>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                      <p className="text-[10px] font-medium text-purple-800">Puntaje Global</p>
+                      <p className="text-sm font-semibold text-purple-700">{(metricasIA.puntajeGlobal*100).toFixed(0)}%</p>
+                      <p className="text-[10px] text-purple-600">F1 debilidades 60%, fortalezas 30%, cobertura 10%</p>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                      <p className="text-[10px] font-medium text-gray-700">Interpretación</p>
+                      <p className="text-[10px] text-gray-600 leading-snug">Valores más altos indican mayor alineación del análisis IA con las reglas locales. Útil para monitorear calidad.</p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-gray-500">Estas métricas comparan la salida de la IA con un baseline heurístico (reglas de umbrales) y no representan una validación absoluta de exactitud pedagógica.</p>
+                </div>
+              )}
               {/* Resumen general */}
               <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-4 sm:p-6">
                 <div className="flex items-start space-x-3">
@@ -1085,12 +1383,12 @@ function SimulacionGraficaHistorial({
               <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
                 Análisis Inteligente con IA
               </h4>
-              <p className="text-gray-600 text-sm sm:text-base mb-4 max-w-md mx-auto">
+                           <p className="text-gray-600 text-sm sm:text-base mb-4 max-w-md mx-auto">
                 Obtén recomendaciones personalizadas basadas en tu rendimiento y patrones de aprendizaje
               </p>
               <button
                 onClick={generarAnalisisIA}
-                className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm sm:text-base"
+                className="inline-flex items-center justify-center w-full sm:w-auto space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colores text-sm sm:text-base"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Generar Análisis</span>

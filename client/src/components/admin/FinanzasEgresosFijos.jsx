@@ -29,6 +29,7 @@ const FRECUENCIAS = [
   "Semanal",
   "Quincenal",
   "Mensual",
+  "Bimestral",
   "Semestral",
   "Anual",
 ];
@@ -36,9 +37,13 @@ const FRECUENCIAS = [
 export default function FinanzasEgresosFijos() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exportExcelLoading, setExportExcelLoading] = useState(false);
+  const [exportExcelError, setExportExcelError] = useState('');
   const [plantillas, setPlantillas] = useState([]);
   const [plantillaModalOpen, setPlantillaModalOpen] = useState(false);
-  const [plantillaForm, setPlantillaForm] = useState({ categoria: '', descripcion: '', proveedor: '', frecuencia: 'Mensual', metodo: 'Efectivo', monto_sugerido: '', dia_pago: '', hora_preferida: '', recordar_minutos: 30, auto_evento: true });
+  const [plantillaForm, setPlantillaForm] = useState({ categoria: '', descripcion: '', proveedor: '', frecuencia: 'Mensual', metodo: 'Efectivo', monto_sugerido: '', dia_pago: '', hora_preferida: '', recordar_minutos: 30, auto_evento: true, auto_instanciar: true, fecha_inicio: '', cadencia_anchor: '' });
+  const [plantillaEditOpen, setPlantillaEditOpen] = useState(false);
+  const [plantillaEdit, setPlantillaEdit] = useState(null);
   const [budgetSummary, setBudgetSummary] = useState({ budget: 0, spent: 0, leftover: 0 });
   const [showModal, setShowModal] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -74,11 +79,18 @@ export default function FinanzasEgresosFijos() {
     estatus: "Pendiente",
   });
   const [form, setForm] = useState(getDefaultForm());
+  // Filtros (historial)
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterFrom, setFilterFrom] = useState('');
+  const [filterTo, setFilterTo] = useState('');
+  const [filterMetodo, setFilterMetodo] = useState('');
+  const [filterEstatus, setFilterEstatus] = useState('');
+  const [filterFrecuencia, setFilterFrecuencia] = useState('');
   useEffect(() => {
     const fetchGastosFijos = async () => {
       try {
         setLoading(true);
-  const data = await listGastosFijos();
+        const data = await listGastosFijos();
   setRows(Array.isArray(data) ? data.map(r => ({ ...r, calendarEventId: r.calendar_event_id ?? r.calendarEventId })) : []);
         // También mantener en storage como backup
         saveExpenses("fijos", data);
@@ -101,6 +113,22 @@ export default function FinanzasEgresosFijos() {
 
     fetchGastosFijos();
   }, []);
+
+  const applyFilters = async () => {
+    try {
+      setLoading(true);
+      const data = await listGastosFijos({ from: filterFrom || undefined, to: filterTo || undefined, metodo: filterMetodo || undefined, estatus: filterEstatus || undefined, frecuencia: filterFrecuencia || undefined });
+      setRows(Array.isArray(data) ? data.map(r => ({ ...r, calendarEventId: r.calendar_event_id ?? r.calendarEventId })) : []);
+      saveExpenses('fijos', data);
+      await refreshBudgetSummary();
+    } catch (e) {
+      console.error('Error filtrando gastos fijos', e);
+    } finally { setLoading(false); }
+  };
+  const clearFilters = async () => {
+    setFilterFrom(''); setFilterTo(''); setFilterMetodo(''); setFilterEstatus(''); setFilterFrecuencia('');
+    await applyFilters();
+  };
 
   // Limpia timeout si cambia o desmonta
   useEffect(() => {
@@ -134,10 +162,94 @@ export default function FinanzasEgresosFijos() {
     }
   };
 
+  // Normaliza fechas a YYYY-MM-DD (evita mostrar timestamps/zonas)
+  const formatDate = (d) => {
+    const parsed = dayjs(d);
+    if (!parsed.isValid()) return d ? String(d) : "-";
+    return parsed.format("YYYY-MM-DD");
+  };
+
   const getSmartEventTime = (dateStr) => {
     const d = dayjs(dateStr);
     if (d.isSame(dayjs(), "day")) return dayjs().add(1, "hour").format("HH:mm");
     return "09:00";
+  };
+
+  // Exportar todos los gastos fijos a Excel
+  const handleExportExcel = async () => {
+    try {
+      setExportExcelLoading(true); setExportExcelError('');
+      const [ExcelJS, data] = await Promise.all([
+        import('exceljs'),
+        listGastosFijos()
+      ]);
+      const workbook = new ExcelJS.Workbook();
+      const ws = workbook.addWorksheet('Gastos fijos');
+      const columns = [
+        { header: 'ID', key: 'id' },
+        { header: 'Fecha', key: 'fecha' },
+        { header: 'Hora', key: 'hora' },
+        { header: 'Categoría', key: 'categoria' },
+        { header: 'Descripción', key: 'descripcion' },
+        { header: 'Proveedor', key: 'proveedor' },
+        { header: 'Frecuencia', key: 'frecuencia' },
+        { header: 'Método', key: 'metodo' },
+        { header: 'Importe', key: 'importe' },
+        { header: 'Estatus', key: 'estatus' },
+        { header: 'Calendar Event ID', key: 'calendar_event_id' },
+      ];
+      ws.columns = columns.map(c => ({ header: c.header, key: c.key, width: Math.max(12, c.header.length + 2) }));
+      for (const r of (Array.isArray(data) ? data : [])) {
+        ws.addRow({
+          id: r.id,
+          fecha: r.fecha || '',
+          hora: r.hora || '',
+          categoria: r.categoria || '',
+          descripcion: r.descripcion || '',
+          proveedor: r.proveedor || '',
+          frecuencia: r.frecuencia || '',
+          metodo: r.metodo || '',
+          importe: Number(r.importe ?? 0),
+          estatus: r.estatus || '',
+          calendar_event_id: r.calendar_event_id ?? r.calendarEventId ?? ''
+        });
+      }
+      // Encabezado estilizado
+      const headerRow = ws.getRow(1);
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.alignment = { vertical: 'middle' };
+      headerRow.height = 20;
+      headerRow.eachCell((cell) => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+        cell.border = { top: { style: 'thin', color: { argb: 'FFDBEAFE' } }, left: { style: 'thin', color: { argb: 'FFDBEAFE' } }, bottom: { style: 'thin', color: { argb: 'FFDBEAFE' } }, right: { style: 'thin', color: { argb: 'FFDBEAFE' } } };
+      });
+      // Formato de moneda
+      const importeCol = ws.getColumn('importe');
+      importeCol.numFmt = '#,##0.00';
+      importeCol.alignment = { horizontal: 'right' };
+      // Filtros y congelar encabezado
+      ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
+      ws.views = [{ state: 'frozen', ySplit: 1 }];
+      // Auto tamaño columnas
+      ws.columns.forEach((col) => {
+        let max = col.header ? String(col.header).length : 10;
+        col.eachCell({ includeEmpty: false }, (cell) => {
+          const v = cell.value == null ? '' : String(cell.value);
+          max = Math.max(max, v.length);
+        });
+        col.width = Math.min(60, Math.max(12, Math.ceil(max * 1.1)));
+      });
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      a.href = url; a.download = `gastos-fijos-${ts}.xlsx`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setExportExcelError('No se pudo exportar Excel.');
+    } finally { setExportExcelLoading(false); }
   };
 
   const refreshBudgetSummary = async (month) => {
@@ -153,6 +265,55 @@ export default function FinanzasEgresosFijos() {
       console.error('Error al refrescar resumen de presupuesto:', error);
       // Fallback al cálculo local
       setBudgetSummary(getBudgetSnapshot(month || dayjs().format("YYYY-MM")));
+    }
+  };
+
+  // Acciones para modal de presupuesto insuficiente en cambio de estatus
+  const saveStatusAsPending = async () => {
+    if (!budgetWarn.open || budgetWarn.context !== 'status') return;
+    const { idx } = budgetWarn.info || {};
+    if (idx === undefined || idx === null) { setBudgetWarn({ open:false, context:null, info:null }); return; }
+    try {
+      await patchGasto(idx, { estatus: 'Pendiente' });
+    } catch (_) {
+      // silencioso: patchGasto ya hizo rollback si falla
+    }
+    setBudgetWarn({ open:false, context:null, info:null });
+  };
+
+  const proceedStatusEvenIfExceed = async () => {
+    if (!budgetWarn.open || budgetWarn.context !== 'status') return;
+    const { idx } = budgetWarn.info || {};
+    if (idx === undefined || idx === null) { setBudgetWarn({ open:false, context:null, info:null }); return; }
+    try {
+      await patchGasto(idx, { estatus: 'Pagado' });
+      const month = dayjs(rows[idx]?.fecha).format('YYYY-MM');
+      await refreshBudgetSummary(month);
+    } catch (_) {
+      // rollback ya aplicado en patchGasto si falla
+    }
+    setBudgetWarn({ open:false, context:null, info:null });
+  };
+
+  // Helper reutilizable para parches optimistas
+  const patchGasto = async (idx, patch) => {
+    const prev = rows;
+    const optimistic = rows.map((x, i) => i === idx ? { ...x, ...patch } : x);
+    setRows(optimistic);
+    saveExpenses("fijos", optimistic);
+    try {
+      if (rows[idx]?.id) {
+        const updated = await updateGastoFijo(rows[idx].id, patch);
+        setRows(cur => {
+          const synced = cur.map(x => x.id === updated.id ? { ...x, ...updated } : x);
+          saveExpenses("fijos", synced);
+          return synced;
+        });
+      }
+    } catch (e) {
+      setRows(prev);
+      saveExpenses("fijos", prev);
+      throw e;
     }
   };
 
@@ -215,7 +376,7 @@ export default function FinanzasEgresosFijos() {
         snap = getBudgetSnapshot(month);
       }
       const exceed = Math.max(0, amount - snap.leftover);
-      if (exceed > 0 || snap.budget === 0) {
+      if (snap.budget > 0 && exceed > 0) {
         setBudgetWarn({
           open: true,
           context: "create",
@@ -459,6 +620,16 @@ export default function FinanzasEgresosFijos() {
             </p>
           </div>
             <div className="flex items-center gap-2">
+              <button onClick={()=> setShowFilters(s=>!s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
+                {showFilters ? 'Ocultar filtros' : 'Filtros'}
+              </button>
+              <button
+                onClick={handleExportExcel}
+                disabled={exportExcelLoading}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              >
+                {exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}
+              </button>
               <button
                 onClick={() => setPlantillaModalOpen(true)}
                 className="px-3 py-1.5 text-sm rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
@@ -473,6 +644,52 @@ export default function FinanzasEgresosFijos() {
               </button>
             </div>
         </div>
+        {showFilters && (
+          <div className="px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Desde</label>
+                <input type="date" value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Hasta</label>
+                <input type="date" value={filterTo} onChange={e=>setFilterTo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Método</label>
+                <select value={filterMetodo} onChange={e=>setFilterMetodo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                  <option value="">Todos</option>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Transferencia">Transferencia</option>
+                  <option value="Tarjeta">Tarjeta</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Estatus</label>
+                <select value={filterEstatus} onChange={e=>setFilterEstatus(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                  <option value="">Todos</option>
+                  <option value="Pagado">Pagado</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Vencido">Vencido</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Frecuencia</label>
+                <select value={filterFrecuencia} onChange={e=>setFilterFrecuencia(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                  <option value="">Todas</option>
+                  {FRECUENCIAS.map(f => <option key={f} value={f}>{f}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button onClick={applyFilters} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-600 text-white hover:bg-rose-700">Aplicar filtros</button>
+              <button onClick={clearFilters} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Limpiar</button>
+            </div>
+          </div>
+        )}
+        {exportExcelError && (
+          <div className="px-6 py-2 text-sm text-amber-600">{exportExcelError}</div>
+        )}
 
         {/* Tabla desktop */}
         <div className="hidden sm:block">
@@ -569,17 +786,13 @@ export default function FinanzasEgresosFijos() {
                         <select
                           value={r.frecuencia}
                           onClick={(e) => e.stopPropagation()}
-                          onChange={(e) =>
-                            setRows((prev) => {
-                              const next = prev.map((x, i) =>
-                                i === idx
-                                  ? { ...x, frecuencia: e.target.value }
-                                  : x
-                              );
-                              saveExpenses("fijos", next);
-                              return next;
-                            })
-                          }
+                          onChange={async (e) => {
+                            try {
+                              await patchGasto(idx, { frecuencia: e.target.value });
+                            } catch (err) {
+                              console.error("No se pudo actualizar frecuencia", err);
+                            }
+                          }}
                           className="rounded-md text-xs px-2 py-1 border border-gray-200"
                         >
                           {FRECUENCIAS.map((f) => (
@@ -603,6 +816,7 @@ export default function FinanzasEgresosFijos() {
                           onClick={(e) => e.stopPropagation()}
                           onChange={async (e) => {
                             const next = e.target.value;
+                            // Validación de presupuesto si va a Pagado
                             if (next === "Pagado") {
                               const item = rows[idx];
                               const month = dayjs(item.fecha).format("YYYY-MM");
@@ -621,8 +835,7 @@ export default function FinanzasEgresosFijos() {
                                 0,
                                 Number(item.importe || 0) - snap.leftover
                               );
-                              if (exceed > 0 || snap.budget === 0) {
-                                // abrir advertencia y no aplicar cambio aún
+                              if (snap.budget > 0 && exceed > 0) {
                                 setBudgetWarn({
                                   open: true,
                                   context: "status",
@@ -637,13 +850,39 @@ export default function FinanzasEgresosFijos() {
                                 return;
                               }
                             }
-                            setRows((prev) => {
-                              const nextRows = prev.map((x, i) =>
-                                i === idx ? { ...x, estatus: next } : x
-                              );
-                              saveExpenses("fijos", nextRows);
-                              return nextRows;
-                            });
+
+                            // UI optimista
+                            const prevRows = rows;
+                            const optimistic = rows.map((x, i) =>
+                              i === idx ? { ...x, estatus: next } : x
+                            );
+                            setRows(optimistic);
+                            saveExpenses("fijos", optimistic);
+
+                            try {
+                              if (rows[idx]?.id) {
+                                const updated = await updateGastoFijo(rows[idx].id, { estatus: next });
+                                // sincronizar con respuesta del backend
+                                setRows((current) => {
+                                  const synced = current.map((x) =>
+                                    x.id === updated.id ? { ...x, ...updated } : x
+                                  );
+                                  saveExpenses("fijos", synced);
+                                  return synced;
+                                });
+                              }
+                              // refrescar presupuesto si corresponde
+                              if (next === "Pagado") {
+                                const month = dayjs(rows[idx].fecha).format("YYYY-MM");
+                                await refreshBudgetSummary(month);
+                              }
+                            } catch (err) {
+                              // rollback en error
+                              setRows(prevRows);
+                              saveExpenses("fijos", prevRows);
+                              console.error("No se pudo actualizar estatus", err);
+                              // Aquí podrías añadir un toast de error
+                            }
                           }}
                           className={`rounded-md text-xs px-2 py-1 border ${
                             r.estatus === "Pagado"
@@ -682,7 +921,7 @@ export default function FinanzasEgresosFijos() {
                   <div className="text-sm font-semibold text-gray-900 truncate pr-2">
                     {idx + 1}. {r.categoria}
                   </div>
-                  <span className="text-xs text-gray-500">{r.fecha}</span>
+                  <span className="text-xs text-gray-500">{formatDate(r.fecha)}</span>
                 </div>
                 <div className="text-[11px] text-gray-600 mb-2 truncate">
                   {r.descripcion || "-"}
@@ -711,15 +950,13 @@ export default function FinanzasEgresosFijos() {
                     <select
                       value={r.frecuencia}
                       onClick={(e) => e.stopPropagation()}
-                      onChange={(e) =>
-                        setRows((prev) => {
-                          const next = prev.map((x, i) =>
-                            i === idx ? { ...x, frecuencia: e.target.value } : x
-                          );
-                          saveExpenses("fijos", next);
-                          return next;
-                        })
-                      }
+                      onChange={async (e) => {
+                        try {
+                          await patchGasto(idx, { frecuencia: e.target.value });
+                        } catch (err) {
+                          console.error("No se pudo actualizar frecuencia", err);
+                        }
+                      }}
                       className="rounded-md text-[10px] px-1.5 py-0.5 border border-gray-200"
                     >
                       {FRECUENCIAS.map((f) => (
@@ -741,15 +978,76 @@ export default function FinanzasEgresosFijos() {
                   <select
                     value={r.estatus}
                     onClick={(e) => e.stopPropagation()}
-                    onChange={(e) =>
-                      setRows((prev) => {
-                        const next = prev.map((x, i) =>
-                          i === idx ? { ...x, estatus: e.target.value } : x
+                    onChange={async (e) => {
+                      const next = e.target.value;
+                      // Validación de presupuesto si va a Pagado
+                      if (next === "Pagado") {
+                        const item = rows[idx];
+                        const month = dayjs(item.fecha).format("YYYY-MM");
+                        let snap = null;
+                        try {
+                          const r = await getResumenMensual(month);
+                          snap = {
+                            budget: Number(r.budget || 0),
+                            spent: Number(r.spent || 0),
+                            leftover: Number(r.leftover || 0),
+                          };
+                        } catch {
+                          snap = getBudgetSnapshot(month);
+                        }
+                        const exceed = Math.max(
+                          0,
+                          Number(item.importe || 0) - snap.leftover
                         );
-                        saveExpenses("fijos", next);
-                        return next;
-                      })
-                    }
+                        if (snap.budget > 0 && exceed > 0) {
+                          setBudgetWarn({
+                            open: true,
+                            context: "status",
+                            info: {
+                              idx,
+                              month,
+                              snap,
+                              amount: Number(item.importe || 0),
+                              exceed,
+                            },
+                          });
+                          return;
+                        }
+                      }
+
+                      // UI optimista
+                      const prevRows = rows;
+                      const optimistic = rows.map((x, i) =>
+                        i === idx ? { ...x, estatus: next } : x
+                      );
+                      setRows(optimistic);
+                      saveExpenses("fijos", optimistic);
+
+                      try {
+                        if (rows[idx]?.id) {
+                          const updated = await updateGastoFijo(rows[idx].id, { estatus: next });
+                          // sincronizar con respuesta del backend
+                          setRows((current) => {
+                            const synced = current.map((x) =>
+                              x.id === updated.id ? { ...x, ...updated } : x
+                            );
+                            saveExpenses("fijos", synced);
+                            return synced;
+                          });
+                        }
+                        // refrescar presupuesto si corresponde
+                        if (next === "Pagado") {
+                          const month = dayjs(rows[idx].fecha).format("YYYY-MM");
+                          await refreshBudgetSummary(month);
+                        }
+                      } catch (err) {
+                        // rollback en error
+                        setRows(prevRows);
+                        saveExpenses("fijos", prevRows);
+                        console.error("No se pudo actualizar estatus", err);
+                        // Aquí podrías añadir un toast de error
+                      }
+                    }}
                     className={`rounded-md text-[10px] px-1.5 py-0.5 border ${
                       r.estatus === "Pagado"
                         ? "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -937,42 +1235,97 @@ export default function FinanzasEgresosFijos() {
       {/* Modal Plantillas de gastos fijos */}
       {plantillaModalOpen && (
         <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-[92px] sm:pt-[112px] pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-[96vw] sm:max-w-3xl rounded-2xl shadow-xl flex flex-col max-h-[90dvh] mx-auto my-6 sm:my-8">
+          <div className="bg-white w-full max-w-[96vw] sm:max-w-3xl rounded-2xl shadow-xl flex flex-col h-[70dvh] mx-auto my-6 sm:my-8">
             <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
               <h3 className="text-base font-semibold text-gray-900">Plantillas de gastos fijos</h3>
               <button onClick={() => setPlantillaModalOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
             </div>
-            <div className="px-4 sm:px-5 py-4 space-y-4 overflow-y-auto">
+            <div className="px-4 sm:px-5 py-4 space-y-4 overflow-y-auto flex-1 min-h-0">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input placeholder="Categoría" value={plantillaForm.categoria} onChange={e=>setPlantillaForm(f=>({...f,categoria:e.target.value}))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                <input placeholder="Proveedor" value={plantillaForm.proveedor} onChange={e=>setPlantillaForm(f=>({...f,proveedor:e.target.value}))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                <input placeholder="Monto sugerido" value={plantillaForm.monto_sugerido} onChange={e=>setPlantillaForm(f=>({...f,monto_sugerido:e.target.value.replace(/[^\d.]/g,'')}))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                <select value={plantillaForm.frecuencia} onChange={e=>setPlantillaForm(f=>({...f,frecuencia:e.target.value}))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm">
-                  {FRECUENCIAS.map(f=> <option key={f} value={f}>{f}</option>)}
-                </select>
-                <select value={plantillaForm.metodo} onChange={e=>setPlantillaForm(f=>({...f,metodo:e.target.value}))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm">
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Transferencia">Transferencia</option>
-                  <option value="Tarjeta">Tarjeta</option>
-                </select>
-                <input placeholder="Descripción (opcional)" value={plantillaForm.descripcion} onChange={e=>setPlantillaForm(f=>({...f,descripcion:e.target.value}))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm md:col-span-2"/>
-                <input type="number" min={1} max={31} placeholder="Día de pago (1-31, opcional)" value={plantillaForm.dia_pago} onChange={e=>setPlantillaForm(f=>({...f,dia_pago:e.target.value}))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                <input type="time" placeholder="Hora preferida (opcional)" value={plantillaForm.hora_preferida} onChange={e=>setPlantillaForm(f=>({...f,hora_preferida:e.target.value}))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-700">Recordar (min)</label>
-                  <input type="number" min={0} value={plantillaForm.recordar_minutos} onChange={e=>setPlantillaForm(f=>({...f,recordar_minutos:Number(e.target.value)||0}))} className="w-24 rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Categoría</label>
+                  <input value={plantillaForm.categoria} onChange={e=>setPlantillaForm(f=>({...f,categoria:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
                 </div>
-                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                  <input type="checkbox" checked={!!plantillaForm.auto_evento} onChange={e=>setPlantillaForm(f=>({...f,auto_evento:e.target.checked}))}/>
-                  Crear evento de calendario automático
-                </label>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Proveedor</label>
+                  <input value={plantillaForm.proveedor} onChange={e=>setPlantillaForm(f=>({...f,proveedor:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Monto sugerido</label>
+                  <input value={plantillaForm.monto_sugerido} onChange={e=>setPlantillaForm(f=>({...f,monto_sugerido:e.target.value.replace(/[^\d.]/g,'')}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Frecuencia</label>
+                  <select value={plantillaForm.frecuencia} onChange={e=>setPlantillaForm(f=>({...f,frecuencia:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    {FRECUENCIAS.map(f=> <option key={f} value={f}>{f}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Método</label>
+                  <select value={plantillaForm.metodo} onChange={e=>setPlantillaForm(f=>({...f,metodo:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Día de pago (1-31, opcional)</label>
+                  <input type="number" min={1} max={31} value={plantillaForm.dia_pago} onChange={e=>setPlantillaForm(f=>({...f,dia_pago:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                  <p className="mt-1 text-[11px] text-gray-500">Se usa junto con la frecuencia para programar la fecha exacta.</p>
+                </div>
+
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Descripción (opcional)</label>
+                  <input value={plantillaForm.descripcion} onChange={e=>setPlantillaForm(f=>({...f,descripcion:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                </div>
+
+                <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Hora preferida (opcional)</label>
+                  <input type="time" value={plantillaForm.hora_preferida} onChange={e=>setPlantillaForm(f=>({...f,hora_preferida:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Fecha de inicio (opcional)</label>
+                    <input type="date" value={plantillaForm.fecha_inicio} onChange={e=>setPlantillaForm(f=>({...f,fecha_inicio:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                    <p className="mt-1 text-[11px] text-gray-500">Si la estableces en hoy, se considera el primer registro hoy; si es futura, no se creará nada antes de esa fecha.</p>
+                  </div>
+
+                {['Bimestral','Semestral','Anual'].includes(plantillaForm.frecuencia) ? (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Mes de referencia</label>
+                    <input type="month" value={plantillaForm.cadencia_anchor} onChange={e=>setPlantillaForm(f=>({...f,cadencia_anchor:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                    <p className="mt-1 text-[11px] text-gray-500">Ancla para calcular los meses que tocan (bimestral, semestral, anual). Si lo dejas vacío, usamos la fecha de creación.</p>
+                  </div>
+                ) : (
+                  <div className="hidden md:block"></div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Recordar (min)</label>
+                  <input type="number" min={0} value={plantillaForm.recordar_minutos} onChange={e=>setPlantillaForm(f=>({...f,recordar_minutos:Number(e.target.value)||0}))} className="w-full md:w-28 rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                </div>
+
+                <div className="md:col-span-3 flex flex-col sm:flex-row sm:items-center gap-3 justify-between mt-1">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                      <input type="checkbox" checked={!!plantillaForm.auto_evento} onChange={e=>setPlantillaForm(f=>({...f,auto_evento:e.target.checked}))}/>
+                      Crear evento de calendario automático
+                    </label>
+                    <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                      <input type="checkbox" checked={!!plantillaForm.auto_instanciar} onChange={e=>setPlantillaForm(f=>({...f,auto_instanciar:e.target.checked}))}/>
+                      Auto‑instanciar (crear egreso automáticamente según fecha)
+                    </label>
+                  </div>
+                </div>
                 <button onClick={async ()=>{
                   try {
-                    const payload = { ...plantillaForm, monto_sugerido: Number((plantillaForm.monto_sugerido||'').replace(/,/g,'')) || 0, dia_pago: plantillaForm.dia_pago?Number(plantillaForm.dia_pago):null, recordar_minutos: Number(plantillaForm.recordar_minutos)||30, auto_evento: !!plantillaForm.auto_evento };
+                    // cadencia_anchor del input month llega como YYYY-MM; convertir a YYYY-MM-01 para el ancla
+                    const anchor = plantillaForm.cadencia_anchor ? `${plantillaForm.cadencia_anchor}-01` : null;
+                    const payload = { ...plantillaForm, cadencia_anchor: anchor, monto_sugerido: Number((plantillaForm.monto_sugerido||'').replace(/,/g,'')) || 0, dia_pago: plantillaForm.dia_pago?Number(plantillaForm.dia_pago):null, recordar_minutos: Number(plantillaForm.recordar_minutos)||30, auto_evento: !!plantillaForm.auto_evento, auto_instanciar: !!plantillaForm.auto_instanciar };
                     if (!payload.categoria) return;
                     const saved = await createPlantilla(payload);
                     setPlantillas(prev=>[saved, ...prev]);
-                    setPlantillaForm({ categoria: '', descripcion: '', proveedor: '', frecuencia: 'Mensual', metodo: 'Efectivo', monto_sugerido: '', dia_pago: '', hora_preferida: '', recordar_minutos: 30, auto_evento: true });
+                    setPlantillaForm({ categoria: '', descripcion: '', proveedor: '', frecuencia: 'Mensual', metodo: 'Efectivo', monto_sugerido: '', dia_pago: '', hora_preferida: '', recordar_minutos: 30, auto_evento: true, auto_instanciar: true, fecha_inicio: '', cadencia_anchor: '' });
                   } catch(e) { console.error('crear plantilla', e); }
                 }} className="rounded-lg bg-indigo-600 text-white px-3 py-2 text-sm">Agregar plantilla</button>
               </div>
@@ -998,23 +1351,44 @@ export default function FinanzasEgresosFijos() {
                         <td className="px-2 py-2">{p.frecuencia}{p.dia_pago?` (${p.dia_pago})`:''}</td>
                         <td className="px-2 py-2">
                           <div className="flex items-center gap-2 justify-end">
+                            <button onClick={() => {
+                              const monthVal = p.cadencia_anchor ? String(p.cadencia_anchor).slice(0,7) : '';
+                              setPlantillaEdit({
+                                id: p.id,
+                                categoria: p.categoria || '',
+                                proveedor: p.proveedor || '',
+                                monto_sugerido: String(Number(p.monto_sugerido||0)),
+                                frecuencia: p.frecuencia || 'Mensual',
+                                metodo: p.metodo || 'Efectivo',
+                                descripcion: p.descripcion || '',
+                                dia_pago: p.dia_pago || '',
+                                hora_preferida: p.hora_preferida || '',
+                                recordar_minutos: Number(p.recordar_minutos)||30,
+                                auto_evento: !!p.auto_evento,
+                                auto_instanciar: !!p.auto_instanciar,
+                                fecha_inicio: p.fecha_inicio ? String(p.fecha_inicio).slice(0,10) : '',
+                                cadencia_anchor: monthVal,
+                              });
+                              setPlantillaEditOpen(true);
+                            }} className="text-indigo-700 hover:text-indigo-800 text-xs">Editar</button>
                             <button onClick={async()=>{
                               try {
-                                // Permitir elegir fecha/estatus al instanciar rápidamente
-                                const chosenDate = window.prompt('Fecha del egreso (YYYY-MM-DD). Déjalo vacío para usar sugerida por plantilla:', '');
-                                const chosenStatus = window.prompt('Estatus (Pagado/Pendiente)', 'Pendiente');
-                                const body = {};
-                                if (chosenDate && /^\d{4}-\d{2}-\d{2}$/.test(chosenDate)) body.fecha = chosenDate;
-                                if (chosenStatus && (chosenStatus==='Pagado' || chosenStatus==='Pendiente')) body.estatus = chosenStatus;
-                                const gasto = await instanciarDesdePlantilla(p.id, body);
+                                const nuevo = await updatePlantilla(p.id, { auto_instanciar: p.auto_instanciar ? 0 : 1 });
+                                setPlantillas(prev => prev.map(x => x.id === p.id ? { ...x, auto_instanciar: nuevo.auto_instanciar } : x));
+                                window.dispatchEvent(new CustomEvent('toast',{ detail:{ type:'info', message: nuevo.auto_instanciar? 'Plantilla activada (se generará automáticamente cuando toque)':'Plantilla desactivada' }}));
+                              } catch(e){ console.error('toggle auto_instanciar', e); window.dispatchEvent(new CustomEvent('toast',{ detail:{ type:'error', message:'Error cambiando estado'}})); }
+                            }} className="text-indigo-700 hover:text-indigo-800 text-xs">{p.auto_instanciar? 'Desactivar':'Activar'}</button>
+                            <button onClick={async(e)=>{
+                              e.stopPropagation();
+                              try {
+                                const gasto = await instanciarDesdePlantilla(p.id, {});
                                 setRows(prev=>[{ ...gasto, calendarEventId: gasto.calendar_event_id ?? gasto.calendarEventId }, ...prev]);
-                                // Crear evento si la plantilla sugiere auto_evento
-                                try {
-                                  if (p.auto_evento) {
+                                if (p.auto_evento) {
+                                  try {
                                     const hora = p.hora_preferida || getSmartEventTime(gasto.fecha);
                                     const evRes = await api.post('/admin/calendar/events', {
                                       titulo: `Pagar ${gasto.categoria}`,
-                                      descripcion: `Proveedor: ${gasto.proveedor||'-'} | Monto: ${formatCurrency(gasto.importe)} | Desde plantilla` ,
+                                      descripcion: `Proveedor: ${gasto.proveedor||'-'} | Monto: ${formatCurrency(gasto.importe)} | Desde plantilla (manual)` ,
                                       fecha: gasto.fecha,
                                       hora,
                                       tipo: 'finanzas',
@@ -1031,10 +1405,11 @@ export default function FinanzasEgresosFijos() {
                                         saveExpenses('fijos', rows);
                                       } catch(_) {}
                                     }
-                                  }
-                                } catch(err) { console.warn('evento plantilla', err?.response?.status || err?.message || err); }
-                              } catch(e) { console.error('instanciar', e); }
-                            }} className="text-emerald-700 hover:text-emerald-800 text-xs">Crear egreso</button>
+                                  } catch(err) { console.warn('evento plantilla manual', err?.response?.status || err?.message || err); }
+                                }
+                                window.dispatchEvent(new CustomEvent('toast',{ detail:{ type:'success', message:`Egreso creado manual (${gasto.fecha})`}}));
+                              } catch(e){ console.error('instanciar manual', e); window.dispatchEvent(new CustomEvent('toast',{ detail:{ type:'error', message:'Error creando egreso manual'}})); }
+                            }} title="Forzar creación manual ahora" className="text-emerald-600 hover:text-emerald-700 text-xs">⚡</button>
                             <button onClick={async()=>{
                               try { await deletePlantilla(p.id); setPlantillas(prev=>prev.filter(x=>x.id!==p.id)); } catch(e) { console.error('delete plantilla', e); }
                             }} className="text-rose-700 hover:text-rose-800 text-xs">Eliminar</button>
@@ -1050,124 +1425,158 @@ export default function FinanzasEgresosFijos() {
         </div>
       )}
 
-      {/* Modal presupuesto insuficiente */}
-      {budgetWarn.open && (
-        <div className="fixed inset-0 z-[10000] overflow-y-auto pt-[128px] sm:pt-[148px] pb-6 px-3 sm:px-4 bg-black/40">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-md rounded-2xl shadow-xl mx-auto my-6 sm:my-8 flex flex-col max-h-[90dvh]">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">
-                Presupuesto insuficiente
-              </h3>
-              <button
-                onClick={() =>
-                  setBudgetWarn({ open: false, context: null, info: null })
-                }
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
+      {/* Modal Editar plantilla */}
+      {plantillaEditOpen && plantillaEdit && (
+        <div className="fixed inset-0 z-[10000] overflow-y-auto p-3 sm:p-4 pt-[92px] sm:pt-[112px] pb-6 bg-black/40">
+          <div className="bg-white w-full max-w-[96vw] sm:max-w-2xl rounded-2xl shadow-xl flex flex-col h-[70dvh] mx-auto my-6 sm:my-8">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+              <h3 className="text-base font-semibold text-gray-900">Editar plantilla</h3>
+              <button onClick={() => { setPlantillaEditOpen(false); setPlantillaEdit(null); }} className="text-gray-500 hover:text-gray-700">✕</button>
             </div>
-            <div className="px-5 py-4 text-sm text-gray-700 space-y-2">
-              {(() => {
-                const i = budgetWarn.info || {};
-                const b = i.snap || { budget: 0, spent: 0, leftover: 0 };
-                return (
-                  <>
-                    <p>
-                      Mes: <strong className="text-gray-900">{i.month}</strong>
-                    </p>
-                    <p>
-                      Presupuesto:{" "}
-                      <strong className="text-indigo-600">
-                        {new Intl.NumberFormat("es-MX", {
-                          style: "currency",
-                          currency: "MXN",
-                        }).format(b.budget || 0)}
-                      </strong>
-                    </p>
-                    <p>
-                      Gastado:{" "}
-                      <strong className="text-rose-600">
-                        {new Intl.NumberFormat("es-MX", {
-                          style: "currency",
-                          currency: "MXN",
-                        }).format(b.spent || 0)}
-                      </strong>
-                    </p>
-                    <p>
-                      Disponible:{" "}
-                      <strong className="text-emerald-600">
-                        {new Intl.NumberFormat("es-MX", {
-                          style: "currency",
-                          currency: "MXN",
-                        }).format(b.leftover || 0)}
-                      </strong>
-                    </p>
-                    <p className="mt-1">
-                      Este egreso:{" "}
-                      <strong className="text-gray-900">
-                        {new Intl.NumberFormat("es-MX", {
-                          style: "currency",
-                          currency: "MXN",
-                        }).format(i.amount || 0)}
-                      </strong>
-                    </p>
-                    <p className="text-rose-700 font-medium">
-                      Excedente:{" "}
-                      {new Intl.NumberFormat("es-MX", {
-                        style: "currency",
-                        currency: "MXN",
-                      }).format(Math.max(0, i.exceed || 0))}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Puedes continuar y registrar el egreso, cambiarlo a
-                      pendiente o ajustar el presupuesto.
-                    </p>
-                  </>
-                );
-              })()}
+            <div className="px-4 sm:px-5 py-4 space-y-4 overflow-y-auto flex-1 min-h-0">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Categoría</label>
+                  <input value={plantillaEdit.categoria} onChange={e=>setPlantillaEdit(f=>({...f,categoria:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Proveedor</label>
+                  <input value={plantillaEdit.proveedor} onChange={e=>setPlantillaEdit(f=>({...f,proveedor:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Monto sugerido</label>
+                  <input value={plantillaEdit.monto_sugerido} onChange={e=>setPlantillaEdit(f=>({...f,monto_sugerido:e.target.value.replace(/[^\d.]/g,'')}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Frecuencia</label>
+                  <select value={plantillaEdit.frecuencia} onChange={e=>setPlantillaEdit(f=>({...f,frecuencia:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    {FRECUENCIAS.map(f=> <option key={f} value={f}>{f}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Método</label>
+                  <select value={plantillaEdit.metodo} onChange={e=>setPlantillaEdit(f=>({...f,metodo:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Día de pago (1-31, opcional)</label>
+                  <input type="number" min={1} max={31} value={plantillaEdit.dia_pago} onChange={e=>setPlantillaEdit(f=>({...f,dia_pago:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                </div>
+
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Descripción (opcional)</label>
+                  <input value={plantillaEdit.descripcion} onChange={e=>setPlantillaEdit(f=>({...f,descripcion:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Hora preferida (opcional)</label>
+                  <input type="time" value={plantillaEdit.hora_preferida} onChange={e=>setPlantillaEdit(f=>({...f,hora_preferida:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Fecha de inicio (opcional)</label>
+                  <input type="date" value={plantillaEdit.fecha_inicio} onChange={e=>setPlantillaEdit(f=>({...f,fecha_inicio:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                  <p className="mt-1 text-[11px] text-gray-500">No se auto‑creará nada antes de esta fecha; si pones hoy, hoy será el primer registro.</p>
+                </div>
+
+                {['Bimestral','Semestral','Anual'].includes(plantillaEdit.frecuencia) ? (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Mes de referencia</label>
+                    <input type="month" value={plantillaEdit.cadencia_anchor} onChange={e=>setPlantillaEdit(f=>({...f,cadencia_anchor:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                    <p className="mt-1 text-[11px] text-gray-500">Ancla para calcular los meses que tocan.</p>
+                  </div>
+                ) : (
+                  <div className="hidden md:block"></div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Recordar (min)</label>
+                  <input type="number" min={0} value={plantillaEdit.recordar_minutos} onChange={e=>setPlantillaEdit(f=>({...f,recordar_minutos:Number(e.target.value)||0}))} className="w-full md:w-28 rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                </div>
+
+                <div className="md:col-span-3 flex flex-col sm:flex-row sm:items-center gap-3 justify-between mt-1">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                      <input type="checkbox" checked={!!plantillaEdit.auto_evento} onChange={e=>setPlantillaEdit(f=>({...f,auto_evento:e.target.checked}))}/>
+                      Crear evento de calendario automático
+                    </label>
+                    <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                      <input type="checkbox" checked={!!plantillaEdit.auto_instanciar} onChange={e=>setPlantillaEdit(f=>({...f,auto_instanciar:e.target.checked}))}/>
+                      Auto‑instanciar (crear egreso automáticamente según fecha)
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-end gap-2">
-              <Link
-                to="/administrativo/finanzas/egresos/presupuesto"
-                onClick={() =>
-                  setBudgetWarn({ open: false, context: null, info: null })
-                }
-                className="px-3 py-1.5 text-sm rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-              >
-                Ajustar presupuesto
-              </Link>
-              {budgetWarn.context === "create" ? (
+            <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-white flex items-center justify-end gap-2">
+              <button onClick={() => { setPlantillaEditOpen(false); setPlantillaEdit(null); }} className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cancelar</button>
+              <button onClick={async () => {
+                try {
+                  const anchor = plantillaEdit.cadencia_anchor ? `${plantillaEdit.cadencia_anchor}-01` : null;
+                  const payload = {
+                    categoria: plantillaEdit.categoria,
+                    proveedor: plantillaEdit.proveedor,
+                    monto_sugerido: Number((plantillaEdit.monto_sugerido||'').replace(/,/g,'')) || 0,
+                    frecuencia: plantillaEdit.frecuencia,
+                    metodo: plantillaEdit.metodo,
+                    descripcion: plantillaEdit.descripcion,
+                    dia_pago: plantillaEdit.dia_pago ? Number(plantillaEdit.dia_pago) : null,
+                    hora_preferida: plantillaEdit.hora_preferida || null,
+                    recordar_minutos: Number(plantillaEdit.recordar_minutos)||30,
+                    auto_evento: !!plantillaEdit.auto_evento,
+                    auto_instanciar: !!plantillaEdit.auto_instanciar,
+                    fecha_inicio: plantillaEdit.fecha_inicio || null,
+                    cadencia_anchor: anchor,
+                  };
+                  const saved = await updatePlantilla(plantillaEdit.id, payload);
+                  setPlantillas(prev => prev.map(x => x.id === saved.id ? saved : x));
+                  setPlantillaEditOpen(false);
+                  setPlantillaEdit(null);
+                } catch(e) { console.error('update plantilla', e); }
+              }} className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Guardar cambios</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal presupuesto insuficiente (nuevo diseño unificado) */}
+      {budgetWarn.open && (()=>{ const i = budgetWarn.info||{}; const b = i.snap || { budget:0, spent:0, leftover:0 }; const fmt = (n)=> new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(n||0)); return (
+        <div className="fixed inset-0 z-[10000] bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden">
+            <div className="px-5 py-4 border-b flex items-center justify-between bg-amber-50/60">
+              <h3 className="text-base font-semibold text-amber-800">Presupuesto insuficiente</h3>
+              <button onClick={()=> setBudgetWarn({ open:false, context:null, info:null })} className="text-amber-600 hover:text-amber-800">✕</button>
+            </div>
+            <div className="px-5 py-4 text-sm text-gray-700 space-y-3">
+              <p>El egreso marcado excede el presupuesto disponible del mes.</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Presupuesto</div><div className="font-semibold">{fmt(b.budget)}</div></div>
+                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Gastado</div><div className="font-semibold">{fmt(b.spent)}</div></div>
+                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Disponible</div><div className="font-semibold">{fmt(b.leftover)}</div></div>
+                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Egreso</div><div className="font-semibold text-rose-600">{fmt(i.amount)}</div></div>
+              </div>
+              <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2">Continuar lo dejará en negativo por {fmt(i.exceed)}.</div>
+            </div>
+            <div className="px-5 py-3 border-t flex items-center justify-end gap-2 bg-gray-50">
+              {budgetWarn.context==='create' ? (
                 <>
-                  <button
-                    onClick={saveAsPendingInstead}
-                    className="px-3 py-1.5 text-sm rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50"
-                  >
-                    Guardar como Pendiente
-                  </button>
-                  <button
-                    onClick={proceedCreateEvenIfExceed}
-                    className="px-3 py-1.5 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700"
-                  >
-                    Continuar y guardar
-                  </button>
+                  <button onClick={saveAsPendingInstead} className="px-4 py-2 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 text-sm">Guardar como Pendiente</button>
+                  <button onClick={proceedCreateEvenIfExceed} className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700">Continuar y guardar</button>
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={() =>
-                      setBudgetWarn({ open: false, context: null, info: null })
-                    }
-                    className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
+                  {/* Estatus: ofrecer las mismas dos opciones que en Variables */}
+                  <button onClick={saveStatusAsPending} className="px-4 py-2 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 text-sm">Guardar como Pendiente</button>
+                  <button onClick={proceedStatusEvenIfExceed} className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700">Continuar y guardar</button>
                 </>
               )}
             </div>
           </div>
         </div>
-      )}
+      ); })()}
 
       {/* Modal Ver descripción */}
       {descOpen && (
@@ -1457,7 +1866,7 @@ export default function FinanzasEgresosFijos() {
                 <div>
                   <span className="text-gray-500">Fecha:</span>{" "}
                   <span className="text-gray-800">
-                    {rows[editIndex]?.fecha}
+                    {formatDate(rows[editIndex]?.fecha)}
                   </span>{" "}
                   <span className="text-gray-500 ml-2">Importe:</span>{" "}
                   <span className="text-gray-800 font-medium">

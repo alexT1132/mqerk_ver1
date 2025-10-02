@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import jsPDF from 'jspdf';
-import { generarYDescargarContrato } from '../../service/contractPDFService.js';
+import { generarContratoPDF } from '../../service/contractPDFService.js';
 import { generarPDFCalibracion } from '../../service/pdfCalibrationService.js';
 import ConfirmModal from '../shared/ConfirmModal';
 import { useAdminContext } from '../../context/AdminContext.jsx';
@@ -129,6 +130,8 @@ function GrupoButton({ label, isActive, onClick, grupo }) {
 
 function ValidacionPagos_Admin_comp() {
   const [showLoadingScreen, setShowLoadingScreen] = useState(true);
+  // Modal pequeña de generación (loading) (mover dentro del componente para evitar invalid hook call)
+  const [genModal, setGenModal] = useState({ open: false, alumno: null, startedAt: 0, countdown: 5, preliminar: false });
   
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeTurno, setActiveTurno] = useState(null);
@@ -140,7 +143,8 @@ function ValidacionPagos_Admin_comp() {
     isOpen: false,
     url: '',
     alumno: null,
-    tipo: ''
+    tipo: '',
+    nombreArchivo: ''
   });
   
   const [showContratoModal, setShowContratoModal] = useState(false);
@@ -152,6 +156,12 @@ function ValidacionPagos_Admin_comp() {
     alumno: null,
     message: '',
     details: ''
+  });
+  // Modal específica para eliminar contrato
+  const [deleteModal, setDeleteModal] = useState({
+    open: false,
+    pago: null,
+    processing: false
   });
 
   // ============= INTEGRACIÓN CON ADMINCONTEXT =============
@@ -209,17 +219,17 @@ function ValidacionPagos_Admin_comp() {
         setApprovedStudentsByCourse(prev => ({ ...prev, [activeCategory]: courseStudents }));
       }
       const grupoFiltrado = courseStudents.filter(est => (est.turno || est.grupo) === activeTurno);
-      const pagosMapeados = grupoFiltrado.map(est => ({
+      const pagosBase = grupoFiltrado.map(est => ({
         id: est.id,
-  folio: est.folio, // puede ser formateado (ej: MEEAU26-0001) según AdminContext
-  folioNumero: est.folioNumero || est.folioNumeroOriginal || est.folioNumero || est.folioNumeroRaw || est.folioNumero, // fallback
+        folio: est.folio,
+        folioNumero: est.folioNumero || est.folioNumeroOriginal || est.folioNumero || est.folioNumeroRaw || est.folioNumero,
         alumno: `${est.nombres || ''} ${est.apellidos || ''}`.trim(),
         correoElectronico: est.correoElectronico || est.email || '',
         categoria: est.curso || activeCategory,
         turno: est.turno || est.grupo || activeTurno,
-  planCurso: est.planCurso || null,
-  pagoCurso: est.pagoCurso || null,
-  metodoPago: est.metodoPago || null,
+        planCurso: est.planCurso || null,
+        pagoCurso: est.pagoCurso || null,
+        metodoPago: est.metodoPago || null,
         fechaEntrada: est.fechaRegistro || (est.created_at ? est.created_at.split('T')[0] : ''),
         comprobanteUrl: est.comprobanteUrl || null,
         contratoUrl: est.contratoUrl || null,
@@ -227,7 +237,29 @@ function ValidacionPagos_Admin_comp() {
         contratoGenerado: Boolean(est.contratoUrl),
         contratoSubido: Boolean(est.contratoUrl)
       }));
-      setPagos(pagosMapeados);
+
+      // Enriquecer consultando backend sólo para los que aún no tienen contratoUrl
+      const enriched = await Promise.all(pagosBase.map(async p => {
+        if (p.contratoUrl) return p;
+        try {
+          const folioCheck = p.folioNumero || p.folio;
+          if (!folioCheck) return p;
+          // Verificación silenciosa de contrato existente SIN regenerar.
+          // Usamos check=1 (modo sólo verificación). Antes se usaba store=1 y eso regeneraba tras eliminar.
+          const resp = await api.get(`/admin/estudiantes/folio/${folioCheck}/contrato?check=1`).catch((e) => {
+            // Silenciar errores 404 u otros durante enriquecimiento
+            return null;
+          });
+          const data = resp?.data;
+          // No logging para producción
+          if (data?.existing && data?.archivo) {
+            // Contrato encontrado, actualizar flags locales
+            return { ...p, contratoUrl: data.archivo, contratoGenerado: true, contratoSubido: true };
+          }
+  } catch (e) { /* Ignorar excepción silenciosamente */ }
+        return p;
+      }));
+      setPagos(enriched);
     } catch (err) {
       console.error('Error construyendo pagos desde estudiantes aprobados:', err);
       setPagos([]);
@@ -256,9 +288,9 @@ function ValidacionPagos_Admin_comp() {
         //     setGruposPorCurso(gruposResponse);
         //   }
         
-        console.log('📦 Datos iniciales cargados (mock temporal)');
+  // Datos iniciales cargados (mock temporal) - log removido en producción
       } catch (error) {
-        console.error('Error loading initial data:', error);
+  // Error loading initial data (silenciado en producción)
         setError('Error al cargar datos iniciales');
       }
     };
@@ -348,7 +380,7 @@ function ValidacionPagos_Admin_comp() {
     const matchTurno = !activeTurno || pago.turno === activeTurno;
     const matchSearch = !searchTerm || 
       pago.alumno.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pago.folio.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(pago.folio || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       pago.correoElectronico?.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchCategory && matchTurno && matchSearch;
@@ -369,22 +401,7 @@ function ValidacionPagos_Admin_comp() {
     }
   };
 
-  // Función para generar contrato usando la plantilla PDF oficial
-  const generarContratoDesdePlantilla = async (alumno) => {
-    try {
-      console.log('🔄 Generando contrato desde plantilla oficial para:', alumno.alumno);
-      
-      // Usar el nuevo servicio de generación de contratos
-      const resultado = await generarYDescargarContrato(alumno);
-      
-      console.log('✅ Contrato generado exitosamente:', resultado.nombreArchivo);
-      return resultado.url;
-      
-    } catch (error) {
-      console.error('❌ Error al generar contrato:', error);
-      throw new Error(error.message || 'Error al generar el contrato desde la plantilla oficial');
-    }
-  };
+  // (Se eliminó la función de generación debug y el botón asociado a solicitud del usuario)
 
   // Función para generar PDF de calibración (herramienta de desarrollo)
   const generarPDFDeCalibracion = async () => {
@@ -404,28 +421,160 @@ function ValidacionPagos_Admin_comp() {
   // generateContract y uploadContract vienen directamente del AdminContext.jsx
   // Estas funciones YA están conectadas con el backend (actualmente con mocks)
   
-  // Función para generar contrato usando AdminContext
+  // Versión original (backend) preservada por si se requiere volver a usar
+  const handleGenerarContratoBackend = async (id) => {
+    try {
+      const alumno = pagos.find(p => p.id === id);
+      if (!alumno) { showErrorModal('Error', 'No se encontró el alumno'); return; }
+      if (!alumno.alumno || !alumno.categoria || !alumno.planCurso || !alumno.pagoCurso) {
+        showErrorModal('Error', 'Faltan datos del alumno para generar el contrato'); return;
+      }
+      openContractModal(alumno);
+      console.log('🔄 Preparando generación de contrato (backend) para pago:', id);
+    } catch (error) {
+      console.error('Error (backend) al preparar generación contrato:', error);
+      showErrorModal('Error', 'Error al preparar la generación del contrato (backend).');
+    }
+  };
+
+  // Nueva función: generar contrato local usando el mismo motor que el modo debug (sin marcadores)
+  // Reemplaza el comportamiento del botón "Generar" para aprovechar inmediatamente las mejoras de layout.
   const handleGenerarContrato = async (id) => {
     try {
-      // Encontrar el alumno por ID
-      const alumno = pagos.find(p => p.id === id);
-      if (!alumno) {
-        showErrorModal('Error', 'No se encontró el alumno');
+      const pago = pagos.find(p => p.id === id);
+      if (!pago) { showErrorModal('Error', 'No se encontró el alumno'); return; }
+      // Validaciones mínimas
+      if (!pago.alumno || !pago.folio) {
+        console.warn('⚠️ Faltan datos básicos, se intentará obtener registro completo por API');
+      }
+
+      // 1) Obtener el registro completo actualizado desde el backend (igual que en debug)
+      const folioApi = pago.folioNumero || pago.folioNumeroOriginal || pago.folioNumeroRaw || pago.folioNumero || pago.folio;
+      if (!folioApi) {
+        showErrorModal('Error', 'No se pudo determinar el folio para cargar datos completos');
         return;
       }
 
-      // Validar que los datos estén completos
-      if (!alumno.alumno || !alumno.categoria || !alumno.planCurso || !alumno.pagoCurso) {
-        showErrorModal('Error', 'Faltan datos del alumno para generar el contrato');
-        return;
+      // Preparar variables previas (abrir modal lo antes posible)
+      let estudianteCompleto = null;
+      let usoFallback403 = false;
+      const start = Date.now();
+      // Modal provisional mientras obtenemos datos (sin alumno todavía)
+  setGenModal({ open: true, alumno: { nombreCompleto: pago.alumno || 'Cargando...' }, startedAt: start, countdown: 5, preliminar: false });
+  console.debug('[CONTRATO] Modal generación abierta (fase 1)');
+  // Ceder el control al navegador para que pinte la modal antes del trabajo pesado
+  await new Promise(requestAnimationFrame);
+  await new Promise(r => setTimeout(r, 30));
+  console.debug('[CONTRATO] Continuando luego de pintar modal');
+
+      try {
+        const resp = await api.get(`/admin/estudiantes/folio/${folioApi}`);
+        estudianteCompleto = resp?.data?.data;
+        if (!estudianteCompleto) throw new Error('El backend no devolvió datos');
+      } catch (e) {
+        const status = e?.response?.status;
+        const statusTxt = e?.response ? `${e.response.status} ${e.response.statusText}` : (e.message || 'Error desconocido');
+        if (status === 403) {
+          console.warn('⚠️ 403 Forbidden al obtener datos completos. Usando fallback local para generar contrato preliminar.');
+          usoFallback403 = true;
+          estudianteCompleto = {
+            folio: pago.folio,
+            folioNumero: pago.folioNumero || pago.folio,
+            nombre: (pago.alumno || '').split(' ')[0] || pago.alumno || 'Alumno',
+            apellidos: (pago.alumno || '').split(' ').slice(1).join(' ') || '---',
+            nombreCompleto: pago.alumno || 'Alumno Desconocido',
+            correoElectronico: pago.correoElectronico || 'sin-correo@example.com',
+            telefono: pago.telefono || '',
+            nombreTutor: pago.nombreTutor || 'Tutor',
+            categoria: pago.categoria || '',
+            fechaEntrada: pago.fechaEntrada || new Date().toISOString().slice(0,10),
+            pagoCurso: pago.pagoCurso || '',
+            planCurso: pago.planCurso || '',
+            metodoPago: pago.metodoPago || '',
+            academia: pago.categoria || '',
+          };
+        } else {
+          throw new Error(`No se pudieron obtener los datos completos del alumno (${statusTxt})`);
+        }
       }
 
-  // Abrir modal de confirmación (generación real ocurre en confirm)
-  openContractModal(alumno);
-  console.log('🔄 Preparando generación de contrato para pago:', id);
+      // Actualizar modal con datos definitivos / bandera preliminar
+  setGenModal(g => ({ ...g, alumno: estudianteCompleto, preliminar: usoFallback403 }));
+  console.debug('[CONTRATO] Modal generación actualizada con datos definitivos. preliminar=', usoFallback403);
+
+      console.log('📝 Generando contrato LOCAL definitivo (solo vista, sin descarga automática) para:', estudianteCompleto.nombreCompleto || estudianteCompleto.alumno);
+
+      // Iniciar countdown local (sin limpiar si se cierra antes, inofensivo)
+      let c = 5;
+      const tick = () => {
+        c -= 1;
+        setGenModal(g => g.open ? { ...g, countdown: c } : g);
+        if (c > 0) setTimeout(tick, 1000);
+      };
+      setTimeout(tick, 1000);
+
+      let resultado;
+      let errorGeneracion = null;
+      try {
+        console.debug('[CONTRATO] Iniciando generación pdf-lib pesada...');
+        // Usar las mismas opciones que el modo debug para asegurar consistencia en campos rellenados
+        const pdfOptions = {
+          debug: true, // mantener true para logs y trazabilidad visual (no agrega marcadores visibles salvo debugMarkers)
+          templateUrl: '/public/CONTRATO_C_E_E_A.pdf',
+          allowBlankFallback: true,
+            showMissingTemplateBanner: false,
+          preliminar: usoFallback403,
+          // Fallbacks de texto (solo se usan si el dato real no viene de la BD)
+          sampleFechaText: pago.fechaEntrada || new Date().toLocaleDateString('es-MX'),
+          // No mostrar el texto del plan; solo se marcará la casilla con 'X'
+          showPlanCurso: false,
+          showMonto: true,
+          showNivelAcademico: false, // se desactiva para no mostrar bachillerato / CBTIS
+          showSeguimiento: false, // cambiar a true si se quiere mostrar seguimiento psicológico
+          showFechaPagina1: false, // activar si se requiere la fecha DIA/MES/AÑO en página 1
+          // Control de meses en página 2 (mantener por defecto visible set 1 y 2)
+          hideMesSet1: false,
+          hideMesSet2: false,
+          showMesSet3: false,
+          // Posibles muestras (solo si vienen vacíos en datos reales)
+          sampleUniversidadText: 'UNIVERSIDAD DEMO' ,
+          samplePostulacionText: 'INGENIERIA' ,
+          sampleOrientacion: 'SI'
+        };
+        resultado = await generarContratoPDF(estudianteCompleto, pdfOptions);
+        console.debug('[CONTRATO] Generación pdf-lib finalizada');
+      } catch (e) {
+        errorGeneracion = e;
+      }
+
+      const elapsed = Date.now() - start;
+      const MIN_DELAY = 5000; // 5 segundos
+      if (elapsed < MIN_DELAY) {
+        await new Promise(r => setTimeout(r, MIN_DELAY - elapsed));
+      }
+
+      // Cerrar modal de loading
+      setGenModal(g => ({ ...g, open: false }));
+
+  if (errorGeneracion) throw errorGeneracion;
+
+      // 3) Actualizar estado local para que aparezca como generado (usa objectURL en memoria)
+      setPagos(prev => prev.map(p => p.id === pago.id ? { ...p, contratoGenerado: true, contratoUrl: resultado.url } : p));
+      console.log('✅ Contrato local generado (no descargado automáticamente):', resultado.nombreArchivo);
+
+      // 4) Mostrar modal de vista previa usando el object URL
+      setModalPDF({ 
+        isOpen: true, 
+        url: resultado.url, 
+        alumno: estudianteCompleto, 
+        tipo: usoFallback403 ? 'contrato-local-preliminar' : 'contrato-local-preview',
+        nombreArchivo: resultado.nombreArchivo || ''
+      });
     } catch (error) {
-      console.error('Error al generar contrato:', error);
-      showErrorModal('Error', 'Error al generar el contrato. Inténtalo de nuevo.');
+      console.error('❌ Error en generación local (no debug):', error);
+      // Asegurarse de cerrar modal de loading si hay error
+      setGenModal(g => ({ ...g, open: false }));
+      showErrorModal('Error', error.message || 'No se pudo generar el contrato local');
     }
   };
 
@@ -434,27 +583,29 @@ function ValidacionPagos_Admin_comp() {
     setIsGeneratingContract(true);
     
     try {
-      // Obtener el alumno del modal actual
-      const alumnoCompleto = contractModal.alumno;
-      
+      // Obtener el alumno del modal actual (guardar referencia ANTES de cerrar)
+      const alumnoRef = contractModal?.alumno;
+      if (!alumnoRef) {
+        throw new Error('No hay alumno seleccionado para generar el contrato');
+      }
       // Cerrar modal de confirmación
       setContractModal({ isOpen: false, type: '', alumno: null, message: '', details: '' });
       
       // ✅ USAR ADMINCONTEXT PARA GENERAR CONTRATO
       // generateContract viene del AdminContext.jsx y maneja la generación del PDF
       const contractData = {
-        alumno: alumnoCompleto.alumno,
-        folio: alumnoCompleto.folio,
-        curso: alumnoCompleto.categoria,
-        turno: alumnoCompleto.turno,
-        plan: alumnoCompleto.planCurso,
-        pago: alumnoCompleto.pagoCurso
+        alumno: alumnoRef.alumno,
+        folio: alumnoRef.folio,
+        curso: alumnoRef.categoria,
+        turno: alumnoRef.turno,
+        plan: alumnoRef.planCurso,
+        pago: alumnoRef.pagoCurso
       };
       
       // Llamar backend generación (devuelve JSON con archivo)
       let data;
       try {
-        const folioApi = alumnoCompleto.folioNumero || alumnoCompleto.folioNumeroOriginal || alumnoCompleto.folioNumeroRaw || alumnoCompleto.folioNumero || alumnoCompleto.folio; // última alternativa
+        const folioApi = alumnoRef.folioNumero || alumnoRef.folioNumeroOriginal || alumnoRef.folioNumeroRaw || alumnoRef.folioNumero || alumnoRef.folio; // última alternativa
         // Preview por defecto (sin guardar). Para guardar usar ?store=1 posteriormente.
         const resp = await api.get(`/admin/estudiantes/folio/${folioApi}/contrato`);
         data = resp.data;
@@ -468,17 +619,17 @@ function ValidacionPagos_Admin_comp() {
         setModalPDF({
           isOpen: true,
           url: pdfUrl,
-          alumno: alumnoCompleto,
+          alumno: alumnoRef,
           tipo: 'contrato'
         });
       } else {
         const urlContrato = data.archivo;
         if (!urlContrato) throw new Error('Respuesta sin archivo');
-        setPagos(pagos.map(pago => pago.id === alumnoCompleto.id ? { ...pago, contratoGenerado: true, contratoUrl: urlContrato } : pago));
+        setPagos(pagos.map(pago => pago.id === alumnoRef.id ? { ...pago, contratoGenerado: true, contratoUrl: urlContrato } : pago));
         setContractModal({
           isOpen: true,
           type: 'success',
-          alumno: alumnoCompleto,
+          alumno: alumnoRef,
           message: data.existing ? 'Contrato ya existente' : '¡Contrato Generado!',
           details: data.existing ? 'Ya había un contrato registrado. Puedes descargarlo o subir el firmado.' : `Contrato creado y guardado. Ahora descárgalo, recaba firmas y súbelo como firmado.`
         });
@@ -491,9 +642,9 @@ function ValidacionPagos_Admin_comp() {
       setContractModal({
         isOpen: true,
         type: 'error',
-        alumno: contractModal.alumno,
+        alumno: contractModal?.alumno || null,
         message: 'Error al Generar el PDF',
-        details: `No se pudo crear el contrato PDF para ${contractModal.alumno?.alumno}. Error: ${pdfError.message}`
+        details: `No se pudo crear el contrato PDF para ${contractModal?.alumno?.alumno || '(Alumno desconocido)'}. Error: ${pdfError.message}`
       });
     }
     
@@ -554,7 +705,31 @@ function ValidacionPagos_Admin_comp() {
       }
       const urlArchivo = data.archivo || null;
 
-      setPagos(pagos.map(p => p.id === id ? { ...p, contratoSubido: true, contratoUrl: urlArchivo, nombreArchivoSubido: file.name, fechaSubida: new Date().toISOString() } : p));
+      // Optimistic update local
+      setPagos(prev => prev.map(p => p.id === id ? { 
+        ...p, 
+        contratoSubido: true, 
+        contratoGenerado: true,
+        contratoUrl: urlArchivo, 
+        nombreArchivoSubido: file.name, 
+        fechaSubida: new Date().toISOString(),
+        versionContrato: 1,
+        contratoFirmado: true
+      } : p));
+
+      // Intentar revalidar datos del estudiante (para futuras mejoras si backend devuelve estado)
+      try {
+        if (alumno.folio) {
+          const folioCheck = alumno.folioNumero || alumno.folio;
+          const respDetalle = await api.get(`/admin/estudiantes/folio/${folioCheck}`);
+          const detalle = respDetalle?.data?.data;
+          if (detalle?.contratoUrl) {
+            setPagos(prev => prev.map(p => p.id === id ? { ...p, contratoUrl: detalle.contratoUrl } : p));
+          }
+        }
+      } catch (revalErr) {
+        console.warn('No se pudo revalidar estudiante tras subir contrato:', revalErr?.message);
+      }
 
       setContractModal({
         isOpen: true,
@@ -592,6 +767,31 @@ function ValidacionPagos_Admin_comp() {
       showErrorModal('Error al Visualizar', 'Error al abrir el contrato. Inténtalo de nuevo.');
     }
   };
+
+  // Eliminar contrato para permitir regenerar / subir nuevamente
+  const openDeleteContrato = (pago) => {
+    if (!pago) return;
+    setDeleteModal({ open: true, pago, processing: false });
+  };
+
+  const confirmDeleteContrato = async () => {
+    if (!deleteModal.pago) return;
+    setDeleteModal(dm => ({ ...dm, processing: true }));
+    try {
+      const pago = deleteModal.pago;
+      const folio = pago.folioNumero || pago.folio;
+      await api.delete(`/admin/estudiantes/folio/${folio}/contrato`);
+      setPagos(prev => prev.map(p => p.id === pago.id ? { ...p, contratoUrl: null, contratoGenerado: false, contratoSubido: false, contratoFirmado: false } : p));
+      setDeleteModal({ open: false, pago: null, processing: false });
+      // Revalidar contra backend (check=1 no genera nada)
+      try { await api.get(`/admin/estudiantes/folio/${folio}/contrato?check=1`); } catch(_) {}
+    } catch (e) {
+      setDeleteModal(dm => ({ ...dm, processing: false }));
+      alert('No se pudo eliminar el contrato: ' + (e?.response?.data?.message || e.message));
+    }
+  };
+
+  const cancelDeleteContrato = () => setDeleteModal({ open: false, pago: null, processing: false });
 
   const handleVisualizarComprobante = (url, alumno) => {
     try {
@@ -700,6 +900,23 @@ function ValidacionPagos_Admin_comp() {
 
   return (
     <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
+      { /* Util para construir nombre de descarga */ }
+      { /* NOTA: se define como función local, no como nodo React */ }
+      { /* eslint-disable-next-line no-unused-vars */ }
+      { (() => {
+          const tipoMap = {
+            'contrato-local-preview': 'Contrato',
+            'contrato-local-preliminar': 'Contrato_PRELIMINAR',
+            'contrato': 'Contrato',
+            'comprobante': 'Comprobante'
+          };
+          // Adjuntar a una ref local en closure accessible por handlers via inline const
+          // Guardamos en un objeto en scope del render
+          // eslint-disable-next-line react-hooks/rules-of-hooks
+        })() }
+      {/* Helper local para nombre de archivo (no se renderiza nada) */}
+      { /* eslint-disable-next-line no-unused-vars */ }
+      { (() => { /* noop placeholder to keep consistent structure */ })() }
       {(showLoadingScreen || isLoading) && (
         <LoadingOverlay message={showLoadingScreen ? "Cargando contratos.." : "Cargando..."} />
       )}
@@ -973,27 +1190,30 @@ function ValidacionPagos_Admin_comp() {
                           {pago.metodoPago || '—'}
                         </td>
                         <td className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 border-r border-gray-200 text-center">
-                          {pago.contratoGenerado ? (
-                            <button
-                              onClick={() => handleVisualizarContrato(pago.contratoUrl, pago)}
-                              className="inline-flex items-center px-1 xs:px-2 sm:px-3 py-0.5 xs:py-1 sm:py-2 bg-green-600 text-white text-[8px] xs:text-[10px] sm:text-xs font-medium rounded-md hover:bg-green-700 transition-colors duration-150"
-                            >
-                              <svg className="w-2 xs:w-3 sm:w-4 h-2 xs:h-3 sm:h-4 mr-0.5 xs:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              Descargar
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleGenerarContrato(pago.id)}
-                              className="inline-flex items-center px-1 xs:px-2 sm:px-3 py-0.5 xs:py-1 sm:py-2 bg-gray-700 text-white text-[8px] xs:text-[10px] sm:text-xs font-medium rounded-md hover:bg-gray-800 transition-colors duration-150"
-                            >
-                              <svg className="w-2 xs:w-3 sm:w-4 h-2 xs:h-3 sm:h-4 mr-0.5 xs:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              Generar
-                            </button>
-                          )}
+                          <div className="flex items-center justify-center gap-2">
+                            {pago.contratoGenerado ? (
+                              <button
+                                onClick={() => handleVisualizarContrato(pago.contratoUrl, pago)}
+                                className="inline-flex items-center px-1 xs:px-2 sm:px-3 py-0.5 xs:py-1 sm:py-2 bg-green-600 text-white text-[8px] xs:text-[10px] sm:text-xs font-medium rounded-md hover:bg-green-700 transition-colors duration-150"
+                              >
+                                <svg className="w-2 xs:w-3 sm:w-4 h-2 xs:h-3 sm:h-4 mr-0.5 xs:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Descargar
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => !genModal.open && handleGenerarContrato(pago.id)}
+                                disabled={genModal.open}
+                                className="btn-generar inline-flex items-center px-1 xs:px-2 sm:px-3 py-0.5 xs:py-1 sm:py-2 bg-gray-700 text-white text-[8px] xs:text-[10px] sm:text-xs font-medium rounded-md hover:bg-gray-800 transition-colors duration-150"
+                              >
+                                <svg className="w-2 xs:w-3 sm:w-4 h-2 xs:h-3 sm:h-4 mr-0.5 xs:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Generar
+                              </button>
+                            )}
+                          </div>
                         </td>
                         <td className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 border-r border-gray-200 text-center">
                           {pago.contratoSubido ? (
@@ -1002,6 +1222,11 @@ function ValidacionPagos_Admin_comp() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
                               Subido
+                              <button onClick={() => openDeleteContrato(pago)} title="Eliminar contrato" className="ml-1 text-red-600 hover:text-red-700">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
                             </div>
                           ) : (
                             <label className="inline-flex items-center px-1 xs:px-2 sm:px-3 py-0.5 xs:py-1 sm:py-2 bg-blue-600 text-white text-[8px] xs:text-[10px] sm:text-xs font-medium rounded-md hover:bg-blue-700 transition-colors duration-150 cursor-pointer">
@@ -1115,8 +1340,9 @@ function ValidacionPagos_Admin_comp() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleGenerarContrato(pago.id)}
-                              className="inline-flex items-center px-3 py-1 bg-gray-700 text-white text-xs font-medium rounded-md hover:bg-gray-800 transition-colors duration-150"
+                              onClick={() => !genModal.open && handleGenerarContrato(pago.id)}
+                              disabled={genModal.open}
+                              className="btn-generar inline-flex items-center px-3 py-1 bg-gray-700 text-white text-xs font-medium rounded-md hover:bg-gray-800 transition-colors duration-150"
                             >
                               <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1135,6 +1361,11 @@ function ValidacionPagos_Admin_comp() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
                               Subido
+                              <button onClick={() => openDeleteContrato(pago)} title="Eliminar contrato" className="ml-2 text-red-600 hover:text-red-700">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
                             </div>
                           ) : (
                             <label className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors duration-150 cursor-pointer">
@@ -1196,118 +1427,142 @@ function ValidacionPagos_Admin_comp() {
         </div>
       </div>
 
-      {/* Componente Modal para visualizar PDF */}
+      {/* Componente Modal para visualizar PDF (versión compacta) */}
       {modalPDF.isOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          {/* Overlay */}
-          <div 
-            className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-all duration-300"
+        <div className="fixed inset-0 z-50 flex justify-center items-center p-1.5 sm:p-3">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setModalPDF({ isOpen: false, url: '', alumno: null, tipo: '' })}
           />
-          
-          {/* Modal Content */}
-          <div className="relative flex flex-col h-full max-w-6xl mx-auto">
-            {/* Header de la modal */}
-            <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between relative z-10">
-              <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
+          <div className="relative flex flex-col w-full max-w-[820px] h-[82vh] rounded-md sm:rounded-lg translate-y-6 sm:translate-y-10 bg-white shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 transform">          
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2 px-2 sm:px-2.5 py-1.5 border-b bg-white/95 backdrop-blur z-10 h-[42px]">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-6.5 h-6.5 rounded-full bg-purple-100 flex items-center justify-center">
+                  <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {modalPDF.tipo === 'contrato' ? 'Contrato de Curso' : 'Comprobante de Pago'}
-                  </h3>
+                <div className="min-w-0">
+                  <h3 className="text-[12px] sm:text-[13px] md:text-sm font-semibold text-gray-900 truncate">{modalPDF.tipo === 'contrato' ? 'Contrato de Curso' : 'Contrato'}</h3>
                   {modalPDF.alumno && (
-                    <p className="text-sm text-gray-600">
-                      {modalPDF.alumno.alumno} • Folio: {modalPDF.alumno.folio} • {modalPDF.alumno.categoria}
-                    </p>
+                    <p className="text-[9px] sm:text-[10px] text-gray-600 truncate">{modalPDF.alumno.alumno} • Folio: {modalPDF.alumno.folio} • {modalPDF.alumno.categoria}</p>
                   )}
                 </div>
               </div>
-              
-              <div className="flex items-center space-x-2">
-                {/* Botón descargar */}
+              <div className="flex items-center gap-1 sm:gap-1.5">
                 <button
                   onClick={() => {
                     const link = document.createElement('a');
                     link.href = modalPDF.url;
-                    link.download = `${modalPDF.tipo}_${modalPDF.alumno?.folio}_${modalPDF.alumno?.alumno?.replace(/\s+/g, '_')}.pdf`;
+                    const buildFilename = (mp) => {
+                      if (!mp) return 'Archivo.pdf';
+                      if (mp.nombreArchivo) return mp.nombreArchivo;
+                      const tipoMap = {
+                        'contrato-local-preview': 'Contrato',
+                        'contrato-local-preliminar': 'Contrato_PRELIMINAR',
+                        'contrato': 'Contrato',
+                        'comprobante': 'Comprobante'
+                      };
+                      const prefix = tipoMap[mp.tipo] || 'Documento';
+                      const folio = mp.alumno?.folio || mp.alumno?.folio_formateado || mp.alumno?.folioNumero || 'SIN_FOLIO';
+                      const rawName = mp.alumno?.alumno || mp.alumno?.nombreCompleto || [mp.alumno?.nombre, mp.alumno?.apellidos].filter(Boolean).join(' ') || 'ALUMNO';
+                      const safeName = rawName.replace(/[^A-Za-z0-9]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g,'');
+                      return `${prefix}_${folio}_${safeName || 'ALUMNO'}.pdf`;
+                    };
+                    link.download = buildFilename(modalPDF);
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
                   }}
-                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+                  className="inline-flex items-center px-2.5 py-1.5 text-[11px] font-medium rounded-md bg-purple-600 text-white hover:bg-purple-700 border border-transparent shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
-                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Descargar
                 </button>
-                
-                {/* Botón cerrar */}
+                {/* Abrir en nueva pestaña */}
+                <button
+                  onClick={() => {
+                    try { window.open(modalPDF.url, '_blank', 'noopener'); } catch(_) {}
+                  }}
+                  title="Abrir en nueva pestaña"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3h7v7m0-7L10 14m-4 7h11" />
+                  </svg>
+                </button>
                 <button
                   onClick={() => setModalPDF({ isOpen: false, url: '', alumno: null, tipo: '' })}
-                  className="inline-flex items-center justify-center w-8 h-8 border border-gray-300 shadow-sm rounded-md text-gray-400 bg-white hover:bg-gray-50 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
             </div>
-            
-            {/* PDF Viewer */}
+            {/* Loading mini modal (portal) */}
+            {/* (El portal de loading se movió fuera para que aparezca aunque aún no esté abierto modalPDF) */}
+            {/* Visor */}
             <div className="flex-1 bg-gray-100">
               <iframe
                 src={modalPDF.url}
                 className="w-full h-full border-none"
                 title={`${modalPDF.tipo} - ${modalPDF.alumno?.alumno}`}
-                style={{ minHeight: 'calc(100vh - 120px)' }}
               />
             </div>
-            
-            {/* Footer de la modal */}
-            <div className="bg-white border-t border-gray-200 px-4 py-3 relative z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>
-                    {modalPDF.tipo === 'contrato' 
-                      ? modalPDF.alumno?.contratoSubido 
-                        ? 'Contrato firmado y subido'
-                        : 'Contrato generado automáticamente'
-                      : 'Comprobante de pago válido'
-                    }
-                  </span>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => setModalPDF({ isOpen: false, url: '', alumno: null, tipo: '' })}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
-                  >
-                    Cerrar
-                  </button>
-                  <button
-                    onClick={() => {
-                      const link = document.createElement('a');
-                      link.href = modalPDF.url;
-                      link.download = `${modalPDF.tipo}_${modalPDF.alumno?.folio}_${modalPDF.alumno?.alumno?.replace(/\s+/g, '_')}.pdf`;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                    }}
-                    className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
-                  >
-                    Descargar PDF
-                  </button>
-                </div>
+            {/* Footer */}
+            <div className="px-2 sm:px-2.5 py-1.5 border-t bg-white/95 backdrop-blur text-[9.5px] sm:text-[10px] flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-gray-600 min-w-0">
+                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="truncate">
+                  {modalPDF.tipo === 'contrato'
+                    ? modalPDF.alumno?.contratoSubido
+                      ? 'Contrato firmado y subido'
+                      : 'Contrato generado automáticamente'
+                    : 'Comprobante de pago válido'}
+                </span>
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5">
+                <button
+                  onClick={() => setModalPDF({ isOpen: false, url: '', alumno: null, tipo: '' })}
+                  className="px-2.5 py-1.5 text-[11px] font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = modalPDF.url;
+                    const buildFilename = (mp) => {
+                      if (!mp) return 'Archivo.pdf';
+                      if (mp.nombreArchivo) return mp.nombreArchivo;
+                      const tipoMap = {
+                        'contrato-local-preview': 'Contrato',
+                        'contrato-local-preliminar': 'Contrato_PRELIMINAR',
+                        'contrato': 'Contrato',
+                        'comprobante': 'Comprobante'
+                      };
+                      const prefix = tipoMap[mp.tipo] || 'Documento';
+                      const folio = mp.alumno?.folio || mp.alumno?.folio_formateado || mp.alumno?.folioNumero || 'SIN_FOLIO';
+                      const rawName = mp.alumno?.alumno || mp.alumno?.nombreCompleto || [mp.alumno?.nombre, mp.alumno?.apellidos].filter(Boolean).join(' ') || 'ALUMNO';
+                      const safeName = rawName.replace(/[^A-Za-z0-9]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g,'');
+                      return `${prefix}_${folio}_${safeName || 'ALUMNO'}.pdf`;
+                    };
+                    link.download = buildFilename(modalPDF);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="px-2.5 py-1.5 text-[11px] font-medium text-white bg-purple-600 border border-transparent rounded-md shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  Descargar PDF
+                </button>
               </div>
             </div>
           </div>
@@ -1315,14 +1570,128 @@ function ValidacionPagos_Admin_comp() {
       )}
 
       {/* Modal de confirmación para generar contrato */}
-      <ConfirmModal
-        isOpen={contractModal.isOpen}
-        type={contractModal.type}
-        message={contractModal.message}
-        details={contractModal.details}
-        onConfirm={confirmGenerateContract}
-        onCancel={() => setContractModal({ isOpen: false, type: '', alumno: null, message: '', details: '' })}
-      />
+      {contractModal.isOpen && (
+        <ConfirmModal
+          isOpen
+          type={contractModal.type}
+          message={contractModal.message}
+          details={contractModal.details}
+          onConfirm={confirmGenerateContract}
+          onCancel={() => setContractModal({ isOpen: false, type: '', alumno: null, message: '', details: '' })}
+        />
+      )}
+
+      {/* Portal global para la modal de generación */}
+      {genModal.open && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-auto select-none">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+          <div className="relative bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.35)] border border-purple-200 w-full max-w-xs p-5 animate-fade-in">
+            <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 shadow-lg flex items-center justify-center ring-4 ring-white">
+              <svg className="w-4 h-4 text-white animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5 9a7.5 7.5 0 0113.418-3.418M19 15a7.5 7.5 0 01-13.418 3.418" />
+              </svg>
+            </div>
+            <div className="flex items-center mb-4 mt-1">
+              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md mr-3">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-sm font-semibold text-gray-800 tracking-wide flex items-center flex-wrap gap-1">
+                  Generando contrato
+                  {genModal.preliminar && (
+                    <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-600 border border-red-200">PRELIMINAR</span>
+                  )}
+                </h4>
+                <p className="text-[11px] text-gray-500 truncate max-w-[180px]" title={genModal.alumno?.nombreCompleto}>
+                  {genModal.alumno?.nombreCompleto || 'Preparando PDF'}
+                </p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="w-full bg-gray-200/80 rounded-full h-2 overflow-hidden relative">
+                <div className="absolute inset-0 opacity-30 bg-[repeating-linear-gradient(45deg,#fff_0_8px,#e5e5e5_8px_16px)]" />
+                <div className="h-2 bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-600 animate-loading-bar rounded-full shadow-inner" />
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-gray-600 font-medium">
+                <span className="flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l2.5 1.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Procesando...
+                </span>
+                <span className="tabular-nums text-purple-600">{genModal.countdown}s</span>
+              </div>
+              <p className="text-[10px] leading-snug text-gray-400">
+                Estamos ensamblando tu PDF con la plantilla oficial y posicionando los campos calibrados.
+              </p>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Modal personalizada para eliminar contrato */}
+      {deleteModal.open && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={cancelDeleteContrato} />
+          <div className="relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl border border-rose-200 overflow-hidden animate-fade-in">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-rose-100 rounded-full opacity-40 blur-2xl" />
+            <div className="relative px-6 pt-6 pb-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center shadow-md">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 leading-tight">Eliminar contrato</h3>
+                  <p className="text-xs text-rose-600 font-medium tracking-wide uppercase">Acción irreversible</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  ¿Seguro que deseas eliminar el contrato del alumno
+                  <span className="font-semibold text-gray-900"> {deleteModal.pago?.alumno}</span>? Esta acción quitará el archivo actual y podrás generar uno nuevo después.
+                </p>
+                <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 flex items-start gap-2">
+                  <svg className="w-5 h-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-[11px] text-rose-700 leading-snug">
+                    Esta eliminación no guarda historial. Si necesitas auditoría futura, considera implementar un soft delete.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center gap-3 justify-end">
+              <button
+                onClick={cancelDeleteContrato}
+                disabled={deleteModal.processing}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeleteContrato}
+                disabled={deleteModal.processing}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-md bg-gradient-to-r from-rose-600 to-rose-700 text-white text-sm font-semibold shadow hover:from-rose-700 hover:to-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-500 disabled:opacity-60"
+              >
+                {deleteModal.processing ? (
+                  <span className="inline-flex items-center gap-2">
+                    <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5 9a7.5 7.5 0 0113.418-3.418M19 15a7.5 7.5 0 01-13.418 3.418" />
+                    </svg>
+                    Eliminando...
+                  </span>
+                ) : 'Eliminar contrato'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

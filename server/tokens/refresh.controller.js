@@ -12,8 +12,21 @@ export async function refreshToken(req, res) {
   const { value: source, role } = findRefreshToken(req.cookies);
   if (!source) return res.status(401).json({ message: 'No refresh token', reason: 'no-rtoken' });
   if (process.env.NODE_ENV !== 'production') {
-    console.log('[REFRESH] Attempt role=%s cookiesPresent=%s%s%s%s', role,
-      rtoken_admin?'admin ':'', rtoken_asesor?'asesor ':'', rtoken_estudiante?'estudiante ':'', (!rtoken_admin&&!rtoken_asesor&&!rtoken_estudiante&&rtoken)?'generic':'');
+    const {
+      rtoken_admin,
+      rtoken_asesor,
+      rtoken_estudiante,
+      rtoken,
+      refresh_token
+    } = req.cookies || {};
+    const present = [
+      rtoken_admin ? 'admin' : null,
+      rtoken_asesor ? 'asesor' : null,
+      rtoken_estudiante ? 'estudiante' : null,
+      refresh_token ? 'unified' : null,
+      rtoken && !rtoken_admin && !rtoken_asesor && !rtoken_estudiante ? 'generic' : null
+    ].filter(Boolean).join(',');
+    console.log('[REFRESH] Attempt role=%s cookiesPresent=[%s]', role || 'n/a', present || 'none');
   }
 
   jwt.verify(source, TOKEN_SECRET, async (err, payload) => {
@@ -30,7 +43,17 @@ export async function refreshToken(req, res) {
 
   // Rotate: revoke old refresh jti then issue new pair
   if (payload.jti) revokeJti(payload.jti);
-  await issueTokenCookies(res, userId, role, { accessMins: 60, refreshDays: 30, remember: true });
+  // Prefer the embedded role from the refresh token if the cookie name was generic/unified
+  const effectiveRole = role || payload.role || null;
+  // Respetar persistencia original: si la cookie existente tenía maxAge (persistente) express la presenta con expires.
+  // Detectamos heurísticamente si el usuario eligió "recordarme" revisando si la cookie de refresh tenía fecha de expiración.
+  // Si no podemos detectarlo, por seguridad usamos remember=false (sesión) para no extender indebidamente.
+  let rememberOriginal = false;
+  try {
+    // Algunas libs no exponen directamente expiración; alternativa: el cliente que marcó remember guarda localStorage 'rememberMe'.
+    // Aquí podemos inspeccionar una cabecera personalizada futura; por ahora mantenemos false.
+  } catch {}
+  await issueTokenCookies(res, userId, effectiveRole, { accessMins: 60, refreshDays: 30, remember: rememberOriginal });
   return res.status(200).json({ ok: true, rotated: true });
     });
   } catch (e) {

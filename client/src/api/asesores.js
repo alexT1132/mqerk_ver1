@@ -15,3 +15,7 @@ export const finalizarProceso = (preregistroId) => axios.post(`/asesores/finaliz
 // Estudiantes del asesor autenticado (aprobados)
 // Acepta opcionalmente { grupo } para filtrar por un grupo específico del asesor
 export const getMisEstudiantes = (params) => axios.get('/asesores/mis-estudiantes', { params });
+
+// Formularios dinámicos de pruebas (WAIS, Matemática)
+export const generarFormularioTest = (preregistroId, tipo) => axios.get(`/asesores/tests/${preregistroId}/form/${encodeURIComponent(tipo)}`);
+export const calificarFormularioTest = (preregistroId, tipo, entries) => axios.post(`/asesores/tests/${preregistroId}/form/${encodeURIComponent(tipo)}/grade`, { entries });

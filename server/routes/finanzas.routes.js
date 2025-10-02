@@ -3,10 +3,12 @@ import * as Ingresos from '../models/ingresos.model.js';
 import * as GastosFijos from '../models/gastos_fijos.model.js';
 import * as GastosVariables from '../models/gastos_variables.model.js';
 import * as PlantillasFijos from '../models/gastos_fijos_plantillas.model.js';
+import { runPlantillasJob } from '../jobs/plantillasAuto.js';
 import { createEvent as calCreate, updateEvent as calUpdate } from '../controllers/calendar.controller.js';
 import * as CalendarModel from '../models/calendar_events.model.js';
 import * as Usuarios from '../models/usuarios.model.js';
 import * as Presupuestos from '../models/presupuestos.model.js';
+import * as PagosAsesores from '../models/pagos_asesores.model.js';
 
 const router = Router();
 
@@ -54,8 +56,6 @@ router.post('/finanzas/ingresos', async (req, res) => {
     res.status(500).json({ message: 'Error interno' });
   }
 });
-
-export default router;
 
 // PUT /api/finanzas/ingresos/:id
 router.put('/finanzas/ingresos/:id', async (req, res) => {
@@ -306,46 +306,13 @@ router.post('/finanzas/gastos-fijos/plantillas/:id/instanciar', async (req, res)
 // Job manual: generar egresos pendientes y eventos para plantillas con auto_instanciar/auto_evento que correspondan a una fecha dada (default: hoy)
 router.post('/finanzas/gastos-fijos/plantillas/job/run', async (req, res) => {
   try {
-    let { fecha } = req.body || {};
-    if (!fecha) {
-      const d = new Date();
-      const iso = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
-      fecha = iso.slice(0,10);
-    }
-    const all = await PlantillasFijos.list({ activo: 1 });
-    const creados = [];
-    for (const p of all) {
-      if (!p.auto_instanciar) continue;
-      // Si el día coincide con el dia_pago de la plantilla (o si no tiene, saltar)
-      if (!p.dia_pago) continue;
-      const target = dayjs(fecha);
-      if (target.date() !== Number(p.dia_pago)) continue;
-      const payload = await PlantillasFijos.instantiateToGastoFijo(p.id, { fecha, estatus: 'Pendiente' });
-      const created = await GastosFijos.create(payload);
-      // Crear evento si corresponde
-      try {
-        if (p.auto_evento) {
-          const hora = p.hora_preferida || '09:00';
-          const ev = await CalendarModel.createEvent(req.user?.id || 1, {
-            titulo: `Pagar ${created.categoria}`,
-            descripcion: `Proveedor: ${created.proveedor || '-'} | Monto: ${created.importe} | Auto-instanciado` ,
-            fecha,
-            hora,
-            tipo: 'finanzas',
-            prioridad: 'media',
-            recordar_minutos: Number(p.recordar_minutos) || 30,
-            completado: 0,
-          });
-          await GastosFijos.update(created.id, { calendar_event_id: ev.id });
-          created.calendar_event_id = ev.id;
-        }
-      } catch {}
-      creados.push(created);
-    }
-    res.json({ ok: true, creados });
+    const { fecha, debug } = req.body || {};
+    const target = fecha || new Date();
+    const result = await runPlantillasJob(target, { debug });
+    res.json({ ok: true, fecha: typeof target === 'string' ? target : new Date(target).toISOString().slice(0,10), ...result });
   } catch (err) {
     console.error('POST /finanzas/gastos-fijos/plantillas/job/run', err);
-    res.status(500).json({ message: 'Error interno' });
+    res.status(500).json({ message: 'Error interno', error: err.message });
   }
 });
 
@@ -384,3 +351,112 @@ router.get('/finanzas/egresos/resumen-mensual', async (req, res) => {
     res.status(500).json({ message: 'Error interno' });
   }
 });
+
+// DEBUG (solo dev): crear y listar eventos de calendario sin auth para verificar integración
+router.post('/finanzas/_debug/calendar/events', async (req, res) => {
+  try {
+    const body = req.body || {};
+    let userId = Number(body.userId);
+    if (!userId || Number.isNaN(userId)) {
+      userId = await Usuarios.getFirstAdminId();
+      if (!userId) return res.status(400).json({ message: 'No existe usuario admin para asociar el evento' });
+    }
+    const created = await CalendarModel.createEvent(userId, {
+      titulo: body.titulo || 'Debug Event',
+      descripcion: body.descripcion || null,
+      fecha: body.fecha || new Date().toISOString().slice(0,10),
+      hora: body.hora || '09:00',
+      tipo: body.tipo || 'debug',
+      prioridad: body.prioridad || 'media',
+      recordar_minutos: Number.isInteger(body.recordar_minutos) ? body.recordar_minutos : 15,
+      completado: body.completado ? 1 : 0,
+    });
+    res.status(201).json({ event: created });
+  } catch (err) {
+  console.error('POST /finanzas/_debug/calendar/events', err);
+  res.status(500).json({ message: 'Error interno', error: err?.message || String(err), code: err?.code });
+  }
+});
+
+router.get('/finanzas/_debug/calendar/events', async (req, res) => {
+  try {
+    const { startDate, endDate, userId } = req.query || {};
+    const uid = Number(userId) || 1;
+    const start = startDate || new Date().toISOString().slice(0,10);
+    const end = endDate || start;
+    const events = await CalendarModel.getEventsByUserAndRange(uid, start, end);
+    res.json({ data: events });
+  } catch (err) {
+    console.error('GET /finanzas/_debug/calendar/events', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+});
+
+router.get('/finanzas/_debug/admin/first-id', async (_req, res) => {
+  try {
+    const id = await Usuarios.getFirstAdminId();
+    if (!id) return res.status(404).json({ message: 'No hay admin' });
+    res.json({ id });
+  } catch (err) {
+    console.error('GET /finanzas/_debug/admin/first-id', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+});
+
+// Pagos a Asesores
+router.get('/finanzas/pagos-asesores', async (req, res) => {
+  try {
+    const { asesor_id, from, to, status } = req.query || {};
+    const data = await PagosAsesores.list({ asesor_id, from, to, status });
+    res.json({ data });
+  } catch (err) {
+    console.error('GET /finanzas/pagos-asesores', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+});
+
+router.post('/finanzas/pagos-asesores', async (req, res) => {
+  try {
+    const body = req.body || {};
+    if (!body.tipo_servicio || !body.fecha_pago) {
+      return res.status(400).json({ message: 'Campos obligatorios: tipo_servicio, fecha_pago' });
+    }
+    // ingreso_final por defecto = (monto_base + honorarios_comision) si no viene
+    if (body.ingreso_final === undefined) {
+      const base = Number(body.monto_base || 0);
+      const hon = Number(body.honorarios_comision || 0);
+      body.ingreso_final = base + hon;
+    }
+    const created = await PagosAsesores.create(body);
+    res.status(201).json({ pago: created });
+  } catch (err) {
+    console.error('POST /finanzas/pagos-asesores', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+});
+
+router.put('/finanzas/pagos-asesores/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await PagosAsesores.update(Number(id), req.body || {});
+    if (!updated) return res.status(404).json({ message: 'No encontrado' });
+    res.json({ pago: updated });
+  } catch (err) {
+    console.error('PUT /finanzas/pagos-asesores/:id', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+});
+
+router.delete('/finanzas/pagos-asesores/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ok = await PagosAsesores.remove(Number(id));
+    if (!ok) return res.status(404).json({ message: 'No encontrado' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('DELETE /finanzas/pagos-asesores/:id', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+});
+
+export default router;

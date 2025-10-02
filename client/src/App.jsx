@@ -8,19 +8,16 @@ import Blog from "./pages/web/Blog.jsx";
 import About from "./pages/web/About.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import { DashboardAdm, ListaAsesores, ListaColaboradores } from './pages/admin/Panel.jsx';
-// Páginas del panel de Asesor (cada archivo exporta un componente por defecto)
-import DashboardAsesor from "./pages/Asesor/Dashboard.jsx";
-import PerfilAsesor from "./pages/Asesor/PerfilAsesor.jsx";
-import Simuladores from "./pages/Asesor/Simuladores.jsx";
-import DashboardCurso from "./pages/Asesor/Cursos.jsx";
-// Páginas placeholder (estructura base; contenido pendiente)
-import Actividades from "./pages/Asesor/Actividades.jsx";
-import Quizt from "./pages/Asesor/Quizt.jsx";
-import Asesorias from "./pages/Asesor/Asesorias.jsx";
+// Páginas del panel de Asesor ahora están agrupadas en AsesorDashboardBundle
+// Mantener solo las exportaciones que se usan globalmente fuera del bundle
 import { PreRegAsesor } from "./pages/Asesor/PreRegAsesor.jsx";
+import { Test as TestAsesor } from "./pages/Asesor/Test.jsx";
+import { Resultado as ResultadoAsesor } from "./pages/Asesor/Resultado.jsx";
+import GraciasAsesor from "./pages/Asesor/Gracias.jsx";
+import { Bienvenida } from "./pages/Asesor/Bienvenida.jsx";
 import Feedback from "./pages/Asesor/Feedback.jsx";
 import FeedbackDetail from "./pages/Asesor/FeedbackDetail.jsx";
-import { Bienvenida } from "./pages/Asesor/Bienvenida.jsx";
+import DashboardCurso from "./pages/Asesor/Cursos.jsx";
 // Contextos de aplicación (autenticación, asesor, estudiantes, comprobantes, alumno)
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { AsesorProvider } from "./context/AsesorContext.jsx";
@@ -60,6 +57,7 @@ import Ingles2021 from "./components/mqerk/online/Ingles_21.jsx";
 import Profesiografica from "./components/mqerk/exporientas/Profesiografica.jsx";
 import ExporientaEducativa from "./components/mqerk/exporientas/ExporientaEducativa.jsx";
 import { AdminDashboardBundle } from './components/admin/AdminDashboardBundle.jsx';
+import { AsesorDashboardBundle } from './components/asesor/AsesorDashboardBundle.jsx';
 import SetupAdmin from './components/admin/SetupAdmin.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { Error404, Error500 } from './pages/Error/ErrorPages.jsx';
@@ -135,6 +133,14 @@ export default function App(){
                     <Route path='/pre_registro' element={<PreRegAsesor />} />
                     <Route path='/comunicado' element={<Bienvenida />} />
 
+                    {/* Flujo de pruebas del asesor */}
+                    <Route path='/test' element={<TestAsesor />} />
+                    {/* Rutas dinámicas eliminadas: WAIS y Matemática ahora integradas en /test */}
+                    <Route path='/resultados' element={<ResultadoAsesor />} />
+                    {/* Acceso directo a resultados por ID */}
+                    <Route path='/resultados/:id' element={<ResultadoAsesor />} />
+                    <Route path='/gracias' element={<GraciasAsesor />} />
+
                     {/* Registro formal de asesor */}
                     <Route path='/registro_asesor' element={<FormularioAsesor />} />
                     <Route path='/asesor/registro_asesor' element={<Navigate to='/registro_asesor' replace />} />
@@ -153,13 +159,8 @@ export default function App(){
                       <Route path='/admin/asesores' element={<ListaAsesores />} />
                       <Route path='/admin/colaboradores' element={<ListaColaboradores />} />
 
-                      {/* Panel de Asesor */}
-                      <Route path='/asesor/dashboard' element={<DashboardAsesor/>} />
-                      <Route path='/asesor/perfil' element={<PerfilAsesor />} />
-                      <Route path='/asesor/actividades' element={<Actividades />} />
-                      <Route path='/asesorias-asesor' element={<Asesorias />} />
-                      <Route path='/asesor/quizt' element={<Quizt />} />
-                      <Route path='/asesor/simuladores' element={<Simuladores />} />
+                      {/* Panel de Asesor (bundle) */}
+                      <Route path="/asesor/*" element={<AsesorDashboardBundle />} />
                       {/* Feedback del asesor */}
                       <Route path='/asesor_feedback' element={<Feedback />} />
                       <Route path='/asesor_feedback/:studentId' element={<FeedbackDetail />} />

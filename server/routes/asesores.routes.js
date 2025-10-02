@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearPreRegistro, obtenerPreRegistro, listarPreRegistros, finalizarProcesoAsesor, guardarPerfilAsesor, obtenerPerfilAsesor, subirDocumentosPerfil, actualizarPreRegistroBasico, actualizarGrupoAsesor, listarAsesoresAdmin, listarGruposDisponibles, asignarAlumnosGrupoAsesor, actualizarStatusAsesor, listarEstudiantesAsesor, actualizarGruposAsesor } from '../controllers/asesores.controller.js';
+import { crearPreRegistro, obtenerPreRegistro, listarPreRegistros, finalizarProcesoAsesor, guardarPerfilAsesor, obtenerPerfilAsesor, subirDocumentosPerfil, actualizarPreRegistroBasico, actualizarGrupoAsesor, listarAsesoresAdmin, listarGruposDisponibles, asignarAlumnosGrupoAsesor, actualizarStatusAsesor, listarEstudiantesAsesor, actualizarGruposAsesor, guardarResultadosTest, obtenerResultadosTest, generarFormularioTest, calificarFormularioTest, listarHistorialResultadosTest } from '../controllers/asesores.controller.js';
 import { authREquired } from '../middlewares/validateToken.js';
 import { uploadPerfilDocs } from '../middlewares/asesorPerfilMulter.js';
 
@@ -9,6 +9,13 @@ router.post('/asesores/preregistro', crearPreRegistro);
 router.get('/asesores/preregistro/:id', obtenerPreRegistro);
 router.put('/asesores/preregistro/:id', actualizarPreRegistroBasico);
 router.get('/asesores/preregistros', listarPreRegistros);
+// Resultados de pruebas (guardar/obtener)
+router.post('/asesores/tests/:preregistroId', guardarResultadosTest);
+router.get('/asesores/tests/:preregistroId', obtenerResultadosTest);
+router.get('/asesores/tests/:preregistroId/history', listarHistorialResultadosTest);
+// Formularios dinámicos
+router.get('/asesores/tests/:preregistroId/form/:tipo', generarFormularioTest);
+router.post('/asesores/tests/:preregistroId/form/:tipo/grade', calificarFormularioTest);
 router.post('/asesores/finalizar/:preregistroId', finalizarProcesoAsesor);
 router.post('/asesores/perfil/:preregistroId', guardarPerfilAsesor);
 router.get('/asesores/perfil/:preregistroId', obtenerPerfilAsesor);

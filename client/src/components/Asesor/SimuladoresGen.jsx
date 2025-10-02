@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -10,6 +10,8 @@ import {
   PlaySquare, 
   Sparkles
 } from "lucide-react";
+import SimuladorModalGen from "./SimulatorModal";
+
 
 /* ------------------- helpers ------------------- */
 
@@ -94,6 +96,9 @@ function MobileRow({ item, onView, onEdit, onDelete }) {
 /* ------------------- main component ------------------- */
 
 export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIONES GENERALES", }) {
+  
+  const [open, setOpen] = useState(false);
+
   const navigate = useNavigate();
 
   // Datos de ejemplo (tráelos de tu API)
@@ -131,7 +136,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   );
 
   /* handlers */
-  const handleCreate = () => navigate("/simuladores/nuevo");
   const handleView = (item) => navigate(`/simuladores/${item.id}`);
   const handleEdit = (item) => navigate(`/simuladores/${item.id}/editar`);
   const handleDelete = (item) => {
@@ -176,7 +180,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       {/* Botón principal (abajo del header, arriba de la tabla) */}
       <div className="mb-4 flex justify-start sm:justify-end">
         <button
-          onClick={handleCreate}
+          onClick={() => setOpen(true)}
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-violet-700 hover:to-indigo-700 sm:w-auto"
         >
           <Plus className="h-4 w-4" />
@@ -316,6 +320,13 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           </div>
         </div>
       </div>
+      <SimuladorModalGen
+            open={open}
+            onClose={() => setOpen(false)}
+            onCreate={(data) => {
+              console.log("Simulador creado:", data);
+            }}
+      />
     </div>
   );
 }

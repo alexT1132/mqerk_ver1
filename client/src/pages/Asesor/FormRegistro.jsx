@@ -1,5 +1,6 @@
 import NavLogin from "../../components/NavLogin";
 import { useState, useEffect, useRef } from "react";
+import { buildApiUrl } from '../../utils/url.js';
 import { usePreventPageReload } from "../../NoReload";
 import {
   TextField,
@@ -12,7 +13,9 @@ import {
   FormGroup,
 } from "@mui/material";
 import { BtnForm } from "../../components/FormRegistroComp";
-import { useForm } from "react-hook-form";
+import SignatureField from "../../components/SignatureField.jsx";
+import { useForm, Controller } from "react-hook-form";
+import ActionSheetSelect from "../../components/ActionSheetSelect.jsx";
 import { useAsesor } from "../../context/AsesorContext";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -21,7 +24,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 export const FormularioAsesor = ({ debugBypass = false }) => {
   usePreventPageReload();
 
-  const { handleSubmit, register, getValues, setValue, watch } = useForm();
+  const { handleSubmit, register, getValues, setValue, watch, control } = useForm();
 
   const { datos1, preregistroId, loadPreRegistro } = useAsesor();
   const location = useLocation();
@@ -30,14 +33,17 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
     debugBypass ||
     searchParams.has("debug") ||
     searchParams.get("bypass") === "1";
-  // Con tests eliminados, flujo siempre permitido tras preregistro
-  const aprobadoFinal = true;
+  // Gating: permitir acceso si viene aprobado desde resultados o si debugBypass
+  const aprobadoFinal = (location.state && location.state.aprobadoFinal === true) || debugBypass || false;
   const [finalizing, setFinalizing] = useState(false);
   const [creds, setCreds] = useState(null);
   const [finalError, setFinalError] = useState(null);
   const [savingPerfil, setSavingPerfil] = useState(false);
-  const [perfilOk, setPerfilOk] = useState(false);
+  // const [perfilOk, setPerfilOk] = useState(false); // (no se usa, removido)
   const filesRef = useRef({});
+  const confettiCanvasRef = useRef(null);
+  const confettiStartedRef = useRef(false);
+  const [showCredsModal, setShowCredsModal] = useState(false);
   const [curpError, setCurpError] = useState("");
   const [rfcError, setRfcError] = useState("");
   const [preValidateError, setPreValidateError] = useState("");
@@ -46,6 +52,8 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
   const [step, setStep] = useState(0);
   const [titulo, setTitulo] = useState("");
   const [adicional1, setAdicional1] = useState("");
+  const [fileErrors, setFileErrors] = useState({});
+  const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 
   const handleTituloChange = (e) => {
     setTitulo(e.target.value);
@@ -53,6 +61,100 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
 
   const handleAdicional1Change = (e) => {
     setAdicional1(e.target.value);
+  };
+
+  // Try to compress images client-side to be below MAX_FILE_BYTES
+  const compressImageBelowLimit = async (file, maxBytes = MAX_FILE_BYTES) => {
+    if (!file || !file.type?.startsWith("image/")) return file;
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = reject;
+        i.src = url;
+      });
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      let { width, height } = img;
+      // Start with original size; we will reduce quality and, if needed, scale down
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+      let quality = 0.9;
+      let blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", quality));
+      // If still too big, iteratively reduce quality and scale
+      let scale = 1.0;
+      for (let iter = 0; blob && blob.size > maxBytes && iter < 10; iter++) {
+        if (quality > 0.4) {
+          quality -= 0.1;
+        } else {
+          // reduce dimensions by 10% when quality is already low
+          scale *= 0.9;
+          const newW = Math.max(300, Math.round(width * scale));
+          const newH = Math.max(300, Math.round(height * scale));
+          if (newW !== canvas.width || newH !== canvas.height) {
+            canvas.width = newW;
+            canvas.height = newH;
+          }
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+        blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", quality));
+      }
+      if (blob && blob.size < file.size) {
+        const compressed = new File([blob], file.name.replace(/\.(png|jpg|jpeg)$/i, "-compressed.jpg"), {
+          type: "image/jpeg",
+          lastModified: Date.now(),
+        });
+        return compressed;
+      }
+      return file;
+    } catch (e) {
+      return file;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleFileInput = (key) => async (e) => {
+    const file = e.target.files?.[0] || null;
+    setFileErrors((prev) => ({ ...prev, [key]: "" }));
+    if (!file) {
+      filesRef.current[key] = null;
+      return;
+    }
+    if (file.size <= MAX_FILE_BYTES) {
+      filesRef.current[key] = file;
+      return;
+    }
+    if (file.type?.startsWith("image/")) {
+      // try compressing
+      const compressed = await compressImageBelowLimit(file);
+      if (compressed && compressed.size <= MAX_FILE_BYTES) {
+        filesRef.current[key] = compressed;
+        setFileErrors((prev) => ({
+          ...prev,
+          [key]: `Se comprimió la imagen automáticamente (nuevo tamaño ${(compressed.size / (1024 * 1024)).toFixed(2)} MB).`,
+        }));
+        return;
+      } else {
+        filesRef.current[key] = null;
+        e.target.value = "";
+        setFileErrors((prev) => ({
+          ...prev,
+          [key]: "La imagen excede 5 MB y no pudo comprimirse lo suficiente. Reduce la resolución o usa un compresor antes de subirla.",
+        }));
+        return;
+      }
+    }
+    // Non-image (PDF u otros): no se comprime en el navegador
+    filesRef.current[key] = null;
+    e.target.value = "";
+    setFileErrors((prev) => ({
+      ...prev,
+      [key]: "El archivo excede 5 MB. Usa un compresor (p. ej., PDF: reduce resolución o compresión con una herramienta online) y vuelve a intentarlo.",
+    }));
   };
 
   const nextStep = () => {
@@ -88,12 +190,64 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
     if (!datos1 && !preregistroId && !isBypass) {
       navigate("/pre_registro");
     }
-  }, [datos1, preregistroId, isBypass]);
+    // Si no está aprobado y no estamos en bypass, pedir volver a resultados
+    if (!aprobadoFinal && !isBypass) {
+      navigate('/resultados');
+    }
+  }, [datos1, preregistroId, isBypass, aprobadoFinal]);
+
+  // Confeti al mostrar credenciales
+  useEffect(()=>{
+    if(!showCredsModal || !creds || !confettiCanvasRef.current || confettiStartedRef.current) return;
+    confettiStartedRef.current = true;
+    const canvas = confettiCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const pieces = Array.from({length: 150}).map(()=>({
+      x: Math.random()*window.innerWidth,
+      y: Math.random()*-window.innerHeight,
+      r: 5+Math.random()*8,
+      c: `hsl(${Math.random()*360},80%,60%)`,
+      vx: (Math.random()-0.5)*1.2,
+      vy: 2+Math.random()*3,
+      rot: Math.random()*Math.PI,
+      vr: (Math.random()-0.5)*0.2
+    }));
+    let animId;
+    const resize = ()=>{
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    const step = ()=>{
+      ctx.clearRect(0,0,canvas.width, canvas.height);
+      pieces.forEach(p=>{
+        p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        if(p.y - p.r > canvas.height) { p.y = -10; p.x = Math.random()*canvas.width; }
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r);
+        ctx.restore();
+      });
+      animId = requestAnimationFrame(step);
+    };
+    animId = requestAnimationFrame(step);
+    // detener después de 6s
+    const timeout = setTimeout(()=>{ cancelAnimationFrame(animId); }, 6000);
+    return ()=>{
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animId);
+      clearTimeout(timeout);
+      confettiStartedRef.current = false;
+    };
+  }, [showCredsModal, creds]);
 
   const displayDatos =
     datos1 || (isBypass ? { nombres: "Debug", apellidos: "Bypass" } : null);
   if (!aprobadoFinal && !isBypass) {
-    return <div className="p-10 text-center text-sm">Acceso no permitido.</div>;
+    return <div className="p-10 text-center text-sm">Redirigiendo a resultados...</div>;
   }
   if (!displayDatos) {
     return <div className="p-10 text-center">Cargando datos...</div>;
@@ -102,6 +256,57 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
   return (
     <>
       <NavLogin />
+      {/* Modal de credenciales con confeti */}
+      {showCredsModal && creds && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={()=> setShowCredsModal(false)} />
+          <div className="relative bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-5 animate-fade-in overflow-hidden">
+            <canvas ref={confettiCanvasRef} className="pointer-events-none absolute inset-0 w-full h-full" />
+            <div className="flex flex-col items-center text-center gap-2">
+              <div className="text-4xl" aria-hidden="true">🎉</div>
+              <h2 className="text-xl font-bold text-emerald-700">Registro completado</h2>
+              <p className="text-sm text-gray-700">Estas son tus credenciales de acceso. Guárdalas en un lugar seguro.</p>
+            </div>
+            <div className="w-full border rounded-lg p-3 bg-emerald-50 border-emerald-200 text-xs text-emerald-800 space-y-1">
+              <div><span className="font-semibold">Usuario:</span> {creds.usuario}</div>
+              <div><span className="font-semibold">Contraseña:</span> {creds.password}</div>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(`${creds.usuario} ${creds.password}`)}
+                className="mt-1 inline-block px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white"
+              >Copiar</button>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    const contenido = `Credenciales MQerKAcademy\n\nUsuario: ${creds.usuario}\nContraseña: ${creds.password}\n\nGuárdalas en un lugar seguro.`;
+                    const blob = new Blob([contenido], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `credenciales_mqerk_${creds.usuario}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+                  } catch(_e) {}
+                }}
+                className="mt-1 inline-block px-3 py-1 rounded bg-purple-600 hover:bg-purple-700 text-white"
+              >Descargar .txt</button>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-end">
+              <button
+                onClick={()=> setShowCredsModal(false)}
+                className="w-full sm:w-auto px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium"
+              >Cerrar</button>
+              <button
+                onClick={()=> navigate('/login')}
+                className="w-full sm:w-auto px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium"
+              >Ir a inicio de sesión</button>
+            </div>
+            <div className="text-[11px] text-gray-400 text-center">Puedes volver a copiar tus credenciales mientras permanezcas en esta página.</div>
+          </div>
+        </div>
+      )}
       {step === 0 && (
         <div className={`flex flex-col py-5 px-5 items-center`}>
           <div className={`flex flex-col items-center justify-center`}>
@@ -115,7 +320,7 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
             </h1>
 
             <p
-              className={`flex flex-wrap text-justify p-2 sm:text-md md:w-200`}
+              className={`flex flex-wrap text-justify p-3 w-full max-w-[640px] md:max-w-[800px] lg:max-w-[920px] sm:text-md leading-relaxed md:leading-loose md:px-2`}
             >
               Como parte de nuestro proceso de reclutamiento de asesores, es
               fundamental llevar un registro detallado. Por ello, te invitamos a
@@ -129,7 +334,7 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
               1. Información personal
             </h2>
 
-            <p className={`text-justify p-2 sm:text-md md:w-200`}>
+            <p className={`text-justify p-3 w-full max-w-[640px] md:max-w-[800px] lg:max-w-[920px] sm:text-md leading-relaxed md:leading-loose md:px-2`}>
               Por favor, completa cada campo de esta sección con tus datos
               personales de manera precisa y actualizada. Asegúrate de verificar
               la información antes de enviarla.
@@ -148,30 +353,18 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                   const telefono = getValues("telefono");
                   const area = datos1?.area; // no editable aquí (opcional luego)
                   const estudios = datos1?.estudios;
-                  await fetch(
-                    `${
-                      import.meta.env.VITE_API_URL || "http://localhost:1002"
-                    }/api/asesores/preregistro/${preregistroId}`,
-                    {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        nombres,
-                        apellidos,
-                        correo,
-                        telefono,
-                        area,
-                        estudios,
-                      }),
-                    }
-                  );
+                  await fetch(buildApiUrl(`/asesores/preregistro/${preregistroId}`), {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombres, apellidos, correo, telefono, area, estudios })
+                  });
                 } catch (err) {
                   console.warn("No se pudo actualizar preregistro", err);
                 }
               }
               nextStep();
             }}
-            className="w-[70%] mx-auto p-6 bg-white"
+            className="w-full max-w-[640px] md:max-w-[880px] lg:max-w-[960px] mx-auto p-4 sm:p-6 md:p-0 bg-white md:bg-transparent rounded-xl md:rounded-none shadow md:shadow-none"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Nombres */}
@@ -423,16 +616,44 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Género
                 </label>
-                <select
-                  className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-[#53289f]"
-                  {...register("genero")}
-                  required
-                >
-                  <option value="">Selecciona</option>
-                  <option value="masculino">Masculino</option>
-                  <option value="femenino">Femenino</option>
-                  <option value="otro">Otro</option>
-                </select>
+                <Controller
+                  control={control}
+                  name="genero"
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <>
+                      {/* Móvil: ActionSheetSelect */}
+                      <div className="md:hidden">
+                        <ActionSheetSelect
+                          id="genero"
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          placeholder="Selecciona"
+                          options={[
+                            { value: "", label: "Selecciona" },
+                            { value: "masculino", label: "Masculino" },
+                            { value: "femenino", label: "Femenino" },
+                            { value: "otro", label: "Otro" },
+                          ]}
+                        />
+                      </div>
+                      {/* Escritorio: select nativo controlado */}
+                      <select
+                        className="hidden md:block w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-[#53289f]"
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        required
+                      >
+                        <option value="" disabled>
+                          Selecciona
+                        </option>
+                        <option value="masculino">Masculino</option>
+                        <option value="femenino">Femenino</option>
+                        <option value="otro">Otro</option>
+                      </select>
+                    </>
+                  )}
+                />
               </div>
 
               {/* RFC */}
@@ -515,7 +736,7 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
             </h1>
 
             <p
-              className={`text-justify p-2 w-fit sm:text-md sm:w-fit md:w-170 lg:w-200`}
+              className={`text-justify p-3 w-full max-w-[640px] md:max-w-[800px] lg:max-w-[920px] sm:text-md leading-relaxed md:leading-loose md:px-2`}
             >
               Proporciona los detalles de tu formación académica y
               certificaciones adicionales. Incluye información completa y
@@ -530,30 +751,58 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
               e.preventDefault();
               nextStep();
             }}
-            className="w-[60%] mx-auto p-6 bg-white"
+            className="w-full max-w-[640px] md:max-w-[880px] lg:max-w-[960px] mx-auto p-4 sm:p-6 md:p-0 bg-white md:bg-transparent rounded-xl md:rounded-none shadow md:shadow-none"
           >
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nivel de estudios
-              </label>
-              <select
-                className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300"
-                defaultValue=""
-                {...register("estudios")}
-                required
-              >
-                <option value="" disabled>
-                  Selecciona una opción
-                </option>
-                <option value="secundaria">Secundaria</option>
-                <option value="preparatoria">Preparatoria</option>
-                <option value="licenciatura">Licenciatura</option>
-                <option value="maestria">Maestría</option>
-                <option value="doctorado">Doctorado</option>
-              </select>
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nivel de estudios
+                </label>
+                <Controller
+                  control={control}
+                  name="estudios"
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <>
+                      {/* Móvil */}
+                      <div className="md:hidden">
+                        <ActionSheetSelect
+                          id="nivel_estudios"
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          placeholder="Selecciona una opción"
+                          options={[
+                            { value: "", label: "Selecciona una opción" },
+                            { value: "secundaria", label: "Secundaria" },
+                            { value: "preparatoria", label: "Preparatoria" },
+                            { value: "licenciatura", label: "Licenciatura" },
+                            { value: "maestria", label: "Maestría" },
+                            { value: "doctorado", label: "Doctorado" },
+                          ]}
+                        />
+                      </div>
+                      {/* Escritorio */}
+                      <select
+                        className="hidden md:block w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300"
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        required
+                      >
+                        <option value="" disabled>
+                          Selecciona una opción
+                        </option>
+                        <option value="secundaria">Secundaria</option>
+                        <option value="preparatoria">Preparatoria</option>
+                        <option value="licenciatura">Licenciatura</option>
+                        <option value="maestria">Maestría</option>
+                        <option value="doctorado">Doctorado</option>
+                      </select>
+                    </>
+                  )}
+                />
+              </div>
             {/* Institución */}
-            <div className="mb-4">
+            <div className="sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Institución
               </label>
@@ -567,44 +816,74 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
             </div>
 
             {/* Título académico */}
-            <div className="mb-4">
+            <div className="sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Título academico
               </label>
-              <select
-                className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300"
-                defaultValue=""
-                onChange={handleTituloChange}
-                {...register("titulo")}
-                required
-              >
-                <option value="" disabled>
-                  Selecciona una opción
-                </option>
-                <option value="si">Si</option>
-                <option value="no">No</option>
-              </select>
+              <Controller
+                control={control}
+                name="titulo"
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <>
+                    {/* Móvil */}
+                    <div className="md:hidden">
+                      <ActionSheetSelect
+                        id="titulo_academico"
+                        value={field.value ?? ""}
+                        onChange={(val) => {
+                          field.onChange(val);
+                          setTitulo(val);
+                        }}
+                        placeholder="Selecciona una opción"
+                        options={[
+                          { value: "", label: "Selecciona una opción" },
+                          { value: "si", label: "Si" },
+                          { value: "no", label: "No" },
+                        ]}
+                      />
+                    </div>
+                    {/* Escritorio */}
+                    <select
+                      className="hidden md:block w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300"
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                        setTitulo(e.target.value);
+                      }}
+                      required
+                    >
+                      <option value="" disabled>
+                        Selecciona una opción
+                      </option>
+                      <option value="si">Si</option>
+                      <option value="no">No</option>
+                    </select>
+                  </>
+                )}
+              />
             </div>
 
             {titulo === "si" && (
-              <div className="mb-4">
+              <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Subir su titulo aqui
                 </label>
                 <input
                   type="file"
                   className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300 file:mr-4 file:py-2 file:px-4 file:border-0 file:rounded-md file:bg-purple-100 file:text-purple-700 file:cursor-pointer hover:file:bg-purple-200"
-                  onChange={(e) => {
-                    filesRef.current["titulo_archivo"] =
-                      e.target.files?.[0] || null;
-                  }}
+                  onChange={handleFileInput("titulo_archivo")}
                   accept=".pdf,.png,.jpg,.jpeg"
                 />
+                <p className="text-xs text-gray-500 mt-1">Máximo 5 MB. Las imágenes se comprimen automáticamente si es posible.</p>
+                {fileErrors["titulo_archivo"] && (
+                  <p className="text-xs text-red-600 mt-1">{fileErrors["titulo_archivo"]}</p>
+                )}
               </div>
             )}
 
             {/* Año de graduación */}
-            <div className="mb-4">
+            <div className="sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Año de graduación
               </label>
@@ -619,29 +898,31 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
               />
             </div>
 
-            <div className="mb-4">
+            <div className="sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Certificaciones o cursos adicionales
               </label>
               <input
                 type="file"
-                onChange={(e) => {
-                  filesRef.current["certificaciones_archivo"] =
-                    e.target.files?.[0] || null;
-                }}
+                onChange={handleFileInput("certificaciones_archivo")}
                 className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300 file:mr-4 file:py-2 file:px-4 file:border-0 file:rounded-md file:bg-purple-100 file:text-purple-700 file:cursor-pointer hover:file:bg-purple-200"
                 accept=".pdf,.png,.jpg,.jpeg"
               />
+              <p className="text-xs text-gray-500 mt-1">Máximo 5 MB.</p>
+              {fileErrors["certificaciones_archivo"] && (
+                <p className="text-xs text-red-600 mt-1">{fileErrors["certificaciones_archivo"]}</p>
+              )}
             </div>
 
             {/* Botón de enviar */}
-            <div className="text-center flex justify-end">
+            <div className="sm:col-span-2 text-center flex justify-end mt-2">
               <button
                 type="submit"
                 className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition cursor-pointer"
               >
                 Siguiente
               </button>
+            </div>
             </div>
           </form>
         </div>
@@ -659,7 +940,7 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
             </h1>
 
             <p
-              className={`text-justify p-2 w-fit sm:text-md sm:w-fit md:w-170 lg:w-200`}
+              className={`text-justify p-3 w-full max-w-[640px] md:max-w-[800px] lg:max-w-[920px] sm:text-md leading-relaxed md:leading-loose md:px-2`}
             >
               Ingresa la información relacionada con tu experiencia profesional,
               incluyendo roles previos, instituciones donde has trabajado, y
@@ -674,7 +955,7 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
               onSubmit(e);
               nextStep();
             }}
-            className={`flex flex-col justify-around items-center w-full md:w-170 lg:w-200 gap-8 p-4`}
+            className={`w-full max-w-[640px] md:max-w-[880px] lg:max-w-[960px] mx-auto flex flex-col gap-6 p-4 sm:p-6 md:p-0 bg-white md:bg-transparent rounded-xl md:rounded-none shadow md:shadow-none`}
           >
             {/* Área de interés o departamento al que aplicas:
              */}
@@ -869,21 +1150,30 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
               </div>
             </fieldset>
 
-            <FormGroup className={`w-full`} {...register("plataformas")}>
+            <FormGroup className={`w-full`}> 
               <h2 className={`border-b-2 border-[#5215bb]/50 text-[#5215bb]`}>
                 Conocimientos en plataformas educativas digitales
               </h2>
               <FormControlLabel
-                control={<Checkbox />}
-                label="Google classroom"
+                control={<Checkbox {...register("plat_google_classroom")} />}
+                label="Google Classroom"
               />
               <FormControlLabel
-                control={<Checkbox />}
+                control={<Checkbox {...register("plat_microsoft_teams")} />}
                 label="Microsoft Teams"
               />
-              <FormControlLabel control={<Checkbox />} label="Zoom" />
-              <FormControlLabel control={<Checkbox />} label="Moodle" />
-              <FormControlLabel control={<Checkbox />} label="Edmodo" />
+              <FormControlLabel
+                control={<Checkbox {...register("plat_zoom")} />}
+                label="Zoom"
+              />
+              <FormControlLabel
+                control={<Checkbox {...register("plat_moodle")} />}
+                label="Moodle"
+              />
+              <FormControlLabel
+                control={<Checkbox {...register("plat_edmodo")} />}
+                label="Edmodo"
+              />
               <FormControlLabel
                 control={
                   <Checkbox
@@ -937,106 +1227,113 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
               e.preventDefault();
               nextStep();
             }}
-            className={`flex flex-col justify-around items-center w-full md:w-170 lg:w-200 gap-4 p-4`}
+            className={`w-full max-w-[640px] md:max-w-[880px] lg:max-w-[960px] mx-auto flex flex-col gap-6 p-4 sm:p-6 md:p-0 bg-white md:bg-transparent rounded-xl md:rounded-none shadow md:shadow-none`}
           >
-            <div className="mb-6 w-120">
+            <div className="mb-6 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Identificación oficial (INE, pasaporte, cartilla militar, etc.):
               </label>
               <input
                 type="file"
-                onChange={(e) => {
-                  filesRef.current["doc_identificacion"] =
-                    e.target.files?.[0] || null;
-                }}
+                onChange={handleFileInput("doc_identificacion")}
                 accept=".pdf,.png,.jpg,.jpeg"
                 className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300 file:mr-4 file:py-2 file:px-4 file:border-0 file:rounded-md file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
               />
+              <p className="text-xs text-gray-500 mt-1">Máximo 5 MB.</p>
+              {fileErrors["doc_identificacion"] && (
+                <p className="text-xs text-red-600 mt-1">{fileErrors["doc_identificacion"]}</p>
+              )}
             </div>
-            <div className="mb-6 w-120">
+            <div className="mb-6 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Comprobante de domicilio reciente (no más de 3 meses de
                 antiguedad):
               </label>
               <input
                 type="file"
-                onChange={(e) => {
-                  filesRef.current["doc_comprobante_domicilio"] =
-                    e.target.files?.[0] || null;
-                }}
+                onChange={handleFileInput("doc_comprobante_domicilio")}
                 accept=".pdf,.png,.jpg,.jpeg"
                 className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300 file:mr-4 file:py-2 file:px-4 file:border-0 file:rounded-md file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
               />
+              <p className="text-xs text-gray-500 mt-1">Máximo 5 MB.</p>
+              {fileErrors["doc_comprobante_domicilio"] && (
+                <p className="text-xs text-red-600 mt-1">{fileErrors["doc_comprobante_domicilio"]}</p>
+              )}
             </div>
-            <div className="mb-6 w-120">
+            <div className="mb-6 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Título o cédula profesional (en caso de aplicar):
               </label>
               <input
                 type="file"
-                onChange={(e) => {
-                  filesRef.current["doc_titulo_cedula"] =
-                    e.target.files?.[0] || null;
-                }}
+                onChange={handleFileInput("doc_titulo_cedula")}
                 accept=".pdf,.png,.jpg,.jpeg"
                 className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300 file:mr-4 file:py-2 file:px-4 file:border-0 file:rounded-md file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
               />
+              <p className="text-xs text-gray-500 mt-1">Máximo 5 MB.</p>
+              {fileErrors["doc_titulo_cedula"] && (
+                <p className="text-xs text-red-600 mt-1">{fileErrors["doc_titulo_cedula"]}</p>
+              )}
             </div>
-            <div className="mb-6 w-120">
+            <div className="mb-6 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Comprobante de certificaciones adicionales: (OPCIONAL)
               </label>
               <input
                 type="file"
-                onChange={(e) => {
-                  filesRef.current["doc_certificaciones"] =
-                    e.target.files?.[0] || null;
-                }}
+                onChange={handleFileInput("doc_certificaciones")}
                 accept=".pdf,.png,.jpg,.jpeg"
                 className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300 file:mr-4 file:py-2 file:px-4 file:border-0 file:rounded-md file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
               />
+              <p className="text-xs text-gray-500 mt-1">Máximo 5 MB.</p>
+              {fileErrors["doc_certificaciones"] && (
+                <p className="text-xs text-red-600 mt-1">{fileErrors["doc_certificaciones"]}</p>
+              )}
             </div>
-            <div className="mb-6 w-120">
+            <div className="mb-6 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Carta de recomendación laboral: (OPCIONAL)
               </label>
               <input
                 type="file"
-                onChange={(e) => {
-                  filesRef.current["doc_carta_recomendacion"] =
-                    e.target.files?.[0] || null;
-                }}
+                onChange={handleFileInput("doc_carta_recomendacion")}
                 accept=".pdf,.png,.jpg,.jpeg"
                 className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300 file:mr-4 file:py-2 file:px-4 file:border-0 file:rounded-md file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
               />
+              <p className="text-xs text-gray-500 mt-1">Máximo 5 MB.</p>
+              {fileErrors["doc_carta_recomendacion"] && (
+                <p className="text-xs text-red-600 mt-1">{fileErrors["doc_carta_recomendacion"]}</p>
+              )}
             </div>
-            <div className="mb-6 w-120">
+            <div className="mb-6 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Currículum vitae actualizado:
               </label>
               <input
                 type="file"
-                onChange={(e) => {
-                  filesRef.current["doc_curriculum"] =
-                    e.target.files?.[0] || null;
-                }}
+                onChange={handleFileInput("doc_curriculum")}
                 accept=".pdf,.png,.jpg,.jpeg"
                 className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300 file:mr-4 file:py-2 file:px-4 file:border-0 file:rounded-md file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
               />
+              <p className="text-xs text-gray-500 mt-1">Máximo 5 MB.</p>
+              {fileErrors["doc_curriculum"] && (
+                <p className="text-xs text-red-600 mt-1">{fileErrors["doc_curriculum"]}</p>
+              )}
             </div>
-            <div className="mb-6 w-120">
+            <div className="mb-6 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Fotografía tamaño pasaporte FORMAL (PNG,JPG):
               </label>
               <input
                 type="file"
-                onChange={(e) => {
-                  filesRef.current["doc_fotografia"] =
-                    e.target.files?.[0] || null;
-                }}
+                onChange={handleFileInput("doc_fotografia")}
                 accept=".png,.jpg,.jpeg"
                 className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-purple-300 file:mr-4 file:py-2 file:px-4 file:border-0 file:rounded-md file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
               />
+              <p className="text-xs text-gray-500 mt-1">Máximo 5 MB. Se intentará comprimir imágenes automáticamente.</p>
+              {fileErrors["doc_fotografia"] && (
+                <p className="text-xs text-red-600 mt-1">{fileErrors["doc_fotografia"]}</p>
+              )}
             </div>
 
             <div className="w-full flex justify-end">
@@ -1058,7 +1355,7 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
               5. Información adicional{" "}
             </h1>{" "}
             {/*Falta agregar la constante del usuario*/}
-            <p className={`p-2 w-fit`}>
+            <p className={`text-justify p-3 w-full max-w-[640px] md:max-w-[800px] lg:max-w-[920px] leading-relaxed md:leading-loose md:px-2`}>
               Incluye lo que no se haya solicitado en las secciones anteriores.
             </p>
           </article>
@@ -1084,13 +1381,15 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
               if (v.consentimiento_datos !== "y")
                 errs.push("Debes autorizar el uso de datos para continuar.");
               // Firma mínima
-              if (!v.firma || v.firma.trim().length < 5)
-                errs.push("Firma (nombre completo) requerida.");
-              // RFC básico (opcional: si se ingresó validar)
+              if (!v.firma || v.firma.trim().length < 3)
+                errs.push("Firma (nombre completo) requerida (mínimo 3 caracteres).");
+              // RFC opcional: solo validar si está completo (>=13)
               if (v.rfc) {
                 const rfc = v.rfc.toUpperCase().trim();
                 const rfcRegex = /^([A-ZÑ&]{3,4})\d{6}([A-Z0-9]{3})$/;
-                if (!rfcRegex.test(rfc)) errs.push("RFC con formato inválido.");
+                if (rfc.length >= 13 && !rfcRegex.test(rfc)) {
+                  errs.push("RFC con formato inválido.");
+                }
               }
               // CURP si se ingresó, asegurar que no haya error previo
               if (v.curp && curpError) {
@@ -1156,7 +1455,10 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                   nacimiento: v.nacimiento,
                   nacionalidad: v.nacionalidad,
                   genero: v.genero,
-                  rfc: v.rfc,
+                  // Si el RFC no está completo (menos de 13), no lo enviamos para no bloquear
+                  rfc: (v.rfc && v.rfc.toUpperCase().trim().length >= 13)
+                    ? v.rfc.toUpperCase().trim()
+                    : null,
                   nivel_estudios: v.estudios,
                   institucion: v.institucion,
                   titulo_academico: v.titulo === "si" ? 1 : 0,
@@ -1166,7 +1468,14 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                   empresa: v.empresa || "",
                   ultimo_puesto: v.ultimo_puesto || "",
                   funciones: v.funsiones || "",
-                  plataformas: [],
+                  plataformas: [
+                    v.plat_google_classroom && 'google_classroom',
+                    v.plat_microsoft_teams && 'microsoft_teams',
+                    v.plat_zoom && 'zoom',
+                    v.plat_moodle && 'moodle',
+                    v.plat_edmodo && 'edmodo',
+                    v.plataformas2 && v.plataformas2.trim() && v.plataformas2.trim()
+                  ].filter(Boolean),
                   dispuesto_capacitacion:
                     v.dispuesto_capacitacion === "y" ? 1 : 0,
                   consentimiento_datos: v.consentimiento_datos === "y" ? 1 : 0,
@@ -1176,16 +1485,11 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                   curp: v.curp || null,
                   entidad_curp: v.entidad_curp || null,
                 };
-                const perfilRes = await fetch(
-                  `${
-                    import.meta.env.VITE_API_URL || "http://localhost:1002"
-                  }/api/asesores/perfil/${preregistroId}`,
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                  }
-                );
+                const perfilRes = await fetch(buildApiUrl(`/asesores/perfil/${preregistroId}`), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload)
+                });
                 if (!perfilRes.ok) {
                   const b = await perfilRes.json().catch(() => ({}));
                   throw new Error(b.message || "Error guardando perfil");
@@ -1195,12 +1499,7 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                   if (f) fd.append(k, f);
                 });
                 if (Array.from(fd.keys()).length) {
-                  const upRes = await fetch(
-                    `${
-                      import.meta.env.VITE_API_URL || "http://localhost:1002"
-                    }/api/asesores/perfil/${preregistroId}/upload`,
-                    { method: "POST", body: fd }
-                  );
+                  const upRes = await fetch(buildApiUrl(`/asesores/perfil/${preregistroId}/upload`), { method: 'POST', body: fd });
                   if (!upRes.ok) {
                     const ub = await upRes.json().catch(() => ({}));
                     throw new Error(ub.message || "Error subiendo documentos");
@@ -1214,17 +1513,13 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
               }
               try {
                 setFinalizing(true);
-                const res = await fetch(
-                  `${
-                    import.meta.env.VITE_API_URL || "http://localhost:1002"
-                  }/api/asesores/finalizar/${preregistroId}`,
-                  { method: "POST" }
-                );
+                const res = await fetch(buildApiUrl(`/asesores/finalizar/${preregistroId}`), { method: 'POST' });
                 const body = await res.json().catch(() => ({}));
                 if (!res.ok) {
                   setFinalError(body.message || "Error finalizando");
                 } else if (body.ok && body.credenciales) {
                   setCreds(body.credenciales);
+                  setShowCredsModal(true);
                 } else if (body.ok && !body.credenciales) {
                   // Ya finalizado previamente
                   setFinalError(
@@ -1383,21 +1678,20 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                 </RadioGroup>
               </FormControl>
 
-              <div className={`flex flex-col gap-2`}>
+              <div className={`flex flex-col gap-2 mt-4`}>
                 <h2 className={`text-center`}>
                   Firma digital o nombre completo como confirmación de la
                   veracidad de los datos proporcionados.
                 </h2>
-                <div className={`flex items-center justify-center w-full`}>
-                  <div className={`border-2 rounded-2xl p-2`}>
-                    <input
-                      type="text"
-                      placeholder="Nombre completo"
-                      {...register("firma")}
-                      className="outline-none text-sm"
-                    />
-                  </div>
-                </div>
+                <SignatureField
+                  value={getValues("firma")}
+                  onChange={(val) => setValue("firma", val, { shouldValidate: false })}
+                  onImageChange={(file) => {
+                    // guardamos la imagen de la firma como archivo opcional
+                    filesRef.current["firma_imagen"] = file || null;
+                  }}
+                />
+                <p className="text-xs text-gray-500 text-center">Puedes escribir tu nombre o dibujar tu firma. Mínimo 3 caracteres si escribes.</p>
               </div>
 
               {!creds && (
@@ -1412,44 +1706,57 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                 />
               )}
               {finalError && (
-                <p className="text-sm text-red-600 font-medium">{finalError}</p>
+                <div className="w-full max-w-md border border-red-300 bg-red-50 rounded p-3 text-xs text-red-700 space-y-2">
+                  <p className="font-medium">{finalError}</p>
+                  {/ya fue finalizado/i.test(finalError) && (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/login')}
+                      className="inline-block px-3 py-1 bg-purple-600 text-white rounded text-[11px] hover:bg-purple-700"
+                    >Ir a inicio de sesión</button>
+                  )}
+                </div>
               )}
               {preValidateError && (
                 <pre className="whitespace-pre-wrap text-xs text-red-700 border border-red-300 bg-red-50 p-2 rounded">
                   {preValidateError}
                 </pre>
               )}
-              {creds && (
+              {creds && !showCredsModal && (
                 <div className="w-full max-w-md border rounded-lg p-4 bg-white shadow text-sm">
                   <h3 className="font-semibold mb-2">Credenciales generadas</h3>
+                  <p className="text-xs text-gray-600 mb-2">Si cerraste el modal puedes copiarlas aquí.</p>
                   <div className="space-y-1">
-                    <div>
-                      <span className="font-medium">Usuario:</span>{" "}
-                      {creds.usuario}
-                    </div>
-                    <div>
-                      <span className="font-medium">Contraseña:</span>{" "}
-                      {creds.password}
-                    </div>
+                    <div><span className="font-medium">Usuario:</span> {creds.usuario}</div>
+                    <div><span className="font-medium">Contraseña:</span> {creds.password}</div>
                     <button
                       type="button"
-                      onClick={() =>
-                        navigator.clipboard.writeText(
-                          `${creds.usuario} ${creds.password}`
-                        )
-                      }
+                      onClick={() => navigator.clipboard.writeText(`${creds.usuario} ${creds.password}`)}
                       className="mt-2 text-xs bg-gray-800 text-white px-3 py-1 rounded hover:bg-black"
-                    >
-                      Copiar
-                    </button>
+                    >Copiar</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          const contenido = `Credenciales MQerKAcademy\n\nUsuario: ${creds.usuario}\nContraseña: ${creds.password}\n\nGuárdalas en un lugar seguro.`;
+                          const blob = new Blob([contenido], { type: 'text/plain' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `credenciales_mqerk_${creds.usuario}.txt`;
+                          document.body.appendChild(a);
+                          a.click();
+                          setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+                        } catch(_e) {}
+                      }}
+                      className="mt-2 text-xs bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700"
+                    >Descargar .txt</button>
                   </div>
                   <button
                     type="button"
-                    onClick={() => navigate("/login")}
+                    onClick={() => navigate('/login')}
                     className="mt-4 text-xs text-purple-700 underline"
-                  >
-                    Ir a inicio de sesión
-                  </button>
+                  >Ir a inicio de sesión</button>
                 </div>
               )}
             </fieldset>

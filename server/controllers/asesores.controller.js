@@ -5,6 +5,8 @@ import bcrypt from 'bcryptjs';
 import * as Perfiles from '../models/asesor_perfiles.model.js';
 import db from '../db.js';
 import * as AsesorPerfiles from '../models/asesor_perfiles.model.js';
+import * as Tests from '../models/asesor_tests.model.js';
+import * as Bank from '../models/test_bank.model.js';
 
 export const crearPreRegistro = async (req, res) => {
   try {
@@ -74,14 +76,31 @@ export const finalizarProcesoAsesor = async (req, res) => {
     const { preregistroId } = req.params;
     const prereg = await PreReg.getById(preregistroId);
     if(!prereg) return res.status(404).json({ message: 'Preregistro no existe' });
-
+    // Anteriormente: si status==='rejected' se bloqueaba. Ahora permitimos reintentos.
+    // Si estaba rejected lo movemos a 'testing' para que pueda volver a intentarlo.
     if(prereg.status === 'rejected') {
-      return res.status(400).json({ message:'Preregistro rechazado' });
+      try { await PreReg.updateStatus(prereg.id, 'testing'); } catch(_e){}
     }
 
-    // Si ya completado, no recrear credenciales
+    // Reglas de aprobación basadas en resultados (si existen)
+    const results = await Tests.getByPreRegistro(preregistroId).catch(()=>null);
+    let aprobado = true;
+    if(results){
+      // Nuevas reglas: solo cuentan WAIS, Académica, Zavic y (si existe) Matemática.
+      const wais = Number(results.wais_total||0);
+      const aca = Number(results.academica_total||0);
+      const zav = Number(results.zavic_total||0);
+      const mat = results.matematica_total != null ? Number(results.matematica_total) : null;
+      const okWais = wais >= 150;
+      const okAca = aca >= 160;
+      const okZav = zav > 80;
+      const okMat = (mat == null) ? true : (mat >= 60); // si no existe aún el campo, no bloquea
+      aprobado = (okWais && okAca && okZav && okMat);
+    }
+
+    // Si ya completado previamente, solo informar estado
     if(prereg.status === 'completed') {
-      return res.json({ ok:true, message:'Ya finalizado' });
+      return res.json({ ok:true, message:'Ya finalizado', aprobado });
     }
 
     // Generar username: nombre + dominio
@@ -108,6 +127,21 @@ export const finalizarProcesoAsesor = async (req, res) => {
     const plainPassword = pwdChars.join('');
     const hash = await bcrypt.hash(plainPassword, 10);
 
+    // Solo generar credenciales si aprobado (cuando hay resultados); si no hay resultados, permitir continuar como antes
+    if(aprobado === false){
+      // Registrar intento fallido sin cambiar estado permanente (permite reintentos)
+      if(results){
+        try {
+          await Tests.addHistoryEntry(preregistroId, { ...results, scenario_type:'finalization_attempt_failed' });
+        } catch(_e){ /* ignore history error */ }
+      }
+      // Asegurar estado mínimo 'testing' para distinguir de pendiente inicial
+      if(['pending','testing','rejected'].includes(prereg.status)){
+        try { await PreReg.updateStatus(prereg.id, 'testing'); } catch(_e){}
+      }
+      return res.status(200).json({ ok:true, aprobado:false, message:'No aprobado según criterios de evaluación' });
+    }
+
     await Usuarios.createUsuario({ usuario: username, contraseña: hash, role: 'asesor', id_estudiante: null });
     // Vincular usuario al perfil si ya existe registro en asesor_perfiles
     try {
@@ -120,11 +154,142 @@ export const finalizarProcesoAsesor = async (req, res) => {
       }
     } catch(_e){ /* ignore linking errors */ }
     await PreReg.updateStatus(prereg.id, 'completed');
+    // Registrar intento aprobado
+    if(results){
+      try {
+        await Tests.addHistoryEntry(preregistroId, { ...results, scenario_type:'finalization_approved' });
+      } catch(_e){ /* ignore history error */ }
+    }
 
-    res.json({ ok:true, credenciales:{ usuario: username, password: plainPassword } });
+    res.json({ ok:true, aprobado:true, credenciales:{ usuario: username, password: plainPassword } });
   } catch(err){
     console.error('Error finalizarProcesoAsesor (sin tests)', err);
     res.status(500).json({ message:'Error interno' });
+  }
+};
+
+// Nuevo: guardar resultados de pruebas de asesor (y crear historial)
+export const guardarResultadosTest = async (req, res) => {
+  try {
+    const { preregistroId } = req.params;
+    const prereg = await PreReg.getById(preregistroId);
+    if(!prereg) return res.status(404).json({ message:'Preregistro no existe' });
+    const payload = req.body || {};
+    // Guardar totales en tabla principal y registrar historial completo
+    const saved = await Tests.createOrUpdateByPreRegistro(preregistroId, payload);
+    await Tests.addHistoryEntry(preregistroId, { ...payload, scenario_type:'manual' });
+    // Al recibir resultados movemos el status a 'testing'
+    if(prereg.status === 'pending'){
+      await PreReg.updateStatus(preregistroId, 'testing');
+    }
+    res.status(201).json({ ok:true, resultados: saved });
+  } catch(err){
+    console.error('guardarResultadosTest', err);
+    res.status(500).json({ message:'Error interno' });
+  }
+};
+
+// Obtener resultados de pruebas por preregistro
+export const obtenerResultadosTest = async (req, res) => {
+  try {
+    const { preregistroId } = req.params;
+    const r = await Tests.getByPreRegistro(preregistroId);
+    if(!r) return res.status(404).json({ message:'No hay resultados' });
+    // Enriquecer con el último detalle disponible en history (subescalas, dimensiones, etc.)
+    let enriched = { ...r };
+    try {
+      const hist = await Tests.listHistoryByPreRegistro(preregistroId);
+      if (Array.isArray(hist) && hist.length) {
+        const rev = [...hist].reverse();
+        const parseJson = (v)=> {
+          if (v == null) return null;
+          try { return typeof v === 'string' ? JSON.parse(v) : v; } catch { return null; }
+        };
+        // Buscar el más reciente que tenga cada detalle
+        const lastDass = rev.find(h => parseJson(h.dass21_subescalas));
+        const lastBig = rev.find(h => parseJson(h.bigfive_dimensiones));
+        const dass21_subescalas = lastDass ? parseJson(lastDass.dass21_subescalas) : null;
+        const bigfive_dimensiones = lastBig ? parseJson(lastBig.bigfive_dimensiones) : null;
+        if (dass21_subescalas) enriched.dass21_subescalas = dass21_subescalas;
+        if (bigfive_dimensiones) enriched.bigfive_dimensiones = bigfive_dimensiones;
+      }
+    } catch(_e) { /* mantener payload mínimo si falla */ }
+    res.json({ resultados: enriched });
+  } catch(err){
+    console.error('obtenerResultadosTest', err);
+    res.status(500).json({ message:'Error interno' });
+  }
+};
+
+// Listar historial de resultados (versiones) para un preregistro
+export const listarHistorialResultadosTest = async (req, res) => {
+  try {
+    const { preregistroId } = req.params;
+    const hist = await Tests.listHistoryByPreRegistro(preregistroId);
+    if (!hist || !hist.length) return res.json({ history: [] });
+    // Sanitizar: devolver totales, version, scenario_type y timestamps si existen
+    const safe = hist.map((h) => ({
+      id: h.id,
+      preregistro_id: h.preregistro_id,
+      version: h.version,
+      scenario_type: h.scenario_type || null,
+      created_at: h.created_at || h.createdAt || null,
+      updated_at: h.updated_at || h.updatedAt || null,
+      bigfive_total: h.bigfive_total ?? null,
+      dass21_total: h.dass21_total ?? null,
+      zavic_total: h.zavic_total ?? null,
+      baron_total: h.baron_total ?? null,
+      wais_total: h.wais_total ?? null,
+      academica_total: h.academica_total ?? null,
+      matematica_total: h.matematica_total ?? null,
+    }));
+    res.json({ history: safe });
+  } catch (err) {
+    console.error('listarHistorialResultadosTest', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+};
+
+// Nuevo: generar formulario dinámico (e.g., WAIS) desde banco
+export const generarFormularioTest = async (req, res) => {
+  try {
+    const { preregistroId, tipo } = req.params; // tipo: 'wais' | 'matematica'
+    const questions = await Bank.getActiveQuestions(tipo);
+    if (!questions.length) return res.status(404).json({ message: 'Sin preguntas activas' });
+    // Elegir aleatoriamente N preguntas (por defecto 25 para wais, 20 para matemática)
+    const N = tipo === 'wais' ? 25 : 20;
+    const shuffled = questions.sort(()=> Math.random()-0.5).slice(0, Math.min(N, questions.length));
+    const qids = shuffled.map(q=> q.id);
+    const opts = await Bank.getOptionsForQuestions(qids);
+    // Agrupar opciones por pregunta
+    const optionsMap = qids.reduce((acc,id)=> (acc[id]=[], acc), {});
+    for (const o of opts) optionsMap[o.question_id].push({ id:o.id, text:o.text });
+    // Persistir instancia
+    const inst = await Bank.createFormInstance({ preregistro_id: Number(preregistroId), test_type: tipo, question_ids: qids });
+    const payload = shuffled.map(q=> ({ id: q.id, prompt: q.prompt, points: q.points, options: optionsMap[q.id]||[] }));
+    res.json({ ok:true, form: { id: inst.id, preregistro_id: inst.preregistro_id, test_type: tipo, questions: payload } });
+  } catch(err){
+    console.error('generarFormularioTest', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+};
+
+// Nuevo: calificar respuestas de formulario dinámico
+export const calificarFormularioTest = async (req, res) => {
+  try {
+    const { preregistroId, tipo } = req.params;
+    const { entries } = req.body || {};
+    const { score } = await Bank.gradeAnswers({ entries: Array.isArray(entries)? entries: [] });
+    // Guardar el total en asesor_tests bajo el campo adecuado
+    const field = tipo === 'wais' ? 'wais_total' : (tipo === 'matematica' ? 'matematica_total' : null);
+    if (!field) return res.status(400).json({ message: 'tipo desconocido' });
+    const payload = { [field]: score };
+    const saved = await Tests.createOrUpdateByPreRegistro(preregistroId, payload);
+    await Tests.addHistoryEntry(preregistroId, { ...payload, scenario_type:`dynamic_${tipo}` });
+    res.json({ ok:true, score, saved });
+  } catch(err){
+    console.error('calificarFormularioTest', err);
+    res.status(500).json({ message: 'Error interno' });
   }
 };
 

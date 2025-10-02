@@ -140,7 +140,15 @@ const GreetingHeader = memo(({ greeting, adminName }) => {
   }, []);
 
   return (
-    <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 px-0 py-4 xs:px-0 xs:py-6 sm:px-0 sm:py-8 md:px-0 md:py-10 lg:px-0 lg:py-12 xl:px-0 xl:py-16 text-white relative overflow-hidden">
+    <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 text-white relative overflow-hidden
+      px-3 py-5
+      xs:px-4 xs:py-6
+      sm:px-6 sm:py-8
+      md:px-8 md:py-10
+      lg:px-10 lg:py-12
+      xl:px-12 xl:py-14
+      2xl:px-14 2xl:py-16
+    ">
      
       <div className="absolute top-0 right-0 w-16 h-16 xs:w-24 xs:h-24 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-64 lg:h-64 xl:w-80 xl:h-80 bg-white bg-opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 animate-pulse"></div>
      
@@ -155,24 +163,31 @@ const GreetingHeader = memo(({ greeting, adminName }) => {
 
       <div className="relative z-10 text-center">
       
-  <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold mb-1 sm:mb-2 md:mb-3 lg:mb-4 leading-tight animate-slide-down">
+  <h1 className="font-bold leading-tight animate-slide-down mb-2 sm:mb-3 lg:mb-4
+    text-[clamp(1.35rem,4vw,2.75rem)]
+    sm:text-[clamp(1.75rem,3.2vw,3.2rem)]
+    lg:text-[clamp(2.2rem,2.8vw,3.6rem)]
+    tracking-tight">
           {greeting}
           <span className="block absolute left-1/2 -translate-x-1/2 bottom-0 w-2/3 h-0.5 bg-gradient-to-r from-indigo-500/80 to-purple-500/80 rounded-full origin-center scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></span>
         </h1>
         
        
-  <h2 className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-light mb-1 sm:mb-3 md:mb-4 lg:mb-5 opacity-90 leading-tight animate-slide-up">
+  <h2 className="font-light opacity-90 leading-tight animate-slide-up mb-2 sm:mb-3 md:mb-4 lg:mb-5
+    text-[clamp(.9rem,2.6vw,1.4rem)] sm:text-[clamp(1rem,2.2vw,1.8rem)] lg:text-[clamp(1.1rem,2vw,2.2rem)]">
           Admin <span className="font-semibold text-yellow-200">{adminName}</span>
         </h2>
         
       
-        <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl opacity-80 px-1 xs:px-2 sm:px-4 md:px-6 lg:px-8 leading-relaxed animate-fade-in-delayed">
+        <p className="opacity-80 leading-relaxed animate-fade-in-delayed
+          text-[clamp(.7rem,2.4vw,.95rem)] sm:text-[clamp(.85rem,2vw,1.05rem)] md:text-[clamp(.95rem,1.8vw,1.25rem)] lg:text-[clamp(1rem,1.6vw,1.35rem)]
+          px-2 sm:px-4 md:px-6 lg:px-8">
           Bienvenido al panel administrativo de MQerKAcademy
         </p>
 
        
         {showWelcome && (
-          <div className="mt-4 inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 animate-welcome-banner">
+          <div className="mt-4 inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 animate-welcome-banner text-[clamp(.65rem,2.2vw,.8rem)] sm:text-sm">
             <span className="text-yellow-300 text-lg animate-bounce">🎉</span>
             <span className="text-sm font-medium">¡Que tengas un excelente día!</span>
             <span className="text-yellow-300 text-lg animate-bounce animation-delay-500">🚀</span>
@@ -180,7 +195,7 @@ const GreetingHeader = memo(({ greeting, adminName }) => {
         )}
       </div>
 
-      {/* Estilos adicionales para las nuevas animaciones */}
+      {/* Estilos para animaciones */}
       <style>
         {`
           @keyframes floatSlow {
@@ -224,17 +239,6 @@ const GreetingHeader = memo(({ greeting, adminName }) => {
   );
 });
 
-/**
- * Componente NotificationsCard - Muestra resumen de notificaciones del admin
- * 
- * IMPORTANTE: Los datos NO vienen directo del backend, sino del hook useAdminNotifications()
- * Este hook maneja todo internamente, aquí solo mostramos lo que nos pasa
- * 
- * Si quieres cambiar la lógica de notificaciones, ve a:
- * - useAdminNotifications.js (donde está la lógica)
- * 
- * Este componente NO se toca para integrar backend, solo muestra datos
- */
 const NotificationsCard = memo(({ notifications, hasUnread }) => {
   return (
     <InfoCard
@@ -516,4 +520,3 @@ function Bienvenida_Admin1() {
 
 export default Bienvenida_Admin1;
 
-// segun sho y chiat ya todo esta ready para el backend

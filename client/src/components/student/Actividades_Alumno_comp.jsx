@@ -10,7 +10,7 @@ import { AREAS_CATALOG_CACHE } from '../../utils/catalogCache';
 import { styleForArea } from '../common/areaStyles.jsx';
 import UnifiedCard from '../common/UnifiedCard.jsx';
 import { resumenActividadesEstudiante, crearOReemplazarEntrega, addArchivoEntrega, listArchivosEntrega, deleteArchivoEntrega } from '../../api/actividades';
-import { resumenQuizzesEstudiante, crearIntentoQuiz, listIntentosQuizEstudiante } from '../../api/quizzes';
+import { resumenQuizzesEstudiante, crearIntentoQuiz, listIntentosQuizEstudiante, listQuizzes } from '../../api/quizzes';
 import { useAuth } from '../../context/AuthContext';
 import { useStudent } from '../../context/StudentContext'; // BACKEND: Control de acceso a módulos
 import { useStudentNotifications } from '../../context/StudentNotificationContext';
@@ -47,7 +47,8 @@ import {
   Send,      // BACKEND: Icono para solicitar acceso
   Globe,     // BACKEND: Icono para Turismo
   Anchor,    // BACKEND: Icono para Militar, Naval y Náutica Mercante
-  Hourglass  // BACKEND: Icono para estado pendiente
+  Hourglass,  // BACKEND: Icono para estado pendiente
+  MessageSquareText // BACKEND: Icono para notas del asesor
 } from 'lucide-react';
 
 // BACKEND: Resolver URLs absolutas a archivos estáticos del backend (puerto API) evitando 404 al intentar cargar desde 5173
@@ -114,6 +115,10 @@ export function Actividades_Alumno_comp() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState(null);
   const [previewKey, setPreviewKey] = useState(0); // para forzar recarga
+  // Notas del asesor
+  const [showNotasModal, setShowNotasModal] = useState(false);
+  const [notasActividad, setNotasActividad] = useState(null);
+  const [notasContent, setNotasContent] = useState('');
   
   // Estados para modal de historial de quizzes
   const [showHistorialModal, setShowHistorialModal] = useState(false);
@@ -239,8 +244,8 @@ export function Actividades_Alumno_comp() {
   },[]);
 
   // Datos reales se cargarán desde la API según área y tipo seleccionado
-  const { user } = useAuth() || {}; // user debe contener id_estudiante
-  const estudianteId = user?.id_estudiante || user?.id || null;
+  const { user, alumno } = useAuth() || {}; // usar alumno.id cuando exista
+  const estudianteId = alumno?.id || user?.id_estudiante || user?.id || null;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -250,7 +255,7 @@ export function Actividades_Alumno_comp() {
   // Meses como ordinales (como en Feedback)
   const months = [
     'Primero', 'Segundo', 'Tercero', 'Cuarto', 'Quinto', 'Sexto',
-    'Séptimo', 'Octavo',,
+    'Séptimo', 'Octavo',
   ];
 
   // BACKEND: Inicializar con al menos un área permitida si es el primer acceso
@@ -264,10 +269,13 @@ export function Actividades_Alumno_comp() {
   // Cargar resumen de actividades/quizzes desde la API según el tipo seleccionado
   useEffect(() => {
     const fetchData = async () => {
-      if (!estudianteId || !selectedType || !selectedArea) return;
+      // Nota: Para quizzes podemos cargar catálogo aun sin estudianteId.
+      // Por eso solo exigimos tipo y área seleccionados.
+      if (!selectedType || !selectedArea) return;
       setLoading(true); setError('');
       try {
         if (selectedType === 'actividades') {
+          if (!estudianteId) { setActividades([]); setLoading(false); return; }
           const { data } = await resumenActividadesEstudiante(estudianteId);
           const rows = (data?.data || data || []).filter(a => {
             if(!a.id_area) return true; // sin asignación específica
@@ -310,37 +318,78 @@ export function Actividades_Alumno_comp() {
               plantilla: r.plantilla || (firstRecurso ? firstRecurso.archivo : null),
               recursos,
               entrega_id: r.entrega_id || r.entregaId || null,
+              // Notas del asesor si existen en la respuesta
+              notas:
+                r.entrega_notas ||
+                r.entrega_comentarios ||
+                r.comentarios ||
+                r.observaciones ||
+                r.retroalimentacion ||
+                '',
+              notas_at: r.entrega_notas_updated_at || r.revisada_at || null,
             };
           });
           setActividades(mapped);
         } else if (selectedType === 'quiz') {
-          const { data } = await resumenQuizzesEstudiante(estudianteId);
-          const rows = (data?.data || data || []).filter(q => {
-            if(!q.id_area) return true;
-            if(selectedArea.id === 5) {
-              if(!selectedModulo) return false;
-              return q.id_area === selectedModulo.id;
+          // Traer resumen por estudiante y catálogo global de quizzes en paralelo
+          const [resResumen, resCatalog] = await Promise.allSettled([
+            estudianteId ? resumenQuizzesEstudiante(estudianteId) : Promise.resolve({ data: { data: [] } }),
+            listQuizzes()
+          ]);
+          const resumenRows = resResumen.status === 'fulfilled' ? (resResumen.value?.data?.data || resResumen.value?.data || []) : [];
+          const catalogRows = resCatalog.status === 'fulfilled' ? (resCatalog.value?.data?.data || resCatalog.value?.data || []) : [];
+
+          // Índice de resumen por id quiz para mergear métricas del alumno
+          const resumenById = resumenRows.reduce((acc, q) => { acc[q.id] = q; return acc; }, {});
+
+          // Fuente base: si hay catálogo, usarlo; si no, usar el resumen directamente
+          const baseRows = catalogRows.length ? catalogRows : resumenRows;
+
+          // Filtrado por área/módulo seleccionado
+          const rows = baseRows.filter(q => {
+            const id_area = q.id_area;
+            if (!id_area) return true; // visible a todas las áreas
+            if (selectedArea.id === 5) { // contenedor de módulos específicos
+              if (!selectedModulo) return false;
+              return id_area === selectedModulo.id;
             }
-            return q.id_area === selectedArea.id;
+            return id_area === selectedArea.id;
           });
-          const mapped = rows.map(q => ({
-            id: q.id,
-            nombre: q.titulo,
-            descripcion: q.descripcion || '',
-            fechaEntrega: q.fecha_limite,
-            fechaSubida: null,
-            archivo: null,
-            entregada: q.total_intentos > 0,
-            score: q.ultimo_puntaje ?? null,
-            maxScore: q.puntos_max || 100,
-            estado: q.total_intentos ? 'realizado' : 'pendiente',
-            areaId: q.id_area,
-            tipo: 'quiz',
-            intentos: [],
-            totalIntentos: q.total_intentos || 0,
-            mejorPuntaje: q.mejor_puntaje ?? null,
-            plantilla: null
-          }));
+
+          // Eliminar datos mock: si no hay filas, se mostrará tabla vacía o estado vacío.
+          const mapped = rows.map(q => {
+            const r = resumenById[q.id] || q; // r contiene métricas si existen
+            const total_intentos = Number(r.total_intentos || 0);
+            const ultimo_puntaje = r.ultimo_puntaje ?? null;
+            const mejor_puntaje = r.mejor_puntaje ?? null;
+            const fecha_limite = q.fecha_limite || q.fechaEntrega || null;
+            const now = new Date();
+            const due = fecha_limite ? new Date(fecha_limite) : null;
+            const within = due ? now <= due : true;
+            // Estado visual esperado por la tabla: 'disponible' | 'completado' | 'vencido'
+            const estadoQuiz = total_intentos > 0 ? 'completado' : (within ? 'disponible' : 'vencido');
+            return {
+              id: q.id,
+              nombre: q.titulo,
+              descripcion: q.descripcion || '',
+              fechaEntrega: fecha_limite,
+              fechaSubida: null,
+              archivo: null,
+              entregada: total_intentos > 0,
+              score: ultimo_puntaje,
+              maxScore: q.puntos_max || 100,
+              estado: estadoQuiz,
+              // defaults para evitar textos "undefined" en la UI
+              tiempoLimite: q.tiempo_limite || '60 min',
+              maxIntentos: q.max_intentos || 3,
+              areaId: q.id_area,
+              tipo: 'quiz',
+              intentos: [],
+              totalIntentos: total_intentos,
+              mejorPuntaje: mejor_puntaje,
+              plantilla: null
+            };
+          });
           setActividades(mapped);
         }
       } catch (e) {
@@ -372,6 +421,24 @@ export function Actividades_Alumno_comp() {
 
   const manualRetry = () => { setRetryCount(c=>c+1); };
 
+  // Notas: helpers para abrir/cerrar modal
+  const openNotasModal = (actividad) => {
+    const contenido = actividad?.notas || '';
+    setNotasActividad(actividad || null);
+    setNotasContent(String(contenido || ''));
+    setShowNotasModal(true);
+
+    // Marcar como visto: guardar timestamp visto para esta actividad
+    try {
+      if (actividad?.id) {
+        const key = `notas_seen_${actividad.id}`;
+        const nowIso = new Date().toISOString();
+        localStorage.setItem(key, nowIso);
+      }
+    } catch {}
+  };
+  const closeNotasModal = () => { setShowNotasModal(false); setNotasActividad(null); setNotasContent(''); };
+
   // Efecto para calcular el puntaje total (como en Feedback)
   useEffect(() => {
     const calculatedTotal = actividades.reduce((sum, actividad) => sum + (actividad.score || 0), 0);
@@ -396,7 +463,14 @@ export function Actividades_Alumno_comp() {
             const list = Array.isArray(resp.data?.data) ? resp.data.data : [];
             const mine = list.find(e => String(e.id_estudiante) === String(estudianteId));
             if (mine && (mine.calificacion !== null && mine.calificacion !== undefined)) {
-              setActividades(prev => prev.map(p => p.id === act.id ? { ...p, score: mine.calificacion, mejorPuntaje: mine.calificacion, estado: 'revisada' } : p));
+              setActividades(prev => prev.map(p => p.id === act.id ? {
+                ...p,
+                score: mine.calificacion,
+                mejorPuntaje: mine.calificacion,
+                estado: 'revisada',
+                notas: mine.notas || mine.comentarios || mine.observaciones || mine.retroalimentacion || p.notas || '',
+                notas_at: mine.updated_at || p.notas_at || null
+              } : p));
             }
           } catch { /* silencioso */ }
         };
@@ -427,7 +501,14 @@ export function Actividades_Alumno_comp() {
             const list = Array.isArray(resp.data?.data) ? resp.data.data : [];
             const mine = list.find(e => String(e.id_estudiante) === String(estudianteId));
             if (mine && (mine.calificacion !== null && mine.calificacion !== undefined)) {
-              setActividades(prev => prev.map(p => p.id === act.id ? { ...p, score: mine.calificacion, mejorPuntaje: mine.calificacion, estado: 'revisada' } : p));
+              setActividades(prev => prev.map(p => p.id === act.id ? {
+                ...p,
+                score: mine.calificacion,
+                mejorPuntaje: mine.calificacion,
+                estado: 'revisada',
+                notas: mine.notas || mine.comentarios || mine.observaciones || mine.retroalimentacion || p.notas || '',
+                notas_at: mine.updated_at || p.notas_at || null
+              } : p));
             }
           } catch {/* ignore */}
         }
@@ -464,14 +545,22 @@ export function Actividades_Alumno_comp() {
 
   // BACKEND: Función para manejar la selección de módulo específico con control de acceso
   const handleSelectModulo = (modulo) => {
-    // Solo permitir la selección si el módulo está en las áreas permitidas
-    if (allowedActivityAreas.includes(modulo.id)) {
-      setSelectedModulo(modulo);
-      setCurrentLevel('buttons');
-    } else {
-      // Si no está permitido, se puede iniciar la solicitud desde la tarjeta
-      console.log("Área no permitida. Debes solicitar acceso.");
+    // DEV OVERRIDE: se fuerza el acceso sin esperar aprobación.
+    // Lógica original comentada temporalmente:
+    // if (allowedActivityAreas.includes(modulo.id)) {
+    //   setSelectedModulo(modulo);
+    //   setCurrentLevel('buttons');
+    // } else {
+    //   console.log('Área no permitida. Debes solicitar acceso.');
+    // }
+
+    if (!allowedActivityAreas.includes(modulo.id)) {
+      // Agregar automáticamente el módulo a las áreas permitidas para esta sesión
+      try { addAllowedActivityArea(modulo.id); } catch {}
+      console.warn('[DEV] Acceso forzado al módulo', modulo.id);
     }
+    setSelectedModulo(modulo);
+    setCurrentLevel('buttons');
   };
 
   // Función para mostrar notificaciones modales
@@ -763,8 +852,11 @@ export function Actividades_Alumno_comp() {
   // Filtrado por mes (como en Feedback)
   const filteredActividades = actividades.filter(actividad => {
     if (selectedMonth === 'all') return true;
-    const activityMonth = new Date(actividad.fechaEntrega).getMonth();
-    return activityMonth === parseInt(selectedMonth);
+    if (!actividad?.fechaEntrega) return true; // si no hay fecha, no filtrar por mes
+    const d = new Date(actividad.fechaEntrega);
+    const m = Number.isNaN(d.getTime()) ? null : d.getMonth();
+    if (m === null) return true; // fecha inválida -> no filtrar
+    return m === parseInt(selectedMonth);
   });
 
   const getSelectedMonthName = () => {
@@ -791,8 +883,8 @@ export function Actividades_Alumno_comp() {
     // Por ahora solo log, después será: 
     // window.location.href = `/simulacion/${quizId}`;
     showNotification(
-      'Iniciando simulación',
-      'Redirigiendo a la simulación...',
+      'Iniciando Quiz',
+      'Redirigiendo al Quiz...',
       'info'
     );
   };
@@ -1728,11 +1820,15 @@ export function Actividades_Alumno_comp() {
                     </div>
                   );
                 } else if (isPending) {
-                  cardClassName += " opacity-70"; 
+                  // DEV OVERRIDE: permitir entrar aunque esté pendiente
+                  isClickable = true;
+                  actionHandler = () => handleSelectModulo(modulo);
+                  cardClassName += " opacity-70 cursor-pointer"; 
                   footerContent = (
                     <div className="inline-flex items-center text-yellow-800 font-medium text-sm bg-yellow-200/80 px-3 py-1 rounded-full">
                       <Hourglass className="w-4 h-4 mr-2" />
                       <span>Pendiente</span>
+                      <span className="ml-2 text-[10px] uppercase tracking-wide text-yellow-700/70">(Acceso temporal)</span>
                     </div>
                   );
                 } else {
@@ -1759,6 +1855,9 @@ export function Actividades_Alumno_comp() {
                 );
               }
 
+              // Si es pending pero lo hicimos clickeable (DEV override), no marcar como pending para que UnifiedCard no bloquee el click
+              const cardPending = isPending && !isClickable;
+
               return (
                 <div key={modulo.id} className="[tap-highlight-color:transparent]">
                   <UnifiedCard
@@ -1770,7 +1869,7 @@ export function Actividades_Alumno_comp() {
                     minHeight={CARD_HEIGHT_PX}
                     onClick={isClickable ? actionHandler : undefined}
                     interactive={isClickable}
-                    pending={isPending}
+                    pending={cardPending}
                     footer={<div className="text-xs sm:text-sm">{footerContent}</div>}
                   />
                 </div>
@@ -1900,35 +1999,80 @@ export function Actividades_Alumno_comp() {
     // Función para renderizar tabla de actividades (versión unificada single-submission)
     const renderTablaActividades = () => (
       <div className="p-6">
-        <div className="mb-8">
-          <button
-            onClick={handleGoBack}
-            className="flex items-center text-blue-600 hover:text-blue-800 mb-4 font-medium"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver a opciones
-          </button>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Actividades</h1>
-              <p className="text-gray-600">{selectedArea?.titulo}</p>
+        {/* Header con navegación (igual a Simulaciones) */}
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-8">
+          <div className="px-6 py-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={handleGoBack}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Actividades</h1>
+                  <p className="text-gray-600">{selectedArea?.titulo}</p>
+                </div>
+              </div>
+              <div className="mt-4 lg:mt-0 flex items-center text-sm text-gray-500">
+                <Target className="w-4 h-4 mr-1" />
+                <span>{filteredActividades.length} actividades disponibles</span>
+              </div>
             </div>
-            {/* Filtro por mes */}
+          </div>
+        </div>
+
+        {/* Título estilizado (igual a Simulaciones, adaptado a Actividades) */}
+        <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl border border-cyan-200 shadow-md p-8 mb-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-100/30 to-indigo-100/30 rounded-full blur-2xl"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-100/30 to-cyan-100/30 rounded-full blur-xl"></div>
+          
+          <div className="flex items-center justify-center relative z-10">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-2 h-2 text-white" />
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-center">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
+                  ACTIVIDADES DISPONIBLES
+                </h2>
+                <div className="flex items-center space-x-2 mt-1">
+                  <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
+                  <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filtros (igual a Simulaciones) */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            <div className="text-lg font-semibold text-gray-800">
+              Filtrar actividades
+            </div>
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-48"
+                className="flex items-center justify-between w-64 px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                <span className="text-gray-700">{getSelectedMonthName()}</span>
-                <ChevronDown className={`w-4 h-4 ml-2 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                <span>{getSelectedMonthName()}</span>
+                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
+
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-30">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
                   <div className="py-1">
                     <button
                       onClick={() => handleMonthSelect('all')}
-                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-600' : 'text-gray-700'}`}
+                      className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
                     >
                       Todos los meses
                     </button>
@@ -1936,7 +2080,7 @@ export function Actividades_Alumno_comp() {
                       <button
                         key={index}
                         onClick={() => handleMonthSelect(index.toString())}
-                        className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-600' : 'text-gray-700'}`}
+                        className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
                       >
                         {month}
                       </button>
@@ -2065,7 +2209,29 @@ export function Actividades_Alumno_comp() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {actividad.entregada ? (
                           actividad.estado === 'revisada' ? (
-                            <span className="font-medium text-gray-900">{actividad.score !== null && actividad.score !== undefined ? actividad.score : (actividad.mejorPuntaje ?? 0)}</span>
+                            <span className="font-medium text-gray-900 inline-flex items-center gap-2">
+                              {actividad.score !== null && actividad.score !== undefined ? actividad.score : (actividad.mejorPuntaje ?? 0)}
+                              {actividad.notas && String(actividad.notas).trim().length > 0 && (
+                                <button
+                                  onClick={() => openNotasModal(actividad)}
+                                  className="relative p-1 rounded hover:bg-blue-50 text-blue-600"
+                                  title="Ver notas del asesor"
+                                >
+                                  <MessageSquareText className="w-4 h-4" />
+                                  {(() => {
+                                    try {
+                                      const seen = localStorage.getItem(`notas_seen_${actividad.id}`);
+                                      const notasAt = actividad.notas_at ? new Date(actividad.notas_at).getTime() : 0;
+                                      const seenAt = seen ? new Date(seen).getTime() : 0;
+                                      const isNew = notasAt && notasAt > seenAt;
+                                      return isNew ? (
+                                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                                      ) : null;
+                                    } catch { return null; }
+                                  })()}
+                                </button>
+                              )}
+                            </span>
                           ) : (
                             <span className="text-xs text-yellow-600 font-medium">En revisión</span>
                           )
@@ -2086,37 +2252,80 @@ export function Actividades_Alumno_comp() {
   // Función para renderizar tabla de quizzes
     const renderTablaQuiz = () => (
       <div className="p-6">
-        <div className="mb-8">
-          <button
-            onClick={handleGoBack}
-            className="flex items-center text-blue-600 hover:text-blue-800 mb-4 font-medium"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver a opciones
-          </button>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Quizzes</h1>
-              <p className="text-gray-600">{selectedArea?.titulo}</p>
+        {/* Header con navegación (igual a Simulaciones) */}
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-8">
+          <div className="px-6 py-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={handleGoBack}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Quizzes</h1>
+                  <p className="text-gray-600">{selectedArea?.titulo}</p>
+                </div>
+              </div>
+              <div className="mt-4 lg:mt-0 flex items-center text-sm text-gray-500">
+                <Target className="w-4 h-4 mr-1" />
+                <span>{filteredActividades.length} quizzes disponibles</span>
+              </div>
             </div>
-            
-            {/* Filtro por mes */}
+          </div>
+        </div>
+
+        {/* Título estilizado (igual a Simulaciones, adaptado a Quizzes) */}
+        <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl border border-cyan-200 shadow-md p-8 mb-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-100/30 to-indigo-100/30 rounded-full blur-2xl"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-100/30 to-cyan-100/30 rounded-full blur-xl"></div>
+          
+          <div className="flex items-center justify-center relative z-10">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Play className="w-6 h-6 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-2 h-2 text-white" />
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-center">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
+                  QUIZZES DISPONIBLES
+                </h2>
+                <div className="flex items-center space-x-2 mt-1">
+                  <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
+                  <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filtros (igual a Simulaciones) */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            <div className="text-lg font-semibold text-gray-800">
+              Filtrar quizzes
+            </div>
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-48"
+                className="flex items-center justify-between w-64 px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                <span className="text-gray-700">{getSelectedMonthName()}</span>
-                <ChevronDown className={`w-4 h-4 ml-2 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                <span>{getSelectedMonthName()}</span>
+                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
-              
+
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-30">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
                   <div className="py-1">
                     <button
                       onClick={() => handleMonthSelect('all')}
-                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-purple-50 text-purple-600' : 'text-gray-700'}`}
+                      className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
                     >
                       Todos los meses
                     </button>
@@ -2124,7 +2333,7 @@ export function Actividades_Alumno_comp() {
                       <button
                         key={index}
                         onClick={() => handleMonthSelect(index.toString())}
-                        className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-purple-50 text-purple-600' : 'text-gray-700'}`}
+                        className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
                       >
                         {month}
                       </button>
@@ -2143,7 +2352,7 @@ export function Actividades_Alumno_comp() {
               <thead className="bg-gradient-to-r from-purple-500 to-pink-600">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Simulación
+                    Quiz
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Fecha Límite
@@ -2163,6 +2372,13 @@ export function Actividades_Alumno_comp() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
+                {!loading && !error && filteredActividades.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-10 text-center text-gray-500 text-sm">
+                      No hay quizzes disponibles por ahora en esta materia. Intenta cambiar de mes o vuelve más tarde.
+                    </td>
+                  </tr>
+                )}
                 {filteredActividades.map((quiz, index) => (
                   <tr key={quiz.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="px-6 py-4">
@@ -2192,7 +2408,7 @@ export function Actividades_Alumno_comp() {
                          quiz.estado === 'disponible' ? 'Disponible' :
                          'Vencido'}
                       </span>
-                    </td>                  <td className="px-6 py-4 whitespace-nowrap">
+                    </td><td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
                       {getBestScore(quiz.id) !== 'En revisión' ? `${getBestScore(quiz.id)}%` : getBestScore(quiz.id)}
                     </div>
@@ -2272,6 +2488,36 @@ export function Actividades_Alumno_comp() {
       {renderHistorialModal()}
       {renderNotificationModal()}
   {renderResourcesModal()}
+      {showNotasModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeNotasModal}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e=>e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-5">
+              <div className="flex items-center gap-2">
+                <MessageSquareText className="w-6 h-6" />
+                <h2 className="text-lg font-bold">Notas del asesor</h2>
+              </div>
+              {notasActividad?.nombre && (
+                <p className="text-sm text-blue-100 mt-1 truncate">{notasActividad.nombre}</p>
+              )}
+            </div>
+            <div className="p-5">
+              {notasContent && String(notasContent).trim().length > 0 ? (
+                <div className="prose prose-sm max-w-none">
+                  <p className="whitespace-pre-wrap text-gray-800 text-sm">{notasContent}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No hay notas registradas.</p>
+              )}
+              {notasActividad?.notas_at && (
+                <p className="mt-3 text-xs text-gray-400">Última actualización: {new Date(notasActividad.notas_at).toLocaleString('es-ES')}</p>
+              )}
+              <div className="mt-5 flex justify-end">
+                <button onClick={closeNotasModal} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm">Cerrar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Overlay para cerrar dropdown */}
       {isDropdownOpen && (

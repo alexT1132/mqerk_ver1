@@ -43,22 +43,77 @@ INSERT IGNORE INTO areas (id,nombre,tipo,descripcion,icon_key,color_gradient,bg_
  (112,'Módulo Transversal: Análisis Psicométrico','especifico','Exámenes psicométricos y aptitud','Brain','from-purple-400 to-indigo-500','bg-gradient-to-br from-purple-50 to-indigo-50','border-purple-200',112);
 
 -- 2. Campos adicionales en actividades
-ALTER TABLE actividades
-  ADD COLUMN publicado TINYINT(1) NOT NULL DEFAULT 1 AFTER activo,
-  ADD COLUMN time_limit_min INT NULL AFTER max_intentos,
-  ADD COLUMN passing_score INT NULL AFTER time_limit_min,
-  ADD COLUMN shuffle_questions TINYINT(1) NOT NULL DEFAULT 0 AFTER passing_score;
+-- Agregar columnas solo si no existen
+SET @col_pub := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'actividades' AND COLUMN_NAME = 'publicado');
+SET @sql_pub := IF(@col_pub = 0, 'ALTER TABLE actividades ADD COLUMN publicado TINYINT(1) NOT NULL DEFAULT 1 AFTER activo', 'SELECT 1');
+PREPARE s1 FROM @sql_pub;
+EXECUTE s1;
+DEALLOCATE PREPARE s1;
+
+SET @col_tl := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'actividades' AND COLUMN_NAME = 'time_limit_min');
+SET @sql_tl := IF(@col_tl = 0, 'ALTER TABLE actividades ADD COLUMN time_limit_min INT NULL AFTER max_intentos', 'SELECT 1');
+PREPARE s2 FROM @sql_tl;
+EXECUTE s2;
+DEALLOCATE PREPARE s2;
+
+SET @col_ps := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'actividades' AND COLUMN_NAME = 'passing_score');
+SET @sql_ps := IF(@col_ps = 0, 'ALTER TABLE actividades ADD COLUMN passing_score INT NULL AFTER time_limit_min', 'SELECT 1');
+PREPARE s3 FROM @sql_ps;
+EXECUTE s3;
+DEALLOCATE PREPARE s3;
+
+SET @col_sh := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'actividades' AND COLUMN_NAME = 'shuffle_questions');
+SET @sql_sh := IF(@col_sh = 0, 'ALTER TABLE actividades ADD COLUMN shuffle_questions TINYINT(1) NOT NULL DEFAULT 0 AFTER passing_score', 'SELECT 1');
+PREPARE s4 FROM @sql_sh;
+EXECUTE s4;
+DEALLOCATE PREPARE s4;
 
 -- 3. Índice extra para consultas por estudiante/estado en entregas
-ALTER TABLE actividades_entregas ADD INDEX idx_entregas_estudiante_estado (id_estudiante, estado);
+-- Crear índice solo si no existe
+SET @idx_exists := (
+  SELECT COUNT(*) FROM information_schema.STATISTICS 
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'actividades_entregas' AND INDEX_NAME = 'idx_entregas_estudiante_estado'
+);
+SET @sql_idx := IF(@idx_exists = 0, 'ALTER TABLE actividades_entregas ADD INDEX idx_entregas_estudiante_estado (id_estudiante, estado)', 'SELECT 1');
+PREPARE s5 FROM @sql_idx;
+EXECUTE s5;
+DEALLOCATE PREPARE s5;
 
 -- 4. Detalle JSON + UNIQUE constraint en intentos de quiz
-ALTER TABLE quizzes_intentos
-  ADD COLUMN detalle_json JSON NULL AFTER correctas,
-  ADD UNIQUE KEY uq_quiz_estudiante_intento (id_quiz, id_estudiante, intent_number);
+-- Agregar columna JSON y UNIQUE solo si no existen
+SET @col_json := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'quizzes_intentos' AND COLUMN_NAME = 'detalle_json');
+SET @sql_json := IF(@col_json = 0, 'ALTER TABLE quizzes_intentos ADD COLUMN detalle_json JSON NULL AFTER correctas', 'SELECT 1');
+PREPARE s6 FROM @sql_json;
+EXECUTE s6;
+DEALLOCATE PREPARE s6;
+
+SET @uq_exists := (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS 
+  WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'quizzes_intentos' AND CONSTRAINT_NAME = 'uq_quiz_estudiante_intento'
+);
+SET @sql_uq := IF(@uq_exists = 0, 'ALTER TABLE quizzes_intentos ADD UNIQUE KEY uq_quiz_estudiante_intento (id_quiz, id_estudiante, intent_number)', 'SELECT 1');
+PREPARE s7 FROM @sql_uq;
+EXECUTE s7;
+DEALLOCATE PREPARE s7;
 
 -- 5. Checks (si motor soporta; se ignoran silenciosamente en versiones previas a 8.0.16)
-ALTER TABLE actividades_entregas ADD CONSTRAINT chk_calificacion_rango CHECK (calificacion IS NULL OR (calificacion >= 0 AND calificacion <= 100));
-ALTER TABLE quizzes_intentos ADD CONSTRAINT chk_quiz_puntaje_rango CHECK (puntaje >= 0 AND puntaje <= 100);
+-- Checks solo si no existen (MySQL 8+)
+SET @chk1 := (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS 
+  WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'actividades_entregas' AND CONSTRAINT_TYPE = 'CHECK' AND CONSTRAINT_NAME = 'chk_calificacion_rango'
+);
+SET @sql_chk1 := IF(@chk1 = 0, 'ALTER TABLE actividades_entregas ADD CONSTRAINT chk_calificacion_rango CHECK (calificacion IS NULL OR (calificacion >= 0 AND calificacion <= 100))', 'SELECT 1');
+PREPARE s8 FROM @sql_chk1;
+EXECUTE s8;
+DEALLOCATE PREPARE s8;
+
+SET @chk2 := (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS 
+  WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'quizzes_intentos' AND CONSTRAINT_TYPE = 'CHECK' AND CONSTRAINT_NAME = 'chk_quiz_puntaje_rango'
+);
+SET @sql_chk2 := IF(@chk2 = 0, 'ALTER TABLE quizzes_intentos ADD CONSTRAINT chk_quiz_puntaje_rango CHECK (puntaje >= 0 AND puntaje <= 100)', 'SELECT 1');
+PREPARE s9 FROM @sql_chk2;
+EXECUTE s9;
+DEALLOCATE PREPARE s9;
 
 -- NOTA: Si la versión de MySQL no soporta JSON o CHECK, ajustar manualmente.

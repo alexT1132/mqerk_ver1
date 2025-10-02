@@ -1,3 +1,7 @@
+// AdminDashboardBundle.jsx
+// Este componente agrupa todas las rutas y componentes del dashboard administrativo
+// Mantiene un layout consistente y maneja la navegación entre las diferentes secciones administrativas
+// si asi no entiedes paar que sirve esto pues pideselo a chat gpt bro
 import { Routes, Route } from 'react-router-dom';
 
 // Layout principal para administrador
@@ -22,6 +26,7 @@ import FinanzasEgresos from './FinanzasEgresos.jsx';
 import FinanzasEgresosFijos from './FinanzasEgresosFijos.jsx';
 import FinanzasEgresosVariables from './FinanzasEgresosVariables.jsx';
 import FinanzasEgresosPresupuesto from './FinanzasEgresosPresupuesto.jsx';
+import FinanzasPagosAsesores from './FinanzasPagosAsesores.jsx';
 
 
 
@@ -68,6 +73,7 @@ export function AdminDashboardBundle() {
   <Route path="/finanzas/egresos/fijos" element={<FinanzasEgresosFijos />} />
   <Route path="/finanzas/egresos/variables" element={<FinanzasEgresosVariables />} />
   <Route path="/finanzas/egresos/presupuesto" element={<FinanzasEgresosPresupuesto />} />
+  <Route path="/finanzas/pagos-asesores" element={<FinanzasPagosAsesores />} />
       </Routes>
     </AdminLayout>
   );

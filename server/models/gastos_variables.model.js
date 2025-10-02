@@ -19,6 +19,16 @@ async function ensureCalendarColumn() {
   __ensured = true;
 }
 
+// Helper to normalize DB row adding camelCase fields expected by frontend
+function formatRow(row){
+  if(!row) return row;
+  return {
+    ...row,
+    valorUnitario: row.valor_unitario,
+    calendarEventId: row.calendar_event_id
+  };
+}
+
 export async function list({ metodo, estatus } = {}) {
   await ensureCalendarColumn().catch(()=>{});
   const where = [];
@@ -27,34 +37,54 @@ export async function list({ metodo, estatus } = {}) {
   if (estatus) { where.push('estatus = ?'); params.push(estatus); }
   const sql = `SELECT * FROM gastos_variables ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY id DESC`;
   const [rows] = await db.query(sql, params);
-  return rows;
+  return rows.map(formatRow);
 }
 
 export async function create(data) {
   await ensureCalendarColumn().catch(()=>{});
-  const { unidades=1, producto, descripcion=null, entidad=null, valor_unitario=0, metodo='Efectivo', importe=0, estatus='Pendiente', calendar_event_id=null } = data || {};
+  // Permit both camelCase (frontend) and snake_case (DB) input
+  const {
+    unidades = 1,
+    producto,
+    descripcion = null,
+    entidad = null,
+    metodo = 'Efectivo',
+    importe = 0,
+    estatus = 'Pendiente'
+  } = data || {};
+  const valor_unitario = data?.valor_unitario ?? data?.valorUnitario ?? 0;
+  const calendar_event_id = data?.calendar_event_id ?? data?.calendarEventId ?? null;
   const sql = `INSERT INTO gastos_variables (unidades, producto, descripcion, entidad, valor_unitario, metodo, importe, estatus, calendar_event_id)
                VALUES (?,?,?,?,?,?,?,?,?)`;
   const params = [unidades, producto, descripcion, entidad, valor_unitario, metodo, importe, estatus, calendar_event_id];
   const [res] = await db.query(sql, params);
   const [rows] = await db.query('SELECT * FROM gastos_variables WHERE id=? LIMIT 1', [res.insertId]);
-  return rows[0];
+  return formatRow(rows[0]);
 }
 
 export async function getById(id) {
   const [rows] = await db.query('SELECT * FROM gastos_variables WHERE id = ? LIMIT 1', [id]);
-  return rows[0] || null;
+  return formatRow(rows[0] || null);
 }
 
 export async function getByCalendarEventId(calendarEventId) {
   if (!calendarEventId) return null;
   await ensureCalendarColumn().catch(()=>{});
   const [rows] = await db.query('SELECT * FROM gastos_variables WHERE calendar_event_id = ? LIMIT 1', [calendarEventId]);
-  return rows[0] || null;
+  return formatRow(rows[0] || null);
 }
 
 export async function update(id, updates) {
   await ensureCalendarColumn().catch(()=>{});
+  // Normalize camelCase to snake_case if provided
+  if (updates && Object.prototype.hasOwnProperty.call(updates, 'valorUnitario') &&
+      !Object.prototype.hasOwnProperty.call(updates, 'valor_unitario')) {
+    updates.valor_unitario = updates.valorUnitario;
+  }
+  if (updates && Object.prototype.hasOwnProperty.call(updates, 'calendarEventId') &&
+      !Object.prototype.hasOwnProperty.call(updates, 'calendar_event_id')) {
+    updates.calendar_event_id = updates.calendarEventId;
+  }
   const allowed = ['unidades','producto','descripcion','entidad','valor_unitario','metodo','importe','estatus','calendar_event_id'];
   const fields = [];
   const values = [];
@@ -65,7 +95,7 @@ export async function update(id, updates) {
   values.push(id);
   await db.query(`UPDATE gastos_variables SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, values);
   const [rows] = await db.query('SELECT * FROM gastos_variables WHERE id = ? LIMIT 1', [id]);
-  return rows[0] || null;
+  return formatRow(rows[0] || null);
 }
 
 export async function remove(id) {

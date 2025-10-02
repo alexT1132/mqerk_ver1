@@ -17,6 +17,16 @@ export default function FinanzasIngresos() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [exportExcelLoading, setExportExcelLoading] = useState(false);
+  const [exportExcelError, setExportExcelError] = useState('');
+
+  // Filtros (historial / meses anteriores)
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterFrom, setFilterFrom] = useState(''); // YYYY-MM-DD
+  const [filterTo, setFilterTo] = useState('');
+  const [filterOrigen, setFilterOrigen] = useState(''); // '', manual, externo
+  const [filterMetodo, setFilterMetodo] = useState(''); // '', Efectivo, ...
+  const [filterEstatus, setFilterEstatus] = useState(''); // '', Pagado...
 
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
@@ -115,7 +125,8 @@ export default function FinanzasIngresos() {
     const loadIngresos = async () => {
       try {
         setLoading(true); setError('');
-  const res = await api.get('/finanzas/ingresos?origen=manual');
+        // Sin filtro por defecto para mostrar historial completo (manual + externo)
+        const res = await api.get('/finanzas/ingresos');
         const list = (res.data?.data || []).map((r) => ({
           alumno: r.alumno_nombre || (r.estudiante_nombre ? `${r.estudiante_nombre} ${r.estudiante_apellidos || ''}`.trim() : (r.estudiante_id ? `#${r.estudiante_id}` : `Ingreso ${r.id}`)),
           curso: r.curso,
@@ -140,6 +151,44 @@ export default function FinanzasIngresos() {
     loadAsesores();
     loadIngresos();
   }, []);
+
+  // Aplicar filtros manualmente (para no crear loops con useEffect)
+  const applyFilters = async () => {
+    try {
+      setLoading(true); setError('');
+      const params = new URLSearchParams();
+      if (filterFrom) params.append('from', filterFrom);
+      if (filterTo) params.append('to', filterTo);
+      if (filterOrigen) params.append('origen', filterOrigen); // manual | externo
+      if (filterMetodo) params.append('metodo', filterMetodo);
+      if (filterEstatus) params.append('estatus', filterEstatus);
+      const qs = params.toString();
+      const res = await api.get(`/finanzas/ingresos${qs ? ('?' + qs) : ''}`);
+      const list = (res.data?.data || []).map((r) => ({
+        alumno: r.alumno_nombre || (r.estudiante_nombre ? `${r.estudiante_nombre} ${r.estudiante_apellidos || ''}`.trim() : (r.estudiante_id ? `#${r.estudiante_id}` : `Ingreso ${r.id}`)),
+        curso: r.curso,
+        fechaInicio: toDateLabel(r.fecha),
+        horaInicio: r.hora || '',
+        asesor: r.asesor_nombre || '',
+        metodo: r.metodo,
+        importe: Number(r.importe || 0),
+        estatus: r.estatus,
+        descripcion: r.descripcion || '',
+        calendarEventId: r.calendar_event_id || null,
+        ...( (()=>{ try { const n = r.notas && JSON.parse(r.notas); const a = n?.asistencia; return a ? { asistenciaEstado: a.estado || null, asistenciaNota: a.nota || '', asistenciaFecha: a.fecha || null } : {}; } catch { return {}; } })() ),
+        _id: r.id,
+      }));
+      setRows(list);
+    } catch (e) {
+      setError('No se pudieron cargar los ingresos filtrados');
+    } finally { setLoading(false); }
+  };
+
+  const clearFilters = () => {
+    setFilterFrom(''); setFilterTo(''); setFilterOrigen(''); setFilterMetodo(''); setFilterEstatus('');
+    // Re-cargar todo
+    applyFilters();
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -228,6 +277,114 @@ export default function FinanzasIngresos() {
 
   const formatCurrency = (n) => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 
+  // (Eliminado) Exportar CSV: mantenemos solo Excel como opción principal
+
+  // Exportar todos los ingresos a Excel (tabla formateada)
+  const handleExportExcel = async () => {
+    try {
+      setExportExcelLoading(true); setExportExcelError('');
+      const [ExcelJS, res] = await Promise.all([
+        import('exceljs'),
+        api.get('/finanzas/ingresos')
+      ]);
+      const data = Array.isArray(res.data?.data) ? res.data.data : [];
+      const workbook = new ExcelJS.Workbook();
+      const ws = workbook.addWorksheet('Ingresos');
+      // Definir encabezados y claves
+      const columns = [
+        { header: 'ID', key: 'id' },
+        { header: 'Fecha', key: 'fecha' },
+        { header: 'Hora', key: 'hora' },
+        { header: 'Alumno', key: 'alumno' },
+        { header: 'Curso / Asesoría', key: 'curso' },
+        { header: 'Asesor', key: 'asesor' },
+        { header: 'Método', key: 'metodo' },
+        { header: 'Importe', key: 'importe' },
+        { header: 'Estatus', key: 'estatus' },
+        { header: 'Descripción', key: 'descripcion' },
+        { header: 'Asistencia (estado)', key: 'asistencia_estado' },
+        { header: 'Asistencia (nota)', key: 'asistencia_nota' },
+        { header: 'Asistencia (fecha)', key: 'asistencia_fecha' },
+        { header: 'Origen', key: 'origen' },
+        { header: 'Comprobante ID', key: 'comprobante_id' },
+        { header: 'Estudiante ID', key: 'estudiante_id' },
+        { header: 'Asesor Pre-registro ID', key: 'asesor_preregistro_id' },
+        { header: 'Calendar Event ID', key: 'calendar_event_id' },
+      ];
+      ws.columns = columns.map(c => ({ header: c.header, key: c.key, width: Math.max(12, c.header.length + 2) }));
+      // Agregar filas
+      for (const r of data) {
+        let asisEstado = '', asisNota = '', asisFecha = '';
+        try { const n = r.notas && JSON.parse(r.notas); const a = n?.asistencia; if (a){ asisEstado = a.estado || ''; asisNota = a.nota || ''; asisFecha = a.fecha || ''; } } catch {}
+        const alumno = r.alumno_nombre || (r.estudiante_nombre ? `${r.estudiante_nombre} ${r.estudiante_apellidos || ''}`.trim() : (r.estudiante_id ? `#${r.estudiante_id}` : `Ingreso ${r.id}`));
+        ws.addRow({
+          id: r.id,
+          fecha: r.fecha || '',
+          hora: r.hora || '',
+          alumno,
+          curso: r.curso || '',
+          asesor: r.asesor_nombre || '',
+          metodo: r.metodo || '',
+          importe: Number(r.importe ?? 0),
+          estatus: r.estatus || '',
+          descripcion: r.descripcion || '',
+          asistencia_estado: asisEstado,
+          asistencia_nota: asisNota,
+          asistencia_fecha: asisFecha,
+          origen: r.comprobante_id ? 'externo' : 'manual',
+          comprobante_id: r.comprobante_id ?? '',
+          estudiante_id: r.estudiante_id ?? '',
+          asesor_preregistro_id: r.asesor_preregistro_id ?? '',
+          calendar_event_id: r.calendar_event_id ?? ''
+        });
+      }
+      // Estilos de encabezado
+      const headerRow = ws.getRow(1);
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.alignment = { vertical: 'middle' };
+      headerRow.height = 20;
+      headerRow.eachCell((cell) => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFDBEAFE' } },
+          left: { style: 'thin', color: { argb: 'FFDBEAFE' } },
+          bottom: { style: 'thin', color: { argb: 'FFDBEAFE' } },
+          right: { style: 'thin', color: { argb: 'FFDBEAFE' } }
+        };
+      });
+      // Formato de moneda para la columna Importe
+      const importeCol = ws.getColumn('importe');
+      importeCol.numFmt = '#,##0.00';
+      importeCol.alignment = { horizontal: 'right' };
+      // AutoFilter y congelar encabezado
+      ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
+      ws.views = [{ state: 'frozen', ySplit: 1 }];
+      // Auto-ajustar anchos según contenido
+      ws.columns.forEach((col) => {
+        let max = col.header ? String(col.header).length : 10;
+        col.eachCell({ includeEmpty: false }, (cell) => {
+          const v = cell.value == null ? '' : String(cell.value);
+          max = Math.max(max, v.length);
+        });
+        col.width = Math.min(60, Math.max(12, Math.ceil(max * 1.1)));
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      a.href = url;
+      a.download = `ingresos-${ts}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setExportExcelError('No se pudo exportar Excel.');
+    } finally { setExportExcelLoading(false); }
+  };
+
   // Totales dinámicos
   const totals = useMemo(() => {
     const now = dayjs();
@@ -253,6 +410,35 @@ export default function FinanzasIngresos() {
     }
     return { all: totalAll, today: totalToday, week: totalWeek, month: totalMonth, year: totalYear };
   }, [rows]);
+
+  // Conteo de ventas por periodo (solo Pagado)
+  const counts = useMemo(() => {
+    const now = dayjs();
+    const todayStart = now.startOf('day');
+    const todayEnd = now.endOf('day');
+    const weekStart = todayStart.subtract(6, 'day');
+
+    let all = 0, today = 0, week = 0, month = 0, year = 0;
+    for (const r of rows) {
+      if (String(r.estatus) !== 'Pagado') continue;
+      const d = dayjs(r.fechaInicio);
+      all += 1;
+      if (d.isSame(now, 'day')) today += 1;
+      if ((d.isAfter(weekStart) || d.isSame(weekStart, 'day')) && (d.isBefore(todayEnd) || d.isSame(todayEnd, 'day'))) week += 1;
+      if (d.isSame(now, 'month')) month += 1;
+      if (d.isSame(now, 'year')) year += 1;
+    }
+    return { all, today, week, month, year };
+  }, [rows]);
+
+  // Ticket promedio por periodo: Total / Número de ventas (evitar división entre 0)
+  const avgTicket = useMemo(() => ({
+    all: counts.all ? (totals.all / counts.all) : 0,
+    today: counts.today ? (totals.today / counts.today) : 0,
+    week: counts.week ? (totals.week / counts.week) : 0,
+    month: counts.month ? (totals.month / counts.month) : 0,
+    year: counts.year ? (totals.year / counts.year) : 0,
+  }), [totals, counts]);
 
   // Datos para gráfica: últimos 6 meses por mes
   const monthlyData = useMemo(() => {
@@ -442,18 +628,22 @@ export default function FinanzasIngresos() {
         <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
           <p className="text-xs text-gray-500">Hoy</p>
           <p className="text-2xl font-semibold text-indigo-600">{formatCurrency(totals.today)}</p>
+          <p className="mt-1 text-[11px] text-gray-600">Ticket: <span className="font-medium text-gray-800">{formatCurrency(avgTicket.today)}</span> · Ventas: <span className="font-medium text-gray-800">{counts.today}</span></p>
         </div>
         <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
           <p className="text-xs text-gray-500">Últimos 7 días</p>
           <p className="text-2xl font-semibold text-indigo-600">{formatCurrency(totals.week)}</p>
+          <p className="mt-1 text-[11px] text-gray-600">Ticket: <span className="font-medium text-gray-800">{formatCurrency(avgTicket.week)}</span> · Ventas: <span className="font-medium text-gray-800">{counts.week}</span></p>
         </div>
         <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
           <p className="text-xs text-gray-500">Mes</p>
           <p className="text-2xl font-semibold text-indigo-600">{formatCurrency(totals.month)}</p>
+          <p className="mt-1 text-[11px] text-gray-600">Ticket: <span className="font-medium text-gray-800">{formatCurrency(avgTicket.month)}</span> · Ventas: <span className="font-medium text-gray-800">{counts.month}</span></p>
         </div>
         <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
           <p className="text-xs text-gray-500">Año</p>
           <p className="text-2xl font-semibold text-indigo-600">{formatCurrency(totals.year)}</p>
+          <p className="mt-1 text-[11px] text-gray-600">Ticket: <span className="font-medium text-gray-800">{formatCurrency(avgTicket.year)}</span> · Ventas: <span className="font-medium text-gray-800">{counts.year}</span></p>
         </div>
       </div>
 
@@ -465,12 +655,65 @@ export default function FinanzasIngresos() {
           </div>
           <div className="flex items-center gap-3">
             <div className="sm:hidden text-xs text-gray-600">Total: <span className="font-semibold text-gray-900">{formatCurrency(totals.all)}</span></div>
+            <button onClick={()=> setShowFilters(s=>!s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
+              {showFilters ? 'Ocultar filtros' : 'Filtros'}
+            </button>
+            <button onClick={handleExportExcel} disabled={exportExcelLoading} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+              {exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}
+            </button>
             <button onClick={openModal} className="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
               <span className="sm:hidden">Nuevo</span>
               <span className="hidden sm:inline">Nuevo ingreso</span>
             </button>
           </div>
         </div>
+        {showFilters && (
+          <div className="px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Desde</label>
+                <input type="date" value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Hasta</label>
+                <input type="date" value={filterTo} onChange={e=>setFilterTo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Origen</label>
+                <select value={filterOrigen} onChange={e=>setFilterOrigen(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                  <option value="">Todos</option>
+                  <option value="manual">Manual</option>
+                  <option value="externo">Comprobantes</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Método</label>
+                <select value={filterMetodo} onChange={e=>setFilterMetodo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                  <option value="">Todos</option>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Transferencia">Transferencia</option>
+                  <option value="Tarjeta">Tarjeta</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Estatus</label>
+                <select value={filterEstatus} onChange={e=>setFilterEstatus(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                  <option value="">Todos</option>
+                  <option value="Pagado">Pagado</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Vencido">Vencido</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button onClick={applyFilters} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Aplicar filtros</button>
+              <button onClick={clearFilters} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Limpiar</button>
+            </div>
+          </div>
+        )}
+        {exportExcelError && (
+          <div className="px-6 py-2 text-sm text-amber-600">{exportExcelError}</div>
+        )}
 
         {/* Vista móvil (cards) */}
     <div className="sm:hidden p-4 space-y-3">

@@ -2,27 +2,29 @@ import { useState } from "react";
 import Topbar from "../../components/Asesor/Topbar";
 import SidebarIconOnly from "../../components/Asesor/Sidebar";
 import MobileSidebar from "../../components/Asesor/MobileSidebar";
+import Actividades from "../../components/Asesor/Actividades";
 
-export default function ActividadesPage() {
+export default function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
+        <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
+      {/* Drawer móvil */}
       <MobileSidebar
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        active="actividades"
+        active="inicio"
         onLogout={() => console.log("logout")}
       />
+
+      {/* Contenido */}
       <div className="mx-auto">
         <div className="flex">
-          <SidebarIconOnly active="actividades" onLogout={() => console.log("logout")} />
+          <SidebarIconOnly active="inicio" onLogout={() => console.log("logout")} />
+
           <main className="flex-1 p-3 sm:p-6">
-            <div className="bg-white rounded-xl shadow p-6">
-              <h1 className="text-xl font-semibold">Actividades</h1>
-              <p className="text-slate-600 mt-2">Sección en construcción.</p>
-            </div>
+            <Actividades />
           </main>
         </div>
       </div>

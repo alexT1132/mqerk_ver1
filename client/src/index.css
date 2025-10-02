@@ -477,3 +477,26 @@ html, body, #root{
     transform: translateX(0px) scale(1.0);
   }
 }
+
+/* ================= Animaciones utilitarias para modales de generación ================= */
+@keyframes fadeInSoft {
+  0% { opacity: 0; transform: translateY(4px) scale(.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-fade-in { animation: fadeInSoft .45s ease-out both; }
+
+@keyframes loadingBar {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0%); }
+  100% { transform: translateX(100%); }
+}
+.animate-loading-bar { animation: loadingBar 1.6s ease-in-out infinite; }
+
+@keyframes spinSlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-spin-slow { animation: spinSlow 3s linear infinite; }
+
+/* Estado disabled visual para botones mientras se genera contrato */
+.btn-generar[disabled] { opacity: .55; cursor: not-allowed; filter: grayscale(.3); }

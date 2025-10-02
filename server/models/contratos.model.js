@@ -17,3 +17,17 @@ export const getContratoByFolio = async (folio) => {
   const [rows] = await db.query('SELECT * FROM contratos WHERE folio = ? ORDER BY created_at DESC LIMIT 1', [folio]);
   return rows[0] || null;
 };
+
+// Eliminar un contrato por ID (última versión u otro específico)
+export const deleteContratoById = async (id) => {
+  if (!id) return { affectedRows: 0 };
+  const [result] = await db.query('DELETE FROM contratos WHERE id = ? LIMIT 1', [id]);
+  return result;
+};
+
+// Eliminar todos los contratos asociados a un folio (para garantizar limpieza total)
+export const deleteContratosByFolio = async (folio) => {
+  if (!folio) return { affectedRows: 0 };
+  const [result] = await db.query('DELETE FROM contratos WHERE folio = ?', [folio]);
+  return result;
+};

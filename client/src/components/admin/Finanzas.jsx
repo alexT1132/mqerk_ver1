@@ -4,9 +4,11 @@ import api from '../../api/axios.js';
 import dayjs from 'dayjs';
 import { getBudgetSnapshot, rolloverIfNeeded, LOW_REMAINING_THRESHOLD, sumExpensesMonth } from '../../utils/budgetStore.js';
 import { getResumenMensual } from '../../service/finanzasPresupuesto.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function FinanzasHome() {
   const location = useLocation();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const [ingresos, setIngresos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,8 +19,12 @@ export default function FinanzasHome() {
     const load = async () => {
       try {
         setLoading(true); setError('');
-        const res = await api.get('/finanzas/ingresos');
-        setIngresos(res.data?.data || []);
+        if (!authLoading && isAuthenticated && user?.role === 'admin') {
+          const res = await api.get('/finanzas/ingresos');
+          setIngresos(res.data?.data || []);
+        } else {
+          setIngresos([]);
+        }
       } catch (e) {
         setError('No se pudieron cargar los ingresos');
       } finally { setLoading(false); }
@@ -39,24 +45,24 @@ export default function FinanzasHome() {
       setEgresosSnap(getBudgetSnapshot(m));
     }
   })();
-  }, []);
+  }, [authLoading, isAuthenticated, user?.role]);
 
   const fmtMoney = (n) => Number(n || 0).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
   const metrics = useMemo(() => {
     const now = dayjs();
-    const mStart = now.startOf('month');
-    const prevStart = now.subtract(1, 'month').startOf('month');
-    const prevEnd = mStart.subtract(1, 'day');
+    const prev = now.subtract(1, 'month');
     let totalMonth = 0, countMonth = 0, totalPrev = 0;
     for (const r of ingresos) {
       const d = dayjs(r.fecha);
       const amt = Number(r.importe) || 0;
       if (d.isSame(now, 'month')) { totalMonth += amt; countMonth++; }
-      if (d.isAfter(prevStart.subtract(1,'millisecond')) && d.isBefore(prevEnd.add(1,'day'))) { totalPrev += amt; }
+      else if (d.isSame(prev, 'month')) { totalPrev += amt; }
     }
-    const growth = totalPrev > 0 ? ((totalMonth - totalPrev) / totalPrev) * 100 : 0;
+    const growthRaw = totalPrev > 0 ? ((totalMonth - totalPrev) / totalPrev) * 100 : 0; // 0 si no hay base
+    const growthPositive = Math.max(0, growthRaw); // solo mostrar positivos
     const avg = countMonth > 0 ? totalMonth / countMonth : 0;
-    return { totalMonth, countMonth, growth, avg };
+    const prevLabel = prev.format('MMMM YYYY');
+    return { totalMonth, countMonth, totalPrev, growthRaw, growthPositive, avg, prevLabel };
   }, [ingresos]);
   
   return (
@@ -135,8 +141,16 @@ export default function FinanzasHome() {
                     <div className="text-[10px] text-gray-500">Transacc.</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-base font-bold text-emerald-600">{loading ? '…' : `${metrics.growth >= 0 ? '+' : ''}${metrics.growth.toFixed(0)}%`}</div>
+                    <div
+                      title={loading ? '' : `Actual: ${fmtMoney(metrics.totalMonth)} | Anterior (${metrics.prevLabel}): ${fmtMoney(metrics.totalPrev)}`}
+                      className={`text-base font-bold ${loading ? '' : (metrics.growthRaw > 0 ? 'text-emerald-600' : (metrics.growthRaw < 0 ? 'text-rose-600' : 'text-gray-400'))}`}
+                    >
+                      {loading ? '…' : `${metrics.growthRaw.toFixed(0)}%`}
+                    </div>
                     <div className="text-[10px] text-gray-500">Crecim.</div>
+                    {!loading && metrics.growthRaw < 0 ? (
+                      <div className="mt-0.5 text-[10px] text-rose-600">{`${Math.abs(Math.min(0, metrics.growthRaw)).toFixed(0)}% menos que el mes anterior`}</div>
+                    ) : null}
                   </div>
                 </div>
 
@@ -148,8 +162,16 @@ export default function FinanzasHome() {
                   </div>
                   <div className="w-px h-8 bg-gray-200"></div>
                   <div className="text-center">
-                    <div className="text-lg font-bold text-emerald-600">{loading ? '…' : `${metrics.growth >= 0 ? '+' : ''}${metrics.growth.toFixed(0)}%`}</div>
+                    <div
+                      title={loading ? '' : `Actual: ${fmtMoney(metrics.totalMonth)} | Anterior (${metrics.prevLabel}): ${fmtMoney(metrics.totalPrev)}`}
+                      className={`text-lg font-bold ${loading ? '' : (metrics.growthRaw > 0 ? 'text-emerald-600' : (metrics.growthRaw < 0 ? 'text-rose-600' : 'text-gray-400'))}`}
+                    >
+                      {loading ? '…' : `${metrics.growthRaw.toFixed(0)}%`}
+                    </div>
                     <div className="text-xs text-gray-500">Crecimiento vs mes anterior</div>
+                    {!loading && metrics.growthRaw < 0 ? (
+                      <div className="mt-0.5 text-[11px] text-rose-600">{`${Math.abs(Math.min(0, metrics.growthRaw)).toFixed(0)}% menos que el mes anterior`}</div>
+                    ) : null}
                   </div>
                   <div className="w-px h-8 bg-gray-200"></div>
                   <div className="text-center">
@@ -345,6 +367,8 @@ export default function FinanzasHome() {
               <div className="absolute inset-0 bg-gradient-to-br from-rose-50/0 to-rose-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             </div>
 
+            {/* (Tarjeta Pagos Asesores eliminada: ahora dentro del modal de Egresos) */}
+
           </div>
         </div>
       </div>
@@ -400,6 +424,21 @@ export default function FinanzasHome() {
                   <div>
                     <div className="text-sm font-semibold text-indigo-700">Presupuesto</div>
                     <div className="text-xs text-gray-600">Asigna y controla el presupuesto mensual de egresos.</div>
+                  </div>
+                </div>
+                <span className="h-8 w-8 rounded-full bg-white/70 border border-indigo-100 flex items-center justify-center text-indigo-600">→</span>
+              </Link>
+
+              <Link
+                to="/administrativo/finanzas/pagos-asesores"
+                className="group rounded-xl bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 hover:border-indigo-200 hover:shadow-md transition-all p-4 flex items-center justify-between"
+                onClick={() => setShowEgresosMenu(false)}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">A</span>
+                  <div>
+                    <div className="text-sm font-semibold text-indigo-700">Pagos asesores</div>
+                    <div className="text-xs text-gray-600">Honorarios y comisiones de asesores.</div>
                   </div>
                 </div>
                 <span className="h-8 w-8 rounded-full bg-white/70 border border-indigo-100 flex items-center justify-center text-indigo-600">→</span>

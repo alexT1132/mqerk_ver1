@@ -82,7 +82,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
 
       {/* Sidebar para pantallas grandes */}
       {SideBarDesktopComponent && (
-        <div className="fixed left-0 top-0 h-full z-40 pt-20 hidden sm:block">
+        <div className="fixed left-0 top-20 sm:top-24 h-[calc(100vh-5rem)] sm:h-[calc(100vh-6rem)] z-40 hidden sm:block">
           <SideBarDesktopComponent setDesktopSidebarOpen={setIsDesktopSidebarOpen} />
         </div>
       )}
@@ -126,15 +126,13 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       {/* Contenido principal de la página */}
       <main
         className={
-          `relative z-10 ${isBienvenidaRoute ? 'pt-16 sm:pt-20' : 'pt-24 sm:pt-28'} pb-6 pl-5 pr-3 sm:px-6 lg:px-8 overflow-x-hidden ` +
+          `relative z-10 pt-20 sm:pt-24 pb-6 pl-5 pr-3 sm:px-6 lg:px-8 overflow-x-hidden ` +
           (isDesktopSidebarOpen ? ' sm:ml-64' : ' sm:ml-20') +
           ' transition-[margin] duration-200'
         }
+        style={{ minHeight: '100vh' }}
       >
-        {/* Hacer que el main sea el único contenedor con scroll */}
-        <div className="min-h-[calc(100vh-96px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
-          {children}
-        </div>
+        {children}
       </main>
     </div>
   );
