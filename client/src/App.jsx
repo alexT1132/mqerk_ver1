@@ -16,11 +16,13 @@ import FeedbackAsesor from "./pages/Asesor/Feedback.jsx";
 import FeedbackDetail from "./pages/Asesor/FeedbackDetail.jsx";
 import NuevoSimulador from "./pages/Asesor/SeccionesSimGeneral.jsx";
 import FormBuilderEspañol from "./pages/Asesor/FormBuilderEspañol.jsx";
-import NuevoQuiztAsesor from "./pages/Asesor/NuevoQuizt.jsx";
-import AsesorQuiz from "./pages/Asesor/Quizt.jsx";
-import AsesorTablaQuiz from "./pages/Asesor/TablaQuizt.jsx";
 import AsesorGrupos from "./pages/Asesor/Grupos.jsx";
 import AsesorAlumnos from "./pages/Asesor/Alumnos.jsx";
+import AsesorActSoli from "./pages/Asesor/ActSolicitudes.jsx";
+import AsesorModEspTabla from "./pages/Asesor/ActModulEspecificoTabla.jsx";
+import AsesorAsesorias from "./pages/Asesor/Asesorias.jsx";
+import QuiztPageAsesor from "./pages/Asesor/QuiztAsesor.jsx";
+import NewQuiztAsesor from "./pages/Asesor/NewQuiztAsesor.jsx";
 // Asesor additional section components
 import { PreRegAsesor } from "./pages/Asesor/PreRegAsesor.jsx";
 import { Bienvenida } from "./pages/Asesor/Bienvenida.jsx";
@@ -33,7 +35,9 @@ import  Actividades  from "./pages/Asesor/Actividades.jsx";
 import ActividadeEspecificosAsesor from "./pages/Asesor/ActividadesEspecificos.jsx";
 import PagosAsesor from "./pages/Asesor/Pagos.jsx";
 import AgendaAsesor from "./pages/Asesor/AgendaAsesor.jsx";
-import TablaActAsesor from "./pages/Asesor/TablaAct.jsx";
+import QuizActAsesor from "./pages/Asesor/QuiztActSection.jsx";
+import TablaActAsesor from "./pages/Asesor/TablaActAsesor.jsx";
+import RecursosAsesores from "./pages/Asesor/Recursos.jsx";
 // Eliminados módulos de tests (Test, Resultado) para flujo simplificado
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { AsesorProvider } from "./context/AsesorContext.jsx";
@@ -187,15 +191,19 @@ export default function App(){
                       <Route path='/asesor/nuevo_simulador' element={<NuevoSimulador />} />
                       <Route path='/asesor/nuevo_simulador/modulo' element={<FormBuilderEspañol />} />
                       <Route path='/asesor/actividades' element={<Actividades />} />
-                      <Route path='/asesor/actividades/modulo' element={<TablaActAsesor />} />
+                      <Route path='/asesor/actividades/modulo' element={<QuizActAsesor />} />
+                      <Route path='/asesor/actividades/modulo/tabla_actividades' element={<TablaActAsesor />} />
                       <Route path='/asesor/actividades/modulos_especificos' element={<ActividadeEspecificosAsesor />} />
+                      <Route path='/asesor/actividades/modulos_especificos/solicitudes' element={<AsesorActSoli />} />
+                      <Route path='/asesor/actividades/modulos_especificos/modulo' element={<AsesorModEspTabla />} />
+                      <Route path='/asesor/actividades/quiz' element={<QuiztPageAsesor />} />
+                      <Route path='/asesor/actividades/nuevo_quizt' element={<NewQuiztAsesor />} />
                       <Route path='/asesor/agenda' element={<AgendaAsesor />} />
-                      <Route path='/asesor/areas' element={<AsesorQuiz />} />
-                      <Route path='/asesor/quizt' element={<AsesorTablaQuiz />} />
-                      <Route path='/asesor/nuevo_quizt' element={<NuevoQuiztAsesor />} />
                       <Route path='/asesor/mis-pagos' element={<PagosAsesor />} />
                       <Route path='/asesor/grupos' element={<AsesorGrupos />} />
                       <Route path='/asesor/alumnos' element={<AsesorAlumnos />} />
+                      <Route path='/asesor/recursos_educativos' element={<RecursosAsesores />} />
+                      <Route path='/asesor/asesorias' element={<AsesorAsesorias />} />
 
                       {/* Fallback redirect if accessed within protected group */}
                       <Route path='/asesor/registro_asesor' element={<Navigate to='/registro_asesor' replace />} />

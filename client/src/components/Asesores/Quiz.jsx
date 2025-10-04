@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Plus,
   Pencil,
@@ -96,6 +96,16 @@ function MobileRow({ item, onView, onEdit, onDelete }) {
 /* ------------------- main component ------------------- */
 
 export default function SimuladoresAdmin({ Icon = PlaySquare, title = "QUIZZES", }) {
+
+  const STORAGE_KEY = "selectedAreaTitle";
+
+  function getSafeStoredTitle() {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const val = String(raw).trim();
+    if (!val || val.toLowerCase() === "null" || val.toLowerCase() === "undefined") return null;
+    return val;
+  }
   
   const [open, setOpen] = useState(false);
 
@@ -146,6 +156,26 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "QUIZZES",
     }
   };
 
+  const location = useLocation();
+  
+    // llega desde AreasDeEstudio con Link state={{ title }}
+    const incomingTitle = typeof location.state?.title === "string"
+      ? location.state.title.trim()
+      : null;
+  
+    const [areaTitle, setAreaTitle] = useState(
+      incomingTitle || getSafeStoredTitle() || "Español y redacción indirecta"
+    );
+  
+    useEffect(() => {
+      if (incomingTitle && incomingTitle.length > 0) {
+        setAreaTitle(incomingTitle);
+        sessionStorage.setItem(STORAGE_KEY, incomingTitle);
+      }
+    }, [incomingTitle]);
+
+    const headerTitle = `${title} — ${areaTitle}`;
+
   return (
     <div className="mx-auto max-w-8xl px-4 pb-12 pt-4 sm:px-6 lg:px-8">
       {/* Encabezado breve */}
@@ -165,7 +195,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "QUIZZES",
 
         <div className="flex flex-col">
           <h2 className="text-xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-sky-700 to-violet-700 sm:text-2xl">
-            {title}
+            {headerTitle}
           </h2>
 
           {/* subrayado doble */}
@@ -323,6 +353,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "QUIZZES",
       <QuiztModal
             open={open}
             onClose={() => setOpen(false)}
+            state={{ title: areaTitle }}
             onCreate={(data) => {
               console.log("Quizt creado:", data);
             }}

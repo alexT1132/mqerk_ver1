@@ -81,16 +81,21 @@ function ModuleCard({ title, desc, color, tint }) {
       <p className="mt-1 text-center text-sm text-slate-600 dark:text-slate-800">{desc}</p>
 
       {/* CTA */}
-      <div className="mt-6 flex justify-center">
-        <button
+      <div className="mt-6 flex justify-center gap-15">
+        <Link
           type="button"
+          to='/asesor/actividades/modulos_especificos/solicitudes'
           className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
         >
-          <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
-            <path d="M12 17a3 3 0 0 0 3-3v-1a3 3 0 0 0-6 0v1a3 3 0 0 0 3 3Zm6-3a6 6 0 1 0-12 0v1H4v6h16v-6h-2v-1Z" />
-          </svg>
-          Acceder
-        </button>
+          Solicitudes
+        </Link>
+        <Link
+          type="button"
+          to='/asesor/actividades/modulos_especificos/modulo'
+          className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+        >
+         Acceder
+        </Link>
       </div>
 
       {/* Tint muy leve como en la referencia */}

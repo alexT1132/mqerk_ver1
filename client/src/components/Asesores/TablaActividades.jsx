@@ -1,10 +1,21 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 /* ===== Datos de ejemplo ===== */
 const SEED = [
   { id: "A-001", title: "Revisar guión del video", pdfUrl: "", due: "2025-09-29", delivered: true,  grade: 9, group: "m1" },
   { id: "A-002", title: "Enviar factura a cliente", pdfUrl: "", due: "2025-09-30", delivered: false, grade: null, group: "v2" },
 ];
+
+const STORAGE_KEY = "selectedAreaTitle";
+
+function getSafeStoredTitle() {
+  const raw = sessionStorage.getItem(STORAGE_KEY);
+  if (!raw) return null;
+  const val = String(raw).trim();
+  if (!val || val.toLowerCase() === "null" || val.toLowerCase() === "undefined") return null;
+  return val;
+}
 
 /* ===== Iconos (SVG inline) ===== */
 const Icon = {
@@ -51,11 +62,8 @@ const badgeDelivered = (ok) =>
   ok ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-50 text-slate-700 ring-slate-200";
 const badgeGroup = "bg-indigo-50 text-indigo-700 ring-indigo-200";
 
-/* ===================================================================
-   MODAL: Nueva Actividad (Actividad, Grupo, PDF, Fecha límite)
-=================================================================== */
+/* ====== MODAL (sin cambios) ====== */
 const GROUPS = ["m1","m2","m3","v1","v2","v3","s1","s2"];
-
 function NewActivityModal({ open, onClose, onSave }) {
   const [title, setTitle] = useState("");
   const [group, setGroup] = useState(GROUPS[0]);
@@ -99,7 +107,6 @@ function NewActivityModal({ open, onClose, onSave }) {
           <div className="px-5 py-4 space-y-4">
             {err && <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{err}</div>}
 
-            {/* Actividad */}
             <div>
               <label className="text-sm font-medium">Actividad *</label>
               <input
@@ -109,7 +116,6 @@ function NewActivityModal({ open, onClose, onSave }) {
               />
             </div>
 
-            {/* Grupo */}
             <div>
               <label className="text-sm font-medium">Grupo</label>
               <select
@@ -120,7 +126,6 @@ function NewActivityModal({ open, onClose, onSave }) {
               </select>
             </div>
 
-            {/* Recurso (PDF) */}
             <div>
               <label className="text-sm font-medium">Recurso (PDF)</label>
               <div className="mt-2 flex items-center gap-2">
@@ -139,7 +144,6 @@ function NewActivityModal({ open, onClose, onSave }) {
               <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={onFileChange}/>
             </div>
 
-            {/* Fecha límite */}
             <div>
               <label className="text-sm font-medium">Fecha límite *</label>
               <input type="date"
@@ -159,7 +163,7 @@ function NewActivityModal({ open, onClose, onSave }) {
 }
 
 /* ===================================================================
-   TABLA: minimalista y responsive con iconos + badge de grupo
+   TABLA
 =================================================================== */
 export default function ActivitiesTable({
   initial = SEED,
@@ -169,13 +173,31 @@ export default function ActivitiesTable({
   onSaveRow = (row) => alert(`Guardado: ${row.title} (grupo: ${(row.group||"").toUpperCase()})`),
   onDeleteExternal,
 }) {
+  const location = useLocation();
+
+  // llega desde AreasDeEstudio con Link state={{ title }}
+  const incomingTitle = typeof location.state?.title === "string"
+    ? location.state.title.trim()
+    : null;
+
+  const [areaTitle, setAreaTitle] = useState(
+    incomingTitle || getSafeStoredTitle() || "Español y redacción indirecta"
+  );
+
+  useEffect(() => {
+    if (incomingTitle && incomingTitle.length > 0) {
+      setAreaTitle(incomingTitle);
+      sessionStorage.setItem(STORAGE_KEY, incomingTitle);
+    }
+  }, [incomingTitle]);
+
+  const headerTitle = `${title} — ${areaTitle}`;
+
   const [rows, setRows] = useState(initial);
   const [open, setOpen] = useState(false);
 
-  // ⬇⬇⬇ NUEVO: estado del filtro
   const [groupFilter, setGroupFilter] = useState("todos");
 
-  // ⬇⬇⬇ NUEVO: ordenar + filtrar por grupo seleccionado
   const data = useMemo(() => {
     const sorted = [...rows].sort((a, b) => a.due.localeCompare(b.due));
     return groupFilter === "todos"
@@ -214,11 +236,11 @@ export default function ActivitiesTable({
     <section className="w-full">
       <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">{title}</h2>
+          {/* Título dinámico */}
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">{headerTitle}</h2>
           <p className="text-sm text-slate-600">Listado de actividades.</p>
         </div>
 
-        {/* ⬇⬇⬇ NUEVO: select de grupos + botón crear (lado derecho) */}
         <div className="flex items-center gap-2">
           <select
             value={groupFilter}

@@ -2,29 +2,25 @@ import { useState } from "react";
 import Topbar from "../../components/Asesores/Topbar";
 import SidebarIconOnly from "../../components/Asesores/Sidebar";
 import MobileSidebar from "../../components/Asesores/MobileSidebar";
-import BuilderQuizt from "../../components/Asesores/simGen/QuiztBuilder";
+import Recursos from "../../components/Asesores/Recursos";
 
-export default function Layout() {
+export default function QuiztPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50">
-        <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
-      {/* Drawer móvil */}
+      <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
       <MobileSidebar
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        active="inicio"
+        active="quizt"
         onLogout={() => console.log("logout")}
       />
-
-      {/* Contenido */}
       <div className="mx-auto">
         <div className="flex">
-          <SidebarIconOnly active="inicio" onLogout={() => console.log("logout")} />
-
+          <SidebarIconOnly active="quizt" onLogout={() => console.log("logout")} />
           <main className="flex-1 p-3 sm:p-6">
-            <BuilderQuizt />
+            <Recursos />
           </main>
         </div>
       </div>

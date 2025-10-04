@@ -1,23 +1,15 @@
 // AsesorDashboard.jsx
 import { Link } from "react-router-dom";
 
-/* ------------------------------------------------------------------ */
-/* Componentes internos minimalistas                                  */
-/* Si ya tienes tus propios CourseChip y AnalyticsCard, reemplázalos. */
-/* ------------------------------------------------------------------ */
-
-const CourseChip = ({ title, image, DEFAULT_USER, }) => {
+const CourseChip = ({ title, image }) => {
   return (
     <Link
-      to={`/asesor/dashboard`}
-      state={{  curso: title }}
+      to="/asesor/dashboard"                    
+      state={{ curso: title }}              
+      onClick={() => localStorage.setItem("cursoSeleccionado", title)}
       className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
-      <img
-        src={image}
-        alt={title}
-        className="h-12 w-12 rounded-lg object-cover"
-      />
+      <img src={image} alt={title} className="h-12 w-12 rounded-lg object-cover" />
       <h3 className="text-sm font-semibold text-slate-800 group-hover:text-indigo-600 transition">
         {title}
       </h3>
@@ -176,18 +168,3 @@ const DEFAULT_STATS = [
   { label: "CERTIFICADOS", value: 2 },
   { label: "GENERACIONES", value: 2 },
 ];
-
-/* ------------------------------------------------------------------ */
-/* OPCIÓN: convertir la derecha en “fija” en pantalla                  */
-/*  - Si prefieres que la tarjeta no sea sticky, sino fija absoluta,   */
-/*    usa este aside y elimina la segunda columna de la grilla.        */
-/* ------------------------------------------------------------------ */
-/*
-<aside className="hidden lg:block fixed right-8 top-20 w-[420px] z-20">
-  <AnalyticsCard user={user} stats={stats} />
-</aside>
-
-<div className="mx-auto max-w-7xl pr-[460px] px-4 py-6 lg:px-8">
-  ...solo la parte izquierda...
-</div>
-*/

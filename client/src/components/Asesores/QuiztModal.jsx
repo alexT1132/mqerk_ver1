@@ -54,7 +54,9 @@ export default function SimulatorModal({ open, onClose, onCreate }) {
       await Promise.resolve(); // simula petición
       onCreate?.(form);
       onClose?.();
-      navigate("/asesor/nuevo_quizt");
+      navigate("/asesor/actividades/nuevo_quizt", {
+        state: areaTitle ? { title: areaTitle } : undefined,
+      });
     } finally {
       setLoading(false);
     }

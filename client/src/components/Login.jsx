@@ -48,6 +48,10 @@ export default function LoginResponsive() {
       navigate("/asesor", { replace: true });
       return;
     }
+    if (role === "administrador") {
+      navigate("/administrador", { replace: true });
+      return;
+    }
     navigate("/", { replace: true });
   }, [isAuthenticated, user, navigate]);
 

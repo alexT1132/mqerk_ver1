@@ -2,7 +2,8 @@ import { useState } from "react";
 import Topbar from "../../components/Asesores/Topbar";
 import SidebarIconOnly from "../../components/Asesores/Sidebar";
 import MobileSidebar from "../../components/Asesores/MobileSidebar";
-import Asesorias from "../../components/Asesores/Asesorias";
+// import Tabla from "../../components/Asesores/TablaActividades";
+import QuiztAct from "../../components/Asesores/Quizt&Act";
 
 export default function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -24,7 +25,7 @@ export default function Layout({ children }) {
           <SidebarIconOnly active="inicio" onLogout={() => console.log("logout")} />
 
           <main className="flex-1 p-3 sm:p-6">
-            <Asesorias />
+            <QuiztAct />
           </main>
         </div>
       </div>

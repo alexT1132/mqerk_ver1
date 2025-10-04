@@ -1,13 +1,25 @@
 // CursoBienvenida.jsx
+import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 
 export default function CursoBienvenida() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const nombreFromState = location.state?.curso;
+  // Prioridad: state.curso (viene del click) > localStorage > fallback
+  const nombreFromState = location.state?.curso ?? null;
+  const nombreFromStorage = useMemo(() => {
+    try { return localStorage.getItem("cursoSeleccionado"); } catch { return null; }
+  }, []);
 
-  const nombreCurso = nombreFromState || "Tu curso";
+  const nombreCurso = nombreFromState || nombreFromStorage || "Tu curso";
+
+  // Si llegó por state, sincroniza storage para que persista tras recargar
+  useEffect(() => {
+    if (nombreFromState) {
+      try { localStorage.setItem("cursoSeleccionado", nombreFromState); } catch {}
+    }
+  }, [nombreFromState]);
 
   return (
     <div className="bg-slate-50">
