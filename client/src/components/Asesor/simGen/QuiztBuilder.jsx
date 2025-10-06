@@ -680,7 +680,7 @@ export default function EspanolFormBuilder() {
       <header className="mb-6 rounded-2xl border border-slate-200 bg-gradient-to-r from-violet-600 to-fuchsia-600 p-6 text-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold sm:text-2xl">Crear formulario • Español</h1>
+            <h1 className="text-xl font-bold sm:text-2xl">Crear Quizt • Español</h1>
             <p className="mt-1 text-sm opacity-90">
               Construye preguntas con imágenes, LaTeX, opción múltiple, verdadero/falso y respuesta corta.
             </p>

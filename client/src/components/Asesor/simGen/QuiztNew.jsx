@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import 'katex/dist/katex.min.css';
 import { InlineMath } from "react-katex";
+import { useLocation } from "react-router-dom"; 
 
 const genId = () => {
   // Navegador moderno y https/localhost
@@ -583,8 +584,39 @@ function QuestionCard({ q, onChange, onRemove }) {
   );
 }
 
+const STORAGE_KEY = "selectedAreaTitle";
+  
+  function getSafeStoredTitle() {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const v = String(raw).trim();
+    if (!v || v.toLowerCase() === "null" || v.toLowerCase() === "undefined") return null;
+    return v;
+  }
+
 /* ----------------------------- Vista principal --------------------------- */
 export default function EspanolFormBuilder() {
+
+  const location = useLocation();
+
+  // lee el título que llega por state
+  const incomingTitle = typeof location.state?.title === "string"
+    ? location.state.title.trim()
+    : null;
+
+  // decide el título del área (state -> storage -> fallback)
+  const [areaTitle, setAreaTitle] = useState(
+    incomingTitle || getSafeStoredTitle() || "Español y redacción indirecta"
+  );
+
+  // si llegó un nuevo título, persístelo en la sesión
+  useEffect(() => {
+    if (incomingTitle && incomingTitle.length > 0) {
+      setAreaTitle(incomingTitle);
+      sessionStorage.setItem(STORAGE_KEY, incomingTitle);
+    }
+  }, [incomingTitle]);
+
   const [questions, setQuestions] = useState([newQuestion("multiple")]);
   const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -680,7 +712,7 @@ export default function EspanolFormBuilder() {
       <header className="mb-6 rounded-2xl border border-slate-200 bg-gradient-to-r from-violet-600 to-fuchsia-600 p-6 text-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold sm:text-2xl">Crear formulario • Español</h1>
+            <h1 className="text-xl font-bold sm:text-2xl">Crear formulario • {areaTitle}</h1>
             <p className="mt-1 text-sm opacity-90">
               Construye preguntas con imágenes, LaTeX, opción múltiple, verdadero/falso y respuesta corta.
             </p>

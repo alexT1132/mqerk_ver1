@@ -54,7 +54,9 @@ export default function SimulatorModal({ open, onClose, onCreate }) {
       await Promise.resolve(); // simula petición
       onCreate?.(form);
       onClose?.();
-      navigate("/asesor/nuevo_simulador");
+      navigate("/asesor/actividades/nuevo_quizt", {
+        state: areaTitle ? { title: areaTitle } : undefined,
+      });
     } finally {
       setLoading(false);
     }
@@ -85,7 +87,7 @@ export default function SimulatorModal({ open, onClose, onCreate }) {
                 id="sim-modal-title"
                 className="text-base font-semibold text-slate-900"
               >
-                {step === 1 ? "Crear instrucciones" : "Información del simulador"}
+                {step === 1 ? "Crear instrucciones" : "Información del quizt"}
               </h2>
               <p className="text-xs text-slate-500">
                 Paso {step} de 2
@@ -156,7 +158,7 @@ export default function SimulatorModal({ open, onClose, onCreate }) {
               onClick={handleCreate}
               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              {loading ? "Creando..." : "Crear simulador"}
+              {loading ? "Creando..." : "Crear quizt"}
               {!loading && (
                 <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M16.707 5.293a1 1 0 0 0-1.414 0L8 12.586 4.707 9.293a1 1 0 1 0-1.414 1.414L8 15.414l8.121-8.121a1 1 0 0 0 0-1.414Z" />
@@ -206,7 +208,7 @@ function StepOne({ form, setForm }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-600">
-        Describe brevemente qué debe hacer el alumno antes de iniciar la simulación.
+        Describe brevemente qué debe hacer el alumno antes de iniciar el quizt.
       </p>
 
       <label className="block text-sm font-medium text-slate-700">
@@ -217,7 +219,7 @@ function StepOne({ form, setForm }) {
         onChange={(e) =>
           setForm((f) => ({ ...f, titulo: e.target.value.slice(0) }))
         }
-        placeholder="Escribe el titulo del simulador"
+        placeholder="Escribe el titulo del quizt"
         className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
       />
 
@@ -230,7 +232,7 @@ function StepOne({ form, setForm }) {
           setForm((f) => ({ ...f, instrucciones: e.target.value.slice(0) }))
         }
         rows={6}
-        placeholder="Ej. Lee cada pregunta y selecciona la respuesta correcta. Tienes 30 minutos para completar el simulador…"
+        placeholder="Ej. Lee cada pregunta y selecciona la respuesta correcta. Tienes 30 minutos para completar el quizt…"
         className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
       />
       <div className="flex items-center justify-between text-xs">
@@ -255,12 +257,12 @@ function StepTwo({ form, setForm }) {
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2">
         <label className="block text-sm font-medium text-slate-700">
-          Nombre del simulador
+          Nombre del quizt
         </label>
         <input
           value={form.nombre}
           onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
-          placeholder="Ej. Simulador EXANI II – Razonamiento"
+          placeholder="Ej. Quizt II – Razonamiento"
           className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
         />
       </div>

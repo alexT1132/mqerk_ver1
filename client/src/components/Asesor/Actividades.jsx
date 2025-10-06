@@ -10,7 +10,7 @@ const AREAS = [
       </svg>
     ),
     colors: { from: "from-orange-500", to: "to-amber-600", tint: "bg-amber-50", ring: "ring-amber-100" },
-    to: "#",
+    to: "/asesor/actividades/modulo",
   },
   {
     title: "Matemáticas y pensamiento analítico",
@@ -21,7 +21,7 @@ const AREAS = [
       </svg>
     ),
     colors: { from: "from-blue-500", to: "to-indigo-600", tint: "bg-indigo-50", ring: "ring-indigo-100" },
-    to: "#",
+    to: "/asesor/actividades/modulo",
   },
   {
     title: "Habilidades transversales",
@@ -32,7 +32,7 @@ const AREAS = [
       </svg>
     ),
     colors: { from: "from-emerald-500", to: "to-teal-600", tint: "bg-emerald-50", ring: "ring-emerald-100" },
-    to: "#",
+    to: "/asesor/actividades/modulo",
   },
   {
     title: "Lengua extranjera",
@@ -43,7 +43,7 @@ const AREAS = [
       </svg>
     ),
     colors: { from: "from-violet-500", to: "to-purple-600", tint: "bg-violet-50", ring: "ring-violet-100" },
-    to: "#",
+    to: "/asesor/actividades/modulo",
   },
   {
     title: "Módulos específicos",
@@ -109,6 +109,7 @@ function AreaCard({ title, subtitle, icon, colors, to: enlace }) {
       <div className="mt-6 flex items-center gap-2 text-sm font-medium">
         <Link
           to={enlace}
+          state={{ title }}
           className="inline-flex items-center gap-2 text-slate-800 dark:text-black group-hover:underline"
         >
           Explorar área

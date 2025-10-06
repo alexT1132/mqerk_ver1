@@ -204,7 +204,7 @@ export default function AreasInteres() {
             title={a.title}
             desc={a.desc}
             gradient={a.gradient}
-            to={`/asesor/simuladores/modulo`}
+            to={`/asesor_simuladores/modulo`}
           />
         ))}
       </div>

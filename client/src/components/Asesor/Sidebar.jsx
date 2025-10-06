@@ -1,22 +1,8 @@
 // src/components/SidebarIconOnly.jsx
 import { NAV_ITEMS, LOGOUT } from "./navItems";
-import { NavLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext.jsx";
+import { NavLink } from "react-router-dom";
 
-export default function SidebarIconOnly({ onLogout }) {
-  const navigate = useNavigate();
-  const { logout } = useAuth();
-
-  const handleLogout = async () => {
-    try {
-      // Ejecutar siempre el logout real
-      await logout();
-    } finally {
-      // Callback adicional opcional (para métricas, toasts, etc.)
-      try { if (typeof onLogout === 'function') onLogout(); } catch {}
-      navigate('/login', { replace: true });
-    }
-  };
+export default function SidebarIconOnly({ onLogout = () => {} }) {
 
   return (
     <aside className="hidden md:flex w-16 shrink-0">
@@ -52,7 +38,7 @@ export default function SidebarIconOnly({ onLogout }) {
 
         {/* Cerrar sesión */}
         <button
-          onClick={handleLogout}
+          onClick={onLogout}
           aria-label={LOGOUT.label}
           className="group relative flex w-full items-center justify-center rounded-lg p-2 text-slate-600 hover:bg-slate-100"
         >
