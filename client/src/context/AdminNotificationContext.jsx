@@ -14,6 +14,20 @@ const AdminNotificationContext = createContext();
  */
 export function AdminNotificationProvider({ children }) {
   const adminNotifications = useAdminNotifications();
+  // Debug mount log (solo desarrollo)
+  if (import.meta?.env?.DEV) {
+    // Evitar ruido excesivo: log sólo primeras 2 montadas
+    if (!window.__ADMIN_NOTIF_MOUNT_COUNT) window.__ADMIN_NOTIF_MOUNT_COUNT = 0;
+    if (window.__ADMIN_NOTIF_MOUNT_COUNT < 2) {
+      // eslint-disable-next-line no-console
+      console.log('[AdminNotificationProvider] mount', {
+        unreadCount: adminNotifications?.unreadCount,
+        pendingCount: adminNotifications?.pendingCount,
+        notificationsLen: adminNotifications?.notifications?.length
+      });
+      window.__ADMIN_NOTIF_MOUNT_COUNT++;
+    }
+  }
 
   return (
     <AdminNotificationContext.Provider value={adminNotifications}>
@@ -28,10 +42,30 @@ export function AdminNotificationProvider({ children }) {
  */
 export function useAdminNotificationContext() {
   const context = useContext(AdminNotificationContext);
-  
   if (!context) {
+    // En desarrollo devolvemos un stub para no romper toda la UI mientras se depura
+    if (import.meta?.env?.DEV) {
+      // eslint-disable-next-line no-console
+      console.warn('[useAdminNotificationContext] Contexto ausente. Devolviendo stub DEV. Revisa que <AdminNotificationProvider> envuelva tu árbol.');
+      const stub = {
+        notifications: [],
+        unreadNotifications: [],
+        unreadCount: 0,
+        pendingCount: 0,
+        isNotificationsOpen: false,
+        setIsNotificationsOpen: () => {},
+        toggleNotifications: () => {},
+        markAllAsRead: () => {},
+        markAsRead: () => {},
+        addNotification: () => {},
+        removeNotification: () => {},
+        getNotificationIcon: () => '🔔',
+        getPriorityColor: () => 'border-blue-500 bg-blue-50',
+        getTimeAgo: () => '—'
+      };
+      return stub;
+    }
     throw new Error('useAdminNotificationContext debe usarse dentro de AdminNotificationProvider');
   }
-  
   return context;
 }

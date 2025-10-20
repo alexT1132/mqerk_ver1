@@ -145,10 +145,10 @@ export function HeaderAdmin() {
   };
 
   return (
-    <header className="relative flex items-center justify-between z-50 bg-gradient-to-r from-[#3d18c3] to-[#4816bf] sticky top-0 left-0 w-full px-3 sm:px-6 py-4">
+    <header className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-[#3d18c3] to-[#4816bf] flex items-center justify-between px-3 sm:px-6 h-20 sm:h-24 py-0">
       {/* Contenedor del Logo */}
       <div className="flex items-center justify-start h-full w-fit z-10 pl-2">
-        <Link to={`/admin1/dashboard`} className="flex items-center justify-center">
+  <Link to="/administrativo/dashboard" className="flex items-center justify-center">
           <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
             <Logos src={MQerkLogo} />
           </div>

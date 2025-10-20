@@ -2,13 +2,24 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 import { NAV_ITEMS, LOGOUT } from "./navItems";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function MobileSidebar({
   open,
   onClose,
   onLogout = () => {},
 }) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      try { onLogout(); } catch {}
+      navigate('/login', { replace: true });
+    }
+  };
   // Cerrar con Escape
   useEffect(() => {
     function onKey(e) { if (e.key === "Escape") onClose(); }
@@ -83,7 +94,7 @@ export default function MobileSidebar({
         {/* Cerrar sesión */}
         <div className="border-t border-slate-200 p-2">
           <button
-            onClick={() => { onClose(); onLogout(); }}
+            onClick={() => { onClose(); handleLogout(); }}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
             aria-label={LOGOUT.label}
           >

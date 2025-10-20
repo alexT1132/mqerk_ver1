@@ -38,6 +38,10 @@ import AgendaAsesor from "./pages/Asesor/AgendaAsesor.jsx";
 import QuizActAsesor from "./pages/Asesor/QuiztActSection.jsx";
 import TablaActAsesor from "./pages/Asesor/TablaActAsesor.jsx";
 import RecursosAsesores from "./pages/Asesor/Recursos.jsx";
+// Mantener solo las exportaciones que se usan globalmente fuera del bundle
+import { Test as TestAsesor } from "./pages/Asesor/Test.jsx";
+import { Resultado as ResultadoAsesor } from "./pages/Asesor/Resultado.jsx";
+import GraciasAsesor from "./pages/Asesor/Gracias.jsx";
 // Eliminados módulos de tests (Test, Resultado) para flujo simplificado
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { AsesorProvider } from "./context/AsesorContext.jsx";
@@ -47,6 +51,17 @@ import RegistroEstudiante from "./pages/alumnos/RegistroEstudiante.jsx";
 import RegisterAlumno from "./pages/alumnos/Register.jsx";
 import Eeau from "./pages/web/preview/Eeau.jsx";
 import Eeap from "./pages/web/preview/Eeap.jsx";
+import DigiStart from "./pages/web/preview/Digi-Start.jsx";
+import Codelab from "./pages/web/preview/Codelab.jsx";
+import LevelUp from "./pages/web/preview/English.jsx";
+import BusinessEnglish from "./pages/web/preview/BussinesEnglish.jsx";
+import Calculo from "./pages/web/preview/CalculoIntegrales.jsx";
+import PiensaResuelve from "./pages/web/preview/PiensaResuelve.jsx";
+import CienciasExperimentales from "./pages/web/preview/CienciasExperimentales.jsx";
+import EstrategiasPsicoeducativas from "./pages/web/preview/EstrategiasPsicoeducativas.jsx";
+import EstrategiasEducativas from "./pages/web/preview/EstrategiasPsicoeducativas.jsx";
+import TecnologiaAplicada from "./pages/web/preview/TecnologiaenlaEnseñanza.jsx";
+import AulaInteligente from "./pages/web/preview/AulaInteligente.jsx";
 import { AlumnoDashboardBundle } from './components/student/AlumnoDashboardBundle.jsx'; 
 import { StudentProvider } from './context/StudentContext.jsx'; 
 import { ComprobanteProvider } from "./context/ComprobantesContext.jsx";
@@ -77,12 +92,24 @@ import Ingles2021 from "./components/mqerk/online/Ingles_21.jsx";
 import Profesiografica from "./components/mqerk/exporientas/Profesiografica.jsx";
 import ExporientaEducativa from "./components/mqerk/exporientas/ExporientaEducativa.jsx";
 import { AdminDashboardBundle } from './components/admin/AdminDashboardBundle.jsx';
+// import { AsesorDashboardBundle } from './components/asesor/AsesorDashboardBundle.jsx';
 import SetupAdmin from './components/admin/SetupAdmin.jsx';
 import Terminos from './pages/web/T&C.jsx'
 import Politicas from './pages/web/Politicas.jsx'
 import AdministradorGeneral from "./pages/AdminGeneral/PanelAdmin.jsx";
 import DashboardAdminGeneral from "./pages/AdminGeneral/Dashboard.jsx";
 import AdminGenCursos from "./pages/AdminGeneral/cursos/cursos.jsx";
+import AsignacionAsesor from "./pages/AdminGeneral/cursos/AsignacionAsesores.jsx";
+import ModulosAsesoresAdminGen from "./pages/AdminGeneral/asesores/PageAsesores.jsx";
+import InformacionAsesoresAdminGen from "./pages/AdminGeneral/asesores/InfoAsesores.jsx";
+import ConfiguracionAdminGen from "./pages/AdminGeneral/Config.jsx";
+import ContabilidadAdminGen from "./pages/AdminGeneral/contabilidad/contabilidad.jsx";
+import FinancierosAdminGen from "./pages/AdminGeneral/Financieros.jsx";
+import AdministrativoAdminGen from "./pages/AdminGeneral/Administrativo.jsx";
+import GestionAdminGen from "./pages/AdminGeneral/Gestion.jsx";
+import EstrategicosAdminGen from "./pages/AdminGeneral/Estrategicos.jsx";
+import CalendarioAdminGen from "./pages/AdminGeneral/Calendario.jsx";
+import ProductividadAdminGeneral from "./pages/AdminGeneral/Productividad.jsx";
 
 export default function App(){
     return(
@@ -110,6 +137,17 @@ export default function App(){
                     <Route path='/politicas_de_privacidad' element={<Politicas />} />
                     <Route path='/entrenamiento_examen_admision_universidad' element={<Eeau />} />
                     <Route path='/entrenamiento_examen_admision_preparatoria' element={<Eeap />} />
+                    <Route path='/digi-start' element={<DigiStart />} />
+                    <Route path='/codelab' element={<Codelab />} />
+                    <Route path='/level-up-english' element={<LevelUp />} />
+                    <Route path='/business-english-pro' element={<BusinessEnglish />} />
+                    <Route path='/calculo-diferencial-e-integral' element={<Calculo />} />
+                    <Route path='/piensa-resuelve' element={<PiensaResuelve />} />
+                    <Route path='/ciencias-experimentales' element={<CienciasExperimentales />} />
+                    <Route path='/estrategias-psicoeducativas' element={<EstrategiasPsicoeducativas />} />
+                    <Route path='/estrategias-educativas-para-maestros' element={<EstrategiasEducativas />} />
+                    <Route path='/tecnologia-aplicada-en-la-ensenanza' element={<TecnologiaAplicada />} />
+                    <Route path='/aula-inteligente' element={<AulaInteligente />} />
 
                     {/* Catálogo de eventos y modalidades */}
                     <Route path="/talleres" element={<Talleres />} />
@@ -156,6 +194,14 @@ export default function App(){
                     {/* Registro simplificado de asesor */}
                     <Route path='/pre_registro' element={<PreRegAsesor />} />
                     <Route path='/comunicado' element={<Bienvenida />} />
+
+                    {/* Flujo de pruebas del asesor */}
+                    <Route path='/test' element={<TestAsesor />} />
+                    {/* Rutas dinámicas eliminadas: WAIS y Matemática ahora integradas en /test */}
+                    <Route path='/resultados' element={<ResultadoAsesor />} />
+                    {/* Acceso directo a resultados por ID */}
+                    <Route path='/resultados/:id' element={<ResultadoAsesor />} />
+                    <Route path='/gracias' element={<GraciasAsesor />} />
 
                     {/* Registro formal de asesor */}
                     <Route path='/registro_asesor' element={<FormularioAsesor />} />
@@ -218,6 +264,17 @@ export default function App(){
                       <Route path="/administrador" element={<AdministradorGeneral />} />
                       <Route path="/administrador_dashboard" element={<DashboardAdminGeneral />} />
                       <Route path="/administrador_cursos" element={<AdminGenCursos />} />
+                      <Route path="/administrador_asesores" element={<ModulosAsesoresAdminGen />} />
+                      <Route path="/administrador_asesores/infotmacion" element={<InformacionAsesoresAdminGen />} />
+                      <Route path="/administrador_asesores/asignaciones" element={<AsignacionAsesor />} />
+                      <Route path="/administrador_configuraciones" element={<ConfiguracionAdminGen />} />
+                      <Route path="/administrador_contabilidad" element={<ContabilidadAdminGen />} />
+                      <Route path="/administrador_financieros" element={<FinancierosAdminGen />} />
+                      <Route path="/administrador_administrativo" element={<AdministrativoAdminGen />} />
+                      <Route path="/administrador_gestion" element={<GestionAdminGen />} />
+                      <Route path="/administrador_estrategicos" element={<EstrategicosAdminGen />} />
+                      <Route path="/administrador_calendario" element={<CalendarioAdminGen />} />
+                      <Route path="/administrador_productividad" element={<ProductividadAdminGeneral />} />
                     </Route>
 
                     {/* Página 404 por defecto */}

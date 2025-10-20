@@ -30,4 +30,6 @@ export async function pingDb() {
   }
 }
 
+// Export nombrado 'pool' para consumidores que esperan { pool }
+export const pool = db;
 export default db;

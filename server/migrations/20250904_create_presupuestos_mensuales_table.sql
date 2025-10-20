@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS presupuestos_mensuales (
   UNIQUE KEY uniq_presupuesto_mes (mes)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Vista de gasto mensual por egresos (Pagado)
+-- Vista de gasto mensual por egresos (solo Pagado)
 DROP VIEW IF EXISTS vw_gasto_mensual;
 CREATE VIEW vw_gasto_mensual AS
 SELECT ym.mes,

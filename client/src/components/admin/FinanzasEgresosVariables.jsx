@@ -19,6 +19,8 @@ import api from "../../api/axios.js";
 export default function FinanzasEgresosVariables() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exportExcelLoading, setExportExcelLoading] = useState(false);
+  const [exportExcelError, setExportExcelError] = useState('');
   const [budgetSummary, setBudgetSummary] = useState({ budget: 0, spent: 0, leftover: 0 });
   const [showModal, setShowModal] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -75,19 +77,36 @@ export default function FinanzasEgresosVariables() {
   });
 
   const [form, setForm] = useState(getDefaultForm());
+  // Filtros
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterFrom, setFilterFrom] = useState('');
+  const [filterTo, setFilterTo] = useState('');
+  const [filterMetodo, setFilterMetodo] = useState('');
+  const [filterEstatus, setFilterEstatus] = useState('');
   
   useEffect(() => {
     const fetchGastosVariables = async () => {
       try {
         setLoading(true);
         const data = await listGastosVariables();
-        setRows(data);
+        // Normalizar para asegurar que siempre haya valorUnitario
+        const normalized = (data || []).map(d => ({
+          ...d,
+            // prefer camelCase ya devuelto por backend actualizado
+          valorUnitario: d.valorUnitario ?? d.valor_unitario ?? 0
+        }));
+        setRows(normalized);
         // También mantener en storage como backup
-        saveExpenses("variables", data);
+        saveExpenses("variables", normalized);
       } catch (error) {
         console.error('Error al cargar gastos variables:', error);
         // Fallback al storage local si falla la API
-        setRows(loadExpenses("variables"));
+        const local = loadExpenses("variables");
+        const normalizedLocal = (local || []).map(d => ({
+          ...d,
+          valorUnitario: d.valorUnitario ?? d.valor_unitario ?? 0
+        }));
+        setRows(normalizedLocal);
       } finally {
         setLoading(false);
       }
@@ -95,6 +114,18 @@ export default function FinanzasEgresosVariables() {
 
     fetchGastosVariables();
   }, []);
+
+  const applyFilters = async () => {
+    try {
+      setLoading(true);
+      const data = await listGastosVariables({ from: filterFrom || undefined, to: filterTo || undefined, metodo: filterMetodo || undefined, estatus: filterEstatus || undefined });
+      const normalized = (data || []).map(d => ({ ...d, valorUnitario: d.valorUnitario ?? d.valor_unitario ?? 0 }));
+      setRows(normalized);
+      saveExpenses('variables', normalized);
+    } catch(e){ console.error('Error filtrando gastos variables', e); }
+    finally { setLoading(false); }
+  };
+  const clearFilters = async () => { setFilterFrom(''); setFilterTo(''); setFilterMetodo(''); setFilterEstatus(''); await applyFilters(); };
 
   useEffect(() => {
     return () => {
@@ -107,7 +138,19 @@ export default function FinanzasEgresosVariables() {
   const onChangeUnidades = (e) => {
     let v = e.target.value || "";
     v = v.replace(/[^\d]/g, ""); // solo enteros
-    setForm((f) => ({ ...f, unidades: v }));
+    setForm((f) => {
+      const unidadesNum = Number(v || 0);
+      const unitVal = parseCurrency(f.valorUnitario);
+      const importeCalc = unidadesNum * unitVal;
+      // Formatear numero sin símbolo, con hasta 2 decimales y separador de miles
+      let importeStr = '';
+      try {
+        importeStr = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(importeCalc);
+      } catch {
+        importeStr = String(importeCalc);
+      }
+      return { ...f, unidades: v, importe: importeStr };
+    });
   };
   const onChangeValorUnitario = (e) => {
     let v = e.target.value || "";
@@ -125,7 +168,18 @@ export default function FinanzasEgresosVariables() {
           ? `${withCommas}.${dec}`
           : `${withCommas}.`
         : withCommas;
-    setForm((f) => ({ ...f, valorUnitario: formatted }));
+    setForm((f) => {
+      const unidadesNum = Number(f.unidades || 0);
+      const unitVal = parseCurrency(formatted);
+      const importeCalc = unidadesNum * unitVal;
+      let importeStr = '';
+      try {
+        importeStr = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(importeCalc);
+      } catch {
+        importeStr = String(importeCalc);
+      }
+      return { ...f, valorUnitario: formatted, importe: importeStr };
+    });
   };
   const onChangeImporte = (e) => {
     let v = e.target.value || "";
@@ -173,6 +227,81 @@ export default function FinanzasEgresosVariables() {
     return { all, today, week, month, year };
   }, [rows]);
 
+  // Exportar todos los gastos variables a Excel
+  const handleExportExcel = async () => {
+    try {
+      setExportExcelLoading(true); setExportExcelError('');
+      const [ExcelJS, data] = await Promise.all([
+        import('exceljs'),
+        listGastosVariables()
+      ]);
+      const workbook = new ExcelJS.Workbook();
+      const ws = workbook.addWorksheet('Gastos variables');
+      const columns = [
+        { header: 'ID', key: 'id' },
+        { header: 'Fecha', key: 'fecha' },
+        { header: 'Unidades', key: 'unidades' },
+        { header: 'Producto/Servicio', key: 'producto' },
+        { header: 'Descripción', key: 'descripcion' },
+        { header: 'Entidad', key: 'entidad' },
+        { header: 'Valor unitario', key: 'valorUnitario' },
+        { header: 'Método', key: 'metodo' },
+        { header: 'Importe', key: 'importe' },
+        { header: 'Estatus', key: 'estatus' },
+        { header: 'Calendar Event ID', key: 'calendar_event_id' },
+      ];
+      ws.columns = columns.map(c => ({ header: c.header, key: c.key, width: Math.max(12, c.header.length + 2) }));
+      for (const r of (Array.isArray(data) ? data : [])) {
+        ws.addRow({
+          id: r.id,
+          fecha: r.fecha || '',
+          unidades: r.unidades ?? 0,
+          producto: r.producto || '',
+          descripcion: r.descripcion || '',
+          entidad: r.entidad || '',
+          valorUnitario: Number(r.valorUnitario ?? r.valor_unitario ?? 0),
+          metodo: r.metodo || '',
+          importe: Number(r.importe ?? 0),
+          estatus: r.estatus || '',
+          calendar_event_id: r.calendar_event_id ?? r.calendarEventId ?? ''
+        });
+      }
+      const headerRow = ws.getRow(1);
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.alignment = { vertical: 'middle' };
+      headerRow.height = 20;
+      headerRow.eachCell((cell) => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+        cell.border = { top: { style: 'thin', color: { argb: 'FFDBEAFE' } }, left: { style: 'thin', color: { argb: 'FFDBEAFE' } }, bottom: { style: 'thin', color: { argb: 'FFDBEAFE' } }, right: { style: 'thin', color: { argb: 'FFDBEAFE' } } };
+      });
+      // Formato de moneda para valorUnitario e importe
+      ws.getColumn('valorUnitario').numFmt = '#,##0.00';
+      ws.getColumn('valorUnitario').alignment = { horizontal: 'right' };
+      ws.getColumn('importe').numFmt = '#,##0.00';
+      ws.getColumn('importe').alignment = { horizontal: 'right' };
+      ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
+      ws.views = [{ state: 'frozen', ySplit: 1 }];
+      ws.columns.forEach((col) => {
+        let max = col.header ? String(col.header).length : 10;
+        col.eachCell({ includeEmpty: false }, (cell) => {
+          const v = cell.value == null ? '' : String(cell.value);
+          max = Math.max(max, v.length);
+        });
+        col.width = Math.min(60, Math.max(12, Math.ceil(max * 1.1)));
+      });
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      a.href = url; a.download = `gastos-variables-${ts}.xlsx`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setExportExcelError('No se pudo exportar Excel.');
+    } finally { setExportExcelLoading(false); }
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     const unidades = Number(form.unidades || 0);
@@ -218,15 +347,15 @@ export default function FinanzasEgresosVariables() {
     try {
       // Crear gasto variable en la API
       const createdGasto = await createGastoVariable(nuevo);
-      
+      const createdNorm = { ...createdGasto, valorUnitario: createdGasto.valorUnitario ?? createdGasto.valor_unitario ?? nuevo.valorUnitario };
       // Actualizar estado local
       setRows((prev) => {
-        const next = [...prev, createdGasto];
+        const next = [...prev, createdNorm];
         saveExpenses("variables", next);
         return next;
       });
 
-      // Crear evento de calendario en background
+      // Crear evento de calendario en background y persistir calendarEventId
       (async () => {
         try {
           const titulo = `Gasto variable: ${nuevo.producto}`;
@@ -243,7 +372,7 @@ export default function FinanzasEgresosVariables() {
           const recordarMinutos = dayjs(nuevo.fecha).isSame(dayjs(), "day")
             ? 10
             : 30;
-          await api.post("/admin/calendar/events", {
+          const evRes = await api.post("/admin/calendar/events", {
             titulo,
             descripcion,
             fecha: nuevo.fecha,
@@ -253,6 +382,18 @@ export default function FinanzasEgresosVariables() {
             recordarMinutos,
             completado: false,
           });
+          const ev = evRes?.data || {};
+          const evId = ev.id || ev.eventId || ev.event?.id;
+          if (evId && createdNorm?.id) {
+            try {
+              const updated = await updateGastoVariable(createdNorm.id, { calendarEventId: evId });
+              setRows((prev) => {
+                const next = prev.map((r) => r.id === createdNorm.id ? (updated || { ...r, calendarEventId: evId }) : r);
+                saveExpenses("variables", next);
+                return next;
+              });
+            } catch {}
+          }
         } catch (err) {
           console.warn(
             "Error al crear evento de calendario:",
@@ -275,16 +416,19 @@ export default function FinanzasEgresosVariables() {
     setForm(getDefaultForm());
   };
 
-  const proceedCreateEvenIfExceed = () => {
+  const proceedCreateEvenIfExceed = async () => {
     if (!budgetWarn.open || budgetWarn.context !== "create") return;
     const { entry } = budgetWarn.info || {};
-    const _lid = Date.now() + Math.random();
-    setRows((prev) => {
-      const next = [...prev, { ...entry, _lid }];
-      saveExpenses("variables", next);
-      return next;
-    });
-    (async () => {
+    try {
+      // Persistir en backend aunque exceda presupuesto
+      const created = await createGastoVariable(entry);
+      const createdNorm = { ...created, valorUnitario: created.valorUnitario ?? created.valor_unitario ?? entry.valorUnitario };
+      setRows((prev) => {
+        const next = [...prev, createdNorm];
+        saveExpenses("variables", next);
+        return next;
+      });
+      // Crear evento y actualizar calendarEventId
       try {
         const titulo = `Gasto variable: ${entry.producto}`;
         const partes = [
@@ -297,9 +441,7 @@ export default function FinanzasEgresosVariables() {
         if (entry.descripcion) partes.push(`Nota: ${entry.descripcion}`);
         const descripcion = partes.join(" | ");
         const hora = "10:00";
-        const recordarMinutos = dayjs(entry.fecha).isSame(dayjs(), "day")
-          ? 10
-          : 30;
+        const recordarMinutos = dayjs(entry.fecha).isSame(dayjs(), "day") ? 10 : 30;
         const evRes = await api.post("/admin/calendar/events", {
           titulo,
           descripcion,
@@ -312,14 +454,15 @@ export default function FinanzasEgresosVariables() {
         });
         const ev = evRes?.data || {};
         const evId = ev.id || ev.eventId || ev.event?.id;
-        if (evId) {
-          setRows((prev) => {
-            const next = prev.map((r) =>
-              r._lid === _lid ? { ...r, calendarEventId: evId } : r
-            );
-            saveExpenses("variables", next);
-            return next;
-          });
+        if (evId && createdNorm?.id) {
+          try {
+            const updated = await updateGastoVariable(createdNorm.id, { calendarEventId: evId });
+            setRows((prev) => {
+              const next = prev.map((r) => r.id === createdNorm.id ? (updated || { ...r, calendarEventId: evId }) : r);
+              saveExpenses("variables", next);
+              return next;
+            });
+          } catch {}
         }
       } catch (err) {
         console.warn(
@@ -327,7 +470,15 @@ export default function FinanzasEgresosVariables() {
           err?.response?.status || err?.message || err
         );
       }
-    })();
+    } catch (err) {
+      // Fallback local si la API falla
+      const _lid = Date.now() + Math.random();
+      setRows((prev) => {
+        const next = [...prev, { ...entry, _lid }];
+        saveExpenses("variables", next);
+        return next;
+      });
+    }
     setBudgetWarn({ open: false, context: null, info: null });
     setShowModal(false);
     setForm(getDefaultForm());
@@ -348,6 +499,41 @@ export default function FinanzasEgresosVariables() {
       setForm(getDefaultForm());
     }
     setBudgetWarn({ open: false, context: null, info: null });
+  };
+
+  // Nuevo: acciones para el flujo de cambio de estatus (status)
+  const saveStatusAsPending = async () => {
+    if (!budgetWarn.open || budgetWarn.context !== 'status') return;
+    const { idx } = budgetWarn.info || {};
+    if (idx === undefined || idx === null) { setBudgetWarn({ open:false, context:null, info:null }); return; }
+    const item = rows[idx];
+    const prev = item?.estatus;
+    // Optimista a Pendiente
+    setRows(prevRows => prevRows.map((r,i)=> i===idx ? { ...r, estatus:'Pendiente' } : r));
+    try {
+      if (item?.id) await updateGastoVariable(item.id, { estatus:'Pendiente' });
+    } catch {
+      // Revertir si falla
+      setRows(prevRows => prevRows.map((r,i)=> i===idx ? { ...r, estatus: prev } : r));
+    }
+    setBudgetWarn({ open:false, context:null, info:null });
+  };
+
+  const proceedStatusEvenIfExceed = async () => {
+    if (!budgetWarn.open || budgetWarn.context !== 'status') return;
+    const { idx } = budgetWarn.info || {};
+    if (idx === undefined || idx === null) { setBudgetWarn({ open:false, context:null, info:null }); return; }
+    const item = rows[idx];
+    const prev = item?.estatus;
+    // Optimista a Pagado y persistir
+    setRows(prevRows => prevRows.map((r,i)=> i===idx ? { ...r, estatus:'Pagado' } : r));
+    try {
+      if (item?.id) await updateGastoVariable(item.id, { estatus:'Pagado' });
+    } catch {
+      // Revertir si falla
+      setRows(prevRows => prevRows.map((r,i)=> i===idx ? { ...r, estatus: prev } : r));
+    }
+    setBudgetWarn({ open:false, context:null, info:null });
   };
 
   return (
@@ -420,13 +606,60 @@ export default function FinanzasEgresosVariables() {
               Registro de gastos variables
             </h2>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-3 py-1.5 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700"
-          >
-            Nuevo gasto variable
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={()=> setShowFilters(s=>!s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{showFilters ? 'Ocultar filtros' : 'Filtros'}</button>
+            <button
+              onClick={handleExportExcel}
+              disabled={exportExcelLoading}
+              className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            >{exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}</button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="px-3 py-1.5 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700"
+            >
+              Nuevo gasto variable
+            </button>
+          </div>
         </div>
+        {showFilters && (
+          <div className="px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Desde</label>
+                <input type="date" value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Hasta</label>
+                <input type="date" value={filterTo} onChange={e=>setFilterTo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Método</label>
+                <select value={filterMetodo} onChange={e=>setFilterMetodo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                  <option value="">Todos</option>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Transferencia">Transferencia</option>
+                  <option value="Tarjeta">Tarjeta</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Estatus</label>
+                <select value={filterEstatus} onChange={e=>setFilterEstatus(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                  <option value="">Todos</option>
+                  <option value="Pagado">Pagado</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Vencido">Vencido</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button onClick={applyFilters} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-600 text-white hover:bg-rose-700">Aplicar filtros</button>
+              <button onClick={clearFilters} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Limpiar</button>
+            </div>
+          </div>
+        )}
+        {exportExcelError && (
+          <div className="px-6 py-2 text-sm text-amber-600">{exportExcelError}</div>
+        )}
 
         {/* Tabla desktop */}
         <div className="hidden sm:block">
@@ -530,8 +763,9 @@ export default function FinanzasEgresosVariables() {
                           onClick={(e) => e.stopPropagation()}
                           onChange={async (e) => {
                             const next = e.target.value;
+                            const item = rows[idx];
+                            const prevStatus = item.estatus;
                             if (next === "Pagado") {
-                              const item = rows[idx];
                               const month = dayjs(item.fecha).format("YYYY-MM");
                               let snap = null;
                               try {
@@ -544,30 +778,24 @@ export default function FinanzasEgresosVariables() {
                               } catch {
                                 snap = getBudgetSnapshot(month);
                               }
-                              const exceed = Math.max(
-                                0,
-                                Number(item.importe || 0) - snap.leftover
-                              );
+                              const exceed = Math.max(0, Number(item.importe || 0) - snap.leftover);
                               if (exceed > 0 || snap.budget === 0) {
                                 setBudgetWarn({
                                   open: true,
                                   context: "status",
-                                  info: {
-                                    idx,
-                                    month,
-                                    snap,
-                                    amount: Number(item.importe || 0),
-                                    exceed,
-                                  },
+                                  info: { idx, month, snap, amount: Number(item.importe || 0), exceed },
                                 });
                                 return;
                               }
                             }
-                            setRows((prev) =>
-                              prev.map((x, i) =>
-                                i === idx ? { ...x, estatus: next } : x
-                              )
-                            );
+                            // Optimistic update
+                            setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, estatus: next } : x)));
+                            try {
+                              if (item?.id) await updateGastoVariable(item.id, { estatus: next });
+                            } catch (err) {
+                              // Revert on error
+                              setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, estatus: prevStatus } : x)));
+                            }
                           }}
                           className={`rounded-md text-xs px-2 py-1 border ${
                             r.estatus === "Pagado"
@@ -616,13 +844,32 @@ export default function FinanzasEgresosVariables() {
                     }`}
                     value={r.estatus}
                     onClick={(e) => e.stopPropagation()}
-                    onChange={(e) =>
-                      setRows((prev) =>
-                        prev.map((x, i) =>
-                          i === idx ? { ...x, estatus: e.target.value } : x
-                        )
-                      )
-                    }
+                    onChange={async (e) => {
+                      const next = e.target.value;
+                      const item = rows[idx];
+                      const prevStatus = item.estatus;
+                      if (next === "Pagado") {
+                        const month = dayjs(item.fecha).format("YYYY-MM");
+                        let snap = null;
+                        try {
+                          const r = await getResumenMensual(month);
+                          snap = { budget: Number(r.budget || 0), spent: Number(r.spent || 0), leftover: Number(r.leftover || 0) };
+                        } catch {
+                          snap = getBudgetSnapshot(month);
+                        }
+                        const exceed = Math.max(0, Number(item.importe || 0) - snap.leftover);
+                        if (exceed > 0 || snap.budget === 0) {
+                          setBudgetWarn({ open: true, context: "status", info: { idx, month, snap, amount: Number(item.importe || 0), exceed } });
+                          return;
+                        }
+                      }
+                      setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, estatus: next } : x)));
+                      try {
+                        if (item?.id) await updateGastoVariable(item.id, { estatus: next });
+                      } catch (err) {
+                        setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, estatus: prevStatus } : x)));
+                      }
+                    }}
                   >
                     <option value="Pendiente">Pendiente</option>
                     <option value="Pagado">Pagado</option>
@@ -805,10 +1052,11 @@ export default function FinanzasEgresosVariables() {
                     <input
                       name="importe"
                       value={form.importe}
-                      onChange={onChangeImporte}
+                      readOnly
                       placeholder="0.00"
                       required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-gray-600"
+                      title="Se calcula automáticamente: unidades × valor unitario"
                     />
                   </div>
                 </div>
@@ -900,123 +1148,39 @@ export default function FinanzasEgresosVariables() {
         </div>
       )}
 
-      {budgetWarn.open && (
-        <div className="fixed inset-0 z-[10000] overflow-y-auto pt-[128px] sm:pt-[148px] pb-6 px-3 sm:px-4 bg-black/40">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-md rounded-2xl shadow-xl mx-auto my-6 sm:my-8 flex flex-col max-h-[90dvh]">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">
-                Presupuesto insuficiente
-              </h3>
-              <button
-                onClick={() =>
-                  setBudgetWarn({ open: false, context: null, info: null })
-                }
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
+      {budgetWarn.open && (()=>{ const i = budgetWarn.info||{}; const b = i.snap || { budget:0, spent:0, leftover:0 }; const fmt = (n)=> new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(n||0)); return (
+        <div className="fixed inset-0 z-[10000] bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden">
+            <div className="px-5 py-4 border-b flex items-center justify-between bg-amber-50/60">
+              <h3 className="text-base font-semibold text-amber-800">Presupuesto insuficiente</h3>
+              <button onClick={()=> setBudgetWarn({ open:false, context:null, info:null })} className="text-amber-600 hover:text-amber-800">✕</button>
             </div>
-            <div className="px-5 py-4 text-sm text-gray-700 space-y-2">
-              {(() => {
-                const i = budgetWarn.info || {};
-                const b = i.snap || { budget: 0, spent: 0, leftover: 0 };
-                return (
-                  <>
-                    <p>
-                      Mes: <strong className="text-gray-900">{i.month}</strong>
-                    </p>
-                    <p>
-                      Presupuesto:{" "}
-                      <strong className="text-indigo-600">
-                        {new Intl.NumberFormat("es-MX", {
-                          style: "currency",
-                          currency: "MXN",
-                        }).format(b.budget || 0)}
-                      </strong>
-                    </p>
-                    <p>
-                      Gastado:{" "}
-                      <strong className="text-rose-600">
-                        {new Intl.NumberFormat("es-MX", {
-                          style: "currency",
-                          currency: "MXN",
-                        }).format(b.spent || 0)}
-                      </strong>
-                    </p>
-                    <p>
-                      Disponible:{" "}
-                      <strong className="text-emerald-600">
-                        {new Intl.NumberFormat("es-MX", {
-                          style: "currency",
-                          currency: "MXN",
-                        }).format(b.leftover || 0)}
-                      </strong>
-                    </p>
-                    <p className="mt-1">
-                      Este egreso:{" "}
-                      <strong className="text-gray-900">
-                        {new Intl.NumberFormat("es-MX", {
-                          style: "currency",
-                          currency: "MXN",
-                        }).format(i.amount || 0)}
-                      </strong>
-                    </p>
-                    <p className="text-rose-700 font-medium">
-                      Excedente:{" "}
-                      {new Intl.NumberFormat("es-MX", {
-                        style: "currency",
-                        currency: "MXN",
-                      }).format(Math.max(0, i.exceed || 0))}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Puedes continuar y registrar el egreso, guardarlo como
-                      pendiente o ajustar el presupuesto.
-                    </p>
-                  </>
-                );
-              })()}
+            <div className="px-5 py-4 text-sm text-gray-700 space-y-3">
+              <p>El egreso marcado excede el presupuesto disponible del mes.</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Presupuesto</div><div className="font-semibold">{fmt(b.budget)}</div></div>
+                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Gastado</div><div className="font-semibold">{fmt(b.spent)}</div></div>
+                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Disponible</div><div className="font-semibold">{fmt(b.leftover)}</div></div>
+                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Egreso</div><div className="font-semibold text-rose-600">{fmt(i.amount)}</div></div>
+              </div>
+              <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2">Continuar lo dejará en negativo por {fmt(i.exceed)}.</div>
             </div>
-            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-end gap-2">
-              <Link
-                to="/administrativo/finanzas/egresos/presupuesto"
-                onClick={() =>
-                  setBudgetWarn({ open: false, context: null, info: null })
-                }
-                className="px-3 py-1.5 text-sm rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-              >
-                Ajustar presupuesto
-              </Link>
-              {budgetWarn.context === "create" ? (
+            <div className="px-5 py-3 border-t flex items-center justify-end gap-2 bg-gray-50">
+              {budgetWarn.context==='create' ? (
                 <>
-                  <button
-                    onClick={saveAsPendingInstead}
-                    className="px-3 py-1.5 text-sm rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50"
-                  >
-                    Guardar como Pendiente
-                  </button>
-                  <button
-                    onClick={proceedCreateEvenIfExceed}
-                    className="px-3 py-1.5 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700"
-                  >
-                    Continuar y guardar
-                  </button>
+                  <button onClick={saveAsPendingInstead} className="px-4 py-2 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 text-sm">Guardar como Pendiente</button>
+                  <button onClick={proceedCreateEvenIfExceed} className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700">Continuar y guardar</button>
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={() =>
-                      setBudgetWarn({ open: false, context: null, info: null })
-                    }
-                    className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
+                  <button onClick={saveStatusAsPending} className="px-4 py-2 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 text-sm">Guardar como Pendiente</button>
+                  <button onClick={proceedStatusEvenIfExceed} className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700">Continuar y guardar</button>
                 </>
               )}
             </div>
           </div>
         </div>
-      )}
+      ); })()}
 
       {/* Modal Editar gasto variable */}
       {editOpen && editData && (
@@ -1153,7 +1317,7 @@ export default function FinanzasEgresosVariables() {
                     <input
                       type="number"
                       step="0.01"
-                      value={editData.valorUnitario}
+                      value={editData.valorUnitario ?? ''}
                       onChange={(e) =>
                         setEditData((d) => ({
                           ...d,
@@ -1170,7 +1334,7 @@ export default function FinanzasEgresosVariables() {
                     <input
                       type="number"
                       step="0.01"
-                      value={editData.importe}
+                      value={editData.importe ?? ''}
                       onChange={(e) =>
                         setEditData((d) => ({ ...d, importe: e.target.value }))
                       }

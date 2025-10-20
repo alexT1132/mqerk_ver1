@@ -5,11 +5,10 @@
 // 3. Tabla de simulaciones disponibles con funcionalidad completa
 import React, { useState, useEffect } from 'react';
 import { useStudent } from '../../context/StudentContext'; // Importar el hook
-// TODO: Reemplazar simulaciones mock por endpoint real cuando esté disponible.
-import { 
-  MOCK_SIMULACIONES_GENERALES, 
-  MOCK_SIMULACIONES_ESPECIFICAS 
-} from '../../data/mockData';
+import { listQuizzes, resumenQuizzesEstudiante, crearIntentoQuiz, listIntentosQuizEstudiante } from '../../api/quizzes';
+import { listPreguntasQuiz, crearSesionQuiz, enviarRespuestasSesion, finalizarSesionQuiz } from '../../api/simulaciones';
+import { useAuth } from '../../context/AuthContext.jsx';
+// Eliminado uso de datos mock; ahora todo viene de backend
 import { getAreasCatalog } from '../../api/areas';
 import { AREAS_CATALOG_CACHE } from '../../utils/catalogCache';
 import { styleForArea } from '../common/areaStyles.jsx';
@@ -95,11 +94,17 @@ export function Simulaciones_Alumno_comp() {
     addAllowedSimulationArea, 
     requestNewSimulationAreaAccess 
   } = useStudent();
+  const { user, alumno } = useAuth() || {};
+  const estudianteId = alumno?.id || user?.id_estudiante || user?.id || null;
 
   // Estados para historial de intentos
   const [showHistorialModal, setShowHistorialModal] = useState(false);
   const [selectedSimulacionHistorial, setSelectedSimulacionHistorial] = useState(null);
   const [simulacionesHistorial, setSimulacionesHistorial] = useState({});
+  const [historialCache, setHistorialCache] = useState({}); // quizId -> intentos reales
+  // Estado de carga/errores de quizzes backend
+  const [loadingQuizzes, setLoadingQuizzes] = useState(false);
+  const [quizError, setQuizError] = useState('');
 
   // Estados para modal de gráficas
   const [showGraficasModal, setShowGraficasModal] = useState(false);
@@ -146,8 +151,7 @@ export function Simulaciones_Alumno_comp() {
     load(fromCache?.data ? true : false);
     return ()=> { cancel=true; };
   },[]);
-  const simulacionesGenerales = MOCK_SIMULACIONES_GENERALES;
-  const simulacionesEspecificas = MOCK_SIMULACIONES_ESPECIFICAS;
+  // (mocks eliminados)
 
   // Meses como ordinales
   const months = [
@@ -157,6 +161,112 @@ export function Simulaciones_Alumno_comp() {
 
   // Altura mínima uniforme para tarjetas (módulos específicos) alineada con Actividades
   const CARD_HEIGHT_PX = 230;
+
+  // (Se eliminó bloque duplicado de helpers; definiciones únicas se mantienen más abajo tras loadQuizzes)
+
+  // Verificar fecha límite
+  const isWithinDeadline = (dueDate) => {
+    const now = new Date();
+    const due = new Date(dueDate);
+    return now < due;
+  };
+
+  const handleVisualizarResultados = (simulacionId) => {
+    console.log('Visualizando resultados:', simulacionId);
+    showNotification(
+      'Resultados de simulación',
+      'Mostrando resultados de la simulación...',
+      'info'
+    );
+  };
+
+  // Verificar si la simulación está disponible para iniciar
+  const isSimulacionAvailable = (simulacion) => {
+    const now = new Date();
+    const fechaEntrega = new Date(simulacion.fechaEntrega);
+    return now <= fechaEntrega && simulacion.estado === 'disponible';
+  };
+
+  // Verificar si se puede reintentar (Función legacy - ahora permitimos reintentos ilimitados)
+  const canRetry = (simulacion) => {
+    return simulacion.completado;
+  };
+
+  // (Legacy historial in-memory removido; ahora historial se obtiene de backend y cache local en historialCache)
+
+  // Reemplazo: eliminamos mocks y cargamos desde backend
+  const loadQuizzes = async (scope) => {
+    if(!estudianteId) { setSimulaciones([]); return; }
+    setLoadingQuizzes(true); setQuizError('');
+    try {
+      const [resResumen, resCatalog] = await Promise.allSettled([
+        resumenQuizzesEstudiante(estudianteId),
+        listQuizzes()
+      ]);
+      const resumenRows = resResumen.status === 'fulfilled' ? (resResumen.value?.data?.data || resResumen.value?.data || []) : [];
+      const catalogRows = resCatalog.status === 'fulfilled' ? (resCatalog.value?.data?.data || resCatalog.value?.data || []) : [];
+      const resumenById = resumenRows.reduce((acc,q)=>{ acc[q.id]=q; return acc; },{});
+      const baseRows = catalogRows.length ? catalogRows : resumenRows;
+      const filtered = baseRows.filter(q => {
+        if(scope.type === 'generales') {
+          // áreas generales: id_area null o 1..4 (asunción) y no módulos específicos
+          return !q.id_area || (q.id_area >=1 && q.id_area <=4); // ajusta si tu mapping real difiere
+        } else if(scope.type === 'modulo' && scope.moduloId) {
+          return q.id_area === scope.moduloId;
+        }
+        return true;
+      });
+      const mapped = filtered.map(q => {
+        const r = resumenById[q.id] || q;
+        const total_intentos = Number(r.total_intentos || 0);
+        const ultimo_puntaje = r.ultimo_puntaje ?? null;
+        const mejor_puntaje = r.mejor_puntaje ?? null;
+        const fecha_limite = q.fecha_limite || q.fechaEntrega || null;
+        const now = new Date();
+        const due = fecha_limite ? new Date(fecha_limite) : null;
+        const within = due ? now <= due : true;
+        const estadoQuiz = total_intentos > 0 ? 'completado' : (within ? 'disponible' : 'vencido');
+        return {
+          id: q.id,
+          nombre: q.titulo,
+            fechaEntrega: fecha_limite,
+          completado: total_intentos > 0,
+          score: ultimo_puntaje,
+          bestScore: mejor_puntaje,
+          estado: estadoQuiz,
+          totalIntentos: total_intentos
+        };
+      });
+      setSimulaciones(mapped);
+    } catch(e){
+      console.error(e); setQuizError('Error cargando simulaciones');
+    } finally { setLoadingQuizzes(false); }
+  };
+
+  // Historial real: fetch solo al abrir modal
+  const fetchHistorial = async (simulacion) => {
+    if(!estudianteId) return;
+    try {
+      const resp = await listIntentosQuizEstudiante(simulacion.id, estudianteId);
+      const rows = resp.data?.data || resp.data || [];
+      setHistorialCache(prev=> ({...prev, [simulacion.id]: rows}));
+    } catch(e){ console.warn('No se pudo cargar historial', e); }
+  };
+
+  const getSimulacionHistorial = (simulacionId) => {
+    const intentos = historialCache[simulacionId] || [];
+    return {
+      intentos: intentos.map((it, idx)=> ({
+        id: it.id,
+        fecha: it.created_at,
+        puntaje: it.puntaje,
+        tiempoEmpleado: Math.round((it.tiempo_segundos||0)/60) || 0
+      })),
+      totalIntentos: intentos.length,
+      mejorPuntaje: intentos.reduce((m,i)=> i.puntaje>m?i.puntaje:m,0),
+      promedioTiempo: intentos.length ? Math.round(intentos.reduce((s,i)=> s + (i.tiempo_segundos||0),0)/60/ intentos.length) : 0
+    };
+  };
 
   // Efecto para calcular el puntaje total
   useEffect(() => {
@@ -174,21 +284,18 @@ export function Simulaciones_Alumno_comp() {
       setCurrentLevel('modulos');
     } else {
       setCurrentLevel('simulaciones');
-      setSimulaciones(simulacionesGenerales);
+      loadQuizzes({ type:'generales' });
     }
   };
 
   // Función para manejar la selección de módulo específico
   const handleSelectModulo = (modulo) => {
-    // Solo permitir la selección si el módulo está en las áreas permitidas
     if (allowedSimulationAreas.includes(modulo.id)) {
       setSelectedModulo(modulo);
       setCurrentLevel('simulaciones');
-      const filteredSims = simulacionesEspecificas.filter(sim => sim.moduloId === modulo.id);
-      setSimulaciones(filteredSims);
+      loadQuizzes({ type:'modulo', moduloId:modulo.id });
     } else {
-      // Si no está permitido, se puede iniciar la solicitud desde la tarjeta
-      console.log("Área no permitida. Debes solicitar acceso.");
+      console.log('Área no permitida. Debes solicitar acceso.');
     }
   };
 
@@ -255,136 +362,7 @@ export function Simulaciones_Alumno_comp() {
     setSelectedMonth(monthValue);
     setIsDropdownOpen(false);
   };
-
-  // Verificar fecha límite
-  const isWithinDeadline = (dueDate) => {
-    const now = new Date();
-    const due = new Date(dueDate);
-    return now < due;
-  };
-
-  const handleVisualizarResultados = (simulacionId) => {
-    console.log('Visualizando resultados:', simulacionId);
-    showNotification(
-      'Resultados de simulación',
-      'Mostrando resultados de la simulación...',
-      'info'
-    );
-  };
-
-  // Verificar si la simulación está disponible para iniciar
-  const isSimulacionAvailable = (simulacion) => {
-    const now = new Date();
-    const fechaEntrega = new Date(simulacion.fechaEntrega);
-    return now <= fechaEntrega && simulacion.estado === 'disponible';
-  };
-
-  // Verificar si se puede reintentar (Función legacy - ahora permitimos reintentos ilimitados)
-  const canRetry = (simulacion) => {
-    return simulacion.completado;
-  };
-
-  // Funciones para manejar historial de intentos
-  const initializeSimulacionHistorial = (simulacionId) => {
-    if (!simulacionesHistorial[simulacionId]) {
-      setSimulacionesHistorial(prev => ({
-        ...prev,
-        [simulacionId]: {
-          intentos: [],
-          totalIntentos: 0,
-          mejorPuntaje: 0,
-          promedioTiempo: 0
-        }
-      }));
-    }
-  };
-
-  const addIntentoToHistorial = (simulacionId, intento) => {
-    initializeSimulacionHistorial(simulacionId);
-    
-    setSimulacionesHistorial(prev => {
-      const currentHistorial = prev[simulacionId] || { intentos: [], totalIntentos: 0, mejorPuntaje: 0 };
-      const newIntentos = [...currentHistorial.intentos, intento];
-      const nuevoMejorPuntaje = Math.max(currentHistorial.mejorPuntaje, intento.puntaje);
-      
-      return {
-        ...prev,
-        [simulacionId]: {
-          ...currentHistorial,
-          intentos: newIntentos,
-          totalIntentos: newIntentos.length,
-          mejorPuntaje: nuevoMejorPuntaje,
-          promedioTiempo: newIntentos.reduce((sum, i) => sum + i.tiempoEmpleado, 0) / newIntentos.length
-        }
-      };
-    });
-  };
-
-  const getSimulacionHistorial = (simulacionId) => {
-    return simulacionesHistorial[simulacionId] || { 
-      intentos: [], 
-      totalIntentos: 0, 
-      mejorPuntaje: 0, 
-      promedioTiempo: 0 
-    };
-  };
-
-  const getBestScore = (simulacionId) => {
-    const historial = getSimulacionHistorial(simulacionId);
-    return historial.mejorPuntaje || 0;
-  };
-
-  const getTotalAttempts = (simulacionId) => {
-    const historial = getSimulacionHistorial(simulacionId);
-    return historial.totalIntentos || 0;
-  };
-
-  // Funciones para manejar acciones de simulaciones con historial
-  const handleIniciarSimulacionConHistorial = (simulacionId) => {
-    // Simular inicio de simulación con resultado
-    const simulatedScore = Math.floor(Math.random() * 100) + 1;
-    const simulatedTime = Math.floor(Math.random() * 120) + 30; // 30-150 minutos
-    
-    const nuevoIntento = {
-      id: Date.now(),
-      fecha: new Date().toISOString(),
-      puntaje: simulatedScore,
-      tiempoEmpleado: simulatedTime,
-      estado: 'completado'
-    };
-
-    addIntentoToHistorial(simulacionId, nuevoIntento);
-    
-    // Actualizar simulación
-    setSimulaciones(prev => prev.map(sim => 
-      sim.id === simulacionId 
-        ? { 
-            ...sim, 
-            completado: true, 
-            score: simulatedScore,
-            bestScore: Math.max(sim.bestScore || 0, simulatedScore),
-            fechaCompletado: new Date().toISOString().split('T')[0],
-            estado: 'completado'
-          }
-        : sim
-    ));
-
-    // Efecto visual de confetti
-    setConfettiScore(simulatedScore);
-    setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 3000);
-
-    console.log('Simulación completada:', simulacionId, 'Puntaje:', simulatedScore);
-  };
-
-  const handleReintentarConHistorial = (simulacionId) => {
-    handleIniciarSimulacionConHistorial(simulacionId);
-  };
-
-  const handleVerHistorial = (simulacion) => {
-    setSelectedSimulacionHistorial(simulacion);
-    setShowHistorialModal(true);
-  };
+  // (Legacy mock attempt handlers removidos)
 
   const closeHistorialModal = () => {
     setShowHistorialModal(false);
@@ -413,38 +391,72 @@ export function Simulaciones_Alumno_comp() {
     setNotificationContent({ title: '', message: '', type: 'success' });
   };
 
-  // Simular algunos intentos previos para las simulaciones completadas
-  useEffect(() => {
-    simulacionesGenerales.concat(simulacionesEspecificas).forEach(sim => {
-      if (sim.completado && !simulacionesHistorial[sim.id]) {
-        const numIntentosPrevios = Math.floor(Math.random() * 3) + 1;
-        for (let i = 0; i < numIntentosPrevios; i++) {
-          const fechaIntento = new Date();
-          fechaIntento.setDate(fechaIntento.getDate() - (numIntentosPrevios - i) * 7);
-          
-          const intento = {
-            id: Date.now() + i,
-            fecha: fechaIntento.toISOString(),
-            puntaje: Math.floor(Math.random() * 30) + 70, // 70-100
-            tiempoEmpleado: Math.floor(Math.random() * 60) + 60, // 60-120 minutos
-            estado: 'completado'
-          };
-          
-          addIntentoToHistorial(sim.id, intento);
-        }
+  // Registrar respuesta local (solo una opción por pregunta por ahora)
+  const handleSelectOpcion = (id_pregunta, id_opcion) => {
+    setRespuestasSesion(prev => ({
+      ...prev,
+      [id_pregunta]: { id_opcion, tiempo_ms: 0 }
+    }));
+  };
+
+  // Enviar respuestas al backend (batch) y finalizar
+  const handleFinalizarSesion = async () => {
+    if(!activeSesion) return;
+    setSesionLoading(true); setSesionError('');
+    try {
+      // Preparar batch
+      const batch = Object.entries(respuestasSesion).map(([id_pregunta, r])=> ({ id_pregunta: Number(id_pregunta), id_opcion: r.id_opcion, tiempo_ms: r.tiempo_ms||0 }));
+      if(batch.length){
+        await enviarRespuestasSesion(activeSesion.id, batch);
       }
-    });
-  }, []);
-
-  // Función actualizada para iniciar simulación
-  const handleIniciarSimulacion = (simulacionId) => {
-    handleIniciarSimulacionConHistorial(simulacionId);
+      const fin = await finalizarSesionQuiz(activeSesion.id);
+      const resultado = fin.data?.data || {};
+      showNotification('Simulación finalizada', `Puntaje: ${resultado.puntaje ?? 'N/A'}`, 'success');
+      setShowSesionModal(false);
+      setActiveSesion(null);
+      await loadQuizzes(selectedTipo==='generales' ? {type:'generales'} : {type:'modulo', moduloId:selectedModulo?.id});
+    } catch(e){
+      console.error(e); setSesionError('Error al finalizar'); showNotification('Error','No se pudo finalizar la sesión','error');
+    } finally { setSesionLoading(false); }
   };
 
-  // Función actualizada para reintentar
-  const handleReintentar = (simulacionId) => {
-    handleReintentarConHistorial(simulacionId);
+  const handleCancelarSesion = () => {
+    setShowSesionModal(false);
+    setActiveSesion(null);
+    setPreguntasSesion([]);
+    setRespuestasSesion({});
   };
+
+  // Limpieza: se removieron simulacionesGenerales/especificas y lógica mock.
+  // Estados para sesión activa (toma de simulación real)
+  const [activeSesion, setActiveSesion] = useState(null); // { id, quizId }
+  const [preguntasSesion, setPreguntasSesion] = useState([]); // preguntas cargadas
+  const [respuestasSesion, setRespuestasSesion] = useState({}); // id_pregunta -> { id_opcion, tiempo_ms }
+  const [sesionLoading, setSesionLoading] = useState(false);
+  const [sesionError, setSesionError] = useState('');
+  const [showSesionModal, setShowSesionModal] = useState(false);
+
+  // Handler para iniciar sesión real (crea sesión y carga preguntas)
+  const handleIniciarSimulacion = async (simulacionId) => {
+    const sim = simulaciones.find(s=>s.id===simulacionId);
+    if(!sim || !estudianteId) return;
+    setSesionLoading(true); setSesionError('');
+    try {
+      const pregResp = await listPreguntasQuiz(sim.id);
+      const preguntas = pregResp.data?.data || [];
+      const sesionResp = await crearSesionQuiz(sim.id, { id_estudiante: estudianteId });
+      const sesionId = sesionResp.data?.data?.id;
+      setActiveSesion({ id: sesionId, quizId: sim.id, nombre: sim.nombre });
+      setPreguntasSesion(preguntas.sort((a,b)=> (a.orden||0)-(b.orden||0)));
+      setRespuestasSesion({});
+      setShowSesionModal(true);
+    } catch(e){
+      console.error(e); setSesionError('No se pudo iniciar la simulación');
+      showNotification('Error','No se pudo iniciar la simulación','error');
+    } finally { setSesionLoading(false); }
+  };
+
+  const handleReintentar = (simulacionId) => handleIniciarSimulacion(simulacionId);
 
   // Función para obtener el color de la dificultad
   const getDifficultyColor = (dificultad) => {
@@ -492,7 +504,7 @@ export function Simulaciones_Alumno_comp() {
           <div className="flex items-center justify-center relative z-10">
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-indigo-600 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-indigo-600 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 sm:mb-5 lg:mb-6 group-hover:scale-110 transition-transform shadow-lg">
                   <Zap className="w-6 h-6 text-white" />
                 </div>
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
@@ -513,25 +525,25 @@ export function Simulaciones_Alumno_comp() {
           </div>
         </div>
 
-        {/* Tarjetas de tipos de simulador */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        {/* Tarjetas de tipos de simulador (2 columnas en móviles, misma altura y CTA alineado) */}
+        <div className="grid grid-cols-2 auto-rows-fr gap-3 sm:gap-6 lg:gap-8 max-w-3xl mx-auto">
           {/* Simulador por áreas generales */}
           <div
             onClick={() => handleSelectTipo('generales')}
-            className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
+            className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group h-full"
           >
-            <div className="p-8 text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                <Target className="w-10 h-10 text-white" />
+            <div className="p-4 sm:p-5 lg:p-6 text-center min-h-[180px] h-full flex flex-col items-center">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4 sm:mb-5 lg:mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                <Target className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Simulador por</h3>
-              <h4 className="text-lg font-semibold text-purple-700 mb-4">áreas generales</h4>
-              <p className="text-gray-700 mb-6 leading-relaxed">
+              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-1 sm:mb-2">Simulador por</h3>
+              <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-purple-700 mb-2 sm:mb-3">áreas generales</h4>
+              <p className="text-gray-700 leading-snug text-xs sm:text-sm mb-3 sm:mb-4">
                 EXANI II, PAA y evaluaciones generales para ingreso universitario
               </p>
-              <div className="inline-flex items-center text-purple-600 font-medium text-sm">
+              <div className="mt-auto pt-2 sm:pt-3 inline-flex items-center text-purple-600 font-medium text-xs sm:text-sm">
                 <span>ACCEDER</span>
-                <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
+                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
           </div>
@@ -539,20 +551,20 @@ export function Simulaciones_Alumno_comp() {
           {/* Simulador por módulos específicos */}
           <div
             onClick={() => handleSelectTipo('especificos')}
-            className="bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
+            className="bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group h-full"
           >
-            <div className="p-8 text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                <Brain className="w-10 h-10 text-white" />
+            <div className="p-4 sm:p-5 lg:p-6 text-center min-h-[180px] h-full flex flex-col items-center">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 sm:mb-5 lg:mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                <Brain className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Simulador por</h3>
-              <h4 className="text-lg font-semibold text-indigo-700 mb-4">módulos específicos</h4>
-              <p className="text-gray-700 mb-6 leading-relaxed">
+              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-1 sm:mb-2">Simulador por</h3>
+              <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-indigo-700 mb-2 sm:mb-3">módulos específicos</h4>
+              <p className="text-gray-700 leading-snug text-xs sm:text-sm mb-3 sm:mb-4">
                 Simulaciones especializadas por área de conocimiento y carrera
               </p>
-              <div className="inline-flex items-center text-indigo-600 font-medium text-sm">
+              <div className="mt-auto pt-2 sm:pt-3 inline-flex items-center text-indigo-600 font-medium text-xs sm:text-sm">
                 <span>ACCEDER</span>
-                <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
+                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
           </div>
@@ -560,6 +572,53 @@ export function Simulaciones_Alumno_comp() {
       </div>
     </div>
   );
+
+  const renderSesionModal = () => {
+    if(!showSesionModal || !activeSesion) return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="bg-white w-full max-w-3xl rounded-xl shadow-xl flex flex-col max-h-[90vh]">
+          <div className="flex items-center justify-between px-6 py-4 border-b">
+            <h3 className="text-lg font-semibold">Simulación: {activeSesion.nombre}</h3>
+            <button onClick={handleCancelarSesion} className="text-gray-500 hover:text-gray-700">✕</button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+            {sesionError && <div className="text-red-600 text-sm">{sesionError}</div>}
+            {preguntasSesion.length === 0 && !sesionLoading && (
+              <div className="text-sm text-gray-500">No hay preguntas configuradas.</div>
+            )}
+            {preguntasSesion.map((p, idx)=>(
+              <div key={p.id} className="border rounded-lg p-4">
+                <div className="font-medium mb-2">{idx+1}. {p.enunciado}</div>
+                <div className="space-y-2">
+                  {p.opciones && p.opciones.map(op => {
+                    const selected = respuestasSesion[p.id]?.id_opcion === op.id;
+                    return (
+                      <button
+                        key={op.id}
+                        type="button"
+                        onClick={()=>handleSelectOpcion(p.id, op.id)}
+                        className={`w-full text-left px-3 py-2 rounded border transition-colors ${selected ? 'bg-indigo-600 text-white border-indigo-600' : 'hover:bg-indigo-50 border-gray-200'}`}
+                      >
+                        {op.texto}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="px-6 py-4 border-t flex items-center justify-between">
+            <div className="text-sm text-gray-500">Preguntas respondidas: {Object.keys(respuestasSesion).length}/{preguntasSesion.length}</div>
+            <div className="flex gap-3">
+              <button onClick={handleCancelarSesion} className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-50">Cancelar</button>
+              <button disabled={sesionLoading} onClick={handleFinalizarSesion} className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">{sesionLoading ? 'Guardando...' : 'Finalizar'}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // NIVEL 2: Módulos específicos (CON LÓGICA DE ACCESO Y ESTILO RESTAURADO)
   const renderModulos = () => {
@@ -805,33 +864,33 @@ export function Simulaciones_Alumno_comp() {
         <div className="hidden lg:block bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-cyan-500 to-indigo-600">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     No.
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Simulación
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
                     Fecha límite
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
                     Ejecutar
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
                     Entregado
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
                     Volver a intentar
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
                     Historial
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
                     Gráficas
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
                     Puntaje
                   </th>
                 </tr>
@@ -906,10 +965,12 @@ export function Simulaciones_Alumno_comp() {
                         {simulacion.completado && getTotalAttempts(simulacion.id) > 0 ? (
                           <button
                             onClick={() => handleVerHistorial(simulacion)}
-                            className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-full transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-blue-100/80 hover:bg-blue-200 rounded-full transition-colors"
+                            title="Historial"
                           >
-                            <FileText className="w-3 h-3 mr-1" />
-                            Ver historial ({getTotalAttempts(simulacion.id)})
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>Historial</span>
+                            <span className="ml-1 inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-white text-blue-700 text-[10px] font-bold">{getTotalAttempts(simulacion.id)}</span>
                           </button>
                         ) : (
                           <span className="text-gray-400 text-sm">-</span>
@@ -1086,27 +1147,33 @@ export function Simulaciones_Alumno_comp() {
     </div>
   );
 
-  // Modal para mostrar el historial de intentos - CORREGIDO
+  // Modal para mostrar el historial de intentos - Compacto
   const renderHistorialModal = () => {
     if (!showHistorialModal || !selectedSimulacionHistorial) return null;
 
     const historial = getSimulacionHistorial(selectedSimulacionHistorial.id);
 
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-4 pt-8 pb-8 overflow-y-auto">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl min-h-fit max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col my-auto">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-3 md:p-4">
+        <div
+          className="bg-white rounded-lg shadow-xl w-full max-w-[min(92vw,48rem)] h-[82vh] sm:h-[76vh] md:h-[72vh] lg:h-[70vh] overflow-hidden flex flex-col"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="historial-title"
+        >
           {/* Header del modal */}
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 flex-shrink-0">
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <h2 className="text-xl font-bold truncate">Historial de Intentos</h2>
-                <p className="text-indigo-100 mt-1 text-base truncate">{selectedSimulacionHistorial.nombre}</p>
+                <h2 id="historial-title" className="text-lg font-bold truncate">Historial de Intentos</h2>
+                <p className="text-indigo-100 mt-0.5 text-sm truncate">{selectedSimulacionHistorial.nombre}</p>
               </div>
               <button
                 onClick={closeHistorialModal}
-                className="text-white hover:text-gray-200 transition-colors ml-4 flex-shrink-0 p-2 hover:bg-white/10 rounded-lg"
+                className="text-white hover:text-gray-200 transition-colors ml-3 flex-shrink-0 p-1.5 hover:bg-white/10 rounded-md"
+                aria-label="Cerrar"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -1114,26 +1181,26 @@ export function Simulaciones_Alumno_comp() {
           </div>
 
           {/* Contenido del modal - Scrollable */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-4">
             {/* Resumen estadístico */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
-                <div className="text-blue-600 text-sm font-medium">Total de Intentos</div>
-                <div className="text-2xl font-bold text-blue-800">{historial.totalIntentos}</div>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <div className="text-blue-600 text-xs font-medium">Total de Intentos</div>
+                <div className="text-xl font-bold text-blue-800">{historial.totalIntentos}</div>
               </div>
-              <div className="bg-green-50 p-4 rounded-xl border border-green-200">
-                <div className="text-green-600 text-sm font-medium">Mejor Puntaje</div>
-                <div className="text-2xl font-bold text-green-800">{historial.mejorPuntaje}%</div>
+              <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                <div className="text-green-600 text-xs font-medium">Mejor Puntaje</div>
+                <div className="text-xl font-bold text-green-800">{historial.mejorPuntaje}%</div>
               </div>
-              <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
-                <div className="text-purple-600 text-sm font-medium">Promedio de Tiempo</div>
-                <div className="text-2xl font-bold text-purple-800">
+              <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                <div className="text-purple-600 text-xs font-medium">Promedio de Tiempo</div>
+                <div className="text-xl font-bold text-purple-800">
                   {Math.round(historial.promedioTiempo || 0)} min
                 </div>
               </div>
-              <div className="bg-orange-50 p-4 rounded-xl border border-orange-200">
-                <div className="text-orange-600 text-sm font-medium">Último Intento</div>
-                <div className="text-sm font-bold text-orange-800">
+              <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                <div className="text-orange-600 text-xs font-medium">Último Intento</div>
+                <div className="text-xs font-bold text-orange-800">
                   {historial.intentos.length > 0 
                     ? new Date(historial.intentos[historial.intentos.length - 1].fecha).toLocaleDateString('es-ES')
                     : 'N/A'
@@ -1143,28 +1210,28 @@ export function Simulaciones_Alumno_comp() {
             </div>
 
             {/* Lista de intentos */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-gray-900 mb-3">
                 Historial Detallado ({historial.intentos.length} intentos)
               </h3>
               
               {historial.intentos.length > 0 ? (
-                <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-xl border border-gray-200 p-4">
-                  <div className="space-y-3">
+                <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
+                  <div className="space-y-2.5">
                     {[...historial.intentos].reverse().map((intento, index) => (
                       <div
                         key={intento.id}
-                        className="bg-white p-4 rounded-lg border border-gray-200 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow"
+                        className="bg-white p-3 rounded-md border border-gray-200 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow"
                       >
-                        <div className="flex items-center space-x-4 min-w-0 flex-1">
-                          <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-semibold text-sm flex-shrink-0">
+                        <div className="flex items-center space-x-3 min-w-0 flex-1">
+                          <div className="w-7 h-7 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-semibold text-[11px] flex-shrink-0">
                             {historial.intentos.length - index}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="font-medium text-gray-900 text-base">
+                            <div className="font-medium text-gray-900 text-sm">
                               Intento {historial.intentos.length - index}
                             </div>
-                            <div className="text-sm text-gray-500 truncate">
+                            <div className="text-xs text-gray-500 truncate">
                               {new Date(intento.fecha).toLocaleDateString('es-ES')} a las{' '}
                               {new Date(intento.fecha).toLocaleTimeString('es-ES', { 
                                 hour: '2-digit', 
@@ -1173,9 +1240,9 @@ export function Simulaciones_Alumno_comp() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-4 flex-shrink-0">
+                        <div className="flex items-center space-x-3 flex-shrink-0">
                           <div className="text-right">
-                            <div className={`font-bold text-lg ${
+                            <div className={`font-bold text-base ${
                               intento.puntaje === historial.mejorPuntaje 
                                 ? 'text-green-600' 
                                 : 'text-gray-700'
@@ -1185,11 +1252,11 @@ export function Simulaciones_Alumno_comp() {
                                 <span className="ml-1 text-yellow-500">👑</span>
                               )}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-xs text-gray-500">
                               {intento.tiempoEmpleado} min
                             </div>
                           </div>
-                          <div className={`w-2 h-8 rounded-full ${
+                          <div className={`w-1.5 h-7 rounded-full ${
                             intento.puntaje >= 90 ? 'bg-green-500' :
                             intento.puntaje >= 70 ? 'bg-yellow-500' :
                             intento.puntaje >= 50 ? 'bg-orange-500' : 'bg-red-500'
@@ -1200,19 +1267,19 @@ export function Simulaciones_Alumno_comp() {
                   </div>
                 </div>
               ) : (
-                <div className="text-center text-gray-500 py-8">
-                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-base">No hay intentos registrados para esta simulación.</p>
+                <div className="text-center text-gray-500 py-6">
+                  <FileText className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                  <p className="text-sm">No hay intentos registrados para esta simulación.</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Footer del modal */}
-          <div className="bg-gray-50 px-6 py-4 flex justify-end flex-shrink-0 border-t border-gray-200">
+          <div className="bg-gray-50 px-4 py-3 flex justify-end flex-shrink-0 border-t border-gray-200">
             <button
               onClick={closeHistorialModal}
-              className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+              className="px-4 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm font-medium transition-colors"
             >
               Cerrar
             </button>

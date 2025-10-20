@@ -39,5 +39,10 @@ export default defineConfig({
         secure: false,
       }
     }
+  },
+  preview: {
+    host: true, // permite acceder vía LAN al modo preview (build)
+    port: 4173,
+    strictPort: true
   }
 })

@@ -35,13 +35,32 @@ export const replaceEntrega = async (prevEntregaId, { id_actividad, id_estudiant
 };
 
 export const calificarEntrega = async (id, calificacion, comentarios) => {
-  const [res] = await db.query('UPDATE actividades_entregas SET calificacion = ?, comentarios = ?, estado = "revisada" WHERE id = ?', [calificacion, comentarios || null, id]);
+  // Actualiza calificación y comentarios; marca revisada y registra timestamps
+  const [res] = await db.query(
+    `UPDATE actividades_entregas
+     SET calificacion = ?,
+         comentarios = ?,
+         estado = 'revisada',
+         revisada_at = NOW(),
+         comentarios_updated_at = CASE WHEN ? IS NOT NULL AND ? <> '' THEN NOW() ELSE comentarios_updated_at END
+     WHERE id = ?`,
+    [calificacion, comentarios || null, comentarios || null, comentarios || '', id]
+  );
   return res;
 };
 
 // Revertir estado "revisada" para permitir nuevas modificaciones antes de la fecha límite
 export const resetRevision = async (id) => {
-  const [res] = await db.query('UPDATE actividades_entregas SET estado = "entregada", calificacion = NULL, comentarios = NULL WHERE id = ?', [id]);
+  const [res] = await db.query(
+    `UPDATE actividades_entregas
+     SET estado = 'entregada',
+         calificacion = NULL,
+         comentarios = NULL,
+         revisada_at = NULL,
+         comentarios_updated_at = NULL
+     WHERE id = ?`,
+    [id]
+  );
   return res;
 };
 
@@ -64,7 +83,16 @@ export const listHistorialEntregasActividadEstudiante = async (id_actividad, id_
 export const getResumenActividadesEstudiante = async (id_estudiante) => {
   // Prioriza entrega calificada más reciente; si ninguna calificada aún, usa la última (MAX id)
   const [rows] = await db.query(`
-    SELECT a.*, e.id AS entrega_id, e.estado AS entrega_estado, e.calificacion, e.version, e.entregada_at, e.archivo
+    SELECT a.*,
+           e.id AS entrega_id,
+           e.estado AS entrega_estado,
+           e.calificacion,
+           e.comentarios AS entrega_comentarios,
+           e.comentarios_updated_at AS entrega_notas_updated_at,
+           e.revisada_at,
+           e.version,
+           e.entregada_at,
+           e.archivo
     FROM actividades a
     LEFT JOIN (
       SELECT t.*

@@ -19,6 +19,19 @@ export const getApiOrigin = () => {
   }
 };
 
+// Returns base API URL including /api
+export const getApiBase = () => {
+  const origin = getApiOrigin();
+  return `${origin}/api`;
+};
+
+// Helper to build full endpoint paths safely
+export const buildApiUrl = (path='') => {
+  const base = getApiBase();
+  if(!path) return base;
+  return `${base}${path.startsWith('/') ? path : '/' + path}`;
+};
+
 export const buildStaticUrl = (p) => {
   if (!p) return null;
   let s = String(p).trim();

@@ -8,7 +8,7 @@ async function ensureTable() {
 		categoria VARCHAR(120) NOT NULL,
 		descripcion VARCHAR(255) NULL,
 		proveedor VARCHAR(120) NULL,
-		frecuencia ENUM('Diario','Semanal','Quincenal','Mensual','Semestral','Anual') NOT NULL DEFAULT 'Mensual',
+		frecuencia ENUM('Diario','Semanal','Quincenal','Mensual','Bimestral','Semestral','Anual') NOT NULL DEFAULT 'Mensual',
 		metodo ENUM('Efectivo','Transferencia','Tarjeta') NOT NULL DEFAULT 'Efectivo',
 		monto_sugerido DECIMAL(12,2) NOT NULL DEFAULT 0,
 		dia_pago TINYINT NULL,
@@ -16,6 +16,8 @@ async function ensureTable() {
 		recordar_minutos INT NOT NULL DEFAULT 30,
 		auto_evento TINYINT(1) NOT NULL DEFAULT 1,
 		auto_instanciar TINYINT(1) NOT NULL DEFAULT 1,
+		fecha_inicio DATE NULL,
+		cadencia_anchor DATE NULL,
 		activo TINYINT(1) NOT NULL DEFAULT 1,
 		last_used_at DATETIME NULL,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -33,7 +35,10 @@ async function ensureTable() {
 				alters.push("ADD COLUMN metodo ENUM('Efectivo','Transferencia','Tarjeta') NOT NULL DEFAULT 'Efectivo'");
 			}
 			if (!have.has('frecuencia')) {
-				alters.push("ADD COLUMN frecuencia ENUM('Diario','Semanal','Quincenal','Mensual','Semestral','Anual') NOT NULL DEFAULT 'Mensual'");
+				alters.push("ADD COLUMN frecuencia ENUM('Diario','Semanal','Quincenal','Mensual','Bimestral','Semestral','Anual') NOT NULL DEFAULT 'Mensual'");
+			} else {
+				// Ensure enum includes Bimestral; rebuild column if needed
+				try { await db.query("ALTER TABLE gastos_fijos_plantillas MODIFY COLUMN frecuencia ENUM('Diario','Semanal','Quincenal','Mensual','Bimestral','Semestral','Anual') NOT NULL DEFAULT 'Mensual'"); } catch (e) {}
 			}
 			if (!have.has('monto_sugerido')) {
 				alters.push("ADD COLUMN monto_sugerido DECIMAL(12,2) NOT NULL DEFAULT 0");
@@ -52,6 +57,12 @@ async function ensureTable() {
 			}
 			if (!have.has('auto_instanciar')) {
 				alters.push("ADD COLUMN auto_instanciar TINYINT(1) NOT NULL DEFAULT 1");
+			}
+			if (!have.has('fecha_inicio')) {
+				alters.push("ADD COLUMN fecha_inicio DATE NULL");
+			}
+			if (!have.has('cadencia_anchor')) {
+				alters.push("ADD COLUMN cadencia_anchor DATE NULL");
 			}
 			if (!have.has('activo')) {
 				alters.push("ADD COLUMN activo TINYINT(1) NOT NULL DEFAULT 1");
@@ -80,10 +91,10 @@ export async function list({ activo } = {}) {
 
 export async function create(data = {}) {
 	await ensureTable();
-	const { categoria, descripcion=null, proveedor=null, frecuencia='Mensual', metodo='Efectivo', monto_sugerido=0, dia_pago=null, hora_preferida=null, recordar_minutos=30, auto_evento=1, auto_instanciar=1, activo=1 } = data;
-	const sql = `INSERT INTO gastos_fijos_plantillas (categoria, descripcion, proveedor, frecuencia, metodo, monto_sugerido, dia_pago, hora_preferida, recordar_minutos, auto_evento, auto_instanciar, activo)
-						 VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`;
-	const params = [categoria, descripcion, proveedor, frecuencia, metodo, Number(monto_sugerido||0), dia_pago ?? null, hora_preferida || null, Number.isInteger(recordar_minutos)?recordar_minutos:30, auto_evento?1:0, auto_instanciar?1:0, activo?1:0];
+	const { categoria, descripcion=null, proveedor=null, frecuencia='Mensual', metodo='Efectivo', monto_sugerido=0, dia_pago=null, hora_preferida=null, recordar_minutos=30, auto_evento=1, auto_instanciar=1, fecha_inicio=null, cadencia_anchor=null, activo=1 } = data;
+	const sql = `INSERT INTO gastos_fijos_plantillas (categoria, descripcion, proveedor, frecuencia, metodo, monto_sugerido, dia_pago, hora_preferida, recordar_minutos, auto_evento, auto_instanciar, fecha_inicio, cadencia_anchor, activo)
+						 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+	const params = [categoria, descripcion, proveedor, frecuencia, metodo, Number(monto_sugerido||0), dia_pago ?? null, hora_preferida || null, Number.isInteger(recordar_minutos)?recordar_minutos:30, auto_evento?1:0, auto_instanciar?1:0, fecha_inicio || null, cadencia_anchor || null, activo?1:0];
 	const [res] = await db.query(sql, params);
 	const [rows] = await db.query('SELECT * FROM gastos_fijos_plantillas WHERE id=? LIMIT 1', [res.insertId]);
 	return rows[0];
@@ -97,7 +108,7 @@ export async function getById(id) {
 
 export async function update(id, updates = {}) {
 	await ensureTable();
-	const allowed = ['categoria','descripcion','proveedor','frecuencia','metodo','monto_sugerido','dia_pago','hora_preferida','recordar_minutos','auto_evento','auto_instanciar','activo','last_used_at'];
+	const allowed = ['categoria','descripcion','proveedor','frecuencia','metodo','monto_sugerido','dia_pago','hora_preferida','recordar_minutos','auto_evento','auto_instanciar','fecha_inicio','cadencia_anchor','activo','last_used_at'];
 	const fields = [];
 	const values = [];
 	for (const k of allowed) {
@@ -123,19 +134,37 @@ export async function instantiateToGastoFijo(plantillaId, { fecha, hora=null, es
 	const tpl = rows[0];
 	if (!tpl) return null;
 
-	// Si no viene fecha, y la plantilla trae dia_pago, calcular la próxima fecha sugerida segun la frecuencia (simple: mensual)
+	// Si no viene fecha y la plantilla tiene dia_pago, calcular próxima fecha según frecuencia
 	if (!fecha && tpl.dia_pago) {
-		const today = new Date();
-		const year = today.getFullYear();
-		const month = today.getMonth(); // 0-11
-		const targetDay = Math.min(Number(tpl.dia_pago), daysInMonth(year, month));
-		let suggested = new Date(year, month, targetDay);
-		if (suggested < new Date(year, month, today.getDate())) {
-			// pasar al siguiente mes
-			const nextMonthDate = addMonthsClamped(year, month, 1, Number(tpl.dia_pago));
-			suggested = nextMonthDate;
+		const todayBase = new Date();
+		// Respetar fecha_inicio: si existe y es posterior a hoy, empezar a calcular desde esa fecha
+		const startDate = tpl.fecha_inicio ? new Date(tpl.fecha_inicio) : null;
+		const today = startDate && startDate > todayBase ? startDate : todayBase;
+		const anchor = tpl.cadencia_anchor ? new Date(tpl.cadencia_anchor) : (tpl.created_at ? new Date(tpl.created_at) : new Date(today.getFullYear(), today.getMonth(), 1));
+		const desiredDay = Number(tpl.dia_pago);
+		const freq = String(tpl.frecuencia || 'Mensual');
+		let candidate = new Date(today.getFullYear(), today.getMonth(), Math.min(desiredDay, daysInMonth(today.getFullYear(), today.getMonth())));
+		if (candidate < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+			candidate = addMonthsClamped(today.getFullYear(), today.getMonth(), 1, desiredDay);
 		}
-		fecha = suggested.toISOString().slice(0,10);
+		const stepBy = (f) => (f==='Bimestral'?2: f==='Semestral'?6: f==='Anual'?12: 1);
+		const step = stepBy(freq);
+		// Ajustar al siguiente mes que respete la cadencia desde el anchor
+		let tries = 0;
+		while (tries < 24) { // máximo 2 años de búsqueda preventivamente
+			const monthsDiff = (candidate.getFullYear() - anchor.getFullYear())*12 + (candidate.getMonth() - anchor.getMonth());
+			if (monthsDiff % step === 0) break;
+			candidate = addMonthsClamped(candidate.getFullYear(), candidate.getMonth(), 1, desiredDay);
+			tries++;
+		}
+		fecha = candidate.toISOString().slice(0,10);
+	}
+
+	// Si aún no hay fecha (plantilla sin dia_pago y no vino en request), usar hoy
+	if (!fecha) {
+		const d = new Date();
+		const iso = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
+		fecha = iso.slice(0,10);
 	}
 
 	// Si no hay hora, usar la hora_preferida de la plantilla
@@ -152,6 +181,7 @@ export async function instantiateToGastoFijo(plantillaId, { fecha, hora=null, es
 		metodo: tpl.metodo,
 		importe: Number(tpl.monto_sugerido||0),
 		estatus,
+		plantilla_id: tpl.id,
 	};
 	await db.query('UPDATE gastos_fijos_plantillas SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?', [plantillaId]);
 	return payload;

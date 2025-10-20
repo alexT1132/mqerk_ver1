@@ -33,13 +33,13 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-8">
             <ul className="flex items-center gap-8">
               <li>
-                <a href="#inicio" className="nav-link">Inicio</a>
+                <a href="/" className="nav-link">Inicio</a>
               </li>
               <li>
-                <a href="#acerca" className="nav-link">Acerca de</a>
+                <a href="/acerca_de" className="nav-link">Acerca de</a>
               </li>
               <li>
-                <a href="#cursos" className="nav-link">Cursos</a>
+                <a href="/" className="nav-link">Cursos</a>
               </li>
               <li className="relative">
                 <button
@@ -62,20 +62,22 @@ export default function Navbar() {
                     onMouseLeave={() => setEventsOpen(false)}
                   >
                     <ul className="py-2 text-sm">
-                      <DropdownItem href="#eventos/calendario" label="Calendario" />
-                      <DropdownItem href="#eventos/proximos" label="Próximos eventos" />
-                      <DropdownItem href="#eventos/pasados" label="Eventos pasados" />
+                      <DropdownItem href="/talleres" label="Talleres" />
+                      <DropdownItem href="/bootcamps" label="Bootcamps" />
+                      <DropdownItem href="/exporientas" label="Exporientas" />
+                      <DropdownItem href="/online" label="Online" />
+                      <DropdownItem href="https://open.spotify.com/user/mvn8ly2def6rlqnbgrck8p85h?si=rBP1ehWvQRqjLVivpqN4jA" label="Podcast" />
                     </ul>
                   </div>
                 )}
               </li>
               <li>
-                <a href="#blog" className="nav-link">Blog</a>
+                <a href="/blog" className="nav-link">Blog</a>
               </li>
             </ul>
 
             <Link
-              to='/login'
+              // to='/login'
               className="inline-flex items-center gap-2 rounded-2xl border border-white/70 px-4 py-2 text-sm font-semibold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             >
               <UserIcon />

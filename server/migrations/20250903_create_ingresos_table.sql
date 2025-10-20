@@ -23,10 +23,42 @@ ALTER TABLE ingresos
   ADD INDEX idx_ingresos_estatus (estatus);
 
 -- Llaves foráneas
-ALTER TABLE ingresos
-  ADD CONSTRAINT fk_ingresos_estudiante FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE SET NULL,
-  ADD CONSTRAINT fk_ingresos_asesor FOREIGN KEY (asesor_preregistro_id) REFERENCES asesor_preregistros(id) ON DELETE SET NULL,
-  ADD CONSTRAINT fk_ingresos_comprobante FOREIGN KEY (comprobante_id) REFERENCES comprobantes(id) ON DELETE SET NULL;
+-- Agregar FKs solo si no existen
+SET @fk_est := (
+  SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE() AND CONSTRAINT_NAME = 'fk_ingresos_estudiante'
+);
+SET @sql_fk_est := IF(@fk_est = 0,
+  'ALTER TABLE ingresos ADD CONSTRAINT fk_ingresos_estudiante FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE SET NULL',
+  'SELECT 1'
+);
+PREPARE fk1 FROM @sql_fk_est;
+EXECUTE fk1;
+DEALLOCATE PREPARE fk1;
+
+SET @fk_as := (
+  SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE() AND CONSTRAINT_NAME = 'fk_ingresos_asesor'
+);
+SET @sql_fk_as := IF(@fk_as = 0,
+  'ALTER TABLE ingresos ADD CONSTRAINT fk_ingresos_asesor FOREIGN KEY (asesor_preregistro_id) REFERENCES asesor_preregistros(id) ON DELETE SET NULL',
+  'SELECT 1'
+);
+PREPARE fk2 FROM @sql_fk_as;
+EXECUTE fk2;
+DEALLOCATE PREPARE fk2;
+
+SET @fk_comp := (
+  SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE() AND CONSTRAINT_NAME = 'fk_ingresos_comprobante'
+);
+SET @sql_fk_comp := IF(@fk_comp = 0,
+  'ALTER TABLE ingresos ADD CONSTRAINT fk_ingresos_comprobante FOREIGN KEY (comprobante_id) REFERENCES comprobantes(id) ON DELETE SET NULL',
+  'SELECT 1'
+);
+PREPARE fk3 FROM @sql_fk_comp;
+EXECUTE fk3;
+DEALLOCATE PREPARE fk3;
 
 -- Backfill básico desde comprobantes (solo si ingresos está vacío)
 INSERT INTO ingresos (estudiante_id, asesor_nombre, curso, fecha, metodo, importe, estatus, comprobante_id)

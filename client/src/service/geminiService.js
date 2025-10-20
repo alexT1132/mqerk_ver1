@@ -6,13 +6,111 @@
  * Nota: En Vite, las variables de entorno se acceden con import.meta.env
  */
 const GEMINI_CONFIG = {
-  // Usar la API key desde variables de entorno o fallback
-  apiKey: import.meta.env?.VITE_GEMINI_API_KEY || 'AIzaSyDA_7eLeeR_BuE2iqRZSauYKYCdJzMoC4A',
-  baseUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+  // En el cliente ya no usamos la API key directamente: llamamos al proxy backend
+  apiKey: import.meta.env?.VITE_GEMINI_API_KEY || '',
+  proxyEndpoint: '/api/ai/gemini/generate',
   model: 'gemini-2.0-flash',
   temperature: 0.7,
-  maxTokens: 1500, // Aumentado para análisis más detallados
-  timeout: 30000 // 30 segundos timeout
+  maxTokens: 1500, // permitir respuestas más ricas
+  timeout: 30000
+};
+
+// ===================== utilidades internas =====================
+const ESPERA = (ms) => new Promise(res => setTimeout(res, ms));
+
+const CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6 horas
+const buildCacheKey = (datos) => `gemini_analisis_${(datos.simulacion || 'simulacion').replace(/\s+/g,'_')}_${datos.tipo || 'general'}`;
+// Rate limiter simple por ventana (evita golpear la API)
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 min
+const RATE_LIMIT_MAX_CALLS = 3; // máx 3 llamadas/min por pestaña
+let callTimestamps = [];
+
+const asegurarRateLimit = async () => {
+  const ahora = Date.now();
+  callTimestamps = callTimestamps.filter(ts => ahora - ts < RATE_LIMIT_WINDOW_MS);
+  if (callTimestamps.length >= RATE_LIMIT_MAX_CALLS) {
+    const espera = RATE_LIMIT_WINDOW_MS - (ahora - callTimestamps[0]) + Math.random()*300;
+    console.warn(`⏳ Rate limit local: esperando ${Math.round(espera)}ms para no saturar la API`);
+    await ESPERA(espera);
+  }
+  callTimestamps.push(Date.now());
+};
+
+async function fetchConReintentos(url, options, { maxRetries = 4, baseDelay = 1000, maxDelay = 10_000 } = {}) {
+  let intento = 0;
+  // Intentos: 0..maxRetries (inclusive de primer intento)
+  while (true) {
+    try {
+      const resp = await fetch(url, options);
+      if (resp.status !== 429 || intento >= maxRetries) return resp;
+      intento++;
+      // Respetar Retry-After si está disponible
+      const retryAfterHeader = resp.headers?.get?.('retry-after');
+      let delay = baseDelay * Math.pow(2, Math.max(0, intento - 1)) + Math.random() * 400;
+      if (retryAfterHeader) {
+        const retryAfterSec = Number(retryAfterHeader);
+        if (!Number.isNaN(retryAfterSec)) {
+          delay = Math.max(delay, retryAfterSec * 1000);
+        }
+      }
+      delay = Math.min(delay, maxDelay);
+      console.warn(`⚠️ 429 recibido. Reintentando (${intento}/${maxRetries}) en ${Math.round(delay)}ms`);
+      await ESPERA(delay);
+    } catch (e) {
+      if (intento >= maxRetries) throw e;
+      const delay = Math.min(baseDelay * Math.pow(2, Math.max(0, intento)), maxDelay);
+      console.warn(`🔌 Error de red. Reintentando (${intento + 1}/${maxRetries}) en ${Math.round(delay)}ms`, e?.message || e);
+      intento++;
+      await ESPERA(delay);
+    }
+  }
+}
+
+const guardarEnCache = (key, payload) => {
+  try {
+    const envoltura = { ts: Date.now(), payload };
+    localStorage.setItem(key, JSON.stringify(envoltura));
+  } catch(e) { /* ignore */ }
+};
+
+const leerCacheValido = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const envoltura = JSON.parse(raw);
+    if (Date.now() - envoltura.ts > CACHE_TTL_MS) return null;
+    return envoltura.payload;
+  } catch(e) { return null; }
+};
+
+const crearAnalisisHeuristico = (datos) => {
+  const fortalezas = (datos.materias || [])
+    .filter(m => m.promedio >= 80)
+    .map(m => ({ materia: m.nombre, comentario: 'Buen dominio, mantener práctica estratégica.' }));
+  const debilidades = (datos.materias || [])
+    .filter(m => m.promedio < 70)
+    .map(m => ({
+      materia: m.nombre,
+      comentario: 'Prioridad de refuerzo: revisar fundamentos y practicar ejercicios graduales.',
+      accionesEspecificas: [
+        'Revisar conceptos base',
+        'Resolver 10 ejercicios diarios',
+        'Autoevaluación semanal'
+      ]
+    }));
+  return {
+    resumen: `Análisis heurístico local generado sin IA. Promedio general: ${datos.promedio?.toFixed ? datos.promedio.toFixed(1) : datos.promedio || 0}%.`,
+    fortalezas,
+    debilidades,
+    planEstudio: { prioridad: debilidades.slice(0,3).map(d => ({ materia: d.materia, tiempo: '30-40 min diarios', enfoque: 'Fundamentos y práctica guiada' })) },
+    esFallbackLocal: true,
+    timestamp: new Date().toISOString(),
+    nota: 'Mostrando análisis heurístico por límite de cuota (429) o error en IA.'
+  };
+};
+
+export const limpiarCacheAnalisisGemini = (datos) => {
+  try { localStorage.removeItem(buildCacheKey(datos)); } catch(e) { /* ignore */ }
 };
 
 /**
@@ -24,15 +122,22 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
   try {
     console.log('🚀 Iniciando análisis con Gemini API');
     console.log('📊 Datos recibidos:', datosAnalisis);
+    // Intentar cache primero
+    const cacheKey = buildCacheKey(datosAnalisis || {});
+    const cache = leerCacheValido(cacheKey);
+    if (cache) {
+      console.warn('📦 Usando análisis desde cache');
+      return { ...cache, desdeCache: true };
+    }
     
     // Validar datos de entrada
     if (!datosAnalisis || !datosAnalisis.simulacion) {
       throw new Error('Datos de análisis inválidos - falta simulación');
     }
 
-    // Validar que la API key esté disponible
-    if (!GEMINI_CONFIG.apiKey || GEMINI_CONFIG.apiKey === 'TU_API_KEY_AQUI') {
-      throw new Error('API Key de Gemini no configurada correctamente');
+    // Validar que el proxy esté configurado
+    if (!GEMINI_CONFIG.proxyEndpoint) {
+      throw new Error('Endpoint de proxy Gemini no configurado');
     }
 
     // Crear prompt estructurado para Gemini
@@ -52,6 +157,7 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
       generationConfig: {
         temperature: GEMINI_CONFIG.temperature,
         maxOutputTokens: GEMINI_CONFIG.maxTokens,
+        response_mime_type: 'application/json'
       },
       safetySettings: [
         {
@@ -73,18 +179,17 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
       ]
     };
 
-    console.log('🌐 Realizando petición a Gemini API...');
-    console.log('🔗 URL completa:', GEMINI_CONFIG.baseUrl + '?key=' + GEMINI_CONFIG.apiKey);
+  console.log('🌐 Realizando petición a Gemini (proxy backend)...');
     
     // Llamada a la API de Gemini
-    const response = await fetch(GEMINI_CONFIG.baseUrl + '?key=' + GEMINI_CONFIG.apiKey, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-      signal: controller.signal
-    });
+    // Respetar rate limit local antes de llamar
+    await asegurarRateLimit();
+  const response = await fetchConReintentos(GEMINI_CONFIG.proxyEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model }),
+        signal: controller.signal
+      }, { maxRetries: 4, baseDelay: 1000, maxDelay: 12000 });
 
     clearTimeout(timeoutId);
 
@@ -93,23 +198,33 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('❌ Error en la respuesta de Gemini:', errorData);
-      
-      // Proporcionar mensajes de error más específicos
-      if (response.status === 404) {
-        throw new Error(`Modelo no encontrado. Verifica que el modelo '${GEMINI_CONFIG.model}' esté disponible. Error: ${errorData.error?.message || 'Modelo no disponible'}`);
-      } else if (response.status === 403) {
-        throw new Error('Acceso denegado. Verifica que la API key tenga los permisos necesarios.');
-      } else if (response.status === 401) {
-        throw new Error('API Key inválida. Verifica la configuración.');
-      } else if (response.status === 429) {
-        throw new Error('Límite de peticiones excedido. Intenta en unos minutos.');
+
+      if (response.status === 429) {
+        // Intentar cache
+        const cacheKey = buildCacheKey(datosAnalisis);
+        const cache = leerCacheValido(cacheKey);
+        if (cache) {
+          console.warn('📦 Usando análisis en cache por 429');
+          return { ...cache, desdeCache: true, aviso: 'Mostrando resultado previo (cache) por límite de cuota 429.' };
+        }
+        const heuristico = crearAnalisisHeuristico(datosAnalisis);
+        try { guardarEnCache(cacheKey, heuristico); } catch(e) { /* ignore */ }
+        return heuristico;
       }
-      
-      throw new Error(`Error en la API de Gemini: ${response.status} - ${errorData.error?.message || 'Error desconocido'}`);
+      if (response.status === 404) {
+        throw new Error(`Modelo no encontrado. Verifica que el modelo '${GEMINI_CONFIG.model}' esté disponible. Error: ${errorData.error?.message || errorData.error || 'Modelo no disponible'}`);
+      }
+      if (response.status === 403) {
+        throw new Error('Acceso denegado. Verifica que la API key tenga los permisos necesarios.');
+      }
+      if (response.status === 401) {
+        throw new Error('API Key inválida. Verifica la configuración.');
+      }
+      throw new Error(`Error en la API de Gemini: ${response.status} - ${errorData.error?.message || errorData.error || 'Error desconocido'}`);
     }
 
     const data = await response.json();
-    console.log('📄 Datos de respuesta:', data);
+  console.log('📄 Datos de respuesta:', data);
     
     // Verificar que la respuesta tenga el formato esperado
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
@@ -118,13 +233,41 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
     }
     
     // Procesar respuesta de Gemini
-    const analisisTexto = data.candidates[0].content.parts[0].text;
+  const analisisTexto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     console.log('📝 Texto de análisis recibido:', analisisTexto.substring(0, 200) + '...');
     
-    const resultado = procesarRespuestaGemini(analisisTexto);
-    console.log('✅ Análisis procesado exitosamente:', resultado);
-    
-    return resultado;
+    let resultado = procesarRespuestaGemini(analisisTexto);
+    console.log('✅ Análisis procesado exitosamente (original):', resultado);
+
+    // Transformar a formato simplificado esperado por el componente
+    const simplificado = {
+      resumen: resultado.analisisGeneral?.resumen || 'Análisis generado',
+      fortalezas: (resultado.fortalezasDetalladas || []).map(f => ({
+        materia: f.materia,
+        comentario: f.comentario || f.nivel || 'Rendimiento sólido'
+      })),
+      debilidades: (resultado.areasDeDesarrollo || []).map(a => ({
+        materia: a.materia,
+        comentario: a.diagnostico || 'Área de mejora',
+        accionesEspecificas: a.estrategiasPrincipales || []
+      })),
+      planEstudio: {
+        prioridad: (resultado.planEstudioPersonalizado?.faseInicial?.actividades || []).map(act => ({
+          materia: act.materia || act.actividad || 'General',
+            tiempo: act.tiempo || '30 min',
+            enfoque: act.actividad || 'Práctica guiada'
+        }))
+      },
+      metadata: resultado.metadata || {},
+      puntuacionConfianza: resultado.puntuacionConfianza || 80,
+      recomendaciones: resultado.recomendacionesPersonalizadas || [],
+      timestamp: new Date().toISOString()
+    };
+
+    // Guardar en cache
+  guardarEnCache(cacheKey, simplificado);
+
+    return simplificado;
     
   } catch (error) {
     console.error('❌ Error completo en generarAnalisisConGemini:', error);
@@ -139,7 +282,8 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
     }
     
     if (error.message.includes('429')) {
-      throw new Error('Límite de peticiones excedido. Intenta en unos minutos.');
+      // Fallback heurístico final si algo falló antes de generar
+      return crearAnalisisHeuristico(datosAnalisis);
     }
     
     if (error.message.includes('403')) {
@@ -175,6 +319,7 @@ export const generarAnalisisEspecializado = async (datosAnalisis, tipoEstudiante
       generationConfig: {
         temperature: 0.8, // Más creatividad para análisis especializado
         maxOutputTokens: 2000, // Más tokens para análisis detallado
+        response_mime_type: 'application/json'
       },
       safetySettings: [
         {
@@ -196,24 +341,31 @@ export const generarAnalisisEspecializado = async (datosAnalisis, tipoEstudiante
       ]
     };
 
-    const response = await fetch(GEMINI_CONFIG.baseUrl + '?key=' + GEMINI_CONFIG.apiKey, {
+    await asegurarRateLimit();
+    const response = await fetchConReintentos(GEMINI_CONFIG.proxyEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model }),
       signal: controller.signal
-    });
+    }, { maxRetries: 4, baseDelay: 1000, maxDelay: 12000 });
 
     clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      if (response.status === 429) {
+        // fallback heurístico y cache
+        const heuristico = crearAnalisisHeuristico(datosAnalisis);
+        try { guardarEnCache(buildCacheKey(datosAnalisis), heuristico); } catch(e) { /* ignore */ }
+        return heuristico;
+      }
       throw new Error(`Error ${response.status}: ${errorData.error?.message || 'Error desconocido'}`);
     }
 
-    const data = await response.json();
-    const analisisTexto = data.candidates[0].content.parts[0].text;
+  const data = await response.json();
+  const analisisTexto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
     const resultado = procesarRespuestaGemini(analisisTexto);
     
@@ -293,9 +445,10 @@ ENFOQUE ESPECIALIZADO PARA ESTUDIANTE AVANZADO:
  * @returns {string} - Tipo de estudiante detectado
  */
 export const detectarTipoEstudiante = (datos) => {
-  const promedio = datos.promedio;
-  const intentos = datos.intentos;
-  const eficiencia = datos.promedio / datos.tiempoPromedio;
+  const promedio = Number(datos?.promedio) || 0;
+  const intentos = Number(datos?.intentos) || 0;
+  const tp = Number(datos?.tiempoPromedio) || 0;
+  const eficiencia = tp > 0 ? promedio / tp : 0;
   
   // Criterios para estudiante avanzado
   if (promedio >= 85 && eficiencia >= 2 && intentos <= 2) {
@@ -325,38 +478,38 @@ const crearPromptAnalisis = (datos) => {
 Actúa como un TUTOR EDUCATIVO EXPERTO con especialización en psicología educativa, análisis de datos académicos y pedagogía personalizada.
 
 CONTEXTO EDUCATIVO:
-Simulación: "${datos.simulacion}"
-Tipo de evaluación: ${datos.tipoEvaluacion || 'Simulacro académico'}
-Nivel educativo: ${datos.nivelEducativo || 'Preparatoria/Universidad'}
+Simulación: "${datos?.simulacion || 'Simulación'}"
+Tipo de evaluación: ${datos?.tipoEvaluacion || 'Simulacro académico'}
+Nivel educativo: ${datos?.nivelEducativo || 'Preparatoria/Universidad'}
 
 DATOS DE RENDIMIENTO DETALLADOS:
 ═══════════════════════════════════════
 
 📊 MÉTRICAS GENERALES:
-- Intentos realizados: ${datos.intentos}
-- Promedio general: ${datos.promedio.toFixed(1)}%
-- Tiempo promedio por intento: ${datos.tiempoPromedio.toFixed(1)} minutos
-- Mejor tiempo registrado: ${datos.mejorTiempo} minutos
+- Intentos realizados: ${Number(datos?.intentos) || 0}
+- Promedio general: ${(Number(datos?.promedio) || 0).toFixed(1)}%
+- Tiempo promedio por intento: ${(Number(datos?.tiempoPromedio) || 0).toFixed(1)} minutos
+- Mejor tiempo registrado: ${Number(datos?.mejorTiempo) || 0} minutos
 - Tendencia general: ${tendenciaGeneral}
 - Patrones de aprendizaje: ${patronesAprendizaje}
 - Nivel de dificultad percibido: ${nivelDificultad}
 
 📈 ANÁLISIS POR MATERIA:
-${datos.materias.map(m => `
+${(datos.materias || []).map(m => `
 ▶ ${m.nombre}:
-  • Promedio: ${m.promedio.toFixed(1)}%
+  • Promedio: ${(Number(m?.promedio) || 0).toFixed(1)}%
   • Tendencia: ${m.tendencia}
-  • Puntajes por intento: ${m.puntajes.join(' → ')}
-  • Mejora: ${calcularMejora(m.puntajes)}%
-  • Consistencia: ${calcularConsistencia(m.puntajes)}
+  • Puntajes por intento: ${(m?.puntajes || []).join(' → ')}
+  • Mejora: ${calcularMejora(m?.puntajes || [])}%
+  • Consistencia: ${calcularConsistencia(m?.puntajes || [])}
   • Tiempo promedio: ${m.tiempoPromedio || 'N/A'} min
 `).join('')}
 
 🔍 ÁREAS DE DIFICULTAD IDENTIFICADAS:
-${datos.areasDebiles.map(a => `
-• ${a.nombre}: ${a.promedio.toFixed(1)}%
-  - Tipo de dificultad: ${a.tipoDificultad || 'Comprensión conceptual'}
-  - Frecuencia de errores: ${a.frecuenciaErrores || 'Alta'}
+${(datos.areasDebiles || []).map(a => `
+• ${a?.nombre || 'Área'}: ${(Number(a?.promedio) || 0).toFixed(1)}%
+  - Tipo de dificultad: ${a?.tipoDificultad || 'Comprensión conceptual'}
+  - Frecuencia de errores: ${a?.frecuenciaErrores || 'Alta'}
 `).join('')}
 
 🎯 ANÁLISIS TEMPORAL:
@@ -484,6 +637,7 @@ export const generarAnalisisPorArea = async (datosAnalisis, area) => {
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 1800,
+        response_mime_type: 'application/json'
       },
       safetySettings: [
         {
@@ -505,14 +659,15 @@ export const generarAnalisisPorArea = async (datosAnalisis, area) => {
       ]
     };
 
-    const response = await fetch(GEMINI_CONFIG.baseUrl + '?key=' + GEMINI_CONFIG.apiKey, {
+    await asegurarRateLimit();
+    const response = await fetchConReintentos(GEMINI_CONFIG.proxyEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model }),
       signal: controller.signal
-    });
+    }, { maxRetries: 4, baseDelay: 1000, maxDelay: 12000 });
 
     clearTimeout(timeoutId);
 
@@ -521,8 +676,8 @@ export const generarAnalisisPorArea = async (datosAnalisis, area) => {
       throw new Error(`Error ${response.status}: ${errorData.error?.message || 'Error desconocido'}`);
     }
 
-    const data = await response.json();
-    const analisisTexto = data.candidates[0].content.parts[0].text;
+  const data = await response.json();
+  const analisisTexto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
     const resultado = procesarRespuestaGemini(analisisTexto);
     
@@ -545,25 +700,24 @@ export const generarAnalisisPorArea = async (datosAnalisis, area) => {
  * @returns {string} - Prompt especializado
  */
 const crearPromptPorArea = (datos, area) => {
-  const materiasDelArea = datos.materias.filter(m => 
-    m.nombre.toLowerCase().includes(area.toLowerCase()) ||
-    obtenerMateriasDeArea(area).some(ma => 
-      m.nombre.toLowerCase().includes(ma.toLowerCase())
-    )
+  const a = (area || '').toLowerCase();
+  const materiasDelArea = (datos.materias || []).filter(m => 
+    (m?.nombre || '').toLowerCase().includes(a) ||
+    obtenerMateriasDeArea(a).some(ma => (m?.nombre || '').toLowerCase().includes(ma.toLowerCase()))
   );
   
   const basePrompt = crearPromptAnalisis(datos);
   
   const especializacionArea = `
-ANÁLISIS ESPECIALIZADO PARA ÁREA: ${area.toUpperCase()}
+ANÁLISIS ESPECIALIZADO PARA ÁREA: ${(area || '').toUpperCase()}
 ═══════════════════════════════════════
 
 MATERIAS DEL ÁREA EVALUADAS:
 ${materiasDelArea.map(m => `
-• ${m.nombre}: ${m.promedio.toFixed(1)}%
-  - Puntajes: ${m.puntajes.join(' → ')}
-  - Mejora: ${calcularMejora(m.puntajes)}%
-  - Consistencia: ${calcularConsistencia(m.puntajes).toFixed(2)}
+• ${m?.nombre || 'Materia'}: ${(Number(m?.promedio) || 0).toFixed(1)}%
+  - Puntajes: ${(m?.puntajes || []).join(' → ')}
+  - Mejora: ${calcularMejora(m?.puntajes || [])}%
+  - Consistencia: ${(calcularConsistencia(m?.puntajes || [])).toFixed(2)}
 `).join('')}
 
 COMPETENCIAS ESPECÍFICAS DEL ÁREA:
@@ -726,36 +880,90 @@ const obtenerEnfoqueEspecializadoArea = (area) => {
  * @returns {Object} - Análisis procesado
  */
 const procesarRespuestaGemini = (respuestaTexto) => {
-  try {
-    console.log('🔄 Procesando respuesta de Gemini...');
-    
-    // Limpiar el texto para extraer solo el JSON
-    let jsonTexto = respuestaTexto.trim();
-    
-    // Buscar el JSON dentro del texto
-    const inicioJson = jsonTexto.indexOf('{');
-    const finJson = jsonTexto.lastIndexOf('}');
-    
-    if (inicioJson !== -1 && finJson !== -1) {
-      jsonTexto = jsonTexto.substring(inicioJson, finJson + 1);
+  const original = String(respuestaTexto || '');
+  const logFail = (err, intento, muestra) => {
+    try { console.warn(`Gemini JSON parse intento ${intento} falló:`, err?.message); if (muestra) console.debug('⮑ muestra:', (muestra.length > 4000 ? muestra.slice(0,4000)+'…' : muestra)); } catch {}
+  };
+
+  // 1) Extraer JSON probable (desde fences o por llaves/corchetes)
+  const extraerJsonCrudo = (txt) => {
+    let t = String(txt || '').trim();
+    const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fence && fence[1]) t = fence[1].trim();
+    // Si comienza con { … } o [ … ], mantener desde el primer delimitador balanceado
+    const firstBrace = t.indexOf('{');
+    const firstBracket = t.indexOf('[');
+    let startIdx = -1;
+    let openChar = null, closeChar = null;
+    if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) { startIdx = firstBrace; openChar = '{'; closeChar = '}'; }
+    else if (firstBracket !== -1) { startIdx = firstBracket; openChar = '['; closeChar = ']'; }
+    if (startIdx === -1) return t; // no hay delimitadores claros, devolver tal cual
+    // Balanceo simple ignorando comillas
+    let depth = 0; let inStr = false; let esc = false; let endIdx = -1;
+    for (let i = startIdx; i < t.length; i++) {
+      const ch = t[i];
+      if (inStr) {
+        if (!esc && ch === '"') inStr = false;
+        esc = (!esc && ch === '\\');
+        continue;
+      }
+      if (ch === '"') { inStr = true; esc = false; continue; }
+      if (ch === openChar) depth++;
+      if (ch === closeChar) depth--;
+      if (depth === 0) { endIdx = i; break; }
     }
-    
-    // Intentar parsear el JSON
-    const analisisJson = JSON.parse(jsonTexto);
-    
-    // Validar estructura del JSON
-    const analisisValidado = validarEstructuraAnalisis(analisisJson);
-    
-    console.log('✅ Análisis procesado correctamente');
-    return analisisValidado;
-    
-  } catch (error) {
-    console.error('❌ Error procesando respuesta de Gemini:', error);
-    console.log('📝 Respuesta recibida:', respuestaTexto);
-    
-    // Fallback: crear análisis básico si el JSON falla
-    return crearAnalisisFallback(respuestaTexto);
+    if (endIdx !== -1) return t.slice(startIdx, endIdx + 1).trim();
+    // fallback a recorte bruto por última llave/corchete
+    const lastClose = Math.max(t.lastIndexOf('}'), t.lastIndexOf(']'));
+    if (lastClose > startIdx) return t.slice(startIdx, lastClose + 1).trim();
+    return t.trim();
+  };
+
+  // 2) Saneadores progresivos
+  const sanearBasico = (t) => t
+    .replace(/^\uFEFF/, '')
+    .replace(/[\u0000-\u001F]+/g, ' ') // controla caracteres de control invisibles
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .trim();
+
+  const quitarComasColgantes = (t) => t
+    // comas antes de cierre de objeto/array
+    .replace(/,\s*(\}|\])/g, '$1');
+
+  const candidates = [];
+  candidates.push(extraerJsonCrudo(original));
+  // Variante sin fences ni adornos adicionales
+  candidates.push(extraerJsonCrudo(original.replace(/```[\s\S]*?```/g, (m)=> m.replace(/```/g,''))));
+
+  for (let intento = 0; intento < candidates.length; intento++) {
+    let s = candidates[intento];
+    try {
+      // Intento A: directo tras saneo básico
+      let a = JSON.parse(sanearBasico(s));
+      return validarEstructuraAnalisis(a);
+    } catch (e1) { logFail(e1, `${intento}-A`, s); }
+
+    try {
+      // Intento B: quitar comas colgantes
+      let b = quitarComasColgantes(sanearBasico(s));
+      return validarEstructuraAnalisis(JSON.parse(b));
+    } catch (e2) { logFail(e2, `${intento}-B`, s); }
+
+    try {
+      // Intento C: si empieza con [, quedarse con primer objeto
+      const cleaned = quitarComasColgantes(sanearBasico(s));
+      if (cleaned.startsWith('[')) {
+        const arr = JSON.parse(cleaned);
+        const obj = Array.isArray(arr) ? (arr.find(x => x && typeof x === 'object') || {}) : {};
+        return validarEstructuraAnalisis(obj);
+      }
+    } catch (e3) { logFail(e3, `${intento}-C`, s); }
   }
+
+  // Todo falló: fallback
+  console.error('❌ Error procesando respuesta de Gemini (todos los intentos fallaron)');
+  return crearAnalisisFallback(original);
 };
 
 /**
@@ -907,7 +1115,8 @@ const generarRecomendacionesPersonalizadas = (analisis) => {
  * @returns {boolean} - True si está configurada
  */
 export const esGeminiConfigurado = () => {
-  return Boolean(GEMINI_CONFIG.apiKey && GEMINI_CONFIG.apiKey.length > 0);
+  // En el cliente, verificamos la presencia del endpoint proxy
+  return typeof GEMINI_CONFIG.proxyEndpoint === 'string' && GEMINI_CONFIG.proxyEndpoint.length > 0;
 };
 
 /**
@@ -1034,7 +1243,7 @@ export const obtenerConsejosEstudio = (materia, promedio) => {
  */
 export const verificarModelosDisponibles = async () => {
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_CONFIG.apiKey}`);
+    const response = await fetch('/api/ai/gemini/models');
     const data = await response.json();
     
     if (data.models) {
@@ -1069,12 +1278,12 @@ export const probarConexionGemini = async () => {
       }
     };
 
-    const response = await fetch(GEMINI_CONFIG.baseUrl + '?key=' + GEMINI_CONFIG.apiKey, {
+    const response = await fetch(GEMINI_CONFIG.proxyEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model }),
     });
 
     if (!response.ok) {
@@ -1098,12 +1307,14 @@ export const probarConexionGemini = async () => {
  * @returns {string} - Tendencia general
  */
 const calcularTendenciaGeneral = (datos) => {
-  const promediosGenerales = datos.materias.map(m => m.promedio);
-  const primerosMitad = promediosGenerales.slice(0, Math.floor(promediosGenerales.length / 2));
-  const segundaMitad = promediosGenerales.slice(Math.floor(promediosGenerales.length / 2));
-  
-  const promedioInicial = primerosMitad.reduce((a, b) => a + b, 0) / primerosMitad.length;
-  const promedioFinal = segundaMitad.reduce((a, b) => a + b, 0) / segundaMitad.length;
+  const promediosGenerales = (datos.materias || []).map(m => Number(m?.promedio) || 0);
+  if (!promediosGenerales.length) return 'Rendimiento estable';
+  const half = Math.floor(promediosGenerales.length / 2) || 1;
+  const primerosMitad = promediosGenerales.slice(0, half);
+  const segundaMitad = promediosGenerales.slice(half);
+  const avg = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+  const promedioInicial = avg(primerosMitad);
+  const promedioFinal = avg(segundaMitad.length ? segundaMitad : primerosMitad);
   
   if (promedioFinal > promedioInicial + 5) return 'Mejora significativa';
   if (promedioFinal > promedioInicial) return 'Mejora gradual';
@@ -1118,8 +1329,9 @@ const calcularTendenciaGeneral = (datos) => {
  * @returns {string} - Patrones identificados
  */
 const identificarPatronesAprendizaje = (datos) => {
-  const materiasConsistentes = datos.materias.filter(m => calcularConsistencia(m.puntajes) > 0.8);
-  const materiasInconsistentes = datos.materias.filter(m => calcularConsistencia(m.puntajes) < 0.6);
+  const materias = datos.materias || [];
+  const materiasConsistentes = materias.filter(m => calcularConsistencia(m.puntajes || []) > 0.8);
+  const materiasInconsistentes = materias.filter(m => calcularConsistencia(m.puntajes || []) < 0.6);
   
   if (materiasConsistentes.length > materiasInconsistentes.length) {
     return 'Aprendizaje consistente y estructurado';
@@ -1135,8 +1347,8 @@ const identificarPatronesAprendizaje = (datos) => {
  * @returns {string} - Nivel de dificultad
  */
 const evaluarNivelDificultad = (datos) => {
-  const promedioGeneral = datos.promedio;
-  const tiempoPromedio = datos.tiempoPromedio;
+  const promedioGeneral = Number(datos?.promedio) || 0;
+  const tiempoPromedio = Number(datos?.tiempoPromedio) || 0;
   
   if (promedioGeneral >= 85 && tiempoPromedio <= 30) return 'Nivel apropiado - Alta eficiencia';
   if (promedioGeneral >= 70 && tiempoPromedio <= 45) return 'Nivel adecuado - Eficiencia normal';
@@ -1151,10 +1363,11 @@ const evaluarNivelDificultad = (datos) => {
  * @returns {number} - Porcentaje de mejora
  */
 const calcularMejora = (puntajes) => {
-  if (puntajes.length < 2) return 0;
-  const primero = puntajes[0];
-  const ultimo = puntajes[puntajes.length - 1];
-  return ((ultimo - primero) / primero * 100).toFixed(1);
+  if (!Array.isArray(puntajes) || puntajes.length < 2) return 0;
+  const primero = Number(puntajes[0]) || 0;
+  const ultimo = Number(puntajes[puntajes.length - 1]) || 0;
+  if (primero <= 0) return 0;
+  return Number(((ultimo - primero) / primero * 100).toFixed(1));
 };
 
 /**
@@ -1163,9 +1376,11 @@ const calcularMejora = (puntajes) => {
  * @returns {number} - Índice de consistencia (0-1)
  */
 const calcularConsistencia = (puntajes) => {
-  if (puntajes.length < 2) return 1;
-  const promedio = puntajes.reduce((a, b) => a + b, 0) / puntajes.length;
-  const desviacion = Math.sqrt(puntajes.reduce((a, b) => a + Math.pow(b - promedio, 2), 0) / puntajes.length);
+  if (!Array.isArray(puntajes) || puntajes.length < 2) return 1;
+  const arr = puntajes.map(v => Number(v) || 0);
+  const promedio = arr.reduce((a, b) => a + b, 0) / arr.length;
+  if (promedio <= 0) return 0;
+  const desviacion = Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - promedio, 2), 0) / arr.length);
   return Math.max(0, 1 - (desviacion / promedio));
 };
 
@@ -1175,7 +1390,9 @@ const calcularConsistencia = (puntajes) => {
  * @returns {string} - Evaluación de eficiencia
  */
 const calcularEficienciaTemporal = (datos) => {
-  const eficiencia = datos.promedio / datos.tiempoPromedio;
+  const promedio = Number(datos?.promedio) || 0;
+  const tp = Number(datos?.tiempoPromedio) || 0;
+  const eficiencia = tp > 0 ? promedio / tp : 0;
   if (eficiencia >= 2) return 'Muy eficiente';
   if (eficiencia >= 1.5) return 'Eficiente';
   if (eficiencia >= 1) return 'Eficiencia normal';
@@ -1188,7 +1405,9 @@ const calcularEficienciaTemporal = (datos) => {
  * @returns {string} - Evaluación de gestión del tiempo
  */
 const evaluarGestionTiempo = (datos) => {
-  const diferenciaTiempo = datos.tiempoPromedio - datos.mejorTiempo;
+  const tp = Number(datos?.tiempoPromedio) || 0;
+  const mt = Number(datos?.mejorTiempo) || 0;
+  const diferenciaTiempo = tp - mt;
   if (diferenciaTiempo <= 5) return 'Gestión del tiempo consistente';
   if (diferenciaTiempo <= 10) return 'Gestión del tiempo variable';
   return 'Gestión del tiempo inconsistente';
@@ -1271,12 +1490,12 @@ export const generarAnalisisCompletoAvanzado = async (datosAnalisis, opciones = 
  */
 const identificarAreaPrincipal = (datos) => {
   // Encontrar materia con menor promedio
-  const materiaDebil = datos.materias.reduce((min, actual) => 
-    actual.promedio < min.promedio ? actual : min
-  );
+  const materiaDebil = (datos.materias || []).reduce((min, actual) => 
+    (actual?.promedio ?? Infinity) < (min?.promedio ?? Infinity) ? actual : min
+  , (datos.materias || [null])[0]);
   
   // Mapear materia a área
-  const materia = materiaDebil.nombre.toLowerCase();
+  const materia = (materiaDebil?.nombre || '').toLowerCase();
   
   if (materia.includes('matemática') || materia.includes('álgebra') || 
       materia.includes('geometría') || materia.includes('cálculo')) {
@@ -1315,24 +1534,62 @@ const identificarAreaPrincipal = (datos) => {
  * @returns {Object} - Análisis combinado
  */
 const combinarAnalisis = (principal, especializado, porArea, tipoEstudiante, datos) => {
+  // Si 'principal' viene simplificado, mapearlo a estructura rica
+  const mapPrincipalToRich = (p) => {
+    if (!p) return {};
+    const fortalezasDetalladas = (p.fortalezas || []).map(f => ({
+      materia: f.materia,
+      nivel: 'Bueno',
+      habilidadesEspecificas: [],
+      comentario: f.comentario || 'Rendimiento sólido',
+      comoMantener: 'Práctica constante'
+    }));
+    const areasDeDesarrollo = (p.debilidades || []).map(d => ({
+      materia: d.materia,
+      nivelDificultad: 'Media',
+      tipoProblema: 'Conceptual',
+      diagnostico: d.comentario || 'Área de mejora',
+      estrategiasPrincipales: d.accionesEspecificas || [],
+      recursosRecomendados: [],
+      tiempoEstimado: '2-4 semanas',
+      indicadoresProgreso: []
+    }));
+    const planEstudioPersonalizado = p.planEstudio ? {
+      faseInicial: {
+        duracion: '2-3 semanas',
+        objetivos: ['Mejorar fundamentos'],
+        actividades: (p.planEstudio.prioridad || []).map(a => ({
+          materia: a.materia,
+          tiempo: a.tiempo,
+          actividad: a.enfoque,
+          recursos: [],
+          evaluacion: 'Autoevaluación semanal'
+        }))
+      }
+    } : undefined;
+    return { fortalezasDetalladas, areasDeDesarrollo, planEstudioPersonalizado, analisisGeneral: { resumen: p.resumen || 'Análisis generado' } };
+  };
+
+  const principalRich = { ...mapPrincipalToRich(principal), ...(principal || {}) };
+
   const analisisCombinado = {
     timestamp: new Date().toISOString(),
     tipoEstudiante,
     metadata: {
-      simulacion: datos.simulacion,
-      intentos: datos.intentos,
-      promedio: datos.promedio,
-      tiempoPromedio: datos.tiempoPromedio,
-      numeroMaterias: datos.materias.length,
-      puntuacionConfianza: principal.puntuacionConfianza || 85
+      simulacion: datos?.simulacion,
+      intentos: Number(datos?.intentos) || 0,
+      promedio: Number(datos?.promedio) || 0,
+      tiempoPromedio: Number(datos?.tiempoPromedio) || 0,
+      numeroMaterias: Array.isArray(datos?.materias) ? datos.materias.length : 0,
+      puntuacionConfianza: Number(principal?.puntuacionConfianza) || 85
     },
     
     // Análisis general (del análisis principal)
-    analisisGeneral: principal.analisisGeneral || {},
+    analisisGeneral: principalRich.analisisGeneral || principal.analisisGeneral || {},
     
     // Combinar fortalezas de todos los análisis
     fortalezasDetalladas: [
-      ...(principal.fortalezasDetalladas || []),
+      ...(principalRich.fortalezasDetalladas || principal.fortalezasDetalladas || []),
       ...(especializado?.fortalezasDetalladas || []),
       ...(porArea?.fortalezasDetalladas || [])
     ].filter((fortaleza, index, self) => 
@@ -1341,7 +1598,7 @@ const combinarAnalisis = (principal, especializado, porArea, tipoEstudiante, dat
     
     // Combinar áreas de desarrollo
     areasDeDesarrollo: [
-      ...(principal.areasDeDesarrollo || []),
+      ...(principalRich.areasDeDesarrollo || principal.areasDeDesarrollo || []),
       ...(especializado?.areasDeDesarrollo || []),
       ...(porArea?.areasDeDesarrollo || [])
     ].filter((area, index, self) => 
@@ -1349,8 +1606,8 @@ const combinarAnalisis = (principal, especializado, porArea, tipoEstudiante, dat
     ),
     
     // Plan de estudio personalizado (tomar el más completo)
-    planEstudioPersonalizado: especializado?.planEstudioPersonalizado || 
-                             principal.planEstudioPersonalizado || {},
+  planEstudioPersonalizado: especializado?.planEstudioPersonalizado || 
+               principalRich.planEstudioPersonalizado || principal.planEstudioPersonalizado || {},
     
     // Técnicas de estudio especializadas
     tecnicasEstudio: {
@@ -1427,8 +1684,20 @@ const generarProximosPasos = (datos, tipoEstudiante) => {
   const pasos = [];
   
   // Paso 1: Enfoque en área más débil
-  const areaDebil = datos.materias.reduce((min, actual) => 
-    actual.promedio < min.promedio ? actual : min
+  const lista = Array.isArray(datos?.materias) ? datos.materias : [];
+  if (lista.length === 0) {
+    return [
+      {
+        orden: 1,
+        titulo: 'Establecer línea base',
+        descripcion: 'Realiza un simulacro para obtener datos iniciales de rendimiento',
+        plazo: '1 semana',
+        prioridad: 'Alta'
+      }
+    ];
+  }
+  const areaDebil = lista.reduce((min, actual) => 
+    (Number(actual?.promedio) || Infinity) < (Number(min?.promedio) || Infinity) ? actual : min
   );
   
   pasos.push({
@@ -1440,7 +1709,7 @@ const generarProximosPasos = (datos, tipoEstudiante) => {
   });
   
   // Paso 2: Optimizar tiempo de estudio
-  if (datos.tiempoPromedio > 60) {
+  if ((Number(datos?.tiempoPromedio) || 0) > 60) {
     pasos.push({
       orden: 2,
       titulo: 'Optimizar tiempo de estudio',
@@ -1451,8 +1720,8 @@ const generarProximosPasos = (datos, tipoEstudiante) => {
   }
   
   // Paso 3: Mantener fortalezas
-  const areaFuerte = datos.materias.reduce((max, actual) => 
-    actual.promedio > max.promedio ? actual : max
+  const areaFuerte = lista.reduce((max, actual) => 
+    (Number(actual?.promedio) || -Infinity) > (Number(max?.promedio) || -Infinity) ? actual : max
   );
   
   pasos.push({
@@ -1470,29 +1739,35 @@ const generarProximosPasos = (datos, tipoEstudiante) => {
  * Calcular funciones auxiliares adicionales
  */
 const calcularDesviacionEstandar = (valores) => {
+  if (!Array.isArray(valores) || valores.length === 0) return 0;
   const promedio = valores.reduce((a, b) => a + b, 0) / valores.length;
   const varianza = valores.reduce((a, b) => a + Math.pow(b - promedio, 2), 0) / valores.length;
   return Math.sqrt(varianza);
 };
 
 const calcularCoeficienteVariacion = (valores) => {
+  if (!Array.isArray(valores) || valores.length === 0) return 0;
   const promedio = valores.reduce((a, b) => a + b, 0) / valores.length;
+  if (promedio === 0) return 0;
   const desviacion = calcularDesviacionEstandar(valores);
   return (desviacion / promedio) * 100;
 };
 
 const calcularConsistenciaGeneral = (materias) => {
-  const consistencias = materias.map(m => calcularConsistencia(m.puntajes));
+  const lista = Array.isArray(materias) ? materias : [];
+  if (lista.length === 0) return 0;
+  const consistencias = lista.map(m => calcularConsistencia(m?.puntajes || []));
   return consistencias.reduce((a, b) => a + b, 0) / consistencias.length;
 };
 
 const calcularTendenciaAprendizaje = (materias) => {
-  const tendencias = materias.map(m => {
-    const mejora = calcularMejora(m.puntajes);
-    return parseFloat(mejora);
+  const lista = Array.isArray(materias) ? materias : [];
+  if (lista.length === 0) return 'Estable';
+  const tendencias = lista.map(m => {
+    const mejora = calcularMejora(m?.puntajes || []);
+    return Number(mejora) || 0;
   });
-  
-  const promedioTendencia = tendencias.reduce((a, b) => a + b, 0) / tendencias.length;
+  const promedioTendencia = tendencias.reduce((a, b) => a + b, 0) / (tendencias.length || 1);
   
   if (promedioTendencia > 10) return 'Mejora significativa';
   if (promedioTendencia > 5) return 'Mejora gradual';
@@ -1501,7 +1776,9 @@ const calcularTendenciaAprendizaje = (materias) => {
 };
 
 const calcularIndiceImprovement = (materias) => {
-  const mejoras = materias.map(m => parseFloat(calcularMejora(m.puntajes)));
+  const lista = Array.isArray(materias) ? materias : [];
+  if (lista.length === 0) return 0;
+  const mejoras = lista.map(m => Number(calcularMejora(m?.puntajes || [])) || 0);
   const mejorasPositivas = mejoras.filter(m => m > 0).length;
-  return (mejorasPositivas / materias.length) * 100;
+  return (mejorasPositivas / lista.length) * 100;
 };

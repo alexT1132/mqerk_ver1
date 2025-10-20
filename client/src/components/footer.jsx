@@ -51,10 +51,10 @@ export default function FooterNeo({
               </div>
             </div>
             <div className="mt-6 flex items-center gap-3">
-              <Social href={socials.facebook} label="Facebook"><IconFacebook/></Social>
-              <Social href={socials.instagram} label="Instagram" variant="outline"><IconInstagram/></Social>
-              <Social href={socials.youtube} label="YouTube"><IconYoutube/></Social>
-              <Social href={socials.tiktok} label="TikTok"><IconTiktok/></Social>
+              <Social  label="Facebook"><IconFacebook/></Social>
+              <Social  label="Instagram" variant="outline"><IconInstagram/></Social>
+              <Social  label="YouTube"><IconYoutube/></Social>
+              <Social  label="TikTok"><IconTiktok/></Social>
             </div>
           </div>
 

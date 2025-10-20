@@ -1,6 +1,7 @@
 // src/context/AdminContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from '../api/axios.js';
+import { useAuth } from './AuthContext.jsx';
 
 /**
  * Contexto principal para el manejo de datos administrativos
@@ -61,6 +62,7 @@ export const useAdminContext = () => {
  * Maneja todo el estado global de la aplicación administrativa
  */
 export const AdminProvider = ({ children }) => {
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   // Estados principales
   const [dashboardData, setDashboardData] = useState(null);
   const [adminProfile, setAdminProfile] = useState(null);
@@ -86,7 +88,7 @@ export const AdminProvider = ({ children }) => {
       setIsLoading(true);
       setError(null);
       // Llamada real al backend
-      const { data } = await axios.get('/admin/dashboard/metrics');
+  const { data } = await axios.get('/admin/dashboard/metrics');
       setDashboardData({
         ingresos: Number(data?.ingresos || 0),
         ingresosPeriodo: data?.ingresosPeriodo || null,
@@ -99,7 +101,11 @@ export const AdminProvider = ({ children }) => {
       setLastUpdated(data?.updatedAt || new Date().toISOString());
       
     } catch (err) {
-      setError(err.message);
+      // Show server-provided reason for 403/401 when available to help debugging
+      if (err && err.response) {
+        console.error('Dashboard metrics server response:', err.response.status, err.response.data);
+      }
+      setError((err && err.message) || 'Error cargando métricas');
       console.error('Dashboard metrics error:', err);
     } finally {
   setIsLoading(false);
@@ -149,8 +155,9 @@ export const AdminProvider = ({ children }) => {
       });
 
     } catch (err) {
-      console.error('Admin profile error:', err);
-      setError('No se pudo cargar el perfil del administrador');
+  if (err?.response) console.error('Admin profile server response:', err.response.status, err.response.data);
+  console.error('Admin profile error:', err);
+  setError('No se pudo cargar el perfil del administrador');
     } finally {
       setIsLoading(false);
     }
@@ -385,23 +392,30 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  // Cargar datos iniciales
+  // Cargar datos iniciales SOLO cuando hay sesión admin: perfil primero, luego métricas + auto-refresh
   useEffect(() => {
-    loadDashboardMetrics();
-    loadAdminProfile();
-    
-    // Auto-refresh cada 5 minutos solo para métricas del dashboard
-    const interval = setInterval(loadDashboardMetrics, 5 * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
+    let interval;
+    if (!authLoading && isAuthenticated && (user?.role === 'admin')) {
+      (async () => {
+        try {
+          await loadAdminProfile();
+          try { await loadDashboardMetrics(); } catch {}
+        } catch {}
+      })();
+      interval = setInterval(loadDashboardMetrics, 5 * 60 * 1000);
+    }
+    return () => { if (interval) clearInterval(interval); };
+  }, [authLoading, isAuthenticated, user?.role]);
 
-  // WebSocket para admins: mismo endpoint, autenticación por cookie token_admin
+  // WebSocket para admins: abrir solo si sesión admin activa; cerrar al salir
   useEffect(() => {
+    if (authLoading || !isAuthenticated || user?.role !== 'admin') {
+      setWsStatus('idle');
+      return;
+    }
     let ws; let closedManually = false; let reconnectTimer;
     async function openSocket(attempt){
       setWsStatus('connecting');
-      // Reutilizamos helper para construir URL (sin importar Vite)
       const { getWsNotificationsUrl, waitForBackendHealth } = await import('../utils/ws.js');
       await waitForBackendHealth(1500).catch(()=>{});
       const url = getWsNotificationsUrl();
@@ -412,15 +426,10 @@ export const AdminProvider = ({ children }) => {
       ws.onmessage = (evt) => {
         try {
           const data = JSON.parse(evt.data);
-          // Reemitir como evento global para hooks/componentes (event-driven)
           try { window.dispatchEvent(new CustomEvent('admin-ws-message', { detail: data })); } catch(_e) {}
-          // Eventos relevantes para admin
-          // 1) Nueva subida de comprobante por estudiante -> refrescar badge pendientes
           if (data.type === 'student_status' && Number(data.payload?.verificacion) === 1) {
-            // No siempre se emite 1 desde el backend actual; si se emite, refrescamos
             loadDashboardMetrics();
           }
-          // 2) Evento explícito para admin: new_comprobante
           if (data.type === 'new_comprobante') {
             loadDashboardMetrics();
           }
@@ -434,8 +443,7 @@ export const AdminProvider = ({ children }) => {
     }
     openSocket(wsAttempts+1);
     return () => { closedManually = true; try { ws && ws.close(); } catch(_){}; if(reconnectTimer) clearTimeout(reconnectTimer); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authLoading, isAuthenticated, user?.role]);
 
   /**
    * Generate contract for a payment
@@ -757,10 +765,7 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  // Initialize admin profile on component mount
-  useEffect(() => {
-    loadAdminProfile();
-  }, []);
+  // Eliminado: la carga inicial del perfil se hace condicionada a sesión admin en el efecto superior
 
   // Context value with all admin functions and state
   const value = {

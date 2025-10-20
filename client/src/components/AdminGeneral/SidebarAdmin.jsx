@@ -1,24 +1,24 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 
 const ITEMS = [
   { label: "Inicio",         icon: HomeIcon,     href: "/administrador_dashboard" },
   { label: "Cursos Activos", icon: CoursesIcon,  href: "/administrador_cursos" },
   { label: "Certificaciones", icon: CertificateIcon, href: "#" },
   { label: "Roles",          icon: BadgeIcon,    href: "#" },
-  { label: "Financiero",     icon: WalletIcon,   href: "#" },
-  { label: "Contabilidad",   icon: CoinIcon,     href: "#" },
-  { label: "Administrativo", icon: BriefcaseIcon,href: "#" },
-  { label: "Gestión",        icon: BellIcon,     href: "#" },
-  { label: "Productividad",  icon: ChartIcon,    href: "#" },
-  { label: "Estratégicos",    icon: TargetIcon,      href: "#" },
-  { label: "Asesores",       icon: UsersIcon,    href: "#" },
-  { label: "Calendario",     icon: CalendarIcon, href: "#" },
+  { label: "Financiero",     icon: WalletIcon,   href: "/administrador_financieros" },
+  { label: "Contabilidad",   icon: CoinIcon,     href: "/administrador_contabilidad" },
+  { label: "Administrativo", icon: BriefcaseIcon,href: "/administrador_administrativo" },
+  { label: "Gestión",        icon: BellIcon,     href: "/administrador_gestion" },
+  { label: "Productividad",  icon: ChartIcon,    href: "/administrador_productividad" },
+  { label: "Estratégicos",   icon: TargetIcon,   href: "/administrador_estrategicos" },
+  { label: "Asesores",       icon: UsersIcon,    href: "/administrador_asesores" },
+  { label: "Calendario",     icon: CalendarIcon, href: "/administrador_calendario" },
   { label: "Correo",         icon: MailIcon,     href: "#" },
   { label: "Lineamientos y Normativas", icon: DocumentIcon, href: "#" },
-  { label: "Configuración",  icon: SettingsIcon, href: "#" },
 ];
 
 export function SidebarRail() {
+
   return (
     <aside
       className="
@@ -28,7 +28,6 @@ export function SidebarRail() {
       "
       aria-label="Barra lateral"
     >
-
       <nav className="mt-1 flex w-full flex-col items-center gap-1">
         {ITEMS.map(({ label, icon: Icon, href }) => (
           <TooltipItem key={label} label={label} href={href}>
@@ -36,12 +35,6 @@ export function SidebarRail() {
           </TooltipItem>
         ))}
       </nav>
-
-      <div />
-        <TooltipItem label="Cerrar sesión" onClick={() => alert("Cerrar sesión")}>
-            <ExitIcon className="h-5 w-5 text-rose-600" />
-        </TooltipItem>
-      <div/>
     </aside>
   );
 }
@@ -49,8 +42,7 @@ export function SidebarRail() {
 /* Drawer móvil */
 export function SidebarDrawer({ open, onClose }) {
   const classes = useMemo(
-    () =>
-      `fixed inset-0 z-50 md:hidden ${open ? "" : "pointer-events-none"}`,
+    () => `fixed inset-0 z-50 md:hidden ${open ? "" : "pointer-events-none"}`,
     [open]
   );
 
@@ -94,15 +86,6 @@ export function SidebarDrawer({ open, onClose }) {
           ))}
         </nav>
 
-        <div className="p-2">
-          <button
-            onClick={() => { onClose(); alert("Cerrar sesión"); }}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-rose-600 hover:bg-rose-50"
-          >
-            <ExitIcon className="h-5 w-5" />
-            <span className="font-medium">Cerrar sesión</span>
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -145,28 +128,6 @@ function ChartIcon(p){return(<svg viewBox="0 0 24 24" fill="none" stroke="curren
 function BellIcon(p){return(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path strokeWidth="1.8" d="M6 8a6 6 0 1112 0v5l2 3H4l2-3z"/><path strokeWidth="1.8" d="M9 19a3 3 0 006 0"/></svg>)}
 function CalendarIcon(p){return(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><rect x="3" y="5" width="18" height="16" rx="2" strokeWidth="1.8"/><path strokeWidth="1.8" d="M3 10h18M8 3v4M16 3v4"/></svg>)}
 function MailIcon(p){return(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><rect x="3" y="5" width="18" height="14" rx="2" strokeWidth="1.8"/><path strokeWidth="1.8" d="M3 7l9 6 9-6"/></svg>)}
-function SettingsIcon(p){return(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path strokeWidth="1.8" d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path strokeWidth="1.8" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06A1.65 1.65 0 0015 19.4a1.65 1.65 0 00-1 .6 1.65 1.65 0 01-2.06 0 1.65 1.65 0 00-1-.6 1.65 1.65 0 00-1.82-.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-.6-1 1.65 1.65 0 010-2.06 1.65 1.65 0 00.6-1 1.65 1.65 0 00-.6-1l-.06-.06A2 2 0 016.77 4.05l.06.06A1.65 1.65 0 008.6 4.4 1.65 1.65 0 009.6 4a1.65 1.65 0 012.06 0 1.65 1.65 0 001 .6 1.65 1.65 0 001.82.33l.06-.06A2 2 0 0119.95 6.8l-.06.06a1.65 1.65 0 00-.6 1 1.65 1.65 0 001 .6 1.65 1.65 0 010 2.06 1.65 1.65 0 00-1 .6z"/></svg>)}
-function ExitIcon(p){return(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path strokeWidth="1.8" d="M10 17l5-5-5-5"/><path strokeWidth="1.8" d="M15 12H3"/><path strokeWidth="1.8" d="M21 3h-6v18h6"/></svg>)}
-function CertificateIcon(props) {return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}><circle cx="12" cy="8" r="4.5" strokeWidth="1.8" /><path strokeWidth="1.8" d="M10 12.5l-3 3v4l3-1.2 2 1.2v-4z" /><path strokeWidth="1.8" d="M14 12.5l3 3v4l-3-1.2-2 1.2v-4z" /><path strokeWidth="1.6" d="M10.5 8.2l1.2 1.2 2-2" /></svg>);}
-function TargetIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
-      {/* círculo externo */}
-      <circle cx="12" cy="12" r="9" strokeWidth="1.8" />
-      {/* círculo interno */}
-      <circle cx="12" cy="12" r="4" strokeWidth="1.8" />
-      {/* línea como puntería */}
-      <path strokeWidth="1.8" d="M12 2v2M12 20v2M2 12h2M20 12h2" />
-    </svg>
-  );
-}
-function DocumentIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
-      {/* hoja */}
-      <rect x="4" y="3" width="16" height="18" rx="2" ry="2" strokeWidth="1.8" />
-      {/* líneas */}
-      <path strokeWidth="1.8" d="M8 7h8M8 11h8M8 15h6" />
-    </svg>
-  );
-}
+function CertificateIcon(props){return(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}><circle cx="12" cy="8" r="4.5" strokeWidth="1.8"/><path strokeWidth="1.8" d="M10 12.5l-3 3v4l3-1.2 2 1.2v-4z"/><path strokeWidth="1.8" d="M14 12.5l3 3v4l-3-1.2-2 1.2v-4z"/><path strokeWidth="1.6" d="M10.5 8.2l1.2 1.2 2-2"/></svg>)}
+function TargetIcon(props){return(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}><circle cx="12" cy="12" r="9" strokeWidth="1.8"/><circle cx="12" cy="12" r="4" strokeWidth="1.8"/><path strokeWidth="1.8" d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>)}
+function DocumentIcon(props){return(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}><rect x="4" y="3" width="16" height="18" rx="2" ry="2" strokeWidth="1.8"/><path strokeWidth="1.8" d="M8 7h8M8 11h8M8 15h6"/></svg>)}

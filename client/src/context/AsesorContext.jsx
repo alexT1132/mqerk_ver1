@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { buildApiUrl } from '../utils/url.js';
 
 const AsesorContext = createContext();
 
@@ -27,7 +28,7 @@ export function AsesorProvider({ children }) {
         try {
             setLoading(true);
             setError(null);
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:1002'}/api/asesores/preregistro`, {
+            const res = await fetch(buildApiUrl('/asesores/preregistro'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -41,6 +42,8 @@ export function AsesorProvider({ children }) {
             setDatos1(body.preregistro);
             setPreregistroId(body.preregistro.id);
             localStorage.setItem('asesor_preregistro_id', String(body.preregistro.id));
+            // Devolver el preregistro creado para permitir a la UI navegar con el ID inmediatamente
+            return body.preregistro;
         } catch (e) {
             setError(e.message);
             throw e;
@@ -49,13 +52,35 @@ export function AsesorProvider({ children }) {
         }
     };
 
-    // Función saveTestResults eliminada (flujo sin tests)
+    // Guardar resultados de test para un preregistro
+    const saveTestResults = async (payload) => {
+        if(!preregistroId) throw new Error('No hay preregistro activo');
+        setLoading(true); setError(null);
+        try {
+            const res = await fetch(buildApiUrl(`/asesores/tests/${preregistroId}`), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
+            const body = await res.json().catch(()=>({}));
+            if(!res.ok){
+                throw new Error(body.message || 'Error guardando resultados');
+            }
+            return body.resultados;
+        } catch(e){
+            setError(e.message);
+            throw e;
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const loadPreRegistro = async () => {
         if(!preregistroId || datos1) return;
         setLoading(true); setError(null);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:1002'}/api/asesores/preregistro/${preregistroId}`, { credentials:'include' });
+            const res = await fetch(buildApiUrl(`/asesores/preregistro/${preregistroId}`), { credentials:'include' });
             if(res.status === 404){
                 // ID inválida: limpiar estado para forzar preregistro de nuevo
                 localStorage.removeItem('asesor_preregistro_id');
@@ -86,6 +111,7 @@ export function AsesorProvider({ children }) {
         <AsesorContext.Provider value={{
             datos1, preregistroId, loading, error,
             preSignup,
+            saveTestResults,
             loadPreRegistro,
         }}>
             {children}

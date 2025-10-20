@@ -90,8 +90,8 @@ function About() {
       <div className="text-[#53289f] text-center text-xl">simplificada</div>
       <div className="flex justify-center py-2">
         <div className="about w-200 flex justify-center items-center flex-col text-center py-2 rounded-2xl">
-          <p className="text-white text-2xl px-10">Formamos estudiantes creativos y críticos, preparados para destacar en un mundo impulsado por la ciencia y la tecnología.</p>
-          <p className="text-white text-2xl px-10">Ofrecemos un servicio integral, humano y transparente, apoyado en tecnologías educativas disruptivas para su éxito profesional y ciudadano.</p>
+          <p className="text-white text-2xl px-10">Formar estudiantes creativos y críticos, preparados para destacar en un mundo impulsado por la ciencia y la tecnología.</p>
+          <p className="text-white text-2xl px-10">Ofrecer un servicio integral, humano y transparente, apoyado en tecnologías educativas disruptivas para su éxito profesional y ciudadano.</p>
           <div className="flex flex-wrap justify-center gap-6 sm:gap-10 md:gap-16 lg:gap-20">
             <img src={Siete} className="w-24 sm:w-32 md:w-40" />
             <img src={Ocho} className="w-24 sm:w-32 md:w-40" />

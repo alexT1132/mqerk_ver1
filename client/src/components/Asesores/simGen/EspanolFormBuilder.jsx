@@ -29,7 +29,7 @@ const newQuestion = (type = "multiple") => ({
   image: null, // { file, preview }
   options:
     type === "multiple"
-      ? [{ id: genId(), text: "", correct: false, image: null }]
+      ? [{ id: crypto.randomUUID(), text: "", correct: false, image: null }]
       : [],
   answer: type === "tf" ? "true" : "", // para tf/short
 });
@@ -291,20 +291,9 @@ function MathPalette({ open, onClose, onPick }) {
 
 /* -------------------------- Componente de Opción ------------------------- */
 function OptionRow({ option, onChange, onRemove }) {
-  const inputRef = useRef(null);
-  const [paletteOpen, setPaletteOpen] = useState(false);
-
-  const handlePick = (latexWithDelimiters) => {
-    insertAtCursor(inputRef.current, latexWithDelimiters, (next) =>
-      onChange({ ...option, text: next })
-    );
-    setPaletteOpen(false);
-  };
-
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-slate-200 p-3">
-      <div className="flex items-start gap-3">
-        {/* marcar correcta */}
+      <div className="flex items-center gap-3">
         <input
           type="checkbox"
           checked={option.correct}

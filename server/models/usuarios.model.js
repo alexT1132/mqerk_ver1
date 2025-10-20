@@ -88,6 +88,11 @@ export const countAdmins = async () => {
   return rows[0]?.total || 0;
 };
 
+export const getFirstAdminId = async () => {
+  const [rows] = await db.query("SELECT id FROM usuarios WHERE role = 'admin' ORDER BY id ASC LIMIT 1");
+  return rows[0]?.id || null;
+};
+
 // Security helpers
 export const resetLoginSecurity = async (id) => {
   const [res] = await db.query(

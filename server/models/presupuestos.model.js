@@ -20,12 +20,25 @@ export async function remove(mes) {
 }
 
 export async function getMonthlySummary(mes) {
-  // Si no pasa mes, usar el actual
+  // Si no pasa mes, usar el actual (YYYY-MM)
   const month = mes || new Date().toISOString().slice(0,7);
+  // Presupuesto asignado para el mes
   const [[budgetRow]] = await db.query('SELECT monto FROM presupuestos_mensuales WHERE mes = ? LIMIT 1', [month]);
-  const [[spentRow]] = await db.query('SELECT total_gasto AS spent FROM vw_gasto_mensual WHERE mes = ? LIMIT 1', [month]);
   const budget = Number(budgetRow?.monto || 0);
-  const spent = Number(spentRow?.spent || 0);
+  // Sumar egresos reales (Pagado) del mes: fijos + variables + pagos a asesores
+  const [[fijos]] = await db.query(
+    "SELECT COALESCE(SUM(importe),0) AS total FROM gastos_fijos WHERE estatus = 'Pagado' AND DATE_FORMAT(fecha, '%Y-%m') = ?",
+    [month]
+  );
+  const [[vars]] = await db.query(
+    "SELECT COALESCE(SUM(importe),0) AS total FROM gastos_variables WHERE estatus = 'Pagado' AND DATE_FORMAT(created_at, '%Y-%m') = ?",
+    [month]
+  );
+  const [[asesores]] = await db.query(
+    "SELECT COALESCE(SUM(ingreso_final),0) AS total FROM pagos_asesores WHERE status = 'Pagado' AND DATE_FORMAT(fecha_pago, '%Y-%m') = ?",
+    [month]
+  );
+  const spent = Number(fijos?.total || 0) + Number(vars?.total || 0) + Number(asesores?.total || 0);
   const leftover = Math.max(0, budget - spent);
   return { mes: month, budget, spent, leftover };
 }

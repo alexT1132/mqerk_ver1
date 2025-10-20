@@ -1,12 +1,14 @@
 // src\hooks\useAdminNotifications.js
 import { useState, useEffect, useRef } from 'react';
 import { getAdminDashboardMetricsRequest } from '../api/usuarios.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 /**
  * Hook personalizado para manejar notificaciones administrativas
  * Gestiona notificaciones específicas del panel de administración
  */
 export function useAdminNotifications() {
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
@@ -17,6 +19,8 @@ export function useAdminNotifications() {
     let isMounted = true;
 
     const fetchMetrics = async () => {
+      // Evitar llamadas cuando no hay sesión admin
+      if (authLoading || !isAuthenticated || user?.role !== 'admin') return;
       try {
         const { data } = await getAdminDashboardMetricsRequest();
         if (!isMounted) return;
@@ -56,10 +60,12 @@ export function useAdminNotifications() {
       }
     };
 
-    // initial fetch
+    // initial fetch solo si admin
     fetchMetrics();
-    // start polling every 60s
-    pollingRef.current = setInterval(fetchMetrics, 60000);
+    // start polling every 60s si admin
+    if (!authLoading && isAuthenticated && user?.role === 'admin') {
+      pollingRef.current = setInterval(fetchMetrics, 60000);
+    }
 
     // Suscribirse a eventos WS del admin para actualización inmediata
     const wsListener = (e) => {
@@ -90,7 +96,7 @@ export function useAdminNotifications() {
       if (pollingRef.current) clearInterval(pollingRef.current);
       window.removeEventListener('admin-ws-message', wsListener);
     };
-  }, []);
+  }, [authLoading, isAuthenticated, user?.role]);
 
   // Función para alternar el estado del dropdown de notificaciones
   const toggleNotifications = () => {

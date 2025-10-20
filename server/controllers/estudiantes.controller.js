@@ -515,10 +515,21 @@ export const generarContrato = async (req, res) => {
     // Flags de comportamiento
     const force = String(req.query?.force || '0') === '1'; // forzar regeneración
     const store = String(req.query?.store || '0') === '1'; // guardar físicamente y registrar
+    const check = String(req.query?.check || '0') === '1'; // sólo verificar existencia sin generar
     const preview = !store; // si no se especifica store=1 es solo vista previa
 
-    // Si ya existe en BD y no se fuerza: devolver metadata existente
+    // Contrato existente (última versión)
     const existente = await Contratos.getContratoByFolio(estudiante.folio).catch(() => null);
+
+    // Rama de sólo verificación (no genera ni guarda)
+    if (check) {
+      if (existente && existente.archivo) {
+        return res.status(200).json({ existing: true, archivo: existente.archivo, stored: true, message: 'Contrato existente' });
+      }
+      return res.status(200).json({ existing: false, stored: false, message: 'Contrato no encontrado' });
+    }
+
+    // Si ya existe en BD y no se fuerza y se pide store (guardar) simplemente devolver
     if (existente && existente.archivo && !force && store) {
       return res.status(200).json({ existing: true, archivo: existente.archivo, stored: true, message: 'Contrato existente' });
     }
@@ -668,5 +679,47 @@ export const resetPasswordAlumno = async (req, res) => {
   } catch (error) {
     console.error('resetPasswordAlumno error:', error);
     return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// ===== Eliminar contrato existente más reciente (admin) =====
+export const eliminarContrato = async (req, res) => {
+  try {
+    const folio = req.params?.folio;
+    if (!folio) return res.status(400).json({ message: 'Folio requerido' });
+    const folioParsed = parseFolioParam(folio);
+    let estudiante = null;
+    if (folioParsed == null) {
+      estudiante = await Estudiantes.getEstudianteByFolioFormateado(folio);
+    } else {
+      estudiante = await Estudiantes.getEstudianteByFolio(folioParsed);
+      if (!estudiante) {
+        estudiante = await Estudiantes.getEstudianteByFolioFormateado(folio);
+      }
+    }
+    if (!estudiante) return res.status(404).json({ message: 'Estudiante no encontrado' });
+
+    const existente = await Contratos.getContratoByFolio(estudiante.folio);
+    if (!existente) return res.status(404).json({ message: 'No hay contrato registrado para eliminar' });
+
+    // Borrar archivos físicos de TODAS las versiones
+    try {
+      const [allRows] = await db.query('SELECT archivo FROM contratos WHERE folio = ?', [estudiante.folio]);
+      for (const row of allRows) {
+        if (row.archivo) {
+          try {
+            const rel = row.archivo.startsWith('/') ? row.archivo.slice(1) : row.archivo;
+            const abs = path.resolve(process.cwd(), rel);
+            if (fs.existsSync(abs)) await fs.promises.unlink(abs);
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+
+    await Contratos.deleteContratosByFolio(estudiante.folio);
+    return res.status(200).json({ message: 'Contratos eliminados', removed: true });
+  } catch (error) {
+    console.error('Error eliminarContrato:', error);
+    return res.status(500).json({ message: 'Error interno del servidor al eliminar contrato' });
   }
 };

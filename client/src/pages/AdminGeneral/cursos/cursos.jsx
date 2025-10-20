@@ -2,7 +2,6 @@ import { useState } from "react";
 import TopbarDash from "../../../components/AdminGeneral/TopbarDash";
 import { SidebarRail, SidebarDrawer } from "../../../components/AdminGeneral/SidebarAdmin";
 import FloatingSidebarButton  from "../../../components/AdminGeneral/FloatingSidebarButton";
-import CreateButton from "./Btn";
 import CursosTable from "./TablaCursos";
 import CourseWizardModal from "./CourseWizardModal";
 
@@ -36,10 +35,9 @@ function Dashboard() {
         <TopbarDash
             title="Asesores Especializados en la Enseñanza de las Ciencias y Tecnología"
         />
-        <CreateButton className="fixed top-25 md:left-25 sm:left-8 z-[20] drop-shadow-lg" onClick={() => setOpen(true)} />
         <CourseWizardModal open={open} onClose={() => setOpen(false)} onSubmit={handleSubmit} />
-        <div className="fixed top-45 inset-x-0 sm:left-10 z-[20]">
-            <div className="mx-auto w-[90%] max-h-[35vh] overflow-y-auto overflow-x-auto rounded-xl">
+        <div className="fixed top-25 inset-x-0 sm:left-10 z-[20]">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <CursosTable data={cursos} onEdit={onEdit} onDelete={onDelete} onView={onView} />
             </div>
         </div>

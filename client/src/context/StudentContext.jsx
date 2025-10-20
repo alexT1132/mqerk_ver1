@@ -148,6 +148,37 @@ export const StudentProvider = ({ children }) => {
   // Reemplazo de mocks: se cargará dinámicamente EEAU desde backend
   const [enrolledCourses, setEnrolledCourses] = useState([]);
 
+  // Utilidades de red (reintento simple con backoff corto)
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  const fetchWithRetry = async (url, options, retries = 2, delayMs = 400) => {
+    let lastErr;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const res = await fetch(url, options);
+        if (res.ok) return res;
+        // Log detallado del cuerpo cuando hay 5xx (ayuda a depurar sin romper UI)
+        try {
+          const ct = res.headers.get('content-type') || '';
+          const body = ct.includes('application/json') ? JSON.stringify(await res.json()) : await res.text();
+          console.warn(`[EEAU] intento ${attempt + 1} fallo: status=${res.status}`, body?.slice?.(0, 500) || body);
+        } catch {}
+        if (res.status >= 500 && res.status <= 599 && attempt < retries) {
+          await sleep(delayMs);
+          continue;
+        }
+        return res; // 4xx u otros: no reintentar
+      } catch (err) {
+        lastErr = err;
+        console.warn(`[EEAU] error de red intento ${attempt + 1}:`, err?.message || err);
+        if (attempt < retries) {
+          await sleep(delayMs);
+          continue;
+        }
+      }
+    }
+    throw lastErr || new Error('fetchWithRetry agotado');
+  };
+
   // TODO: BACKEND - Función para cargar cursos matriculados desde API
   const loadEnrolledCourses = async () => {
     const buildCourse = (override = {}) => ({
@@ -170,7 +201,7 @@ export const StudentProvider = ({ children }) => {
       ...override
     });
     try {
-      const res = await fetch('/api/eeau', { credentials: 'include' });
+      const res = await fetchWithRetry('/api/eeau', { credentials: 'include' }, 2, 450);
       if (!res.ok) {
         console.warn('No se pudo obtener EEAU (status no OK, usando fallback):', res.status);
         const fallback = buildCourse();

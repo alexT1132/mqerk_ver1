@@ -42,14 +42,21 @@ export async function issueTokenCookies(res, userId, role, { accessMins, refresh
   const refresh = await createRefreshToken({ id: userId, role: roleLower }, refreshExp);
   const isProd = process.env.NODE_ENV === 'production';
   const base = { httpOnly: true, sameSite: 'lax', secure: isProd, path: '/' };
-  if (remember) base.maxAge = refreshDays * 24 * 60 * 60 * 1000;
+  // ACCESS TOKEN: siempre de vida corta; si remember=true lo hacemos persistente (maxAge) para soportar pestañas nuevas.
+  if (remember) base.maxAge = refreshDays * 24 * 60 * 60 * 1000; // aunque el access expira antes, esto evita que se pierda al cerrar sólo una pestaña
   const accessName = roleLower ? `token_${roleLower}` : ACCESS_GENERIC;
   const refreshName = roleLower ? `rtoken_${roleLower}` : REFRESH_GENERIC;
   // Legacy role-specific + unified canonical
   res.cookie(accessName, access, base);
-  res.cookie(refreshName, refresh, { ...base, maxAge: refreshDays * 24 * 60 * 60 * 1000 });
   res.cookie(ACCESS_UNIFIED, access, base);
-  res.cookie(REFRESH_UNIFIED, refresh, { ...base, maxAge: refreshDays * 24 * 60 * 60 * 1000 });
+
+  // REFRESH TOKEN: si remember=false lo dejamos como cookie de sesión (sin maxAge) para que se elimine al cerrar el navegador completo.
+  // Esto corrige el problema reportado: volver a abrir el panel sin haber hecho logout ya no re-autentica si no marcó "recordarme".
+  const refreshCookieOptions = remember
+    ? { ...base, maxAge: refreshDays * 24 * 60 * 60 * 1000 }
+    : { ...base }; // sesión (desaparece al cerrar navegador)
+  res.cookie(refreshName, refresh, refreshCookieOptions);
+  res.cookie(REFRESH_UNIFIED, refresh, refreshCookieOptions);
   return { accessName, refreshName, unified: { access: ACCESS_UNIFIED, refresh: REFRESH_UNIFIED } };
 }
 
