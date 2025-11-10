@@ -1,0 +1,38 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "simulate": "node ./scripts/simular_tests.js",
+    "seed:asesor": "node ./scripts/seed-asesor-sample.js",
+    "seed:plantillas-fijos": "node ./scripts/seed-gastos-fijos-plantillas.js",
+    "migrate": "node ./scripts/run-migrations.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cookie": "^0.6.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.18",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "googleapis": "^155.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.1",
+    "mysql2": "^3.14.1",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2",
+    "pdf-lib": "^1.17.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
