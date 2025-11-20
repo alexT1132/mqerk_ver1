@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 // Nota: reemplazado react-katex por un componente local liviano para evitar dependencia
 import InlineMath from './InlineMath.jsx';
+import MathPalette, { Modal } from './MathPalette.jsx';
 
 const genId = () => {
   // Navegador moderno y https/localhost
@@ -119,120 +120,7 @@ function ImagePicker({ value, onChange, label = "Imagen (opcional)" }) {
   );
 }
 
-/* ------------------------------- Modal base ------------------------------ */
-function Modal({ open, onClose, title, children, footer }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 px-4">
-      <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b p-4">
-          <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100"
-            aria-label="Cerrar"
-          >
-            ✕
-          </button>
-        </div>
-        <div className="max-h-[70vh] overflow-y-auto p-4">{children}</div>
-        <div className="flex justify-end gap-3 border-t p-3">
-          {footer ? footer : (
-            <button
-              onClick={onClose}
-              className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Cerrar
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------- Paleta de fórmulas ---------------------------- */
-export const SECTIONS = {
-  'Básico': [
-    'x^2', 'x_i', '\\sqrt{x}', '\\sqrt[n]{x}',
-    '\\frac{a}{b}', '\\cdot', '\\times', '\\div',
-    '\\pm', '\\mp', '\\dots', '\\ldots', '\\cdots',
-    '\\overline{AB}', '\\hat{\\theta}', '\\vec{v}', '^{\\circ}',
-  ],
-
-  'Griego': [
-    '\\alpha','\\beta','\\gamma','\\delta','\\epsilon','\\zeta','\\eta','\\theta',
-    '\\iota','\\kappa','\\lambda','\\mu','\\nu','\\xi','\\pi','\\rho','\\sigma',
-    '\\tau','\\upsilon','\\phi','\\chi','\\psi','\\omega',
-    '\\Gamma','\\Delta','\\Theta','\\Lambda','\\Xi','\\Pi','\\Sigma','\\Upsilon','\\Phi','\\Psi','\\Omega'
-  ],
-
-  'ABΓ (Conj.)': [
-    '\\mathbb{N}','\\mathbb{Z}','\\mathbb{Q}','\\mathbb{R}','\\mathbb{C}',
-    '\\mathcal{A}','\\mathcal{B}','\\mathcal{L}','\\mathcal{F}',
-    '\\subset','\\subseteq','\\supset','\\supseteq','\\in','\\notin',
-    '\\cup','\\cap','\\setminus','\\varnothing'
-  ],
-
-  'Trig': [
-    '\\sin','\\cos','\\tan','\\cot','\\sec','\\csc',
-    '\\arcsin','\\arccos','\\arctan',
-    '\\sin^{-1}','\\cos^{-1}','\\tan^{-1}'
-  ],
-
-  'Rel/Op': [
-    '\\le','\\ge','<','>','\\neq','\\approx','\\equiv','\\propto',
-    '\\to','\\Rightarrow','\\Leftarrow','\\Leftrightarrow',
-    '\\parallel','\\perp','\\angle','\\measuredangle'
-  ],
-
-  'Álgebra': [
-    '\\log','\\ln','e^{x}','a^{b}','x^{\\square}','_{\\square}',
-    '(x+1)^2','(a-b)^2','(a+b)^3','(a-b)^3',
-    '\\sqrt{\\square}','\\sqrt[n]{\\square}',
-    '\\binom{n}{k}','\\choose','\\gcd','\\operatorname{lcm}'
-  ],
-
-  'Cálculo': [
-    '\\sum_{i=1}^{n} a_i','\\prod_{k=1}^{n} b_k',
-    '\\int f(x)\\,dx','\\int_{a}^{b} f(x)\\,dx',
-    '\\iint\\, dA','\\iiint\\, dV','\\oint\\,',
-    '\\lim_{x\\to 0}','\\lim_{n\\to\\infty}',
-    '\\frac{d}{dx}','\\frac{d^2}{dx^2}',
-    '\\frac{\\partial}{\\partial x}','\\frac{\\partial^2}{\\partial x^2}'
-  ],
-
-  'Parént./Matriz': [
-    '\\left(\\square\\right)','\\left[\\square\\right]','\\left\\{\\square\\right\\}',
-    '\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}',
-    '\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}',
-    '\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix}',
-    '\\begin{matrix} a & b & c \\\\ d & e & f \\end{matrix}'
-  ],
-
-  'Vect/Flechas': [
-    '\\vec{v}','\\overrightarrow{AB}','\\overleftarrow{CD}',
-    '\\nabla','\\nabla\\cdot\\vec{F}','\\nabla\\times\\vec{F}'
-  ],
-
-  'Prob/Combi': [
-    'P(A)','P(A\\mid B)','\\Pr\\,(\\square)','\\mathbb{E}[X]','\\operatorname{Var}(X)',
-    '\\binom{n}{k}','\\frac{n!}{k!\\,(n-k)!}','n!','(n-1)!'
-  ],
-
-  'Química/H₂O': [
-    'H_2O','CO_2','Na^+','Cl^-','x^{2+}','x^{3-}'
-  ],
-
-  'Plantillas': [
-    '\\frac{\\square}{\\square}','\\sqrt{\\square}','\\sqrt[n]{\\square}',
-    '\\left(\\square\\right)','\\left[\\square\\right]','\\left\\{\\square\\right\\}',
-    'a^{\\square}','\\_{\\square}','\\lim_{x\\to \\square}',
-    '\\sum_{i=\\square}^{\\square} \\square','\\int_{\\square}^{\\square} \\square\\,dx'
-  ],
-};
-
-/** Inserta en el cursor de un textarea */
+/** Inserta en el cursor de un textarea y selecciona el primer \\square si existe */
 function insertAtCursor(textarea, insert, setValue) {
   const start = textarea.selectionStart ?? textarea.value.length;
   const end = textarea.selectionEnd ?? textarea.value.length;
@@ -242,51 +130,17 @@ function insertAtCursor(textarea, insert, setValue) {
 
   requestAnimationFrame(() => {
     textarea.focus();
-    const pos = start + insert.length;
-    textarea.selectionStart = textarea.selectionEnd = pos;
+    const PLACE = "\\square";
+    const idx = insert.indexOf(PLACE);
+    if (idx !== -1) {
+      const abs = start + idx;
+      textarea.selectionStart = abs;
+      textarea.selectionEnd = abs + PLACE.length;
+    } else {
+      const pos = start + insert.length;
+      textarea.selectionStart = textarea.selectionEnd = pos;
+    }
   });
-}
-
-/** Modal con la paleta; estable (sin hooks condicionales) */
-function MathPalette({ open, onClose, onPick }) {
-  const [tab, setTab] = useState("Básico");
-
-  useEffect(() => {
-    if (open) setTab("Básico");
-  }, [open]);
-
-  if (!open) return null;
-
-  return (
-    <Modal open={open} onClose={onClose} title="Insertar fórmula">
-      <div className="flex flex-wrap items-center gap-2 border-b pb-3">
-        {Object.keys(SECTIONS).map((label) => (
-          <button
-            key={label}
-            onClick={() => setTab(label)}
-            className={`rounded-full px-3 py-1 text-sm ${
-              tab === label ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-700"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6">
-        {SECTIONS[tab].map((tok, i) => (
-          <button
-            key={i}
-            onClick={() => onPick(`$${tok}$`)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm hover:bg-slate-50"
-            title={tok}
-          >
-            <InlineMath math={tok} />
-          </button>
-        ))}
-      </div>
-    </Modal>
-  );
 }
 
 /* -------------------------- Componente de Opción ------------------------- */

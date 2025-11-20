@@ -114,27 +114,61 @@ export default function PdfMobileViewer({ url, initialPage = 1, enableGestures =
   }, [enableGestures, next, prev]);
 
   return (
-    <div className="w-full flex flex-col items-stretch">
-      <div ref={containerRef} className="w-full bg-gray-100 rounded-lg border border-gray-300 overflow-hidden">
+    <div className="w-full h-full flex flex-col items-stretch flex-1 min-h-0">
+      <div ref={containerRef} className="w-full flex-1 bg-gray-100 rounded-lg border border-gray-300 overflow-hidden flex flex-col min-h-0">
         {loading ? (
-          <div className="h-64 flex items-center justify-center text-gray-500 text-sm">Cargando PDF…</div>
+          <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">Cargando PDF…</div>
         ) : error ? (
-          <div className="h-64 flex items-center justify-center text-red-500 text-sm">{error}</div>
+          <div className="flex-1 flex items-center justify-center text-red-500 text-sm font-medium">{error}</div>
         ) : (
-          <div className="w-full overflow-auto" style={{ maxHeight: '60vh' }}>
-            <canvas ref={canvasRef} className="block mx-auto" style={{ background: 'white' }} />
+          <div className="flex-1 w-full overflow-auto min-h-0" style={{ maxHeight: 'none' }}>
+            <canvas ref={canvasRef} className="block mx-auto" style={{ background: 'white', maxWidth: '100%', height: 'auto' }} />
           </div>
         )}
       </div>
-      <div className="mt-2 flex items-center justify-between gap-2">
+      <div className="mt-2 flex items-center justify-between gap-2 flex-wrap px-1">
         <div className="flex items-center gap-1">
-          <button onClick={prev} disabled={page <= 1} className={`px-3 py-1 rounded-md text-xs border ${page <= 1 ? 'text-gray-400 border-gray-200' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}>Anterior</button>
-          <button onClick={next} disabled={page >= (numPages||1)} className={`px-3 py-1 rounded-md text-xs border ${(page >= (numPages||1)) ? 'text-gray-400 border-gray-200' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}>Siguiente</button>
+          <button 
+            onClick={prev} 
+            disabled={page <= 1} 
+            className={`p-2 rounded-md border transition-colors flex items-center justify-center ${page <= 1 ? 'text-gray-400 border-gray-200 bg-gray-50' : 'text-purple-700 border-purple-300 hover:bg-purple-50 bg-white'}`}
+            aria-label="Página anterior"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button 
+            onClick={next} 
+            disabled={page >= (numPages||1)} 
+            className={`p-2 rounded-md border transition-colors flex items-center justify-center ${(page >= (numPages||1)) ? 'text-gray-400 border-gray-200 bg-gray-50' : 'text-purple-700 border-purple-300 hover:bg-purple-50 bg-white'}`}
+            aria-label="Página siguiente"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
-        <div className="text-[11px] text-gray-600">Página {page} de {numPages || 1}</div>
+        <div className="text-xs text-gray-600 font-medium">Página {page} de {numPages || 1}</div>
         <div className="flex items-center gap-1">
-          <button onClick={zoomOut} className="px-2 py-1 rounded-md text-xs border text-purple-700 border-purple-300 hover:bg-purple-50">-</button>
-          <button onClick={zoomIn} className="px-2 py-1 rounded-md text-xs border text-purple-700 border-purple-300 hover:bg-purple-50">+</button>
+          <button 
+            onClick={zoomOut} 
+            className="p-2 rounded-md border text-purple-700 border-purple-300 hover:bg-purple-50 bg-white transition-colors flex items-center justify-center"
+            aria-label="Alejar"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+            </svg>
+          </button>
+          <button 
+            onClick={zoomIn} 
+            className="p-2 rounded-md border text-purple-700 border-purple-300 hover:bg-purple-50 bg-white transition-colors flex items-center justify-center"
+            aria-label="Acercar"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>

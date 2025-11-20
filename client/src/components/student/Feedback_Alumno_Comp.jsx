@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown, RefreshCcw, PlusCircle, Info, MessageSquareText, X } from 'lucide-react';
 import PdfMobileViewer from '../common/PdfMobileViewer.jsx';
-import PdfFullScreenOverlay from '../common/PdfFullScreenOverlay.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { listTasks, listSubmissionsByStudent, createSubmission, createTask, updateTask, cancelSubmissionApi, getSubmissionNote } from '../../api/feedback.js';
 import { buildStaticUrl, getApiOrigin } from '../../utils/url.js';
@@ -26,7 +25,7 @@ const Feedback_Alumno_Comp = () => {
   const [newTaskError, setNewTaskError] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiScore, setConfettiScore] = useState(0);
-  const [showMotivationalMessage, setShowMotivationalMessage] = useState(false); 
+  const [showMotivationalMessage, setShowMotivationalMessage] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState('all'); // 'all' o etiqueta ordinal ('Octavo', ...)
   const [showViewTaskModal, setShowViewTaskModal] = useState(false);
   const [viewingTaskName, setViewingTaskName] = useState('');
@@ -55,7 +54,6 @@ const Feedback_Alumno_Comp = () => {
   const [notesBySubmission, setNotesBySubmission] = useState({}); // { subId: 'texto' }
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteView, setNoteView] = useState({ text: '', taskName: '' });
-  const [showPdfFullScreen, setShowPdfFullScreen] = useState(false);
 
   // Conteo global de tareas creadas por el alumno (informativo)
   const studentOwnedCount = tasks.filter(t => t._isStudentOwned).length;
@@ -90,7 +88,7 @@ const Feedback_Alumno_Comp = () => {
   const [showTripleEffect, setShowTripleEffect] = useState(false);
   // Tamaño último archivo elegido (para feedback rápido)
   const [lastSelectedSizeMB, setLastSelectedSizeMB] = useState(null);
-  const formatMB = (bytes) => (bytes / (1024*1024)).toFixed(2);
+  const formatMB = (bytes) => (bytes / (1024 * 1024)).toFixed(2);
 
   // Efecto para calcular los puntos totales
   useEffect(() => {
@@ -107,10 +105,10 @@ const Feedback_Alumno_Comp = () => {
       try {
         const [tasksRes, subsRes] = await Promise.all([
           listTasks({ activo: 1 }),
-          listSubmissionsByStudent(alumnoId, { limit: 10000 }).catch(() => ({ data: { data: [] }}))
+          listSubmissionsByStudent(alumnoId, { limit: 10000 }).catch(() => ({ data: { data: [] } }))
         ]);
         if (cancel) return;
-  const tasksRaw = Array.isArray(tasksRes?.data?.data) ? tasksRes.data.data : [];
+        const tasksRaw = Array.isArray(tasksRes?.data?.data) ? tasksRes.data.data : [];
         const subs = Array.isArray(subsRes?.data?.data) ? subsRes.data.data : [];
         // Calcular conteo mensual (por mes calendario basado en created_at)
         const byMonth = subs.reduce((acc, s) => {
@@ -199,18 +197,18 @@ const Feedback_Alumno_Comp = () => {
       fd.append('id_estudiante', alumnoId);
       // Si es una actividad creada por el alumno, actualizar due_date al momento de subir
       const t = tasks.find(x => x.id === taskId);
-  // No modificar due_date aquí: mantener el mes asignado al crear para que el agrupado sea consistente
-  try { /* antes se actualizaba due_date aquí; se elimina para evitar mover la tarea de mes */ } catch {}
+      // No modificar due_date aquí: mantener el mes asignado al crear para que el agrupado sea consistente
+      try { /* antes se actualizaba due_date aquí; se elimina para evitar mover la tarea de mes */ } catch { }
       const res = await createSubmission(fd);
       const sub = res?.data?.data;
       if (sub) {
-  const rel = sub.archivo;
-  const fullUrl = rel ? buildStaticUrl(rel) : null;
-  setTasks(prev => prev.map(t => {
-    if (t.id !== taskId) return t;
-    // Mantener dueDate sin cambios para no mover la tarea de mes al subir
-    return { ...t, submittedPdf: fullUrl, isSubmitted: true, score: sub.puntos || 10, _subId: sub.id, dueDate: t.dueDate };
-  }));
+        const rel = sub.archivo;
+        const fullUrl = rel ? buildStaticUrl(rel) : null;
+        setTasks(prev => prev.map(t => {
+          if (t.id !== taskId) return t;
+          // Mantener dueDate sin cambios para no mover la tarea de mes al subir
+          return { ...t, submittedPdf: fullUrl, isSubmitted: true, score: sub.puntos || 10, _subId: sub.id, dueDate: t.dueDate };
+        }));
         // Actualizar contador mensual en caliente si NO es reemplazo
         try {
           if (!replacingExisting) {
@@ -220,7 +218,7 @@ const Feedback_Alumno_Comp = () => {
               return next;
             });
           }
-        } catch {}
+        } catch { }
         setConfettiScore(sub.puntos || 10);
         const randomWord = motivationalWords[Math.floor(Math.random() * motivationalWords.length)];
         setMotivationalWord(randomWord);
@@ -257,7 +255,7 @@ const Feedback_Alumno_Comp = () => {
       setTasks(prevTasks => prevTasks.map(task => task.id === taskId ? { ...task, submittedPdf: null, isSubmitted: false, score: null, _subId: null } : task));
       // Recalcular contador mensual desde backend para consistencia
       try {
-        const subsRes = await listSubmissionsByStudent(alumnoId, { limit: 10000 }).catch(() => ({ data: { data: [] }}));
+        const subsRes = await listSubmissionsByStudent(alumnoId, { limit: 10000 }).catch(() => ({ data: { data: [] } }));
         const subs = Array.isArray(subsRes?.data?.data) ? subsRes.data.data : [];
         const byMonth = subs.reduce((acc, s) => {
           if (s?.replaced_by) return acc; // solo vigentes
@@ -270,7 +268,7 @@ const Feedback_Alumno_Comp = () => {
         const usedThisMonth = byMonth[nowM] || 0;
         setMonthlyCountThisMonth(usedThisMonth);
         setMonthlyCapReached(usedThisMonth >= perMonthCap);
-      } catch {}
+      } catch { }
       setShowModal(false);
       setSelectedTask(null);
     } catch (e) {
@@ -313,12 +311,12 @@ const Feedback_Alumno_Comp = () => {
           due = new Date(y, (m - 1), 1, 12, 0, 0);
         }
       }
-  const body = { nombre: name, due_date: due.toISOString(), puntos: 10, grupos: JSON.stringify([alumnoId]), activo: 1 };
+      const body = { nombre: name, due_date: due.toISOString(), puntos: 10, grupos: JSON.stringify([alumnoId]), activo: 1 };
       await createTask(body);
       // Refrescar lista
-        const [tasksRes, subsRes] = await Promise.all([
+      const [tasksRes, subsRes] = await Promise.all([
         listTasks({ activo: 1 }),
-        listSubmissionsByStudent(alumnoId, { limit: 10000 }).catch(() => ({ data: { data: [] }}))
+        listSubmissionsByStudent(alumnoId, { limit: 10000 }).catch(() => ({ data: { data: [] } }))
       ]);
       const tasksRaw = Array.isArray(tasksRes?.data?.data) ? tasksRes.data.data : [];
       const subs = Array.isArray(subsRes?.data?.data) ? subsRes.data.data : [];
@@ -337,20 +335,20 @@ const Feedback_Alumno_Comp = () => {
       const filtered = tasksRaw.filter(t => { const g = Array.isArray(t.grupos) ? t.grupos : null; return !g || g.includes(alumnoId); });
       const mapped = filtered.map(t => {
         const sub = subs.find(s => s.id_task === t.id && !s.replaced_by);
-  const rel = sub?.archivo || null; const fullUrl = rel ? buildStaticUrl(rel) : null;
+        const rel = sub?.archivo || null; const fullUrl = rel ? buildStaticUrl(rel) : null;
         return { id: t.id, name: t.nombre, dueDate: t.due_date, submittedPdf: fullUrl, isSubmitted: !!sub, score: sub ? (sub.puntos || 10) : null, _subId: sub?.id || null, _isStudentOwned: Array.isArray(t.grupos) && t.grupos.includes(alumnoId) };
       });
       setTasks(mapped);
       closeCreateTask();
     } catch (e) {
       console.error('crear actividad abierta', e);
-  setNewTaskError(e?.response?.data?.message || 'No se pudo crear la actividad');
+      setNewTaskError(e?.response?.data?.message || 'No se pudo crear la actividad');
     }
   };
 
   const openViewTaskModal = (task) => {
     setViewingTaskName(task.name);
-  setViewingTaskPdf(task.submittedPdf);
+    setViewingTaskPdf(task.submittedPdf);
     setShowViewTaskModal(true);
   };
 
@@ -380,7 +378,7 @@ const Feedback_Alumno_Comp = () => {
   // Helpers y mapeo de meses (ordinales relativos al inicio del curso)
   const monthKey = (d) => {
     const dt = new Date(d);
-    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
   };
   const addMonths = (date, n) => {
     const d = new Date(date);
@@ -389,10 +387,10 @@ const Feedback_Alumno_Comp = () => {
   const distinctMonths = React.useMemo(() => {
     const set = new Set();
     for (const t of tasks) { if (t?.dueDate) set.add(monthKey(t.dueDate)); }
-    return Array.from(set).sort((a,b)=> new Date(b+"-01") - new Date(a+"-01"));
+    return Array.from(set).sort((a, b) => new Date(b + "-01") - new Date(a + "-01"));
   }, [tasks]);
   // Ordinales ascendentes (1..8) para alinear con la duración del curso: Primero, Segundo, ...
-  const ORDINALS_ASC = ['Primero','Segundo','Tercero','Cuarto','Quinto','Sexto','Séptimo','Octavo'];
+  const ORDINALS_ASC = ['Primero', 'Segundo', 'Tercero', 'Cuarto', 'Quinto', 'Sexto', 'Séptimo', 'Octavo'];
   // Determinar el "inicio del curso" para mapear 8 meses relativos.
   // Prioridad: alumno.fecha_inicio > alumno.created_at > primer dueDate en tareas > hoy
   const courseStartDate = React.useMemo(() => {
@@ -431,7 +429,7 @@ const Feedback_Alumno_Comp = () => {
   // Recalcular el conteo de creadas por el alumno para el mes seleccionado (ordinal)
   const studentOwnedCountForSelected = React.useMemo(() => {
     try {
-      const mk = selectedMonth === 'all' ? (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })() : monthKeyByOrdinal[selectedMonth];
+      const mk = selectedMonth === 'all' ? (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; })() : monthKeyByOrdinal[selectedMonth];
       if (!mk) return 0;
       return tasks.filter(t => t._isStudentOwned && t?.dueDate && monthKey(t.dueDate) === mk).length;
     } catch { return 0; }
@@ -446,7 +444,7 @@ const Feedback_Alumno_Comp = () => {
     const [y, m] = mk.split('-').map(Number);
     const now = new Date();
     if (y < now.getFullYear()) return true;
-    if (y === now.getFullYear() && (m-1) < now.getMonth()) return true;
+    if (y === now.getFullYear() && (m - 1) < now.getMonth()) return true;
     return false;
   }, [selectedMonth, monthKeyByOrdinal]);
 
@@ -634,15 +632,15 @@ const Feedback_Alumno_Comp = () => {
   };
 
   return (
-  <div className="min-h-screen bg-white p-2 xs:p-3 sm:p-4 md:p-5 lg:p-6 font-sans text-gray-800 flex flex-col items-center relative overflow-hidden">
+    <div className="min-h-screen bg-white p-2 xs:p-3 sm:p-4 md:p-5 lg:p-6 font-sans text-gray-800 flex flex-col items-center relative overflow-hidden">
       {/* Título responsivo */}
-  <h1 className="text-2xl xs:text-3xl sm:text-5xl font-extrabold mb-4 sm:mb-8 text-purple-700 drop-shadow-lg text-center tracking-tight">
+      <h1 className="text-2xl xs:text-3xl sm:text-5xl font-extrabold mb-4 sm:mb-8 text-purple-700 drop-shadow-lg text-center tracking-tight">
         FEEDBACK
       </h1>
-     
+
 
       {/* Puntos + Progreso */}
-  <div className="bg-gradient-to-r from-purple-100 to-indigo-100 border-2 border-purple-200 rounded-xl shadow-lg p-4 sm:p-5 mb-4 sm:mb-6 flex flex-col sm:flex-row gap-5 sm:items-center w-full max-w-3xl">
+      <div className="bg-gradient-to-r from-purple-100 to-indigo-100 border-2 border-purple-200 rounded-xl shadow-lg p-4 sm:p-5 mb-4 sm:mb-6 flex flex-col sm:flex-row gap-5 sm:items-center w-full max-w-3xl">
         <div className="flex items-center gap-4">
           <Star className="w-10 h-10 sm:w-12 sm:h-12 text-yellow-500 drop-shadow-lg" fill="currentColor" />
           <div>
@@ -665,7 +663,7 @@ const Feedback_Alumno_Comp = () => {
         <div className="w-full max-w-3xl mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{fetchError}</div>
       )}
       {loadingTasks && (
-        <div className="w-full max-w-3xl mb-4 text-sm text-purple-700 bg-purple-50 border border-purple-200 rounded-lg p-3 flex items-center gap-2"><RefreshCcw className="w-4 h-4 animate-spin"/>Cargando...</div>
+        <div className="w-full max-w-3xl mb-4 text-sm text-purple-700 bg-purple-50 border border-purple-200 rounded-lg p-3 flex items-center gap-2"><RefreshCcw className="w-4 h-4 animate-spin" />Cargando...</div>
       )}
 
       {/* Animación de confeti y felicitaciones */}
@@ -765,8 +763,8 @@ const Feedback_Alumno_Comp = () => {
         </div>
       )}
 
-  {/* Filtros: Mes + Búsqueda */}
-  <div className="mb-4 sm:mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full max-w-3xl lg:static sticky top-0 z-30 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 px-1 pt-2 rounded-xl">
+      {/* Filtros: Mes + Búsqueda */}
+      <div className="mb-4 sm:mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full max-w-3xl lg:static sticky top-0 z-30 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 px-1 pt-2 rounded-xl">
         <label className="text-sm sm:text-lg font-medium text-purple-700 drop-shadow-sm text-center sm:text-left">
           Feedback del mes:
         </label>
@@ -781,7 +779,7 @@ const Feedback_Alumno_Comp = () => {
             <span className="truncate">{getSelectedMonthName()}</span>
             <ChevronDown className={`w-5 h-5 text-purple-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
-          
+
           {isDropdownOpen && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-purple-200 rounded-lg shadow-xl z-30 max-h-48 overflow-y-auto">
               <div
@@ -790,10 +788,10 @@ const Feedback_Alumno_Comp = () => {
               >
                 Todos los meses
               </div>
-        {months.map((month, index) => (
+              {months.map((month, index) => (
                 <div
                   key={index}
-          onClick={() => handleMonthSelect(month, month)}
+                  onClick={() => handleMonthSelect(month, month)}
                   className="px-4 py-3 hover:bg-purple-50 cursor-pointer text-purple-700 border-b border-purple-100 last:border-b-0"
                 >
                   {month}
@@ -825,127 +823,127 @@ const Feedback_Alumno_Comp = () => {
         </div>
       </div>
 
-  {/* Vista de escritorio - Tabla */}
-  {/* Contenedor más ancho y con scroll horizontal para evitar que el contenido se mueva o se corte */}
-  <div className="hidden lg:block w-full max-w-6xl 2xl:max-w-5xl">
-    <div className="bg-purple-100 bg-opacity-70 backdrop-blur-sm border-2 border-purple-300 rounded-2xl shadow-xl overflow-x-auto">
-      <table className="min-w-[1000px] 2xl:min-w-[900px] table-fixed text-[13px] 2xl:text-[12px]">
-          <colgroup>
-            <col style={{ width: '6%' }} />
-            <col style={{ width: '36%' }} />
-            <col style={{ width: '16%' }} />
-            <col style={{ width: '16%' }} />
-            <col style={{ width: '8%' }} />
-            <col style={{ width: '6%' }} />
-            <col style={{ width: '6%' }} />
-            <col style={{ width: '6%' }} />
-          </colgroup>
-          <thead className="bg-gradient-to-r from-purple-500 to-indigo-600">
-            <tr>
-      <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">No.</th>
-      <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Nombre de la tarea</th>
-      <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Cargar mi actividad</th>
-      <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Fecha de entrega</th>
-      <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Visualizar</th>
-      <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Nota</th>
-      <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Entregado</th>
-      <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Puntaje</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-purple-300 bg-purple-100 bg-opacity-50">
-            {paginatedTasks.length > 0 ? (
-              paginatedTasks.map((task, index) => (
-                <tr key={task.id} className="hover:bg-purple-200 hover:bg-opacity-70 transition-all duration-200">
-                  <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px] font-medium text-purple-700">{indexOfFirst + index + 1}</td>
-                  <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px] text-gray-800 font-medium truncate" title={task.name}>{task.name}</td>
-                  <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
-                    <div className="flex justify-center items-center">
-                    <button
-                      onClick={() => openModal(task)}
-                      disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
-                      className={`flex items-center px-4 2xl:px-3 py-2 2xl:py-1.5 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 text-sm 2xl:text-xs ${
-                        (!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
-                          ? 'bg-gray-400 cursor-not-allowed text-white'
-                          : (task.isSubmitted
-                              ? 'bg-purple-500 hover:bg-purple-600 text-white focus:ring-purple-300'
-                              : 'bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-300')
-                      }`}
-                    >
-                      <Upload className="w-5 h-5 mr-2" />
-                      {task.isSubmitted ? 'Gestionar Entrega' : (monthlyCapReached ? 'Límite mensual' : 'Subir Tarea')}
-                    </button>
-                    </div>
-                  </td>
-                  <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px] text-gray-800">
-                    <div className="flex flex-col gap-1">
-                      <span>{(task._isStudentOwned && !task.isSubmitted) ? 'Se genera al subir' : new Date(task.dueDate).toLocaleDateString('es-ES', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}</span>
-                      {(() => { if (task._isStudentOwned && !task.isSubmitted) return null; const u = getUrgencyInfo(task.dueDate, task.isSubmitted); return u ? (
-                        <span className={`inline-block px-2 py-0.5 text-[10px] font-semibold rounded-full ring-1 ${u.color} ${u.ring}`}>{u.label}</span>
-                      ) : null; })()}
-                    </div>
-                  </td>
-                  <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
-                    <div className="flex justify-center items-center">
-                    <button
-                      onClick={() => openViewTaskModal(task)}
-                      disabled={!task.submittedPdf}
-                      className={`p-3 2xl:p-2.5 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 ${
-                        task.submittedPdf
-                          ? 'bg-green-500 hover:bg-green-600 text-white focus:ring-green-300'
-                          : 'bg-gray-400 cursor-not-allowed text-white'
-                      }`}
-                    >
-                      <Eye className="w-5 h-5" />
-                    </button>
-                    </div>
-                  </td>
-                  <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
-                    <div className="flex justify-center items-center">
-                    {task._subId ? (
-                      (notesBySubmission[task._subId] ? (
+      {/* Vista de escritorio - Tabla */}
+      {/* Contenedor más ancho y con scroll horizontal para evitar que el contenido se mueva o se corte */}
+      <div className="hidden lg:block w-full max-w-7xl 2xl:max-w-[1600px]">
+        <div className="bg-purple-100 bg-opacity-70 backdrop-blur-sm border-2 border-purple-300 rounded-2xl shadow-xl overflow-x-auto">
+          <table className="min-w-[1200px] 2xl:min-w-[1200px] table-fixed text-[13px] 2xl:text-[12px]">
+            <colgroup>
+              <col style={{ width: '6%' }} />
+              <col style={{ width: '36%' }} />
+              <col style={{ width: '16%' }} />
+              <col style={{ width: '16%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '6%' }} />
+              <col style={{ width: '6%' }} />
+              <col style={{ width: '6%' }} />
+            </colgroup>
+            <thead className="bg-gradient-to-r from-purple-500 to-indigo-600">
+              <tr>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">No.</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Nombre de la tarea</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Cargar mi actividad</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Fecha de entrega</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Visualizar</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Nota</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Entregado</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Puntaje</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-purple-300 bg-purple-100 bg-opacity-50">
+              {paginatedTasks.length > 0 ? (
+                paginatedTasks.map((task, index) => (
+                  <tr key={task.id} className="hover:bg-purple-200 hover:bg-opacity-70 transition-all duration-200">
+                    <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px] font-medium text-purple-700">{indexOfFirst + index + 1}</td>
+                    <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px] text-gray-800 font-medium truncate" title={task.name}>{task.name}</td>
+                    <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
+                      <div className="flex justify-center items-center">
                         <button
-                          onClick={() => openNoteModal(task)}
-                          className="inline-flex items-center gap-2 px-3 2xl:px-2.5 py-1.5 2xl:py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow text-sm 2xl:text-xs"
-                          title="Ver nota del asesor"
+                          onClick={() => openModal(task)}
+                          disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
+                          className={`flex items-center px-4 2xl:px-3 py-2 2xl:py-1.5 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 text-sm 2xl:text-xs ${(!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
+                              ? 'bg-gray-400 cursor-not-allowed text-white'
+                              : (task.isSubmitted
+                                ? 'bg-purple-500 hover:bg-purple-600 text-white focus:ring-purple-300'
+                                : 'bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-300')
+                            }`}
                         >
-                          <MessageSquareText className="w-4 h-4"/> Nota
+                          <Upload className="w-5 h-5 mr-2" />
+                          {task.isSubmitted ? 'Gestionar Entrega' : (monthlyCapReached ? 'Límite mensual' : 'Subir Tarea')}
                         </button>
-                      ) : (
-                        <span className="text-gray-500">Sin nota</span>
-                      ))
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                    </div>
-                  </td>
-                  <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
-                    <div className="flex justify-center items-center">
-                      {task.isSubmitted ? (
-                        <CheckCircle className="w-7 h-7 text-green-500 drop-shadow-lg" />
-                      ) : (
-                        <XCircle className="w-7 h-7 text-red-500 drop-shadow-lg" />
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
-                    <div className="text-purple-700 font-semibold text-center">{task.score !== null ? `${task.score} pts` : '-'}</div>
+                      </div>
+                    </td>
+                    <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px] text-gray-800">
+                      <div className="flex flex-col gap-1">
+                        <span>{(task._isStudentOwned && !task.isSubmitted) ? 'Se genera al subir' : new Date(task.dueDate).toLocaleDateString('es-ES', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}</span>
+                        {(() => {
+                          if (task._isStudentOwned && !task.isSubmitted) return null; const u = getUrgencyInfo(task.dueDate, task.isSubmitted); return u ? (
+                            <span className={`inline-block px-2 py-0.5 text-[10px] font-semibold rounded-full ring-1 ${u.color} ${u.ring}`}>{u.label}</span>
+                          ) : null;
+                        })()}
+                      </div>
+                    </td>
+                    <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
+                      <div className="flex justify-center items-center">
+                        <button
+                          onClick={() => openViewTaskModal(task)}
+                          disabled={!task.submittedPdf}
+                          className={`p-3 2xl:p-2.5 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 ${task.submittedPdf
+                              ? 'bg-green-500 hover:bg-green-600 text-white focus:ring-green-300'
+                              : 'bg-gray-400 cursor-not-allowed text-white'
+                            }`}
+                        >
+                          <Eye className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
+                      <div className="flex justify-center items-center">
+                        {task._subId ? (
+                          (notesBySubmission[task._subId] ? (
+                            <button
+                              onClick={() => openNoteModal(task)}
+                              className="inline-flex items-center gap-2 px-3 2xl:px-2.5 py-1.5 2xl:py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow text-sm 2xl:text-xs"
+                              title="Ver nota del asesor"
+                            >
+                              <MessageSquareText className="w-4 h-4" /> Nota
+                            </button>
+                          ) : (
+                            <span className="text-gray-500">Sin nota</span>
+                          ))
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
+                      <div className="flex justify-center items-center">
+                        {task.isSubmitted ? (
+                          <CheckCircle className="w-7 h-7 text-green-500 drop-shadow-lg" />
+                        ) : (
+                          <XCircle className="w-7 h-7 text-red-500 drop-shadow-lg" />
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
+                      <div className="text-purple-700 font-semibold text-center">{task.score !== null ? `${task.score} pts` : '-'}</div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="px-6 py-8 text-center text-gray-600 text-lg font-medium">
+                    No hay tareas para el mes seleccionado.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="8" className="px-6 py-8 text-center text-gray-600 text-lg font-medium">
-                  No hay tareas para el mes seleccionado.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-    </div>
+              )}
+            </tbody>
+          </table>
+        </div>
         {/* Controles de paginación escritorio */}
         {filteredTasks.length > TASKS_PER_PAGE && (
           <div className="flex items-center justify-between px-6 py-4 bg-white border-t border-purple-300">
@@ -961,10 +959,10 @@ const Feedback_Alumno_Comp = () => {
                 p === '...'
                   ? <span key={idx} className="px-2 py-1 text-sm text-gray-500 select-none">...</span>
                   : <button
-                      key={p}
-                      onClick={() => goToPage(p)}
-                      className={`w-8 h-8 rounded-md text-sm font-medium border flex items-center justify-center transition ${p === currentPage ? 'bg-purple-600 text-white border-purple-600' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
-                    >{p}</button>
+                    key={p}
+                    onClick={() => goToPage(p)}
+                    className={`w-8 h-8 rounded-md text-sm font-medium border flex items-center justify-center transition ${p === currentPage ? 'bg-purple-600 text-white border-purple-600' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+                  >{p}</button>
               ))}
             </div>
             <button
@@ -978,11 +976,11 @@ const Feedback_Alumno_Comp = () => {
         )}
       </div>
 
-  {/* Vista móvil - Cards en 2 columnas */}
-  <div className="lg:hidden w-full max-w-4xl">
-    {paginatedTasks.length > 0 ? (
-  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-3">
-      {paginatedTasks.map((task, index) => (
+      {/* Vista móvil - Cards en 2 columnas */}
+      <div className="lg:hidden w-full max-w-4xl">
+        {paginatedTasks.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-3">
+            {paginatedTasks.map((task, index) => (
               <div
                 key={task.id}
                 className="relative bg-gradient-to-br from-purple-100 via-indigo-100 to-white border-2 border-purple-200 rounded-3xl shadow-2xl p-3 sm:p-4 md:p-5 flex flex-col gap-2 transition-transform duration-200 hover:scale-[1.02] hover:shadow-purple-300/60"
@@ -1030,9 +1028,11 @@ const Feedback_Alumno_Comp = () => {
                     month: 'short',
                     day: 'numeric',
                   })}</span>
-                  {(() => { if (task._isStudentOwned && !task.isSubmitted) return null; const u = getUrgencyInfo(task.dueDate, task.isSubmitted); return u ? (
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${u.color} ring-1 ${u.ring}`}>{u.label}</span>
-                  ) : null; })()}
+                  {(() => {
+                    if (task._isStudentOwned && !task.isSubmitted) return null; const u = getUrgencyInfo(task.dueDate, task.isSubmitted); return u ? (
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${u.color} ring-1 ${u.ring}`}>{u.label}</span>
+                    ) : null;
+                  })()}
                 </div>
                 {/* Estado visual */}
                 <div className="flex items-center gap-1.5 mb-2">
@@ -1048,11 +1048,10 @@ const Feedback_Alumno_Comp = () => {
                   <button
                     onClick={() => openModal(task)}
                     disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
-                    className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold gap-1 ${
-                      (!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
+                    className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold gap-1 ${(!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
                         ? 'bg-gray-400 cursor-not-allowed text-white'
                         : (task.isSubmitted ? 'bg-purple-500 hover:bg-purple-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white')
-                    }`}
+                      }`}
                     aria-label={task.isSubmitted ? 'Gestionar entrega' : 'Subir tarea'}
                     title={task.isSubmitted ? 'Gestionar entrega' : (monthlyCapReached ? 'Límite mensual' : 'Subir tarea')}
                   >
@@ -1064,11 +1063,10 @@ const Feedback_Alumno_Comp = () => {
                   <button
                     onClick={() => openViewTaskModal(task)}
                     disabled={!task.submittedPdf}
-                    className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold ${
-                      task.submittedPdf
+                    className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold ${task.submittedPdf
                         ? 'bg-green-500 hover:bg-green-600 text-white'
                         : 'bg-gray-400 cursor-not-allowed text-white'
-                    }`}
+                      }`}
                     aria-label="Ver tarea"
                     title={task.submittedPdf ? 'Ver' : 'Sin archivo'}
                   >
@@ -1110,10 +1108,10 @@ const Feedback_Alumno_Comp = () => {
                 p === '...'
                   ? <span key={idx} className="px-2 py-1 text-gray-500 select-none">...</span>
                   : <button
-                      key={p}
-                      onClick={() => goToPage(p)}
-                      className={`w-7 h-7 rounded-md border flex items-center justify-center ${p === currentPage ? 'bg-purple-600 text-white border-purple-600' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
-                    >{p}</button>
+                    key={p}
+                    onClick={() => goToPage(p)}
+                    className={`w-7 h-7 rounded-md border flex items-center justify-center ${p === currentPage ? 'bg-purple-600 text-white border-purple-600' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+                  >{p}</button>
               ))}
             </div>
             <button
@@ -1225,95 +1223,102 @@ const Feedback_Alumno_Comp = () => {
 
       {/* Modal de visualización de tarea */}
       {showViewTaskModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100 border-2 border-purple-200 flex flex-col"
-               style={{ maxHeight: '70vh' }}>
-            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-purple-700">Visualizar Tarea</h2>
-            <p className="mb-4 text-gray-700 text-sm sm:text-base">
-              Tarea: <span className="font-semibold text-purple-600">{viewingTaskName}</span>
-            </p>
-    {viewingTaskPdf ? (
-              <>
-                <div className="flex-grow w-full bg-gray-100 rounded-lg overflow-hidden mb-2 border border-gray-300 flex items-center justify-center relative" style={{ minHeight: '16rem' }}>
-                  {(isMobile || isPdfIframeBlocked) ? (
-                    <div className="w-full">
-                      <PdfMobileViewer url={viewingTaskPdf} />
-                    </div>
-                  ) : (
-                    <iframe
-                      key={viewingTaskPdf}
-                      src={viewingTaskPdf}
-                      title="Visor de PDF"
-                      className="w-full h-96 border-none"
-                      onError={(e) => { e.currentTarget.outerHTML = '<div class=\'w-full h-full flex items-center justify-center text-xs text-red-500\'>Error cargando PDF</div>'; }}
-                    />
-                  )}
-                </div>
-                {(isMobile) && viewingTaskPdf && (
-                  <div className="mb-3 flex justify-end">
-                    <button
-                      onClick={() => setShowPdfFullScreen(true)}
-                      className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow text-xs"
-                    >Pantalla completa</button>
-                  </div>
-                )}
-                <p className="text-[10px] sm:text-xs text-gray-500 text-center mb-2">
-                  Ruta: {(() => {
-                    try {
-                      const origin = getApiOrigin();
-                      if (!viewingTaskPdf) return '';
-                      // Prefer stripping the backend origin; fallback to pathname if it's an absolute URL elsewhere
-                      if (viewingTaskPdf.startsWith(origin)) return viewingTaskPdf.slice(origin.length) || '/';
-                      try {
-                        const u = new URL(viewingTaskPdf);
-                        return (u.pathname || '/') + (u.search || '');
-                      } catch {
-                        return viewingTaskPdf;
-                      }
-                    } catch {
-                      return viewingTaskPdf || '';
-                    }
-                  })()}
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 pt-16 sm:pt-20"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeViewTaskModal();
+          }}
+        >
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-4xl 2xl:max-w-5xl max-h-[85vh] sm:max-h-[75vh] transform transition-all duration-300 scale-100 border-2 border-purple-200 flex flex-col overflow-hidden">
+            {/* Header con gradiente */}
+            <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0">
+              <div className="flex-1 min-w-0 pr-2">
+                <h2 className="text-lg sm:text-2xl font-bold text-white mb-0.5 sm:mb-1">Visualizar Tarea</h2>
+                <p className="text-purple-100 text-xs sm:text-sm truncate">
+                  Tarea: <span className="font-semibold text-white">{viewingTaskName}</span>
                 </p>
-              </>
-            ) : (
-              <p className="mb-6 text-gray-700 text-sm sm:text-base text-center">
-                No hay archivo subido para visualizar.
-              </p>
-            )}
-            <div className="flex flex-col sm:flex-row justify-end gap-2 mt-auto">
-              {viewingTaskPdf && (
-                <button
-                  onClick={handleOpenPdfInNewTab}
-                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm"
-                >
-                  Ver en nueva pestaña
-                </button>
-              )}
+              </div>
               <button
                 onClick={closeViewTaskModal}
-                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-300 text-sm"
+                className="bg-white/20 hover:bg-white/30 text-white rounded-full p-1.5 sm:p-2 transition-all duration-200 hover:scale-110 flex-shrink-0"
+                aria-label="Cerrar modal"
               >
-                Cerrar
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
+            </div>
+
+            {/* Contenido del PDF */}
+            <div className="flex-1 overflow-hidden flex flex-col p-3 sm:p-6 bg-gray-50">
+              {viewingTaskPdf ? (
+                <>
+                  {/* Contenedor del PDF con mejor diseño */}
+                  <div className={`w-full bg-white rounded-lg overflow-hidden border-2 border-gray-200 shadow-inner relative flex flex-col ${(isMobile || isPdfIframeBlocked) ? 'flex-1 min-h-[400px] sm:min-h-[450px]' : 'h-[calc(75vh-200px)] sm:h-[calc(75vh-180px)]'}`}>
+                    {(isMobile || isPdfIframeBlocked) ? (
+                      <div className="w-full h-full flex-1 flex flex-col overflow-hidden">
+                        <PdfMobileViewer url={viewingTaskPdf} enableGestures={true} />
+                      </div>
+                    ) : (
+                      <iframe
+                        allowFullScreen
+                        key={viewingTaskPdf}
+                        src={viewingTaskPdf}
+                        title="Visor de PDF"
+                        className="w-full h-full border-none"
+                        onError={(e) => {
+                          e.currentTarget.outerHTML = '<div class=\'w-full h-full flex items-center justify-center text-sm text-red-500 bg-red-50 rounded\'>Error cargando PDF. Por favor, intenta abrirlo en una nueva pestaña.</div>';
+                        }}
+                      />
+                    )}
+                  </div>
+
+                </>
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-600 text-lg font-medium">No hay archivo subido para visualizar.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Botones de acción */}
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-3 sm:mt-4 flex-shrink-0">
+                {viewingTaskPdf && (
+                  <button
+                    onClick={handleOpenPdfInNewTab}
+                    className="w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    Ver en nueva pestaña
+                  </button>
+                )}
+                <button
+                  onClick={closeViewTaskModal}
+                  className="w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-lg shadow-md transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-300 text-xs sm:text-sm font-semibold"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Overlay fullscreen para PDF en móvil */}
-      {showPdfFullScreen && viewingTaskPdf && (
-        <PdfFullScreenOverlay url={viewingTaskPdf} onClose={() => setShowPdfFullScreen(false)} />
-      )}
 
       {/* Modal: Ver nota del asesor */}
       {showNoteModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeNoteModal}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border-2 border-purple-200" onClick={(e)=> e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border-2 border-purple-200" onClick={(e) => e.stopPropagation()}>
             <div className="px-4 py-3 bg-[#3d18c3] text-white flex items-center justify-between">
               <div className="font-semibold text-sm truncate">Nota del asesor · {noteView.taskName}</div>
               <button onClick={closeNoteModal} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white text-xs">
-                <X className="w-3.5 h-3.5"/> Cerrar
+                <X className="w-3.5 h-3.5" /> Cerrar
               </button>
             </div>
             <div className="p-4">
@@ -1345,7 +1350,7 @@ const Feedback_Alumno_Comp = () => {
             <input
               type="text"
               value={newTaskName}
-              onChange={(e)=> setNewTaskName(e.target.value)}
+              onChange={(e) => setNewTaskName(e.target.value)}
               maxLength={100}
               className="w-full p-3 rounded-lg bg-white border-2 border-purple-200 text-purple-700 shadow focus:ring-2 focus:ring-purple-400 focus:outline-none focus:border-purple-400"
               placeholder="Ej. Lectura capítulo 1"

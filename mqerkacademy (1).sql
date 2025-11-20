@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 15-10-2025 a las 20:07:41
+-- Tiempo de generación: 19-11-2025 a las 21:22:32
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.0.30
 
@@ -52,30 +52,7 @@ CREATE TABLE `actividades` (
   `creado_por` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ;
-
---
--- Volcado de datos para la tabla `actividades`
---
-
-INSERT INTO `actividades` (`id`, `titulo`, `descripcion`, `tipo`, `id_area`, `materia`, `puntos_max`, `peso_calificacion`, `fecha_limite`, `grupos`, `recursos_json`, `imagen_portada`, `visible_desde`, `visible_hasta`, `max_intentos`, `time_limit_min`, `passing_score`, `shuffle_questions`, `requiere_revision`, `activo`, `publicado`, `creado_por`, `created_at`, `updated_at`) VALUES
-(2, 'probando', 'probando', 'actividad', 1, NULL, 100, 0.00, '2025-08-19 23:59:00', '[\"V1\"]', '[{\"archivo\":\"/public/1755659683193-fundamentos-de-sql-3edi-oppel-o6t27e.pdf\",\"nombre\":\"fundamentos_de_sql_3edi_oppel.pdf\",\"mime\":\"application/pdf\",\"tamano\":2735617}]', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 1, NULL, '2025-08-20 03:14:43', '2025-10-06 23:09:25'),
-(3, 'prueba 2', 'dwdwd', 'actividad', 2, NULL, 100, 0.00, '2025-08-20 23:59:00', '[\"V1\"]', '[{\"archivo\":\"/public/1755746551923-manual-sql1-xse5n7.pdf\",\"nombre\":\"Manual-SQL1.pdf\",\"mime\":\"application/pdf\",\"tamano\":1083603}]', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 1, NULL, '2025-08-21 03:22:31', '2025-10-06 23:07:12'),
-(4, 'PRODUCTOS NOTABLES', 'ANALIZA Y RESUELVE LOS EJERCICIOS DE MANERA ORDENADA', 'actividad', 2, NULL, 100, 0.00, '2025-08-22 23:59:00', '[\"V1\"]', '[{\"archivo\":\"/public/1755803019726-reglamento-uwilb0.pdf\",\"nombre\":\"REGLAMENTO.pdf\",\"mime\":\"application/pdf\",\"tamano\":182775}]', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 1, NULL, '2025-08-21 19:03:39', '2025-10-06 23:07:14'),
-(5, 'prueba nuevo panel', NULL, 'actividad', 2, NULL, 100, 0.00, '2025-10-07 00:00:00', '[\"v1\"]', '[{\"archivo\":\"/public/1759791100543-sdai-api-i3s34f.pdf\",\"nombre\":\"SdAI_API.pdf\",\"mime\":\"application/pdf\",\"tamano\":379342}]', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 1, 1, NULL, '2025-10-06 22:51:40', '2025-10-06 22:51:40'),
-(9, 'POTENCIAS Y RAÍCES', NULL, 'actividad', 1, NULL, 100, 0.00, '2025-10-08 06:00:00', '[\"v1\"]', '[{\"archivo\":\"/public/1759862940088-infografia-ciencias-sociales-6p4yrw.pdf\",\"nombre\":\"Infografia_Ciencias Sociales.pdf\",\"mime\":\"application/pdf\",\"tamano\":157368}]', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 1, NULL, '2025-10-07 18:49:00', '2025-10-07 21:09:06'),
-(10, 'RAICES Y ECUACIONES', NULL, 'actividad', 2, NULL, 100, 0.00, '2025-10-10 00:00:00', '[\"v1\"]', '[{\"archivo\":\"/public/1759863216013-plan-de-desarrollo-estrat-gico-nsa-n-cle-n40zsq.pdf\",\"nombre\":\"Plan de Desarrollo EstratÃ©gico- NSA (NÃºcleo de Sol....pdf\",\"mime\":\"application/pdf\",\"tamano\":151099}]', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 1, 1, NULL, '2025-10-07 18:53:36', '2025-10-07 18:53:36'),
-(13, 'MATE 1', NULL, 'quiz', NULL, 'Matemáticas y pensamiento analítico', 100, 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 60, NULL, 0, 0, 1, 1, NULL, '2025-10-07 21:49:47', '2025-10-09 19:19:11'),
-(14, 'PRUEBA 2', 'PROBANDO EL SEGUNDO QUIZ', 'quiz', 2, 'Matemáticas y pensamiento analítico', 100, 0.00, '2025-10-13 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL, 70, NULL, 1, 0, 1, 1, NULL, '2025-10-08 17:55:08', '2025-10-08 17:55:08'),
-(15, 'prueba 3', 'probando por tercera vez', 'quiz', 2, 'Matemáticas y pensamiento analítico', 100, 0.00, '2025-10-09 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL, 70, NULL, 1, 0, 1, 1, NULL, '2025-10-08 18:39:33', '2025-10-08 18:39:33'),
-(16, 'prueba 4', 'prueba 4 de los quizes', 'quiz', 2, 'Matemáticas y pensamiento analítico', 100, 0.00, '2025-10-09 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL, 180, NULL, 1, 0, 1, 1, NULL, '2025-10-08 18:59:01', '2025-10-08 18:59:01'),
-(17, 'prueba 6', 'prueba 6 intento', 'quiz', 2, 'Matemáticas y pensamiento analítico', 100, 0.00, '2025-10-08 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL, 60, NULL, 1, 0, 1, 1, NULL, '2025-10-08 19:09:06', '2025-10-08 19:09:06'),
-(18, 'Diagnóstico de Redacción y Ortografía', NULL, 'quiz', NULL, 'Español y redacción indirecta', 100, 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 10, 60, NULL, 0, 0, 1, 1, 21, '2025-10-09 20:28:05', '2025-10-10 19:14:55'),
-(19, 'llñsakdñlska', 'klm<lñsdmksl<md', 'quiz', 3, 'Habilidades transversales', 100, 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 60, NULL, 1, 0, 1, 1, 21, '2025-10-09 21:04:39', '2025-10-09 21:04:39'),
-(20, 'prueba 7', 'probando porque la tabla no se muestra en todas las materias', 'quiz', 2, 'Matemáticas y pensamiento analítico', 100, 0.00, '2025-10-09 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL, 60, NULL, 1, 0, 1, 1, 21, '2025-10-09 21:06:44', '2025-10-09 21:06:44'),
-(21, 'Diagnóstico de Redacción y Ortografía ', 'Este quiz está diseñado para evaluar tus habilidades en áreas fundamentales de la redacción y gramática del español. A través de una serie de preguntas, pondremos a prueba tus conocimientos sobre:\n\nAcentuación y ortografía.\n\nUso correcto de signos de puntuación.\n\nConcordancia verbal y nominal.\n\nElección de conectores lógicos.\n\nConversión de estilo directo a indirecto.', 'quiz', 1, 'Español y redacción indirecta', 100, 0.00, '2025-10-13 00:00:00', NULL, NULL, NULL, NULL, NULL, 10, 60, NULL, 1, 0, 1, 1, 21, '2025-10-10 19:55:46', '2025-10-10 19:55:46'),
-(22, 'Desafío de Redacción Avanzada ', 'Este breve cuestionario está diseñado para poner a prueba tu dominio de temas complejos de la gramática y redacción en español.\n\nLas preguntas se centran en el uso preciso del modo subjuntivo, la correcta construcción de oraciones (evitando errores como el queísmo/dequeísmo) y la transformación a estilo indirecto.\n\nEstos son temas avanzados que requieren atención al detalle. Lee cada opción cuidadosamente antes de seleccionar tu respuesta.', 'quiz', 1, 'Español y redacción indirecta', 100, 0.00, '2025-10-14 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL, 120, NULL, 1, 0, 1, 1, 21, '2025-10-10 21:30:36', '2025-10-10 21:30:36'),
-(23, 'prueba 1', NULL, 'actividad', 1, NULL, 100, 0.00, '2025-10-16 00:00:00', '[\"v1\"]', '[{\"archivo\":\"/public/1760136848630-cuadernillo-1ra-unidad-sociales-1-ysoo32.pdf\",\"nombre\":\"CUADERNILLO 1RA UNIDAD_SOCIALES (1).pdf\",\"mime\":\"application/pdf\",\"tamano\":2095926}]', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 1, 1, NULL, '2025-10-10 22:54:08', '2025-10-10 22:54:08');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -101,20 +78,7 @@ CREATE TABLE `actividades_entregas` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `revisada_at` datetime DEFAULT NULL,
   `comentarios_updated_at` datetime DEFAULT NULL
-) ;
-
---
--- Volcado de datos para la tabla `actividades_entregas`
---
-
-INSERT INTO `actividades_entregas` (`id`, `id_actividad`, `id_estudiante`, `archivo`, `original_nombre`, `mime_type`, `tamano`, `calificacion`, `comentarios`, `estado`, `version`, `replaced_by`, `entregada_at`, `created_at`, `updated_at`, `revisada_at`, `comentarios_updated_at`) VALUES
-(2, 2, 67, '/public/1755663991234-manual-sql1-compressed-xqr4i9.pdf', 'Manual-SQL1_compressed.pdf', 'application/pdf', 159959, 8, NULL, 'revisada', 1, 3, '2025-08-20 04:26:31', '2025-08-20 04:26:31', '2025-09-19 20:42:37', '2025-09-19 14:42:37', NULL),
-(3, 2, 67, '/public/1755664370234-comprobante-pago-mq-20250729-0001-xn3rl6.pdf', 'comprobante-pago-MQ-20250729-0001.pdf', 'application/pdf', 8708, NULL, NULL, 'entregada', 2, NULL, '2025-08-20 04:32:50', '2025-08-20 04:32:50', '2025-08-20 04:32:50', NULL, NULL),
-(4, 3, 67, '/public/1755748227979-manual-sql1-compressed-rbyjro.pdf', 'Manual-SQL1_compressed.pdf', 'application/pdf', 159959, 10, NULL, 'revisada', 1, NULL, '2025-08-21 03:50:28', '2025-08-21 03:50:28', '2025-09-19 20:42:37', '2025-09-19 14:42:37', NULL),
-(5, 4, 73, '/public/1755803132983-i-ndice-del-modelo-educativo-disruptivo--q621tt.pdf', 'IÌNDICE DEL MODELO EDUCATIVO DISRUPTIVO Y SOSTENIBLE 1) (1).pdf', 'application/pdf', 1096240, 8, NULL, 'revisada', 1, NULL, '2025-08-21 19:05:33', '2025-08-21 19:05:33', '2025-09-19 20:42:37', '2025-09-19 14:42:37', NULL),
-(6, 5, 67, '/public/1759791172391-sdai-api-8dllqm.pdf', 'SdAI_API.pdf', 'application/pdf', 379342, 9, 'el ejercicio 3 esta mal, revisalo nuevamente te doy hasta las 12 paar que lo subas corregido', 'revisada', 1, NULL, '2025-10-06 22:52:52', '2025-10-06 22:52:52', '2025-10-06 23:02:24', '2025-10-06 17:02:24', '2025-10-06 17:02:24'),
-(7, 9, 67, '/public/1759863016610-cuadernillo-1ra-unidad-sociales-gb9dq2.pdf', 'CUADERNILLO 1RA UNIDAD_SOCIALES.pdf', 'application/pdf', 2095926, 10, 'EXCELENTE', 'revisada', 1, NULL, '2025-10-07 18:50:16', '2025-10-07 18:50:16', '2025-10-07 18:51:37', '2025-10-07 12:51:37', '2025-10-07 12:51:37'),
-(8, 10, 67, '/public/1759863255395-sdai-api-njaum8.pdf', 'SdAI_API.pdf', 'application/pdf', 379342, 8, NULL, 'revisada', 1, NULL, '2025-10-07 18:54:15', '2025-10-07 18:54:15', '2025-10-07 18:55:01', '2025-10-07 12:55:01', NULL);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -131,19 +95,6 @@ CREATE TABLE `actividades_entregas_archivos` (
   `tamano` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `actividades_entregas_archivos`
---
-
-INSERT INTO `actividades_entregas_archivos` (`id`, `entrega_id`, `archivo`, `original_nombre`, `mime_type`, `tamano`, `created_at`) VALUES
-(1, 4, '/public/1755748719028-manual-sql1-compressed-7h3wnp.pdf', 'Manual-SQL1_compressed.pdf', 'application/pdf', 159959, '2025-08-21 03:58:39'),
-(2, 4, '/public/1755748719032-contrato-mqeeau-2025-0731-8819-mar-a-gon-cmpmo8.pdf', 'Contrato_MQEEAU-2025-0731-8819_MARÃA_GONZÃLEZ_LÃPEZ.pdf', 'application/pdf', 604636, '2025-08-21 03:58:39'),
-(3, 4, '/public/1755748719039-comprobante-pago-mq-20250729-0001-3pr278.pdf', 'comprobante-pago-MQ-20250729-0001.pdf', 'application/pdf', 8708, '2025-08-21 03:58:39'),
-(4, 5, '/public/1755803132983-i-ndice-del-modelo-educativo-disruptivo--q621tt.pdf', 'IÌNDICE DEL MODELO EDUCATIVO DISRUPTIVO Y SOSTENIBLE 1) (1).pdf', 'application/pdf', 1096240, '2025-08-21 19:05:33'),
-(5, 6, '/public/1759791172391-sdai-api-8dllqm.pdf', 'SdAI_API.pdf', 'application/pdf', 379342, '2025-10-06 22:52:52'),
-(6, 7, '/public/1759863016610-cuadernillo-1ra-unidad-sociales-gb9dq2.pdf', 'CUADERNILLO 1RA UNIDAD_SOCIALES.pdf', 'application/pdf', 2095926, '2025-10-07 18:50:16'),
-(7, 8, '/public/1759863255395-sdai-api-njaum8.pdf', 'SdAI_API.pdf', 'application/pdf', 379342, '2025-10-07 18:54:15');
 
 -- --------------------------------------------------------
 
@@ -275,6 +226,24 @@ INSERT INTO `areas` (`id`, `nombre`, `tipo`, `descripcion`, `icon_key`, `color_g
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `asesor_notifications`
+--
+
+CREATE TABLE `asesor_notifications` (
+  `id` bigint(20) NOT NULL,
+  `asesor_user_id` int(11) NOT NULL,
+  `type` enum('payment','activity_submission','feedback_submission','simulation_completed','system','other') DEFAULT 'other',
+  `title` varchar(150) NOT NULL,
+  `message` text NOT NULL,
+  `action_url` varchar(255) DEFAULT NULL,
+  `metadata` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`metadata`)),
+  `is_read` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `asesor_perfiles`
 --
 
@@ -352,6 +321,59 @@ CREATE TABLE `asesor_preregistros` (
 
 INSERT INTO `asesor_preregistros` (`id`, `nombres`, `apellidos`, `correo`, `telefono`, `area`, `estudios`, `status`, `created_at`, `updated_at`) VALUES
 (4, 'Jair Iván', 'Martínez Palacios', 'contacto.jairivan@gmail.com', '2871619023', 'Ingeniería', 'Licenciatura', 'completed', '2025-09-25 18:51:02', '2025-10-06 17:29:56');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `asesor_reminders`
+--
+
+CREATE TABLE `asesor_reminders` (
+  `id` int(11) NOT NULL,
+  `asesor_user_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `date` date NOT NULL,
+  `time` time DEFAULT NULL,
+  `category` varchar(50) NOT NULL DEFAULT 'recordatorio',
+  `priority` varchar(50) NOT NULL DEFAULT 'blue',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `asesor_reminders`
+--
+
+INSERT INTO `asesor_reminders` (`id`, `asesor_user_id`, `title`, `description`, `date`, `time`, `category`, `priority`, `created_at`, `updated_at`) VALUES
+(1, 21, 'redactar el examen del grupo v1', 'redactar el examen del grupo v1', '2025-11-18', '14:33:00', 'recordatorio', 'blue', '2025-11-18 14:33:26', '2025-11-18 14:33:26');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `asesor_resources`
+--
+
+CREATE TABLE `asesor_resources` (
+  `id` int(11) NOT NULL,
+  `asesor_user_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `file_path` varchar(500) NOT NULL,
+  `file_name` varchar(255) NOT NULL,
+  `file_size` bigint(20) NOT NULL,
+  `file_type` varchar(100) NOT NULL,
+  `tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`tags`)),
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `asesor_resources`
+--
+
+INSERT INTO `asesor_resources` (`id`, `asesor_user_id`, `title`, `description`, `file_path`, `file_name`, `file_size`, `file_type`, `tags`, `created_at`, `updated_at`) VALUES
+(2, 21, 'Login general', NULL, 'D:/Escritorio/MQERK/mqerk_ver1-Miguel-el-Angel/server/uploads/recursos-educativos/1763497016874-48jt8f-Login_general.pdf', 'Login general.pdf', 2169422, 'application/pdf', '[]', '2025-11-18 14:16:56', '2025-11-18 14:16:56');
 
 -- --------------------------------------------------------
 
@@ -450,6 +472,33 @@ INSERT INTO `asesor_test_forms` (`id`, `preregistro_id`, `test_type`, `question_
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `asistencias`
+--
+
+CREATE TABLE `asistencias` (
+  `id` int(11) NOT NULL,
+  `id_estudiante` int(11) NOT NULL,
+  `id_asesor` int(11) NOT NULL,
+  `fecha` date NOT NULL,
+  `tipo` enum('clase','tarea','simulacion') NOT NULL DEFAULT 'clase',
+  `asistio` tinyint(1) NOT NULL DEFAULT 1,
+  `observaciones` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `asistencias`
+--
+
+INSERT INTO `asistencias` (`id`, `id_estudiante`, `id_asesor`, `fecha`, `tipo`, `asistio`, `observaciones`, `created_at`, `updated_at`) VALUES
+(1, 67, 21, '2025-11-18', 'clase', 1, NULL, '2025-11-18 01:07:07', '2025-11-18 20:39:35'),
+(2, 69, 21, '2025-11-18', 'clase', 1, NULL, '2025-11-18 01:07:07', '2025-11-18 20:39:35'),
+(3, 73, 21, '2025-11-18', 'clase', 1, NULL, '2025-11-18 01:07:07', '2025-11-18 20:39:35');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `calendar_events`
 --
 
@@ -523,14 +572,6 @@ INSERT INTO `comprobantes` (`id`, `id_estudiante`, `comprobante`, `importe`, `me
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `comprobantes_backup_20250811`
---
--- Error leyendo la estructura de la tabla mqerkacademy.comprobantes_backup_20250811: #1932 - Table 'mqerkacademy.comprobantes_backup_20250811' doesn't exist in engine
--- Error leyendo datos de la tabla mqerkacademy.comprobantes_backup_20250811: #1064 - Algo está equivocado en su sintax cerca 'FROM `mqerkacademy`.`comprobantes_backup_20250811`' en la linea 1
-
--- --------------------------------------------------------
-
---
 -- Estructura de tabla para la tabla `contratos`
 --
 
@@ -549,6 +590,52 @@ CREATE TABLE `contratos` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `documentos_asesor`
+--
+
+CREATE TABLE `documentos_asesor` (
+  `id` int(11) NOT NULL,
+  `id_asesor` int(11) DEFAULT NULL,
+  `tipo_seccion` enum('documento','contrato','lineamiento') NOT NULL DEFAULT 'documento',
+  `nombre` varchar(255) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `archivo_path` varchar(500) DEFAULT NULL,
+  `estado` enum('pending','done','rechazado') NOT NULL DEFAULT 'pending',
+  `observaciones` text DEFAULT NULL,
+  `fecha_vencimiento` date DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `documentos_asesor`
+--
+
+INSERT INTO `documentos_asesor` (`id`, `id_asesor`, `tipo_seccion`, `nombre`, `descripcion`, `archivo_path`, `estado`, `observaciones`, `fecha_vencimiento`, `created_at`, `updated_at`) VALUES
+(1, 4, 'documento', 'INE ambos lados', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(2, 4, 'documento', 'INE ambos lados', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(3, 4, 'documento', 'Comprobante de domicilio', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(4, 4, 'documento', 'Comprobante de domicilio', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(5, 4, 'documento', 'CIF SAT', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(6, 4, 'documento', 'CIF SAT', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(7, 4, 'documento', 'Título académico', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(8, 4, 'documento', 'Título académico', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(9, 4, 'documento', 'Cédula Profesional', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(10, 4, 'documento', 'Cédula Profesional', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(11, 4, 'documento', 'Certificaciones', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(12, 4, 'documento', 'Certificaciones', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(13, 4, 'documento', 'CV actualizado', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(14, 4, 'documento', 'CV actualizado', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(15, 4, 'documento', 'Fotografía profesional', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(16, 4, 'documento', 'Fotografía profesional', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(17, 4, 'documento', 'Carta de recomendación', NULL, '/uploads/documentos/doc-4-1763431646674-781950171.pdf', 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:07:26'),
+(18, 4, 'documento', 'Carta de recomendación', NULL, '/uploads/documentos/doc-4-1763432058632-412766889.pdf', 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:14:18'),
+(19, 4, 'contrato', 'Contrato de prestación de servicios', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56'),
+(20, 4, 'contrato', 'Contrato de prestación de servicios', NULL, NULL, 'pending', NULL, NULL, '2025-11-18 02:06:56', '2025-11-18 02:06:56');
 
 -- --------------------------------------------------------
 
@@ -644,6 +731,7 @@ CREATE TABLE `estudiantes_config` (
   `id_estudiante` int(11) NOT NULL,
   `nivel_experiencia` varchar(32) DEFAULT 'intermedio',
   `intereses` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT json_array() CHECK (json_valid(`intereses`)),
+  `theme_preference` varchar(16) DEFAULT 'system',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -652,8 +740,8 @@ CREATE TABLE `estudiantes_config` (
 -- Volcado de datos para la tabla `estudiantes_config`
 --
 
-INSERT INTO `estudiantes_config` (`id`, `id_estudiante`, `nivel_experiencia`, `intereses`, `created_at`, `updated_at`) VALUES
-(1, 67, 'intermedio', '[\"programacion\",\"tecnologico\",\"psicoeducativo\"]', '2025-08-11 00:46:28', '2025-08-13 22:34:33');
+INSERT INTO `estudiantes_config` (`id`, `id_estudiante`, `nivel_experiencia`, `intereses`, `theme_preference`, `created_at`, `updated_at`) VALUES
+(1, 67, 'intermedio', '[\"programacion\",\"tecnologico\",\"psicoeducativo\"]', 'system', '2025-08-11 00:46:28', '2025-08-13 22:34:33');
 
 -- --------------------------------------------------------
 
@@ -742,6 +830,555 @@ INSERT INTO `feedback_tasks` (`id`, `nombre`, `descripcion`, `archivos_json`, `i
 (4, 'probando', NULL, NULL, NULL, 10, '2025-08-21 20:25:51', '[67]', 1, '2025-08-21 20:24:16', '2025-08-21 20:25:51'),
 (5, 'dsa', NULL, NULL, NULL, 10, '2025-08-21 20:59:22', '[67]', 1, '2025-08-21 20:47:30', '2025-08-21 20:59:22'),
 (6, 'adasdasd', NULL, NULL, NULL, 10, '2025-09-01 17:34:51', '[67]', 1, '2025-09-01 17:34:51', '2025-09-01 17:34:51');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `formulas`
+--
+
+CREATE TABLE `formulas` (
+  `id` int(11) NOT NULL,
+  `categoria` varchar(100) NOT NULL,
+  `nombre` varchar(255) DEFAULT NULL,
+  `latex` text NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `tiene_placeholders` tinyint(1) NOT NULL DEFAULT 0,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `orden` int(11) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `formulas`
+--
+
+INSERT INTO `formulas` (`id`, `categoria`, `nombre`, `latex`, `descripcion`, `tiene_placeholders`, `activo`, `orden`, `created_at`, `updated_at`) VALUES
+(1, 'Básico', NULL, 'x^2', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(2, 'Básico', NULL, 'x_i', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(3, 'Básico', NULL, '\\sqrt{x}', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(4, 'Básico', NULL, '\\sqrt[n]{x}', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(5, 'Básico', NULL, '\\frac{a}{b}', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(6, 'Básico', NULL, '\\cdot', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(7, 'Básico', NULL, '\\times', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(8, 'Básico', NULL, '\\div', NULL, 0, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(9, 'Básico', NULL, '\\pm', NULL, 0, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(10, 'Básico', NULL, '\\mp', NULL, 0, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(11, 'Básico', NULL, '\\dots', NULL, 0, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(12, 'Básico', NULL, '\\ldots', NULL, 0, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(13, 'Básico', NULL, '\\cdots', NULL, 0, 1, 12, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(14, 'Básico', NULL, '\\overline{AB}', NULL, 0, 1, 13, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(15, 'Básico', NULL, '\\hat{\\theta}', NULL, 0, 1, 14, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(16, 'Básico', NULL, '\\vec{v}', NULL, 0, 1, 15, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(17, 'Básico', NULL, '^{\\circ}', NULL, 0, 1, 16, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(18, 'Griego', NULL, '\\alpha', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(19, 'Griego', NULL, '\\beta', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(20, 'Griego', NULL, '\\gamma', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(21, 'Griego', NULL, '\\delta', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(22, 'Griego', NULL, '\\epsilon', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(23, 'Griego', NULL, '\\zeta', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(24, 'Griego', NULL, '\\eta', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(25, 'Griego', NULL, '\\theta', NULL, 0, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(26, 'Griego', NULL, '\\iota', NULL, 0, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(27, 'Griego', NULL, '\\kappa', NULL, 0, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(28, 'Griego', NULL, '\\lambda', NULL, 0, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(29, 'Griego', NULL, '\\mu', NULL, 0, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(30, 'Griego', NULL, '\\nu', NULL, 0, 1, 12, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(31, 'Griego', NULL, '\\xi', NULL, 0, 1, 13, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(32, 'Griego', NULL, '\\pi', NULL, 0, 1, 14, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(33, 'Griego', NULL, '\\rho', NULL, 0, 1, 15, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(34, 'Griego', NULL, '\\sigma', NULL, 0, 1, 16, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(35, 'Griego', NULL, '\\tau', NULL, 0, 1, 17, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(36, 'Griego', NULL, '\\upsilon', NULL, 0, 1, 18, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(37, 'Griego', NULL, '\\phi', NULL, 0, 1, 19, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(38, 'Griego', NULL, '\\chi', NULL, 0, 1, 20, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(39, 'Griego', NULL, '\\psi', NULL, 0, 1, 21, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(40, 'Griego', NULL, '\\omega', NULL, 0, 1, 22, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(41, 'Griego', NULL, '\\Gamma', NULL, 0, 1, 23, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(42, 'Griego', NULL, '\\Delta', NULL, 0, 1, 24, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(43, 'Griego', NULL, '\\Theta', NULL, 0, 1, 25, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(44, 'Griego', NULL, '\\Lambda', NULL, 0, 1, 26, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(45, 'Griego', NULL, '\\Xi', NULL, 0, 1, 27, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(46, 'Griego', NULL, '\\Pi', NULL, 0, 1, 28, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(47, 'Griego', NULL, '\\Sigma', NULL, 0, 1, 29, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(48, 'Griego', NULL, '\\Upsilon', NULL, 0, 1, 30, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(49, 'Griego', NULL, '\\Phi', NULL, 0, 1, 31, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(50, 'Griego', NULL, '\\Psi', NULL, 0, 1, 32, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(51, 'Griego', NULL, '\\Omega', NULL, 0, 1, 33, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(52, 'ABΓ (Conj.)', NULL, '\\mathbb{N}', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(53, 'ABΓ (Conj.)', NULL, '\\mathbb{Z}', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(54, 'ABΓ (Conj.)', NULL, '\\mathbb{Q}', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(55, 'ABΓ (Conj.)', NULL, '\\mathbb{R}', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(56, 'ABΓ (Conj.)', NULL, '\\mathbb{C}', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(57, 'ABΓ (Conj.)', NULL, '\\mathcal{A}', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(58, 'ABΓ (Conj.)', NULL, '\\mathcal{B}', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(59, 'ABΓ (Conj.)', NULL, '\\mathcal{L}', NULL, 0, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(60, 'ABΓ (Conj.)', NULL, '\\mathcal{F}', NULL, 0, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(61, 'ABΓ (Conj.)', NULL, '\\subset', NULL, 0, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(62, 'ABΓ (Conj.)', NULL, '\\subseteq', NULL, 0, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(63, 'ABΓ (Conj.)', NULL, '\\supset', NULL, 0, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(64, 'ABΓ (Conj.)', NULL, '\\supseteq', NULL, 0, 1, 12, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(65, 'ABΓ (Conj.)', NULL, '\\in', NULL, 0, 1, 13, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(66, 'ABΓ (Conj.)', NULL, '\\notin', NULL, 0, 1, 14, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(67, 'ABΓ (Conj.)', NULL, '\\cup', NULL, 0, 1, 15, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(68, 'ABΓ (Conj.)', NULL, '\\cap', NULL, 0, 1, 16, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(69, 'ABΓ (Conj.)', NULL, '\\setminus', NULL, 0, 1, 17, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(70, 'ABΓ (Conj.)', NULL, '\\varnothing', NULL, 0, 1, 18, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(71, 'Trig', NULL, '\\sin', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(72, 'Trig', NULL, '\\cos', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(73, 'Trig', NULL, '\\tan', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(74, 'Trig', NULL, '\\cot', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(75, 'Trig', NULL, '\\sec', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(76, 'Trig', NULL, '\\csc', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(77, 'Trig', NULL, '\\arcsin', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(78, 'Trig', NULL, '\\arccos', NULL, 0, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(79, 'Trig', NULL, '\\arctan', NULL, 0, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(80, 'Trig', NULL, '\\sin^{-1}', NULL, 0, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(81, 'Trig', NULL, '\\cos^{-1}', NULL, 0, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(82, 'Trig', NULL, '\\tan^{-1}', NULL, 0, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(83, 'Rel/Op', NULL, '\\le', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(84, 'Rel/Op', NULL, '\\ge', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(85, 'Rel/Op', NULL, '<', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(86, 'Rel/Op', NULL, '>', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(87, 'Rel/Op', NULL, '\\neq', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(88, 'Rel/Op', NULL, '\\approx', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(89, 'Rel/Op', NULL, '\\equiv', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(90, 'Rel/Op', NULL, '\\propto', NULL, 0, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(91, 'Rel/Op', NULL, '\\to', NULL, 0, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(92, 'Rel/Op', NULL, '\\Rightarrow', NULL, 0, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(93, 'Rel/Op', NULL, '\\Leftarrow', NULL, 0, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(94, 'Rel/Op', NULL, '\\Leftrightarrow', NULL, 0, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(95, 'Rel/Op', NULL, '\\parallel', NULL, 0, 1, 12, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(96, 'Rel/Op', NULL, '\\perp', NULL, 0, 1, 13, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(97, 'Rel/Op', NULL, '\\angle', NULL, 0, 1, 14, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(98, 'Rel/Op', NULL, '\\measuredangle', NULL, 0, 1, 15, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(99, 'Álgebra', NULL, '\\log', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(100, 'Álgebra', NULL, '\\ln', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(101, 'Álgebra', NULL, 'e^{x}', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(102, 'Álgebra', NULL, 'a^{b}', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(103, 'Álgebra', NULL, 'x^{\\square}', NULL, 1, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(104, 'Álgebra', NULL, '_{\\square}', NULL, 1, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(105, 'Álgebra', NULL, '(x+1)^2', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(106, 'Álgebra', NULL, '(a-b)^2', NULL, 0, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(107, 'Álgebra', NULL, '(a+b)^3', NULL, 0, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(108, 'Álgebra', NULL, '(a-b)^3', NULL, 0, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(109, 'Álgebra', NULL, '\\sqrt{\\square}', NULL, 1, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(110, 'Álgebra', NULL, '\\sqrt[n]{\\square}', NULL, 1, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(111, 'Álgebra', NULL, '\\binom{n}{k}', NULL, 0, 1, 12, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(112, 'Álgebra', NULL, '\\choose', NULL, 0, 1, 13, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(113, 'Álgebra', NULL, '\\gcd', NULL, 0, 1, 14, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(114, 'Álgebra', NULL, '\\operatorname{lcm}', NULL, 0, 1, 15, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(115, 'Álgebra', NULL, 'x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}', NULL, 0, 1, 16, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(116, 'Álgebra', NULL, 'ax^2 + bx + c = 0', NULL, 0, 1, 17, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(117, 'Álgebra', NULL, '(a+b)(a-b) = a^2 - b^2', NULL, 0, 1, 18, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(118, 'Álgebra', NULL, 'a^2 + 2ab + b^2 = (a+b)^2', NULL, 0, 1, 19, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(119, 'Álgebra', NULL, 'a^2 - 2ab + b^2 = (a-b)^2', NULL, 0, 1, 20, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(120, 'Álgebra', NULL, 'a^3 + b^3 = (a+b)(a^2-ab+b^2)', NULL, 0, 1, 21, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(121, 'Álgebra', NULL, 'a^3 - b^3 = (a-b)(a^2+ab+b^2)', NULL, 0, 1, 22, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(122, 'Álgebra', NULL, '\\frac{a}{b} = \\frac{c}{d} \\Rightarrow ad = bc', NULL, 0, 1, 23, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(123, 'Cálculo', NULL, '\\sum_{i=1}^{n} a_i', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(124, 'Cálculo', NULL, '\\prod_{k=1}^{n} b_k', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(125, 'Cálculo', NULL, '\\int f(x)\\,dx', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(126, 'Cálculo', NULL, '\\int_{a}^{b} f(x)\\,dx', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(127, 'Cálculo', NULL, '\\int \\square\\,dx', NULL, 1, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(128, 'Cálculo', NULL, '\\int_{\\square}^{\\square} \\square\\,dx', NULL, 1, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(129, 'Cálculo', NULL, '\\int x^{\\square}\\,dx', NULL, 1, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(130, 'Cálculo', NULL, '\\int e^{\\square}\\,dx', NULL, 1, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(131, 'Cálculo', NULL, '\\int \\sin(\\square)\\,dx', NULL, 1, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(132, 'Cálculo', NULL, '\\int \\cos(\\square)\\,dx', NULL, 1, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(133, 'Cálculo', NULL, '\\int \\frac{1}{\\square}\\,dx', NULL, 1, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(134, 'Cálculo', NULL, '\\int \\ln(\\square)\\,dx', NULL, 1, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(135, 'Cálculo', NULL, '\\iint\\, dA', NULL, 0, 1, 12, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(136, 'Cálculo', NULL, '\\iiint\\, dV', NULL, 0, 1, 13, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(137, 'Cálculo', NULL, '\\oint\\,', NULL, 0, 1, 14, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(138, 'Cálculo', NULL, '\\lim_{x\\to 0}', NULL, 0, 1, 15, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(139, 'Cálculo', NULL, '\\lim_{n\\to\\infty}', NULL, 0, 1, 16, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(140, 'Cálculo', NULL, '\\lim_{x\\to \\square}', NULL, 1, 1, 17, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(141, 'Cálculo', NULL, '\\lim_{x\\to \\square} \\frac{\\square}{\\square}', NULL, 1, 1, 18, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(142, 'Cálculo', NULL, '\\frac{d}{dx}', NULL, 0, 1, 19, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(143, 'Cálculo', NULL, '\\frac{d^2}{dx^2}', NULL, 0, 1, 20, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(144, 'Cálculo', NULL, '\\frac{d}{dx}(\\square)', NULL, 1, 1, 21, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(145, 'Cálculo', NULL, '\\frac{d^2}{dx^2}(\\square)', NULL, 1, 1, 22, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(146, 'Cálculo', NULL, '\\frac{\\partial}{\\partial x}', NULL, 0, 1, 23, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(147, 'Cálculo', NULL, '\\frac{\\partial^2}{\\partial x^2}', NULL, 0, 1, 24, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(148, 'Cálculo', NULL, '\\frac{\\partial}{\\partial x}(\\square)', NULL, 1, 1, 25, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(149, 'Cálculo', NULL, '\\frac{\\partial}{\\partial y}(\\square)', NULL, 1, 1, 26, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(150, 'Cálculo', NULL, '\\frac{d}{dx}(x^n) = nx^{n-1}', NULL, 0, 1, 27, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(151, 'Cálculo', NULL, '\\frac{d}{dx}(e^x) = e^x', NULL, 0, 1, 28, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(152, 'Cálculo', NULL, '\\frac{d}{dx}(\\ln x) = \\frac{1}{x}', NULL, 0, 1, 29, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(153, 'Cálculo', NULL, '\\frac{d}{dx}(\\sin x) = \\cos x', NULL, 0, 1, 30, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(154, 'Cálculo', NULL, '\\frac{d}{dx}(\\cos x) = -\\sin x', NULL, 0, 1, 31, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(155, 'Cálculo', NULL, '\\frac{d}{dx}(\\tan x) = \\sec^2 x', NULL, 0, 1, 32, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(156, 'Cálculo', NULL, '\\frac{d}{dx}(\\cot x) = -\\csc^2 x', NULL, 0, 1, 33, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(157, 'Cálculo', NULL, '\\frac{d}{dx}(\\sec x) = \\sec x \\tan x', NULL, 0, 1, 34, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(158, 'Cálculo', NULL, '\\frac{d}{dx}(\\csc x) = -\\csc x \\cot x', NULL, 0, 1, 35, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(159, 'Cálculo', NULL, '\\frac{d}{dx}(\\arcsin x) = \\frac{1}{\\sqrt{1-x^2}}', NULL, 0, 1, 36, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(160, 'Cálculo', NULL, '\\frac{d}{dx}(\\arccos x) = -\\frac{1}{\\sqrt{1-x^2}}', NULL, 0, 1, 37, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(161, 'Cálculo', NULL, '\\frac{d}{dx}(\\arctan x) = \\frac{1}{1+x^2}', NULL, 0, 1, 38, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(162, 'Cálculo', NULL, '\\frac{d}{dx}(f \\cdot g) = f\'g + fg\'', NULL, 0, 1, 39, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(163, 'Cálculo', NULL, '\\frac{d}{dx}\\left(\\frac{f}{g}\\right) = \\frac{f\'g - fg\'}{g^2}', NULL, 0, 1, 40, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(164, 'Cálculo', NULL, '\\frac{d}{dx}(f(g(x))) = f\'(g(x)) \\cdot g\'(x)', NULL, 0, 1, 41, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(165, 'Cálculo', NULL, '\\int x^n\\,dx = \\frac{x^{n+1}}{n+1} + C', NULL, 0, 1, 42, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(166, 'Cálculo', NULL, '\\int e^x\\,dx = e^x + C', NULL, 0, 1, 43, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(167, 'Cálculo', NULL, '\\int \\frac{1}{x}\\,dx = \\ln|x| + C', NULL, 0, 1, 44, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(168, 'Cálculo', NULL, '\\int \\sin x\\,dx = -\\cos x + C', NULL, 0, 1, 45, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(169, 'Cálculo', NULL, '\\int \\cos x\\,dx = \\sin x + C', NULL, 0, 1, 46, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(170, 'Cálculo', NULL, '\\int \\sec^2 x\\,dx = \\tan x + C', NULL, 0, 1, 47, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(171, 'Cálculo', NULL, '\\int \\csc^2 x\\,dx = -\\cot x + C', NULL, 0, 1, 48, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(172, 'Cálculo', NULL, '\\int \\sec x \\tan x\\,dx = \\sec x + C', NULL, 0, 1, 49, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(173, 'Cálculo', NULL, '\\int \\csc x \\cot x\\,dx = -\\csc x + C', NULL, 0, 1, 50, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(174, 'Cálculo', NULL, '\\int \\frac{1}{\\sqrt{1-x^2}}\\,dx = \\arcsin x + C', NULL, 0, 1, 51, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(175, 'Cálculo', NULL, '\\int \\frac{1}{1+x^2}\\,dx = \\arctan x + C', NULL, 0, 1, 52, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(176, 'Cálculo', NULL, '\\int \\frac{1}{x^2+a^2}\\,dx = \\frac{1}{a}\\arctan\\frac{x}{a} + C', NULL, 0, 1, 53, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(177, 'Cálculo', NULL, '\\int \\frac{1}{\\sqrt{x^2-a^2}}\\,dx = \\ln|x+\\sqrt{x^2-a^2}| + C', NULL, 0, 1, 54, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(178, 'Cálculo', NULL, '\\int u\\,dv = uv - \\int v\\,du', NULL, 0, 1, 55, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(179, 'Cálculo', NULL, '\\int_{a}^{b} f(x)\\,dx = F(b) - F(a)', NULL, 0, 1, 56, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(180, 'Cálculo', NULL, '\\lim_{x\\to a} \\frac{f(x)-f(a)}{x-a} = f\'(a)', NULL, 0, 1, 57, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(181, 'Cálculo', NULL, '\\lim_{h\\to 0} \\frac{f(x+h)-f(x)}{h} = f\'(x)', NULL, 0, 1, 58, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(182, 'Cálculo', NULL, '\\frac{d}{dx}\\left(\\int_{a}^{x} f(t)\\,dt\\right) = f(x)', NULL, 0, 1, 59, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(183, 'Cálculo', NULL, '\\int_{a}^{b} f(x)g\'(x)\\,dx = f(x)g(x)\\big|_a^b - \\int_{a}^{b} f\'(x)g(x)\\,dx', NULL, 0, 1, 60, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(184, 'Cálculo', NULL, '\\int f(g(x))g\'(x)\\,dx = \\int f(u)\\,du', NULL, 0, 1, 61, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(185, 'Cálculo', NULL, '\\frac{\\partial f}{\\partial x} = \\lim_{h\\to 0} \\frac{f(x+h,y)-f(x,y)}{h}', NULL, 0, 1, 62, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(186, 'Cálculo', NULL, '\\frac{\\partial^2 f}{\\partial x \\partial y} = \\frac{\\partial^2 f}{\\partial y \\partial x}', NULL, 0, 1, 63, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(187, 'Cálculo', NULL, '\\nabla f = \\left(\\frac{\\partial f}{\\partial x}, \\frac{\\partial f}{\\partial y}, \\frac{\\partial f}{\\partial z}\\right)', NULL, 0, 1, 64, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(188, 'Cálculo', NULL, '\\int_C \\vec{F} \\cdot d\\vec{r} = \\int_a^b \\vec{F}(\\vec{r}(t)) \\cdot \\vec{r}\'(t)\\,dt', NULL, 0, 1, 65, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(189, 'Cálculo', NULL, '\\iint_D f(x,y)\\,dA = \\int_a^b \\int_{g_1(x)}^{g_2(x)} f(x,y)\\,dy\\,dx', NULL, 0, 1, 66, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(190, 'Cálculo', NULL, '\\iiint_E f(x,y,z)\\,dV = \\int_a^b \\int_{g_1(x)}^{g_2(x)} \\int_{h_1(x,y)}^{h_2(x,y)} f(x,y,z)\\,dz\\,dy\\,dx', NULL, 0, 1, 67, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(191, 'Parént./Matriz', NULL, '\\left(\\square\\right)', NULL, 1, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(192, 'Parént./Matriz', NULL, '\\left[\\square\\right]', NULL, 1, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(193, 'Parént./Matriz', NULL, '\\left\\{\\square\\right\\}', NULL, 1, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(194, 'Parént./Matriz', NULL, '\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(195, 'Parént./Matriz', NULL, '\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(196, 'Parént./Matriz', NULL, '\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix}', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(197, 'Parént./Matriz', NULL, '\\begin{matrix} a & b & c \\\\ d & e & f \\end{matrix}', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(198, 'Vect/Flechas', NULL, '\\vec{v}', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(199, 'Vect/Flechas', NULL, '\\overrightarrow{AB}', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(200, 'Vect/Flechas', NULL, '\\overleftarrow{CD}', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(201, 'Vect/Flechas', NULL, '\\nabla', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(202, 'Vect/Flechas', NULL, '\\nabla\\cdot\\vec{F}', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(203, 'Vect/Flechas', NULL, '\\nabla\\times\\vec{F}', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(204, 'Prob/Combi', NULL, 'P(A)', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(205, 'Prob/Combi', NULL, 'P(A\\mid B)', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(206, 'Prob/Combi', NULL, '\\Pr\\,(\\square)', NULL, 1, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(207, 'Prob/Combi', NULL, '\\mathbb{E}[X]', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(208, 'Prob/Combi', NULL, '\\operatorname{Var}(X)', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(209, 'Prob/Combi', NULL, '\\binom{n}{k}', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(210, 'Prob/Combi', NULL, '\\frac{n!}{k!\\,(n-k)!}', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(211, 'Prob/Combi', NULL, 'n!', NULL, 0, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(212, 'Prob/Combi', NULL, '(n-1)!', NULL, 0, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(213, 'Química/H₂O', NULL, 'H_2O', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(214, 'Química/H₂O', NULL, 'CO_2', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(215, 'Química/H₂O', NULL, 'Na^+', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(216, 'Química/H₂O', NULL, 'Cl^-', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(217, 'Química/H₂O', NULL, 'x^{2+}', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(218, 'Química/H₂O', NULL, 'x^{3-}', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(219, 'Química/H₂O', NULL, 'H_2SO_4', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(220, 'Química/H₂O', NULL, 'HNO_3', NULL, 0, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(221, 'Química/H₂O', NULL, 'HCl', NULL, 0, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(222, 'Química/H₂O', NULL, 'NaOH', NULL, 0, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(223, 'Química/H₂O', NULL, 'CaCO_3', NULL, 0, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(224, 'Química/H₂O', NULL, 'CH_4', NULL, 0, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(225, 'Química/H₂O', NULL, 'C_2H_5OH', NULL, 0, 1, 12, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(226, 'Química/H₂O', NULL, 'NH_3', NULL, 0, 1, 13, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(227, 'Química/H₂O', NULL, 'H_2O_2', NULL, 0, 1, 14, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(228, 'Química/H₂O', NULL, 'NaCl', NULL, 0, 1, 15, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(229, 'Química/H₂O', NULL, 'KCl', NULL, 0, 1, 16, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(230, 'Química/H₂O', NULL, 'MgCl_2', NULL, 0, 1, 17, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(231, 'Química/H₂O', NULL, 'AlCl_3', NULL, 0, 1, 18, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(232, 'Química/H₂O', NULL, 'pH = -\\log[H^+]', NULL, 0, 1, 19, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(233, 'Química/H₂O', NULL, 'pOH = -\\log[OH^-]', NULL, 0, 1, 20, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(234, 'Química/H₂O', NULL, 'pH + pOH = 14', NULL, 0, 1, 21, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(235, 'Química/H₂O', NULL, 'K_w = [H^+][OH^-] = 1.0 \\times 10^{-14}', NULL, 0, 1, 22, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(236, 'Química/H₂O', NULL, 'K_a = \\frac{[H^+][A^-]}{[HA]}', NULL, 0, 1, 23, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(237, 'Química/H₂O', NULL, 'K_b = \\frac{[OH^-][BH^+]}{[B]}', NULL, 0, 1, 24, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(238, 'Química/H₂O', NULL, 'K_a \\cdot K_b = K_w', NULL, 0, 1, 25, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(239, 'Química/H₂O', NULL, '\\Delta G = \\Delta H - T\\Delta S', NULL, 0, 1, 26, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(240, 'Química/H₂O', NULL, '\\Delta G = -RT\\ln K', NULL, 0, 1, 27, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(241, 'Química/H₂O', NULL, 'PV = nRT', NULL, 0, 1, 28, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(242, 'Química/H₂O', NULL, '\\frac{P_1V_1}{T_1} = \\frac{P_2V_2}{T_2}', NULL, 0, 1, 29, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(243, 'Química/H₂O', NULL, 'C = \\frac{n}{V}', NULL, 0, 1, 30, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(244, 'Química/H₂O', NULL, 'M_1V_1 = M_2V_2', NULL, 0, 1, 31, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(245, 'Química/H₂O', NULL, '\\Delta H = \\sum H_{products} - \\sum H_{reactants}', NULL, 0, 1, 32, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(246, 'Química/H₂O', NULL, 'q = mc\\Delta T', NULL, 0, 1, 33, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(247, 'Química/H₂O', NULL, '\\Delta S = \\frac{q_{rev}}{T}', NULL, 0, 1, 34, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(248, 'Química/H₂O', NULL, 'E = E^0 - \\frac{RT}{nF}\\ln Q', NULL, 0, 1, 35, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(249, 'Química/H₂O', NULL, 'E^0 = E^0_{cathode} - E^0_{anode}', NULL, 0, 1, 36, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(250, 'Química/H₂O', NULL, '\\Delta G^0 = -nFE^0', NULL, 0, 1, 37, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(251, 'Plantillas', NULL, '\\frac{\\square}{\\square}', NULL, 1, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(252, 'Plantillas', NULL, '\\sqrt{\\square}', NULL, 1, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(253, 'Plantillas', NULL, '\\sqrt[n]{\\square}', NULL, 1, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(254, 'Plantillas', NULL, '\\left(\\square\\right)', NULL, 1, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(255, 'Plantillas', NULL, '\\left[\\square\\right]', NULL, 1, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(256, 'Plantillas', NULL, '\\left\\{\\square\\right\\}', NULL, 1, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(257, 'Plantillas', NULL, 'a^{\\square}', NULL, 1, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(258, 'Plantillas', NULL, '\\_{\\square}', NULL, 1, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(259, 'Plantillas', NULL, '\\lim_{x\\to \\square}', NULL, 1, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(260, 'Plantillas', NULL, '\\sum_{i=\\square}^{\\square} \\square', NULL, 1, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(261, 'Plantillas', NULL, '\\int_{\\square}^{\\square} \\square\\,dx', NULL, 1, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(262, 'Plantillas', NULL, 'x = \\frac{-\\square \\pm \\sqrt{\\square^2-4\\square\\square}}{2\\square}', NULL, 1, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(263, 'Plantillas', NULL, 'ax^2 + \\square x + \\square = 0', NULL, 1, 1, 12, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(264, 'Plantillas', NULL, 'y = \\square x + \\square', NULL, 1, 1, 13, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(265, 'Plantillas', NULL, 'y - \\square = \\square(x - \\square)', NULL, 1, 1, 14, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(266, 'Plantillas', NULL, 'd = \\sqrt{(\\square-\\square)^2 + (\\square-\\square)^2}', NULL, 1, 1, 15, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(267, 'Plantillas', NULL, 'm = \\frac{\\square - \\square}{\\square - \\square}', NULL, 1, 1, 16, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(268, 'Plantillas', NULL, 'A = \\pi \\square^2', NULL, 1, 1, 17, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(269, 'Plantillas', NULL, 'V = \\frac{4}{3}\\pi \\square^3', NULL, 1, 1, 18, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(270, 'Plantillas', NULL, 'V = \\pi \\square^2 \\square', NULL, 1, 1, 19, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(271, 'Plantillas', NULL, 'V = \\frac{1}{3}\\pi \\square^2 \\square', NULL, 1, 1, 20, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(272, 'Plantillas', NULL, 'V = \\square \\cdot \\square \\cdot \\square', NULL, 1, 1, 21, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(273, 'Plantillas', NULL, 'a^2 + b^2 = c^2', NULL, 0, 1, 22, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(274, 'Plantillas', NULL, 'F = \\square \\cdot \\square', NULL, 1, 1, 23, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(275, 'Plantillas', NULL, 'E = \\frac{1}{2}\\square \\cdot \\square^2', NULL, 1, 1, 24, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(276, 'Plantillas', NULL, 'E = \\square \\cdot \\square \\cdot \\square', NULL, 1, 1, 25, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(277, 'Plantillas', NULL, 'v = \\square + \\square \\cdot \\square', NULL, 1, 1, 26, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(278, 'Plantillas', NULL, 'x = \\square + \\square \\cdot \\square + \\frac{1}{2}\\square \\cdot \\square^2', NULL, 1, 1, 27, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(279, 'Fórmulas', NULL, 'x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(280, 'Fórmulas', NULL, 'ax^2 + bx + c = 0', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(281, 'Fórmulas', NULL, 'y = mx + b', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(282, 'Fórmulas', NULL, 'y - y_1 = m(x - x_1)', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(283, 'Fórmulas', NULL, 'd = \\sqrt{(x_2-x_1)^2 + (y_2-y_1)^2}', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(284, 'Fórmulas', NULL, 'm = \\frac{y_2 - y_1}{x_2 - x_1}', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(285, 'Fórmulas', NULL, 'A = \\pi r^2', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(286, 'Fórmulas', NULL, 'C = 2\\pi r', NULL, 0, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(287, 'Fórmulas', NULL, 'V = \\frac{4}{3}\\pi r^3', NULL, 0, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(288, 'Fórmulas', NULL, 'A = 4\\pi r^2', NULL, 0, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(289, 'Fórmulas', NULL, 'V = \\pi r^2 h', NULL, 0, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(290, 'Fórmulas', NULL, 'A = 2\\pi r^2 + 2\\pi r h', NULL, 0, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(291, 'Fórmulas', NULL, 'V = \\frac{1}{3}\\pi r^2 h', NULL, 0, 1, 12, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(292, 'Fórmulas', NULL, 'A = \\pi r (r + \\sqrt{h^2 + r^2})', NULL, 0, 1, 13, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(293, 'Fórmulas', NULL, 'V = lwh', NULL, 0, 1, 14, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(294, 'Fórmulas', NULL, 'A = 2(lw + lh + wh)', NULL, 0, 1, 15, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(295, 'Fórmulas', NULL, 'V = \\frac{1}{3}Bh', NULL, 0, 1, 16, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(296, 'Fórmulas', NULL, 'a^2 + b^2 = c^2', NULL, 0, 1, 17, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(297, 'Fórmulas', NULL, '\\sin^2\\theta + \\cos^2\\theta = 1', NULL, 0, 1, 18, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(298, 'Fórmulas', NULL, '\\tan\\theta = \\frac{\\sin\\theta}{\\cos\\theta}', NULL, 0, 1, 19, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(299, 'Fórmulas', NULL, '\\sin(\\alpha \\pm \\beta) = \\sin\\alpha\\cos\\beta \\pm \\cos\\alpha\\sin\\beta', NULL, 0, 1, 20, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(300, 'Fórmulas', NULL, '\\cos(\\alpha \\pm \\beta) = \\cos\\alpha\\cos\\beta \\mp \\sin\\alpha\\sin\\beta', NULL, 0, 1, 21, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(301, 'Fórmulas', NULL, '\\sin(2\\theta) = 2\\sin\\theta\\cos\\theta', NULL, 0, 1, 22, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(302, 'Fórmulas', NULL, '\\cos(2\\theta) = \\cos^2\\theta - \\sin^2\\theta', NULL, 0, 1, 23, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(303, 'Fórmulas', NULL, '\\sin^2\\theta = \\frac{1-\\cos(2\\theta)}{2}', NULL, 0, 1, 24, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(304, 'Fórmulas', NULL, '\\cos^2\\theta = \\frac{1+\\cos(2\\theta)}{2}', NULL, 0, 1, 25, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(305, 'Física', NULL, 'F = ma', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(306, 'Física', NULL, 'E = mc^2', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(307, 'Física', NULL, 'E = \\frac{1}{2}mv^2', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(308, 'Física', NULL, 'E = mgh', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(309, 'Física', NULL, 'v = v_0 + at', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(310, 'Física', NULL, 'x = x_0 + v_0t + \\frac{1}{2}at^2', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(311, 'Física', NULL, 'v^2 = v_0^2 + 2a(x-x_0)', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(312, 'Física', NULL, 'F = G\\frac{m_1 m_2}{r^2}', NULL, 0, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(313, 'Física', NULL, 'F = k\\frac{q_1 q_2}{r^2}', NULL, 0, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(314, 'Física', NULL, 'E = \\frac{F}{q}', NULL, 0, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(315, 'Física', NULL, 'V = \\frac{W}{q}', NULL, 0, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(316, 'Física', NULL, 'P = IV', NULL, 0, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(317, 'Física', NULL, 'R = \\frac{V}{I}', NULL, 0, 1, 12, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(318, 'Física', NULL, 'P = \\frac{V^2}{R}', NULL, 0, 1, 13, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(319, 'Física', NULL, 'P = I^2 R', NULL, 0, 1, 14, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(320, 'Física', NULL, '\\lambda = \\frac{v}{f}', NULL, 0, 1, 15, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(321, 'Física', NULL, 'E = hf', NULL, 0, 1, 16, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(322, 'Física', NULL, 'p = mv', NULL, 0, 1, 17, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(323, 'Física', NULL, '\\Delta p = F\\Delta t', NULL, 0, 1, 18, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(324, 'Física', NULL, 'W = Fd', NULL, 0, 1, 19, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(325, 'Física', NULL, 'P = \\frac{W}{t}', NULL, 0, 1, 20, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(326, 'Física', NULL, '\\tau = rF\\sin\\theta', NULL, 0, 1, 21, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(327, 'Física', NULL, 'L = I\\omega', NULL, 0, 1, 22, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(328, 'Física', NULL, 'K = \\frac{1}{2}I\\omega^2', NULL, 0, 1, 23, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(329, 'Física', NULL, 'T = 2\\pi\\sqrt{\\frac{L}{g}}', NULL, 0, 1, 24, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(330, 'Física', NULL, 'T = 2\\pi\\sqrt{\\frac{m}{k}}', NULL, 0, 1, 25, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(331, 'Física', NULL, 'f = \\frac{1}{T}', NULL, 0, 1, 26, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(332, 'Física', NULL, '\\omega = 2\\pi f', NULL, 0, 1, 27, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(333, 'Física', NULL, 'PV = nRT', NULL, 0, 1, 28, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(334, 'Física', NULL, 'Q = mc\\Delta T', NULL, 0, 1, 29, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(335, 'Física', NULL, '\\Delta S = \\frac{Q}{T}', NULL, 0, 1, 30, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(336, 'Física', NULL, '\\eta = \\frac{W_{out}}{Q_{in}}', NULL, 0, 1, 31, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(337, 'Física', NULL, '\\Delta U = Q - W', NULL, 0, 1, 32, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(338, 'Geometría', NULL, 'A = \\frac{1}{2}bh', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(339, 'Geometría', NULL, 'A = \\frac{1}{2}ab\\sin C', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(340, 'Geometría', NULL, 'A = \\sqrt{s(s-a)(s-b)(s-c)}', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(341, 'Geometría', NULL, 's = \\frac{a+b+c}{2}', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(342, 'Geometría', NULL, 'A = \\frac{1}{2}(a+b)h', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(343, 'Geometría', NULL, 'A = \\frac{n}{2} \\cdot r^2 \\sin\\left(\\frac{360°}{n}\\right)', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(344, 'Geometría', NULL, 'V = \\frac{1}{3}Ah', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(345, 'Geometría', NULL, 'V = \\frac{4}{3}\\pi r^3', NULL, 0, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(346, 'Geometría', NULL, 'A = 4\\pi r^2', NULL, 0, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(347, 'Geometría', NULL, 'V = \\pi r^2 h', NULL, 0, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(348, 'Geometría', NULL, 'A_{lateral} = 2\\pi r h', NULL, 0, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(349, 'Geometría', NULL, 'A_{total} = 2\\pi r(r+h)', NULL, 0, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(350, 'Geometría', NULL, 'V = \\frac{1}{3}\\pi r^2 h', NULL, 0, 1, 12, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(351, 'Geometría', NULL, 'A_{lateral} = \\pi r l', NULL, 0, 1, 13, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(352, 'Geometría', NULL, 'A_{total} = \\pi r(r+l)', NULL, 0, 1, 14, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(353, 'Geometría', NULL, 'l = \\sqrt{r^2 + h^2}', NULL, 0, 1, 15, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(354, 'Geometría', NULL, 'V = lwh', NULL, 0, 1, 16, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(355, 'Geometría', NULL, 'A = 2(lw + lh + wh)', NULL, 0, 1, 17, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(356, 'Geometría', NULL, 'V = a^3', NULL, 0, 1, 18, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(357, 'Geometría', NULL, 'A = 6a^2', NULL, 0, 1, 19, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(358, 'Geometría', NULL, 'd = a\\sqrt{3}', NULL, 0, 1, 20, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(359, 'Geometría', NULL, 'V = \\frac{1}{3}a^2 h', NULL, 0, 1, 21, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(360, 'Geometría', NULL, 'A_{lateral} = 2al', NULL, 0, 1, 22, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(361, 'Geometría', NULL, 'A_{total} = a^2 + 2al', NULL, 0, 1, 23, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(362, 'Geometría', NULL, 'l = \\sqrt{a^2 + h^2}', NULL, 0, 1, 24, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(363, 'Geometría', NULL, '\\theta = \\frac{s}{r}', NULL, 0, 1, 25, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(364, 'Geometría', NULL, 'A = \\frac{1}{2}r^2\\theta', NULL, 0, 1, 26, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(365, 'Geometría', NULL, 'A = \\frac{1}{2}r^2(\\theta - \\sin\\theta)', NULL, 0, 1, 27, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(366, 'IPN 2020', NULL, 'x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}', NULL, 0, 1, 0, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(367, 'IPN 2020', NULL, 'ax^2 + bx + c = 0', NULL, 0, 1, 1, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(368, 'IPN 2020', NULL, '(a+b)^2 = a^2 + 2ab + b^2', NULL, 0, 1, 2, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(369, 'IPN 2020', NULL, '(a-b)^2 = a^2 - 2ab + b^2', NULL, 0, 1, 3, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(370, 'IPN 2020', NULL, '(a+b)(a-b) = a^2 - b^2', NULL, 0, 1, 4, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(371, 'IPN 2020', NULL, '(a+b)^3 = a^3 + 3a^2b + 3ab^2 + b^3', NULL, 0, 1, 5, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(372, 'IPN 2020', NULL, '(a-b)^3 = a^3 - 3a^2b + 3ab^2 - b^3', NULL, 0, 1, 6, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(373, 'IPN 2020', NULL, 'a^3 + b^3 = (a+b)(a^2-ab+b^2)', NULL, 0, 1, 7, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(374, 'IPN 2020', NULL, 'a^3 - b^3 = (a-b)(a^2+ab+b^2)', NULL, 0, 1, 8, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(375, 'IPN 2020', NULL, '\\log_a(xy) = \\log_a x + \\log_a y', NULL, 0, 1, 9, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(376, 'IPN 2020', NULL, '\\log_a\\left(\\frac{x}{y}\\right) = \\log_a x - \\log_a y', NULL, 0, 1, 10, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(377, 'IPN 2020', NULL, '\\log_a(x^n) = n\\log_a x', NULL, 0, 1, 11, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(378, 'IPN 2020', NULL, '\\log_a a = 1', NULL, 0, 1, 12, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(379, 'IPN 2020', NULL, '\\log_a 1 = 0', NULL, 0, 1, 13, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(380, 'IPN 2020', NULL, 'a^m \\cdot a^n = a^{m+n}', NULL, 0, 1, 14, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(381, 'IPN 2020', NULL, '\\frac{a^m}{a^n} = a^{m-n}', NULL, 0, 1, 15, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(382, 'IPN 2020', NULL, '(a^m)^n = a^{mn}', NULL, 0, 1, 16, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(383, 'IPN 2020', NULL, 'a^{-n} = \\frac{1}{a^n}', NULL, 0, 1, 17, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(384, 'IPN 2020', NULL, 'a^{1/n} = \\sqrt[n]{a}', NULL, 0, 1, 18, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(385, 'IPN 2020', NULL, '\\sqrt{a} \\cdot \\sqrt{b} = \\sqrt{ab}', NULL, 0, 1, 19, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(386, 'IPN 2020', NULL, '\\frac{\\sqrt{a}}{\\sqrt{b}} = \\sqrt{\\frac{a}{b}}', NULL, 0, 1, 20, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(387, 'IPN 2020', NULL, 'a^2 + b^2 = c^2', NULL, 0, 1, 21, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(388, 'IPN 2020', NULL, 'd = \\sqrt{(x_2-x_1)^2 + (y_2-y_1)^2}', NULL, 0, 1, 22, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(389, 'IPN 2020', NULL, 'm = \\frac{y_2 - y_1}{x_2 - x_1}', NULL, 0, 1, 23, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(390, 'IPN 2020', NULL, 'y = mx + b', NULL, 0, 1, 24, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(391, 'IPN 2020', NULL, 'y - y_1 = m(x - x_1)', NULL, 0, 1, 25, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(392, 'IPN 2020', NULL, 'A = \\pi r^2', NULL, 0, 1, 26, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(393, 'IPN 2020', NULL, 'C = 2\\pi r = \\pi d', NULL, 0, 1, 27, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(394, 'IPN 2020', NULL, 'A = \\frac{1}{2}bh', NULL, 0, 1, 28, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(395, 'IPN 2020', NULL, 'P = 2(l + w)', NULL, 0, 1, 29, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(396, 'IPN 2020', NULL, 'A = lw', NULL, 0, 1, 30, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(397, 'IPN 2020', NULL, 'A = s^2', NULL, 0, 1, 31, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(398, 'IPN 2020', NULL, 'P = 4s', NULL, 0, 1, 32, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(399, 'IPN 2020', NULL, 'V = lwh', NULL, 0, 1, 33, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(400, 'IPN 2020', NULL, 'A = 2(lw + lh + wh)', NULL, 0, 1, 34, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(401, 'IPN 2020', NULL, 'V = s^3', NULL, 0, 1, 35, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(402, 'IPN 2020', NULL, 'A = 6s^2', NULL, 0, 1, 36, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(403, 'IPN 2020', NULL, 'V = \\pi r^2 h', NULL, 0, 1, 37, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(404, 'IPN 2020', NULL, 'A = 2\\pi r(r + h)', NULL, 0, 1, 38, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(405, 'IPN 2020', NULL, 'V = \\frac{4}{3}\\pi r^3', NULL, 0, 1, 39, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(406, 'IPN 2020', NULL, 'A = 4\\pi r^2', NULL, 0, 1, 40, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(407, 'IPN 2020', NULL, 'V = \\frac{1}{3}\\pi r^2 h', NULL, 0, 1, 41, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(408, 'IPN 2020', NULL, 'A_{lateral} = \\pi r l', NULL, 0, 1, 42, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(409, 'IPN 2020', NULL, 'A_{total} = \\pi r(r + l)', NULL, 0, 1, 43, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(410, 'IPN 2020', NULL, '\\sin^2\\theta + \\cos^2\\theta = 1', NULL, 0, 1, 44, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(411, 'IPN 2020', NULL, '\\tan\\theta = \\frac{\\sin\\theta}{\\cos\\theta}', NULL, 0, 1, 45, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(412, 'IPN 2020', NULL, '\\cot\\theta = \\frac{\\cos\\theta}{\\sin\\theta}', NULL, 0, 1, 46, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(413, 'IPN 2020', NULL, '\\sec\\theta = \\frac{1}{\\cos\\theta}', NULL, 0, 1, 47, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(414, 'IPN 2020', NULL, '\\csc\\theta = \\frac{1}{\\sin\\theta}', NULL, 0, 1, 48, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(415, 'IPN 2020', NULL, '\\sin(\\alpha \\pm \\beta) = \\sin\\alpha\\cos\\beta \\pm \\cos\\alpha\\sin\\beta', NULL, 0, 1, 49, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(416, 'IPN 2020', NULL, '\\cos(\\alpha \\pm \\beta) = \\cos\\alpha\\cos\\beta \\mp \\sin\\alpha\\sin\\beta', NULL, 0, 1, 50, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(417, 'IPN 2020', NULL, '\\tan(\\alpha \\pm \\beta) = \\frac{\\tan\\alpha \\pm \\tan\\beta}{1 \\mp \\tan\\alpha\\tan\\beta}', NULL, 0, 1, 51, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(418, 'IPN 2020', NULL, '\\sin(2\\theta) = 2\\sin\\theta\\cos\\theta', NULL, 0, 1, 52, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(419, 'IPN 2020', NULL, '\\cos(2\\theta) = \\cos^2\\theta - \\sin^2\\theta', NULL, 0, 1, 53, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(420, 'IPN 2020', NULL, '\\cos(2\\theta) = 2\\cos^2\\theta - 1', NULL, 0, 1, 54, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(421, 'IPN 2020', NULL, '\\cos(2\\theta) = 1 - 2\\sin^2\\theta', NULL, 0, 1, 55, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(422, 'IPN 2020', NULL, '\\tan(2\\theta) = \\frac{2\\tan\\theta}{1 - \\tan^2\\theta}', NULL, 0, 1, 56, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(423, 'IPN 2020', NULL, '\\sin^2\\theta = \\frac{1-\\cos(2\\theta)}{2}', NULL, 0, 1, 57, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(424, 'IPN 2020', NULL, '\\cos^2\\theta = \\frac{1+\\cos(2\\theta)}{2}', NULL, 0, 1, 58, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(425, 'IPN 2020', NULL, '\\sin\\left(\\frac{\\theta}{2}\\right) = \\pm\\sqrt{\\frac{1-\\cos\\theta}{2}}', NULL, 0, 1, 59, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(426, 'IPN 2020', NULL, '\\cos\\left(\\frac{\\theta}{2}\\right) = \\pm\\sqrt{\\frac{1+\\cos\\theta}{2}}', NULL, 0, 1, 60, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(427, 'IPN 2020', NULL, 'a^2 = b^2 + c^2 - 2bc\\cos A', NULL, 0, 1, 61, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(428, 'IPN 2020', NULL, '\\frac{a}{\\sin A} = \\frac{b}{\\sin B} = \\frac{c}{\\sin C} = 2R', NULL, 0, 1, 62, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(429, 'IPN 2020', NULL, 'F = ma', NULL, 0, 1, 63, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(430, 'IPN 2020', NULL, 'W = Fd', NULL, 0, 1, 64, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(431, 'IPN 2020', NULL, 'P = \\frac{W}{t}', NULL, 0, 1, 65, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(432, 'IPN 2020', NULL, 'E_c = \\frac{1}{2}mv^2', NULL, 0, 1, 66, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(433, 'IPN 2020', NULL, 'E_p = mgh', NULL, 0, 1, 67, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(434, 'IPN 2020', NULL, 'E_m = E_c + E_p', NULL, 0, 1, 68, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(435, 'IPN 2020', NULL, 'v = v_0 + at', NULL, 0, 1, 69, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(436, 'IPN 2020', NULL, 'x = x_0 + v_0t + \\frac{1}{2}at^2', NULL, 0, 1, 70, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(437, 'IPN 2020', NULL, 'v^2 = v_0^2 + 2a(x-x_0)', NULL, 0, 1, 71, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(438, 'IPN 2020', NULL, 'x = \\frac{v_0 + v}{2}t', NULL, 0, 1, 72, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(439, 'IPN 2020', NULL, 'p = mv', NULL, 0, 1, 73, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(440, 'IPN 2020', NULL, '\\Delta p = F\\Delta t', NULL, 0, 1, 74, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(441, 'IPN 2020', NULL, 'F_c = \\frac{mv^2}{r}', NULL, 0, 1, 75, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(442, 'IPN 2020', NULL, 'F_g = G\\frac{m_1 m_2}{r^2}', NULL, 0, 1, 76, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(443, 'IPN 2020', NULL, '\\tau = rF\\sin\\theta', NULL, 0, 1, 77, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(444, 'IPN 2020', NULL, 'L = I\\omega', NULL, 0, 1, 78, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(445, 'IPN 2020', NULL, 'K = \\frac{1}{2}I\\omega^2', NULL, 0, 1, 79, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(446, 'IPN 2020', NULL, 'PV = nRT', NULL, 0, 1, 80, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(447, 'IPN 2020', NULL, '\\frac{P_1V_1}{T_1} = \\frac{P_2V_2}{T_2}', NULL, 0, 1, 81, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(448, 'IPN 2020', NULL, 'Q = mc\\Delta T', NULL, 0, 1, 82, '2025-11-13 22:46:50', '2025-11-13 22:46:50');
+INSERT INTO `formulas` (`id`, `categoria`, `nombre`, `latex`, `descripcion`, `tiene_placeholders`, `activo`, `orden`, `created_at`, `updated_at`) VALUES
+(449, 'IPN 2020', NULL, 'Q = mL', NULL, 0, 1, 83, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(450, 'IPN 2020', NULL, '\\Delta U = Q - W', NULL, 0, 1, 84, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(451, 'IPN 2020', NULL, '\\eta = \\frac{W_{out}}{Q_{in}}', NULL, 0, 1, 85, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(452, 'IPN 2020', NULL, '\\Delta S = \\frac{Q}{T}', NULL, 0, 1, 86, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(453, 'IPN 2020', NULL, 'F = k\\frac{q_1 q_2}{r^2}', NULL, 0, 1, 87, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(454, 'IPN 2020', NULL, 'E = \\frac{F}{q}', NULL, 0, 1, 88, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(455, 'IPN 2020', NULL, 'E = k\\frac{q}{r^2}', NULL, 0, 1, 89, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(456, 'IPN 2020', NULL, 'V = \\frac{W}{q}', NULL, 0, 1, 90, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(457, 'IPN 2020', NULL, 'V = k\\frac{q}{r}', NULL, 0, 1, 91, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(458, 'IPN 2020', NULL, 'C = \\frac{Q}{V}', NULL, 0, 1, 92, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(459, 'IPN 2020', NULL, 'C = \\frac{\\varepsilon_0 A}{d}', NULL, 0, 1, 93, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(460, 'IPN 2020', NULL, 'U = \\frac{1}{2}CV^2', NULL, 0, 1, 94, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(461, 'IPN 2020', NULL, 'I = \\frac{Q}{t}', NULL, 0, 1, 95, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(462, 'IPN 2020', NULL, 'V = IR', NULL, 0, 1, 96, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(463, 'IPN 2020', NULL, 'P = IV', NULL, 0, 1, 97, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(464, 'IPN 2020', NULL, 'P = I^2R', NULL, 0, 1, 98, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(465, 'IPN 2020', NULL, 'P = \\frac{V^2}{R}', NULL, 0, 1, 99, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(466, 'IPN 2020', NULL, 'R = \\rho\\frac{L}{A}', NULL, 0, 1, 100, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(467, 'IPN 2020', NULL, 'R_{eq} = R_1 + R_2 + \\cdots + R_n', NULL, 0, 1, 101, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(468, 'IPN 2020', NULL, '\\frac{1}{R_{eq}} = \\frac{1}{R_1} + \\frac{1}{R_2} + \\cdots + \\frac{1}{R_n}', NULL, 0, 1, 102, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(469, 'IPN 2020', NULL, 'F = qvB\\sin\\theta', NULL, 0, 1, 103, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(470, 'IPN 2020', NULL, 'F = ILB\\sin\\theta', NULL, 0, 1, 104, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(471, 'IPN 2020', NULL, 'B = \\frac{\\mu_0 I}{2\\pi r}', NULL, 0, 1, 105, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(472, 'IPN 2020', NULL, '\\Phi = BA\\cos\\theta', NULL, 0, 1, 106, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(473, 'IPN 2020', NULL, '\\varepsilon = -N\\frac{\\Delta\\Phi}{\\Delta t}', NULL, 0, 1, 107, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(474, 'IPN 2020', NULL, 'v = \\lambda f', NULL, 0, 1, 108, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(475, 'IPN 2020', NULL, 'f = \\frac{1}{T}', NULL, 0, 1, 109, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(476, 'IPN 2020', NULL, '\\omega = 2\\pi f', NULL, 0, 1, 110, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(477, 'IPN 2020', NULL, 'v = \\frac{d}{t}', NULL, 0, 1, 111, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(478, 'IPN 2020', NULL, 'E = hf', NULL, 0, 1, 112, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(479, 'IPN 2020', NULL, '\\lambda = \\frac{h}{p}', NULL, 0, 1, 113, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(480, 'IPN 2020', NULL, 'T = 2\\pi\\sqrt{\\frac{L}{g}}', NULL, 0, 1, 114, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(481, 'IPN 2020', NULL, 'T = 2\\pi\\sqrt{\\frac{m}{k}}', NULL, 0, 1, 115, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(482, 'IPN 2020', NULL, 'f = \\frac{1}{2\\pi}\\sqrt{\\frac{k}{m}}', NULL, 0, 1, 116, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(483, 'IPN 2020', NULL, 'n = \\frac{m}{M}', NULL, 0, 1, 117, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(484, 'IPN 2020', NULL, 'M = \\frac{m}{n}', NULL, 0, 1, 118, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(485, 'IPN 2020', NULL, 'C = \\frac{n}{V}', NULL, 0, 1, 119, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(486, 'IPN 2020', NULL, 'M_1V_1 = M_2V_2', NULL, 0, 1, 120, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(487, 'IPN 2020', NULL, '\\% = \\frac{m_{soluto}}{m_{solución}} \\times 100', NULL, 0, 1, 121, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(488, 'IPN 2020', NULL, 'ppm = \\frac{m_{soluto}}{m_{solución}} \\times 10^6', NULL, 0, 1, 122, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(489, 'IPN 2020', NULL, 'X_i = \\frac{n_i}{n_{total}}', NULL, 0, 1, 123, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(490, 'IPN 2020', NULL, 'P_i = X_i P_{total}', NULL, 0, 1, 124, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(491, 'IPN 2020', NULL, 'pH = -\\log[H^+]', NULL, 0, 1, 125, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(492, 'IPN 2020', NULL, 'pOH = -\\log[OH^-]', NULL, 0, 1, 126, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(493, 'IPN 2020', NULL, 'pH + pOH = 14', NULL, 0, 1, 127, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(494, 'IPN 2020', NULL, 'K_w = [H^+][OH^-] = 1.0 \\times 10^{-14}', NULL, 0, 1, 128, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(495, 'IPN 2020', NULL, 'K_a = \\frac{[H^+][A^-]}{[HA]}', NULL, 0, 1, 129, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(496, 'IPN 2020', NULL, 'K_b = \\frac{[OH^-][BH^+]}{[B]}', NULL, 0, 1, 130, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(497, 'IPN 2020', NULL, 'K_a \\cdot K_b = K_w', NULL, 0, 1, 131, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(498, 'IPN 2020', NULL, 'pH = pK_a + \\log\\left(\\frac{[A^-]}{[HA]}\\right)', NULL, 0, 1, 132, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(499, 'IPN 2020', NULL, 'K_c = \\frac{[C]^c[D]^d}{[A]^a[B]^b}', NULL, 0, 1, 133, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(500, 'IPN 2020', NULL, 'K_p = K_c(RT)^{\\Delta n}', NULL, 0, 1, 134, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(501, 'IPN 2020', NULL, '\\Delta H = \\sum H_{products} - \\sum H_{reactants}', NULL, 0, 1, 135, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(502, 'IPN 2020', NULL, '\\Delta G = \\Delta H - T\\Delta S', NULL, 0, 1, 136, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(503, 'IPN 2020', NULL, '\\Delta G = -RT\\ln K', NULL, 0, 1, 137, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(504, 'IPN 2020', NULL, '\\Delta G^0 = -nFE^0', NULL, 0, 1, 138, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(505, 'IPN 2020', NULL, 'q = mc\\Delta T', NULL, 0, 1, 139, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(506, 'IPN 2020', NULL, '\\Delta S = \\frac{q_{rev}}{T}', NULL, 0, 1, 140, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(507, 'IPN 2020', NULL, 'E^0 = E^0_{cathode} - E^0_{anode}', NULL, 0, 1, 141, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(508, 'IPN 2020', NULL, 'E = E^0 - \\frac{RT}{nF}\\ln Q', NULL, 0, 1, 142, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(509, 'IPN 2020', NULL, 'E = E^0 - \\frac{0.0592}{n}\\log Q', NULL, 0, 1, 143, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(510, 'IPN 2020', NULL, '\\Delta G = -nFE', NULL, 0, 1, 144, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(511, 'IPN 2020', NULL, 'Q = It', NULL, 0, 1, 145, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(512, 'IPN 2020', NULL, 'm = \\frac{MQ}{nF}', NULL, 0, 1, 146, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(513, 'IPN 2020', NULL, '\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}', NULL, 0, 1, 147, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(514, 'IPN 2020', NULL, '\\sum_{i=1}^{n} i^2 = \\frac{n(n+1)(2n+1)}{6}', NULL, 0, 1, 148, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(515, 'IPN 2020', NULL, '\\sum_{i=1}^{n} i^3 = \\left[\\frac{n(n+1)}{2}\\right]^2', NULL, 0, 1, 149, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(516, 'IPN 2020', NULL, 'a_n = a_1 + (n-1)d', NULL, 0, 1, 150, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(517, 'IPN 2020', NULL, 'S_n = \\frac{n}{2}(a_1 + a_n)', NULL, 0, 1, 151, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(518, 'IPN 2020', NULL, 'a_n = a_1 r^{n-1}', NULL, 0, 1, 152, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(519, 'IPN 2020', NULL, 'S_n = a_1\\frac{1-r^n}{1-r}', NULL, 0, 1, 153, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(520, 'IPN 2020', NULL, 'S_\\infty = \\frac{a_1}{1-r}', NULL, 0, 1, 154, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(521, 'IPN 2020', NULL, '\\binom{n}{r} = \\frac{n!}{r!(n-r)!}', NULL, 0, 1, 155, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(522, 'IPN 2020', NULL, 'P(n,r) = \\frac{n!}{(n-r)!}', NULL, 0, 1, 156, '2025-11-13 22:46:50', '2025-11-13 22:46:50'),
+(523, 'IPN 2020', NULL, 'n! = n \\cdot (n-1) \\cdot (n-2) \\cdots 2 \\cdot 1', NULL, 0, 1, 157, '2025-11-13 22:46:50', '2025-11-13 22:46:50');
 
 -- --------------------------------------------------------
 
@@ -938,6 +1575,45 @@ INSERT INTO `presupuestos_mensuales` (`id`, `mes`, `monto`, `created_at`, `updat
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `quizzes`
+--
+
+CREATE TABLE `quizzes` (
+  `id` int(11) NOT NULL,
+  `titulo` varchar(255) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `id_area` int(11) DEFAULT NULL,
+  `materia` varchar(255) DEFAULT NULL,
+  `puntos_max` int(11) NOT NULL DEFAULT 100,
+  `peso_calificacion` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `fecha_limite` datetime DEFAULT NULL,
+  `grupos` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`grupos`)),
+  `max_intentos` int(11) DEFAULT NULL,
+  `requiere_revision` tinyint(1) NOT NULL DEFAULT 0,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `publicado` tinyint(1) NOT NULL DEFAULT 0,
+  `creado_por` int(11) DEFAULT NULL,
+  `time_limit_min` int(11) DEFAULT NULL,
+  `passing_score` int(11) DEFAULT NULL,
+  `shuffle_questions` tinyint(1) NOT NULL DEFAULT 0,
+  `visible_desde` datetime DEFAULT NULL,
+  `visible_hasta` datetime DEFAULT NULL,
+  `imagen_portada` varchar(255) DEFAULT NULL,
+  `recursos_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`recursos_json`)),
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `quizzes`
+--
+
+INSERT INTO `quizzes` (`id`, `titulo`, `descripcion`, `id_area`, `materia`, `puntos_max`, `peso_calificacion`, `fecha_limite`, `grupos`, `max_intentos`, `requiere_revision`, `activo`, `publicado`, `creado_por`, `time_limit_min`, `passing_score`, `shuffle_questions`, `visible_desde`, `visible_hasta`, `imagen_portada`, `recursos_json`, `created_at`, `updated_at`) VALUES
+(6, '', NULL, NULL, NULL, 100, 0.00, NULL, '[\"V1\"]', NULL, 0, 1, 1, 21, NULL, NULL, 0, NULL, NULL, NULL, NULL, '2025-11-19 20:19:18', '2025-11-19 20:19:31');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `quizzes_intentos`
 --
 
@@ -952,38 +1628,7 @@ CREATE TABLE `quizzes_intentos` (
   `correctas` int(11) DEFAULT NULL,
   `detalle_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`detalle_json`)),
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ;
-
---
--- Volcado de datos para la tabla `quizzes_intentos`
---
-
-INSERT INTO `quizzes_intentos` (`id`, `id_quiz`, `id_estudiante`, `puntaje`, `intent_number`, `tiempo_segundos`, `total_preguntas`, `correctas`, `detalle_json`, `created_at`) VALUES
-(1, 13, 67, 100, 1, NULL, 1, 1, NULL, '2025-10-07 22:27:17'),
-(2, 14, 67, 0, 1, NULL, 1, NULL, NULL, '2025-10-08 18:15:05'),
-(3, 14, 67, 0, 2, NULL, 1, NULL, NULL, '2025-10-08 18:21:12'),
-(4, 14, 67, 0, 3, NULL, 1, NULL, NULL, '2025-10-08 18:29:46'),
-(5, 15, 67, 0, 1, NULL, 1, NULL, NULL, '2025-10-08 18:43:57'),
-(6, 15, 67, 0, 2, NULL, 1, NULL, NULL, '2025-10-08 18:48:37'),
-(7, 15, 67, 0, 3, NULL, 1, NULL, NULL, '2025-10-08 18:54:54'),
-(8, 16, 67, 0, 1, NULL, 1, NULL, NULL, '2025-10-08 19:04:52'),
-(9, 16, 67, 0, 2, NULL, 1, NULL, NULL, '2025-10-08 19:12:01'),
-(10, 16, 67, 0, 3, NULL, 1, NULL, NULL, '2025-10-08 19:21:45'),
-(11, 17, 67, 0, 1, NULL, 1, NULL, NULL, '2025-10-08 19:32:10'),
-(12, 17, 67, 0, 2, NULL, 1, NULL, NULL, '2025-10-08 19:37:34'),
-(13, 17, 67, 100, 3, NULL, 1, 1, NULL, '2025-10-08 19:41:14'),
-(14, 18, 67, 0, 1, NULL, 5, NULL, NULL, '2025-10-09 22:35:52'),
-(15, 18, 67, 20, 2, NULL, 5, 1, NULL, '2025-10-09 22:47:03'),
-(16, 20, 67, 100, 1, NULL, 1, 1, NULL, '2025-10-09 22:57:05'),
-(17, 20, 67, 100, 2, NULL, 1, 1, NULL, '2025-10-09 22:59:15'),
-(18, 20, 67, 100, 3, NULL, 1, 1, NULL, '2025-10-09 23:04:06'),
-(19, 18, 67, 80, 3, 234, 5, 4, NULL, '2025-10-10 19:10:43'),
-(20, 21, 67, 0, 1, 63, 5, NULL, NULL, '2025-10-10 20:12:08'),
-(21, 21, 67, 20, 2, 154, 5, 1, NULL, '2025-10-10 20:15:13'),
-(22, 21, 67, 60, 3, 55, 5, 3, NULL, '2025-10-10 21:09:44'),
-(23, 22, 67, 0, 1, 217, 1, NULL, NULL, '2025-10-10 21:51:43'),
-(24, 22, 67, 0, 2, 63, 1, NULL, NULL, '2025-10-10 21:53:10'),
-(25, 22, 67, 100, 3, 72, 1, 1, NULL, '2025-10-10 22:01:55');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -1011,7 +1656,7 @@ CREATE TABLE `quizzes_preguntas` (
   `id_quiz` int(11) NOT NULL,
   `orden` int(11) NOT NULL DEFAULT 1,
   `enunciado` text NOT NULL,
-  `tipo` enum('opcion_multiple','multi_respuesta','verdadero_falso') DEFAULT 'opcion_multiple',
+  `tipo` enum('opcion_multiple','multi_respuesta','verdadero_falso','respuesta_corta') DEFAULT 'opcion_multiple',
   `puntos` int(11) NOT NULL DEFAULT 1,
   `activa` tinyint(1) NOT NULL DEFAULT 1,
   `metadata_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`metadata_json`)),
@@ -1024,25 +1669,11 @@ CREATE TABLE `quizzes_preguntas` (
 --
 
 INSERT INTO `quizzes_preguntas` (`id`, `id_quiz`, `orden`, `enunciado`, `tipo`, `puntos`, `activa`, `metadata_json`, `created_at`, `updated_at`) VALUES
-(7, 14, 1, 'Resuelve: $2x^2$', 'opcion_multiple', 1, 1, NULL, '2025-10-08 17:55:08', NULL),
-(8, 15, 1, 'cuanto es 2+2', 'opcion_multiple', 1, 1, NULL, '2025-10-08 18:39:33', NULL),
-(9, 16, 1, 'cuanto es 2+2?', 'opcion_multiple', 1, 1, NULL, '2025-10-08 18:59:01', NULL),
-(10, 17, 1, 'fumas ?', 'opcion_multiple', 1, 1, NULL, '2025-10-08 19:09:06', NULL),
-(11, 13, 1, 'RESUELVE LA SIGUIENTE OPERACION: $x^2$', 'opcion_multiple', 1, 1, NULL, '2025-10-09 19:19:11', NULL),
-(12, 18, 1, '1. Puntuación Correcta:\nSelecciona la oración que utiliza los signos de puntuación de manera correcta.', 'opcion_multiple', 1, 1, NULL, '2025-10-09 20:28:05', NULL),
-(13, 18, 2, '2. Acentuación Diacrítica:\nElige la opción que completa correctamente la siguiente frase: \"Quisiera ir a la fiesta, ___ no tengo tiempo\".', 'opcion_multiple', 1, 1, NULL, '2025-10-09 20:28:05', NULL),
-(14, 18, 3, '3. Conectores Lógicos 🗣️:\nCompleta la oración con el conector que le da un sentido lógico: \"El cambio climático es un problema global; ___________, requiere soluciones de todos los países\".', 'opcion_multiple', 1, 1, NULL, '2025-10-09 20:28:05', NULL),
-(15, 18, 4, '4. Estilo Indirecto\n¿Cuál es la forma correcta de reportar la siguiente frase en estilo indirecto?: El entrenador dijo: \"Mañana entrenaremos en la mañana\".', 'opcion_multiple', 1, 1, NULL, '2025-10-09 20:28:05', NULL),
-(16, 18, 5, '5. Concordancia Verbal 🤓\nSelecciona la opción que completa la oración con la concordancia verbal correcta: \"La mayoría de los estudiantes ___________ que el examen fue difícil\".', 'opcion_multiple', 1, 1, NULL, '2025-10-09 20:28:05', NULL),
-(17, 19, 1, 'lsakdlkmaldjlkasjdklsadksdkl', 'opcion_multiple', 1, 1, NULL, '2025-10-09 21:04:39', NULL),
-(18, 20, 1, '$x^2$', 'opcion_multiple', 1, 1, NULL, '2025-10-09 21:06:44', NULL),
-(20, 18, 1, 'Puntuación Correcta:\nSelecciona la oración que utiliza los signos de puntuación de manera correcta.', 'opcion_multiple', 1, 1, NULL, '2025-10-10 19:22:18', NULL),
-(21, 21, 1, 'Selecciona la oración que utiliza los signos de puntuación de manera correcta.', 'opcion_multiple', 1, 1, NULL, '2025-10-10 19:55:46', NULL),
-(22, 21, 2, 'Elige la opción que completa correctamente la siguiente frase: \"Quisiera ir a la fiesta, ___ no tengo tiempo\".', 'opcion_multiple', 1, 1, NULL, '2025-10-10 19:55:46', NULL),
-(23, 21, 3, 'Completa la oración con el conector que le da un sentido lógico: \"El cambio climático es un problema global; ___________, requiere soluciones de todos los países\".', 'opcion_multiple', 1, 1, NULL, '2025-10-10 19:55:46', NULL),
-(24, 21, 4, '¿Cuál es la forma correcta de reportar la siguiente frase en estilo indirecto?: El entrenador dijo: \"Mañana entrenaremos en la mañana\".', 'opcion_multiple', 1, 1, NULL, '2025-10-10 19:55:46', NULL),
-(25, 21, 5, 'Selecciona la opción que completa la oración con la concordancia verbal correcta: \"La mayoría de los estudiantes ___________ que el examen fue difícil\".', 'opcion_multiple', 1, 1, NULL, '2025-10-10 19:55:46', NULL),
-(26, 22, 1, ' Selecciona la oración construida correctamente, evitando los errores comunes de \'queísmo\' y \'dequeísmo\'.', 'opcion_multiple', 1, 1, NULL, '2025-10-10 21:30:36', NULL);
+(36, 6, 1, 'Un automóvil viaja a una velocidad constante de 80 km/h. ¿Cuánto tiempo, en horas, le tomará recorrer una distancia de 320 km? Usa la fórmula: tiempo = distancia / velocidad.', 'opcion_multiple', 1, 1, NULL, '2025-11-19 20:19:18', NULL),
+(37, 6, 2, 'Un terreno rectangular tiene un largo de 15 metros y un ancho de 8 metros. Si se desea cercar el terreno con una malla, ¿cuántos metros de malla se necesitan? Usa la fórmula: Perímetro = 2 * (largo + ancho).', 'opcion_multiple', 1, 1, NULL, '2025-11-19 20:19:18', NULL),
+(38, 6, 3, 'Resuelve la siguiente ecuación cuadrática: x² - 5x + 6 = 0. ¿Cuál es el valor de la solución mayor?', 'opcion_multiple', 1, 1, NULL, '2025-11-19 20:19:18', NULL),
+(39, 6, 4, 'El área de un círculo con radio de 5 cm es 25π cm².', 'verdadero_falso', 1, 1, NULL, '2025-11-19 20:19:18', NULL),
+(40, 6, 5, 'Si un producto tiene un precio original de $120 y se le aplica un descuento del 25%, ¿cuál es el precio final del producto?', 'respuesta_corta', 1, 1, NULL, '2025-11-19 20:19:18', NULL);
 
 -- --------------------------------------------------------
 
@@ -1078,60 +1709,21 @@ CREATE TABLE `quizzes_preguntas_opciones` (
 --
 
 INSERT INTO `quizzes_preguntas_opciones` (`id`, `id_pregunta`, `texto`, `es_correcta`, `orden`, `retroalimentacion`, `created_at`) VALUES
-(3, 7, '4X', 1, 1, NULL, '2025-10-08 17:55:08'),
-(4, 7, 'X', 0, 2, NULL, '2025-10-08 17:55:08'),
-(5, 7, '2X', 0, 3, NULL, '2025-10-08 17:55:08'),
-(6, 8, '2', 0, 1, NULL, '2025-10-08 18:39:33'),
-(7, 8, '3', 0, 2, NULL, '2025-10-08 18:39:33'),
-(8, 8, '4', 1, 3, NULL, '2025-10-08 18:39:33'),
-(9, 8, '5', 0, 4, NULL, '2025-10-08 18:39:33'),
-(10, 9, 'igua a pez?', 0, 1, NULL, '2025-10-08 18:59:01'),
-(11, 9, '2', 0, 2, NULL, '2025-10-08 18:59:01'),
-(12, 9, '4', 1, 3, NULL, '2025-10-08 18:59:01'),
-(13, 10, 'si', 1, 1, NULL, '2025-10-08 19:09:06'),
-(14, 10, 'no', 1, 2, NULL, '2025-10-08 19:09:06'),
-(15, 11, '2X', 1, 1, NULL, '2025-10-09 19:19:11'),
-(16, 12, 'A) El equipo trabajó duro toda la semana sin embargo, no logró el resultado esperado.', 0, 1, NULL, '2025-10-09 20:28:05'),
-(17, 12, 'B) El equipo trabajó duro toda la semana, sin embargo no logró el resultado esperado.', 0, 2, NULL, '2025-10-09 20:28:05'),
-(18, 12, 'C) El equipo trabajó duro toda la semana; sin embargo, no logró el resultado esperado.', 1, 3, NULL, '2025-10-09 20:28:05'),
-(19, 13, 'A) más', 0, 1, NULL, '2025-10-09 20:28:05'),
-(20, 13, 'B) mas', 1, 2, NULL, '2025-10-09 20:28:05'),
-(21, 13, 'C) máz', 0, 3, NULL, '2025-10-09 20:28:05'),
-(22, 14, 'A) no obstante', 0, 1, NULL, '2025-10-09 20:28:05'),
-(23, 14, 'B) en cambio', 0, 2, NULL, '2025-10-09 20:28:05'),
-(24, 14, 'DC) por lo tanto', 1, 3, NULL, '2025-10-09 20:28:05'),
-(25, 15, 'A) El entrenador dijo que mañana entrenarían en la mañana.', 0, 1, NULL, '2025-10-09 20:28:05'),
-(26, 15, 'B) El entrenador dijo que entrenarán mañana en la mañana.', 0, 2, NULL, '2025-10-09 20:28:05'),
-(27, 15, 'C) El entrenador dijo que al día siguiente entrenarían en la mañana. ', 1, 3, NULL, '2025-10-09 20:28:05'),
-(28, 16, 'A) opinó', 0, 1, NULL, '2025-10-09 20:28:05'),
-(29, 16, 'B) opinaron ', 1, 2, NULL, '2025-10-09 20:28:05'),
-(30, 16, 'C) opina', 0, 3, NULL, '2025-10-09 20:28:05'),
-(31, 17, 'lkasdlkaldklñask', 1, 1, NULL, '2025-10-09 21:04:39'),
-(32, 18, '2x', 1, 1, NULL, '2025-10-09 21:06:44'),
-(33, 21, 'El equipo trabajó duro toda la semana sin embargo, no logró el resultado esperado.', 0, 1, NULL, '2025-10-10 19:55:46'),
-(34, 21, 'El equipo trabajó duro toda la semana, sin embargo no logró el resultado esperado.', 0, 2, NULL, '2025-10-10 19:55:46'),
-(35, 21, 'El equipo trabajó duro toda la semana; sin embargo, no logró el resultado esperado.', 1, 3, NULL, '2025-10-10 19:55:46'),
-(36, 21, 'El equipo trabajó duro toda la semana, sin embargo, no logró el resultado esperado.', 0, 4, NULL, '2025-10-10 19:55:46'),
-(37, 22, 'más', 0, 1, NULL, '2025-10-10 19:55:46'),
-(38, 22, 'mas ', 1, 2, NULL, '2025-10-10 19:55:46'),
-(39, 22, 'máz', 0, 3, NULL, '2025-10-10 19:55:46'),
-(40, 22, 'maz', 0, 4, NULL, '2025-10-10 19:55:46'),
-(41, 23, 'no obstante', 0, 1, NULL, '2025-10-10 19:55:46'),
-(42, 23, 'en cambio', 0, 2, NULL, '2025-10-10 19:55:46'),
-(43, 23, 'aun así', 0, 3, NULL, '2025-10-10 19:55:46'),
-(44, 23, 'por lo tanto', 1, 4, NULL, '2025-10-10 19:55:46'),
-(45, 24, 'El entrenador dijo que mañana entrenarían en la mañana.', 0, 1, NULL, '2025-10-10 19:55:46'),
-(46, 24, 'El entrenador dijo que entrenarán mañana en la mañana.', 0, 2, NULL, '2025-10-10 19:55:46'),
-(47, 24, ' El entrenador dijo que al día siguiente entrenarían en la mañana.', 1, 3, NULL, '2025-10-10 19:55:46'),
-(48, 24, 'El entrenador dijo: al día siguiente entrenaremos en la mañana.', 0, 4, NULL, '2025-10-10 19:55:46'),
-(49, 25, 'opinó', 0, 1, NULL, '2025-10-10 19:55:46'),
-(50, 25, 'opinaron', 1, 2, NULL, '2025-10-10 19:55:46'),
-(51, 25, 'opina', 0, 3, NULL, '2025-10-10 19:55:46'),
-(52, 25, 'opinan', 0, 4, NULL, '2025-10-10 19:55:46'),
-(53, 26, 'Estoy convencido que el esfuerzo es la clave del éxito', 0, 1, NULL, '2025-10-10 21:30:36'),
-(54, 26, ' Pienso de que deberíamos considerar otras alternativas.', 0, 2, NULL, '2025-10-10 21:30:36'),
-(55, 26, 'Me alegro de que hayas venido a la reunión de hoy.', 1, 3, NULL, '2025-10-10 21:30:36'),
-(56, 26, 'No me di cuenta que ya era tan tarde.', 0, 4, NULL, '2025-10-10 21:30:36');
+(106, 36, '4 horas', 1, 1, NULL, '2025-11-19 20:19:18'),
+(107, 36, '3 horas', 0, 2, NULL, '2025-11-19 20:19:18'),
+(108, 36, '5 horas', 0, 3, NULL, '2025-11-19 20:19:18'),
+(109, 36, '3.5 horas', 0, 4, NULL, '2025-11-19 20:19:18'),
+(110, 37, '46 metros', 1, 1, NULL, '2025-11-19 20:19:18'),
+(111, 37, '120 metros', 0, 2, NULL, '2025-11-19 20:19:18'),
+(112, 37, '23 metros', 0, 3, NULL, '2025-11-19 20:19:18'),
+(113, 37, '50 metros', 0, 4, NULL, '2025-11-19 20:19:18'),
+(114, 38, '3', 1, 1, NULL, '2025-11-19 20:19:18'),
+(115, 38, '2', 0, 2, NULL, '2025-11-19 20:19:18'),
+(116, 38, '-3', 0, 3, NULL, '2025-11-19 20:19:18'),
+(117, 38, '-2', 0, 4, NULL, '2025-11-19 20:19:18'),
+(118, 39, 'Verdadero', 1, 1, NULL, '2025-11-19 20:19:18'),
+(119, 39, 'Falso', 0, 2, NULL, '2025-11-19 20:19:18'),
+(120, 40, '$90', 1, 1, NULL, '2025-11-19 20:19:18');
 
 -- --------------------------------------------------------
 
@@ -1152,49 +1744,6 @@ CREATE TABLE `quizzes_sesiones` (
   `metadata_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`metadata_json`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `quizzes_sesiones`
---
-
-INSERT INTO `quizzes_sesiones` (`id`, `id_quiz`, `id_estudiante`, `intento_num`, `estado`, `started_at`, `finished_at`, `tiempo_limite_seg`, `created_at`, `metadata_json`) VALUES
-('022a4d01-e334-4d6b-909d-68eec32b01d7', 17, 67, 2, 'finalizado', '2025-10-08 19:36:32', '2025-10-08 19:37:34', 3600, '2025-10-10 15:23:34', NULL),
-('07a4554e-525a-48c4-a28d-4c0d63304bf5', 16, 67, 3, 'finalizado', '2025-10-08 19:15:44', '2025-10-08 19:21:45', 10800, '2025-10-10 15:23:34', NULL),
-('0830cd4b-a473-4ea0-a3a4-13e822703f07', 22, 67, 3, 'finalizado', '2025-10-10 22:00:43', '2025-10-10 22:01:55', 7200, '2025-10-10 16:00:43', NULL),
-('0c29e9f0-d968-4590-8dc3-ece7167dc810', 20, 67, 2, 'finalizado', '2025-10-09 22:59:11', '2025-10-09 22:59:15', 3600, '2025-10-10 15:23:34', NULL),
-('14039477-da39-4d39-aeda-a22928058bd6', 19, 67, 1, 'en_progreso', '2025-10-09 23:19:59', NULL, 3600, '2025-10-10 15:23:34', NULL),
-('157727d9-613e-4b6c-9b3d-faa9badf9aff', 13, 67, 1, 'en_progreso', '2025-10-07 22:02:31', NULL, 3600, '2025-10-10 15:23:34', NULL),
-('1a2390ce-408e-41db-a1fa-7b0f5d64b1a5', 21, 67, 2, 'finalizado', '2025-10-10 20:12:40', '2025-10-10 20:15:13', 3600, '2025-10-10 15:23:34', NULL),
-('1aac2512-2885-48b1-a193-4a8ece8ee6cc', 17, 67, 1, 'finalizado', '2025-10-08 19:27:29', '2025-10-08 19:32:10', 3600, '2025-10-10 15:23:34', NULL),
-('1c047394-c476-44d0-9353-b598f37d8bcb', 21, 67, 1, 'finalizado', '2025-10-10 20:11:04', '2025-10-10 20:12:08', 3600, '2025-10-10 15:23:34', NULL),
-('34e2bf26-51db-4d91-8d2f-42b44a8adfa7', 15, 67, 3, 'finalizado', '2025-10-08 18:51:25', '2025-10-08 18:54:54', 4200, '2025-10-10 15:23:34', NULL),
-('3c21ef77-d9f5-4310-9f74-082c35ba9114', 14, 67, 2, 'finalizado', '2025-10-08 18:20:49', '2025-10-08 18:21:12', 4200, '2025-10-10 15:23:34', NULL),
-('414f2482-3252-4695-a0ef-d0f9a10bc30e', 21, 67, 3, 'finalizado', '2025-10-10 21:08:49', '2025-10-10 21:09:44', 3600, '2025-10-10 15:23:34', NULL),
-('4338d694-84e4-44ee-b3ce-80aae20c8970', 17, 67, 3, 'finalizado', '2025-10-08 19:39:17', '2025-10-08 19:41:14', 3600, '2025-10-10 15:23:34', NULL),
-('4b791edf-c8f5-46e6-85ca-8e9c70ef2db1', 18, 67, 1, 'finalizado', '2025-10-09 22:28:07', '2025-10-09 22:35:52', 3600, '2025-10-10 15:23:34', NULL),
-('4c96c6ae-431f-4e37-a1dc-1146fdaf713a', 14, 67, 3, 'finalizado', '2025-10-08 18:25:20', '2025-10-08 18:29:46', 4200, '2025-10-10 15:23:34', NULL),
-('55401d19-ebb9-4841-9e93-6cf2bcd22a62', 18, 67, 3, 'finalizado', '2025-10-10 19:06:49', '2025-10-10 19:10:43', 3600, '2025-10-10 15:23:34', NULL),
-('669ff546-14a5-447b-ac63-760a28ac6fd9', 13, 67, 1, 'en_progreso', '2025-10-07 22:14:48', NULL, 3600, '2025-10-10 15:23:34', NULL),
-('69070dc8-cb65-405f-ac07-1134842d1bf9', 13, 67, 1, 'en_progreso', '2025-10-07 22:17:24', NULL, 3600, '2025-10-10 15:23:34', NULL),
-('733f4327-e7a7-4619-93d9-b3706931eccf', 13, 67, 1, 'en_progreso', '2025-10-07 22:10:12', NULL, 3600, '2025-10-10 15:23:34', NULL),
-('74f25bc9-dcfe-4b6e-a0b9-3cecc3195719', 18, 67, 3, 'en_progreso', '2025-10-10 19:01:53', NULL, 3600, '2025-10-10 15:23:34', NULL),
-('80566207-bb67-42fb-a36c-86a4d99a921d', 18, 67, 2, 'finalizado', '2025-10-09 22:38:48', '2025-10-09 22:47:03', 3600, '2025-10-10 15:23:34', NULL),
-('9a750fc4-1859-4149-835b-aca97a94b270', 14, 67, 1, 'en_progreso', '2025-10-08 18:04:23', NULL, 4200, '2025-10-10 15:23:34', NULL),
-('aaac61bc-7943-42c2-b86a-93a606cba0e8', 13, 67, 1, 'en_progreso', '2025-10-07 21:56:43', NULL, 3600, '2025-10-10 15:23:34', NULL),
-('b560766e-8e34-46df-ad27-7a3185762d2b', 13, 67, 2, 'en_progreso', '2025-10-09 23:20:00', NULL, 3600, '2025-10-10 15:23:34', NULL),
-('c01a69ea-9b02-4936-90b9-664b0e70bb91', 14, 67, 1, 'finalizado', '2025-10-08 18:14:39', '2025-10-08 18:15:05', 4200, '2025-10-10 15:23:34', NULL),
-('c3a3c29d-ca84-438d-9026-77e7039395b0', 22, 67, 1, 'finalizado', '2025-10-10 21:48:06', '2025-10-10 21:51:43', 7200, '2025-10-10 15:48:06', NULL),
-('d8a61c6b-b107-496f-a02c-4071e7a390f5', 14, 67, 1, 'en_progreso', '2025-10-08 17:57:41', NULL, 4200, '2025-10-10 15:23:34', NULL),
-('da7c1c95-ddeb-406e-8965-cee401417a3f', 15, 67, 2, 'finalizado', '2025-10-08 18:46:38', '2025-10-08 18:48:37', 4200, '2025-10-10 15:23:34', NULL),
-('df5e616d-9574-462a-9d72-502da7865d77', 15, 67, 1, 'finalizado', '2025-10-08 18:40:15', '2025-10-08 18:43:57', 4200, '2025-10-10 15:23:34', NULL),
-('e05f5b3c-ab88-42fe-b2a5-e3200d3c4866', 13, 67, 1, 'en_progreso', '2025-10-07 22:04:28', NULL, 3600, '2025-10-10 15:23:34', NULL),
-('e4de617c-67c3-40d5-a6ae-62becd5d93f8', 20, 67, 3, 'finalizado', '2025-10-09 23:02:09', '2025-10-09 23:04:06', 3600, '2025-10-10 15:23:34', NULL),
-('e6c4e6de-bb45-44bb-be6b-472ad18381d1', 14, 67, 1, 'en_progreso', '2025-10-08 18:04:39', NULL, 4200, '2025-10-10 15:23:34', NULL),
-('eb0b270a-a7d0-4088-b98c-16ef7ce2975b', 13, 67, 1, 'finalizado', '2025-10-07 22:19:58', '2025-10-07 22:27:17', 3600, '2025-10-10 15:23:34', NULL),
-('ef265ae3-196c-45b4-b032-e008ec5e40fe', 20, 67, 1, 'finalizado', '2025-10-09 22:57:01', '2025-10-09 22:57:05', 3600, '2025-10-10 15:23:34', NULL),
-('efeadd35-344e-42a1-a882-a9add62226f0', 16, 67, 2, 'finalizado', '2025-10-08 19:10:19', '2025-10-08 19:12:01', 10800, '2025-10-10 15:23:34', NULL),
-('f2b1e705-2c49-458b-a092-5be667d73e07', 22, 67, 2, 'finalizado', '2025-10-10 21:52:07', '2025-10-10 21:53:10', 7200, '2025-10-10 15:52:07', NULL),
-('fd957db5-a7bd-4ba2-9b7f-d317105d5307', 16, 67, 1, 'finalizado', '2025-10-08 19:01:05', '2025-10-08 19:04:52', 10800, '2025-10-10 15:23:34', NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -1211,39 +1760,6 @@ CREATE TABLE `quizzes_sesiones_respuestas` (
   `tiempo_ms` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `quizzes_sesiones_respuestas`
---
-
-INSERT INTO `quizzes_sesiones_respuestas` (`id`, `id_sesion`, `id_pregunta`, `id_opcion`, `valor_texto`, `correcta`, `tiempo_ms`, `created_at`) VALUES
-(2, '4338d694-84e4-44ee-b3ce-80aae20c8970', 10, 13, NULL, 1, NULL, '2025-10-08 19:41:14'),
-(3, '80566207-bb67-42fb-a36c-86a4d99a921d', 12, 17, NULL, 0, NULL, '2025-10-09 22:47:03'),
-(4, '80566207-bb67-42fb-a36c-86a4d99a921d', 13, 19, NULL, 0, NULL, '2025-10-09 22:47:03'),
-(5, '80566207-bb67-42fb-a36c-86a4d99a921d', 14, 24, NULL, 1, NULL, '2025-10-09 22:47:03'),
-(6, '80566207-bb67-42fb-a36c-86a4d99a921d', 15, 26, NULL, 0, NULL, '2025-10-09 22:47:03'),
-(7, '80566207-bb67-42fb-a36c-86a4d99a921d', 16, 28, NULL, 0, NULL, '2025-10-09 22:47:03'),
-(8, 'ef265ae3-196c-45b4-b032-e008ec5e40fe', 18, 32, NULL, 1, NULL, '2025-10-09 22:57:05'),
-(9, '0c29e9f0-d968-4590-8dc3-ece7167dc810', 18, 32, NULL, 1, NULL, '2025-10-09 22:59:15'),
-(10, 'e4de617c-67c3-40d5-a6ae-62becd5d93f8', 18, 32, NULL, 1, NULL, '2025-10-09 23:04:06'),
-(11, '55401d19-ebb9-4841-9e93-6cf2bcd22a62', 12, 16, NULL, 0, NULL, '2025-10-10 19:10:43'),
-(12, '55401d19-ebb9-4841-9e93-6cf2bcd22a62', 13, 20, NULL, 1, NULL, '2025-10-10 19:10:43'),
-(13, '55401d19-ebb9-4841-9e93-6cf2bcd22a62', 14, 24, NULL, 1, NULL, '2025-10-10 19:10:43'),
-(14, '55401d19-ebb9-4841-9e93-6cf2bcd22a62', 15, 27, NULL, 1, NULL, '2025-10-10 19:10:43'),
-(15, '55401d19-ebb9-4841-9e93-6cf2bcd22a62', 16, 29, NULL, 1, NULL, '2025-10-10 19:10:43'),
-(16, '1a2390ce-408e-41db-a1fa-7b0f5d64b1a5', 21, 33, NULL, 0, NULL, '2025-10-10 20:15:13'),
-(17, '1a2390ce-408e-41db-a1fa-7b0f5d64b1a5', 22, 37, NULL, 0, NULL, '2025-10-10 20:15:13'),
-(18, '1a2390ce-408e-41db-a1fa-7b0f5d64b1a5', 23, 41, NULL, 0, NULL, '2025-10-10 20:15:13'),
-(19, '1a2390ce-408e-41db-a1fa-7b0f5d64b1a5', 24, 45, NULL, 0, NULL, '2025-10-10 20:15:13'),
-(20, '1a2390ce-408e-41db-a1fa-7b0f5d64b1a5', 25, 50, NULL, 1, NULL, '2025-10-10 20:15:13'),
-(21, '414f2482-3252-4695-a0ef-d0f9a10bc30e', 21, 33, NULL, 0, NULL, '2025-10-10 21:09:44'),
-(22, '414f2482-3252-4695-a0ef-d0f9a10bc30e', 22, 38, NULL, 1, NULL, '2025-10-10 21:09:44'),
-(23, '414f2482-3252-4695-a0ef-d0f9a10bc30e', 23, 44, NULL, 1, NULL, '2025-10-10 21:09:44'),
-(24, '414f2482-3252-4695-a0ef-d0f9a10bc30e', 24, 46, NULL, 0, NULL, '2025-10-10 21:09:44'),
-(25, '414f2482-3252-4695-a0ef-d0f9a10bc30e', 25, 50, NULL, 1, NULL, '2025-10-10 21:09:44'),
-(26, 'c3a3c29d-ca84-438d-9026-77e7039395b0', 26, 54, NULL, 0, NULL, '2025-10-10 21:51:43'),
-(27, 'f2b1e705-2c49-458b-a092-5be667d73e07', 26, 54, NULL, 0, NULL, '2025-10-10 21:53:10'),
-(28, '0830cd4b-a473-4ea0-a3a4-13e822703f07', 26, 55, NULL, 1, NULL, '2025-10-10 22:01:55');
 
 -- --------------------------------------------------------
 
@@ -1266,15 +1782,6 @@ CREATE TABLE `simulaciones` (
   `grupos` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`grupos`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `simulaciones`
---
-
-INSERT INTO `simulaciones` (`id`, `titulo`, `descripcion`, `id_area`, `fecha_limite`, `time_limit_min`, `publico`, `activo`, `creado_por`, `created_at`, `updated_at`, `grupos`) VALUES
-(1, '', NULL, NULL, NULL, NULL, 1, 0, 21, '2025-10-13 21:16:28', '2025-10-13 21:16:39', NULL),
-(2, 'sdfsdfsd', 'dsfsdfdsfsdfsdf', NULL, '2025-10-21 00:00:00', 60, 1, 0, 21, '2025-10-13 21:21:48', '2025-10-13 21:43:45', '[\"v1\"]'),
-(7, 'prueba 5', NULL, NULL, NULL, 60, 1, 1, 21, '2025-10-13 22:58:48', '2025-10-13 22:59:16', NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -1293,17 +1800,6 @@ CREATE TABLE `simulaciones_intentos` (
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `simulaciones_intentos`
---
-
-INSERT INTO `simulaciones_intentos` (`id`, `id_simulacion`, `id_estudiante`, `puntaje`, `intent_number`, `tiempo_segundos`, `total_preguntas`, `correctas`, `created_at`) VALUES
-(7, 7, 67, 80.00, 1, 28, 5, 4, '2025-10-14 16:36:28'),
-(8, 7, 67, 60.00, 2, 21, 5, 3, '2025-10-14 16:51:26'),
-(9, 7, 67, 40.00, 3, 44, 5, 2, '2025-10-14 17:51:22'),
-(10, 7, 67, 60.00, 4, 29, 5, 3, '2025-10-14 18:10:14'),
-(11, 7, 67, 80.00, 5, 228, 5, 4, '2025-10-14 18:23:19');
-
 -- --------------------------------------------------------
 
 --
@@ -1320,19 +1816,6 @@ CREATE TABLE `simulaciones_preguntas` (
   `activa` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `simulaciones_preguntas`
---
-
-INSERT INTO `simulaciones_preguntas` (`id`, `id_simulacion`, `orden`, `enunciado`, `tipo`, `puntos`, `activa`) VALUES
-(5, 1, 1, 'dasfdasFSDFAASF', 'opcion_multiple', 1, 1),
-(7, 2, 1, 'WDWQDWQDWQD', 'opcion_multiple', 1, 1),
-(35, 7, 1, 'Español: ¿Cuál es un sinónimo de \"rápido\"?', 'opcion_multiple', 1, 1),
-(36, 7, 2, 'Matemáticas: ¿Cuál es el resultado de 7 × 8?', 'opcion_multiple', 1, 1),
-(37, 7, 3, 'Ciencias: ¿Cuál es el planeta más cercano al Sol?', 'opcion_multiple', 1, 1),
-(38, 7, 4, 'Inglés: Selecciona la palabra escrita correctamente', 'opcion_multiple', 1, 1),
-(39, 7, 5, 'Historia: ¿En qué año comenzó la Primera Guerra Mundial?', 'opcion_multiple', 1, 1);
-
 -- --------------------------------------------------------
 
 --
@@ -1346,34 +1829,6 @@ CREATE TABLE `simulaciones_preguntas_opciones` (
   `es_correcta` tinyint(1) NOT NULL DEFAULT 0,
   `orden` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `simulaciones_preguntas_opciones`
---
-
-INSERT INTO `simulaciones_preguntas_opciones` (`id`, `id_pregunta`, `texto`, `es_correcta`, `orden`) VALUES
-(2, 5, 'ASFSAFF', 1, 1),
-(4, 7, 'DQWDQW', 1, 1),
-(107, 35, 'Veloz', 1, 1),
-(108, 35, 'Lento', 0, 2),
-(109, 35, 'Torpe', 0, 3),
-(110, 35, 'Pesado', 0, 4),
-(111, 36, '56', 1, 1),
-(112, 36, '54', 0, 2),
-(113, 36, '48', 0, 3),
-(114, 36, '49', 0, 4),
-(115, 37, 'Mercurio', 1, 1),
-(116, 37, 'Venus', 0, 2),
-(117, 37, 'Tierra', 0, 3),
-(118, 37, 'Marte', 0, 4),
-(119, 38, 'beautiful', 1, 1),
-(120, 38, 'beatiful', 0, 2),
-(121, 38, 'beautifull', 0, 3),
-(122, 38, 'beutiful', 0, 4),
-(123, 39, '1914', 1, 1),
-(124, 39, '1918', 0, 2),
-(125, 39, '1939', 0, 3),
-(126, 39, '1945', 0, 4);
 
 -- --------------------------------------------------------
 
@@ -1390,74 +1845,6 @@ CREATE TABLE `simulaciones_respuestas` (
   `tiempo_ms` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `simulaciones_respuestas`
---
-
-INSERT INTO `simulaciones_respuestas` (`id`, `id_sesion`, `id_pregunta`, `id_opcion`, `texto_libre`, `tiempo_ms`) VALUES
-(32, 8, 35, 107, NULL, 3030),
-(33, 8, 36, 111, NULL, 4204),
-(34, 8, 37, 118, NULL, 6250),
-(35, 8, 35, 107, NULL, 3030),
-(36, 8, 36, 111, NULL, 4204),
-(37, 8, 37, 118, NULL, 6250),
-(38, 8, 38, 119, NULL, 10252),
-(39, 8, 39, 123, NULL, 3173),
-(40, 8, 35, 107, NULL, 3030),
-(41, 8, 36, 111, NULL, 4204),
-(42, 8, 37, 118, NULL, 6250),
-(43, 8, 38, 119, NULL, 10252),
-(44, 8, 39, 123, NULL, 3173),
-(45, 9, 35, 107, NULL, 4736),
-(46, 9, 36, 111, NULL, 2860),
-(47, 9, 37, 118, NULL, 1248),
-(48, 9, 38, 119, NULL, 8558),
-(49, 9, 39, 124, NULL, 2010),
-(50, 9, 35, 107, NULL, 4736),
-(51, 9, 36, 111, NULL, 2860),
-(52, 9, 37, 118, NULL, 1248),
-(53, 9, 38, 119, NULL, 8558),
-(54, 9, 39, 124, NULL, 2010),
-(55, 11, 35, 107, NULL, 33391),
-(56, 11, 36, 111, NULL, 4211),
-(57, 11, 37, 118, NULL, 976),
-(58, 11, 38, 121, NULL, 1492),
-(59, 11, 39, 124, NULL, 924),
-(60, 11, 35, 107, NULL, 33391),
-(61, 11, 36, 111, NULL, 4211),
-(62, 11, 37, 118, NULL, 976),
-(63, 11, 38, 121, NULL, 1492),
-(64, 11, 39, 124, NULL, 924),
-(65, 12, 35, 107, NULL, 21773),
-(66, 12, 36, 111, NULL, 1352),
-(67, 12, 37, 118, NULL, 1084),
-(68, 12, 38, 121, NULL, 1292),
-(69, 12, 39, 123, NULL, 2426),
-(70, 12, 35, 107, NULL, 21773),
-(71, 12, 36, 111, NULL, 1352),
-(72, 12, 37, 118, NULL, 1084),
-(73, 12, 38, 121, NULL, 1292),
-(74, 12, 39, 123, NULL, 2426),
-(75, 13, 35, 107, NULL, 41782),
-(76, 13, 36, 111, NULL, 3596),
-(77, 13, 37, 118, NULL, 42794),
-(78, 13, 37, 115, NULL, 53305),
-(79, 13, 35, 109, NULL, 48344),
-(80, 13, 36, 112, NULL, 17010),
-(81, 13, 38, 119, NULL, 51050),
-(82, 13, 36, 111, NULL, 29848),
-(83, 13, 35, 107, NULL, 69358),
-(84, 13, 35, 107, NULL, 69358),
-(85, 13, 36, 111, NULL, 29848),
-(86, 13, 37, 115, NULL, 53305),
-(87, 13, 38, 119, NULL, 51050),
-(88, 13, 39, 124, NULL, 19816),
-(89, 13, 35, 107, NULL, 69358),
-(90, 13, 36, 111, NULL, 29848),
-(91, 13, 37, 115, NULL, 53305),
-(92, 13, 38, 119, NULL, 51050),
-(93, 13, 39, 124, NULL, 19816);
-
 -- --------------------------------------------------------
 
 --
@@ -1472,18 +1859,6 @@ CREATE TABLE `simulaciones_sesiones` (
   `finished_at` timestamp NULL DEFAULT NULL,
   `elapsed_ms` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `simulaciones_sesiones`
---
-
-INSERT INTO `simulaciones_sesiones` (`id`, `id_simulacion`, `id_estudiante`, `started_at`, `finished_at`, `elapsed_ms`) VALUES
-(8, 7, 67, '2025-10-14 16:36:00', '2025-10-14 16:36:28', 27912),
-(9, 7, 67, '2025-10-14 16:51:05', '2025-10-14 16:51:26', 20895),
-(10, 7, 67, '2025-10-14 17:48:00', NULL, NULL),
-(11, 7, 67, '2025-10-14 17:50:38', '2025-10-14 17:51:22', 43675),
-(12, 7, 67, '2025-10-14 18:09:45', '2025-10-14 18:10:14', 29312),
-(13, 7, 67, '2025-10-14 18:19:31', '2025-10-14 18:23:19', 227664);
 
 -- --------------------------------------------------------
 
@@ -1529,7 +1904,8 @@ CREATE TABLE `student_area_permissions` (
 
 INSERT INTO `student_area_permissions` (`id`, `id_estudiante`, `area_id`, `area_type`, `granted_by`, `granted_at`) VALUES
 (1, 67, 101, 'actividad', 21, '2025-10-13 16:53:37'),
-(2, 67, 102, 'actividad', 21, '2025-10-13 16:58:17');
+(2, 67, 102, 'actividad', 21, '2025-10-13 16:58:17'),
+(3, 67, 101, 'simulacion', 21, '2025-11-04 21:28:56');
 
 -- --------------------------------------------------------
 
@@ -1558,9 +1934,13 @@ INSERT INTO `student_area_requests` (`id`, `id_estudiante`, `area_id`, `area_typ
 (2, 67, 102, 'actividad', 'approved', NULL, 21, '2025-10-13 16:53:12', '2025-10-13 16:58:17'),
 (3, 67, 102, 'simulacion', 'pending', NULL, NULL, '2025-10-13 16:59:55', NULL),
 (4, 67, 107, 'simulacion', 'pending', NULL, NULL, '2025-10-13 17:00:01', NULL),
-(5, 67, 101, 'simulacion', 'pending', NULL, NULL, '2025-10-13 17:00:05', NULL),
+(5, 67, 101, 'simulacion', 'approved', NULL, 21, '2025-10-13 17:00:05', '2025-11-04 21:28:56'),
 (6, 67, 104, 'actividad', 'pending', NULL, NULL, '2025-10-13 17:02:55', NULL),
-(7, 67, 103, 'actividad', 'pending', NULL, NULL, '2025-10-13 17:03:17', NULL);
+(7, 67, 103, 'actividad', 'pending', NULL, NULL, '2025-10-13 17:03:17', NULL),
+(8, 67, 105, 'actividad', 'pending', NULL, NULL, '2025-10-22 03:24:36', NULL),
+(9, 67, 104, 'simulacion', 'pending', NULL, NULL, '2025-10-22 03:32:26', NULL),
+(10, 67, 103, 'simulacion', 'pending', NULL, NULL, '2025-10-22 03:34:19', NULL),
+(11, 67, 105, 'simulacion', 'pending', NULL, NULL, '2025-11-03 21:12:57', NULL);
 
 -- --------------------------------------------------------
 
@@ -1707,7 +2087,28 @@ INSERT INTO `student_notifications` (`id`, `student_id`, `type`, `title`, `messa
 (120, 69, 'assignment', 'Nueva simulación asignada', 'Se te asignó: sadd', '/alumno/simulaciones', '{\"simulacion_id\":4,\"kind\":\"simulacion\"}', 0, '2025-10-13 21:46:39'),
 (121, 71, 'assignment', 'Nueva simulación asignada', 'Se te asignó: sadd', '/alumno/simulaciones', '{\"simulacion_id\":4,\"kind\":\"simulacion\"}', 0, '2025-10-13 21:46:39'),
 (122, 72, 'assignment', 'Nueva simulación asignada', 'Se te asignó: sadd', '/alumno/simulaciones', '{\"simulacion_id\":4,\"kind\":\"simulacion\"}', 0, '2025-10-13 21:46:39'),
-(123, 73, 'assignment', 'Nueva simulación asignada', 'Se te asignó: sadd', '/alumno/simulaciones', '{\"simulacion_id\":4,\"kind\":\"simulacion\"}', 0, '2025-10-13 21:46:39');
+(123, 73, 'assignment', 'Nueva simulación asignada', 'Se te asignó: sadd', '/alumno/simulaciones', '{\"simulacion_id\":4,\"kind\":\"simulacion\"}', 0, '2025-10-13 21:46:39'),
+(124, 67, '', 'Acceso aprobado', 'Tu acceso al módulo Ciencias Exactas (Simulación) fue aprobado', NULL, '{\"area_id\":101,\"area_type\":\"simulacion\",\"area_name\":\"Ciencias Exactas\",\"area_type_label\":\"Simulación\",\"request_id\":5,\"status\":\"approved\"}', 1, '2025-11-04 21:28:56'),
+(125, 67, 'assignment', 'Nueva simulación asignada', 'Se te asignó: Ciencias Exactas', '/alumno/simulaciones', '{\"simulacion_id\":15,\"kind\":\"simulacion\"}', 1, '2025-11-05 18:00:25'),
+(126, 69, 'assignment', 'Nueva simulación asignada', 'Se te asignó: Ciencias Exactas', '/alumno/simulaciones', '{\"simulacion_id\":15,\"kind\":\"simulacion\"}', 0, '2025-11-05 18:00:25'),
+(127, 71, 'assignment', 'Nueva simulación asignada', 'Se te asignó: Ciencias Exactas', '/alumno/simulaciones', '{\"simulacion_id\":15,\"kind\":\"simulacion\"}', 0, '2025-11-05 18:00:25'),
+(128, 72, 'assignment', 'Nueva simulación asignada', 'Se te asignó: Ciencias Exactas', '/alumno/simulaciones', '{\"simulacion_id\":15,\"kind\":\"simulacion\"}', 0, '2025-11-05 18:00:25'),
+(129, 73, 'assignment', 'Nueva simulación asignada', 'Se te asignó: Ciencias Exactas', '/alumno/simulaciones', '{\"simulacion_id\":15,\"kind\":\"simulacion\"}', 0, '2025-11-05 18:00:25'),
+(130, 67, 'assignment', 'Nueva simulación asignada', 'Se te asignó: Ciencias Exactas (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":18,\"kind\":\"simulacion\"}', 1, '2025-11-14 04:56:09'),
+(131, 69, 'assignment', 'Nueva simulación asignada', 'Se te asignó: Ciencias Exactas (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":18,\"kind\":\"simulacion\"}', 0, '2025-11-14 04:56:09'),
+(132, 71, 'assignment', 'Nueva simulación asignada', 'Se te asignó: Ciencias Exactas (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":18,\"kind\":\"simulacion\"}', 0, '2025-11-14 04:56:09'),
+(133, 72, 'assignment', 'Nueva simulación asignada', 'Se te asignó: Ciencias Exactas (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":18,\"kind\":\"simulacion\"}', 0, '2025-11-14 04:56:09'),
+(134, 73, 'assignment', 'Nueva simulación asignada', 'Se te asignó: Ciencias Exactas (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":18,\"kind\":\"simulacion\"}', 0, '2025-11-14 04:56:09'),
+(135, 67, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Matemáticas y pensamiento analítico (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=5', '{\"actividad_id\":5,\"kind\":\"quiz\"}', 1, '2025-11-19 19:55:34'),
+(136, 69, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Matemáticas y pensamiento analítico (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=5', '{\"actividad_id\":5,\"kind\":\"quiz\"}', 0, '2025-11-19 19:55:34'),
+(137, 71, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Matemáticas y pensamiento analítico (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=5', '{\"actividad_id\":5,\"kind\":\"quiz\"}', 0, '2025-11-19 19:55:34'),
+(138, 72, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Matemáticas y pensamiento analítico (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=5', '{\"actividad_id\":5,\"kind\":\"quiz\"}', 0, '2025-11-19 19:55:34'),
+(139, 73, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Matemáticas y pensamiento analítico (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=5', '{\"actividad_id\":5,\"kind\":\"quiz\"}', 0, '2025-11-19 19:55:34'),
+(140, 67, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Matemáticas y pensamiento analítico (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=6', '{\"actividad_id\":6,\"kind\":\"quiz\"}', 0, '2025-11-19 20:19:31'),
+(141, 69, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Matemáticas y pensamiento analítico (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=6', '{\"actividad_id\":6,\"kind\":\"quiz\"}', 0, '2025-11-19 20:19:31'),
+(142, 71, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Matemáticas y pensamiento analítico (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=6', '{\"actividad_id\":6,\"kind\":\"quiz\"}', 0, '2025-11-19 20:19:31'),
+(143, 72, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Matemáticas y pensamiento analítico (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=6', '{\"actividad_id\":6,\"kind\":\"quiz\"}', 0, '2025-11-19 20:19:31'),
+(144, 73, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Matemáticas y pensamiento analítico (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=6', '{\"actividad_id\":6,\"kind\":\"quiz\"}', 0, '2025-11-19 20:19:31');
 
 -- --------------------------------------------------------
 
@@ -1723,7 +2124,8 @@ CREATE TABLE `student_reminders` (
   `date` date NOT NULL,
   `priority` enum('red','orange','yellow','green','blue','purple') DEFAULT 'blue',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `asesor_user_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -1860,12 +2262,12 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `usuario`, `contraseña`, `must_change`, `last_login_at`, `password_changed_at`, `failed_attempts`, `locked_until`, `role`, `id_estudiante`, `created_at`) VALUES
-(3, 'miguel', '$2b$10$JkGqmotlDUI4Kuutn3ywoesTpA3izIF6QjlJUygfyizNoO9xJpJye', 1, '2025-10-15 10:34:12', NULL, 0, NULL, 'estudiante', 67, '2025-08-11 00:41:45'),
-(6, 'jesica_admin', '$2b$10$C9FZlnOw4.vJfjxh5E/H8OZu0S7g7ZF.dRiCopqNfz/8Hta1ta9VW', 1, '2025-10-13 12:52:51', NULL, 0, NULL, 'admin', NULL, '2025-08-11 04:00:37'),
+(3, 'miguel', '$2b$10$JkGqmotlDUI4Kuutn3ywoesTpA3izIF6QjlJUygfyizNoO9xJpJye', 1, '2025-11-19 12:06:48', NULL, 0, NULL, 'estudiante', 67, '2025-08-11 00:41:45'),
+(6, 'jesica_admin', '$2b$10$C9FZlnOw4.vJfjxh5E/H8OZu0S7g7ZF.dRiCopqNfz/8Hta1ta9VW', 1, '2025-11-18 16:36:10', NULL, 0, NULL, 'admin', NULL, '2025-08-11 04:00:37'),
 (8, 'jessica.mqerk', '$2b$10$/.53BvJ4Vuh6E910koGzqOOHU7m5kvsR2x8q8gE.4iN7tEem93Une', 1, NULL, NULL, 0, NULL, 'estudiante', 69, '2025-08-11 19:36:41'),
 (10, 'kelvincienytec', '$2b$10$A.Y8E73jINN6a0AWHDEId.lxAy6F4HBSz83NZhEvchCwAgGXfa7Oa', 1, '2025-10-06 11:03:12', NULL, 0, NULL, 'asesor', NULL, '2025-08-11 22:48:41'),
 (20, 'juan8', '$2b$10$WY5sxiP7FVP5q6MxJHcsFeKo5P8Aah.9HvfqfWYkQF.ULEeBPewdC', 1, NULL, NULL, 0, NULL, 'estudiante', 73, '2025-08-21 18:19:30'),
-(21, 'jair.asesor', '$2b$10$UjpfEXATomGY6ftdqu2niuLgNQ7sGLkd8Or/5EeQwsJW5d.ybdDp6', 0, '2025-10-14 10:33:48', '2025-10-13 12:59:25', 0, NULL, 'asesor', NULL, '2025-10-06 17:29:14');
+(21, 'jair.asesor', '$2b$10$UjpfEXATomGY6ftdqu2niuLgNQ7sGLkd8Or/5EeQwsJW5d.ybdDp6', 0, '2025-11-19 12:06:54', '2025-10-13 12:59:25', 0, NULL, 'asesor', NULL, '2025-10-06 17:29:14');
 
 -- --------------------------------------------------------
 
@@ -1975,6 +2377,15 @@ ALTER TABLE `areas`
   ADD KEY `idx_areas_activo` (`activo`);
 
 --
+-- Indices de la tabla `asesor_notifications`
+--
+ALTER TABLE `asesor_notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_asesor_unread` (`asesor_user_id`,`is_read`),
+  ADD KEY `idx_asesor_created` (`asesor_user_id`,`created_at`),
+  ADD KEY `idx_type` (`type`);
+
+--
 -- Indices de la tabla `asesor_perfiles`
 --
 ALTER TABLE `asesor_perfiles`
@@ -1991,6 +2402,22 @@ ALTER TABLE `asesor_perfiles`
 ALTER TABLE `asesor_preregistros`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uq_asesor_prereg_correo` (`correo`);
+
+--
+-- Indices de la tabla `asesor_reminders`
+--
+ALTER TABLE `asesor_reminders`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_asesor_date` (`asesor_user_id`,`date`);
+
+--
+-- Indices de la tabla `asesor_resources`
+--
+ALTER TABLE `asesor_resources`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_asesor_created` (`asesor_user_id`,`created_at`),
+  ADD KEY `idx_asesor_type` (`asesor_user_id`,`file_type`);
+ALTER TABLE `asesor_resources` ADD FULLTEXT KEY `idx_search` (`title`,`description`);
 
 --
 -- Indices de la tabla `asesor_tests`
@@ -2014,6 +2441,17 @@ ALTER TABLE `asesor_test_forms`
   ADD KEY `idx_preregistro_type` (`preregistro_id`,`test_type`);
 
 --
+-- Indices de la tabla `asistencias`
+--
+ALTER TABLE `asistencias`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_estudiante_fecha_tipo` (`id_estudiante`,`fecha`,`tipo`),
+  ADD KEY `idx_estudiante` (`id_estudiante`),
+  ADD KEY `idx_asesor` (`id_asesor`),
+  ADD KEY `idx_fecha` (`fecha`),
+  ADD KEY `idx_estudiante_fecha` (`id_estudiante`,`fecha`);
+
+--
 -- Indices de la tabla `calendar_events`
 --
 ALTER TABLE `calendar_events`
@@ -2034,6 +2472,15 @@ ALTER TABLE `contratos`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_contratos_folio` (`folio`),
   ADD KEY `fk_contratos_estudiante` (`id_estudiante`);
+
+--
+-- Indices de la tabla `documentos_asesor`
+--
+ALTER TABLE `documentos_asesor`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_asesor` (`id_asesor`),
+  ADD KEY `idx_tipo_seccion` (`tipo_seccion`),
+  ADD KEY `idx_estado` (`estado`);
 
 --
 -- Indices de la tabla `eeau`
@@ -2080,6 +2527,15 @@ ALTER TABLE `feedback_tasks`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_feedback_tasks_due_date` (`due_date`),
   ADD KEY `idx_feedback_tasks_activo` (`activo`);
+
+--
+-- Indices de la tabla `formulas`
+--
+ALTER TABLE `formulas`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_categoria` (`categoria`),
+  ADD KEY `idx_activo` (`activo`),
+  ADD KEY `idx_orden` (`orden`);
 
 --
 -- Indices de la tabla `gastos_fijos`
@@ -2135,6 +2591,16 @@ ALTER TABLE `pagos_asesores`
 ALTER TABLE `presupuestos_mensuales`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uniq_presupuesto_mes` (`mes`);
+
+--
+-- Indices de la tabla `quizzes`
+--
+ALTER TABLE `quizzes`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_quizzes_area` (`id_area`),
+  ADD KEY `idx_quizzes_creado_por` (`creado_por`),
+  ADD KEY `idx_quizzes_activo` (`activo`),
+  ADD KEY `idx_quizzes_publicado` (`publicado`);
 
 --
 -- Indices de la tabla `quizzes_intentos`
@@ -2281,7 +2747,8 @@ ALTER TABLE `student_notifications`
 ALTER TABLE `student_reminders`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_student_date` (`student_id`,`date`),
-  ADD KEY `idx_student_created` (`student_id`,`created_at`);
+  ADD KEY `idx_student_created` (`student_id`,`created_at`),
+  ADD KEY `idx_asesor_user` (`asesor_user_id`);
 
 --
 -- Indices de la tabla `test_options`
@@ -2315,7 +2782,7 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `actividades`
 --
 ALTER TABLE `actividades`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `actividades_entregas`
@@ -2327,7 +2794,7 @@ ALTER TABLE `actividades_entregas`
 -- AUTO_INCREMENT de la tabla `actividades_entregas_archivos`
 --
 ALTER TABLE `actividades_entregas_archivos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `admin_emails`
@@ -2342,6 +2809,12 @@ ALTER TABLE `admin_profiles`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
+-- AUTO_INCREMENT de la tabla `asesor_notifications`
+--
+ALTER TABLE `asesor_notifications`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `asesor_perfiles`
 --
 ALTER TABLE `asesor_perfiles`
@@ -2352,6 +2825,18 @@ ALTER TABLE `asesor_perfiles`
 --
 ALTER TABLE `asesor_preregistros`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT de la tabla `asesor_reminders`
+--
+ALTER TABLE `asesor_reminders`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `asesor_resources`
+--
+ALTER TABLE `asesor_resources`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `asesor_tests`
@@ -2372,6 +2857,12 @@ ALTER TABLE `asesor_test_forms`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
+-- AUTO_INCREMENT de la tabla `asistencias`
+--
+ALTER TABLE `asistencias`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
 -- AUTO_INCREMENT de la tabla `calendar_events`
 --
 ALTER TABLE `calendar_events`
@@ -2390,6 +2881,12 @@ ALTER TABLE `contratos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
+-- AUTO_INCREMENT de la tabla `documentos_asesor`
+--
+ALTER TABLE `documentos_asesor`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+
+--
 -- AUTO_INCREMENT de la tabla `eeau`
 --
 ALTER TABLE `eeau`
@@ -2405,7 +2902,7 @@ ALTER TABLE `estudiantes`
 -- AUTO_INCREMENT de la tabla `estudiantes_config`
 --
 ALTER TABLE `estudiantes_config`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT de la tabla `feedback_submissions`
@@ -2424,6 +2921,12 @@ ALTER TABLE `feedback_submission_notes`
 --
 ALTER TABLE `feedback_tasks`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT de la tabla `formulas`
+--
+ALTER TABLE `formulas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=524;
 
 --
 -- AUTO_INCREMENT de la tabla `gastos_fijos`
@@ -2462,6 +2965,12 @@ ALTER TABLE `presupuestos_mensuales`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
+-- AUTO_INCREMENT de la tabla `quizzes`
+--
+ALTER TABLE `quizzes`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
 -- AUTO_INCREMENT de la tabla `quizzes_intentos`
 --
 ALTER TABLE `quizzes_intentos`
@@ -2477,7 +2986,7 @@ ALTER TABLE `quizzes_materias`
 -- AUTO_INCREMENT de la tabla `quizzes_preguntas`
 --
 ALTER TABLE `quizzes_preguntas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT de la tabla `quizzes_preguntas_materias`
@@ -2489,49 +2998,49 @@ ALTER TABLE `quizzes_preguntas_materias`
 -- AUTO_INCREMENT de la tabla `quizzes_preguntas_opciones`
 --
 ALTER TABLE `quizzes_preguntas_opciones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=121;
 
 --
 -- AUTO_INCREMENT de la tabla `quizzes_sesiones_respuestas`
 --
 ALTER TABLE `quizzes_sesiones_respuestas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `simulaciones`
 --
 ALTER TABLE `simulaciones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `simulaciones_intentos`
 --
 ALTER TABLE `simulaciones_intentos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `simulaciones_preguntas`
 --
 ALTER TABLE `simulaciones_preguntas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `simulaciones_preguntas_opciones`
 --
 ALTER TABLE `simulaciones_preguntas_opciones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=127;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `simulaciones_respuestas`
 --
 ALTER TABLE `simulaciones_respuestas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=94;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `simulaciones_sesiones`
 --
 ALTER TABLE `simulaciones_sesiones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `soft_deletes`
@@ -2543,19 +3052,19 @@ ALTER TABLE `soft_deletes`
 -- AUTO_INCREMENT de la tabla `student_area_permissions`
 --
 ALTER TABLE `student_area_permissions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `student_area_requests`
 --
 ALTER TABLE `student_area_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT de la tabla `student_notifications`
 --
 ALTER TABLE `student_notifications`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=124;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=145;
 
 --
 -- AUTO_INCREMENT de la tabla `student_reminders`
@@ -2612,11 +3121,29 @@ ALTER TABLE `admin_profiles`
   ADD CONSTRAINT `fk_admin_user` FOREIGN KEY (`user_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
 
 --
+-- Filtros para la tabla `asesor_notifications`
+--
+ALTER TABLE `asesor_notifications`
+  ADD CONSTRAINT `asesor_notifications_ibfk_1` FOREIGN KEY (`asesor_user_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
+
+--
 -- Filtros para la tabla `asesor_perfiles`
 --
 ALTER TABLE `asesor_perfiles`
   ADD CONSTRAINT `fk_ap_preregistro` FOREIGN KEY (`preregistro_id`) REFERENCES `asesor_preregistros` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_ap_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `asesor_reminders`
+--
+ALTER TABLE `asesor_reminders`
+  ADD CONSTRAINT `asesor_reminders_ibfk_1` FOREIGN KEY (`asesor_user_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `asesor_resources`
+--
+ALTER TABLE `asesor_resources`
+  ADD CONSTRAINT `asesor_resources_ibfk_1` FOREIGN KEY (`asesor_user_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `asesor_tests`
@@ -2677,9 +3204,17 @@ ALTER TABLE `pagos_asesores`
   ADD CONSTRAINT `fk_pagos_asesor_registro` FOREIGN KEY (`asesor_preregistro_id`) REFERENCES `asesor_preregistros` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
+-- Filtros para la tabla `quizzes`
+--
+ALTER TABLE `quizzes`
+  ADD CONSTRAINT `fk_quizzes_area` FOREIGN KEY (`id_area`) REFERENCES `areas` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_quizzes_creado_por` FOREIGN KEY (`creado_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL;
+
+--
 -- Filtros para la tabla `quizzes_intentos`
 --
 ALTER TABLE `quizzes_intentos`
+  ADD CONSTRAINT `fk_qi_quiz` FOREIGN KEY (`id_quiz`) REFERENCES `quizzes` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_quiz_intento_estudiante` FOREIGN KEY (`id_estudiante`) REFERENCES `estudiantes` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_quiz_intento_quiz` FOREIGN KEY (`id_quiz`) REFERENCES `actividades` (`id`) ON DELETE CASCADE;
 
@@ -2687,7 +3222,7 @@ ALTER TABLE `quizzes_intentos`
 -- Filtros para la tabla `quizzes_preguntas`
 --
 ALTER TABLE `quizzes_preguntas`
-  ADD CONSTRAINT `fk_pregunta_quiz` FOREIGN KEY (`id_quiz`) REFERENCES `actividades` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_qp_quiz` FOREIGN KEY (`id_quiz`) REFERENCES `quizzes` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `quizzes_preguntas_opciones`
@@ -2699,6 +3234,7 @@ ALTER TABLE `quizzes_preguntas_opciones`
 -- Filtros para la tabla `quizzes_sesiones`
 --
 ALTER TABLE `quizzes_sesiones`
+  ADD CONSTRAINT `fk_qs_quiz` FOREIGN KEY (`id_quiz`) REFERENCES `quizzes` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_sesion_est` FOREIGN KEY (`id_estudiante`) REFERENCES `estudiantes` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_sesion_quiz` FOREIGN KEY (`id_quiz`) REFERENCES `actividades` (`id`) ON DELETE CASCADE;
 
@@ -2755,6 +3291,12 @@ ALTER TABLE `student_area_permissions`
 ALTER TABLE `student_area_requests`
   ADD CONSTRAINT `fk_sar_decider` FOREIGN KEY (`decided_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_sar_student` FOREIGN KEY (`id_estudiante`) REFERENCES `estudiantes` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `student_reminders`
+--
+ALTER TABLE `student_reminders`
+  ADD CONSTRAINT `student_reminders_ibfk_1` FOREIGN KEY (`asesor_user_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL;
 
 --
 -- Filtros para la tabla `test_options`

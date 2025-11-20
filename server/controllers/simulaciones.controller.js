@@ -18,25 +18,54 @@ export const listSimulaciones = async (req, res) => {
         } else {
           rows = rows.filter(r => !r.id_area);
         }
-      } catch {}
+
+        // Filtrar por grupos: solo mostrar simulaciones asignadas al grupo del estudiante
+        const [studentData] = await db.query('SELECT grupo FROM estudiantes WHERE id = ? LIMIT 1', [user.id_estudiante]);
+        const studentGrupo = studentData[0]?.grupo || null;
+
+        if (studentGrupo) {
+          rows = rows.filter(r => {
+            // Si la simulación no tiene grupos asignados (NULL, undefined, o vacío), está disponible para todos
+            if (!r.grupos || r.grupos === null || r.grupos === '') return true;
+
+            // Parsear grupos (puede ser JSON string o array)
+            let grupos = [];
+            try {
+              grupos = typeof r.grupos === 'string' ? JSON.parse(r.grupos) : r.grupos;
+              // Si no es array después de parsear, mostrar por seguridad
+              if (!Array.isArray(grupos)) return true;
+            } catch (parseError) {
+              // Error al parsear JSON, mostrar por seguridad
+              console.warn('[listSimulaciones] Error parsing grupos for simulacion', r.id, ':', parseError.message);
+              return true;
+            }
+
+            // Si grupos está vacío, disponible para todos
+            if (grupos.length === 0) return true;
+
+            // Verificar si el grupo del estudiante está en la lista
+            return grupos.includes(studentGrupo);
+          });
+        }
+      } catch (e) { console.error('listSimulaciones filter error:', e); }
     }
     res.json({ data: rows });
-  } catch (e) { console.error('listSimulaciones', e); res.status(500).json({ message:'Error interno' }); }
+  } catch (e) { console.error('listSimulaciones', e); res.status(500).json({ message: 'Error interno' }); }
 };
 
 export const resumenSimulacionesEstudiante = async (req, res) => {
   try { const rows = await Sims.listResumenEstudiante(req.params.id_estudiante); res.json({ data: rows }); }
-  catch (e) { console.error('resumenSimulacionesEstudiante', e); res.status(500).json({ message:'Error interno' }); }
+  catch (e) { console.error('resumenSimulacionesEstudiante', e); res.status(500).json({ message: 'Error interno' }); }
 };
 
 export const listIntentosSimulacionEstudiante = async (req, res) => {
   try { const rows = await Sims.listIntentosEstudiante(req.params.id, req.params.id_estudiante); res.json({ data: rows }); }
-  catch (e) { console.error('listIntentosSimulacionEstudiante', e); res.status(500).json({ message:'Error interno' }); }
+  catch (e) { console.error('listIntentosSimulacionEstudiante', e); res.status(500).json({ message: 'Error interno' }); }
 };
 
 export const listPreguntasSimulacion = async (req, res) => {
   try { const rows = await Sims.listPreguntas(req.params.id); res.json({ data: rows }); }
-  catch (e) { console.error('listPreguntasSimulacion', e); res.status(500).json({ message:'Error interno' }); }
+  catch (e) { console.error('listPreguntasSimulacion', e); res.status(500).json({ message: 'Error interno' }); }
 };
 
 // GET /api/simulaciones/:id/analitica/:id_estudiante
@@ -57,10 +86,10 @@ export const crearSesionSimulacion = async (req, res) => {
   try {
     const id_simulacion = Number(req.params.id);
     const id_estudiante = Number(req.body?.id_estudiante);
-    if (!id_estudiante) return res.status(400).json({ message:'id_estudiante requerido' });
+    if (!id_estudiante) return res.status(400).json({ message: 'id_estudiante requerido' });
     const sesion = await Sims.createSesion({ id_simulacion, id_estudiante });
     res.status(201).json({ data: sesion });
-  } catch (e) { console.error('crearSesionSimulacion', e); res.status(500).json({ message:'Error interno' }); }
+  } catch (e) { console.error('crearSesionSimulacion', e); res.status(500).json({ message: 'Error interno' }); }
 };
 
 export const registrarRespuestasSesion = async (req, res) => {
@@ -69,7 +98,7 @@ export const registrarRespuestasSesion = async (req, res) => {
     const respuestas = Array.isArray(req.body?.respuestas) ? req.body.respuestas : [];
     const out = await Sims.saveRespuestasBatch(id_sesion, respuestas);
     res.json({ data: { saved: out.affectedRows || 0 } });
-  } catch (e) { console.error('registrarRespuestasSesion', e); res.status(500).json({ message:'Error interno' }); }
+  } catch (e) { console.error('registrarRespuestasSesion', e); res.status(500).json({ message: 'Error interno' }); }
 };
 
 export const finalizarSesionSimulacion = async (req, res) => {
@@ -78,7 +107,7 @@ export const finalizarSesionSimulacion = async (req, res) => {
     const meta = req.body || {};
     const result = await Sims.finalizarSesion({ id_sesion: Number(req.params.id_sesion), meta });
     res.json({ data: result });
-  } catch (e) { console.error('finalizarSesionSimulacion', e); res.status(500).json({ message:'Error interno' }); }
+  } catch (e) { console.error('finalizarSesionSimulacion', e); res.status(500).json({ message: 'Error interno' }); }
 };
 
 // Review detallado de una simulación por intento (estructura similar a getReviewQuizIntento)
@@ -90,7 +119,7 @@ export const getReviewSimulacionIntento = async (req, res) => {
     if (!id_simulacion) return res.status(400).json({ message: 'id simulacion inválido' });
 
     // Cargar preguntas + opciones
-  const preguntasRaw = await Sims.listPreguntas(id_simulacion, { includeInactive: true });
+    const preguntasRaw = await Sims.listPreguntas(id_simulacion, { includeInactive: true });
     const normalizeOrder = (rows = []) => [...rows].sort((a, b) => {
       const aNum = Number(a?.intent_number ?? a?.intentNumber ?? a?.id ?? 0);
       const bNum = Number(b?.intent_number ?? b?.intentNumber ?? b?.id ?? 0);
@@ -102,11 +131,11 @@ export const getReviewSimulacionIntento = async (req, res) => {
     const [sesiones] = await db.query(
       'SELECT * FROM simulaciones_sesiones WHERE id_simulacion = ? AND id_estudiante = ? AND finished_at IS NOT NULL ORDER BY finished_at DESC, id DESC',
       [id_simulacion, id_estudiante]
-    ).catch(()=>[[]]);
+    ).catch(() => [[]]);
     const [intentosRows] = await db.query(
       'SELECT * FROM simulaciones_intentos WHERE id_simulacion = ? AND id_estudiante = ? ORDER BY intent_number ASC, id ASC',
       [id_simulacion, id_estudiante]
-    ).catch(()=>[[]]);
+    ).catch(() => [[]]);
 
     const ascSesiones = normalizeOrder(sesiones);
     const ascIntentos = normalizeOrder(intentosRows);
@@ -294,14 +323,14 @@ export const getReviewSimulacionIntento = async (req, res) => {
     });
   } catch (e) {
     console.error('getReviewSimulacionIntento', e);
-    res.status(500).json({ message:'Error interno' });
+    res.status(500).json({ message: 'Error interno' });
   }
 };
 
 // ----- CRUD para asesores/admin ----- //
 export const createSimulacion = async (req, res) => {
   try {
-    if (req.user?.role === 'estudiante') return res.status(403).json({ message:'No autorizado' });
+    if (req.user?.role === 'estudiante') return res.status(403).json({ message: 'No autorizado' });
     const { titulo, descripcion, preguntas, fecha_limite, time_limit_min, publico, id_area, grupos } = req.body || {};
     if (!titulo) return res.status(400).json({ message: 'titulo requerido' });
     const creado_por = req.user?.id || null;
@@ -319,7 +348,7 @@ export const createSimulacion = async (req, res) => {
     // Notificar a estudiantes por grupos si se especificaron
     try {
       if (Array.isArray(gruposVal) && gruposVal.length) {
-        const placeholders = gruposVal.map(()=>'?').join(',');
+        const placeholders = gruposVal.map(() => '?').join(',');
         const [rows] = await db.query(`SELECT id FROM estudiantes WHERE grupo IN (${placeholders})`, gruposVal);
         if (rows.length) {
           const list = rows.map(r => ({
@@ -330,28 +359,28 @@ export const createSimulacion = async (req, res) => {
             action_url: `/alumno/simulaciones`,
             metadata: { simulacion_id: fresh.id, kind: 'simulacion' }
           }));
-          const bulkRes = await StudentNotifs.bulkCreateNotifications(list).catch(()=>null);
+          const bulkRes = await StudentNotifs.bulkCreateNotifications(list).catch(() => null);
           let idMap = [];
           if (bulkRes && bulkRes.affectedRows) {
             const { firstInsertId, affectedRows } = bulkRes;
-            if (firstInsertId && affectedRows === rows.length) idMap = Array.from({ length: affectedRows }, (_,i)=> firstInsertId + i);
+            if (firstInsertId && affectedRows === rows.length) idMap = Array.from({ length: affectedRows }, (_, i) => firstInsertId + i);
           }
           rows.forEach((r, idx) => {
-            broadcastStudent(r.id, { type:'notification', payload: { kind:'assignment', simulacion_id:fresh.id, title: 'Nueva simulación', message: fresh.titulo, notif_id: idMap[idx] } });
+            broadcastStudent(r.id, { type: 'notification', payload: { kind: 'assignment', simulacion_id: fresh.id, title: 'Nueva simulación', message: fresh.titulo, notif_id: idMap[idx] } });
           });
         }
       }
     } catch (e) { console.error('notif createSimulacion', e); }
 
     res.status(201).json({ data: fresh });
-  } catch (e) { console.error('createSimulacion', e); res.status(500).json({ message:'Error interno' }); }
+  } catch (e) { console.error('createSimulacion', e); res.status(500).json({ message: 'Error interno' }); }
 };
 
 export const updateSimulacion = async (req, res) => {
   const { id } = req.params;
   const { titulo, descripcion, preguntas, fecha_limite, time_limit_min, publico, id_area, activo, grupos } = req.body || {};
   try {
-    if (req.user?.role === 'estudiante') return res.status(403).json({ message:'No autorizado' });
+    if (req.user?.role === 'estudiante') return res.status(403).json({ message: 'No autorizado' });
     // Obtener para detectar transición de publicación si se desea
     const existing = await Sims.getSimulacionById(id);
     if (!existing) return res.status(404).json({ message: 'Simulación no encontrada' });
@@ -368,7 +397,7 @@ export const updateSimulacion = async (req, res) => {
       let gruposVal = grupos;
       try { if (!gruposVal && existing.grupos) gruposVal = typeof existing.grupos === 'string' ? JSON.parse(existing.grupos) : existing.grupos; } catch { gruposVal = null; }
       if (publishTransition && Array.isArray(gruposVal) && gruposVal.length) {
-        const placeholders = gruposVal.map(()=>'?').join(',');
+        const placeholders = gruposVal.map(() => '?').join(',');
         const [rows] = await db.query(`SELECT id FROM estudiantes WHERE grupo IN (${placeholders})`, gruposVal);
         if (rows.length) {
           const list = rows.map(r => ({
@@ -379,14 +408,14 @@ export const updateSimulacion = async (req, res) => {
             action_url: `/alumno/simulaciones`,
             metadata: { simulacion_id: Number(id), kind: 'simulacion' }
           }));
-          const bulkRes = await StudentNotifs.bulkCreateNotifications(list).catch(()=>null);
+          const bulkRes = await StudentNotifs.bulkCreateNotifications(list).catch(() => null);
           let idMap = [];
           if (bulkRes && bulkRes.affectedRows) {
             const { firstInsertId, affectedRows } = bulkRes;
-            if (firstInsertId && affectedRows === rows.length) idMap = Array.from({ length: affectedRows }, (_,i)=> firstInsertId + i);
+            if (firstInsertId && affectedRows === rows.length) idMap = Array.from({ length: affectedRows }, (_, i) => firstInsertId + i);
           }
           rows.forEach((r, idx) => {
-            broadcastStudent(r.id, { type:'notification', payload: { kind:'assignment', simulacion_id:Number(id), title: 'Nueva simulación', message: titulo || existing.titulo, notif_id: idMap[idx] } });
+            broadcastStudent(r.id, { type: 'notification', payload: { kind: 'assignment', simulacion_id: Number(id), title: 'Nueva simulación', message: titulo || existing.titulo, notif_id: idMap[idx] } });
           });
         }
       }
@@ -394,17 +423,17 @@ export const updateSimulacion = async (req, res) => {
 
     const fresh = await Sims.getSimulacionById(id);
     res.json({ data: fresh });
-  } catch (e) { console.error('updateSimulacion', e); res.status(500).json({ message:'Error interno' }); }
+  } catch (e) { console.error('updateSimulacion', e); res.status(500).json({ message: 'Error interno' }); }
 };
 
 export const deleteSimulacion = async (req, res) => {
   const { id } = req.params;
   try {
-    if (req.user?.role === 'estudiante') return res.status(403).json({ message:'No autorizado' });
+    if (req.user?.role === 'estudiante') return res.status(403).json({ message: 'No autorizado' });
     const ok = await Sims.deleteSimulacion(id);
     if (!ok) return res.status(404).json({ message: 'Simulación no encontrada' });
     res.json({ ok: true });
-  } catch (e) { console.error('deleteSimulacion', e); res.status(500).json({ message:'Error interno' }); }
+  } catch (e) { console.error('deleteSimulacion', e); res.status(500).json({ message: 'Error interno' }); }
 };
 
 export const getSimulacionFull = async (req, res) => {
@@ -412,7 +441,7 @@ export const getSimulacionFull = async (req, res) => {
     const sim = await Sims.getSimulacionFull(req.params.id);
     if (!sim) return res.status(404).json({ message: 'No encontrado' });
     res.json({ data: sim });
-  } catch (e) { console.error('getSimulacionFull', e); res.status(500).json({ message:'Error interno' }); }
+  } catch (e) { console.error('getSimulacionFull', e); res.status(500).json({ message: 'Error interno' }); }
 };
 
 export const getSimulacion = async (req, res) => {
@@ -420,5 +449,5 @@ export const getSimulacion = async (req, res) => {
     const sim = await Sims.getSimulacionById(req.params.id);
     if (!sim) return res.status(404).json({ message: 'No encontrado' });
     res.json({ data: sim });
-  } catch (e) { console.error('getSimulacion', e); res.status(500).json({ message:'Error interno' }); }
+  } catch (e) { console.error('getSimulacion', e); res.status(500).json({ message: 'Error interno' }); }
 };

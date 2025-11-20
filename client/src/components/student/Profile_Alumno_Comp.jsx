@@ -11,7 +11,7 @@ const InputField = ({ name, type = "text", placeholder, value, onChange, classNa
   const placeholderColor = isAcademic ? 'green' : isCourse ? 'orange' : 'purple';
   const hasError = errors[name];
   const hasValue = value && value.trim() !== '';
-  
+
   return (
     <div className="space-y-1">
       <div className="relative">
@@ -22,13 +22,12 @@ const InputField = ({ name, type = "text", placeholder, value, onChange, classNa
           onChange={onChange}
           placeholder={placeholder}
           maxLength={maxLength}
-          className={`w-full p-2 rounded-lg bg-white border-2 ${
-            hasError 
-              ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-200' 
+          className={`w-full p-2 rounded-lg bg-white border-2 ${hasError
+              ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-200'
               : hasValue
-              ? `border-${borderColor}-400 focus:border-${borderColor}-500 focus:ring-1 focus:ring-${borderColor}-200`
-              : `border-${borderColor}-200 focus:border-${borderColor}-500 focus:ring-1 focus:ring-${borderColor}-200`
-          } text-xs font-semibold placeholder-${placeholderColor}-400 shadow-inner transition-all duration-200 outline-none ${className}`}
+                ? `border-${borderColor}-400 focus:border-${borderColor}-500 focus:ring-1 focus:ring-${borderColor}-200`
+                : `border-${borderColor}-200 focus:border-${borderColor}-500 focus:ring-1 focus:ring-${borderColor}-200`
+            } text-xs font-semibold placeholder-${placeholderColor}-400 shadow-inner transition-all duration-200 outline-none ${className}`}
         />
         {hasValue && !hasError && (
           <span className={`absolute right-2 top-1/2 transform -translate-y-1/2 text-${borderColor}-500 text-sm`}>
@@ -36,9 +35,8 @@ const InputField = ({ name, type = "text", placeholder, value, onChange, classNa
           </span>
         )}
         {maxLength && hasValue && (
-          <span className={`absolute right-8 top-1/2 transform -translate-y-1/2 text-xs ${
-            value.length > maxLength * 0.8 ? 'text-amber-500' : 'text-gray-400'
-          }`}>
+          <span className={`absolute right-8 top-1/2 transform -translate-y-1/2 text-xs ${value.length > maxLength * 0.8 ? 'text-amber-500' : 'text-gray-400'
+            }`}>
             {value.length}/{maxLength}
           </span>
         )}
@@ -142,7 +140,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
           error = 'Nombre del tutor solo puede contener letras y espacios';
         }
         break;
-      
+
       // Validaciones de datos académicos
       case 'academic.bachillerato':
         if (!validateLength(value, 2, 100)) {
@@ -159,8 +157,8 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
           error = value.length < 2 ? 'Universidad debe tener al menos 2 caracteres' : 'Nombre muy largo (máx. 100 caracteres)';
         }
         break;
-      
-      
+
+
       default:
         break;
     }
@@ -170,7 +168,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Primero actualizar los datos
     const [section, field] = name.split('.');
     if (field) {
@@ -216,7 +214,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
     fieldsToValidate.forEach(fieldName => {
       const [section, field] = fieldName.split('.');
       const value = formData[section][field];
-      
+
       // Solo validar si el campo tiene contenido
       if (value && value.trim() !== '') {
         const error = validateField(fieldName, value);
@@ -272,21 +270,21 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
 
   return (
     <div className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm animate-in fade-in duration-500 overflow-y-auto">
-      <div className="min-h-screen flex items-end justify-center p-4 pb-16 pt-32">
-        <div className="relative w-full max-w-sm mx-auto rounded-2xl shadow-2xl border border-gray-200 bg-white overflow-hidden animate-in zoom-in-95 duration-600">
-          
+      <div className="min-h-screen flex items-center sm:items-end justify-center p-2 xs:p-4 pb-4 sm:pb-16 pt-4 sm:pt-32">
+        <div className="relative w-full max-w-sm mx-auto rounded-2xl shadow-2xl border border-gray-200 bg-white overflow-hidden animate-in zoom-in-95 duration-600 my-auto sm:my-0">
+
           {/* Header visual compacto */}
-          <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 px-5 py-3 text-center">
+          <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 px-3 xs:px-5 py-2 xs:py-3 text-center">
             <div className="flex justify-center mb-1">
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/30 shadow-lg border-2 border-white/50 text-base">✏️</span>
+              <span className="inline-flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 rounded-full bg-white/30 shadow-lg border-2 border-white/50 text-sm xs:text-base">✏️</span>
             </div>
-            <h2 className="text-base font-extrabold text-white drop-shadow-lg">Editar Perfil</h2>
+            <h2 className="text-sm xs:text-base font-extrabold text-white drop-shadow-lg">Editar Perfil</h2>
           </div>
 
           {/* Formulario compacto */}
-          <form onSubmit={handleSubmit} className="p-3">
-            <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-2">
-              
+          <form onSubmit={handleSubmit} className="p-2 xs:p-3">
+            <div className="space-y-2 xs:space-y-3 max-h-[50vh] sm:max-h-[45vh] overflow-y-auto pr-1 xs:pr-2">
+
               {/* Datos Personales */}
               <div>
                 <h3 className="text-xs font-bold text-purple-700 mb-2 flex items-center gap-1 uppercase tracking-wider">
@@ -409,7 +407,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                 </p>
               </div>
             )}
-            
+
             {errors.submit && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
                 <p className="text-red-600 text-xs font-medium flex items-center gap-1">
@@ -450,16 +448,16 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
             )}
 
             {/* Botones simplificados */}
-            <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
+            <div className="flex gap-1 xs:gap-2 mt-2 xs:mt-3 pt-2 xs:pt-3 border-t border-gray-200">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="flex-1 px-3 py-2 rounded-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-all duration-200 text-xs disabled:opacity-50"
+                className="flex-1 px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-all duration-200 text-xs disabled:opacity-50"
               >
                 Cancelar
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => {
@@ -467,31 +465,31 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                   setErrors({});
                 }}
                 disabled={isSubmitting}
-                className="px-3 py-2 rounded-lg bg-blue-200 text-blue-700 font-bold hover:bg-blue-300 transition-all duration-200 text-xs disabled:opacity-50"
+                className="px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg bg-blue-200 text-blue-700 font-bold hover:bg-blue-300 transition-all duration-200 text-xs disabled:opacity-50"
                 title="Restaurar valores originales"
               >
                 🔄
               </button>
-              
+
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold hover:from-purple-700 hover:to-blue-700 transition-all duration-200 text-xs disabled:opacity-50 flex items-center justify-center gap-1"
+                className="flex-1 px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold hover:from-purple-700 hover:to-blue-700 transition-all duration-200 text-xs disabled:opacity-50 flex items-center justify-center gap-1"
               >
                 {isSubmitting ? (
                   <>
                     <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
-                    Guardando...
+                    <span className="hidden xs:inline">Guardando...</span>
                   </>
                 ) : errors.success ? (
                   <>
                     <span>✅</span>
-                    Guardado
+                    <span className="hidden xs:inline">Guardado</span>
                   </>
                 ) : (
                   <>
                     <span>💾</span>
-                    Guardar
+                    <span className="hidden xs:inline">Guardar</span>
                   </>
                 )}
               </button>
@@ -516,14 +514,14 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
  * @param {string|null} [props.error=null] - Mensaje de error si la carga falla.
  */
 function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = false, error = null }) {
-  
+
   // BACKEND: Obtener datos básicos del contexto del estudiante
   const { studentData, currentCourse } = useStudent();
   const { alumno } = useAuth();
 
   // Helper: construir URL absoluta para archivos servidos por el backend
   const apiOrigin = getApiOrigin();
-  
+
   // BACKEND: Estructura base del perfil - se poblará desde la API
   const defaultProfileData = {
     name: studentData?.name && studentData.name !== "XXXX" ? studentData.name : (alumno?.nombre ? `${alumno.nombre} ${alumno.apellidos || ''}`.trim() : "Estudiante"),
@@ -536,17 +534,17 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
       tutorPhoneNumber: alumno?.tel_tutor || "",
     },
     academic: {
-  // Siempre mostrar la academia institucional fija
-  academy:  "MQerKAcademy",
-  // El bachillerato actual proviene del backend; si no hay academico2, usar academico1
-  bachillerato: alumno?.academico2 || alumno?.academico1 || "",
+      // Siempre mostrar la academia institucional fija
+      academy: "MQerKAcademy",
+      // El bachillerato actual proviene del backend; si no hay academico2, usar academico1
+      bachillerato: alumno?.academico2 || alumno?.academico1 || "",
       licenciaturaOption: alumno?.orientacion || "",
       universityOption: alumno?.universidades1 || "",
     },
     course: {
       activeCourse: currentCourse?.title || (alumno?.curso || ""),
-  // Asesor fijo por ahora (luego será dinámico)
-  advisor: "Kélvil Valentín Gómez Ramírez",
+      // Asesor fijo por ahora (luego será dinámico)
+      advisor: "Kélvil Valentín Gómez Ramírez",
       group: alumno?.grupo || "",
       // Modalidad fija por ahora
       modality: "Presencial",
@@ -629,7 +627,7 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
         console.error('Error al cargar perfil:', error);
       }
     };
-    
+
     fetchProfileData();
   }, [alumno?.id]);
 
@@ -737,16 +735,16 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
   // ----------------------------------
 
   return (
-    <div className="min-h-screen bg-white p-2 xs:p-3 sm:p-4 md:p-5 lg:p-6 font-inter text-gray-800">
-      
+    <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 pt-12 pb-4 font-inter text-gray-800 w-full max-w-full overflow-x-hidden" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+
       {/* Sección de Encabezado - Consistente con Dashboard */}
-  <div className="flex flex-col items-center md:flex-row md:items-start md:justify-between mb-5 pb-3 border-b-2 border-gradient-to-r from-blue-200 to-purple-200">
-        <h2 className="text-3xl xs:text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 md:mb-0">
+      <div className="flex flex-col items-center md:flex-row md:items-start md:justify-between mb-4 sm:mb-5 pb-3 border-b-2 border-gray-200 w-full">
+        <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 md:mb-0 text-center md:text-left w-full md:w-auto">
           MI PERFIL
         </h2>
         <button
           onClick={handleEditClick}
-          className="px-4 xs:px-6 py-2 xs:py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 text-sm xs:text-base flex items-center space-x-2"
+          className="w-full md:w-auto px-4 xs:px-6 py-2 xs:py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 text-sm xs:text-base flex items-center justify-center space-x-2"
         >
           <span>✏️</span>
           <span>Editar perfil</span>
@@ -754,24 +752,24 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
       </div>
 
       {/* MANTENER INTACTA - Sección de Información del Usuario con estilo mejorado */}
-  <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-2xl border border-gray-200 grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6 mb-6 hover:shadow-2xl transition-all duration-300">
+      <div className="bg-white p-3 xs:p-4 sm:p-6 rounded-2xl shadow-2xl border border-gray-200 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 mb-4 sm:mb-6 hover:shadow-2xl transition-all duration-300 w-full overflow-x-hidden">
         {/* Columna de la izquierda: Foto de Perfil y Nombre */}
-  <div className="flex flex-col items-center justify-start lg:col-span-1 border-b lg:border-b-0 lg:border-r border-gray-200 pb-5 lg:pb-0 lg:pr-5">
-          <div className="relative mb-4">
+        <div className="flex flex-col items-center justify-start lg:col-span-1 border-b lg:border-b-0 lg:border-r border-gray-200 pb-4 sm:pb-5 lg:pb-0 lg:pr-5 w-full">
+          <div className="relative mb-3 sm:mb-4">
             <img
               src={currentProfileData.profilePic}
               alt={currentProfileData.name}
-              className="w-40 h-40 rounded-full object-cover border-4 border-blue-400 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+              className="w-32 h-32 xs:w-36 xs:h-36 sm:w-40 sm:h-40 rounded-full object-cover border-4 border-blue-400 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
               onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/160x160/A0AEC0/FFFFFF?text=Foto"; }}
             />
             {/* Badge de verificación */}
-            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-              <span className="text-white text-sm font-bold">✓</span>
+            <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+              <span className="text-white text-xs sm:text-sm font-bold">✓</span>
             </div>
           </div>
-          <div className="text-center bg-white rounded-xl px-4 py-3 shadow-2xl border border-gray-100">
-            <p className="text-xl font-bold text-gray-900 mb-1">{currentProfileData.name}</p>
-            <div className="flex items-center justify-center text-sm text-green-600 font-medium">
+          <div className="text-center bg-white rounded-xl px-3 xs:px-4 py-2 sm:py-3 shadow-2xl border border-gray-100 w-full">
+            <p className="text-lg xs:text-xl font-bold text-gray-900 mb-1 break-words">{currentProfileData.name}</p>
+            <div className="flex items-center justify-center text-xs sm:text-sm text-green-600 font-medium">
               <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
               Estudiante Activo
             </div>
@@ -779,25 +777,25 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
         </div>
 
         {/* Columnas centrales y de la derecha para los datos */}
-  <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-y-5 gap-x-6">
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 w-full">
           {/* Sección: DATOS PERSONALES */}
-          <div className="md:col-span-2">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-3 sm:p-4 mb-5 shadow-2xl">
-              <h3 className="text-lg font-bold text-white flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 13a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          <div className="sm:col-span-2 w-full">
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-2 xs:p-3 sm:p-4 mb-3 sm:mb-5 shadow-2xl w-full">
+              <h3 className="text-base xs:text-lg font-bold text-white flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 xs:h-6 xs:w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 13a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 DATOS PERSONALES
               </h3>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div className="bg-white rounded-xl p-3 sm:p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-full">
+              <div className="bg-white rounded-xl p-2 xs:p-3 sm:p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 w-full">
                 <div className="flex items-start">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 13H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z"/></svg>
+                  <div className="w-8 h-8 xs:w-10 xs:h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 xs:h-5 xs:w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 13H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z" /></svg>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Correo electrónico</p>
-                    <p className="text-sm font-bold text-gray-800 break-all">
-                      {currentProfileData.personal.email || 
+                    <p className="text-xs xs:text-sm font-bold text-gray-800 break-all">
+                      {currentProfileData.personal.email ||
                         <span className="text-gray-400 italic">No configurado</span>
                       }
                     </p>
@@ -805,15 +803,15 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-3 sm:p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+              <div className="bg-white rounded-xl p-2 xs:p-3 sm:p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 w-full">
                 <div className="flex items-start">
-                  <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                  <div className="w-8 h-8 xs:w-10 xs:h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 xs:h-5 xs:w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Mi número de teléfono</p>
-                    <p className="text-sm font-bold text-gray-800">
-                      {currentProfileData.personal.phoneNumber || 
+                    <p className="text-xs xs:text-sm font-bold text-gray-800 break-words">
+                      {currentProfileData.personal.phoneNumber ||
                         <span className="text-gray-400 italic">No configurado</span>
                       }
                     </p>
@@ -821,15 +819,15 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-3 sm:p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+              <div className="bg-white rounded-xl p-2 xs:p-3 sm:p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 w-full">
                 <div className="flex items-start">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  <div className="w-8 h-8 xs:w-10 xs:h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 xs:h-5 xs:w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Municipio o comunidad</p>
-                    <p className="text-sm font-bold text-gray-800">
-                      {currentProfileData.personal.municipio || 
+                    <p className="text-xs xs:text-sm font-bold text-gray-800 break-words">
+                      {currentProfileData.personal.municipio ||
                         <span className="text-gray-400 italic">No configurado</span>
                       }
                     </p>
@@ -837,15 +835,15 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-3 sm:p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+              <div className="bg-white rounded-xl p-2 xs:p-3 sm:p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 w-full">
                 <div className="flex items-start">
-                  <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                  <div className="w-8 h-8 xs:w-10 xs:h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 xs:h-5 xs:w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Teléfono de mi tutor</p>
-                    <p className="text-sm font-bold text-gray-800">
-                      {currentProfileData.personal.tutorPhoneNumber || 
+                    <p className="text-xs xs:text-sm font-bold text-gray-800 break-words">
+                      {currentProfileData.personal.tutorPhoneNumber ||
                         <span className="text-gray-400 italic">No configurado</span>
                       }
                     </p>
@@ -853,15 +851,15 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-3 sm:p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 sm:col-span-2">
+              <div className="bg-white rounded-xl p-2 xs:p-3 sm:p-4 shadow-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 sm:col-span-2 w-full">
                 <div className="flex items-start">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 15v2m-2 2h4M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  <div className="w-8 h-8 xs:w-10 xs:h-10 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 xs:h-5 xs:w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 15v2m-2 2h4M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Nombre de mi tutor</p>
-                    <p className="text-sm font-bold text-gray-800">
-                      {currentProfileData.personal.tutorName || 
+                    <p className="text-xs xs:text-sm font-bold text-gray-800 break-words">
+                      {currentProfileData.personal.tutorName ||
                         <span className="text-gray-400 italic">No configurado</span>
                       }
                     </p>
@@ -874,67 +872,67 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
       </div>
 
       {/* Grid de secciones - Solo 2 tarjetas */}
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 xs:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xs:gap-5 sm:gap-6 w-full">
 
         {/* Sección: DATOS ACADÉMICOS - Mejorada */}
-        <div className="bg-white rounded-2xl shadow-2xl border border-green-200 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 lg:col-span-1">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-3 xs:p-4">
-            <h3 className="text-lg xs:text-xl font-bold text-white flex items-center justify-center">
-              <span className="mr-2 text-2xl">🎓</span>
+        <div className="bg-white rounded-2xl shadow-2xl border border-green-200 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 lg:col-span-1 w-full">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-2 xs:p-3 sm:p-4">
+            <h3 className="text-base xs:text-lg sm:text-xl font-bold text-white flex items-center justify-center">
+              <span className="mr-2 text-xl xs:text-2xl">🎓</span>
               DATOS ACADÉMICOS
             </h3>
           </div>
-          <div className="p-3 xs:p-4 space-y-3">
+          <div className="p-2 xs:p-3 sm:p-4 space-y-2 xs:space-y-3">
             <div className="flex items-start">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                <span className="text-green-600 text-sm">🏫</span>
+              <div className="w-7 h-7 xs:w-8 xs:h-8 bg-green-100 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                <span className="text-green-600 text-xs xs:text-sm">🏫</span>
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Academia</p>
-                <p className="text-sm font-bold text-gray-800">
-                  {currentProfileData.academic.academy || 
+                <p className="text-xs xs:text-sm font-bold text-gray-800 break-words">
+                  {currentProfileData.academic.academy ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                <span className="text-green-600 text-sm">📚</span>
+              <div className="w-7 h-7 xs:w-8 xs:h-8 bg-green-100 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                <span className="text-green-600 text-xs xs:text-sm">📚</span>
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Bachillerato actual</p>
-                <p className="text-sm font-bold text-gray-800">
-                  {currentProfileData.academic.bachillerato || 
+                <p className="text-xs xs:text-sm font-bold text-gray-800 break-words">
+                  {currentProfileData.academic.bachillerato ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                <span className="text-green-600 text-sm">🎯</span>
+              <div className="w-7 h-7 xs:w-8 xs:h-8 bg-green-100 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                <span className="text-green-600 text-xs xs:text-sm">🎯</span>
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Opción de licenciatura</p>
-                <p className="text-sm font-bold text-gray-800">
-                  {currentProfileData.academic.licenciaturaOption || 
+                <p className="text-xs xs:text-sm font-bold text-gray-800 break-words">
+                  {currentProfileData.academic.licenciaturaOption ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                <span className="text-green-600 text-sm">🏛️</span>
+              <div className="w-7 h-7 xs:w-8 xs:h-8 bg-green-100 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                <span className="text-green-600 text-xs xs:text-sm">🏛️</span>
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Opción de universidad</p>
-                <p className="text-sm font-bold text-gray-800">
-                  {currentProfileData.academic.universityOption || 
+                <p className="text-xs xs:text-sm font-bold text-gray-800 break-words">
+                  {currentProfileData.academic.universityOption ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
                 </p>
@@ -944,64 +942,64 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
         </div>
 
         {/* Sección: DATOS DEL CURSO - Mejorada */}
-        <div className="bg-white rounded-2xl shadow-2xl border border-orange-200 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 lg:col-span-1">
-          <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 xs:p-4">
-            <h3 className="text-lg xs:text-xl font-bold text-white flex items-center justify-center">
-              <span className="mr-2 text-2xl">📖</span>
+        <div className="bg-white rounded-2xl shadow-2xl border border-orange-200 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 lg:col-span-1 w-full">
+          <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 xs:p-3 sm:p-4">
+            <h3 className="text-base xs:text-lg sm:text-xl font-bold text-white flex items-center justify-center">
+              <span className="mr-2 text-xl xs:text-2xl">📖</span>
               DATOS DEL CURSO
             </h3>
           </div>
-          <div className="p-3 xs:p-4 space-y-3">
+          <div className="p-2 xs:p-3 sm:p-4 space-y-2 xs:space-y-3">
             <div className="flex items-start">
-              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                <span className="text-orange-600 text-sm">📝</span>
+              <div className="w-7 h-7 xs:w-8 xs:h-8 bg-orange-100 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                <span className="text-orange-600 text-xs xs:text-sm">📝</span>
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Curso activo</p>
-                <p className="text-sm font-bold text-gray-800">
-                  {currentProfileData.course.activeCourse || 
+                <p className="text-xs xs:text-sm font-bold text-gray-800 break-words">
+                  {currentProfileData.course.activeCourse ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start">
-              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                <span className="text-orange-600 text-sm">👨‍🏫</span>
+              <div className="w-7 h-7 xs:w-8 xs:h-8 bg-orange-100 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                <span className="text-orange-600 text-xs xs:text-sm">👨‍🏫</span>
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Asesor a cargo</p>
-                <p className="text-sm font-bold text-gray-800">
-                  {currentProfileData.course.advisor || 
+                <p className="text-xs xs:text-sm font-bold text-gray-800 break-words">
+                  {currentProfileData.course.advisor ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start">
-              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                <span className="text-orange-600 text-sm">👥</span>
+              <div className="w-7 h-7 xs:w-8 xs:h-8 bg-orange-100 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                <span className="text-orange-600 text-xs xs:text-sm">👥</span>
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Grupo</p>
-                <p className="text-sm font-bold text-gray-800">
-                  {currentProfileData.course.group || 
+                <p className="text-xs xs:text-sm font-bold text-gray-800 break-words">
+                  {currentProfileData.course.group ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start">
-              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                <span className="text-orange-600 text-sm">💻</span>
+              <div className="w-7 h-7 xs:w-8 xs:h-8 bg-orange-100 rounded-full flex items-center justify-center mr-2 xs:mr-3 flex-shrink-0">
+                <span className="text-orange-600 text-xs xs:text-sm">💻</span>
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Modalidad</p>
-                <p className="text-sm font-bold text-gray-800">
-                  {currentProfileData.course.modality || 
+                <p className="text-xs xs:text-sm font-bold text-gray-800 break-words">
+                  {currentProfileData.course.modality ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
                 </p>

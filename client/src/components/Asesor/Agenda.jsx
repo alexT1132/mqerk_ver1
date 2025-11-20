@@ -1,14 +1,24 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { Calendar as CalendarIcon, Plus, Edit2, Trash2, X, Clock, Tag, AlertCircle, CheckCircle2, Search, Filter, Users, User, Loader2 } from "lucide-react";
+import {
+  listRemindersPersonal,
+  createReminderPersonal,
+  updateReminderPersonal,
+  deleteReminderPersonal,
+  createReminderForStudents,
+  listRemindersForStudents,
+} from "../../api/asesores.js";
+import { getMisEstudiantes } from "../../api/asesores.js";
 
 /* ---------- categorías/leyenda ---------- */
 const CATEGORIES = {
-  tareas: { name: "Actividades / Tareas", dot: "bg-amber-500" },
-  simuladores: { name: "Simuladores", dot: "bg-fuchsia-500" },
-  conferencias: { name: "Conferencias / talleres", dot: "bg-green-500" },
-  pago: { name: "Fecha de pago", dot: "bg-violet-500" },
-  examenes: { name: "Exámenes / Evaluaciones", dot: "bg-blue-500" },
-  asesorias: { name: "Asesorías", dot: "bg-rose-500" },
-  recordatorio: { name: "Recordatorio", dot: "bg-teal-500" },
+  tareas: { name: "Actividades / Tareas", dot: "bg-amber-500", color: "bg-amber-100 text-amber-800 border-amber-200" },
+  simuladores: { name: "Simuladores", dot: "bg-fuchsia-500", color: "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200" },
+  conferencias: { name: "Conferencias / talleres", dot: "bg-green-500", color: "bg-green-100 text-green-800 border-green-200" },
+  pago: { name: "Fecha de pago", dot: "bg-violet-500", color: "bg-violet-100 text-violet-800 border-violet-200" },
+  examenes: { name: "Exámenes / Evaluaciones", dot: "bg-blue-500", color: "bg-blue-100 text-blue-800 border-blue-200" },
+  asesorias: { name: "Asesorías", dot: "bg-rose-500", color: "bg-rose-100 text-rose-800 border-rose-200" },
+  recordatorio: { name: "Recordatorio", dot: "bg-teal-500", color: "bg-teal-100 text-teal-800 border-teal-200" },
 };
 
 const monthNames = "enero_febrero_marzo_abril_mayo_junio_julio_agosto_septiembre_octubre_noviembre_diciembre".split("_");
@@ -17,146 +27,454 @@ function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
 function endOfMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
 function addMonths(d, n) { return new Date(d.getFullYear(), d.getMonth() + n, 1); }
 function toISO(d) { return d.toISOString().slice(0, 10); }
-const fmtMoney = (n) => n?.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 
 /* =========================================================
-   MODAL: Crear Recordatorio
+   MODAL: Crear/Editar Recordatorio
 ========================================================= */
-function ReminderModal({ open, onClose, onSave, defaultDate }) {
+function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos, estudiantes, onLoadEstudiantes }) {
   const PRIORITIES = [
-    { key: "red",    ring: "ring-red-300",    bg: "bg-red-500" },
-    { key: "orange", ring: "ring-orange-300", bg: "bg-orange-500" },
-    { key: "amber",  ring: "ring-amber-300",  bg: "bg-amber-400" },
-    { key: "green",  ring: "ring-green-300",  bg: "bg-green-500" },
-    { key: "blue",   ring: "ring-blue-300",   bg: "bg-blue-600" },
-    { key: "violet", ring: "ring-violet-300", bg: "bg-violet-500" },
+    { key: "red",    ring: "ring-red-300",    bg: "bg-red-500", name: "Alta" },
+    { key: "orange", ring: "ring-orange-300", bg: "bg-orange-500", name: "Media-Alta" },
+    { key: "amber",  ring: "ring-amber-300",  bg: "bg-amber-400", name: "Media" },
+    { key: "green",  ring: "ring-green-300",  bg: "bg-green-500", name: "Baja" },
+    { key: "blue",   ring: "ring-blue-300",   bg: "bg-blue-600", name: "Normal" },
+    { key: "violet", ring: "ring-violet-300", bg: "bg-violet-500", name: "Personal" },
   ];
 
+  const [type, setType] = useState("personal"); // "personal" o "estudiantes"
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [date, setDate] = useState(defaultDate || "");
+  const [time, setTime] = useState("");
+  const [category, setCategory] = useState("recordatorio");
   const [priority, setPriority] = useState("blue");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  
+  // Opciones para estudiantes
+  const [targetType, setTargetType] = useState("grupo"); // "grupo" o "estudiante"
+  const [selectedGrupo, setSelectedGrupo] = useState("");
+  const [selectedEstudiantes, setSelectedEstudiantes] = useState([]);
+  const [estudiantesFiltrados, setEstudiantesFiltrados] = useState([]);
+  const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setName(""); setDesc(""); setPriority("blue");
-      setDate(defaultDate || "");
+      if (eventToEdit) {
+        setName(eventToEdit.title || "");
+        setDesc(eventToEdit.description || "");
+        setDate(eventToEdit.date || "");
+        setTime(eventToEdit.time || "");
+        setCategory(eventToEdit.category || eventToEdit.cat || "recordatorio");
+        setPriority(eventToEdit.priority || "blue");
+        setType(eventToEdit.type || "personal");
+      } else {
+        setName("");
+        setDesc("");
+        setTime("");
+        setCategory("recordatorio");
+        setPriority("blue");
+        setType("personal");
+        setDate(defaultDate || "");
+        setTargetType("grupo");
+        setSelectedGrupo("");
+        setSelectedEstudiantes([]);
+      }
       setError("");
     }
-  }, [open, defaultDate]);
+  }, [open, defaultDate, eventToEdit]);
 
-  const save = () => {
+  // Cargar estudiantes cuando se selecciona un grupo
+  useEffect(() => {
+    if (type === "estudiantes" && targetType === "estudiante" && selectedGrupo && onLoadEstudiantes) {
+      setLoadingEstudiantes(true);
+      onLoadEstudiantes(selectedGrupo)
+        .then(loaded => {
+          const filtrados = (loaded || []).filter(e => e.grupo === selectedGrupo);
+          setEstudiantesFiltrados(filtrados);
+        })
+        .catch(err => {
+          console.error("Error cargando estudiantes:", err);
+          setEstudiantesFiltrados([]);
+        })
+        .finally(() => {
+          setLoadingEstudiantes(false);
+        });
+    } else if (type === "estudiantes" && selectedGrupo && estudiantes) {
+      // Usar estudiantes ya cargados
+      const filtrados = estudiantes.filter(e => e.grupo === selectedGrupo);
+      setEstudiantesFiltrados(filtrados);
+    } else {
+      setEstudiantesFiltrados([]);
+    }
+    if (targetType === "grupo") {
+      setSelectedEstudiantes([]);
+    }
+  }, [type, targetType, selectedGrupo, estudiantes, onLoadEstudiantes]);
+
+  const save = async () => {
     if (!name.trim()) return setError("El nombre es obligatorio.");
     if (!date) return setError("La fecha es obligatoria.");
-    onSave({
-      id: crypto.randomUUID(),
-      date,                 // "YYYY-MM-DD"
-      title: name.trim(),
-      description: desc.trim(),
-      cat: "recordatorio",
-      tag: "Recordatorio",
-      priority,             // para estilos propios si quieres
-      admin: false,
-    });
-    onClose?.();
+    
+    if (type === "estudiantes") {
+      if (targetType === "grupo" && !selectedGrupo) {
+        return setError("Debes seleccionar un grupo.");
+      }
+      if (targetType === "estudiante" && selectedEstudiantes.length === 0) {
+        return setError("Debes seleccionar al menos un estudiante.");
+      }
+    }
+
+    setSaving(true);
+    setError("");
+    
+    try {
+      const reminderData = {
+        title: name.trim(),
+        description: desc.trim() || null,
+        date,
+        time: time || null,
+        category: category || "recordatorio",
+        priority,
+      };
+
+      if (type === "personal") {
+        await onSave(reminderData, "personal", eventToEdit?.id);
+      } else {
+        // Para estudiantes
+        if (targetType === "grupo") {
+          await onSave({ ...reminderData, grupo: selectedGrupo }, "estudiantes", null);
+        } else {
+          await onSave({ ...reminderData, studentIds: selectedEstudiantes }, "estudiantes", null);
+        }
+      }
+      onClose?.();
+    } catch (err) {
+      setError(err?.response?.data?.message || "Error al guardar el recordatorio");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
       {/* overlay */}
       <div
         onClick={onClose}
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
-      {/* modal */}
-      <div className="absolute inset-0 grid place-items-center p-4">
-        <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-xl bg-white">
-          {/* header */}
-          <div className="px-5 py-4 bg-gradient-to-r from-teal-600 to-cyan-600 text-white">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🗒️</span>
-              <h3 className="font-semibold text-lg">Crear Recordatorio</h3>
+      {/* modal - Más compacto y responsive - Altura fija para evitar cambios de tamaño */}
+      <div className="relative w-full max-w-lg rounded-xl overflow-hidden shadow-2xl bg-white z-[101] h-[85vh] sm:h-[75vh] max-h-[85vh] sm:max-h-[75vh] flex flex-col">
+        {/* header compacto */}
+        <div className="px-3 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <CalendarIcon className="size-4" />
+              <h3 className="font-semibold text-sm">
+                {eventToEdit ? "Editar Recordatorio" : "Crear Recordatorio"}
+              </h3>
             </div>
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg hover:bg-white/20 transition-colors"
+              aria-label="Cerrar"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* body compacto - Altura fija con scroll */}
+        <div className="px-3 py-2 space-y-2 overflow-y-auto flex-1 min-h-0 text-sm">
+          {error && (
+            <div className="flex items-center gap-1.5 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2 py-1">
+              <AlertCircle className="size-3 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Tipo de recordatorio compacto */}
+          {!eventToEdit && (
+            <div>
+              <label className="text-xs font-medium text-slate-700 mb-0.5 block">
+                Tipo <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setType("personal")}
+                  className={`p-1.5 rounded-lg border-2 transition-all ${
+                    type === "personal"
+                      ? "border-violet-500 bg-violet-50 text-violet-700"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  }`}
+                >
+                  <User className="size-3.5 mx-auto mb-0.5" />
+                  <div className="font-semibold text-xs">Personal</div>
+                  <div className="text-[10px] text-slate-500">Solo para ti</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setType("estudiantes")}
+                  className={`p-1.5 rounded-lg border-2 transition-all ${
+                    type === "estudiantes"
+                      ? "border-violet-500 bg-violet-50 text-violet-700"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  }`}
+                >
+                  <Users className="size-3.5 mx-auto mb-0.5" />
+                  <div className="font-semibold text-xs">Estudiantes</div>
+                  <div className="text-[10px] text-slate-500">Grupo o individual</div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Campos comunes compactos */}
+          <div>
+            <label className="text-xs font-medium text-slate-700 mb-0.5 block">
+              Nombre <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Ej. Entrega de proyecto"
+              className="w-full text-sm rounded-lg border-2 border-slate-200 px-2.5 py-1 outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
 
-          {/* body */}
-          <div className="px-5 py-4 space-y-4">
-            {error && (
-              <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                {error}
-              </div>
-            )}
+          <div>
+            <label className="text-xs font-medium text-slate-700 mb-0.5 block">Descripción</label>
+            <textarea
+              rows={2}
+              placeholder="Detalles del recordatorio…"
+              className="w-full text-sm rounded-lg border-2 border-slate-200 px-2.5 py-1 outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 resize-none transition-all"
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+            />
+          </div>
 
+          <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-sm font-medium">Nombre <span className="text-rose-500">*</span></label>
-              <input
-                type="text"
-                placeholder="Ej. Entrega de proyecto"
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Descripción</label>
-              <textarea
-                rows={3}
-                placeholder="Detalles del recordatorio…"
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500 resize-none"
-                value={desc}
-                onChange={(e) => setDesc(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Fecha <span className="text-rose-500">*</span></label>
+              <label className="text-xs font-medium text-slate-700 mb-0.5 block">
+                Fecha <span className="text-red-500">*</span>
+              </label>
               <input
                 type="date"
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full text-xs rounded-lg border-2 border-slate-200 px-2 py-1 outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
-
             <div>
-              <label className="text-sm font-medium">Prioridad</label>
-              <div className="mt-2 flex items-center gap-3">
-                {PRIORITIES.map(p => (
-                  <button
-                    key={p.key}
-                    type="button"
-                    onClick={() => setPriority(p.key)}
-                    className={[
-                      "w-8 h-8 rounded-full ring-2 transition",
-                      p.bg,
-                      priority === p.key ? p.ring : "ring-transparent hover:ring-slate-300"
-                    ].join(" ")}
-                    aria-label={p.key}
-                  />
-                ))}
-              </div>
+              <label className="text-xs font-medium text-slate-700 mb-0.5 block">Hora</label>
+              <input
+                type="time"
+                className="w-full text-xs rounded-lg border-2 border-slate-200 px-2 py-1 outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+              />
             </div>
           </div>
 
-          {/* footer */}
-          <div className="px-5 py-4 flex items-center justify-end gap-3 bg-slate-50">
-            <button
-              onClick={onClose}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-slate-700 hover:bg-white"
+          <div>
+            <label className="text-xs font-medium text-slate-700 mb-0.5 block">Categoría</label>
+            <select
+              className="w-full text-sm rounded-lg border-2 border-slate-200 px-2.5 py-1 outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all bg-white"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
             >
-              Cancelar
-            </button>
-            <button
-              onClick={save}
-              className="rounded-xl bg-teal-600 hover:bg-teal-700 text-white px-4 py-2"
-            >
-              Guardar
-            </button>
+              {Object.entries(CATEGORIES).map(([key, value]) => (
+                <option key={key} value={key}>
+                  {value.name}
+                </option>
+              ))}
+            </select>
           </div>
+
+          <div>
+            <label className="text-xs font-medium text-slate-700 mb-0.5 block">Prioridad</label>
+            <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
+              {PRIORITIES.map(p => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => setPriority(p.key)}
+                  className={[
+                    "relative w-7 h-7 rounded-full ring-2 transition-all hover:scale-105",
+                    p.bg,
+                    priority === p.key ? `${p.ring} scale-105` : "ring-transparent hover:ring-slate-300"
+                  ].join(" ")}
+                  title={p.name}
+                  aria-label={p.name}
+                >
+                  {priority === p.key && (
+                    <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-white border-2 border-violet-600 flex items-center justify-center">
+                      <CheckCircle2 className="size-2 text-violet-600" />
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Opciones para estudiantes compactas */}
+          {type === "estudiantes" && !eventToEdit && (
+            <div className="space-y-1.5 pt-1.5 border-t border-slate-200">
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-0.5 block">
+                  Asignar a <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setTargetType("grupo")}
+                    className={`p-1.5 rounded-lg border-2 transition-all ${
+                      targetType === "grupo"
+                        ? "border-violet-500 bg-violet-50 text-violet-700"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="font-semibold text-xs">Grupo completo</div>
+                    <div className="text-[10px] text-slate-500">Todos los estudiantes</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTargetType("estudiante")}
+                    className={`p-1.5 rounded-lg border-2 transition-all ${
+                      targetType === "estudiante"
+                        ? "border-violet-500 bg-violet-50 text-violet-700"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="font-semibold text-xs">Específico(s)</div>
+                    <div className="text-[10px] text-slate-500">Seleccionar uno o más</div>
+                  </button>
+                </div>
+              </div>
+
+              {targetType === "grupo" && (
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-0.5 block">
+                    Grupo <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full text-sm rounded-lg border-2 border-slate-200 px-2.5 py-1 outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all bg-white"
+                    value={selectedGrupo}
+                    onChange={(e) => setSelectedGrupo(e.target.value)}
+                  >
+                    <option value="">Selecciona un grupo</option>
+                    {grupos.map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {targetType === "estudiante" && (
+                <div className="space-y-1.5">
+                  <div>
+                    <label className="text-xs font-medium text-slate-700 mb-0.5 block">
+                      Grupo <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      className="w-full text-sm rounded-lg border-2 border-slate-200 px-2.5 py-1 outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all bg-white"
+                      value={selectedGrupo}
+                      onChange={(e) => {
+                        setSelectedGrupo(e.target.value);
+                        setSelectedEstudiantes([]);
+                      }}
+                    >
+                      <option value="">Selecciona un grupo</option>
+                      {grupos.map(g => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {selectedGrupo && (
+                    <div>
+                      <label className="text-xs font-medium text-slate-700 mb-0.5 block">
+                        Estudiante(s) <span className="text-red-500">*</span>
+                      </label>
+                      <div className="max-h-20 sm:max-h-24 overflow-y-auto border-2 border-slate-200 rounded-lg p-1 space-y-1">
+                        {loadingEstudiantes ? (
+                          <div className="flex items-center justify-center p-2">
+                            <Loader2 className="size-4 animate-spin text-violet-600" />
+                          </div>
+                        ) : estudiantesFiltrados.length === 0 ? (
+                          <div className="text-center text-slate-500 text-xs py-2">
+                            No hay estudiantes en este grupo
+                          </div>
+                        ) : (
+                          estudiantesFiltrados.map(est => (
+                            <label
+                              key={est.id}
+                              className="flex items-center gap-1.5 p-1 rounded-md hover:bg-slate-50 cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedEstudiantes.includes(est.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedEstudiantes([...selectedEstudiantes, est.id]);
+                                  } else {
+                                    setSelectedEstudiantes(selectedEstudiantes.filter(id => id !== est.id));
+                                  }
+                                }}
+                                className="rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-xs text-slate-900 truncate">
+                                  {est.nombres || est.nombre} {est.apellidos || est.apellido}
+                                </div>
+                                <div className="text-[10px] text-slate-500 truncate">
+                                  {est.folio_formateado || est.folio || ""}
+                                </div>
+                              </div>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                      {selectedEstudiantes.length > 0 && (
+                        <div className="mt-0.5 text-[10px] text-slate-600">
+                          {selectedEstudiantes.length} estudiante(s) seleccionado(s)
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* footer compacto */}
+        <div className="px-3 py-1.5 flex items-center justify-end gap-2 bg-slate-50 border-t border-slate-200 shrink-0">
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="rounded-lg border-2 border-slate-300 px-2.5 py-1 text-xs text-slate-700 hover:bg-white hover:border-slate-400 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={save}
+            disabled={saving}
+            className="rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white px-2.5 py-1 text-xs font-medium shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                <span className="hidden sm:inline">Guardando...</span>
+                <span className="sm:hidden">...</span>
+              </>
+            ) : (
+              eventToEdit ? "Actualizar" : "Guardar"
+            )}
+          </button>
         </div>
       </div>
     </div>
@@ -167,7 +485,11 @@ function ReminderModal({ open, onClose, onSave, defaultDate }) {
    LISTA EVENTOS / LEYENDA / CALENDARIO
 ========================================================= */
 function Chip({ children, className = "" }) {
-  return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${className}`} />;
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border ${className}`}>
+      {children}
+    </span>
+  );
 }
 
 function DatePill({ date }) {
@@ -176,39 +498,70 @@ function DatePill({ date }) {
   const day = d.getDate();
   const y = d.getFullYear();
   return (
-    <div className="w-20 shrink-0 grid place-items-center rounded-xl bg-rose-50 border border-rose-100 text-center py-2">
-      <div className="text-rose-600 text-xs font-semibold">{m}</div>
+    <div className="w-20 shrink-0 grid place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-center py-3 shadow-md">
+      <div className="text-xs font-semibold opacity-90">{m}</div>
       <div className="text-2xl font-bold -mt-0.5">{day}</div>
-      <div className="text-[10px] text-slate-500">{y}</div>
+      <div className="text-[10px] opacity-75">{y}</div>
     </div>
   );
 }
 
-function EventItem({ ev }) {
-  const isPago = ev.cat === "pago";
+function EventItem({ ev, onEdit, onDelete }) {
+  const category = CATEGORIES[ev.category || ev.cat] || CATEGORIES.recordatorio;
+  const isPast = new Date(ev.date) < new Date(new Date().setHours(0, 0, 0, 0));
+
   return (
-    <div className="flex items-start gap-4 p-4 sm:p-5 border-b last:border-0">
+    <div className={`group flex items-start gap-4 p-4 sm:p-5 border-b last:border-0 hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 transition-all ${isPast ? "opacity-75" : ""}`}>
       <DatePill date={ev.date} />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h4 className="font-semibold text-slate-900">{ev.title}</h4>
-          {ev.admin && <Chip className="bg-amber-100 text-amber-800 ring-1 ring-amber-200">★ Admin</Chip>}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h4 className="font-bold text-slate-900 text-base">{ev.title}</h4>
+              {isPast && (
+                <Chip className="bg-slate-100 text-slate-600 border-slate-200">
+                  <Clock className="size-3" /> Pasado
+                </Chip>
+              )}
+            </div>
+            {ev.description && (
+              <p className="text-sm text-slate-600 mt-1 line-clamp-2">{ev.description}</p>
+            )}
+            {ev.time && (
+              <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500">
+                <Clock className="size-3.5" />
+                <span>{ev.time}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {onEdit && (
+              <button
+                onClick={() => onEdit(ev)}
+                className="p-2 rounded-lg text-slate-600 hover:text-violet-600 hover:bg-violet-50 transition-all opacity-0 group-hover:opacity-100"
+                title="Editar"
+              >
+                <Edit2 className="size-4" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(ev.id)}
+                className="p-2 rounded-lg text-slate-600 hover:text-red-600 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                title="Eliminar"
+              >
+                <Trash2 className="size-4" />
+              </button>
+            )}
+          </div>
         </div>
-        <p className="text-sm text-slate-600 mt-1 line-clamp-2">{ev.description}</p>
-        <div className="mt-2 flex items-center gap-2 flex-wrap">
-          <Chip className="bg-teal-100 text-teal-800 ring-1 ring-teal-200">{ev.tag || "Recordatorio"}</Chip>
-          {isPago && (
-            <Chip className="bg-rose-100 text-rose-700 ring-1 ring-rose-200">
-              ● Pago pendiente • {fmtMoney(ev.amount)}
-            </Chip>
-          )}
+        <div className="flex items-center gap-2 flex-wrap mt-2">
+          <Chip className={category.color}>
+            <span className={`w-2 h-2 rounded-full ${category.dot}`}></span>
+            {category.name}
+          </Chip>
         </div>
       </div>
-      {isPago ? (
-        <button className="ml-auto inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2.5">
-          💳 Pagar
-        </button>
-      ) : null}
     </div>
   );
 }
@@ -216,13 +569,16 @@ function EventItem({ ev }) {
 function Legend() {
   const entries = Object.entries(CATEGORIES);
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h5 className="font-semibold text-slate-900 mb-3">Leyenda de Eventos</h5>
+    <div className="rounded-2xl border-2 border-slate-200 bg-white p-4 shadow-sm">
+      <h5 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+        <Tag className="size-4 text-violet-600" />
+        Leyenda de Eventos
+      </h5>
       <ul className="space-y-2">
         {entries.map(([k, v]) => (
           <li key={k} className="flex items-center gap-3 text-sm">
-            <span className={`w-3.5 h-3.5 rounded-full ${v.dot}`} />
-            <span>{v.name}</span>
+            <span className={`w-3.5 h-3.5 rounded-full ${v.dot} shrink-0`} />
+            <span className="text-slate-700">{v.name}</span>
           </li>
         ))}
       </ul>
@@ -230,7 +586,7 @@ function Legend() {
   );
 }
 
-function Calendar({ monthDate, setMonthDate, events, onCreate }) {
+function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
   const meta = useMemo(() => {
     const start = startOfMonth(monthDate);
     const end = endOfMonth(monthDate);
@@ -254,52 +610,93 @@ function Calendar({ monthDate, setMonthDate, events, onCreate }) {
   const dayLabel = ["L", "M", "X", "J", "V", "S", "D"];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-2xl border-2 border-slate-200 bg-white shadow-lg overflow-hidden">
       {/* header */}
-      <div className="flex items-center justify-between px-4 sm:px-5 py-3 bg-gradient-to-r from-indigo-500 to-violet-600 text-white">
-        <button onClick={() => go(-1)} className="p-2 rounded-lg hover:bg-white/10">‹</button>
-        <div className="text-sm sm:text-base font-semibold uppercase tracking-wide">
+      <div className="flex items-center justify-between px-4 sm:px-5 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
+        <button
+          onClick={() => go(-1)}
+          className="p-2 rounded-lg hover:bg-white/20 transition-colors"
+          aria-label="Mes anterior"
+        >
+          ‹
+        </button>
+        <div className="text-base sm:text-lg font-bold uppercase tracking-wide">
           {monthNames[monthDate.getMonth()].toUpperCase()} {monthDate.getFullYear()}
         </div>
-        <button onClick={() => go(1)} className="p-2 rounded-lg hover:bg-white/10">›</button>
+        <button
+          onClick={() => go(1)}
+          className="p-2 rounded-lg hover:bg-white/20 transition-colors"
+          aria-label="Mes siguiente"
+        >
+          ›
+        </button>
       </div>
 
       {/* labels */}
-      <div className="grid grid-cols-7 text-center text-xs text-slate-500 px-2 sm:px-3 py-2">
-        {dayLabel.map((d) => <div key={d} className="py-1">{d}</div>)}
+      <div className="grid grid-cols-7 text-center text-xs font-semibold text-slate-600 px-2 sm:px-3 py-3 bg-slate-50 border-b border-slate-200">
+        {dayLabel.map((d) => (
+          <div key={d} className="py-1">
+            {d}
+          </div>
+        ))}
       </div>
 
       {/* celdas */}
-      <div className="grid grid-cols-7 gap-px bg-slate-200/60">
+      <div className="grid grid-cols-7 gap-px bg-slate-200">
         {meta.cells.map((date, i) => {
-          if (!date) return <div key={`e-${i}`} className="bg-white h-16 sm:h-20" />;
+          if (!date) return <div key={`e-${i}`} className="bg-white h-20 sm:h-24" />;
           const iso = toISO(date);
           const evs = meta.map[iso] || [];
           const today = toISO(new Date()) === iso;
+          const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
           return (
-            <div key={iso} className="relative bg-white h-16 sm:h-20 p-1.5 hover:bg-slate-50 transition">
-              <div className={`text-xs text-slate-700 font-medium w-6 h-6 grid place-items-center rounded ${today ? "bg-slate-900 text-white" : ""}`}>
+            <button
+              key={iso}
+              onClick={() => {
+                if (onDayClick) onDayClick(iso);
+                else if (onCreate) onCreate(iso);
+              }}
+              className={`relative bg-white h-20 sm:h-24 p-1.5 hover:bg-violet-50 transition-all cursor-pointer border-r border-b border-slate-100 ${
+                today ? "ring-2 ring-violet-500 ring-inset" : ""
+              } ${isPast ? "opacity-60" : ""}`}
+            >
+              <div
+                className={`text-xs font-semibold w-7 h-7 grid place-items-center rounded-full ${
+                  today
+                    ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-md"
+                    : "text-slate-700"
+                }`}
+              >
                 {date.getDate()}
               </div>
-              {/* puntos */}
-              <div className="absolute left-1.5 bottom-1.5 flex gap-1">
-                {evs.slice(0, 3).map((e) => (
-                  <span key={e.id} className={`w-2.5 h-2.5 rounded ${CATEGORIES[e.cat]?.dot || "bg-slate-400"}`} />
-                ))}
-                {evs.length > 3 && <span className="text-[10px] text-slate-500">+{evs.length - 3}</span>}
-              </div>
-            </div>
+              {/* puntos de eventos */}
+              {evs.length > 0 && (
+                <div className="absolute left-1.5 bottom-1.5 right-1.5 flex gap-1 flex-wrap">
+                  {evs.slice(0, 3).map((e) => (
+                    <span
+                      key={e.id}
+                      className={`w-2.5 h-2.5 rounded-full ${CATEGORIES[e.category || e.cat]?.dot || "bg-slate-400"}`}
+                      title={e.title}
+                    />
+                  ))}
+                  {evs.length > 3 && (
+                    <span className="text-[9px] text-slate-500 font-medium">+{evs.length - 3}</span>
+                  )}
+                </div>
+              )}
+            </button>
           );
         })}
       </div>
 
       {/* footer */}
-      <div className="p-3 sm:p-4">
+      <div className="p-4 bg-slate-50 border-t border-slate-200">
         <button
-          onClick={() => onCreate?.(toISO(new Date(monthDate.getFullYear(), monthDate.getMonth(), new Date().getDate())))}
-          className="inline-flex items-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm px-4 py-2"
+          onClick={() => onCreate?.(toISO(new Date()))}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-sm px-4 py-2.5 font-medium shadow-md hover:shadow-lg transition-all"
         >
-          ＋ Crear recordatorio
+          <Plus className="size-4" />
+          Crear recordatorio
         </button>
       </div>
     </div>
@@ -310,80 +707,250 @@ function Calendar({ monthDate, setMonthDate, events, onCreate }) {
    PÁGINA PRINCIPAL
 ========================================================= */
 export default function AgendaDashboard() {
-  // carga inicial (con algunos ejemplos) desde localStorage
-  const [events, setEvents] = useState(() => {
-    const saved = localStorage.getItem("events");
-    if (saved) return JSON.parse(saved);
-    // ejemplos
-    return [
-      { id: "1", date: "2025-09-29", title: "Fecha de pago mensual", tag: "Fecha de pago", amount: 500, admin: true, cat: "pago" },
-      { id: "2", date: "2025-11-05", title: "PAGO CORRESPONDIENTE DEL MES", tag: "Fecha de pago", amount: 1500, admin: true, cat: "pago" },
-      { id: "3", date: "2025-11-15", title: "Cuota de Noviembre", tag: "Fecha de pago", amount: 750, admin: true, cat: "pago" },
-      { id: "4", date: "2025-09-12", title: "Conferencia sobre Programación", tag: "Conferencias / talleres", admin: true, cat: "conferencias" },
-    ];
-  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [grupos, setGrupos] = useState([]);
+  const [estudiantes, setEstudiantes] = useState([]);
+  const [estudiantesPorGrupo, setEstudiantesPorGrupo] = useState({});
+  const [monthDate, setMonthDate] = useState(new Date());
+  const [openModal, setOpenModal] = useState(false);
+  const [modalDate, setModalDate] = useState("");
+  const [eventToEdit, setEventToEdit] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
 
-  // persistir
+  // Cargar recordatorios personales
   useEffect(() => {
-    localStorage.setItem("events", JSON.stringify(events));
-  }, [events]);
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [personalRes, estudiantesRes] = await Promise.all([
+          listRemindersPersonal().catch(() => ({ data: { data: [] } })),
+          getMisEstudiantes().catch(() => ({ data: { data: [], grupos_asesor: [] } })),
+        ]);
+        
+        if (!alive) return;
+        
+        const personalEvents = (personalRes.data?.data || []).map(e => ({
+          ...e,
+          type: "personal",
+        }));
+        
+        const gruposList = estudiantesRes.data?.grupos_asesor || [];
+        setGrupos(Array.isArray(gruposList) ? gruposList : []);
+        setEstudiantes(estudiantesRes.data?.data || []);
+        
+        setEvents(personalEvents);
+      } catch (e) {
+        console.error("Error cargando recordatorios:", e);
+        setError(e?.response?.data?.message || "Error al cargar los recordatorios");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
 
-  // ordenar por fecha (desc/asc según prefieras)
+  // Ordenar por fecha (asc)
   const ordered = useMemo(
-    () => [...events].sort((a, b) => a.date.localeCompare(b.date)),
+    () => [...events].sort((a, b) => {
+      const dateA = new Date(a.date + (a.time ? `T${a.time}` : "T00:00"));
+      const dateB = new Date(b.date + (b.time ? `T${b.time}` : "T00:00"));
+      return dateA - dateB;
+    }),
     [events]
   );
 
-  const [monthDate, setMonthDate] = useState(new Date("2025-09-01"));
-  const [openModal, setOpenModal] = useState(false);
-  const [modalDate, setModalDate] = useState("");
+  // Filtrar eventos
+  const filteredEvents = useMemo(() => {
+    let filtered = ordered;
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (e) =>
+          e.title.toLowerCase().includes(query) ||
+          (e.description && e.description.toLowerCase().includes(query))
+      );
+    }
+    if (filterCategory !== "all") {
+      filtered = filtered.filter((e) => (e.category || e.cat) === filterCategory);
+    }
+    return filtered;
+  }, [ordered, searchQuery, filterCategory]);
 
   const openCreate = (dateISO) => {
+    setEventToEdit(null);
     setModalDate(dateISO || "");
     setOpenModal(true);
   };
 
-  const addReminder = (ev) => {
-    setEvents((prev) => [...prev, ev]);
+  const openEdit = (event) => {
+    setEventToEdit(event);
+    setModalDate(event.date);
+    setOpenModal(true);
   };
 
-  const pendientes = events.filter((e) => e.cat === "pago").length;
+  const handleSave = async (data, type, eventId) => {
+    try {
+      if (type === "personal") {
+        if (eventId) {
+          // Actualizar
+          await updateReminderPersonal(eventId, data);
+          setEvents(prev => prev.map(e => e.id === eventId ? { ...data, id: eventId, type: "personal" } : e));
+        } else {
+          // Crear
+          const response = await createReminderPersonal(data);
+          setEvents(prev => [...prev, { ...response.data.data, type: "personal" }]);
+        }
+      } else {
+        // Para estudiantes
+        await createReminderForStudents(data);
+        // Recargar eventos personales (los de estudiantes no se muestran aquí)
+        const response = await listRemindersPersonal();
+        const personalEvents = (response.data?.data || []).map(e => ({
+          ...e,
+          type: "personal",
+        }));
+        setEvents(personalEvents);
+      }
+      setOpenModal(false);
+      setEventToEdit(null);
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este recordatorio?")) return;
+    
+    try {
+      await deleteReminderPersonal(id);
+      setEvents(prev => prev.filter(e => e.id !== id));
+    } catch (err) {
+      alert(err?.response?.data?.message || "Error al eliminar el recordatorio");
+    }
+  };
+
+  const upcomingEvents = filteredEvents.filter((e) => new Date(e.date) >= new Date(new Date().setHours(0, 0, 0, 0)));
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="size-8 animate-spin text-violet-600 mx-auto mb-4" />
+          <p className="text-slate-600">Cargando agenda...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-violet-50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header */}
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600 mb-2">
+            Agenda / Calendario
+          </h1>
+          <p className="text-slate-600 text-sm sm:text-base">
+            Gestiona tus recordatorios personales y asigna recordatorios a tus estudiantes
+          </p>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600">
+            {error}
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
           {/* Calendario */}
-          <section>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 mb-3">
-              AGENDA / CALENDARIO
-            </h2>
+          <section className="space-y-4">
             <Calendar
               monthDate={monthDate}
               setMonthDate={setMonthDate}
               events={events}
-              onCreate={(d) => { openCreate(d); }}
+              onCreate={openCreate}
+              onDayClick={openCreate}
             />
-            <div className="mt-4 max-w-sm">
-              <Legend />
-            </div>
+            <Legend />
           </section>
 
           {/* Eventos */}
-          <section>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600">
-                EVENTOS Y ACTIVIDADES IMPORTANTES
+          <section className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">
+                Recordatorios Personales
               </h2>
-              <div className="hidden sm:flex items-center gap-2">
-                <span className="rounded-full bg-slate-100 text-slate-700 text-sm px-3 py-1.5 border border-slate-200">
-                  {pendientes} pendientes
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-violet-100 text-violet-800 text-sm px-3 py-1.5 border border-violet-200 font-medium">
+                  {upcomingEvents.length} próximos
                 </span>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-              {ordered.map((ev) => <EventItem key={ev.id} ev={ev} />)}
+            {/* Filtros y búsqueda */}
+            <div className="space-y-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar recordatorios..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-slate-200 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none transition-all"
+                />
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Filter className="size-4 text-slate-500" />
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="px-4 py-2 rounded-xl border-2 border-slate-200 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none transition-all bg-white"
+                >
+                  <option value="all">Todas las categorías</option>
+                  {Object.entries(CATEGORIES).map(([key, value]) => (
+                    <option key={key} value={key}>
+                      {value.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Lista de eventos */}
+            <div className="rounded-2xl border-2 border-slate-200 bg-white shadow-lg overflow-hidden">
+              {filteredEvents.length === 0 ? (
+                <div className="p-8 text-center">
+                  <CalendarIcon className="size-12 text-slate-400 mx-auto mb-3" />
+                  <p className="text-slate-600 font-medium">
+                    {searchQuery || filterCategory !== "all"
+                      ? "No se encontraron recordatorios"
+                      : "No hay recordatorios personales"}
+                  </p>
+                  {!searchQuery && filterCategory === "all" && (
+                    <button
+                      onClick={() => openCreate(toISO(new Date()))}
+                      className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-sm px-4 py-2 font-medium shadow-md hover:shadow-lg transition-all"
+                    >
+                      <Plus className="size-4" />
+                      Crear primer recordatorio
+                    </button>
+                  )}
+                </div>
+              ) : (
+                filteredEvents.map((ev) => (
+                  <EventItem
+                    key={ev.id}
+                    ev={ev}
+                    onEdit={openEdit}
+                    onDelete={handleDelete}
+                  />
+                ))
+              )}
             </div>
           </section>
         </div>
@@ -392,10 +959,30 @@ export default function AgendaDashboard() {
       {/* MODAL */}
       <ReminderModal
         open={openModal}
-        onClose={() => setOpenModal(false)}
-        onSave={addReminder}
+        onClose={() => {
+          setOpenModal(false);
+          setEventToEdit(null);
+        }}
+        onSave={handleSave}
         defaultDate={modalDate}
+        eventToEdit={eventToEdit}
+        grupos={grupos}
+        estudiantes={estudiantes}
+        onLoadEstudiantes={async (grupo) => {
+          if (estudiantesPorGrupo[grupo]) {
+            return estudiantesPorGrupo[grupo];
+          }
+          try {
+            const response = await getMisEstudiantes({ grupo });
+            const loaded = response.data?.data || [];
+            setEstudiantesPorGrupo(prev => ({ ...prev, [grupo]: loaded }));
+            return loaded;
+          } catch (err) {
+            console.error("Error cargando estudiantes:", err);
+            return [];
+          }
+        }}
       />
-    </main>
+    </div>
   );
 }

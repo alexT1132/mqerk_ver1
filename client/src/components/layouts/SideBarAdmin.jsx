@@ -22,22 +22,28 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick }) 
   // Define si es un elemento para el menú móvil o de escritorio
   const isMobileItem = !!mobileOnClick; // Si mobileOnClick está presente, asumimos que es para el menú móvil
 
-  const handleLinkClick = (e) => {
+  const handleLinkClick = async (e) => {
     // Manejo especial para Cerrar Sesión
     if (to === "/login") {
       e.preventDefault();
       try {
-        // Actualiza estado de auth en el cliente inmediatamente
-        authLogout?.();
-        // Llama al backend para limpiar la cookie httpOnly (sin bloquear redirección)
-        logoutRequest().catch(() => {});
-      } finally {
+        // Cerrar menú móvil si está abierto
+        if (mobileOnClick) mobileOnClick();
+        
+        // Esperar a que el logout se complete antes de redirigir
+        await authLogout?.();
+        // Limpiar cookies del backend (sin bloquear si falla)
+        await logoutRequest().catch(() => {});
+        
         // Limpieza adicional
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminProfile');
-        if (mobileOnClick) mobileOnClick();
+      } catch (error) {
+        console.error('Error durante logout:', error);
+      } finally {
         // Hard redirect para desmontar Providers y evitar llamadas residuales
-        window.location.href = '/login';
+        // Usar replace para evitar que el usuario pueda volver atrás
+        window.location.replace('/login');
       }
       return;
     }

@@ -68,7 +68,7 @@ export default function FinanzasHome() {
   return (
     <div className="relative w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
       {/* Header con título grande pegado arriba */}
-      <div className="pt-1 xs:pt-1 sm:pt-2 lg:pt-2 pb-0 px-2 xs:px-3 sm:px-4">
+      <div className="pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-0 px-2 xs:px-3 sm:px-4">
         <div className="w-full max-w-7xl mx-auto">
           <div className="text-center mb-3">
             <h2 className="relative inline-block text-xl xs:text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black text-gray-800/90 mb-1 xs:mb-2 tracking-tight leading-tight font-[system-ui,-apple-system,'Segoe_UI','Roboto','Helvetica_Neue',Arial,sans-serif]">

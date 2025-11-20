@@ -81,8 +81,54 @@ export const updateSimulacionMeta = async (id, fields = {}) => {
 };
 
 export const deleteSimulacion = async (id) => {
-  const [res] = await db.query('DELETE FROM simulaciones WHERE id = ?', [id]);
-  return res?.affectedRows > 0;
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // Verificar existencia
+    const [existsRows] = await conn.query('SELECT id FROM simulaciones WHERE id = ? LIMIT 1', [id]);
+    if (!existsRows.length) {
+      await conn.rollback();
+      return false;
+    }
+
+    // Borrar respuestas y sesiones
+    const [ses] = await conn.query('SELECT id FROM simulaciones_sesiones WHERE id_simulacion = ?', [id]);
+    const sesIds = ses.map((r) => r.id);
+    if (sesIds.length) {
+      await conn.query('DELETE FROM simulaciones_respuestas WHERE id_sesion IN (?)', [sesIds]);
+      await conn.query('DELETE FROM simulaciones_sesiones WHERE id IN (?)', [sesIds]);
+    } else {
+      await conn.query('DELETE FROM simulaciones_respuestas WHERE id_sesion IN (SELECT id FROM simulaciones_sesiones WHERE id_simulacion = ?)', [id]);
+      await conn.query('DELETE FROM simulaciones_sesiones WHERE id_simulacion = ?', [id]);
+    }
+
+    // Borrar intentos
+    await conn.query('DELETE FROM simulaciones_intentos WHERE id_simulacion = ?', [id]);
+
+    // Borrar preguntas y opciones
+    const [pregs] = await conn.query('SELECT id FROM simulaciones_preguntas WHERE id_simulacion = ?', [id]);
+    const qIds = pregs.map((r) => r.id);
+    if (qIds.length) {
+      await conn.query('DELETE FROM simulaciones_preguntas_opciones WHERE id_pregunta IN (?)', [qIds]);
+      await conn.query('DELETE FROM simulaciones_preguntas WHERE id IN (?)', [qIds]);
+    } else {
+      await conn.query('DELETE FROM simulaciones_preguntas_opciones WHERE id_pregunta IN (SELECT id FROM simulaciones_preguntas WHERE id_simulacion = ?)', [id]);
+      await conn.query('DELETE FROM simulaciones_preguntas WHERE id_simulacion = ?', [id]);
+    }
+
+    // Finalmente borrar la simulación
+    const [del] = await conn.query('DELETE FROM simulaciones WHERE id = ?', [id]);
+
+    await conn.commit();
+    return del?.affectedRows > 0;
+  } catch (e) {
+    try { await conn.rollback(); } catch {}
+    console.error('deleteSimulacion error:', e);
+    throw e;
+  } finally {
+    conn.release();
+  }
 };
 
 export const createPregunta = async ({ id_simulacion, orden = null, enunciado, tipo = 'opcion_multiple', puntos = 1, activa = 1 }) => {

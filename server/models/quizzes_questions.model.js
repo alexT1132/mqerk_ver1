@@ -29,9 +29,64 @@ export const getPreguntaById = async (id) => {
 // Sesiones
 export const crearSesion = async ({ id_quiz, id_estudiante, intento_num, tiempo_limite_seg }) => {
   const id = randomUUID();
-  await db.query('INSERT INTO quizzes_sesiones (id, id_quiz, id_estudiante, intento_num, tiempo_limite_seg) VALUES (?,?,?,?,?)', [id, id_quiz, id_estudiante, intento_num, tiempo_limite_seg || null]);
-  const [rows] = await db.query('SELECT * FROM quizzes_sesiones WHERE id = ?', [id]);
-  return rows[0];
+  // Asegurar que los valores sean del tipo correcto
+  const idQuiz = Number(id_quiz);
+  const idEstudiante = Number(id_estudiante);
+  const intentoNum = Number(intento_num);
+  const tiempoLimite = tiempo_limite_seg ? Number(tiempo_limite_seg) : null;
+  
+  // Validaciones básicas
+  if (!idQuiz || isNaN(idQuiz)) {
+    throw new Error('id_quiz debe ser un número válido');
+  }
+  if (!idEstudiante || isNaN(idEstudiante)) {
+    throw new Error('id_estudiante debe ser un número válido');
+  }
+  if (!intentoNum || isNaN(intentoNum)) {
+    throw new Error('intento_num debe ser un número válido');
+  }
+  
+  try {
+    await db.query(
+      'INSERT INTO quizzes_sesiones (id, id_quiz, id_estudiante, intento_num, tiempo_limite_seg) VALUES (?,?,?,?,?)',
+      [id, idQuiz, idEstudiante, intentoNum, tiempoLimite]
+    );
+    const [rows] = await db.query('SELECT * FROM quizzes_sesiones WHERE id = ?', [id]);
+    return rows[0];
+  } catch (e) {
+    // Si es un error de foreign key, agregar más contexto
+    if (e.code === 'ER_NO_REFERENCED_ROW_2' || e.errno === 1452) {
+      console.error('[crearSesion] Error de foreign key al insertar sesión');
+      console.error('[crearSesion] id_quiz:', idQuiz, 'id_estudiante:', idEstudiante);
+      console.error('[crearSesion] SQL:', e.sql);
+      console.error('[crearSesion] Mensaje:', e.sqlMessage);
+      // Verificar si el quiz existe
+      const [quizCheck] = await db.query('SELECT id FROM quizzes WHERE id = ?', [idQuiz]);
+      if (quizCheck.length === 0) {
+        throw new Error(`El quiz con id ${idQuiz} no existe en la tabla quizzes`);
+      }
+      // Verificar si el estudiante existe
+      const [estCheck] = await db.query('SELECT id FROM estudiantes WHERE id = ?', [idEstudiante]);
+      if (estCheck.length === 0) {
+        throw new Error(`El estudiante con id ${idEstudiante} no existe`);
+      }
+      // Verificar foreign keys
+      const [fkRows] = await db.query(`
+        SELECT CONSTRAINT_NAME, REFERENCED_TABLE_NAME
+        FROM information_schema.KEY_COLUMN_USAGE
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'quizzes_sesiones'
+          AND COLUMN_NAME = 'id_quiz'
+          AND REFERENCED_TABLE_NAME IS NOT NULL
+      `);
+      const wrongFk = fkRows.find(fk => fk.REFERENCED_TABLE_NAME === 'actividades');
+      if (wrongFk) {
+        throw new Error(`Error: Existe una foreign key incorrecta ${wrongFk.CONSTRAINT_NAME} apuntando a actividades. Ejecuta: ALTER TABLE quizzes_sesiones DROP FOREIGN KEY ${wrongFk.CONSTRAINT_NAME}`);
+      }
+      throw new Error(`Error de foreign key: ${e.sqlMessage}. El quiz y estudiante existen pero hay un problema con las constraints.`);
+    }
+    throw e;
+  }
 };
 
 export const getSesion = async (id_sesion) => {
@@ -96,6 +151,7 @@ export const createPregunta = async ({ id_quiz, orden, enunciado, tipo, puntos, 
       const [rows] = await db.query('SELECT * FROM quizzes_preguntas WHERE id = ?', [res.insertId]);
       return rows[0];
     }
+    // Re-lanzar el error para que el controller lo maneje (especialmente errores de ENUM)
     throw e;
   }
 };

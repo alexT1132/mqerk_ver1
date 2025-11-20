@@ -282,21 +282,28 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
   const pageItems = sortedActiveCourses.slice(start, start + PAGE_SIZE);
   React.useEffect(() => { if (page > totalPages) setPage(1); }, [totalPages]);
 
-  // BACKEND: Función para seleccionar un curso matriculado y navegar al dashboard
+  // BACKEND: Función para seleccionar/cambiar un curso matriculado
+  // Si ya hay un curso seleccionado, solo lo cambiamos sin navegar
+  // Si no hay curso, seleccionamos y navegamos al dashboard
   const handleCourseAction = (course) => {
     try {
-      // Actualizar el contexto local
+      // Actualizar el contexto local (cambiar curso si ya hay uno, o seleccionar si no hay)
       if (selectCourse && course?.id) {
         selectCourse(course.id);
+        console.log('✅ Curso seleccionado/cambiado:', course.title);
       }
       
       // BACKEND: Aquí se debería hacer una llamada para actualizar el curso actual
       // Ejemplo: await updateCurrentCourse(course.id);
       
-      // Navegar al dashboard del estudiante
-      navigate('/alumno/');
+      // Solo navegar al dashboard si no hay curso seleccionado actualmente
+      // Si ya hay un curso, solo lo cambiamos sin redirigir
+      if (!currentCourse) {
+        navigate('/alumno/');
+      }
+      // Si ya había un curso seleccionado, solo lo cambiamos (permanecemos en /alumno/cursos)
     } catch (error) {
-      console.error('Error al seleccionar curso:', error);
+      console.error('Error al seleccionar/cambiar curso:', error);
     }
   };
 

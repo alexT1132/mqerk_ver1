@@ -153,7 +153,7 @@ export default function StudentPaymentsPage() {
   }
 
   return (
-    <div className="p-3 md:p-6">
+    <div className="pt-8 sm:pt-12 pb-3 md:pb-6 px-3 md:px-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header con regreso y acciones */}
         <div className="flex flex-col gap-3">

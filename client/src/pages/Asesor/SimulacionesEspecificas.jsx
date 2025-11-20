@@ -18,12 +18,12 @@ export default function Layout({ children }) {
         onLogout={() => console.log("logout")}
       />
 
-      {/* Contenido */}
-      <div className="mx-auto">
+      {/* Contenido: compensado para topbar y sidebar fijos */}
+      <div className="w-full pt-14 md:pl-24">
         <div className="flex">
           <SidebarIconOnly active="inicio" onLogout={() => console.log("logout")} />
 
-          <main className="flex-1 p-3 sm:p-6">
+          <main className="flex-1 min-h-[calc(100vh-3.5rem)] p-3 sm:p-6">
             <div>{children}</div>
             <SimuladoresEspecificos />
           </main>

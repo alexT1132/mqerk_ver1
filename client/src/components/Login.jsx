@@ -40,7 +40,12 @@ export default function LoginResponsive() {
       return;
     }
     if (role === "asesor") {
-      navigate("/asesor/dashboard", { replace: true });
+      // Limpiar curso seleccionado al iniciar sesión para forzar selección
+      try {
+        localStorage.removeItem("cursoSeleccionado");
+      } catch {}
+      // Siempre redirigir a inicio para seleccionar curso
+      navigate("/asesor/inicio", { replace: true });
       return;
     }
     navigate("/", { replace: true });
@@ -126,9 +131,9 @@ export default function LoginResponsive() {
   });
 
   return (
-    <div className="relative min-h-[100svh] md:min-h-[100dvh] w-full bg-gradient-to-br from-blue-900 via-indigo-700 to-purple-700 dark:from-zinc-900 dark:via-zinc-900 dark:to-black overflow-hidden">
+    <div className="relative min-h-[100svh] md:min-h-[100dvh] w-full bg-gradient-to-br from-blue-900 via-indigo-700 to-purple-700 overflow-hidden">
       {/* Fondo con partículas (opcional) */}
-      <ParticlesBackground className="opacity-40 dark:opacity-30" color="255,255,255" linkDistance={140} density={12000} minCount={70} minCountMobile={40} maxSpeed={0.5} />
+      <ParticlesBackground className="opacity-40" color="255,255,255" linkDistance={140} density={12000} minCount={70} minCountMobile={40} maxSpeed={0.5} />
 
       {/* Contenedor */}
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 min-h-[100svh] md:min-h-[100dvh] flex flex-col items-center justify-center gap-4 sm:gap-6 py-8">

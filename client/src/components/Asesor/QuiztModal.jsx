@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getMisEstudiantes } from "../../api/asesores.js";
 
-export default function SimulatorModal({ open, onClose, onCreate, areaTitle, initialForm = null }) {
+export default function SimulatorModal({ open, onClose, onCreate, areaTitle, areaId, initialForm = null, onFormChange = null }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [gruposAsesor, setGruposAsesor] = useState([]);
+  const [gruposLoading, setGruposLoading] = useState(false);
 
   // Estado del formulario (ambos pasos)
   const [form, setForm] = useState({
@@ -11,38 +14,143 @@ export default function SimulatorModal({ open, onClose, onCreate, areaTitle, ini
     instrucciones: "",
     nombre: "",
     fechaLimite: "",
-    publico: true,
+    publico: false, // Borrador por defecto (no publicado)
     horas: 0,
     minutos: 0,
     intentosMode: 'unlimited', // 'unlimited' | 'limited'
     maxIntentos: 3,
+    grupos: [], // Array de grupos seleccionados
+    id_area: areaId || null, // Agregar área al formulario
   });
 
   const firstFocusable = useRef(null);
+  const prevFormRef = useRef(null); // Para evitar loops infinitos en onFormChange
+  const onFormChangeRef = useRef(onFormChange); // Almacenar referencia estable de onFormChange
+  const isUpdatingFromInitialForm = useRef(false); // Bandera para evitar loops cuando viene de initialForm
+  const prevOpenRef = useRef(false); // Para rastrear cuando el modal se abre por primera vez
 
-  // Reset cuando se abra/cierre
+  // Actualizar la referencia cuando cambie
   useEffect(() => {
-    if (open) {
+    onFormChangeRef.current = onFormChange;
+  }, [onFormChange]);
+
+  // Cargar grupos del asesor al abrir el modal
+  useEffect(() => {
+    if (open && gruposAsesor.length === 0) {
+      setGruposLoading(true);
+      getMisEstudiantes()
+        .then(({ data }) => {
+          const grupos = data?.grupos_asesor || [];
+          setGruposAsesor(Array.isArray(grupos) ? grupos : []);
+        })
+        .catch(() => {
+          setGruposAsesor([]);
+        })
+        .finally(() => {
+          setGruposLoading(false);
+        });
+    }
+  }, [open, gruposAsesor.length]);
+
+  // Reset cuando se abra el modal (solo cuando open cambia de false a true)
+  useEffect(() => {
+    if (open && !prevOpenRef.current) {
+      // El modal acaba de abrirse
       setStep(1);
-      // Prefill si viene initialForm
+      isUpdatingFromInitialForm.current = true;
+      // Prefill si viene initialForm (solo al abrir)
       if (initialForm) {
-        setForm((prev) => ({
-          ...prev,
-          titulo: initialForm.titulo || initialForm.nombre || prev.titulo,
-          instrucciones: initialForm.instrucciones || prev.instrucciones,
-          nombre: initialForm.nombre || initialForm.titulo || prev.nombre,
-          fechaLimite: initialForm.fechaLimite || prev.fechaLimite,
-          publico: initialForm.publico ?? prev.publico,
-          horas: Number(initialForm.horas ?? prev.horas ?? 0),
-          minutos: Number(initialForm.minutos ?? prev.minutos ?? 0),
-          intentosMode: initialForm.intentosMode || prev.intentosMode,
-          maxIntentos: Number(initialForm.maxIntentos ?? prev.maxIntentos ?? 3),
-        }));
+        const gruposInicial = initialForm.grupos
+          ? (Array.isArray(initialForm.grupos) ? initialForm.grupos : String(initialForm.grupos).split(',').map(s => s.trim()).filter(Boolean))
+          : [];
+        setForm((prev) => {
+          const newForm = {
+            ...prev,
+            titulo: initialForm.titulo || initialForm.nombre || prev.titulo,
+            instrucciones: initialForm.instrucciones || prev.instrucciones,
+            nombre: initialForm.nombre || initialForm.titulo || prev.nombre,
+            fechaLimite: initialForm.fechaLimite || prev.fechaLimite,
+            publico: initialForm.publico ?? prev.publico,
+            horas: Number(initialForm.horas ?? prev.horas ?? 0),
+            minutos: Number(initialForm.minutos ?? prev.minutos ?? 0),
+            intentosMode: initialForm.intentosMode || prev.intentosMode,
+            maxIntentos: Number(initialForm.maxIntentos ?? prev.maxIntentos ?? 3),
+            grupos: gruposInicial,
+          };
+          // Actualizar prevFormRef para evitar que el useEffect de abajo notifique
+          prevFormRef.current = JSON.stringify({
+            nombre: newForm.nombre,
+            instrucciones: newForm.instrucciones,
+            horas: newForm.horas,
+            minutos: newForm.minutos,
+            intentosMode: newForm.intentosMode,
+            maxIntentos: newForm.maxIntentos,
+            grupos: newForm.grupos,
+          });
+          return newForm;
+        });
+      } else {
+        // Reset grupos al abrir sin initialForm
+        setForm((prev) => {
+          const resetForm = { ...prev, grupos: [] };
+          // Actualizar prevFormRef
+          prevFormRef.current = JSON.stringify({
+            nombre: resetForm.nombre,
+            instrucciones: resetForm.instrucciones,
+            horas: resetForm.horas,
+            minutos: resetForm.minutos,
+            intentosMode: resetForm.intentosMode,
+            maxIntentos: resetForm.maxIntentos,
+            grupos: resetForm.grupos,
+          });
+          return resetForm;
+        });
       }
+      // Resetear la bandera después de un breve delay
+      setTimeout(() => {
+        isUpdatingFromInitialForm.current = false;
+      }, 200);
       // foco inicial
       setTimeout(() => firstFocusable.current?.focus(), 50);
     }
-  }, [open, initialForm]);
+    prevOpenRef.current = open;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]); // Solo dependemos de 'open', no de 'initialForm' para evitar resetear el paso
+
+  // Notificar cambios del formulario al padre cada vez que cambia (para preservar configuración al generar con IA)
+  // Usar un pequeño delay para evitar loops infinitos y solo notificar cuando realmente cambia
+  useEffect(() => {
+    if (!open || !onFormChangeRef.current || isUpdatingFromInitialForm.current) return;
+
+    // Solo notificar si realmente cambió algo relevante
+    const formStr = JSON.stringify({
+      nombre: form.nombre,
+      instrucciones: form.instrucciones,
+      horas: form.horas,
+      minutos: form.minutos,
+      intentosMode: form.intentosMode,
+      maxIntentos: form.maxIntentos,
+      grupos: form.grupos,
+    });
+
+    if (prevFormRef.current !== formStr) {
+      prevFormRef.current = formStr;
+      const timeoutId = setTimeout(() => {
+        if (onFormChangeRef.current && !isUpdatingFromInitialForm.current) {
+          onFormChangeRef.current(form);
+        }
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.nombre, form.instrucciones, form.horas, form.minutos, form.intentosMode, form.maxIntentos, form.grupos, open]);
+
+  // Sincronizar id_area cuando cambia el prop areaId
+  useEffect(() => {
+    if (areaId !== undefined && areaId !== null) {
+      setForm(prev => ({ ...prev, id_area: areaId }));
+    }
+  }, [areaId]);
 
   // Cerrar con ESC
   useEffect(() => {
@@ -58,11 +166,41 @@ export default function SimulatorModal({ open, onClose, onCreate, areaTitle, ini
 
   const canNext = step === 1 ? form.instrucciones.trim().length >= 10 : true;
 
-  // Permitir horas = 0; requerir que el total sea > 0
-  const totalMinutes = Math.max(0, Math.trunc(Number(form.horas||0))*60) + Math.max(0, Math.trunc(Number(form.minutos||0)));
-  const canCreate = form.nombre.trim().length >= 3 && totalMinutes > 0;
+  // Validaciones para crear quiz
+  const totalMinutes = Math.max(0, Math.trunc(Number(form.horas || 0)) * 60) + Math.max(0, Math.trunc(Number(form.minutos || 0)));
+  const hasFecha = form.fechaLimite && form.fechaLimite.trim() !== '';
+  const fechaValida = hasFecha ? (new Date(form.fechaLimite + 'T00:00:00') >= new Date(new Date().setHours(0, 0, 0, 0))) : false;
+  const hasGrupos = Array.isArray(form.grupos) && form.grupos.length > 0;
+  const hasTiempo = totalMinutes > 0;
+
+  const canCreate = form.nombre.trim().length >= 3 && hasFecha && fechaValida && hasGrupos && hasTiempo;
 
   const handleCreate = async () => {
+    // Validaciones adicionales con mensajes
+    if (!form.nombre.trim() || form.nombre.trim().length < 3) {
+      alert('El nombre del quiz debe tener al menos 3 caracteres.');
+      return;
+    }
+    if (!form.fechaLimite || form.fechaLimite.trim() === '') {
+      alert('Debes seleccionar una fecha límite.');
+      return;
+    }
+    const fechaLimiteDate = new Date(form.fechaLimite + 'T00:00:00');
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    if (fechaLimiteDate < hoy) {
+      alert('La fecha límite no puede ser menor a la fecha actual.');
+      return;
+    }
+    if (!Array.isArray(form.grupos) || form.grupos.length === 0) {
+      alert('Debes seleccionar al menos un grupo.');
+      return;
+    }
+    if (totalMinutes <= 0) {
+      alert('Debes especificar una duración mayor a 0 (horas o minutos).');
+      return;
+    }
+
     if (!canCreate) return;
     setLoading(true);
     try {
@@ -71,7 +209,23 @@ export default function SimulatorModal({ open, onClose, onCreate, areaTitle, ini
       const normMraw = Math.max(0, parseInt(form.minutos ?? 0, 10) || 0);
       const addH = Math.floor(normMraw / 60);
       const normM = normMraw % 60;
-      const finalForm = { ...form, horas: normH + addH, minutos: normM };
+      // Enviar grupos como array JSON (no como string separado por comas)
+      const gruposFinal = Array.isArray(form.grupos) && form.grupos.length > 0
+        ? form.grupos  // Enviar el array directamente
+        : [];
+      const finalForm = {
+        titulo: form.titulo || form.nombre,  // Backend espera 'titulo'
+        descripcion: form.instrucciones,     // Backend espera 'descripcion', no 'instrucciones'
+        nombre: form.nombre,
+        fechaLimite: form.fechaLimite,
+        horas: normH + addH,
+        minutos: normM,
+        grupos: gruposFinal,
+        id_area: form.id_area,
+        publico: form.publico,
+        intentosMode: form.intentosMode,
+        maxIntentos: form.maxIntentos
+      };
       await Promise.resolve(); // simula petición
       onCreate?.(finalForm);
       onClose?.();
@@ -138,7 +292,7 @@ export default function SimulatorModal({ open, onClose, onCreate, areaTitle, ini
           {step === 1 ? (
             <StepOne form={form} setForm={setForm} />
           ) : (
-            <StepTwo form={form} setForm={setForm} />
+            <StepTwo form={form} setForm={setForm} gruposAsesor={gruposAsesor} gruposLoading={gruposLoading} hasGrupos={hasGrupos} />
           )}
         </div>
 
@@ -262,7 +416,7 @@ function StepOne({ form, setForm }) {
 }
 
 /* Paso 2 – Información del quizt */
-function StepTwo({ form, setForm }) {
+function StepTwo({ form, setForm, gruposAsesor, gruposLoading, hasGrupos = false }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="sm:col-span-2">
@@ -276,13 +430,24 @@ function StepTwo({ form, setForm }) {
       </div>
 
       <div className="min-w-0">
-        <label className="block text-sm font-medium text-slate-700">Fecha límite</label>
+        <label className="block text-sm font-medium text-slate-700">
+          Fecha límite <span className="text-rose-600">*</span>
+        </label>
         <input
           type="date"
+          min={new Date().toISOString().split('T')[0]}
           value={form.fechaLimite}
           onChange={(e) => setForm((f) => ({ ...f, fechaLimite: e.target.value }))}
-          className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+          className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${form.fechaLimite && new Date(form.fechaLimite + 'T00:00:00') < new Date(new Date().setHours(0, 0, 0, 0))
+            ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500'
+            : form.fechaLimite
+              ? 'border-emerald-300 focus:border-violet-500 focus:ring-violet-500'
+              : 'border-slate-200 focus:border-violet-500 focus:ring-violet-500'
+            }`}
         />
+        {form.fechaLimite && new Date(form.fechaLimite + 'T00:00:00') < new Date(new Date().setHours(0, 0, 0, 0)) && (
+          <p className="mt-1 text-xs text-rose-600">La fecha no puede ser menor a la fecha actual.</p>
+        )}
       </div>
 
       <div className="min-w-0">
@@ -290,8 +455,8 @@ function StepTwo({ form, setForm }) {
         <input
           type="number"
           min={0}
-          value={Math.max(0, Number(form.horas||0))}
-          onChange={(e) => setForm((f) => ({ ...f, horas: Math.max(0, Number(e.target.value||0)) }))}
+          value={Math.max(0, Number(form.horas || 0))}
+          onChange={(e) => setForm((f) => ({ ...f, horas: Math.max(0, Number(e.target.value || 0)) }))}
           onBlur={(e) => {
             const hr = Math.max(0, parseInt(e.target.value || 0, 10) || 0);
             const mr = Math.max(0, parseInt(form.minutos || 0, 10) || 0);
@@ -309,8 +474,8 @@ function StepTwo({ form, setForm }) {
           type="number"
           min={0}
           max={599}
-          value={Math.max(0, Number(form.minutos||0))}
-          onChange={(e) => setForm((f) => ({ ...f, minutos: Math.max(0, Number(e.target.value||0)) }))}
+          value={Math.max(0, Number(form.minutos || 0))}
+          onChange={(e) => setForm((f) => ({ ...f, minutos: Math.max(0, Number(e.target.value || 0)) }))}
           onBlur={(e) => {
             const hr = Math.max(0, parseInt(form.horas || 0, 10) || 0);
             const mr = Math.max(0, parseInt(e.target.value || 0, 10) || 0);
@@ -350,30 +515,56 @@ function StepTwo({ form, setForm }) {
             min={1}
             value={form.maxIntentos}
             disabled={form.intentosMode !== 'limited'}
-            onChange={(e) => setForm((f) => ({ ...f, maxIntentos: Math.max(1, Number(e.target.value||1)) }))}
+            onChange={(e) => setForm((f) => ({ ...f, maxIntentos: Math.max(1, Number(e.target.value || 1)) }))}
             className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm disabled:bg-slate-100 disabled:opacity-50 disabled:pointer-events-none"
           />
         </div>
         <p className="mt-1 text-xs leading-snug text-slate-500">Si eliges "Sin límite", el alumno podrá intentar hasta la fecha límite.</p>
       </div>
 
+      {/* Selección de grupos */}
       <div className="sm:col-span-2">
-        <label className="mb-2 block text-sm font-medium text-slate-700">Visibilidad</label>
-        <label className="inline-flex cursor-pointer items-center gap-3">
-          <input
-            type="checkbox"
-            checked={form.publico}
-            onChange={(e) => setForm((f) => ({ ...f, publico: e.target.checked }))}
-            className="peer sr-only"
-          />
-          <span className="rounded-full bg-slate-200 p-1 peer-checked:hidden">
-            <svg className="h-4 w-4 text-slate-600" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3c-4 0-7.333 2.667-9 7 1.667 4.333 5 7 9 7s7.333-2.667 9-7c-1.667-4.333-5-7-9-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/></svg>
-          </span>
-          <span className="hidden rounded-full bg-emerald-100 p-1 text-emerald-600 peer-checked:inline">
-            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M2.5 10s3-4.5 7.5-4.5S17.5 10 17.5 10s-3 4.5-7.5 4.5S2.5 10 2.5 10Zm7.5 2.5A2.5 2.5 0 1 0 7.5 10 2.5 2.5 0 0 0 10 12.5Z"/></svg>
-          </span>
-          <span className="text-sm text-slate-700">{form.publico ? "Público" : "Privado"}</span>
+        <label className="block text-sm font-medium text-slate-700 mb-2">
+          Grupos asignados <span className="text-rose-600">*</span>
         </label>
+        {gruposLoading ? (
+          <div className="text-xs text-slate-500 py-2">Cargando grupos...</div>
+        ) : gruposAsesor.length === 0 ? (
+          <p className="text-xs text-slate-500 py-2">No tienes grupos asignados. Contacta al administrador.</p>
+        ) : (
+          <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 max-h-40 overflow-y-auto">
+            {gruposAsesor.map((grupo) => {
+              const isSelected = Array.isArray(form.grupos) && form.grupos.includes(grupo);
+              return (
+                <label
+                  key={grupo}
+                  className="flex items-center gap-2 cursor-pointer hover:bg-white rounded px-2 py-1.5 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                      const gruposActuales = Array.isArray(form.grupos) ? form.grupos : [];
+                      if (e.target.checked) {
+                        setForm((f) => ({ ...f, grupos: [...gruposActuales, grupo] }));
+                      } else {
+                        setForm((f) => ({ ...f, grupos: gruposActuales.filter(g => g !== grupo) }));
+                      }
+                    }}
+                    className="h-4 w-4 text-violet-600 focus:ring-violet-500 border-slate-300 rounded"
+                  />
+                  <span className="text-sm text-slate-700 font-medium">{grupo.toUpperCase()}</span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+        {!hasGrupos && gruposAsesor.length > 0 && (
+          <p className="mt-1 text-xs text-rose-600">Debes seleccionar al menos un grupo.</p>
+        )}
+        <p className="mt-1 text-[11px] leading-snug text-slate-500">
+          Selecciona los grupos a los que quieres asignar este quiz.
+        </p>
       </div>
     </div>
   );

@@ -124,6 +124,10 @@ export default function EntregasActividad() {
       return alert('Ingresa una calificación');
     }
     const calificacion = Number(calRaw);
+    // Validar que esté en el rango 1-100
+    if (calificacion < 1 || calificacion > 100) {
+      return alert('La calificación debe estar entre 1 y 100');
+    }
     try {
       setSavingId(entregaId);
       const resp = await calificarEntrega(entregaId, { calificacion, comentarios });
@@ -160,104 +164,171 @@ export default function EntregasActividad() {
   );
 
   return (
-  <div className="mx-auto max-w-[95rem] px-3 pb-8 pt-2 sm:px-4 lg:px-6">
-      {/* Header */}
-      <div className="mb-6 flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-white">
-            <ArrowLeft className="w-4 h-4" /> Atrás
-          </button>
-          {areaTitle && <span className="text-sm text-slate-500">Área: {areaTitle}</span>}
+  <div className="mx-auto max-w-[95rem] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      {/* Header mejorado */}
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate(-1)} 
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              <ArrowLeft className="w-4 h-4" /> Volver
+            </button>
+            <div className="h-6 w-px bg-slate-200" />
+            {areaTitle && (
+              <div>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Área</p>
+                <p className="text-sm font-semibold text-slate-700">{areaTitle}</p>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-r from-indigo-50 via-violet-50 to-pink-50 p-5">
+        
+        <div className="relative overflow-hidden rounded-2xl border-2 border-slate-200 bg-gradient-to-r from-indigo-50 via-violet-50 to-pink-50 p-6 sm:p-8 shadow-lg">
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-200/30 rounded-full blur-3xl" />
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Entregas de la actividad</h2>
-          <p className="text-sm text-slate-600 mt-1">Revisa, califica y agrega comentarios a las entregas de los estudiantes.</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Badge className="bg-slate-900 text-slate-50 ring-slate-700/50">Asignados: {totalAsignados}</Badge>
-            <Badge className="bg-indigo-600 text-white ring-indigo-600/40">Entregadas: {totalEntregadas}</Badge>
-            <Badge className="bg-emerald-600 text-white ring-emerald-600/40">Revisadas: {totalRevisadas}</Badge>
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-violet-200/30 rounded-full blur-3xl" />
+          <div className="relative z-10">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+              Entregas de la actividad
+            </h1>
+            <p className="text-sm sm:text-base text-slate-600 mb-6">Revisa, califica y agrega comentarios a las entregas de los estudiantes.</p>
+            <div className="flex flex-wrap gap-3">
+              <div className="rounded-xl border-2 border-slate-200 bg-white/80 backdrop-blur-sm px-4 py-3 shadow-sm">
+                <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Asignados</div>
+                <div className="text-2xl font-bold text-slate-900">{totalAsignados}</div>
+              </div>
+              <div className="rounded-xl border-2 border-indigo-200 bg-indigo-50/80 backdrop-blur-sm px-4 py-3 shadow-sm">
+                <div className="text-xs font-medium text-indigo-600 uppercase tracking-wide mb-1">Entregadas</div>
+                <div className="text-2xl font-bold text-indigo-700">{totalEntregadas}</div>
+              </div>
+              <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50/80 backdrop-blur-sm px-4 py-3 shadow-sm">
+                <div className="text-xs font-medium text-emerald-600 uppercase tracking-wide mb-1">Revisadas</div>
+                <div className="text-2xl font-bold text-emerald-700">{totalRevisadas}</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {error && <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
+      {error && (
+        <div className="mb-4 rounded-xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-4 py-3 flex items-start gap-3 shadow-sm">
+          <span className="text-rose-600 font-bold">⚠</span>
+          <p className="text-sm font-medium text-rose-800">{error}</p>
+        </div>
+      )}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-xl">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b bg-slate-50/70 backdrop-blur supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
-              <th className="px-4 py-3 text-slate-500 text-xs uppercase tracking-wide">Estudiante</th>
-              <th className="px-4 py-3 text-slate-500 text-xs uppercase tracking-wide">Estado</th>
-              <th className="px-4 py-3 text-slate-500 text-xs uppercase tracking-wide">Entregado el</th>
-              <th className="px-4 py-3 text-slate-500 text-xs uppercase tracking-wide">Archivo(s)</th>
-              <th className="px-4 py-3 text-slate-500 text-xs uppercase tracking-wide">Calificación</th>
-              <th className="px-4 py-3 text-right text-slate-500 text-xs uppercase tracking-wide">Acciones</th>
+            <tr className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-slate-50 supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
+              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Estudiante</th>
+              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Estado</th>
+              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Entregado el</th>
+              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Archivo(s)</th>
+              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Calificación</th>
+              <th className="px-6 py-4 text-right text-slate-600 text-xs font-bold uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {loading && Array.from({ length: 6 }).map((_, i) => (
-              <tr key={`sk-${i}`} className="border-b last:border-0">
-                <td className="px-4 py-3"><div className="h-3 w-40 bg-slate-200/70 rounded animate-pulse"/></td>
-                <td className="px-4 py-3"><div className="h-6 w-16 bg-slate-200/70 rounded-full animate-pulse"/></td>
-                <td className="px-4 py-3"><div className="h-3 w-36 bg-slate-200/70 rounded animate-pulse"/></td>
-                <td className="px-4 py-3"><div className="h-8 w-28 bg-slate-200/70 rounded-lg animate-pulse"/></td>
-                <td className="px-4 py-3"><div className="h-8 w-64 bg-slate-200/70 rounded-lg animate-pulse"/></td>
-                <td className="px-4 py-3"><div className="h-8 w-24 ml-auto bg-slate-200/70 rounded-lg animate-pulse"/></td>
+              <tr key={`sk-${i}`} className="border-b border-slate-100 last:border-0">
+                <td className="px-6 py-4"><div className="h-5 w-48 bg-slate-200/70 rounded-lg animate-pulse"/></td>
+                <td className="px-6 py-4"><div className="h-7 w-24 bg-slate-200/70 rounded-full animate-pulse"/></td>
+                <td className="px-6 py-4"><div className="h-4 w-36 bg-slate-200/70 rounded-lg animate-pulse"/></td>
+                <td className="px-6 py-4"><div className="h-10 w-32 bg-slate-200/70 rounded-xl animate-pulse"/></td>
+                <td className="px-6 py-4"><div className="h-10 w-80 bg-slate-200/70 rounded-xl animate-pulse"/></td>
+                <td className="px-6 py-4"><div className="h-10 w-28 ml-auto bg-slate-200/70 rounded-xl animate-pulse"/></td>
               </tr>
             ))}
             {!loading && rows.map(r => (
-              <tr key={r.id} className="border-b last:border-0 odd:bg-slate-50/30 hover:bg-indigo-50/30 transition-colors">
-                <td className="px-4 py-3">
-                  <span className="font-medium text-slate-800">{r.estudiante_nombre || r.id_estudiante}</span>
+              <tr key={r.id} className="border-b border-slate-100 last:border-0 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/30 transition-all duration-200 group">
+                <td className="px-6 py-4">
+                  <span className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">{r.estudiante_nombre || r.id_estudiante}</span>
                 </td>
-                <td className="px-4 py-3">
-                  <Badge className={badgeEstado(r.estado)}>{(r.estado || 'pendiente').replace('_',' ')}</Badge>
+                <td className="px-6 py-4">
+                  <Badge className={badgeEstado(r.estado)}>
+                    {(r.estado || 'pendiente').replace('_',' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </Badge>
                 </td>
-                <td className="px-4 py-3 text-slate-700">{formatDateTime(r.entregada_at)}</td>
-                <td className="px-4 py-3">
-                  {r.entrega_id ? (
-                    <button onClick={() => openFiles(r.entrega_id)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-200">
-                      <FileText className="w-4 h-4" /> Ver archivo{fileCounts[r.entrega_id] !== undefined ? ` (${fileCounts[r.entrega_id]})` : ''}
-                    </button>
-                  ) : <span className="text-slate-400">—</span>}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      placeholder="0-100"
-                      className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                      value={grading[r.id]?.calificacion ?? (r.calificacion ?? '')}
-                      onChange={(e) => setGrading(prev => ({ ...prev, [r.id]: { ...prev[r.id], calificacion: e.target.value } }))}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Comentarios"
-                      className="w-56 rounded-lg border border-slate-300 px-2 py-1 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                      value={grading[r.id]?.comentarios ?? ''}
-                      onChange={(e) => setGrading(prev => ({ ...prev, [r.id]: { ...prev[r.id], comentarios: e.target.value } }))}
-                    />
+                <td className="px-6 py-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <span className="text-sm font-medium text-slate-700">{formatDateTime(r.entregada_at)}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-6 py-4">
+                  {r.entrega_id ? (
+                    <button 
+                      onClick={() => openFiles(r.entrega_id)}
+                      className="inline-flex items-center gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
+                    >
+                      <FileText className="w-4 h-4" /> 
+                      Ver archivo{fileCounts[r.entrega_id] !== undefined ? ` (${fileCounts[r.entrega_id]})` : ''}
+                    </button>
+                  ) : (
+                    <span className="text-slate-400 font-medium">—</span>
+                  )}
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        placeholder="Calificación"
+                        className="w-24 rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                        value={grading[r.id]?.calificacion ?? (r.calificacion ?? '')}
+                        onChange={(e) => setGrading(prev => ({ ...prev, [r.id]: { ...prev[r.id], calificacion: e.target.value } }))}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-[200px]">
+                      <input
+                        type="text"
+                        placeholder="Escribe comentarios aquí..."
+                        className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                        value={grading[r.id]?.comentarios ?? ''}
+                        onChange={(e) => setGrading(prev => ({ ...prev, [r.id]: { ...prev[r.id], comentarios: e.target.value } }))}
+                      />
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-right">
                   <button
                     onClick={() => onGrade(r.entrega_id || r.id)}
                     disabled={!r.entrega_id || savingId === (r.entrega_id || r.id)}
-                    className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition
-                      ${r.entrega_id ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}
+                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all transform hover:scale-105 active:scale-95
+                      ${r.entrega_id 
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl' 
+                        : 'bg-slate-200 text-slate-500 cursor-not-allowed hover:scale-100'
+                      }
                       ${savingId === (r.entrega_id || r.id) ? 'opacity-90' : ''}`}
                   >
-                    {savingId === (r.entrega_id || r.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {savingId === (r.entrega_id || r.id) ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
                     Guardar
                   </button>
                 </td>
               </tr>
             ))}
-            {!loading && rows.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-500">Sin entregas.</td></tr>}
+            {!loading && rows.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                      <FileText className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-slate-700">No hay entregas</p>
+                      <p className="text-sm text-slate-500 mt-1">Los estudiantes aún no han entregado esta actividad</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

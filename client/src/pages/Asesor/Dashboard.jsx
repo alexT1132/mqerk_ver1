@@ -18,12 +18,12 @@ export default function Layout({ children }) {
         onLogout={() => console.log("logout")}
       />
 
-      {/* Contenido: full-width */}
-      <div className="w-full">
+      {/* Contenido: compensado para topbar y sidebar fijos */}
+      <div className="w-full pt-14 md:pl-24">
         <div className="flex w-full">
           <SidebarIconOnly active="inicio" onLogout={() => console.log("logout")} />
 
-          <main className="flex-1 w-full">
+          <main className="flex-1 w-full min-h-[calc(100vh-3.5rem)]">
             <Dashboard />
           </main>
         </div>

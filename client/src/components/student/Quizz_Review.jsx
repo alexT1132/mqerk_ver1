@@ -245,7 +245,8 @@ export default function Quizz_Review() {
       setTimeout(async () => {
         try { await handleEnviar(); } 
         catch (err) { console.error("Fallo el envío automático por cambio de pestaña:", err); } 
-        finally { setTimeout(() => { navigate('/alumno/actividades'); }, 3000); }
+        // El cierre automático se maneja en el useEffect de finalizado
+        // No necesitamos hacer nada aquí porque handleEnviar() ya marca finalizado como true
       }, 5000); 
     }
   }, [tabAwayCount, navigate, showFinalWarning]);
@@ -372,6 +373,22 @@ export default function Quizz_Review() {
     setRespuestas(prev => ({ ...prev, [idPregunta]: idOpcion }));
   };
 
+  // Manejar respuesta corta (texto libre)
+  const handleTextAnswer = (idPregunta, valorTexto) => {
+    if (showFinalWarning || showWarningModal || isWindowTooSmall) return;
+    // Acumular tiempo desde la última interacción a la pregunta anterior
+    const now = Date.now();
+    const t = timingRef.current;
+    if (t.lastTs != null && t.lastQid != null) {
+      const delta = Math.max(0, now - t.lastTs);
+      const prev = t.buckets.get(t.lastQid) || 0;
+      t.buckets.set(t.lastQid, prev + delta);
+    }
+    t.lastTs = now;
+    t.lastQid = idPregunta;
+    setRespuestas(prev => ({ ...prev, [idPregunta]: { valor_texto: valorTexto } }));
+  };
+
   const handleEnviar = async () => {
     if (enviando) return;
     setEnviando(true); 
@@ -386,11 +403,26 @@ export default function Quizz_Review() {
         timingRef.current.lastTs = now;
       }
       // Construir payload incluyendo tiempo_ms por pregunta (si disponible)
-      const payload = Object.entries(respuestas).map(([id_pregunta, id_opcion]) => ({
-        id_pregunta: Number(id_pregunta),
-        id_opcion: Number(id_opcion),
-        tiempo_ms: Math.max(0, Math.round(timingRef.current.buckets.get(Number(id_pregunta)) || 0)) || undefined,
-      }));
+      // Soporta tanto opciones (id_opcion) como respuestas cortas (valor_texto)
+      const payload = Object.entries(respuestas).map(([id_pregunta, respuesta]) => {
+        const tiempo = Math.max(0, Math.round(timingRef.current.buckets.get(Number(id_pregunta)) || 0)) || undefined;
+        // Si la respuesta es un objeto con valor_texto, es una respuesta corta
+        if (typeof respuesta === 'object' && respuesta !== null && respuesta.valor_texto !== undefined) {
+          return {
+            id_pregunta: Number(id_pregunta),
+            id_opcion: null,
+            valor_texto: respuesta.valor_texto || '',
+            tiempo_ms: tiempo
+          };
+        }
+        // Si no, es una opción seleccionada
+        return {
+          id_pregunta: Number(id_pregunta),
+          id_opcion: Number(respuesta),
+          valor_texto: null,
+          tiempo_ms: tiempo
+        };
+      });
       if (sesionId) {
         if (payload.length) await enviarRespuestasSesion(sesionId, payload);
         const finishedAt = Date.now();
@@ -434,7 +466,16 @@ export default function Quizz_Review() {
     return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   };
 
-  const answeredCount = Object.keys(respuestas).length;
+  // Contar preguntas respondidas (incluyendo respuestas cortas que pueden estar vacías)
+  const answeredCount = Object.keys(respuestas).filter(id => {
+    const respuesta = respuestas[id];
+    // Si es un objeto con valor_texto, contar solo si tiene texto
+    if (typeof respuesta === 'object' && respuesta !== null && respuesta.valor_texto !== undefined) {
+      return String(respuesta.valor_texto || '').trim().length > 0;
+    }
+    // Si es una opción seleccionada (número), contar
+    return respuesta !== null && respuesta !== undefined;
+  }).length;
   const totalQuestions = preguntas.length;
   const timePercent = useMemo(() => {
     if (!timeLimitSec || remainingSec == null) return null;
@@ -465,6 +506,80 @@ export default function Quizz_Review() {
     navigate(DEFAULT_RETURN_PATH, { replace: true });
   };
 
+  // Cerrar automáticamente la pestaña cuando el quiz termina
+  useEffect(() => {
+    if (!finalizado) return;
+    
+    // Limpiar localStorage
+    try { localStorage.removeItem(`quiz_open_${quizId}`); } catch {}
+    
+    // Función para intentar cerrar la pestaña de manera más agresiva
+    const attemptClose = () => {
+      try {
+        // Notificar a la ventana padre si existe
+        if (window.opener && !window.opener.closed) {
+          try { 
+            window.opener.focus(); 
+            window.opener.postMessage({ 
+              type: forcedSubmitMessage ? 'QUIZ_CLOSED' : 'QUIZ_FINISHED', 
+              quizId, 
+              sesionId 
+            }, window.location.origin); 
+          } catch {}
+        }
+        
+        // Intentar cerrar la pestaña - solo funciona si fue abierta con window.open()
+        const canClose = window.opener !== null || window.history.length <= 1;
+        if (canClose) {
+          try {
+            window.close();
+            // Si window.close() no funciona inmediatamente, usar location.href como alternativa
+            setTimeout(() => {
+              if (!document.hidden) {
+                // La pestaña aún está visible, usar fallback
+                window.location.href = 'about:blank';
+                setTimeout(() => {
+                  try { navigate(DEFAULT_RETURN_PATH, { replace: true }); }
+                  catch { try { window.location.href = DEFAULT_RETURN_PATH; } catch {} }
+                }, 100);
+              }
+            }, 100);
+          } catch (e) {
+            console.log('[Quiz] window.close() falló:', e.message);
+            // Fallback inmediato si window.close() falla
+            window.location.href = DEFAULT_RETURN_PATH;
+          }
+        } else {
+          // No se puede cerrar porque no fue abierta por script, redirigir directamente
+          window.location.href = DEFAULT_RETURN_PATH;
+        }
+      } catch (e) {
+        console.log('[Quiz] Error al cerrar pestaña:', e.message);
+        // Fallback final: redirigir
+        try { navigate(DEFAULT_RETURN_PATH, { replace: true }); }
+        catch { try { window.location.href = DEFAULT_RETURN_PATH; } catch {} }
+      }
+    };
+    
+    // Si fue forzado por seguridad o timeout, cerrar más rápido
+    if (forcedSubmitMessage || autoTimeout) {
+      const delay = forcedSubmitMessage ? 2500 : 4000; // 2.5s si fue forzado, 4s si fue timeout
+      const closeTimer = setTimeout(attemptClose, delay);
+      
+      return () => {
+        clearTimeout(closeTimer);
+      };
+    }
+    // Si terminó normalmente, dar tiempo para ver el resultado pero cerrar automáticamente
+    else {
+      const closeTimer = setTimeout(attemptClose, 8000); // 8 segundos después de terminar normalmente
+      
+      return () => {
+        clearTimeout(closeTimer);
+      };
+    }
+  }, [finalizado, forcedSubmitMessage, autoTimeout, quizId, sesionId, navigate]);
+
   // Permisos: solicitud rápida si hay 403 por área
   const handleRequestAccess = async () => {
     // Intentamos inferir el área desde la ruta de retorno (?areaId=)
@@ -482,37 +597,37 @@ export default function Quizz_Review() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-    <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg shadow-sm">
-      <div className="w-full px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
+    <div className="min-h-screen bg-white font-sans">
+    <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm mt-12 sm:mt-16">
+      <div className="w-full px-3 sm:px-6 lg:px-8 py-1 sm:py-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 min-w-0">
-                <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 truncate">{quizTitle}</h1>
+                <h1 className="text-xs sm:text-sm md:text-base font-bold text-gray-900 truncate">{quizTitle}</h1>
                 {/* Contador compacto para móviles */}
-                <span className="sm:hidden text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium whitespace-nowrap">{answeredCount}/{totalQuestions}</span>
+                <span className="sm:hidden text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium whitespace-nowrap">{answeredCount}/{totalQuestions}</span>
               </div>
-              <p className="text-xs text-gray-500 hidden sm:block">Modo seguro activado. Concéntrate en tus respuestas.</p>
+              <p className="text-[9px] sm:text-[10px] text-gray-500 hidden sm:block mt-0.5 leading-tight">Modo seguro activado. Concéntrate en tus respuestas.</p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center text-sm text-gray-700 bg-gray-100 px-3 py-1.5 rounded-full font-medium">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              <div className="hidden sm:flex items-center text-[10px] text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full font-medium">
                 {answeredCount}/{totalQuestions}
               </div>
-              <div className={`flex items-center gap-2 text-sm font-bold px-3 py-1.5 rounded-full border ${timeLimitSec ? (remainingSec!=null && remainingSec<=60 ? 'border-red-300 bg-red-50 text-red-700 animate-pulse' : 'border-gray-200 bg-white text-gray-800') : 'border-gray-200 bg-gray-100 text-gray-600'}`}>
-                <Timer className="w-4 h-4" />
-                <span>{timeLimitSec ? formatTime(remainingSec) : 'Sin límite'}</span>
+              <div className={`flex items-center gap-1 text-xs sm:text-sm font-bold px-2 py-0.5 rounded-full border ${timeLimitSec ? (remainingSec!=null && remainingSec<=60 ? 'border-red-300 bg-red-50 text-red-700 animate-pulse' : 'border-gray-200 bg-white text-gray-800') : 'border-gray-200 bg-gray-100 text-gray-600'}`}>
+                <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="whitespace-nowrap">{timeLimitSec ? formatTime(remainingSec) : 'Sin límite'}</span>
               </div>
             </div>
           </div>
         </div>
         {timePercent != null && (
-          <div className="w-full h-1 bg-gray-200">
-            <div className={`h-1 rounded-r-full transition-all duration-500 ${timePercent <= 15 ? 'bg-red-500' : timePercent <= 40 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${timePercent}%` }} />
+          <div className="w-full h-0.5 bg-gray-200">
+            <div className={`h-0.5 rounded-r-full transition-all duration-500 ${timePercent <= 15 ? 'bg-red-500' : timePercent <= 40 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${timePercent}%` }} />
           </div>
         )}
       </div>
 
-  <div className="w-full px-3 sm:px-6 lg:px-10 py-4 sm:py-8">
+  <div className="w-full px-3 sm:px-6 lg:px-10 pt-12 sm:pt-16 pb-4 sm:pb-8">
         {loading && (
           <div className="py-24 text-center text-gray-500 flex flex-col items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
@@ -546,23 +661,71 @@ export default function Quizz_Review() {
                     <div className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[12px] sm:text-sm font-bold ring-3 sm:ring-4 ring-indigo-100">{idx + 1}</div>
                     <div className="w-full">
                       <p className="font-semibold text-gray-900 mb-3 sm:mb-4 text-[15px] sm:text-lg">{p.enunciado || p.pregunta || `Pregunta ${idx+1}`}</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
-                        {(p.opciones || []).map(op => {
-                          const checked = respuestas[p.id] === op.id;
-                          return (
-                            <button key={op.id} onClick={() => handleSelect(p.id, op.id)} aria-pressed={checked}
-                              className={`group text-left border rounded-lg p-3 sm:p-3.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 ${checked ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-200' : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'}`}
-                            >
-                              <div className="flex items-start gap-3">
-                                <span aria-hidden="true" className={`inline-flex flex-none shrink-0 grow-0 h-5 w-5 min-w-[20px] min-h-[20px] items-center justify-center rounded-full border-2 transition-colors duration-200 ${checked ? 'border-indigo-600 bg-indigo-600' : 'border-gray-400 bg-white group-hover:border-indigo-500'}`}>
-                                  {checked && <CheckIcon />}
-                                </span>
-                                <span className="text-[14px] sm:text-sm text-gray-800 leading-[1.35] break-words">{op.texto || op.opcion || `Opción ${op.id}`}</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
+                      
+                      {/* Opción múltiple */}
+                      {p.tipo === 'opcion_multiple' && (p.opciones || []).length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
+                          {(p.opciones || []).map(op => {
+                            const checked = respuestas[p.id] === op.id;
+                            return (
+                              <button key={op.id} onClick={() => handleSelect(p.id, op.id)} aria-pressed={checked}
+                                className={`group text-left border rounded-lg p-3 sm:p-3.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 ${checked ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-200' : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'}`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <span aria-hidden="true" className={`inline-flex flex-none shrink-0 grow-0 h-5 w-5 min-w-[20px] min-h-[20px] items-center justify-center rounded-full border-2 transition-colors duration-200 ${checked ? 'border-indigo-600 bg-indigo-600' : 'border-gray-400 bg-white group-hover:border-indigo-500'}`}>
+                                    {checked && <CheckIcon />}
+                                  </span>
+                                  <span className="text-[14px] sm:text-sm text-gray-800 leading-[1.35] break-words">{op.texto || op.opcion || `Opción ${op.id}`}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Verdadero/Falso */}
+                      {p.tipo === 'verdadero_falso' && (p.opciones || []).length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {(p.opciones || []).map(op => {
+                            const checked = respuestas[p.id] === op.id;
+                            return (
+                              <button key={op.id} onClick={() => handleSelect(p.id, op.id)} aria-pressed={checked}
+                                className={`group text-left border-2 rounded-xl p-4 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 ${checked ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-200' : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span aria-hidden="true" className={`inline-flex flex-none shrink-0 grow-0 h-6 w-6 min-w-[24px] min-h-[24px] items-center justify-center rounded-full border-2 transition-colors duration-200 ${checked ? 'border-indigo-600 bg-indigo-600' : 'border-gray-400 bg-white group-hover:border-indigo-500'}`}>
+                                    {checked && <CheckIcon />}
+                                  </span>
+                                  <span className="text-base sm:text-lg font-semibold text-gray-800">{op.texto || op.opcion || `Opción ${op.id}`}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Respuesta corta */}
+                      {p.tipo === 'respuesta_corta' && (
+                        <div>
+                          <textarea
+                            value={typeof respuestas[p.id] === 'object' && respuestas[p.id]?.valor_texto !== undefined 
+                              ? respuestas[p.id].valor_texto 
+                              : (respuestas[p.id] || '')}
+                            onChange={(e) => handleTextAnswer(p.id, e.target.value)}
+                            placeholder="Escribe tu respuesta aquí..."
+                            rows={4}
+                            className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-sm sm:text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-colors resize-y"
+                          />
+                          <p className="mt-2 text-xs text-gray-500">Escribe tu respuesta en el cuadro de texto arriba.</p>
+                        </div>
+                      )}
+
+                      {/* Fallback: Si el tipo no se reconoce o no hay opciones, mostrar mensaje */}
+                      {p.tipo !== 'opcion_multiple' && p.tipo !== 'verdadero_falso' && p.tipo !== 'respuesta_corta' && (!p.opciones || p.opciones.length === 0) && (
+                        <div className="text-sm text-gray-500 italic p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          Tipo de pregunta no soportado: {p.tipo || 'desconocido'}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

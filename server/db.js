@@ -22,11 +22,39 @@ const db = mysql.createPool({
 });
 
 export async function pingDb() {
-  const conn = await db.getConnection();
+  let conn;
   try {
-    await conn.query('SELECT 1');
+    // Timeout de 5 segundos para obtener conexión
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('DB connection timeout')), 5000)
+    );
+    
+    conn = await Promise.race([
+      db.getConnection(),
+      timeoutPromise
+    ]);
+    
+    // Timeout de 3 segundos para la query
+    const queryTimeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('DB query timeout')), 3000)
+    );
+    
+    await Promise.race([
+      conn.query('SELECT 1'),
+      queryTimeoutPromise
+    ]);
+  } catch (e) {
+    // Re-lanzar el error para que el health controller lo maneje
+    throw e;
   } finally {
-    conn.release();
+    // Asegurar que la conexión se libera siempre
+    if (conn) {
+      try {
+        conn.release();
+      } catch (releaseErr) {
+        console.error('[pingDb] Error releasing connection:', releaseErr?.message || releaseErr);
+      }
+    }
   }
 }
 

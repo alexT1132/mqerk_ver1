@@ -33,12 +33,12 @@ function CategoryButton({ label, isActive, onClick }) {
             onClick={onClick}
             className={`
                 relative overflow-hidden 
-                px-1 py-1.5 xs:px-2 xs:py-2 sm:px-3 sm:py-3 md:px-4 md:py-3
+                px-1 py-1 xs:px-1.5 xs:py-1.5 sm:px-2 sm:py-2 md:px-3 md:py-2
                 rounded-md xs:rounded-lg sm:rounded-xl 
-                font-bold text-[9px] xs:text-[10px] sm:text-xs md:text-sm lg:text-base
+                font-bold text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs lg:text-sm
                 transition-all duration-300 ease-out 
-                w-full min-w-[70px] xs:min-w-[85px] sm:min-w-[100px] max-w-[120px] xs:max-w-[140px] sm:max-w-[160px]
-                h-10 xs:h-12 sm:h-14 md:h-16
+                w-full min-w-[60px] xs:min-w-[70px] sm:min-w-[80px] max-w-[100px] xs:max-w-[110px] sm:max-w-[130px]
+                h-8 xs:h-10 sm:h-12 md:h-14
                 flex items-center justify-center
                 border-2 transform hover:scale-105 hover:shadow-lg
                 ${isActive
@@ -1005,30 +1005,30 @@ export function ComprobanteRecibo() {
     // ==================== RENDER ====================
 
     return (
-        <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
+        <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white overflow-x-hidden">
             {showLoadingScreen && (
                 <LoadingOverlay message="Cargando validación de recibos..." />
             )}
             {/* ==================== HEADER Y FILTROS ==================== */}
-            <div className="pt-2 xs:pt-4 sm:pt-6 pb-2 xs:pb-3 sm:pb-4 px-2 xs:px-4 sm:px-6">
-                <div className="w-full max-w-7xl mx-auto">
+            <div className="pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-2 xs:pb-2 sm:pb-3 w-full max-w-full mx-auto">
+                <div className="w-full max-w-full mx-auto px-2 xs:px-3 sm:px-4">
                     {/* Título principal */}
-                    <div className="text-center mb-4 xs:mb-6 sm:mb-8">
-                        <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-1 xs:mb-2 px-2">
+                    <div className="text-center mb-2 xs:mb-3 sm:mb-4">
+                        <h1 className="text-base xs:text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-1">
                             Seleccionar Curso para Comprobantes de Pago
                         </h1>
-                        <p className="text-xs xs:text-sm sm:text-base text-gray-600 px-4">
+                        <p className="text-xs xs:text-sm text-gray-600">
                             Selecciona el curso para gestionar los comprobantes de pago
                         </p>
                     </div>
 
                     {/* Selector de cursos */}
-                    <div className="mb-4 xs:mb-6 sm:mb-8">
-                        <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-6 shadow-lg border border-gray-200">
-                            <h2 className="text-base xs:text-lg sm:text-xl font-bold text-gray-800 mb-3 xs:mb-4 sm:mb-6 text-center px-2">
+                    <div className="mb-2 xs:mb-3 sm:mb-4">
+                        <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl sm:rounded-2xl p-2 xs:p-3 sm:p-4 shadow-lg border border-gray-200">
+                            <h2 className="text-sm xs:text-base sm:text-lg font-bold text-gray-800 mb-2 xs:mb-3 sm:mb-4 text-center">
                                 Cursos Disponibles
                             </h2>
-                            <div className="grid grid-cols-3 xs:grid-cols-3 sm:grid-cols-6 md:grid-cols-6 gap-1 xs:gap-1.5 sm:gap-2 md:gap-3 place-items-center">
+                            <div className="grid grid-cols-3 xs:grid-cols-3 sm:grid-cols-6 md:grid-cols-6 gap-1 xs:gap-1.5 sm:gap-2 justify-items-center">
                                 {cursosDisponibles.map((cat) => (
                                     <CategoryButton
                                         key={cat}
@@ -1043,12 +1043,12 @@ export function ComprobanteRecibo() {
 
                     {/* Selector de grupos/turnos dinámico */}
                     {activeCategory && (
-                        <div className="mb-3 xs:mb-4 sm:mb-6">
-                            <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-6 shadow-lg border border-gray-200">
-                                <h2 className="text-base xs:text-lg sm:text-xl font-bold text-gray-800 mb-3 xs:mb-4 sm:mb-6 text-center px-2">
+                        <div className="mb-2 xs:mb-2 sm:mb-3">
+                            <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl sm:rounded-2xl p-2 xs:p-3 sm:p-4 shadow-lg border border-gray-200">
+                                <h2 className="text-sm xs:text-base sm:text-lg font-bold text-gray-800 mb-2 xs:mb-3 sm:mb-4 text-center">
                                     Grupos Disponibles para {activeCategory}
                                 </h2>
-                                <div className="flex flex-wrap gap-1.5 xs:gap-2 sm:gap-3 justify-center items-center max-w-4xl mx-auto">
+                                <div className="flex flex-wrap gap-1.5 xs:gap-2 sm:gap-3 justify-center items-center w-full max-w-full mx-auto">
                                     {Array.isArray(gruposObtenidos) ? (
                                         gruposObtenidos.map((data, index) => (
                                             <VespertinoButton
@@ -1104,7 +1104,7 @@ export function ComprobanteRecibo() {
 
                     {/* Información del grupo seleccionado */}
                     {activeCategory && activeVespertino && (
-                        <div className="mb-4 xs:mb-6">
+                        <div className="mb-3 xs:mb-4 sm:mb-5">
                             <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 xs:px-6 sm:px-8 py-4 xs:py-5 sm:py-6 rounded-lg xs:rounded-xl sm:rounded-2xl shadow-lg">
                                 <div className="text-center">
                                     <p className="text-sm xs:text-base sm:text-lg md:text-xl font-semibold mb-1 xs:mb-2">
@@ -1120,7 +1120,7 @@ export function ComprobanteRecibo() {
 
                     {/* Navegación entre vistas */}
                     {activeCategory && activeVespertino && (
-                        <div className="mb-4 xs:mb-6">
+                        <div className="mb-3 xs:mb-4 sm:mb-5">
                             <div className="bg-white rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-6 shadow-lg border border-gray-200">
                                 <div className="flex flex-wrap gap-2 xs:gap-3 justify-center">
                                     <button
@@ -1171,8 +1171,8 @@ export function ComprobanteRecibo() {
 
             {/* ==================== TABLA DE COMPROBANTES ==================== */}
             {showContent && (
-                <div className="flex-1 px-2 xs:px-4 sm:px-6 pb-4 xs:pb-6">
-                    <div className="w-full max-w-7xl mx-auto">
+                <div className="flex-1 px-2 xs:px-4 sm:px-6 pb-4 xs:pb-6 w-full max-w-full overflow-x-hidden">
+                    <div className="w-full max-w-full mx-auto">
                         <div className="bg-white rounded-lg xs:rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
                             <div className="px-4 xs:px-6 py-4 bg-gray-50 border-b border-gray-200">
                                 <h3 className="text-lg font-semibold text-gray-800">{getTituloVista()}</h3>
@@ -1181,7 +1181,7 @@ export function ComprobanteRecibo() {
                             <div className="overflow-x-auto">
                                 {vistaActual === 'aprobados' && (
                                     <div className="px-4 xs:px-6 pt-4 pb-2 bg-white border-b border-gray-200">
-                                        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                        <div className="w-full max-w-full mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                             <div className="flex-1">
                                                 <div className="relative">
                                                     <input

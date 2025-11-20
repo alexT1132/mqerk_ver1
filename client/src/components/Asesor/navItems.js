@@ -15,6 +15,8 @@ import {
   CreditCard,
   Settings,
   LogOut,
+  CheckSquare,     // para "Asistencias"
+  FileText,        // para "Documentación"
 } from "lucide-react";
 
 export const NAV_ITEMS = [
@@ -25,8 +27,9 @@ export const NAV_ITEMS = [
   { key: "simuladores",          label: "Simuladores",          icon: Joystick,      href: "/asesor/simuladores" },
   { key: "actividades",          label: "Actividades",          icon: ListTodo,      href: "/asesor/actividades" },
   { key: "feedback",             label: "Feedback",             icon: MessageCircle, href: "/asesor/feedback" },
-  { key: "correo",               label: "Correo",               icon: Mail,          href: "/asesor/correo" },
+  { key: "documentacion",        label: "Documentación",         icon: FileText,      href: "/asesor/documentacion" },
   { key: "calendario",           label: "Calendario",           icon: Calendar,      href: "/asesor/agenda" },
+  { key: "asistencias",          label: "Asistencias",          icon: CheckSquare,   href: "/asesor/registro-asistencia" },
   { key: "reportes",             label: "Reportes",             icon: BarChart3,     href: "/asesor/reportes" },
   { key: "recursos-educativos",  label: "Recursos educativos",  icon: GraduationCap, href: "/asesor/recursos_educativos" },
   { key: "mis-pagos",            label: "Mis pagos",            icon: CreditCard,    href: "/asesor/mis-pagos" },

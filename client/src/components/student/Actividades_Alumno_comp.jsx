@@ -18,18 +18,18 @@ import { useAuth } from '../../context/AuthContext';
 import { useStudent } from '../../context/StudentContext'; // BACKEND: Control de acceso a módulos
 import { useStudentNotifications } from '../../context/StudentNotificationContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Upload, 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  Download, 
-  ArrowLeft, 
-  BookOpen, 
-  FileText, 
-  Brain, 
-  ChevronDown, 
-  Star, 
+import {
+  Upload,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Download,
+  ArrowLeft,
+  BookOpen,
+  FileText,
+  Brain,
+  ChevronDown,
+  Star,
   Calendar,
   Trophy,
   Target,
@@ -76,14 +76,14 @@ export function Actividades_Alumno_comp() {
   // BACKEND: Contexto para control de acceso a módulos específicos
   const navigate = useNavigate();
   const location = useLocation();
-  const { 
-    allowedActivityAreas, 
-    activityRequests, 
-    addAllowedActivityArea, 
+  const {
+    allowedActivityAreas,
+    activityRequests,
+    addAllowedActivityArea,
     requestNewActivityAreaAccess,
     currentCourse,
   } = useStudent();
-  
+
   // BACKEND: Determinar si el estudiante ya tiene al menos un área permitida
   const hasInitialArea = allowedActivityAreas.length > 0;
 
@@ -99,10 +99,10 @@ export function Actividades_Alumno_comp() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
 
-  
+
   const [areasData, setAreasData] = useState([]); // desde API (generales)
   const [modulosEspecificos, setModulosEspecificos] = useState([]); // desde API (modulos)
-  
+
   // Paginación reutilizable (para quizzes): 10 por página
   const [quizPage, setQuizPage] = useState(1);
   const QUIZ_PAGE_SIZE = 10;
@@ -110,109 +110,109 @@ export function Actividades_Alumno_comp() {
   useEffect(() => { setQuizPage(1); }, [selectedMonth]);
 
   // Nota: sorted/paged se calculan después de definir filteredActividades
-/////////////////////////////////////////////////////7
+  /////////////////////////////////////////////////////7
 
- // Deep-linking: si venimos con una URL, este efecto ajusta el estado para mostrar la vista correcta.
-useEffect(() => {
-  try {
-    const params = new URLSearchParams(location.search || '');
-    const level = params.get('level');
-    const type = params.get('type');
-    const areaIdParam = params.get('areaId');
-    const wantsHistorial = params.get('historial') === '1';
-    const quizIdParam = params.get('quizId');
+  // Deep-linking: si venimos con una URL, este efecto ajusta el estado para mostrar la vista correcta.
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search || '');
+      const level = params.get('level');
+      const type = params.get('type');
+      const areaIdParam = params.get('areaId');
+      const wantsHistorial = params.get('historial') === '1';
+      const quizIdParam = params.get('quizId');
 
-    // Si piden explícitamente volver al selector (buttons) y hay área, restaurar a ese nivel
-    if (level === 'buttons' && areaIdParam) {
-      const areaId = Number(areaIdParam);
-      if (Number.isFinite(areaId)) {
-        // Detectar por pertenencia al catálogo de módulos (más robusto que umbral de ID)
-        const modulo = modulosEspecificos.find(m => m.id === areaId);
-        if (modulo) {
-          setSelectedArea({ id: 5, titulo: 'Módulos' });
-          setSelectedModulo(modulo);
-        } else {
-          const area = areasData.find(a => a.id === areaId);
-          if (area) {
-            setSelectedArea(area);
-            setSelectedModulo(null);
-          }
-        }
-        setSelectedType(null);
-        setCurrentLevel('buttons');
-        // Normalizar la URL: quitar type/historial/quizId si vienen arrastrados
-        try {
-          const paramsNow = new URLSearchParams(location.search || '');
-          const hasNoise = paramsNow.has('type') || paramsNow.has('historial') || paramsNow.has('quizId');
-          if (hasNoise) {
-            paramsNow.set('level', 'buttons');
-            paramsNow.set('areaId', String(areaId));
-            paramsNow.delete('type');
-            paramsNow.delete('historial');
-            paramsNow.delete('quizId');
-            const qs = paramsNow.toString();
-            navigate(`${location.pathname}${qs ? `?${qs}` : ''}`, { replace: true });
-          }
-        } catch {}
-        // En modo selector somos autoritativos: no seguir procesando para evitar forzar la tabla
-        setPendingOpenHistorialQuizId(null);
-        return;
-      }
-    }
-
-    // Si no hay parámetros mínimos para tabla (type y areaId), no forzar nada: dejamos el nivel actual o áreas por defecto
-    if (!type || !areaIdParam) {
-      if (level === 'buttons') {
-        // Ya gestionado arriba; no forzamos cambio de nivel
-        return;
-      }
-      if (!level) {
-        setCurrentLevel('areas');
-        setSelectedArea(null);
-        setSelectedModulo(null);
-        setSelectedType(null);
-      }
-      // Continuamos por si hay historial pendiente
-    } else {
-      // Si hay datos de áreas y módulos cargados, procedemos a establecer el estado.
-      if (areasData.length > 0 || modulosEspecificos.length > 0) {
+      // Si piden explícitamente volver al selector (buttons) y hay área, restaurar a ese nivel
+      if (level === 'buttons' && areaIdParam) {
         const areaId = Number(areaIdParam);
-        // Detectar módulo por pertenencia al catálogo en vez de por umbral de ID
-        const modulo = modulosEspecificos.find(m => m.id === areaId);
-        if (modulo) { // Es un módulo específico
-          setSelectedArea({ id: 5, titulo: 'Módulos' });
-          setSelectedModulo(modulo);
-          setSelectedType(type);
-          setCurrentLevel('table');
-        } else { // Es un área general
-          const area = areasData.find(a => a.id === areaId);
-          if (area) {
-            setSelectedArea(area);
-            setSelectedModulo(null); // Nos aseguramos de limpiar el módulo
+        if (Number.isFinite(areaId)) {
+          // Detectar por pertenencia al catálogo de módulos (más robusto que umbral de ID)
+          const modulo = modulosEspecificos.find(m => m.id === areaId);
+          if (modulo) {
+            setSelectedArea({ id: 5, titulo: 'Módulos' });
+            setSelectedModulo(modulo);
+          } else {
+            const area = areasData.find(a => a.id === areaId);
+            if (area) {
+              setSelectedArea(area);
+              setSelectedModulo(null);
+            }
+          }
+          setSelectedType(null);
+          setCurrentLevel('buttons');
+          // Normalizar la URL: quitar type/historial/quizId si vienen arrastrados
+          try {
+            const paramsNow = new URLSearchParams(location.search || '');
+            const hasNoise = paramsNow.has('type') || paramsNow.has('historial') || paramsNow.has('quizId');
+            if (hasNoise) {
+              paramsNow.set('level', 'buttons');
+              paramsNow.set('areaId', String(areaId));
+              paramsNow.delete('type');
+              paramsNow.delete('historial');
+              paramsNow.delete('quizId');
+              const qs = paramsNow.toString();
+              navigate(`${location.pathname}${qs ? `?${qs}` : ''}`, { replace: true });
+            }
+          } catch { }
+          // En modo selector somos autoritativos: no seguir procesando para evitar forzar la tabla
+          setPendingOpenHistorialQuizId(null);
+          return;
+        }
+      }
+
+      // Si no hay parámetros mínimos para tabla (type y areaId), no forzar nada: dejamos el nivel actual o áreas por defecto
+      if (!type || !areaIdParam) {
+        if (level === 'buttons') {
+          // Ya gestionado arriba; no forzamos cambio de nivel
+          return;
+        }
+        if (!level) {
+          setCurrentLevel('areas');
+          setSelectedArea(null);
+          setSelectedModulo(null);
+          setSelectedType(null);
+        }
+        // Continuamos por si hay historial pendiente
+      } else {
+        // Si hay datos de áreas y módulos cargados, procedemos a establecer el estado.
+        if (areasData.length > 0 || modulosEspecificos.length > 0) {
+          const areaId = Number(areaIdParam);
+          // Detectar módulo por pertenencia al catálogo en vez de por umbral de ID
+          const modulo = modulosEspecificos.find(m => m.id === areaId);
+          if (modulo) { // Es un módulo específico
+            setSelectedArea({ id: 5, titulo: 'Módulos' });
+            setSelectedModulo(modulo);
             setSelectedType(type);
-            setCurrentLevel(area.id === 5 ? 'modulos' : 'table');
+            setCurrentLevel('table');
+          } else { // Es un área general
+            const area = areasData.find(a => a.id === areaId);
+            if (area) {
+              setSelectedArea(area);
+              setSelectedModulo(null); // Nos aseguramos de limpiar el módulo
+              setSelectedType(type);
+              setCurrentLevel(area.id === 5 ? 'modulos' : 'table');
+            }
           }
         }
       }
-    }
 
-    // Marcar si debemos reabrir el historial al volver desde resultados
-    // Solo si estamos (o vamos a estar) en contexto de tabla de quizzes
-    if (wantsHistorial && quizIdParam && level !== 'buttons') {
-      const qid = Number(quizIdParam);
-      if (Number.isFinite(qid)) {
-        setPendingOpenHistorialQuizId(qid);
+      // Marcar si debemos reabrir el historial al volver desde resultados
+      // Solo si estamos (o vamos a estar) en contexto de tabla de quizzes
+      if (wantsHistorial && quizIdParam && level !== 'buttons') {
+        const qid = Number(quizIdParam);
+        if (Number.isFinite(qid)) {
+          setPendingOpenHistorialQuizId(qid);
+        }
+      } else {
+        setPendingOpenHistorialQuizId(null);
       }
-    } else {
-      setPendingOpenHistorialQuizId(null);
+    } catch (e) {
+      console.error("Error en deep-linking:", e);
     }
-  } catch (e) {
-    console.error("Error en deep-linking:", e);
-  }
-  // Este efecto se ejecuta cada vez que cambia la URL o cuando los catálogos de áreas/módulos se terminan de cargar.
-}, [location.search, areasData, modulosEspecificos, navigate]);
-  
-////////////////////////////////////////////////////////////////////////////////
+    // Este efecto se ejecuta cada vez que cambia la URL o cuando los catálogos de áreas/módulos se terminan de cargar.
+  }, [location.search, areasData, modulosEspecificos, navigate]);
+
+  ////////////////////////////////////////////////////////////////////////////////
 
   // Estados para modales (inspirado en Feedback)
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -245,17 +245,17 @@ useEffect(() => {
   const [showNotasModal, setShowNotasModal] = useState(false);
   const [notasActividad, setNotasActividad] = useState(null);
   const [notasContent, setNotasContent] = useState('');
-  
+
   // Estados para modal de historial de quizzes
   const [showHistorialModal, setShowHistorialModal] = useState(false);
   const [selectedQuizHistorial, setSelectedQuizHistorial] = useState(null);
   // Reapertura automática del Historial tras volver de resultados
   const [pendingOpenHistorialQuizId, setPendingOpenHistorialQuizId] = useState(null);
   // Modal para ver textos largos (instrucciones / descripciones)
-  const [longTextModal, setLongTextModal] = useState({ open:false, title:'', content:'', meta:null });
-  const openLongText = (title, content, meta=null) => setLongTextModal({ open:true, title, content: String(content||''), meta });
-  const closeLongText = () => setLongTextModal({ open:false, title:'', content:'', meta:null });
-  
+  const [longTextModal, setLongTextModal] = useState({ open: false, title: '', content: '', meta: null });
+  const openLongText = (title, content, meta = null) => setLongTextModal({ open: true, title, content: String(content || ''), meta });
+  const closeLongText = () => setLongTextModal({ open: false, title: '', content: '', meta: null });
+
   // Estados para efectos visuales (como en Feedback)
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiScore, setConfettiScore] = useState(0);
@@ -277,22 +277,86 @@ useEffect(() => {
   useEffect(() => {
     if (!notifications || !Array.isArray(notifications)) return;
     // Asumimos que notifications viene ordenado con la más reciente primero
-  const latestGrade = notifications.find(n => n.type === 'grade');
+    const latestGrade = notifications.find(n => n.type === 'grade');
     if (latestGrade && latestGrade.id !== lastGradeNotifRef.current) {
       lastGradeNotifRef.current = latestGrade.id;
       // Refrescar sólo si actualmente estamos viendo actividades
       if (selectedType === 'actividades') {
         setGradeRefreshKey(k => k + 1);
         // Si payload contiene id de actividad y calificación, actualizamos optimísticamente
-  // Aceptar formatos: "Calificación: 10" o "Tu entrega fue calificada con 10"
-  const calMatch = /(?:Calificación:|calificada\s+con)\s*(\d+)/i.exec(latestGrade.message || '');
-        const calValue = calMatch ? parseInt(calMatch[1],10) : null;
+        // Aceptar formatos: "Calificación: 10" o "Tu entrega fue calificada con 10"
+        const calMatch = /(?:Calificación:|calificada\s+con)\s*(\d+)/i.exec(latestGrade.message || '');
+        const calValue = calMatch ? parseInt(calMatch[1], 10) : null;
         if (calValue !== null && latestGrade.metadata?.actividadId) {
           setActividades(prev => prev.map(a => a.id === latestGrade.metadata.actividadId ? { ...a, score: calValue, mejorPuntaje: calValue, estado: 'revisada' } : a));
         }
       }
     }
   }, [notifications, selectedType]);
+
+  // Escuchar eventos de WebSocket para actualizar lista en tiempo real cuando se crea un nuevo quiz/actividad/simulación
+  useEffect(() => {
+    const handler = (e) => {
+      const data = e.detail;
+      if (!data || data.type !== 'notification' || !data.payload) return;
+      const payload = data.payload;
+
+      // Si es una notificación de nueva actividad/quiz/simulación asignada
+      if (payload.kind === 'assignment') {
+        const actividadId = payload.actividad_id || payload.metadata?.actividad_id;
+        const simulacionId = payload.simulacion_id || payload.metadata?.simulacion_id;
+        // Buscar kind en metadata primero, luego en el mensaje como fallback
+        const kind = payload.metadata?.kind || '';
+        const messageLower = (payload.message || '').toLowerCase();
+        const titleLower = (payload.title || '').toLowerCase();
+
+        // Determinar el tipo de contenido con múltiples verificaciones
+        const isQuiz = kind === 'quiz'
+          || messageLower.includes('quiz')
+          || titleLower.includes('quiz')
+          || messageLower.includes('quizz');
+        const isSimulacion = kind === 'simulacion'
+          || messageLower.includes('simulación')
+          || messageLower.includes('simulacion')
+          || titleLower.includes('simulación')
+          || titleLower.includes('simulacion');
+        const isActividad = !isQuiz && !isSimulacion && (actividadId || messageLower.includes('actividad'));
+
+        // Si hay un simulacion_id, es una simulación (no se muestra en actividades/quizzes, pero recargamos por si acaso)
+        if (simulacionId) {
+          // Las simulaciones tienen su propia página, pero podemos mostrar una notificación
+          console.log('[Actividades] Nueva simulación asignada:', simulacionId);
+          // No recargamos aquí porque las simulaciones no se muestran en esta vista
+        }
+
+        // Recargar si es quiz y estamos viendo quizzes, o si es actividad y estamos viendo actividades
+        const shouldRefresh = (isQuiz && selectedType === 'quiz') || (isActividad && selectedType === 'actividades');
+
+        if (shouldRefresh) {
+          console.log('[Actividades] Recargando lista por nueva asignación:', {
+            isQuiz,
+            isActividad,
+            selectedType,
+            kind,
+            actividadId,
+            message: payload.message
+          });
+          // Recargar la lista para mostrar el nuevo quiz/actividad
+          setRefreshKey(k => k + 1);
+        } else {
+          console.debug('[Actividades] No se recargará la lista:', {
+            isQuiz,
+            isActividad,
+            selectedType,
+            kind,
+            shouldRefresh
+          });
+        }
+      }
+    };
+    window.addEventListener('student-ws-message', handler);
+    return () => window.removeEventListener('student-ws-message', handler);
+  }, [selectedType, selectedArea]);
 
   // Cuando llegue una notificación de acceso a área aprobado, refrescar todo el panel
   useEffect(() => {
@@ -307,7 +371,7 @@ useEffect(() => {
       try {
         const areaName = latestAccess.metadata?.area_name || '';
         showNotification('Acceso aprobado', `Tu acceso al módulo ${areaName} fue aprobado. Ya puedes entrar.`, 'success');
-      } catch {}
+      } catch { }
       // Opcional: disparar un re-render ligero; el contexto ya re-hidrata permisos vía WS
       setRefreshKey((k) => k + 1);
     }
@@ -345,7 +409,7 @@ useEffect(() => {
           // Traer de nuevo el listado para reflejar estado/completado
           setRefreshKey((k) => k + 1);
           // Opcional: traer foco a esta pestaña
-          try { window.focus(); } catch {}
+          try { window.focus(); } catch { }
         }
       } catch { /* ignore */ }
     };
@@ -400,50 +464,50 @@ useEffect(() => {
     }
   };
 
-  
+
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [catalogError, setCatalogError] = useState('');
   // Usar styleForArea compartido
   const styleFor = styleForArea;
 
-  useEffect(()=> {
-    let cancel=false;
+  useEffect(() => {
+    let cancel = false;
     const fromCache = AREAS_CATALOG_CACHE.get();
     if (fromCache?.data) {
       const payload = fromCache.data;
       const generales = Array.isArray(payload.generales) ? payload.generales : [];
       const modulos = Array.isArray(payload.modulos) ? payload.modulos : [];
-      const mappedGenerales = generales.map(a=> ({ id:a.id, titulo:a.nombre, descripcion:a.descripcion, ...styleFor(a.id) }));
+      const mappedGenerales = generales.map(a => ({ id: a.id, titulo: a.nombre, descripcion: a.descripcion, ...styleFor(a.id) }));
       if (payload.contenedor) {
         mappedGenerales.push({ id: payload.contenedor.id, titulo: payload.contenedor.nombre, descripcion: payload.contenedor.descripcion, ...styleFor(payload.contenedor.id) });
       }
       setAreasData(mappedGenerales);
-      setModulosEspecificos(modulos.map(m=> ({ id:m.id, titulo:m.nombre, descripcion:m.descripcion, ...styleFor(m.id) })));
+      setModulosEspecificos(modulos.map(m => ({ id: m.id, titulo: m.nombre, descripcion: m.descripcion, ...styleFor(m.id) })));
       // Si está fresco y no stale evitamos refetch
       if (!fromCache.stale) return; // stale-while-revalidate: mostramos y luego revalidamos abajo
     }
-    const load = async (silent=false)=> {
-      if(!silent) { setLoadingCatalog(true); setCatalogError(''); }
+    const load = async (silent = false) => {
+      if (!silent) { setLoadingCatalog(true); setCatalogError(''); }
       try {
         const res = await getAreasCatalog();
         const payload = res.data?.data || res.data || {};
         AREAS_CATALOG_CACHE.set(payload);
         const generales = Array.isArray(payload.generales) ? payload.generales : [];
         const modulos = Array.isArray(payload.modulos) ? payload.modulos : [];
-        if(cancel) return;
-        const mappedGenerales = generales.map(a=> ({ id:a.id, titulo:a.nombre, descripcion:a.descripcion, ...styleFor(a.id) }));
+        if (cancel) return;
+        const mappedGenerales = generales.map(a => ({ id: a.id, titulo: a.nombre, descripcion: a.descripcion, ...styleFor(a.id) }));
         if (payload.contenedor) {
           mappedGenerales.push({ id: payload.contenedor.id, titulo: payload.contenedor.nombre, descripcion: payload.contenedor.descripcion, ...styleFor(payload.contenedor.id) });
         }
         setAreasData(mappedGenerales);
-        setModulosEspecificos(modulos.map(m=> ({ id:m.id, titulo:m.nombre, descripcion:m.descripcion, ...styleFor(m.id) })));
-      } catch(e){ if(!cancel){ setCatalogError('No se pudo cargar catálogo de áreas'); }}
-      finally { if(!cancel) setLoadingCatalog(false); }
+        setModulosEspecificos(modulos.map(m => ({ id: m.id, titulo: m.nombre, descripcion: m.descripcion, ...styleFor(m.id) })));
+      } catch (e) { if (!cancel) { setCatalogError('No se pudo cargar catálogo de áreas'); } }
+      finally { if (!cancel) setLoadingCatalog(false); }
     };
     // Si venía de cache y era stale, revalidar en segundo plano (silent true)
     load(fromCache?.data ? true : false);
-    return ()=> { cancel=true; };
-  },[]);
+    return () => { cancel = true; };
+  }, []);
 
   // Datos reales se cargarán desde la API según área y tipo seleccionado
   const { user, alumno } = useAuth() || {}; // usar alumno.id cuando exista
@@ -466,10 +530,10 @@ useEffect(() => {
   // Modal de instrucciones: hacerlo más compacto y aprovechar mejor el ancho disponible
   const modalWidth = isMobile
     ? '88vw'
-  : (isTablet
-    ? (isLandscape ? 'min(560px, 60vw)' : 'min(600px, 64vw)')
-        // Escritorio y pantallas muy grandes: aún más compacto
-        : 'min(480px, 30vw)');
+    : (isTablet
+      ? (isLandscape ? 'min(560px, 60vw)' : 'min(600px, 64vw)')
+      // Escritorio y pantallas muy grandes: aún más compacto
+      : 'min(480px, 30vw)');
   const modalOffsetX = 0; // centrar sin desplazamiento lateral para evitar márgenes innecesarios
 
   // Meses como ordinales (como en Feedback)
@@ -554,14 +618,14 @@ useEffect(() => {
           if (!estudianteId) { setActividades([]); setLoading(false); return; }
           const { data } = await resumenActividadesEstudiante(estudianteId);
           const rows = (data?.data || data || []).filter(a => {
-            if(!a.id_area) return false; // ocultar actividades sin área asignada para evitar mezclar materias
-            if(selectedArea.id === 5) { // contenedor de módulos específicos
-              if(!selectedModulo) return false; // aún no se eligió uno
+            if (!a.id_area) return false; // ocultar actividades sin área asignada para evitar mezclar materias
+            if (selectedArea.id === 5) { // contenedor de módulos específicos
+              if (!selectedModulo) return false; // aún no se eligió uno
               return a.id_area === selectedModulo.id; // coincide con módulo específico 101..112
             }
             return a.id_area === selectedArea.id; // áreas generales 1..4
           });
-  const mapped = rows.map(r => {
+          const mapped = rows.map(r => {
             // Parsear recursos_json (nuevo campo que reemplaza a 'plantilla')
             let recursos = [];
             if (r.recursos_json) {
@@ -571,9 +635,9 @@ useEffect(() => {
               } catch { recursos = []; }
             }
             const firstRecurso = recursos[0];
-              const cal = r.calificacion ?? r.entrega_calificacion ?? null;
-              const estadoCalc = (r.estado_revision || r.entrega_estado || 'pendiente');
-              return {
+            const cal = r.calificacion ?? r.entrega_calificacion ?? null;
+            const estadoCalc = (r.estado_revision || r.entrega_estado || 'pendiente');
+            return {
               id: r.id,
               nombre: r.titulo,
               descripcion: r.descripcion || '',
@@ -581,15 +645,15 @@ useEffect(() => {
               fechaSubida: r.entrega_estado ? (r.entregada_at ? new Date(r.entregada_at).toISOString().split('T')[0] : null) : null,
               archivo: r.archivo || null,
               entregada: !!r.entrega_estado,
-                // score puede venir null aunque calificacion exista: mantenemos cal como score para mostrarla
-                score: cal,
+              // score puede venir null aunque calificacion exista: mantenemos cal como score para mostrarla
+              score: cal,
               maxScore: r.puntos_max || 100,
-                estado: cal !== null ? 'revisada' : estadoCalc,
+              estado: cal !== null ? 'revisada' : estadoCalc,
               areaId: r.id_area,
               tipo: 'actividades',
               intentos: [],
               totalIntentos: r.version || (r.entrega_estado ? 1 : 0),
-                mejorPuntaje: cal,
+              mejorPuntaje: cal,
               // Compatibilidad: usamos 'plantilla' para mostrar el botón de descarga con el primer recurso
               plantilla: r.plantilla || (firstRecurso ? firstRecurso.archivo : null),
               recursos,
@@ -608,30 +672,91 @@ useEffect(() => {
           setActividades(mapped);
         } else if (selectedType === 'quiz') {
           // Traer resumen por estudiante y catálogo global de quizzes en paralelo
+          // IMPORTANTE: Cuando el backend ya filtra por áreas permitidas del estudiante,
+          // no debemos filtrar por id_area aquí para evitar ocultar quizzes que deberían estar visibles.
+          // El backend en listQuizzes ya filtra correctamente por áreas permitidas del estudiante.
+          // Solo filtrar por área si el usuario explícitamente seleccionó un área específica en la UI.
           const idAreaQuery = selectedArea.id === 5 ? (selectedModulo?.id || undefined) : selectedArea.id;
+          console.debug('[Quizzes] Cargando quizzes para área:', selectedArea.id, 'módulo:', selectedModulo?.id, 'query id_area:', idAreaQuery);
+          // Nota: Pasamos id_area al backend, pero el backend también filtra por áreas permitidas del estudiante
+          // El backend ya hace el trabajo pesado de filtrar por permisos, así que confiamos en él
           const [resResumen, resCatalog] = await Promise.allSettled([
             estudianteId ? resumenQuizzesEstudiante(estudianteId) : Promise.resolve({ data: { data: [] } }),
             listQuizzes(idAreaQuery ? { id_area: idAreaQuery } : {})
           ]);
           const resumenRows = resResumen.status === 'fulfilled' ? (resResumen.value?.data?.data || resResumen.value?.data || []) : [];
           const catalogRows = resCatalog.status === 'fulfilled' ? (resCatalog.value?.data?.data || resCatalog.value?.data || []) : [];
+          console.debug('[Quizzes] Resumen recibido:', resumenRows.length, 'catálogo recibido:', catalogRows.length);
 
           // Índice de resumen por id quiz para mergear métricas del alumno
           const resumenById = resumenRows.reduce((acc, q) => { acc[q.id] = q; return acc; }, {});
 
           // Fuente base: si hay catálogo, usarlo; si no, usar el resumen directamente
-          const baseRows = catalogRows.length ? catalogRows : resumenRows;
+          let baseRows = catalogRows.length ? catalogRows : resumenRows;
+          console.debug('[Quizzes] Filas base antes de filtrar duplicados:', baseRows.length);
+          console.debug('[Quizzes] IDs de quizzes base:', baseRows.map(q => ({ id: q.id, titulo: q.titulo, id_area: q.id_area })));
+
+          // Eliminar duplicados por ID (por si algún quiz aparece en ambas fuentes)
+          const seenIds = new Set();
+          baseRows = baseRows.filter(q => {
+            if (!q?.id) return false;
+            if (seenIds.has(q.id)) return false;
+            seenIds.add(q.id);
+            return true;
+          });
+          console.debug('[Quizzes] Filas base después de filtrar duplicados:', baseRows.length);
 
           // Filtrado por área/módulo seleccionado
+          // NOTA: El backend ya filtró por áreas permitidas del estudiante, así que los quizzes
+          // que lleguen aquí ya son visibles para el estudiante. Solo filtramos por la UI
+          // del área seleccionada para mantener la consistencia visual.
           const rows = baseRows.filter(q => {
             const id_area = q.id_area;
-            if (!id_area) return false; // ocultar quizzes sin área asignada
-            if (selectedArea.id === 5) { // contenedor de módulos específicos
-              if (!selectedModulo) return false;
-              return id_area === selectedModulo.id;
+
+            // Si el quiz no tiene área asignada, solo mostrarlo si estamos viendo "Todas las áreas"
+            // (pero como estamos en una vista de área específica, normalmente lo ocultamos)
+            if (!id_area) {
+              console.debug('[Quizzes] Quiz sin área:', q.id, q.titulo);
+              // Permitir mostrar quizzes sin área solo si no hay área seleccionada específica
+              // En la práctica, si estamos viendo quizzes, hay un área seleccionada, así que los ocultamos
+              return false;
             }
-            return id_area === selectedArea.id;
+
+            // Si estamos viendo módulos específicos (selectedArea.id === 5)
+            if (selectedArea.id === 5) {
+              if (!selectedModulo) {
+                // Si no hay módulo seleccionado, no mostrar ningún quiz (esperando selección)
+                return false;
+              }
+              // Coincidir con el módulo específico
+              const matches = id_area === selectedModulo.id;
+              if (!matches) {
+                console.debug('[Quizzes] Quiz no coincide con módulo:', {
+                  quiz_id: q.id,
+                  quiz_titulo: q.titulo,
+                  quiz_id_area: id_area,
+                  modulo_esperado: selectedModulo.id,
+                  modulo_titulo: selectedModulo.titulo
+                });
+              }
+              return matches;
+            }
+
+            // Para áreas generales (1-4), coincidir con el área seleccionada
+            const matches = id_area === selectedArea.id;
+            if (!matches) {
+              console.debug('[Quizzes] Quiz no coincide con área:', {
+                quiz_id: q.id,
+                quiz_titulo: q.titulo,
+                quiz_id_area: id_area,
+                area_esperada: selectedArea.id,
+                area_titulo: selectedArea.titulo
+              });
+            }
+            return matches;
           });
+
+          console.debug('[Quizzes] Filas después de filtrar por área:', rows.length);
 
           // Eliminar datos mock: si no hay filas, se mostrará tabla vacía o estado vacío.
           const mapped = rows.map(q => {
@@ -668,7 +793,7 @@ useEffect(() => {
               tiempoLimite: (() => {
                 const tl = Number(q.time_limit_min);
                 if (!Number.isFinite(tl) || tl <= 0) return null;
-                const hh = Math.floor(tl/60), mm = tl % 60;
+                const hh = Math.floor(tl / 60), mm = tl % 60;
                 if (hh > 0 && mm > 0) return `${hh} h ${mm} min`;
                 if (hh > 0) return `${hh} h`;
                 return `${mm} min`;
@@ -692,7 +817,7 @@ useEffect(() => {
         console.error(e);
         setError('Error cargando datos');
         if (retryCount < MAX_RETRIES) {
-          setRetryCount(c=>c+1);
+          setRetryCount(c => c + 1);
         }
       } finally { setLoading(false); }
     };
@@ -705,17 +830,17 @@ useEffect(() => {
     if (!isMobile) return; // sólo móviles
     if (!viewingActivityFile) return;
     setMobilePdfLoading(true); setMobilePdfFailed(false);
-    const timer = setTimeout(()=> {
+    const timer = setTimeout(() => {
       // Si después de 3s no terminó onLoad asumimos que fallará inline
       setMobilePdfLoading(l => {
         if (l) { setMobilePdfFailed(true); return false; }
         return l;
       });
     }, 3000);
-    return ()=> clearTimeout(timer);
+    return () => clearTimeout(timer);
   }, [viewingActivityFile, showViewModal, isMobile]);
 
-  const manualRetry = () => { setRetryCount(c=>c+1); };
+  const manualRetry = () => { setRetryCount(c => c + 1); };
 
   // Notas: helpers para abrir/cerrar modal
   const openNotasModal = (actividad) => {
@@ -731,7 +856,7 @@ useEffect(() => {
         const nowIso = new Date().toISOString();
         localStorage.setItem(key, nowIso);
       }
-    } catch {}
+    } catch { }
   };
   const closeNotasModal = () => { setShowNotasModal(false); setNotasActividad(null); setNotasContent(''); };
 
@@ -806,9 +931,9 @@ useEffect(() => {
                 notas_at: mine.updated_at || p.notas_at || null
               } : p));
             }
-          } catch {/* ignore */}
+          } catch {/* ignore */ }
         }
-      } catch {/* ignore */}
+      } catch {/* ignore */ }
     }, 12000); // 12s balancea frescura y carga
     return () => clearInterval(interval);
   }, [actividades, selectedType, estudianteId]);
@@ -880,62 +1005,62 @@ useEffect(() => {
   };
 
 
-  
-// //--- SOLUCIÓN DEFINITIVA DE NAVEGACIÓN ---
-// useEffect(() => {
-//   const params = new URLSearchParams(location.search);
-//   const typeFromUrl = params.get('type');
-//   const areaIdFromUrl = params.get('areaId');
 
-//   // CASO 1: La URL tiene parámetros, pero el componente no está mostrando la tabla.
-//   // Esto pasa cuando vienes de "Volver" o cargas la URL directamente.
-//   if (typeFromUrl && areaIdFromUrl && currentLevel !== 'table') {
-//     // Esperamos a que los datos del catálogo estén listos antes de hacer nada.
-//     if (areasData.length > 0 || modulosEspecificos.length > 0) {
-//       const areaId = Number(areaIdFromUrl);
-//       const area = areasData.find(a => a.id === areaId);
-//       if (area) {
-//         setSelectedArea(area);
-//         setSelectedType(typeFromUrl);
-//         setCurrentLevel('table'); // Forzamos la vista de tabla
-//       }
-//     }
-//     return; // Evita que se ejecute más lógica
-//   }
+  // //--- SOLUCIÓN DEFINITIVA DE NAVEGACIÓN ---
+  // useEffect(() => {
+  //   const params = new URLSearchParams(location.search);
+  //   const typeFromUrl = params.get('type');
+  //   const areaIdFromUrl = params.get('areaId');
 
-//   // CASO 2: El estado interno dice que debemos estar en una tabla (ej. hiciste clic en "Quizzes").
-//   // Nos aseguramos de que la URL lo refleje.
-//   if (currentLevel === 'table' && selectedType && selectedArea) {
-//     const expectedSearch = `?type=${selectedType}&areaId=${selectedArea.id}`;
-//     if (location.search !== expectedSearch) {
-//       navigate(location.pathname + expectedSearch, { replace: true });
-//     }
-//     return;
-//   }
+  //   // CASO 1: La URL tiene parámetros, pero el componente no está mostrando la tabla.
+  //   // Esto pasa cuando vienes de "Volver" o cargas la URL directamente.
+  //   if (typeFromUrl && areaIdFromUrl && currentLevel !== 'table') {
+  //     // Esperamos a que los datos del catálogo estén listos antes de hacer nada.
+  //     if (areasData.length > 0 || modulosEspecificos.length > 0) {
+  //       const areaId = Number(areaIdFromUrl);
+  //       const area = areasData.find(a => a.id === areaId);
+  //       if (area) {
+  //         setSelectedArea(area);
+  //         setSelectedType(typeFromUrl);
+  //         setCurrentLevel('table'); // Forzamos la vista de tabla
+  //       }
+  //     }
+  //     return; // Evita que se ejecute más lógica
+  //   }
 
-//   // CASO 3: El estado interno es el principal ("areas") pero la URL aún tiene parámetros.
-//   // Limpiamos la URL para que coincida con la vista.
-//   if (currentLevel === 'areas' && location.search) {
-//     navigate(location.pathname, { replace: true });
-//   }
-// }, [
-//   location.search,
-//   currentLevel,
-//   selectedType,
-//   selectedArea,
-//   areasData,
-//   modulosEspecificos,
-//   navigate
-// ]);
+  //   // CASO 2: El estado interno dice que debemos estar en una tabla (ej. hiciste clic en "Quizzes").
+  //   // Nos aseguramos de que la URL lo refleje.
+  //   if (currentLevel === 'table' && selectedType && selectedArea) {
+  //     const expectedSearch = `?type=${selectedType}&areaId=${selectedArea.id}`;
+  //     if (location.search !== expectedSearch) {
+  //       navigate(location.pathname + expectedSearch, { replace: true });
+  //     }
+  //     return;
+  //   }
 
-// Nota: Se eliminó un segundo efecto de deep-linking redundante que forzaba
-// volver a 'areas' cuando no había parámetros en la URL. Ese efecto
-// interfería con la navegación interna (por ejemplo, al seleccionar un área
-// o un módulo, que no actualiza inmediatamente la URL) y "rebotaba" la vista
-// impidiendo avanzar a botones/tabla. Conservamos únicamente el efecto de
-// deep-linking declarado más arriba, que ya sincroniza correctamente el
-// estado con la URL cuando es necesario.
-// Función para mostrar notificaciones modales
+  //   // CASO 3: El estado interno es el principal ("areas") pero la URL aún tiene parámetros.
+  //   // Limpiamos la URL para que coincida con la vista.
+  //   if (currentLevel === 'areas' && location.search) {
+  //     navigate(location.pathname, { replace: true });
+  //   }
+  // }, [
+  //   location.search,
+  //   currentLevel,
+  //   selectedType,
+  //   selectedArea,
+  //   areasData,
+  //   modulosEspecificos,
+  //   navigate
+  // ]);
+
+  // Nota: Se eliminó un segundo efecto de deep-linking redundante que forzaba
+  // volver a 'areas' cuando no había parámetros en la URL. Ese efecto
+  // interfería con la navegación interna (por ejemplo, al seleccionar un área
+  // o un módulo, que no actualiza inmediatamente la URL) y "rebotaba" la vista
+  // impidiendo avanzar a botones/tabla. Conservamos únicamente el efecto de
+  // deep-linking declarado más arriba, que ya sincroniza correctamente el
+  // estado con la URL cuando es necesario.
+  // Función para mostrar notificaciones modales
   const showNotification = (title, message, type = 'success') => {
     setNotificationContent({ title, message, type });
     setShowNotificationModal(true);
@@ -1013,7 +1138,7 @@ useEffect(() => {
           setShowHistorialModal(false);
           setSelectedQuizHistorial(null);
           setPendingOpenHistorialQuizId(null);
-        } catch {}
+        } catch { }
         setCurrentLevel('buttons');
         const params = new URLSearchParams(location.search || '');
         const areaIdValue = (selectedArea?.id === 5) ? (selectedModulo?.id) : selectedArea?.id;
@@ -1061,7 +1186,7 @@ useEffect(() => {
 
   // Función para manejar subida multi-archivo
   const handleFileUpload = async (actividadId, files) => {
-    if (!files || !files.length) { showNotification('Sin archivos','Selecciona al menos un PDF.','warning'); return; }
+    if (!files || !files.length) { showNotification('Sin archivos', 'Selecciona al menos un PDF.', 'warning'); return; }
     if (!Array.isArray(files)) files = [files];
     // Validaciones ya se hacen previo, pero reforzamos
     let totalBytes = 0;
@@ -1070,8 +1195,8 @@ useEffect(() => {
       if (f.size > MAX_FILE_SIZE_BYTES) { showNotification('Archivo grande', `${f.name} supera 5MB.`, 'warning'); return; }
       totalBytes += f.size;
     }
-    if (totalBytes > MAX_TOTAL_BYTES) { showNotification('Límite excedido','Los archivos combinados superan 20MB.','warning'); return; }
-    if (!estudianteId) { showNotification('Sesión requerida','No se encontró ID de estudiante','error'); return; }
+    if (totalBytes > MAX_TOTAL_BYTES) { showNotification('Límite excedido', 'Los archivos combinados superan 20MB.', 'warning'); return; }
+    if (!estudianteId) { showNotification('Sesión requerida', 'No se encontró ID de estudiante', 'error'); return; }
     const esTipoActividad = selectedType === 'actividades';
     try {
       if (esTipoActividad) {
@@ -1086,40 +1211,40 @@ useEffect(() => {
         // refrescar lista actividades
         const { data } = await resumenActividadesEstudiante(estudianteId);
         const rows = (data?.data || data || []).filter(a => {
-          if(!a.id_area) return true;
-          if(selectedArea.id === 5){ if(!selectedModulo) return false; return a.id_area === selectedModulo.id; }
+          if (!a.id_area) return true;
+          if (selectedArea.id === 5) { if (!selectedModulo) return false; return a.id_area === selectedModulo.id; }
           return a.id_area === selectedArea.id;
         });
         const mapped = rows.map(r => {
           let recursos = [];
-            if (r.recursos_json) {
-              try {
-                recursos = typeof r.recursos_json === 'string' ? JSON.parse(r.recursos_json) : r.recursos_json;
-                if (!Array.isArray(recursos)) recursos = [];
-              } catch { recursos = []; }
-            }
-            const firstRecurso = recursos[0];
-            return {
-              id: r.id,
-              nombre: r.titulo,
-              descripcion: r.descripcion || '',
-              fechaEntrega: r.fecha_limite,
-              fechaSubida: r.entregada_at ? new Date(r.entregada_at).toISOString().split('T')[0] : null,
-              archivo: r.archivo || null,
-              entregada: !!r.entrega_estado,
-              score: r.calificacion ?? null,
-              maxScore: r.puntos_max || 100,
-              estado: r.entrega_estado || 'pendiente',
-              areaId: r.id_area,
-              tipo: 'actividades',
-              intentos: [],
-              totalIntentos: r.version || (r.entrega_estado ? 1 : 0),
-              mejorPuntaje: r.calificacion ?? null,
-              plantilla: r.plantilla || (firstRecurso ? firstRecurso.archivo : null),
-              recursos,
-              entrega_id: r.entrega_id || r.entregaId || null,
-            };
-          });
+          if (r.recursos_json) {
+            try {
+              recursos = typeof r.recursos_json === 'string' ? JSON.parse(r.recursos_json) : r.recursos_json;
+              if (!Array.isArray(recursos)) recursos = [];
+            } catch { recursos = []; }
+          }
+          const firstRecurso = recursos[0];
+          return {
+            id: r.id,
+            nombre: r.titulo,
+            descripcion: r.descripcion || '',
+            fechaEntrega: r.fecha_limite,
+            fechaSubida: r.entregada_at ? new Date(r.entregada_at).toISOString().split('T')[0] : null,
+            archivo: r.archivo || null,
+            entregada: !!r.entrega_estado,
+            score: r.calificacion ?? null,
+            maxScore: r.puntos_max || 100,
+            estado: r.entrega_estado || 'pendiente',
+            areaId: r.id_area,
+            tipo: 'actividades',
+            intentos: [],
+            totalIntentos: r.version || (r.entrega_estado ? 1 : 0),
+            mejorPuntaje: r.calificacion ?? null,
+            plantilla: r.plantilla || (firstRecurso ? firstRecurso.archivo : null),
+            recursos,
+            entrega_id: r.entrega_id || r.entregaId || null,
+          };
+        });
         setActividades(mapped);
       } else {
         // Quiz (placeholder existente)
@@ -1127,8 +1252,8 @@ useEffect(() => {
         await crearIntentoQuiz(actividadId, { id_estudiante: estudianteId, puntaje: randomScore });
         const { data } = await resumenQuizzesEstudiante(estudianteId);
         const rows = (data?.data || data || []).filter(q => {
-          if(!q.id_area) return true;
-          if(selectedArea.id === 5){ if(!selectedModulo) return false; return q.id_area === selectedModulo.id; }
+          if (!q.id_area) return true;
+          if (selectedArea.id === 5) { if (!selectedModulo) return false; return q.id_area === selectedModulo.id; }
           return q.id_area === selectedArea.id;
         });
         const mapped = rows.map(q => ({
@@ -1152,11 +1277,11 @@ useEffect(() => {
         setActividades(mapped);
       }
       setShowUploadModal(false); setSelectedActividad(null);
-      setConfettiScore(esTipoActividad ? 0 : actividades.find(a=>a.id===actividadId)?.score || 0);
-      setShowConfetti(true); setTimeout(()=> setShowConfetti(false),3000);
-    } catch(e) {
+      setConfettiScore(esTipoActividad ? 0 : actividades.find(a => a.id === actividadId)?.score || 0);
+      setShowConfetti(true); setTimeout(() => setShowConfetti(false), 3000);
+    } catch (e) {
       console.error(e);
-      showNotification('Error','No se pudieron subir los archivos','error');
+      showNotification('Error', 'No se pudieron subir los archivos', 'error');
     }
   };
 
@@ -1171,8 +1296,8 @@ useEffect(() => {
     setViewingEntregaArchivos([]);
     setViewingSelectedArchivoId(null);
     setViewingArchivosError('');
-  setMobilePdfFailed(false); setMobilePdfLoading(false);
-  setUseAltViewer(false);
+    setMobilePdfFailed(false); setMobilePdfLoading(false);
+    setUseAltViewer(false);
     // Si la actividad tiene registro de entrega múltiple, obtener lista
     if (actividad.entrega_id) {
       setViewingArchivosLoading(true);
@@ -1188,8 +1313,8 @@ useEffect(() => {
             setViewingActivityFile(resolveFileUrl(actividad.archivo));
           }
         })
-        .catch(()=> { setViewingArchivosError('No se pudieron cargar los archivos de la entrega'); setViewingActivityFile(resolveFileUrl(actividad.archivo)); })
-        .finally(()=> setViewingArchivosLoading(false));
+        .catch(() => { setViewingArchivosError('No se pudieron cargar los archivos de la entrega'); setViewingActivityFile(resolveFileUrl(actividad.archivo)); })
+        .finally(() => setViewingArchivosLoading(false));
     } else {
       setViewingActivityFile(resolveFileUrl(actividad.archivo));
     }
@@ -1198,18 +1323,18 @@ useEffect(() => {
   };
 
   const closeModals = () => {
-  setShowUploadModal(false);
-  setEntregaArchivos([]); // limpiar archivos al cerrar
+    setShowUploadModal(false);
+    setEntregaArchivos([]); // limpiar archivos al cerrar
     setShowViewModal(false);
     setSelectedActividad(null);
     setViewingActivityFile('');
-  setViewingEntregaArchivos([]);
-  setViewingSelectedArchivoId(null);
-  setUploadSelectedFiles([]);
-  setUploadError('');
+    setViewingEntregaArchivos([]);
+    setViewingSelectedArchivoId(null);
+    setUploadSelectedFiles([]);
+    setUploadError('');
     setPdfError(false);
-  setShowMobileFileList(false);
-  setUseAltViewer(false);
+    setShowMobileFileList(false);
+    setUseAltViewer(false);
   };
 
   // Función para descargar actividad
@@ -1219,22 +1344,22 @@ useEffect(() => {
     // Prioriza primer recurso si existen múltiples
     const target = actividad.recursos?.[0] || (actividad.plantilla ? { archivo: actividad.plantilla } : null);
     if (!target) return;
-  const full = resolveFileUrl(target.archivo || target);
-  const name = (target.nombre || (target.archivo || target).split('/').pop() || `actividad_${actividadId}.pdf`);
-  downloadViaBlob(full, name);
+    const full = resolveFileUrl(target.archivo || target);
+    const name = (target.nombre || (target.archivo || target).split('/').pop() || `actividad_${actividadId}.pdf`);
+    downloadViaBlob(full, name);
   };
 
   const handleDownloadRecurso = (actividadId, recurso) => {
     if (!recurso) return;
-  const full = resolveFileUrl(recurso.archivo);
-  const name = recurso.nombre || recurso.archivo.split('/').pop();
-  downloadViaBlob(full, name);
+    const full = resolveFileUrl(recurso.archivo);
+    const name = recurso.nombre || recurso.archivo.split('/').pop();
+    downloadViaBlob(full, name);
   };
 
   const openResourcesModal = (actividad) => {
     setResourcesActividad(actividad);
     setPreviewRecurso(actividad.recursos?.[0] || null);
-  setPreviewError(null); setPreviewLoading(false); setPreviewKey(c=>c+1);
+    setPreviewError(null); setPreviewLoading(false); setPreviewKey(c => c + 1);
     setShowResourcesModal(true);
   };
 
@@ -1247,7 +1372,7 @@ useEffect(() => {
   const downloadAllRecursos = () => {
     if (!resourcesActividad?.recursos?.length) return;
     resourcesActividad.recursos.forEach((r, idx) => {
-      setTimeout(()=> handleDownloadRecurso(resourcesActividad.id, r), idx * 300); // separación mayor para evitar saturar
+      setTimeout(() => handleDownloadRecurso(resourcesActividad.id, r), idx * 300); // separación mayor para evitar saturar
     });
   };
 
@@ -1255,7 +1380,7 @@ useEffect(() => {
   const downloadViaBlob = async (url, filename) => {
     try {
       const res = await fetch(url, { credentials: 'include' });
-      if (!res.ok) throw new Error('HTTP '+res.status);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1263,7 +1388,7 @@ useEffect(() => {
       a.download = filename || 'archivo.pdf';
       document.body.appendChild(a);
       a.click();
-      setTimeout(()=> { URL.revokeObjectURL(blobUrl); a.remove(); }, 1000);
+      setTimeout(() => { URL.revokeObjectURL(blobUrl); a.remove(); }, 1000);
     } catch (e) {
       // Fallback: abrir en nueva pestaña si no se pudo forzar descarga
       const a = document.createElement('a');
@@ -1395,7 +1520,7 @@ useEffect(() => {
         }
         return d;
       }
-    } catch {}
+    } catch { }
     return null;
   }
 
@@ -1430,22 +1555,24 @@ useEffect(() => {
         showNotification('Quiz ya abierto', 'Ya tienes este quiz abierto en otra pestaña. Ciérrala o vuelve a esa pestaña para continuar.', 'warning');
         return;
       }
-    } catch {}
-    // Validación de flujo: requiere curso seleccionado
-    if (!currentCourse) {
-      showNotification(
-        'Selecciona tu curso',
-        'Para iniciar un quiz primero debes seleccionar tu curso activo.',
-        'warning'
-      );
-      // Redirigir a la vista de cursos (SPA navigation para no perder contexto)
-      setTimeout(() => navigate('/alumno/cursos', { replace: true }), 300);
-      return;
+    } catch { }
+
+    // Verificar si hay curso disponible (en estado o localStorage) pero no bloquear
+    // El quiz puede iniciarse sin curso seleccionado, solo mostrar advertencia si es necesario
+    let hasCourse = false;
+    try {
+      hasCourse = !!currentCourse || !!localStorage.getItem('currentCourse');
+    } catch { }
+
+    if (!hasCourse) {
+      // Mostrar advertencia pero no bloquear - permitir iniciar el quiz
+      console.warn('[Quiz] No hay curso seleccionado, pero permitiendo iniciar quiz');
     }
-  // Mostrar modal con cuenta regresiva y permitir cancelar (abriremos la pestaña al aceptar o al terminar la cuenta)
-  try { preOpenedTabRef.current = null; } catch {}
-  // Mostrar modal con cuenta regresiva y permitir cancelar
-  setStartModal({ open: true, quizId, seconds: 5 });
+
+    // Mostrar modal con cuenta regresiva y permitir cancelar (abriremos la pestaña al aceptar o al terminar la cuenta)
+    try { preOpenedTabRef.current = null; } catch { }
+    // Mostrar modal con cuenta regresiva y permitir cancelar
+    setStartModal({ open: true, quizId, seconds: 5 });
   };
   // Detectar si un quiz está abierto en otra pestaña (latido <15s)
   const isQuizOpenElsewhere = (qid) => {
@@ -1531,28 +1658,28 @@ useEffect(() => {
 
   // Abrir quiz en nueva pestaña (ventaja: aislamiento y bloqueos sin afectar dashboard)
   const openQuizInNewTab = (qid, reuseWin = null) => {
-  const target = `/alumno/actividades/quiz/${qid}`;
+    const target = `/alumno/actividades/quiz/${qid}`;
     try {
       // Pre-marcar este quiz como "abierto" para reflejar el estado de inmediato en UI
-      try { localStorage.setItem(`quiz_open_${qid}`, JSON.stringify({ ts: Date.now(), pid: 'preopen' })); } catch {}
+      try { localStorage.setItem(`quiz_open_${qid}`, JSON.stringify({ ts: Date.now(), pid: 'preopen' })); } catch { }
       setOpenHeartbeatTick((t) => t + 1);
       // Abrir nueva pestaña en el gesto del usuario (aceptar) o tras la cuenta
       const win = window.open('', '_blank');
       if (!win) {
         // Popup bloqueado -> fallback misma pestaña
-  navigate(target, { replace: true, state: { returnTo: window.location.pathname + window.location.search } });
+        navigate(target, { replace: true, state: { returnTo: window.location.pathname + window.location.search } });
       }
       else {
         try {
           win.document.write('<!doctype html><title>MQERK Academy</title><meta charset="utf-8"/><p style="font-family:system-ui,Segoe UI,Arial;margin:2rem;color:#4b5563;">Cargando quiz…</p>');
           win.document.close();
-        } catch {}
+        } catch { }
         win.location.href = target;
       }
     } catch {
-  navigate(target, { replace: true, state: { returnTo: window.location.pathname + window.location.search } });
+      navigate(target, { replace: true, state: { returnTo: window.location.pathname + window.location.search } });
     } finally {
-      setStartModal({ open:false, quizId:null, seconds:5 });
+      setStartModal({ open: false, quizId: null, seconds: 5 });
     }
   };
   useEffect(() => {
@@ -1572,8 +1699,8 @@ useEffect(() => {
     // Estilo igual al contenedor de notificaciones (gradiente, ícono y botón primario)
     const colorGradient = 'from-blue-500 to-indigo-600';
     return (
-  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => { try { if (preOpenedTabRef.current && !preOpenedTabRef.current.closed && preOpenedTabRef.current.location.href === 'about:blank') { preOpenedTabRef.current.close(); } } catch {} setStartModal({ open:false, quizId:null, seconds:5 }); }}>
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e=>e.stopPropagation()}>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => { try { if (preOpenedTabRef.current && !preOpenedTabRef.current.closed && preOpenedTabRef.current.location.href === 'about:blank') { preOpenedTabRef.current.close(); } } catch { } setStartModal({ open: false, quizId: null, seconds: 5 }); }}>
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
           {/* Header estilo notificación */}
           <div className={`bg-gradient-to-r ${colorGradient} text-white p-6 text-center`}>
             <Brain className="w-12 h-12 text-white/90 mx-auto mb-2" />
@@ -1586,7 +1713,7 @@ useEffect(() => {
             </p>
             <div className="flex items-center justify-between gap-3">
               <button
-                onClick={() => { try { if (preOpenedTabRef.current && !preOpenedTabRef.current.closed && preOpenedTabRef.current.location.href === 'about:blank') { preOpenedTabRef.current.close(); } } catch {} setStartModal({ open:false, quizId:null, seconds:5 }); }}
+                onClick={() => { try { if (preOpenedTabRef.current && !preOpenedTabRef.current.closed && preOpenedTabRef.current.location.href === 'about:blank') { preOpenedTabRef.current.close(); } } catch { } setStartModal({ open: false, quizId: null, seconds: 5 }); }}
                 className="w-1/2 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium"
               >
                 Cancelar
@@ -1616,7 +1743,7 @@ useEffect(() => {
     if (anyNonPdf) { setUploadError('Solo archivos PDF.'); return; }
     const anyTooBig = uploadSelectedFiles.some(f => f.size > MAX_FILE_SIZE_BYTES);
     if (anyTooBig) { setUploadError('Uno o más archivos superan 5MB.'); return; }
-    const total = uploadSelectedFiles.reduce((s,f)=> s + f.size, 0);
+    const total = uploadSelectedFiles.reduce((s, f) => s + f.size, 0);
     if (total > MAX_TOTAL_BYTES) { setUploadError('Tamaño combinado > 20MB.'); return; }
     handleFileUpload(selectedActividad.id, uploadSelectedFiles);
   };
@@ -1629,7 +1756,7 @@ useEffect(() => {
       console.log(`Intento número: ${actividad.totalIntentos + 1}`);
       console.log(`Intentos previos: ${actividad.totalIntentos}`);
       console.log(`Mejor puntaje actual: ${actividad.mejorPuntaje || 'N/A'}`);
-      
+
       if (selectedType === 'actividades') {
         // Para actividades: abrir modal de subida
         openUploadModal(actividad);
@@ -1656,7 +1783,7 @@ useEffect(() => {
       });
       historialTexto += `Mejor puntaje: ${actividad.mejorPuntaje}%\n`;
       historialTexto += `Total de intentos: ${actividad.totalIntentos}`;
-      
+
       showNotification(
         'Historial de Intentos',
         historialTexto,
@@ -1758,7 +1885,7 @@ useEffect(() => {
         try {
           const resp = await listArchivosEntrega(selectedActividad.entrega_id);
           setEntregaArchivos(resp.data?.data || []);
-        } catch {}
+        } catch { }
       })();
     }
   }, [showUploadModal, selectedActividad, entregaArchivos.length]);
@@ -1780,7 +1907,7 @@ useEffect(() => {
               {blocked ? 'Entrega Finalizada' : isEdit ? 'Gestionar Archivos' : 'Subir Archivos'}
             </h2>
             <p className="text-indigo-100 mt-1 text-sm">
-              {blocked ? 'La actividad ya fue revisada. No puedes subir más archivos.' : isEdit ? 'Agrega o elimina PDFs antes de la revisión.' : 'Sube un PDF (podrás agregar más luego).' }
+              {blocked ? 'La actividad ya fue revisada. No puedes subir más archivos.' : isEdit ? 'Agrega o elimina PDFs antes de la revisión.' : 'Sube un PDF (podrás agregar más luego).'}
             </p>
           </div>
 
@@ -1839,7 +1966,7 @@ useEffect(() => {
               {!!uploadSelectedFiles.length && !uploadError && (
                 <ul className="mt-2 text-xs text-green-600 space-y-1 max-h-28 overflow-auto pr-1">
                   {uploadSelectedFiles.map(f => (
-                    <li key={f.name} className="flex items-center gap-1"><CheckCircle className="w-4 h-4" /> {f.name} ({(f.size/1024).toFixed(1)} KB)</li>
+                    <li key={f.name} className="flex items-center gap-1"><CheckCircle className="w-4 h-4" /> {f.name} ({(f.size / 1024).toFixed(1)} KB)</li>
                   ))}
                 </ul>
               )}
@@ -1858,8 +1985,8 @@ useEffect(() => {
                     <li key={f.id} className="flex items-center justify-between bg-gray-100 rounded-lg px-3 py-2 text-xs">
                       <span className="truncate" title={f.original_nombre || f.archivo}>{(f.original_nombre || f.archivo.split('/').pop())}</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => window.open(f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`,'_blank')} className="text-blue-600 hover:underline">Ver</button>
-                        {!blocked && <button onClick={async () => { try { const resp = await deleteArchivoEntrega(selectedActividad.entrega_id, f.id); setEntregaArchivos(resp.data?.data || []); } catch { showNotification('Error','No se pudo eliminar','error'); } }} className="text-red-500 hover:text-red-700">Eliminar</button>}
+                        <button onClick={() => window.open(f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`, '_blank')} className="text-blue-600 hover:underline">Ver</button>
+                        {!blocked && <button onClick={async () => { try { const resp = await deleteArchivoEntrega(selectedActividad.entrega_id, f.id); setEntregaArchivos(resp.data?.data || []); } catch { showNotification('Error', 'No se pudo eliminar', 'error'); } }} className="text-red-500 hover:text-red-700">Eliminar</button>}
                       </div>
                     </li>
                   ))}
@@ -1891,23 +2018,23 @@ useEffect(() => {
     const hasMulti = viewingEntregaArchivos && viewingEntregaArchivos.length > 0;
 
     const downloadEntregaArchivo = async (f) => {
-      if(!f) return;
+      if (!f) return;
       const full = f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`;
       const name = f.original_nombre || f.archivo.split('/').pop();
       await downloadViaBlob(full, name);
     };
     const downloadAllEntregaArchivos = () => {
-      viewingEntregaArchivos.forEach((f,idx)=> setTimeout(()=> downloadEntregaArchivo(f), idx*400));
+      viewingEntregaArchivos.forEach((f, idx) => setTimeout(() => downloadEntregaArchivo(f), idx * 400));
     };
 
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-start px-2 pt-24 md:pt-28 pb-4 z-50" onClick={closeModals}>
-        <div className="bg-white rounded-t-2xl md:rounded-xl shadow-2xl w-full max-w-5xl h-[calc(100vh-7rem)] md:h-[82vh] flex flex-col overflow-hidden" onClick={e=>e.stopPropagation()}>
+        <div className="bg-white rounded-t-2xl md:rounded-xl shadow-2xl w-full max-w-5xl h-[calc(100vh-7rem)] md:h-[82vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
           <div className="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
             <h2 className="font-semibold text-lg truncate flex-1 pr-2">Entrega: {selectedActividad.nombre}</h2>
             {hasMulti && isMobile && (
               <button
-                onClick={() => setShowMobileFileList(v=>!v)}
+                onClick={() => setShowMobileFileList(v => !v)}
                 className="mr-2 px-3 py-1.5 text-xs rounded-md bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20"
               >{showMobileFileList ? 'Ocultar' : 'Lista'}</button>
             )}
@@ -1922,14 +2049,14 @@ useEffect(() => {
                 const active = f.id === viewingSelectedArchivoId;
                 const display = f.original_nombre || f.archivo.split('/').pop();
                 return (
-                  <div key={f.id} className={`group rounded-lg border p-2 text-xs cursor-pointer transition-colors ${active ? 'border-purple-500 bg-white shadow-sm' : 'border-gray-200 bg-white hover:bg-purple-50'}`} onClick={()=> { setViewingSelectedArchivoId(f.id); const src = f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`; setViewingActivityFile(src); }}>
+                  <div key={f.id} className={`group rounded-lg border p-2 text-xs cursor-pointer transition-colors ${active ? 'border-purple-500 bg-white shadow-sm' : 'border-gray-200 bg-white hover:bg-purple-50'}`} onClick={() => { setViewingSelectedArchivoId(f.id); const src = f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`; setViewingActivityFile(src); }}>
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-purple-500" />
                       <span className="truncate" title={display}>{display}</span>
                     </div>
                     <div className="mt-1 flex gap-2">
-                      <button className="text-blue-600 hover:underline" onClick={(e)=> { e.stopPropagation(); downloadEntregaArchivo(f); }}>Descargar</button>
-                      <button className="text-gray-500 hover:underline" onClick={(e)=> { e.stopPropagation(); setViewingSelectedArchivoId(f.id); const src = f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`; setViewingActivityFile(src); }}>Ver</button>
+                      <button className="text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); downloadEntregaArchivo(f); }}>Descargar</button>
+                      <button className="text-gray-500 hover:underline" onClick={(e) => { e.stopPropagation(); setViewingSelectedArchivoId(f.id); const src = f.archivo.startsWith('http') ? f.archivo : `${window.location.origin}${f.archivo}`; setViewingActivityFile(src); }}>Ver</button>
                     </div>
                   </div>
                 );
@@ -1942,14 +2069,14 @@ useEffect(() => {
             <div className="flex-1 flex flex-col">
               <div className="p-3 border-b flex flex-wrap gap-2 items-center justify-between">
                 <div className="text-sm font-medium truncate max-w-[60%]">
-                  {hasMulti ? (viewingEntregaArchivos.find(f=>f.id===viewingSelectedArchivoId)?.original_nombre || viewingEntregaArchivos.find(f=>f.id===viewingSelectedArchivoId)?.archivo?.split('/').pop() || 'Selecciona un archivo') : (pdfSrc ? pdfSrc.split('/').pop() : 'Sin archivo')}
+                  {hasMulti ? (viewingEntregaArchivos.find(f => f.id === viewingSelectedArchivoId)?.original_nombre || viewingEntregaArchivos.find(f => f.id === viewingSelectedArchivoId)?.archivo?.split('/').pop() || 'Selecciona un archivo') : (pdfSrc ? pdfSrc.split('/').pop() : 'Sin archivo')}
                 </div>
                 <div className="flex gap-2">
                   {hasMulti && viewingEntregaArchivos.length > 1 && (
                     <button onClick={downloadAllEntregaArchivos} className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md">Descargar todo</button>
                   )}
                   {pdfSrc && esPDF && (
-                    <button onClick={()=> { if(viewingSelectedArchivoId){ const f=viewingEntregaArchivos.find(x=>x.id===viewingSelectedArchivoId); downloadEntregaArchivo(f); } else { handleOpenPdfInNewTab(); } }} className="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">Descargar actual</button>
+                    <button onClick={() => { if (viewingSelectedArchivoId) { const f = viewingEntregaArchivos.find(x => x.id === viewingSelectedArchivoId); downloadEntregaArchivo(f); } else { handleOpenPdfInNewTab(); } }} className="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">Descargar actual</button>
                   )}
                   {pdfSrc && esPDF && !isMobile && (
                     <button onClick={handleOpenPdfInNewTab} className="px-3 py-1.5 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded-md">Abrir pestaña</button>
@@ -1963,21 +2090,22 @@ useEffect(() => {
                     <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center text-gray-600 text-xs gap-3">
                       <div className="font-medium">Abrir documento</div>
                       <div className="text-[11px] text-gray-500 max-w-xs">En móvil se abrirá fuera del sitio para mejor lectura.</div>
-                      <button onClick={()=> window.open(pdfSrc,'_blank','noopener')} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-xs w-full max-w-[200px]">Abrir PDF</button>
-                      <button onClick={()=> window.location.href = pdfSrc} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs w-full max-w-[200px]">Forzar descarga</button>
-                      <button onClick={()=> setUseAltViewer(v=>!v)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs w-full max-w-[200px]">{useAltViewer ? 'Cerrar visor alterno' : 'Visor alterno'}</button>
+                      <button onClick={() => window.open(pdfSrc, '_blank', 'noopener')} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-xs w-full max-w-[200px]">Abrir PDF</button>
+                      <button onClick={() => window.location.href = pdfSrc} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs w-full max-w-[200px]">Forzar descarga</button>
+                      <button onClick={() => setUseAltViewer(v => !v)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs w-full max-w-[200px]">{useAltViewer ? 'Cerrar visor alterno' : 'Visor alterno'}</button>
                       {useAltViewer && (
                         <iframe
-                          key={pdfSrc+'alt-simple'}
+                          allowFullScreen
+                          key={pdfSrc + 'alt-simple'}
                           src={`https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(pdfSrc)}`}
                           title="Entrega PDF (Alt)"
                           className="w-full h-full border-none mt-2 bg-white"
-                          onError={()=> setUseAltViewer(false)}
+                          onError={() => setUseAltViewer(false)}
                         />
                       )}
                     </div>
                   ) : (
-                    <iframe key={pdfSrc} src={encodeURI(pdfSrc)} title="Entrega PDF" className="w-full h-full border-none" />
+                    <iframe key={pdfSrc} src={encodeURI(pdfSrc)} title="Entrega PDF" className="w-full h-full border-none" allowFullScreen />
                   )
                 ) : (
                   <div className="text-xs text-gray-500">No hay PDF para visualizar.</div>
@@ -2096,7 +2224,7 @@ useEffect(() => {
             <p className="text-gray-700 text-lg leading-relaxed mb-6">
               {notificationContent.message}
             </p>
-            
+
             <button
               onClick={closeNotificationModal}
               className={`w-full px-6 py-3 bg-gradient-to-r ${getColorByType(notificationContent.type)} hover:opacity-90 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105`}
@@ -2112,37 +2240,37 @@ useEffect(() => {
   // Modal de recursos múltiples (descarga y vista previa)
   const renderResourcesModal = () => {
     if (!showResourcesModal || !resourcesActividad) return null;
-  const recursos = resourcesActividad.recursos || [];
-  const current = previewRecurso;
-  const baseUrlRaw = current ? resolveFileUrl(current.archivo) : null;
-  // Codificar la URL para manejar espacios y caracteres especiales (ej. nombres con espacios)
-  const baseUrl = baseUrlRaw ? encodeURI(baseUrlRaw) : null;
-  const currentUrl = baseUrl ? baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'v=' + previewKey : null; // cache-bust
-  // BACKEND: Asesores solo pueden subir PDFs, así que asumimos siempre PDF y simplificamos la lógica
+    const recursos = resourcesActividad.recursos || [];
+    const current = previewRecurso;
+    const baseUrlRaw = current ? resolveFileUrl(current.archivo) : null;
+    // Codificar la URL para manejar espacios y caracteres especiales (ej. nombres con espacios)
+    const baseUrl = baseUrlRaw ? encodeURI(baseUrlRaw) : null;
+    const currentUrl = baseUrl ? baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'v=' + previewKey : null; // cache-bust
+    // BACKEND: Asesores solo pueden subir PDFs, así que asumimos siempre PDF y simplificamos la lógica
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-start px-2 pt-24 md:pt-28 pb-4 z-50" onClick={closeResourcesModal}>
-        <div className="bg-white rounded-t-2xl md:rounded-xl shadow-2xl w-full max-w-4xl h-[calc(100vh-7rem)] md:h-[80vh] flex flex-col overflow-hidden" onClick={e=>e.stopPropagation()}>
+        <div className="bg-white rounded-t-2xl md:rounded-xl shadow-2xl w-full max-w-4xl h-[calc(100vh-7rem)] md:h-[80vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
           <div className="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
             <h2 className="font-semibold text-lg flex-1 pr-2 truncate">Recursos de: {resourcesActividad.nombre}</h2>
             {isMobile && (
               <button
-                onClick={() => setShowMobileFileList(v=>!v)}
+                onClick={() => setShowMobileFileList(v => !v)}
                 className="mr-2 px-3 py-1.5 text-xs rounded-md bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20"
               >{showMobileFileList ? 'Ocultar' : 'Lista'}</button>
             )}
             <button onClick={closeResourcesModal} className="text-white/80 hover:text-white">✕</button>
           </div>
           <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
-      <div className={`w-full md:w-64 md:border-r border-b md:border-b-0 overflow-y-auto p-3 space-y-2 bg-gray-50 ${isMobile ? (showMobileFileList ? 'block max-h-48' : 'hidden') : 'block'} md:max-h-none flex-shrink-0`}>
-              {recursos.map((r,idx)=> (
-        <div key={idx} className={`group rounded-lg border p-2 text-xs cursor-pointer transition-colors ${previewRecurso===r ? 'border-blue-500 bg-white shadow-sm' : 'border-gray-200 bg-white hover:bg-blue-50'}`} onClick={()=> { setPreviewRecurso(r); setPreviewError(null); setPreviewLoading(true); setPreviewKey(c=>c+1); }}>
+            <div className={`w-full md:w-64 md:border-r border-b md:border-b-0 overflow-y-auto p-3 space-y-2 bg-gray-50 ${isMobile ? (showMobileFileList ? 'block max-h-48' : 'hidden') : 'block'} md:max-h-none flex-shrink-0`}>
+              {recursos.map((r, idx) => (
+                <div key={idx} className={`group rounded-lg border p-2 text-xs cursor-pointer transition-colors ${previewRecurso === r ? 'border-blue-500 bg-white shadow-sm' : 'border-gray-200 bg-white hover:bg-blue-50'}`} onClick={() => { setPreviewRecurso(r); setPreviewError(null); setPreviewLoading(true); setPreviewKey(c => c + 1); }}>
                   <div className="flex items-center gap-2">
                     <Download className="w-4 h-4 text-blue-500" />
                     <span className="truncate" title={r.nombre || r.archivo}>{r.nombre || r.archivo.split('/').pop()}</span>
                   </div>
                   <div className="mt-1 flex gap-2">
-          <button className="text-blue-600 hover:underline" onClick={(e)=> { e.stopPropagation(); handleDownloadRecurso(resourcesActividad.id,r); }}>Descargar</button>
-          <button className="text-gray-500 hover:underline" onClick={(e)=> { e.stopPropagation(); setPreviewRecurso(r); setPreviewError(null); setPreviewLoading(true); setPreviewKey(c=>c+1); }}>Ver</button>
+                    <button className="text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); handleDownloadRecurso(resourcesActividad.id, r); }}>Descargar</button>
+                    <button className="text-gray-500 hover:underline" onClick={(e) => { e.stopPropagation(); setPreviewRecurso(r); setPreviewError(null); setPreviewLoading(true); setPreviewKey(c => c + 1); }}>Ver</button>
                   </div>
                 </div>
               ))}
@@ -2155,7 +2283,7 @@ useEffect(() => {
                 <div className="flex gap-2">
                   <button onClick={downloadAllRecursos} className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md">Descargar todo</button>
                   {current && (
-                    <button onClick={()=> handleDownloadRecurso(resourcesActividad.id,current)} className="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">Descargar actual</button>
+                    <button onClick={() => handleDownloadRecurso(resourcesActividad.id, current)} className="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">Descargar actual</button>
                   )}
                 </div>
               </div>
@@ -2171,7 +2299,7 @@ useEffect(() => {
                     {previewError && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center p-4 text-xs text-red-600 bg-white">
                         <div>ERROR al cargar el PDF</div>
-                        <button className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs" onClick={()=> { setPreviewError(null); setPreviewLoading(true); setPreviewKey(c=>c+1); }}>Reintentar</button>
+                        <button className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs" onClick={() => { setPreviewError(null); setPreviewLoading(true); setPreviewKey(c => c + 1); }}>Reintentar</button>
                         <a className="text-blue-600 underline" href={baseUrl} target="_blank" rel="noopener">Abrir en nueva pestaña</a>
                       </div>
                     )}
@@ -2179,25 +2307,27 @@ useEffect(() => {
                       <div className="flex flex-col items-center justify-center gap-3 text-center p-4 text-xs text-gray-600">
                         <div>Vista previa limitada en este dispositivo.</div>
                         <a href={baseUrl} target="_blank" rel="noopener" className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs">Abrir PDF</a>
-                        <button onClick={()=> setUseAltViewer(true)} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs">Visor alterno</button>
+                        <button onClick={() => setUseAltViewer(true)} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs">Visor alterno</button>
                       </div>
                     ) : useAltViewer ? (
                       <iframe
-                        key={currentUrl+'alt'}
+                        allowFullScreen
+                        key={currentUrl + 'alt'}
                         src={`https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(baseUrl)}`}
                         title="Recurso PDF (Alt)"
                         className="w-full h-full border-0 bg-white"
-                        onLoad={()=> setPreviewLoading(false)}
-                        onError={()=> { setUseAltViewer(false); setPreviewError(true); }}
+                        onLoad={() => setPreviewLoading(false)}
+                        onError={() => { setUseAltViewer(false); setPreviewError(true); }}
                       />
                     ) : (
                       <iframe
+                        allowFullScreen
                         key={currentUrl}
                         src={currentUrl}
                         title="Recurso PDF"
                         className="w-full h-full border-0"
-                        onLoad={()=> setPreviewLoading(false)}
-                        onError={()=> { setPreviewLoading(false); setPreviewError(true); }}
+                        onLoad={() => setPreviewLoading(false)}
+                        onError={() => { setPreviewLoading(false); setPreviewError(true); }}
                       />
                     )}
                   </>
@@ -2217,18 +2347,18 @@ useEffect(() => {
 
   // Función para renderizar las áreas principales
   const renderAreas = () => (
-  <div className="min-h-screen bg-transparent dark:bg-transparent px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
+    <div className="min-h-screen bg-transparent dark:bg-transparent px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
       <div className="max-w-7xl mx-auto">
         {error && !loading && (
           <div className="mb-4 p-4 rounded-xl border border-red-200 bg-red-50 flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1 text-sm text-red-700">
-              {error} {retryCount>0 && retryCount<=MAX_RETRIES && `(reintento ${retryCount}/${MAX_RETRIES})`}
+              {error} {retryCount > 0 && retryCount <= MAX_RETRIES && `(reintento ${retryCount}/${MAX_RETRIES})`}
             </div>
             <div className="flex gap-2">
               {retryCount <= MAX_RETRIES && (
                 <button onClick={manualRetry} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 active:scale-95">Reintentar</button>
               )}
-              <button onClick={()=> window.location.reload()} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 active:scale-95">Recargar</button>
+              <button onClick={() => window.location.reload()} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 active:scale-95">Recargar</button>
             </div>
           </div>
         )}
@@ -2259,7 +2389,7 @@ useEffect(() => {
         <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 rounded-xl border border-purple-200 shadow-md p-8 mb-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100/30 to-blue-100/30 rounded-full blur-2xl"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-indigo-100/30 to-purple-100/30 rounded-full blur-xl"></div>
-          
+
           <div className="flex items-center justify-center relative z-10">
             <div className="flex items-center space-x-4">
               <div className="relative">
@@ -2270,7 +2400,7 @@ useEffect(() => {
                   <Trophy className="w-2 h-2 text-white" />
                 </div>
               </div>
-              
+
               <div className="flex flex-col items-center">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-indigo-700 to-blue-700 bg-clip-text text-transparent">
                   ÁREAS DE ESTUDIO
@@ -2284,10 +2414,10 @@ useEffect(() => {
           </div>
         </div>
 
-  {/* Grid de áreas */}
-  {/* Grid responsive: compacta en tablets para aprovechar ancho */}
-  <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr gap-3 md:gap-4 lg:gap-5">
-          {(loadingCatalog || loading) && areasData.length===0 && (
+        {/* Grid de áreas */}
+        {/* Grid responsive: compacta en tablets para aprovechar ancho */}
+        <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr gap-3 md:gap-4 lg:gap-5">
+          {(loadingCatalog || loading) && areasData.length === 0 && (
             <div className="col-span-full py-8 text-center text-sm text-gray-500">Cargando áreas...</div>
           )}
           {areasData.map((area) => (
@@ -2332,7 +2462,7 @@ useEffect(() => {
                       {hasInitialArea ? 'Módulos Específicos' : 'Elige tu Área de Interés'}
                     </h1>
                     <p className="text-gray-600">
-                      {hasInitialArea 
+                      {hasInitialArea
                         ? 'Accede a tus áreas permitidas o solicita acceso a nuevas.'
                         : 'Selecciona tu primera área de conocimiento para empezar.'}
                     </p>
@@ -2349,7 +2479,7 @@ useEffect(() => {
           {/* Grid de módulos específicos con lógica de acceso y estilo restaurado */}
           {/* Grid responsive para módulos específicos */}
           <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr gap-3 md:gap-4 lg:gap-5">
-            {(loadingCatalog || loading) && modulosEspecificos.length===0 && (
+            {(loadingCatalog || loading) && modulosEspecificos.length === 0 && (
               <div className="col-span-full py-6 text-center text-sm text-gray-500">Cargando módulos...</div>
             )}
             {modulosEspecificos.map((modulo) => {
@@ -2357,7 +2487,7 @@ useEffect(() => {
               const request = activityRequests.find(req => req.areaId === modulo.id);
               const isPending = request && request.status === 'pending';
 
-              let actionHandler = () => {};
+              let actionHandler = () => { };
               let footerContent;
               let cardClassName = `${modulo.bgColor} ${modulo.borderColor} border rounded-2xl shadow-md hover:shadow-xl transition-all duration-200 group px-4 py-5 sm:px-6 sm:py-6 flex flex-col select-none`;
               let isClickable = false;
@@ -2427,7 +2557,7 @@ useEffect(() => {
                 </div>
               );
             })}
-            {!loadingCatalog && !catalogError && modulosEspecificos.length===0 && (
+            {!loadingCatalog && !catalogError && modulosEspecificos.length === 0 && (
               <div className="col-span-full text-center text-xs sm:text-sm text-gray-500 py-6">No hay módulos específicos disponibles.</div>
             )}
           </div>
@@ -2470,7 +2600,7 @@ useEffect(() => {
         <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl border border-cyan-200 shadow-md p-8 mb-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-100/30 to-indigo-100/30 rounded-full blur-2xl"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-100/30 to-cyan-100/30 rounded-full blur-xl"></div>
-          
+
           <div className="flex items-center justify-center relative z-10">
             <div className="flex items-center space-x-4">
               <div className="relative">
@@ -2481,7 +2611,7 @@ useEffect(() => {
                   <CheckCircle2 className="w-2 h-2 text-white" />
                 </div>
               </div>
-              
+
               <div className="flex flex-col items-center">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
                   Actividades y Quizzes
@@ -2505,7 +2635,7 @@ useEffect(() => {
               icon={<FileText className="w-6 h-6 text-white" />}
               containerClasses="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 lg:w-[380px] xl:w-[420px]"
               iconWrapperClass="bg-gradient-to-br from-blue-500 to-indigo-600"
-              minHeight={CARD_HEIGHT_PX+40}
+              minHeight={CARD_HEIGHT_PX + 40}
               onClick={() => handleSelectType('actividades')}
               footer={<div className="inline-flex items-center text-blue-600 font-medium text-xs sm:text-sm"><span>ACCEDER</span><ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
             />
@@ -2515,7 +2645,7 @@ useEffect(() => {
               icon={<Brain className="w-6 h-6 text-white" />}
               containerClasses="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 lg:w-[380px] xl:w-[420px]"
               iconWrapperClass="bg-gradient-to-br from-purple-500 to-pink-600"
-              minHeight={CARD_HEIGHT_PX+40}
+              minHeight={CARD_HEIGHT_PX + 40}
               onClick={() => handleSelectType('quiz')}
               footer={<div className="inline-flex items-center text-purple-600 font-medium text-xs sm:text-sm"><span>ACCEDER</span><ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
             />
@@ -2548,627 +2678,628 @@ useEffect(() => {
     </div>
   );
 
-    // Función para renderizar tabla de actividades (versión unificada single-submission)
-    const renderTablaActividades = () => (
-  <div className="px-0 sm:px-3 md:px-4 lg:px-6 py-6">
-        
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-8">
-          <div className="px-6 py-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={handleGoBack}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-                <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Actividades</h1>
-                  <p className="text-gray-600">{selectedArea?.titulo}</p>
-                </div>
-              </div>
-              <div className="mt-4 lg:mt-0 flex items-center text-sm text-gray-500">
-                <Target className="w-4 h-4 mr-1" />
-                <span>{filteredActividades.length} actividades disponibles</span>
-              </div>
-            </div>
-          </div>
-        </div>
+  // Función para renderizar tabla de actividades (versión unificada single-submission)
+  const renderTablaActividades = () => (
+    <div className="px-0 sm:px-3 md:px-4 lg:px-6 py-6">
 
-       
-        <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl border border-cyan-200 shadow-md p-8 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-100/30 to-indigo-100/30 rounded-full blur-2xl"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-100/30 to-cyan-100/30 rounded-full blur-xl"></div>
-          
-          <div className="flex items-center justify-center relative z-10">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-8">
+        <div className="px-6 py-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <FileText className="w-6 h-6 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-2 h-2 text-white" />
-                </div>
-              </div>
-              
-              <div className="flex flex-col items-center">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
-                  ACTIVIDADES DISPONIBLES
-                </h2>
-                <div className="flex items-center space-x-2 mt-1">
-                  <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
-                  <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
-                </div>
+              <button
+                onClick={handleGoBack}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Actividades</h1>
+                <p className="text-gray-600">{selectedArea?.titulo}</p>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Filtros (UX optimizada para móviles) */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
-            <div className="text-base sm:text-lg font-semibold text-gray-800">Filtrar actividades</div>
-            {isMobile ? (
-              <div className="relative w-full">
-                <button
-                  type="button"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center justify-between w-full px-3 sm:px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-haspopup="listbox"
-                  aria-expanded={isDropdownOpen}
-                >
-                  <span className="truncate">{getSelectedMonthName()}</span>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {isDropdownOpen && (
-                  <div className="absolute z-[80] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-2xl max-h-72 overflow-y-auto">
-                    <div className="py-1">
-                      <button
-                        type="button"
-                        onClick={() => { handleMonthSelect('all'); setIsDropdownOpen(false); }}
-                        className={`block w-full px-4 py-3 text-left text-base hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                        role="option"
-                        aria-selected={selectedMonth === 'all'}
-                      >
-                        Todos los meses
-                      </button>
-                      {months.map((month, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => { handleMonthSelect(index.toString()); setIsDropdownOpen(false); }}
-                          className={`block w-full px-4 py-3 text-left text-base hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                          role="option"
-                          aria-selected={selectedMonth === index.toString()}
-                        >
-                          {month}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center justify-between w-56 sm:w-64 px-3 sm:px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-haspopup="listbox"
-                  aria-expanded={isDropdownOpen}
-                >
-                  <span>{getSelectedMonthName()}</span>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {isDropdownOpen && (
-                  <div className="absolute z-[70] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-auto">
-                    <div className="py-1">
-                      <button
-                        type="button"
-                        onClick={() => { handleMonthSelect('all'); setIsDropdownOpen(false); }}
-                        className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                      >
-                        Todos los meses
-                      </button>
-                      {months.map((month, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => { handleMonthSelect(index.toString()); setIsDropdownOpen(false); }}
-                          className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                          role="option"
-                          aria-selected={selectedMonth === index.toString()}
-                        >
-                          {month}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Nueva tabla single-submission */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gradient-to-r from-blue-500 to-indigo-600">
-                <tr>
-                  <th className="px-4 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">No.</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Actividad</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Recursos</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Fecha Límite</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Subir / Editar</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Entregado</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Visualizar</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Calificación</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {loading && (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">Cargando actividades...</td>
-                  </tr>
-                )}
-                {!loading && error && (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center text-sm text-red-600">{error}</td>
-                  </tr>
-                )}
-                {!loading && !error && filteredActividades.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">No hay actividades.</td>
-                  </tr>
-                )}
-                {!loading && !error && filteredActividades.map((actividad, index) => {
-                  const vencida = !isWithinDeadline(actividad.fechaEntrega);
-                  // Bloqueado si ya fue revisada (calificada) o vencida
-                  const puedeEditar = actividad.entregada && !vencida && actividad.estado !== 'revisada';
-                  return (
-                    <tr key={actividad.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="px-4 py-4 text-sm text-gray-700 font-medium">{index + 1}</td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{actividad.nombre}</div>
-                          {actividad.descripcion && (
-                            <div className="text-xs text-gray-500 mt-0.5">
-                              <p
-                                style={{
-                                  display:'-webkit-box',
-                                  WebkitLineClamp:2,
-                                  WebkitBoxOrient:'vertical',
-                                  overflow:'hidden',
-                                  textAlign:'justify',
-                                  maxWidth: descMaxCh,
-                                  wordBreak: 'break-word'
-                                }}
-                              >
-                                {actividad.descripcion}
-                              </p>
-                              {String(actividad.descripcion).length > 160 && (
-                                <button
-                                  onClick={() => openLongText(actividad.nombre, actividad.descripcion, { tipo:'actividad', id:actividad.id })}
-                                  className="mt-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline"
-                                >
-                                  Ver más
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {actividad.recursos && actividad.recursos.length > 0 && (
-                          <button
-                            onClick={() => openResourcesModal(actividad)}
-                            className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200"
-                          >
-                            <Download className="w-4 h-4 mr-1" /> {actividad.recursos.length} PDF{actividad.recursos.length>1?'s':''}
-                          </button>
-                        )}
-                        {!actividad.recursos?.length && actividad.plantilla && (
-                          <button
-                            onClick={() => handleDownload(actividad.id)}
-                            className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200"
-                          >
-                            <Download className="w-4 h-4 mr-1" /> PDF
-                          </button>
-                        )}
-                        {!actividad.plantilla && (!actividad.recursos || actividad.recursos.length === 0) && (
-                          <span className="text-xs text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{new Date(actividad.fechaEntrega).toLocaleDateString('es-ES')}</div>
-                        <div className={`text-xs ${vencida ? 'text-red-600' : 'text-green-600'}`}>{vencida ? 'Vencida' : 'A tiempo'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {!actividad.entregada ? (
-                          <button
-                            onClick={() => openUploadModal(actividad)}
-                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm"
-                          >
-                            <Upload className="w-4 h-4 mr-1" /> Subir
-                          </button>
-                        ) : (
-                          <div className="flex flex-col items-start">
-                            <button
-                              onClick={() => openUploadModal(actividad)}
-                              disabled={!puedeEditar}
-                              title={!puedeEditar && actividad.estado === 'revisada' ? 'Esta entrega ya fue calificada y no puede modificarse' : (!puedeEditar ? 'No disponible' : 'Editar entrega')}
-                              className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md shadow-sm ${
-                                puedeEditar ? 'text-white bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                              }`}
-                            >
-                              {puedeEditar ? <Upload className="w-4 h-4 mr-1" /> : null}
-                              {puedeEditar ? 'Editar' : 'Bloqueado'}
-                            </button>
-                            {!puedeEditar && actividad.estado === 'revisada' && (
-                              <span className="mt-1 text-[10px] font-medium text-purple-600">Ya calificada - no editable</span>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {actividad.entregada ? (
-                          <CheckCircle className="w-5 h-5 text-green-500" />
-                        ) : (
-                          <XCircle className="w-5 h-5 text-red-500" />
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => openViewModal(actividad)}
-                          disabled={!actividad.entregada}
-                          className={`p-2 rounded-md ${actividad.entregada ? 'text-green-600 hover:text-green-800 hover:bg-green-50' : 'text-gray-400 cursor-not-allowed'} transition-colors`}
-                          title="Ver entrega"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {actividad.entregada ? (
-                          actividad.estado === 'revisada' ? (
-                            <span className="font-medium text-gray-900 inline-flex items-center gap-2">
-                              {actividad.score !== null && actividad.score !== undefined ? actividad.score : (actividad.mejorPuntaje ?? 0)}
-                              {actividad.notas && String(actividad.notas).trim().length > 0 && (
-                                <button
-                                  onClick={() => openNotasModal(actividad)}
-                                  className="relative p-1 rounded hover:bg-blue-50 text-blue-600"
-                                  title="Ver notas del asesor"
-                                >
-                                  <MessageSquareText className="w-4 h-4" />
-                                  {(() => {
-                                    try {
-                                      const seen = localStorage.getItem(`notas_seen_${actividad.id}`);
-                                      const notasAt = actividad.notas_at ? new Date(actividad.notas_at).getTime() : 0;
-                                      const seenAt = seen ? new Date(seen).getTime() : 0;
-                                      const isNew = notasAt && notasAt > seenAt;
-                                      return isNew ? (
-                                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
-                                      ) : null;
-                                    } catch { return null; }
-                                  })()}
-                                </button>
-                              )}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-yellow-600 font-medium">En revisión</span>
-                          )
-                        ) : (
-                          <span className="text-xs text-gray-400">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="mt-4 lg:mt-0 flex items-center text-sm text-gray-500">
+              <Target className="w-4 h-4 mr-1" />
+              <span>{filteredActividades.length} actividades disponibles</span>
+            </div>
           </div>
         </div>
       </div>
-    );
 
-  // Función para renderizar tabla de quizzes
-    const renderTablaQuiz = () => (
-  <div className="px-0 sm:px-3 md:px-4 lg:px-6 py-6">
-   
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-8">
-          <div className="px-6 py-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={handleGoBack}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-                <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Quizzes</h1>
-                  <p className="text-gray-600">{selectedArea?.titulo}</p>
-                </div>
+
+      <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl border border-cyan-200 shadow-md p-8 mb-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-100/30 to-indigo-100/30 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-100/30 to-cyan-100/30 rounded-full blur-xl"></div>
+
+        <div className="flex items-center justify-center relative z-10">
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                <FileText className="w-6 h-6 text-white" />
               </div>
-              <div className="mt-4 lg:mt-0 flex items-center text-sm text-gray-500">
-                <Target className="w-4 h-4 mr-1" />
-                <span>{filteredActividades.length} quizzes disponibles</span>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-2 h-2 text-white" />
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
+                ACTIVIDADES DISPONIBLES
+              </h2>
+              <div className="flex items-center space-x-2 mt-1">
+                <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
+                <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-      
-        <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl border border-cyan-200 shadow-md p-8 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-100/30 to-indigo-100/30 rounded-full blur-2xl"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-100/30 to-cyan-100/30 rounded-full blur-xl"></div>
-          
-          <div className="flex items-center justify-center relative z-10">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Play className="w-6 h-6 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-2 h-2 text-white" />
-                </div>
-              </div>
-              
-              <div className="flex flex-col items-center">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
-                  QUIZZES DISPONIBLES
-                </h2>
-                <div className="flex items-center space-x-2 mt-1">
-                  <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
-                  <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filtros (UX optimizada para móviles) */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
-            <div className="text-base sm:text-lg font-semibold text-gray-800">Filtrar quizzes</div>
-            {isMobile ? (
-              <div className="relative w-full">
-                <button
-                  type="button"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center justify-between w-full px-3 sm:px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-haspopup="listbox"
-                  aria-expanded={isDropdownOpen}
-                >
-                  <span className="truncate">{getSelectedMonthName()}</span>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {isDropdownOpen && (
-                  <div className="absolute z-[80] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-2xl max-h-72 overflow-y-auto">
-                    <div className="py-1">
-                      <button
-                        type="button"
-                        onClick={() => { handleMonthSelect('all'); setIsDropdownOpen(false); }}
-                        className={`block w-full px-4 py-3 text-left text-base hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                        role="option"
-                        aria-selected={selectedMonth === 'all'}
-                      >
-                        Todos los meses
-                      </button>
-                      {months.map((month, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => { handleMonthSelect(index.toString()); setIsDropdownOpen(false); }}
-                          className={`block w-full px-4 py-3 text-left text-base hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                          role="option"
-                          aria-selected={selectedMonth === index.toString()}
-                        >
-                          {month}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center justify-between w-56 sm:w-64 px-3 sm:px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-haspopup="listbox"
-                  aria-expanded={isDropdownOpen}
-                >
-                  <span>{getSelectedMonthName()}</span>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {isDropdownOpen && (
-                  <div className="absolute z-[70] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-auto">
-                    <div className="py-1">
-                      <button
-                        type="button"
-                        onClick={() => { handleMonthSelect('all'); setIsDropdownOpen(false); }}
-                        className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                      >
-                        Todos los meses
-                      </button>
-                      {months.map((month, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => { handleMonthSelect(index.toString()); setIsDropdownOpen(false); }}
-                          className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                          role="option"
-                          aria-selected={selectedMonth === index.toString()}
-                        >
-                          {month}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Quizzes responsive: tarjetas en móviles, tabla en tablets/desktop */}
-  <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-          {/* Vista móvil: lista de tarjetas (sin scroll horizontal) */}
-          <div className="sm:hidden p-3 space-y-3">
-            {!loading && !error && filteredActividades.length === 0 && (
-              <div className="text-center text-gray-500 text-sm py-8">No hay quizzes disponibles por ahora en esta materia.</div>
-            )}
-              {pagedQuizzes.map((quiz) => {
-              const est = computeQuizEstado(quiz);
-              const available = isQuizAvailable(quiz);
-              const attempts = getTotalAttempts(quiz.id);
-              const showResults = attempts > 0;
-              const displayResults = showResults || !available;
-                const isOpen = isQuizOpenElsewhere(quiz.id);
-              return (
-                <div key={quiz.id} className="rounded-xl border border-gray-200 shadow-sm p-3 bg-white">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 text-[15px] leading-snug break-words">{quiz.nombre}</div>
-                      {quiz.descripcion && (
-                        <div className="text-xs text-gray-600 mt-1">
-                          <p style={{display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden', textAlign:'justify', maxWidth:'46ch', wordBreak:'break-word'}}>
-                            {quiz.descripcion}
-                          </p>
-                          {String(quiz.descripcion).length > 200 && (
-                            <button onClick={() => openLongText(quiz.nombre, quiz.descripcion, { tipo:'quiz', id:quiz.id })} className="mt-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline">Ver más</button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-shrink-0 text-right">
-                      <div className="text-[11px] text-gray-500">Fecha límite</div>
-                      <div className="text-sm font-medium text-gray-900">{new Date(quiz.fechaEntrega).toLocaleDateString('es-ES')}</div>
-                      <div className={`${isWithinDeadline(quiz.fechaEntrega) ? 'text-green-600' : 'text-red-600'} text-[11px]`}>{isWithinDeadline(quiz.fechaEntrega) ? 'Disponible' : 'Vencido'}</div>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className={`inline-flex px-2 py-0.5 text-[11px] font-semibold rounded-full ${
-                      est === 'completado' ? 'bg-green-100 text-green-800' : est === 'disponible' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {est === 'completado' ? 'Completado' : est === 'disponible' ? 'Disponible' : 'Vencido'}
-                    </span>
-                    <div className="text-[12px] text-gray-700">
-                      Mejor: {getBestScore(quiz.id) !== 'En revisión' ? `${getBestScore(quiz.id)}%` : getBestScore(quiz.id)} · Intentos: {attempts}/{quiz.maxIntentos}
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center justify-end gap-2">
+      {/* Filtros (UX optimizada para móviles) */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+          <div className="text-base sm:text-lg font-semibold text-gray-800">Filtrar actividades</div>
+          {isMobile ? (
+            <div className="relative w-full">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center justify-between w-full px-3 sm:px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-haspopup="listbox"
+                aria-expanded={isDropdownOpen}
+              >
+                <span className="truncate">{getSelectedMonthName()}</span>
+                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isDropdownOpen && (
+                <div className="absolute z-[80] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-2xl max-h-72 overflow-y-auto">
+                  <div className="py-1">
                     <button
-                      onClick={() => { if (available && !isOpen) handleIniciarSimulacion(quiz.id); }}
-                      title={isOpen ? 'Ya abierto en otra pestaña' : (available ? 'Iniciar quiz' : 'No disponible')}
-                      disabled={!available || isOpen}
-                      className={`px-3 py-1.5 text-xs rounded-lg border ${(!available || isOpen) ? 'border-gray-200 text-gray-400 bg-gray-100 cursor-not-allowed' : 'border-green-200 text-green-700 bg-green-50 hover:bg-green-100'}`}
+                      type="button"
+                      onClick={() => { handleMonthSelect('all'); setIsDropdownOpen(false); }}
+                      className={`block w-full px-4 py-3 text-left text-base hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                      role="option"
+                      aria-selected={selectedMonth === 'all'}
                     >
-                      Iniciar
+                      Todos los meses
                     </button>
-                    {displayResults && (
-                      <button onClick={() => handleVisualizarResultados(quiz.id)} title={showResults ? 'Ver resultados' : 'Ver resultados (no hay intentos registrados)'} className="px-3 py-1.5 text-xs rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100">Resultados</button>
-                    )}
-                    {attempts > 0 && (
-                      <button onClick={() => handleVerHistorial(quiz)} className="px-3 py-1.5 text-xs rounded-lg border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100">Historial</button>
-                    )}
+                    {months.map((month, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => { handleMonthSelect(index.toString()); setIsDropdownOpen(false); }}
+                        className={`block w-full px-4 py-3 text-left text-base hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                        role="option"
+                        aria-selected={selectedMonth === index.toString()}
+                      >
+                        {month}
+                      </button>
+                    ))}
                   </div>
-                  <div className="mt-2 text-[11px] text-gray-500">Tiempo límite: {quiz.tiempoLimite} · Máx. intentos: {quiz.maxIntentos}</div>
                 </div>
-              );
-            })}
-          </div>
+              )}
+            </div>
+          ) : (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center justify-between w-56 sm:w-64 px-3 sm:px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-haspopup="listbox"
+                aria-expanded={isDropdownOpen}
+              >
+                <span>{getSelectedMonthName()}</span>
+                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isDropdownOpen && (
+                <div className="absolute z-[70] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-auto">
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => { handleMonthSelect('all'); setIsDropdownOpen(false); }}
+                      className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                    >
+                      Todos los meses
+                    </button>
+                    {months.map((month, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => { handleMonthSelect(index.toString()); setIsDropdownOpen(false); }}
+                        className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                        role="option"
+                        aria-selected={selectedMonth === index.toString()}
+                      >
+                        {month}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
-          {/* Vista sm+ : tabla tradicional */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gradient-to-r from-purple-500 to-pink-600 text-xs">
+      {/* Nueva tabla single-submission */}
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gradient-to-r from-blue-500 to-indigo-600">
+              <tr>
+                <th className="px-4 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">No.</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Actividad</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Recursos</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Fecha Límite</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Subir / Editar</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Entregado</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Visualizar</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Calificación</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading && (
                 <tr>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
-                    Quiz
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
-                    Fecha Límite
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
-                    Mejor Puntaje
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
-                    Intentos
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-medium text-white uppercase tracking-wider">
-                    Acciones
-                  </th>
+                  <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">Cargando actividades...</td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {!loading && !error && filteredActividades.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-10 text-center text-gray-500 text-sm">
-                      No hay quizzes disponibles por ahora en esta materia. Intenta cambiar de mes o vuelve más tarde.
-                    </td>
-                  </tr>
-                )}
-                 {pagedQuizzes.map((quiz, index) => (
-                   <tr key={quiz.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+              )}
+              {!loading && error && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-8 text-center text-sm text-red-600">{error}</td>
+                </tr>
+              )}
+              {!loading && !error && filteredActividades.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">No hay actividades.</td>
+                </tr>
+              )}
+              {!loading && !error && filteredActividades.map((actividad, index) => {
+                const vencida = !isWithinDeadline(actividad.fechaEntrega);
+                // Bloqueado si ya fue revisada (calificada) o vencida
+                const puedeEditar = actividad.entregada && !vencida && actividad.estado !== 'revisada';
+                return (
+                  <tr key={actividad.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="px-4 py-4 text-sm text-gray-700 font-medium">{index + 1}</td>
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{quiz.nombre}</div>
-                        {quiz.descripcion && (
-                          <div className="text-sm text-gray-500 mt-0.5">
+                        <div className="text-sm font-medium text-gray-900">{actividad.nombre}</div>
+                        {actividad.descripcion && (
+                          <div className="text-xs text-gray-500 mt-0.5">
                             <p
                               style={{
-                                display:'-webkit-box',
-                                WebkitLineClamp:2,
-                                WebkitBoxOrient:'vertical',
-                                overflow:'hidden',
-                                textAlign:'justify',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textAlign: 'justify',
                                 maxWidth: descMaxCh,
                                 wordBreak: 'break-word'
                               }}
                             >
-                              {quiz.descripcion}
+                              {actividad.descripcion}
                             </p>
-                            {String(quiz.descripcion).length > 200 && (
+                            {String(actividad.descripcion).length > 160 && (
                               <button
-                                onClick={() => openLongText(quiz.nombre, quiz.descripcion, { tipo:'quiz', id:quiz.id })}
-                                className="mt-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                                onClick={() => openLongText(actividad.nombre, actividad.descripcion, { tipo: 'actividad', id: actividad.id })}
+                                className="mt-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline"
                               >
                                 Ver más
                               </button>
                             )}
                           </div>
                         )}
-                        <div className="text-xs text-gray-400 mt-1">
-                          Tiempo límite: {quiz.tiempoLimite} | Máx. intentos: {quiz.maxIntentos}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {actividad.recursos && actividad.recursos.length > 0 && (
+                        <button
+                          onClick={() => openResourcesModal(actividad)}
+                          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200"
+                        >
+                          <Download className="w-4 h-4 mr-1" /> {actividad.recursos.length} PDF{actividad.recursos.length > 1 ? 's' : ''}
+                        </button>
+                      )}
+                      {!actividad.recursos?.length && actividad.plantilla && (
+                        <button
+                          onClick={() => handleDownload(actividad.id)}
+                          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200"
+                        >
+                          <Download className="w-4 h-4 mr-1" /> PDF
+                        </button>
+                      )}
+                      {!actividad.plantilla && (!actividad.recursos || actividad.recursos.length === 0) && (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{new Date(actividad.fechaEntrega).toLocaleDateString('es-ES')}</div>
+                      <div className={`text-xs ${vencida ? 'text-red-600' : 'text-green-600'}`}>{vencida ? 'Vencida' : 'A tiempo'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {!actividad.entregada ? (
+                        <button
+                          onClick={() => openUploadModal(actividad)}
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm"
+                        >
+                          <Upload className="w-4 h-4 mr-1" /> Subir
+                        </button>
+                      ) : (
+                        <div className="flex flex-col items-start">
+                          <button
+                            onClick={() => openUploadModal(actividad)}
+                            disabled={!puedeEditar}
+                            title={!puedeEditar && actividad.estado === 'revisada' ? 'Esta entrega ya fue calificada y no puede modificarse' : (!puedeEditar ? 'No disponible' : 'Editar entrega')}
+                            className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md shadow-sm ${puedeEditar ? 'text-white bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                              }`}
+                          >
+                            {puedeEditar ? <Upload className="w-4 h-4 mr-1" /> : null}
+                            {puedeEditar ? 'Editar' : 'Bloqueado'}
+                          </button>
+                          {!puedeEditar && actividad.estado === 'revisada' && (
+                            <span className="mt-1 text-[10px] font-medium text-purple-600">Ya calificada - no editable</span>
+                          )}
                         </div>
-                      </div>
+                      )}
                     </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {new Date(quiz.fechaEntrega).toLocaleDateString('es-ES')}
-                      </div>
-                      <div className={`text-xs ${isWithinDeadline(quiz.fechaEntrega) ? 'text-green-600' : 'text-red-600'}`}>
-                        {isWithinDeadline(quiz.fechaEntrega) ? 'Disponible' : 'Vencido'}
-                      </div>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {actividad.entregada ? (
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-red-500" />
+                      )}
                     </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                      {(() => { const est = computeQuizEstado(quiz); return (
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          est === 'completado' ? 'bg-green-100 text-green-800' :
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => openViewModal(actividad)}
+                        disabled={!actividad.entregada}
+                        className={`p-2 rounded-md ${actividad.entregada ? 'text-green-600 hover:text-green-800 hover:bg-green-50' : 'text-gray-400 cursor-not-allowed'} transition-colors`}
+                        title="Ver entrega"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {actividad.entregada ? (
+                        actividad.estado === 'revisada' ? (
+                          <span className="font-medium text-gray-900 inline-flex items-center gap-2">
+                            {actividad.score !== null && actividad.score !== undefined ? actividad.score : (actividad.mejorPuntaje ?? 0)}
+                            {actividad.notas && String(actividad.notas).trim().length > 0 && (
+                              <button
+                                onClick={() => openNotasModal(actividad)}
+                                className="relative p-1 rounded hover:bg-blue-50 text-blue-600"
+                                title="Ver notas del asesor"
+                              >
+                                <MessageSquareText className="w-4 h-4" />
+                                {(() => {
+                                  try {
+                                    const seen = localStorage.getItem(`notas_seen_${actividad.id}`);
+                                    const notasAt = actividad.notas_at ? new Date(actividad.notas_at).getTime() : 0;
+                                    const seenAt = seen ? new Date(seen).getTime() : 0;
+                                    const isNew = notasAt && notasAt > seenAt;
+                                    return isNew ? (
+                                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                                    ) : null;
+                                  } catch { return null; }
+                                })()}
+                              </button>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-yellow-600 font-medium">En revisión</span>
+                        )
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Función para renderizar tabla de quizzes
+  const renderTablaQuiz = () => (
+    <div className="px-0 sm:px-3 md:px-4 lg:px-6 py-6">
+
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-8">
+        <div className="px-6 py-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleGoBack}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Quizzes</h1>
+                <p className="text-gray-600">{selectedArea?.titulo}</p>
+              </div>
+            </div>
+            <div className="mt-4 lg:mt-0 flex items-center text-sm text-gray-500">
+              <Target className="w-4 h-4 mr-1" />
+              <span>{filteredActividades.length} quizzes disponibles</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl border border-cyan-200 shadow-md p-8 mb-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-100/30 to-indigo-100/30 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-100/30 to-cyan-100/30 rounded-full blur-xl"></div>
+
+        <div className="flex items-center justify-center relative z-10">
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Play className="w-6 h-6 text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-2 h-2 text-white" />
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
+                QUIZZES DISPONIBLES
+              </h2>
+              <div className="flex items-center space-x-2 mt-1">
+                <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
+                <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filtros (UX optimizada para móviles) */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+          <div className="text-base sm:text-lg font-semibold text-gray-800">Filtrar quizzes</div>
+          {isMobile ? (
+            <div className="relative w-full">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center justify-between w-full px-3 sm:px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-haspopup="listbox"
+                aria-expanded={isDropdownOpen}
+              >
+                <span className="truncate">{getSelectedMonthName()}</span>
+                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isDropdownOpen && (
+                <div className="absolute z-[80] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-2xl max-h-72 overflow-y-auto">
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => { handleMonthSelect('all'); setIsDropdownOpen(false); }}
+                      className={`block w-full px-4 py-3 text-left text-base hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                      role="option"
+                      aria-selected={selectedMonth === 'all'}
+                    >
+                      Todos los meses
+                    </button>
+                    {months.map((month, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => { handleMonthSelect(index.toString()); setIsDropdownOpen(false); }}
+                        className={`block w-full px-4 py-3 text-left text-base hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                        role="option"
+                        aria-selected={selectedMonth === index.toString()}
+                      >
+                        {month}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center justify-between w-56 sm:w-64 px-3 sm:px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-haspopup="listbox"
+                aria-expanded={isDropdownOpen}
+              >
+                <span>{getSelectedMonthName()}</span>
+                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isDropdownOpen && (
+                <div className="absolute z-[70] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-auto">
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => { handleMonthSelect('all'); setIsDropdownOpen(false); }}
+                      className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                    >
+                      Todos los meses
+                    </button>
+                    {months.map((month, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => { handleMonthSelect(index.toString()); setIsDropdownOpen(false); }}
+                        className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                        role="option"
+                        aria-selected={selectedMonth === index.toString()}
+                      >
+                        {month}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quizzes responsive: tarjetas en móviles, tabla en tablets/desktop */}
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+        {/* Vista móvil: lista de tarjetas (sin scroll horizontal) */}
+        <div className="sm:hidden p-3 space-y-3">
+          {!loading && !error && filteredActividades.length === 0 && (
+            <div className="text-center text-gray-500 text-sm py-8">No hay quizzes disponibles por ahora en esta materia.</div>
+          )}
+          {pagedQuizzes.map((quiz) => {
+            const est = computeQuizEstado(quiz);
+            const available = isQuizAvailable(quiz);
+            const attempts = getTotalAttempts(quiz.id);
+            const showResults = attempts > 0;
+            const displayResults = showResults || !available;
+            const isOpen = isQuizOpenElsewhere(quiz.id);
+            return (
+              <div key={quiz.id} className="rounded-xl border border-gray-200 shadow-sm p-3 bg-white">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-gray-900 text-[15px] leading-snug break-words">{quiz.nombre}</div>
+                    {quiz.descripcion && (
+                      <div className="text-xs text-gray-600 mt-1">
+                        <p style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textAlign: 'justify', maxWidth: '46ch', wordBreak: 'break-word' }}>
+                          {quiz.descripcion}
+                        </p>
+                        {String(quiz.descripcion).length > 200 && (
+                          <button onClick={() => openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id })} className="mt-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline">Ver más</button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <div className="text-[11px] text-gray-500">Fecha límite</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {quiz.fechaEntrega ? new Date(quiz.fechaEntrega).toLocaleDateString('es-ES') : 'Sin fecha límite'}
+                    </div>
+                    <div className={`${isWithinDeadline(quiz.fechaEntrega) ? 'text-green-600' : 'text-red-600'} text-[11px]`}>{isWithinDeadline(quiz.fechaEntrega) ? 'Disponible' : (quiz.fechaEntrega ? 'Vencido' : 'Disponible')}</div>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span className={`inline-flex px-2 py-0.5 text-[11px] font-semibold rounded-full ${est === 'completado' ? 'bg-green-100 text-green-800' : est === 'disponible' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                    {est === 'completado' ? 'Completado' : est === 'disponible' ? 'Disponible' : 'Vencido'}
+                  </span>
+                  <div className="text-[12px] text-gray-700">
+                    Mejor: {getBestScore(quiz.id) !== 'En revisión' ? `${getBestScore(quiz.id)}%` : getBestScore(quiz.id)} · Intentos: {attempts}/{quiz.maxIntentos}
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => { if (available && !isOpen) handleIniciarSimulacion(quiz.id); }}
+                    title={isOpen ? 'Ya abierto en otra pestaña' : (available ? 'Iniciar quiz' : 'No disponible')}
+                    disabled={!available || isOpen}
+                    className={`px-3 py-1.5 text-xs rounded-lg border ${(!available || isOpen) ? 'border-gray-200 text-gray-400 bg-gray-100 cursor-not-allowed' : 'border-green-200 text-green-700 bg-green-50 hover:bg-green-100'}`}
+                  >
+                    Iniciar
+                  </button>
+                  {displayResults && (
+                    <button onClick={() => handleVisualizarResultados(quiz.id)} title={showResults ? 'Ver resultados' : 'Ver resultados (no hay intentos registrados)'} className="px-3 py-1.5 text-xs rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100">Resultados</button>
+                  )}
+                  {attempts > 0 && (
+                    <button onClick={() => handleVerHistorial(quiz)} className="px-3 py-1.5 text-xs rounded-lg border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100">Historial</button>
+                  )}
+                </div>
+                <div className="mt-2 text-[11px] text-gray-500">Tiempo límite: {quiz.tiempoLimite} · Máx. intentos: {quiz.maxIntentos}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Vista sm+ : tabla tradicional */}
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gradient-to-r from-purple-500 to-pink-600 text-xs">
+              <tr>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
+                  Quiz
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
+                  Fecha Límite
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
+                  Mejor Puntaje
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
+                  Intentos
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-medium text-white uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {!loading && !error && filteredActividades.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-gray-500 text-sm">
+                    No hay quizzes disponibles por ahora en esta materia. Intenta cambiar de mes o vuelve más tarde.
+                  </td>
+                </tr>
+              )}
+              {pagedQuizzes.map((quiz, index) => (
+                <tr key={quiz.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="px-6 py-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{quiz.nombre}</div>
+                      {quiz.descripcion && (
+                        <div className="text-sm text-gray-500 mt-0.5">
+                          <p
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              textAlign: 'justify',
+                              maxWidth: descMaxCh,
+                              wordBreak: 'break-word'
+                            }}
+                          >
+                            {quiz.descripcion}
+                          </p>
+                          {String(quiz.descripcion).length > 200 && (
+                            <button
+                              onClick={() => openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id })}
+                              className="mt-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              Ver más
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-400 mt-1">
+                        Tiempo límite: {quiz.tiempoLimite} | Máx. intentos: {quiz.maxIntentos}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {quiz.fechaEntrega ? new Date(quiz.fechaEntrega).toLocaleDateString('es-ES') : 'Sin fecha límite'}
+                    </div>
+                    <div className={`text-xs ${isWithinDeadline(quiz.fechaEntrega) ? 'text-green-600' : 'text-red-600'}`}>
+                      {isWithinDeadline(quiz.fechaEntrega) ? 'Disponible' : (quiz.fechaEntrega ? 'Vencido' : 'Disponible')}
+                    </div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                    {(() => {
+                      const est = computeQuizEstado(quiz); return (
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${est === 'completado' ? 'bg-green-100 text-green-800' :
                           est === 'disponible' ? 'bg-blue-100 text-blue-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
+                            'bg-red-100 text-red-800'
+                          }`}>
                           {est === 'completado' ? 'Completado' : est === 'disponible' ? 'Disponible' : 'Vencido'}
                         </span>
-                      ); })()}
-                    </td><td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                      );
+                    })()}
+                  </td><td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
                       {getBestScore(quiz.id) !== 'En revisión' ? `${getBestScore(quiz.id)}%` : getBestScore(quiz.id)}
                     </div>
@@ -3231,17 +3362,17 @@ useEffect(() => {
                 </tr>
               ))}
             </tbody>
-           </table>
-         </div>
-         <div className="px-4 py-3 border-t border-gray-200 bg-white">
-           <Pagination
-             totalItems={quizTotal}
-             pageSize={QUIZ_PAGE_SIZE}
-             currentPage={quizPage}
-             onPageChange={setQuizPage}
-           />
-         </div>
-       </div>
+          </table>
+        </div>
+        <div className="px-4 py-3 border-t border-gray-200 bg-white">
+          <Pagination
+            totalItems={quizTotal}
+            pageSize={QUIZ_PAGE_SIZE}
+            currentPage={quizPage}
+            onPageChange={setQuizPage}
+          />
+        </div>
+      </div>
     </div>
   );
 
@@ -3252,7 +3383,7 @@ useEffect(() => {
       {currentLevel === 'modulos' && renderModulos()}
       {currentLevel === 'buttons' && renderButtons()}
       {currentLevel === 'table' && (selectedType === 'actividades' ? renderTablaActividades() : renderTablaQuiz())}
-      
+
       {/* Modales */}
       {renderUploadModal()}
       {renderViewModal()}
@@ -3262,22 +3393,22 @@ useEffect(() => {
         historial={selectedQuizHistorial ? getQuizHistorial(selectedQuizHistorial.id) : null}
         onClose={closeHistorialModal}
       />
-  {/* Resultados ahora es página completa: /alumno/actividades/quiz/:quizId/resultados */}
+      {/* Resultados ahora es página completa: /alumno/actividades/quiz/:quizId/resultados */}
       {renderNotificationModal()}
       {renderStartQuizModal()}
       {renderResourcesModal()}
       {longTextModal.open && (
-  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-start z-50 px-2 sm:px-3 lg:px-4 2xl:px-6 pt-32 md:pt-40 pb-6" onClick={closeLongText}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-start z-50 px-2 sm:px-3 lg:px-4 2xl:px-6 pt-32 md:pt-40 pb-6" onClick={closeLongText}>
           <div
             className="bg-white rounded-xl shadow-2xl w-full overflow-hidden"
             style={{ width: modalWidth, transform: modalOffsetX ? `translateX(${modalOffsetX}px)` : undefined }}
-            onClick={e=>e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-3 sm:py-4">
               <h2 className="text-base sm:text-lg lg:text-[15px] 2xl:text-[14px] font-bold break-words" title={longTextModal.title}>{longTextModal.title}</h2>
             </div>
             <div className="px-3 py-2 sm:p-3 lg:p-4">
-              <div className="text-sm sm:text-base lg:text-[12px] xl:text-[12.5px] 2xl:text-[12.5px] text-gray-800 whitespace-pre-wrap pr-1 sm:pr-2" style={{maxHeight: (isMobile ? '60vh' : (isTablet && isLandscape ? '58vh' : '60vh')), overflowY:'auto', textAlign:'justify', lineHeight:1.42, wordBreak:'break-word', maxWidth: (isMobile ? '42ch' : (isTablet ? (isLandscape ? '40ch' : '44ch') : '44ch')), margin: '0 auto'}}>
+              <div className="text-sm sm:text-base lg:text-[12px] xl:text-[12.5px] 2xl:text-[12.5px] text-gray-800 whitespace-pre-wrap pr-1 sm:pr-2" style={{ maxHeight: (isMobile ? '60vh' : (isTablet && isLandscape ? '58vh' : '60vh')), overflowY: 'auto', textAlign: 'justify', lineHeight: 1.42, wordBreak: 'break-word', maxWidth: (isMobile ? '42ch' : (isTablet ? (isLandscape ? '40ch' : '44ch') : '44ch')), margin: '0 auto' }}>
                 {longTextModal.content}
               </div>
               <div className="mt-3 sm:mt-4 lg:mt-5 flex justify-end">
@@ -3289,7 +3420,7 @@ useEffect(() => {
       )}
       {showNotasModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeNotasModal}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e=>e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-5">
               <div className="flex items-center gap-2">
                 <MessageSquareText className="w-6 h-6" />

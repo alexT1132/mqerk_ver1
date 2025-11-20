@@ -1,5 +1,5 @@
 // BACKEND: Dashboard Bundle - Contenedor principal de rutas del alumno
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 
 // Layout y contextos
@@ -48,7 +48,7 @@ export function AlumnoDashboardBundle() {
 
 function StudentAwareLayout() {
   const { isVerified, hasPaid, currentCourse, isLoading, hasContentAccess, refreshOverdueAccess } = useStudent();
-  const { alumno } = useAuth();
+  const { alumno, isAuthenticated, loading: authLoading } = useAuth();
   const location = useLocation();
   const isCoursesRoute = location.pathname.startsWith('/alumno/cursos');
   // Fallback inmediato a localStorage para evitar parpadeo o estados transitorios en el primer render
@@ -91,13 +91,15 @@ function StudentAwareLayout() {
   const shouldShowSidebar = isAlumnoSection && !isQuizRoute && !isSimRoute && !(isCoursesRoute && !hasSelectedCourse);
 
   // Redirección temprana para evitar parpadeo del dashboard sin curso seleccionado
-  // Retrasar la decisión de redirección una vez para permitir hidratación desde localStorage
+  // IMPORTANTE: Usar hasSelectedCourse (que verifica localStorage) en lugar de solo currentCourse
+  // para evitar redirigir antes de que el curso se haya hidratado desde localStorage
   // No redirigir a cursos si el usuario está entrando directamente a un quiz (runner o resultados),
   // porque el currentCourse puede hidratarse unos ms después y causar un salto molesto.
   // Solo redirigir a /alumno/cursos desde las páginas de aterrizaje del dashboard.
   // Evita que un refresh profundo (p.ej. en pagos, perfil, actividades) te saque de la vista actual.
   const isAlumnoLanding = location.pathname === '/alumno' || location.pathname === '/alumno/' || location.pathname === '/alumno/dashboard';
-  const shouldRedirectToCourses = hydrated && isApproved && !currentCourse && isAlumnoLanding;
+  // Usar hasSelectedCourse que verifica tanto currentCourse como localStorage
+  const shouldRedirectToCourses = hydrated && isApproved && !hasSelectedCourse && isAlumnoLanding;
   // Redirección por bloqueo global de acceso (solo desde la portada, no desde secciones internas)
   const shouldRedirectToWelcome = !hasContentAccess && isAlumnoLanding;
 
@@ -133,6 +135,27 @@ function StudentAwareLayout() {
     return () => clearTimeout(timer);
   }, [currentCourse, isVerified, hasPaid]);
 
+  // Redirigir si se pierde la autenticación mientras se está navegando
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      const path = location.pathname;
+      // No redirigir si ya estamos en login o rutas públicas
+      if (!path.startsWith('/login') && !path.startsWith('/pre_registro')) {
+        // Limpiar datos sensibles
+        try {
+          localStorage.removeItem('mq_user');
+          localStorage.removeItem('rememberMe');
+          localStorage.removeItem('currentCourse');
+          sessionStorage.clear();
+        } catch (e) {
+          console.warn('Error al limpiar datos locales:', e);
+        }
+        // Redirigir al login con la ruta actual como parámetro
+        window.location.href = `/login?redirect=${encodeURIComponent(path)}`;
+      }
+    }
+  }, [authLoading, isAuthenticated, location.pathname]);
+
   // Recalcular acceso global al montar y cuando cambie alumno
   useEffect(() => {
     refreshOverdueAccess();
@@ -146,6 +169,9 @@ function StudentAwareLayout() {
       setForceUpdate(prev => prev + 1);
     }
   }, [currentCourse]);
+
+  // El curso NO se deselecciona automáticamente - debe persistir durante toda la sesión
+  // Solo se puede cambiar desde /alumno/cursos explícitamente
 
   // BACKEND: Loading state para evitar parpadeos
   if (isLoading) {

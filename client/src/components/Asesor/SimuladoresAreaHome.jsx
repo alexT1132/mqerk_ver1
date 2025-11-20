@@ -35,8 +35,8 @@ export default function SimuladoresAreaHome(){
   const areaTitle = incoming || queryArea || 'Módulo específico';
 
   return (
-    <section className="px-3 sm:px-6 lg:px-10 pt-0 sm:pt-0 pb-6 sm:pb-8">
-      <header className="-mt-3 sm:-mt-5 md:-mt-6 rounded-2xl border border-slate-200/70 bg-white shadow-sm px-3 sm:px-6 py-3 sm:py-4 mb-5 sm:mb-6">
+    <section className="px-3 sm:px-6 lg:px-10 pt-4 sm:pt-6 pb-6 sm:pb-8">
+      <header className="rounded-2xl border border-slate-200/70 bg-white shadow-sm px-3 sm:px-6 py-3 sm:py-4 mb-5 sm:mb-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             <button

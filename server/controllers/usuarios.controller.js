@@ -366,25 +366,28 @@ export const verifyToken = async (req, res) => {
       }
     }
     if (process.env.NODE_ENV !== 'production') console.log('[VERIFY] no-token cookies=%o', Object.keys(req.cookies||{}));
-    return res.status(401).json({ message: 'Unauthorized', reason: 'no-token' });
+    // Devolver 200 con datos vacíos en lugar de 401 para evitar errores en consola cuando no hay sesión
+    // El frontend puede manejar esto como "usuario no autenticado" sin mostrar errores
+    return res.status(200).json({ message: 'No authenticated', reason: 'no-token' });
   }
   jwt.verify(candidate, TOKEN_SECRET, async (err, user) => {
     if (err) {
       if (process.env.NODE_ENV !== 'production') console.log('[VERIFY] jwt error %s', err.name);
+      // Para tokens expirados o inválidos, devolver 200 con razón para que el frontend pueda manejar el refresh
       if (err.name === 'TokenExpiredError') {
-        return res.status(401).json({ message: "Unauthorized", reason: 'expired' });
+        return res.status(200).json({ message: "Token expired", reason: 'expired' });
       }
-      return res.status(401).json({ message: "Unauthorized", reason: 'invalid-token' });
+      return res.status(200).json({ message: "Invalid token", reason: 'invalid-token' });
     }
     if (isRevoked(user.jti)) {
-      return res.status(401).json({ message: 'Unauthorized', reason: 'revoked' });
+      return res.status(200).json({ message: 'Token revoked', reason: 'revoked' });
     }
 
   const userFound = await Usuarios.getUsuarioPorid(user.id);
   const soft = await SoftDeletes.getByUsuarioId(userFound?.id);
-  if (soft) return res.status(401).json({ message: "Unauthorized", reason: 'soft-deleted' });
+  if (soft) return res.status(200).json({ message: "User soft deleted", reason: 'soft-deleted' });
 
-    if (!userFound) return res.status(401).json({ message: "Unauthorized", reason: 'user-not-found' });
+    if (!userFound) return res.status(200).json({ message: "User not found", reason: 'user-not-found' });
 
   console.log(userFound);
 
@@ -397,7 +400,7 @@ export const verifyToken = async (req, res) => {
       const estudiante = await Estudiantes.getEstudianteById(userFound.id_estudiante);
       // Bloquear acceso si el estudiante está suspendido
       if (estudiante && estudiante.estatus === 'Suspendido') {
-        return res.status(401).json({ message: 'Unauthorized', reason: 'suspended' });
+        return res.status(200).json({ message: 'User suspended', reason: 'suspended' });
       }
 
         return res.json({

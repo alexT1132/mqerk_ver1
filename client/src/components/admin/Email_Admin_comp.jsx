@@ -192,7 +192,7 @@ function Email_Admin_comp() {
   );
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="px-6 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Toast */}
         {toast && (

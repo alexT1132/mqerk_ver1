@@ -4,7 +4,7 @@ import Topbar from "../../components/Asesor/Topbar";
 import SidebarIconOnly from "../../components/Asesor/Sidebar";
 import MobileSidebar from "../../components/Asesor/MobileSidebar";
 import { getMisEstudiantes } from "../../api/asesores.js";
-import { Eye, Loader2 } from "lucide-react";
+import { Eye, Loader2, Users } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function Layout({ embedded = false }) {
@@ -169,15 +169,15 @@ export default function Layout({ embedded = false }) {
 
   const content = (
     <>
-      <div className="mx-auto">
-        <h1 className="text-lg sm:text-xl font-bold text-gray-800">Feedback de alumnos</h1>
-        <p className="text-sm text-gray-600">Selecciona un alumno asignado para revisar sus entregas y dejar notas.</p>
+      <div className="mx-auto mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2">Feedback de alumnos</h1>
+        <p className="text-sm sm:text-base text-gray-600">Selecciona un alumno asignado para revisar sus entregas y dejar notas.</p>
       </div>
 
-      <section className="bg-white rounded-2xl shadow p-4 sm:p-5 border border-slate-100">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <div className="font-semibold text-slate-800 flex items-center gap-3">
-            <span>Mis estudiantes</span>
+      <section className="bg-white rounded-2xl shadow p-3 sm:p-4 md:p-5 border border-slate-100">
+        <div className="flex flex-col gap-3 mb-3">
+          <div className="font-semibold text-slate-800 flex flex-wrap items-center gap-2 text-sm sm:text-base">
+            <span className="w-full sm:w-auto">Mis estudiantes</span>
             <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200" title="Activos tras filtro de grupo">
               Activos {baseFiltrados.length}
             </span>
@@ -190,38 +190,40 @@ export default function Layout({ embedded = false }) {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
             <input
               type="text"
               value={search}
               onChange={(e)=> setSearch(e.target.value)}
               placeholder="Buscar por folio o nombre"
-              className="w-full sm:w-64 px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e)=> setDateFrom(e.target.value)}
-              className="px-2 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              title="Desde"
-            />
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e)=> setDateTo(e.target.value)}
-              className="px-2 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              title="Hasta"
-            />
-            <button
-              onClick={clearFilters}
-              className="px-2.5 py-1.5 rounded-lg border text-sm border-slate-300 hover:bg-slate-50"
-              title="Limpiar filtros"
-            >
-              Limpiar
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e)=> setDateFrom(e.target.value)}
+                className="flex-1 min-w-0 px-2 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                title="Desde"
+              />
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e)=> setDateTo(e.target.value)}
+                className="flex-1 min-w-0 px-2 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                title="Hasta"
+              />
+              <button
+                onClick={clearFilters}
+                className="px-3 py-2 rounded-lg border text-sm border-slate-300 hover:bg-slate-50 whitespace-nowrap"
+                title="Limpiar filtros"
+              >
+                Limpiar
+              </button>
+            </div>
           </div>
           {loading && (
-            <div className="flex items-center gap-2 text-sm text-purple-600 ml-auto">
+            <div className="flex items-center gap-2 text-sm text-purple-600">
               <Loader2 className="size-4 animate-spin" /> Cargando…
             </div>
           )}
@@ -231,12 +233,12 @@ export default function Layout({ embedded = false }) {
         <div className="mb-3">
           {gruposDisponibles.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-slate-600 mr-1">Grupo:</span>
+              <span className="text-xs sm:text-sm text-slate-600 font-medium">Grupo:</span>
               {gruposDisponibles.map((g) => (
                 <button
                   key={g}
                   onClick={() => setSelectedGroup(g)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium border transition ${
                     selectedGroup === g
                       ? 'bg-purple-700 text-white border-purple-700 shadow'
                       : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
@@ -248,7 +250,7 @@ export default function Layout({ embedded = false }) {
               ))}
             </div>
           ) : (
-            <div className="text-xs text-slate-500">No hay grupos disponibles.</div>
+            <div className="text-xs sm:text-sm text-slate-500">No hay grupos disponibles.</div>
           )}
         </div>
 
@@ -259,51 +261,60 @@ export default function Layout({ embedded = false }) {
             Selecciona un grupo para ver a tus estudiantes asignados.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-lg bg-white">
-            <table className="min-w-[980px] table-fixed text-sm">
+          <div className="overflow-x-auto rounded-2xl border-2 border-slate-200 shadow-lg bg-white -mx-3 sm:mx-0">
+            <table className="min-w-[980px] table-fixed text-xs sm:text-sm">
               <colgroup>
                 {colWidths.map((w, i) => (
                   <col key={i} style={{ width: w }} />
                 ))}
               </colgroup>
-              <thead className="bg-purple-700 sticky top-0 z-10">
+              <thead className="bg-gradient-to-r from-purple-600 to-indigo-600 sticky top-0 z-10">
                 <tr className="text-left text-white uppercase tracking-wide">
                   {columns.map((c) => (
-                    <th key={c.key} className="px-4 py-3 whitespace-nowrap text-xs font-bold">
+                    <th key={c.key} className="px-4 py-4 whitespace-nowrap text-xs font-bold">
                       {c.label}
                     </th>
                   ))}
-                  <th className="px-4 py-3" />
+                  <th className="px-4 py-4 text-right">
+                    <span className="text-xs font-bold">Acciones</span>
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-purple-100 bg-white">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {estudiantesFiltrados.length === 0 && !loading ? (
                   <tr>
-                    <td colSpan={columns.length + 1} className="px-4 py-8 text-center text-slate-500">
-                      No hay estudiantes asignados.
+                    <td colSpan={columns.length + 1} className="px-4 py-12 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <Users className="size-12 text-slate-400" />
+                        <p className="text-slate-600 font-medium">No hay estudiantes asignados</p>
+                        <p className="text-sm text-slate-500">Los estudiantes aparecerán aquí cuando estén asignados a tu grupo</p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
-                  estudiantesFiltrados.map((e) => (
-                    <tr key={e.id} className="hover:bg-slate-50">
+                  estudiantesFiltrados.map((e, idx) => (
+                    <tr 
+                      key={e.id} 
+                      className="hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 transition-colors duration-200 border-b border-slate-100"
+                    >
                       {columns.map((c) => (
-                        <td key={c.key} className="px-4 py-3 whitespace-nowrap text-slate-800">
+                        <td key={c.key} className="px-4 py-4 whitespace-nowrap text-slate-800">
                           {c.key === 'nombreCompleto' ? (
-                            <span className="font-medium truncate inline-block max-w-[260px]" title={c.render(e)}>
+                            <span className="font-semibold text-slate-900 truncate inline-block max-w-[260px]" title={c.render(e)}>
                               {c.render(e)}
                             </span>
                           ) : (
-                            c.render(e)
+                            <span className="text-slate-700">{c.render(e)}</span>
                           )}
                         </td>
                       ))}
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <td className="px-2 sm:px-4 py-3 sm:py-4 text-right whitespace-nowrap">
                         <button
                           onClick={() => navigate(`/asesor/feedback/${e.id}`)}
-                          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-purple-700 hover:bg-purple-800 text-white shadow-md"
-                          title="Revisar actividades"
+                          className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                          title="Revisar actividades y entregas"
                         >
-                          <Eye className="size-4" /> Revisar
+                          <Eye className="size-3 sm:size-4" /> <span className="hidden sm:inline">Revisar</span>
                         </button>
                       </td>
                     </tr>
@@ -322,7 +333,7 @@ export default function Layout({ embedded = false }) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
+      <Topbar />
 
       <MobileSidebar
         open={mobileOpen}
@@ -331,11 +342,12 @@ export default function Layout({ embedded = false }) {
         onLogout={handleLogout}
       />
 
-      <div className="mx-auto">
+      {/* Contenido: compensado para topbar y sidebar fijos */}
+      <div className="w-full pt-14 md:pl-24">
         <div className="flex">
           <SidebarIconOnly active="feedback" onLogout={handleLogout} />
 
-          <main className="flex-1 p-3 sm:p-6 space-y-6">
+          <main className="flex-1 min-h-[calc(100vh-3.5rem)] p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 overflow-x-hidden">
             {content}
           </main>
         </div>

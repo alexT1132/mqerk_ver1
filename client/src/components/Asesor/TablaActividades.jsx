@@ -1,7 +1,8 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { listActividades as apiListActividades, createActividad as apiCreateActividad, updateActividad as apiUpdateActividad, areaIdFromName } from "../../api/actividades.js";
-import { Eye, FileText, Save, Pencil, Trash2, CalendarDays, Plus, Filter, ArrowLeft, AlertTriangle } from "lucide-react";
+import { listActividades as apiListActividades, createActividad as apiCreateActividad, updateActividad as apiUpdateActividad, areaIdFromName, listEntregasActividad } from "../../api/actividades.js";
+import { Eye, FileText, Save, Pencil, Trash2, CalendarDays, Plus, Filter, ArrowLeft, AlertTriangle, X } from "lucide-react";
+import { useAuth } from "../../context/AuthContext.jsx";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
 
@@ -30,9 +31,13 @@ const badgeDelivered = (ok) =>
   ok ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-50 text-slate-700 ring-slate-200";
 const badgeGroup = "bg-indigo-50 text-indigo-700 ring-indigo-200";
 
-/* ====== MODAL (sin cambios) ====== */
-const GROUPS = ["m1","m2","m3","v1","v2","v3","s1","s2"];
+/* ====== MODAL ====== */
 function NewActivityModal({ open, onClose, onSave }) {
+  const { user } = useAuth();
+  // Obtener grupos del asesor desde el contexto
+  const asesorGroups = user?.grupo_asesor ? (Array.isArray(user.grupo_asesor) ? user.grupo_asesor : [user.grupo_asesor]) : [];
+  const GROUPS = asesorGroups.length > 0 ? asesorGroups : ["m1", "m2", "m3", "v1", "v2", "v3", "s1", "s2"]; // Fallback si no hay grupos asignados
+
   const [title, setTitle] = useState("");
   const [group, setGroup] = useState(GROUPS[0]);
   const [due, setDue] = useState("");
@@ -59,6 +64,7 @@ function NewActivityModal({ open, onClose, onSave }) {
   const save = () => {
     if (!title.trim()) return setErr("La actividad es obligatoria.");
     if (!due) return setErr("La fecha límite es obligatoria.");
+    if (!pdfFile) return setErr("Debes cargar un archivo PDF.");
     onSave({
       id: crypto.randomUUID(),
       title: title.trim(),
@@ -76,63 +82,111 @@ function NewActivityModal({ open, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="absolute inset-0 grid place-items-center p-3">
-        <div className="w-full max-w-sm rounded-2xl overflow-hidden bg-white shadow-xl mt-10 sm:mt-14">
-          <div className="px-4 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white">
-            <h3 className="text-sm font-semibold">Nueva actividad</h3>
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-md" onClick={onClose} />
+      <div className="absolute inset-0 grid place-items-center p-4">
+        <div className="w-full max-w-lg rounded-2xl overflow-hidden bg-white shadow-2xl ring-1 ring-slate-200 transform transition-all">
+          <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Nueva actividad</h3>
+                  <p className="text-xs text-white/80">Completa los campos para crear la actividad</p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <div className="px-4 py-3 space-y-3">
-            {err && <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-1.5">{err}</div>}
+          <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+            {err && (
+              <div className="rounded-xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-4 py-3 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm font-medium text-rose-800">{err}</p>
+              </div>
+            )}
 
             <div>
-              <label className="text-sm font-medium">Actividad *</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Actividad <span className="text-rose-500">*</span>
+              </label>
               <input
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                 placeholder="Ej. Entregar reporte semanal"
-                value={title} onChange={(e)=>setTitle(e.target.value)}
+                value={title} onChange={(e) => setTitle(e.target.value)}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Grupo</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Grupo</label>
               <select
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                value={group} onChange={(e)=>setGroup(e.target.value)}
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                value={group} onChange={(e) => setGroup(e.target.value)}
               >
-                {GROUPS.map(g => <option key={g} value={g}>{g.toUpperCase()}</option>)}
+                {GROUPS.map(g => <option key={g} value={g}>Grupo {g.toUpperCase()}</option>)}
               </select>
             </div>
 
             <div>
-              <label className="text-sm font-medium">Recurso (PDF)</label>
-              <div className="mt-1.5 flex items-center gap-2">
-                <button type="button" onClick={triggerFile}
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-xs hover:bg-slate-50">
-                  <FileText className="w-4 h-4" /> Cargar PDF
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Recurso (PDF)</label>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={triggerFile}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:border-slate-400 transition-all"
+                >
+                  <FileText className="w-5 h-5" />
+                  {pdfName ? 'Reemplazar PDF' : 'Cargar archivo PDF'}
                 </button>
                 {pdfName ? (
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-slate-700 truncate max-w-[180px]" title={pdfName}>{pdfName}</span>
-                    <a href={pdfUrl} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">Ver</a>
-                    <button onClick={clearFile} className="text-slate-500 hover:text-rose-600">Quitar</button>
+                  <div className="flex items-center justify-between rounded-xl border-2 border-emerald-200 bg-emerald-50 px-4 py-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <FileText className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                      <span className="text-sm font-medium text-slate-700 truncate" title={pdfName}>{pdfName}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <a href={pdfUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">Ver</a>
+                      <button onClick={clearFile} className="text-sm font-medium text-rose-600 hover:text-rose-700">Quitar</button>
+                    </div>
                   </div>
-                ) : <span className="text-xs text-slate-500">Ningún archivo seleccionado</span>}
+                ) : (
+                  <p className="text-xs text-slate-500 text-center">Ningún archivo seleccionado</p>
+                )}
               </div>
-              <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={onFileChange}/>
+              <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={onFileChange} />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Fecha límite *</label>
-              <input type="date"
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                value={due} onChange={(e)=>setDue(e.target.value)}
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Fecha límite <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="date"
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                value={due} onChange={(e) => setDue(e.target.value)}
               />
             </div>
           </div>
-          <div className="px-4 py-3 bg-slate-50 flex items-center justify-end gap-2.5">
-            <button onClick={onClose} className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-white">Cancelar</button>
-            <button onClick={save} className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 text-sm">Guardar</button>
+          <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 border-t border-slate-200 flex items-center justify-end gap-3">
+            <button
+              onClick={onClose}
+              className="rounded-xl border-2 border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={save}
+              className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-5 py-2.5 text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+            >
+              Guardar actividad
+            </button>
           </div>
         </div>
       </div>
@@ -141,6 +195,11 @@ function NewActivityModal({ open, onClose, onSave }) {
 }
 
 function EditActivityModal({ open, onClose, row, onSave }) {
+  const { user } = useAuth();
+  // Obtener grupos del asesor desde el contexto
+  const asesorGroups = user?.grupo_asesor ? (Array.isArray(user.grupo_asesor) ? user.grupo_asesor : [user.grupo_asesor]) : [];
+  const GROUPS = asesorGroups.length > 0 ? asesorGroups : ["m1", "m2", "m3", "v1", "v2", "v3", "s1", "s2"]; // Fallback si no hay grupos asignados
+
   const [title, setTitle] = useState("");
   const [group, setGroup] = useState(GROUPS[0]);
   const [due, setDue] = useState("");
@@ -174,6 +233,9 @@ function EditActivityModal({ open, onClose, row, onSave }) {
 
   const save = () => {
     if (!title.trim()) return setErr("La actividad es obligatoria.");
+    if (!due) return setErr("La fecha límite es obligatoria.");
+    // Validar que haya un PDF (ya sea el original o uno nuevo)
+    if (!pdfFile && !row?.pdfUrl) return setErr("Debes cargar un archivo PDF.");
     const payload = {
       id: row.id,
       title: title.trim(),
@@ -188,70 +250,122 @@ function EditActivityModal({ open, onClose, row, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="absolute inset-0 grid place-items-center p-3">
-        <div className="w-full max-w-sm rounded-2xl overflow-hidden bg-white shadow-xl mt-10 sm:mt-14">
-          <div className="px-4 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white">
-            <h3 className="text-sm font-semibold">Editar actividad</h3>
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-md" onClick={onClose} />
+      <div className="absolute inset-0 grid place-items-center p-4">
+        <div className="w-full max-w-lg rounded-2xl overflow-hidden bg-white shadow-2xl ring-1 ring-slate-200 transform transition-all">
+          <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Editar actividad</h3>
+                  <p className="text-xs text-white/80">Modifica los campos necesarios</p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <div className="px-4 py-3 space-y-3">
-            {err && <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-1.5">{err}</div>}
+          <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+            {err && (
+              <div className="rounded-xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-4 py-3 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm font-medium text-rose-800">{err}</p>
+              </div>
+            )}
 
             <div>
-              <label className="text-sm font-medium">Actividad *</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Actividad <span className="text-rose-500">*</span>
+              </label>
               <input
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                 placeholder="Ej. Entregar reporte semanal"
-                value={title} onChange={(e)=>setTitle(e.target.value)}
+                value={title} onChange={(e) => setTitle(e.target.value)}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Grupo</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Grupo</label>
               <select
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                value={group} onChange={(e)=>setGroup(e.target.value)}
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                value={group} onChange={(e) => setGroup(e.target.value)}
               >
-                {GROUPS.map(g => <option key={g} value={g}>{g.toUpperCase()}</option>)}
+                {GROUPS.map(g => <option key={g} value={g}>Grupo {g.toUpperCase()}</option>)}
               </select>
             </div>
 
             <div>
-              <label className="text-sm font-medium">Recurso (PDF)</label>
-              <div className="mt-1.5 space-y-1.5">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Recurso (PDF)</label>
+              <div className="space-y-2">
                 {row?.pdfUrl && !pdfFile && (
-                  <div className="text-xs text-slate-600">Recurso actual: <a href={row.pdfUrl} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">Ver</a></div>
-                )}
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={triggerFile}
-                          className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-xs hover:bg-slate-50">
-                    <FileText className="w-4 h-4" /> {pdfFile ? 'Reemplazar PDF' : 'Subir/Reemplazar PDF'}
-                  </button>
-                  {pdfName ? (
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-slate-700 truncate max-w-[180px]" title={pdfName}>{pdfName}</span>
-                      <a href={pdfUrl} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">Ver</a>
-                      <button onClick={clearFile} className="text-slate-500 hover:text-rose-600">Quitar</button>
+                  <div className="rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-indigo-600" />
+                        <span className="text-sm font-medium text-slate-700">Recurso actual</span>
+                      </div>
+                      <a href={row.pdfUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">
+                        Ver PDF
+                      </a>
                     </div>
-                  ) : (
-                    <span className="text-xs text-slate-500">{row?.pdfUrl ? 'Usando recurso actual' : 'Ningún archivo seleccionado'}</span>
-                  )}
-                </div>
-                <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={onFileChange}/>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={triggerFile}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:border-slate-400 transition-all"
+                >
+                  <FileText className="w-5 h-5" />
+                  {pdfFile ? 'Reemplazar PDF' : 'Subir/Reemplazar PDF'}
+                </button>
+                {pdfName ? (
+                  <div className="flex items-center justify-between rounded-xl border-2 border-emerald-200 bg-emerald-50 px-4 py-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <FileText className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                      <span className="text-sm font-medium text-slate-700 truncate" title={pdfName}>{pdfName}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <a href={pdfUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">Ver</a>
+                      <button onClick={clearFile} className="text-sm font-medium text-rose-600 hover:text-rose-700">Quitar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 text-center">{row?.pdfUrl ? 'Usando recurso actual' : 'Ningún archivo seleccionado'}</p>
+                )}
               </div>
+              <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={onFileChange} />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Fecha límite</label>
-              <input type="date"
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                value={due} onChange={(e)=>setDue(e.target.value)}
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Fecha límite</label>
+              <input
+                type="date"
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                value={due} onChange={(e) => setDue(e.target.value)}
               />
             </div>
           </div>
-          <div className="px-4 py-3 bg-slate-50 flex items-center justify-end gap-2.5">
-            <button onClick={onClose} className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-white">Cancelar</button>
-            <button onClick={save} className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 text-sm">Guardar cambios</button>
+          <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 border-t border-slate-200 flex items-center justify-end gap-3">
+            <button
+              onClick={onClose}
+              className="rounded-xl border-2 border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={save}
+              className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-5 py-2.5 text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+            >
+              Guardar cambios
+            </button>
           </div>
         </div>
       </div>
@@ -267,11 +381,16 @@ export default function ActivitiesTable({
   title = "Actividades",
   onView = (row) => alert(`Visualizar: ${row.title}`),
   onOpenPdf,
-  onSaveRow = (row) => alert(`Guardado: ${row.title} (grupo: ${(row.group||"").toUpperCase()})`),
+  onSaveRow = (row) => alert(`Guardado: ${row.title} (grupo: ${(row.group || "").toUpperCase()})`),
   onDeleteExternal,
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Obtener grupos del asesor desde el contexto para el filtro
+  const asesorGroups = user?.grupo_asesor ? (Array.isArray(user.grupo_asesor) ? user.grupo_asesor : [user.grupo_asesor]) : [];
+  const GROUPS = asesorGroups.length > 0 ? asesorGroups : ["m1", "m2", "m3", "v1", "v2", "v3", "s1", "s2"]; // Fallback si no hay grupos asignados
 
   // llega desde AreasDeEstudio con Link state={{ title }}
   const incomingTitle = typeof location.state?.title === "string"
@@ -297,6 +416,7 @@ export default function ActivitiesTable({
   const [editRow, setEditRow] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [averageGrades, setAverageGrades] = useState({}); // actividadId -> promedio
 
   const [groupFilter, setGroupFilter] = useState("todos");
   // Modal de recurso no disponible
@@ -320,7 +440,7 @@ export default function ActivitiesTable({
         setLoading(true);
         setError(null);
         const id_area = areaIdFromName(areaTitle) || undefined;
-  const { data: acts } = await apiListActividades({ id_area, tipo: 'actividad', limit: 200, activo: 1 });
+        const { data: acts } = await apiListActividades({ id_area, tipo: 'actividad', limit: 200, activo: 1 });
         if (!alive) return;
         const mapped = (Array.isArray(acts) ? acts : []).map(a => ({
           id: a.id,
@@ -341,6 +461,33 @@ export default function ActivitiesTable({
     return () => { alive = false; };
   }, [areaTitle]);
 
+  // Cargar calificaciones promedio de cada actividad
+  useEffect(() => {
+    if (rows.length === 0) return;
+    let alive = true;
+    (async () => {
+      const grades = {};
+      for (const row of rows) {
+        try {
+          const { data: entregas } = await listEntregasActividad(row.id, { limit: 500 });
+          const entregasArray = Array.isArray(entregas) ? entregas : [];
+          const calificadas = entregasArray.filter(e => e.calificacion !== null && e.calificacion !== undefined);
+          if (calificadas.length > 0) {
+            const suma = calificadas.reduce((acc, e) => acc + Number(e.calificacion || 0), 0);
+            const promedio100 = suma / calificadas.length;
+            // Convertir de escala 0-100 a escala 0-10
+            const promedio10 = promedio100 / 10;
+            grades[row.id] = Math.round(promedio10 * 10) / 10; // Redondear a 1 decimal
+          }
+        } catch (e) {
+          // Silencioso, no afecta la carga principal
+        }
+      }
+      if (alive) setAverageGrades(grades);
+    })();
+    return () => { alive = false; };
+  }, [rows]);
+
   const data = useMemo(() => {
     const sorted = [...rows].sort((a, b) => a.due.localeCompare(b.due));
     return groupFilter === "todos"
@@ -353,7 +500,7 @@ export default function ActivitiesTable({
       setError(null);
       setLoading(true);
       // Mapear título de área → id_area conocido
-  const id_area = areaIdFromName(areaTitle) || null;
+      const id_area = areaIdFromName(areaTitle) || null;
       const grupos = r.group ? [r.group] : [];
       const recursos = r.pdfFile ? [r.pdfFile] : [];
       const created = await apiCreateActividad({
@@ -426,16 +573,16 @@ export default function ActivitiesTable({
   const toggleDelivered = (id) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, delivered: !r.delivered } : r)));
 
-  const IconButton = ({ onClick, variant="default", label, children, disabled }) => {
-    const base = "inline-grid place-items-center w-9 h-9 rounded-lg border transition focus:outline-none focus:ring-2 focus:ring-offset-1";
+  const IconButton = ({ onClick, variant = "default", label, children, disabled }) => {
+    const base = "inline-grid place-items-center w-10 h-10 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-105 active:scale-95";
     const look = {
-      default: "border-slate-200 hover:bg-slate-50 text-slate-700 focus:ring-slate-200",
-      danger:  "border-rose-300 text-rose-700 hover:bg-rose-50 focus:ring-rose-200",
-      primary: "border-indigo-300 text-indigo-700 hover:bg-indigo-50 focus:ring-indigo-200",
+      default: "border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 focus:ring-slate-300",
+      danger: "border-rose-300 text-rose-700 hover:bg-rose-50 hover:border-rose-400 focus:ring-rose-300",
+      primary: "border-indigo-300 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-400 focus:ring-indigo-300 bg-indigo-50/50",
     }[variant];
     return (
       <button onClick={onClick} title={label} aria-label={label} disabled={disabled}
-              className={`${base} ${look} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}>
+        className={`${base} ${look} ${disabled ? "opacity-50 cursor-not-allowed hover:scale-100" : ""}`}>
         {children}
       </button>
     );
@@ -478,221 +625,300 @@ export default function ActivitiesTable({
   const openPdf = onOpenPdf || openPdfSafe;
 
   return (
-    <section className="w-full">
+    <section className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {error && (
-        <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="mb-4 rounded-xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-4 py-3 flex items-start gap-3 shadow-sm">
+          <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm font-medium text-rose-800">{error}</p>
+        </div>
       )}
-      <div className="mb-4 sm:mb-6 flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200"
-          >
-            <ArrowLeft className="w-4 h-4" /> Atrás
-          </button>
-          <div className="flex items-center gap-2">
+
+      {/* Header mejorado */}
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              <ArrowLeft className="w-4 h-4" /> Volver
+            </button>
+            <div className="h-6 w-px bg-slate-200" />
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                {title}
+              </h1>
+              <p className="text-sm text-slate-600 mt-0.5">{areaTitle}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
             <div className="relative">
-              <Filter className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Filter className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <select
                 value={groupFilter}
                 onChange={(e) => setGroupFilter(e.target.value)}
-                className="pl-8 pr-3 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="pl-10 pr-4 rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                 title="Filtrar por grupo"
               >
-                <option value="todos">Todos</option>
+                <option value="todos">Todos los grupos</option>
                 {GROUPS.map(g => (
-                  <option key={g} value={g}>{g.toUpperCase()}</option>
+                  <option key={g} value={g}>Grupo {g.toUpperCase()}</option>
                 ))}
               </select>
             </div>
-            <button onClick={() => setOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 shadow-sm">
+            <button
+              onClick={() => setOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold px-5 py-2.5 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+            >
               <Plus className="w-4 h-4" /> Nueva actividad
             </button>
           </div>
         </div>
-        <div>
-          {/* Título dinámico */}
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
-            {headerTitle}
-            <span className="ml-2 align-middle text-xs rounded-full bg-slate-100 text-slate-600 px-2 py-0.5">{data.length}</span>
-          </h2>
-          <p className="text-sm text-slate-600">Gestiona las actividades del área seleccionada.</p>
+
+        {/* Estadísticas rápidas */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="rounded-xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm">
+            <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Total</div>
+            <div className="text-2xl font-bold text-slate-900">{data.length}</div>
+          </div>
+          <div className="rounded-xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
+            <div className="text-xs font-medium text-emerald-600 uppercase tracking-wide mb-1">Entregadas</div>
+            <div className="text-2xl font-bold text-emerald-700">{data.filter(r => r.delivered).length}</div>
+          </div>
+          <div className="rounded-xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm">
+            <div className="text-xs font-medium text-amber-600 uppercase tracking-wide mb-1">Pendientes</div>
+            <div className="text-2xl font-bold text-amber-700">{data.filter(r => !r.delivered).length}</div>
+          </div>
+          <div className="rounded-xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-4 shadow-sm">
+            <div className="text-xs font-medium text-indigo-600 uppercase tracking-wide mb-1">Con recurso</div>
+            <div className="text-2xl font-bold text-indigo-700">{data.filter(r => r.pdfUrl).length}</div>
+          </div>
         </div>
       </div>
 
       {/* Tabla desktop */}
-      <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="hidden md:block overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-xl">
         <table className="w-full text-sm">
           <thead className="text-left">
-            <tr className="border-b bg-slate-50/60 backdrop-blur supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
-              <th className="px-4 py-3 text-slate-500 text-xs uppercase tracking-wide">No.</th>
-              <th className="px-4 py-3 text-slate-500 text-xs uppercase tracking-wide">Actividad</th>
-              <th className="px-4 py-3 text-slate-500 text-xs uppercase tracking-wide">Recurso</th>
-              <th className="px-4 py-3 text-slate-500 text-xs uppercase tracking-wide">Fecha límite</th>
-              <th className="px-4 py-3 text-slate-500 text-xs uppercase tracking-wide">Entregado</th>
-              <th className="px-4 py-3 text-slate-500 text-xs uppercase tracking-wide">Visualizar</th>
-              <th className="px-4 py-3 text-slate-500 text-xs uppercase tracking-wide">Calificación</th>
-              <th className="px-4 py-3 text-right text-slate-500 text-xs uppercase tracking-wide">Acciones</th>
+            <tr className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-slate-50 supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
+              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">No.</th>
+              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Actividad</th>
+              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Recurso</th>
+              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Fecha límite</th>
+              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Estado</th>
+              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Calificación</th>
+              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Visualizar</th>
+              <th className="px-6 py-4 text-right text-slate-600 text-xs font-bold uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               Array.from({ length: 5 }).map((_, i) => (
-                <tr key={`skeleton-${i}`} className="border-b last:border-0">
-                  <td className="px-4 py-3"><div className="h-3 w-6 bg-slate-200/70 rounded animate-pulse"/></td>
-                  <td className="px-4 py-3"><div className="h-3 w-40 bg-slate-200/70 rounded animate-pulse"/></td>
-                  <td className="px-4 py-3"><div className="h-8 w-9 bg-slate-200/70 rounded-lg animate-pulse"/></td>
-                  <td className="px-4 py-3"><div className="h-3 w-24 bg-slate-200/70 rounded animate-pulse"/></td>
-                  <td className="px-4 py-3"><div className="h-6 w-16 bg-slate-200/70 rounded-full animate-pulse"/></td>
-                  <td className="px-4 py-3"><div className="h-8 w-9 bg-slate-200/70 rounded-lg animate-pulse"/></td>
-                  <td className="px-4 py-3"><div className="h-8 w-24 bg-slate-200/70 rounded-lg animate-pulse"/></td>
-                  <td className="px-4 py-3"><div className="h-8 w-32 ml-auto bg-slate-200/70 rounded-lg animate-pulse"/></td>
+                <tr key={`skeleton-${i}`} className="border-b border-slate-100 last:border-0">
+                  <td className="px-6 py-4"><div className="h-4 w-8 bg-slate-200/70 rounded-lg animate-pulse" /></td>
+                  <td className="px-6 py-4"><div className="h-5 w-48 bg-slate-200/70 rounded-lg animate-pulse" /></td>
+                  <td className="px-6 py-4"><div className="h-10 w-10 bg-slate-200/70 rounded-xl animate-pulse" /></td>
+                  <td className="px-6 py-4"><div className="h-9 w-28 bg-slate-200/70 rounded-lg animate-pulse" /></td>
+                  <td className="px-6 py-4"><div className="h-7 w-24 bg-slate-200/70 rounded-full animate-pulse" /></td>
+                  <td className="px-6 py-4"><div className="h-8 w-16 bg-slate-200/70 rounded-lg animate-pulse" /></td>
+                  <td className="px-6 py-4"><div className="h-10 w-10 bg-slate-200/70 rounded-xl animate-pulse" /></td>
+                  <td className="px-6 py-4"><div className="h-10 w-36 ml-auto bg-slate-200/70 rounded-xl animate-pulse" /></td>
                 </tr>
               ))
             )}
             {!loading && data.map((r, idx) => (
-              <tr key={r.id} className="border-b last:border-0 odd:bg-slate-50/30 hover:bg-indigo-50/30 transition-colors">
-                <td className="px-4 py-3 font-mono text-slate-500">{idx + 1}</td>
-                <td className="px-4 py-3 font-medium">
+              <tr key={r.id} className="border-b border-slate-100 last:border-0 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/30 transition-all duration-200 group">
+                <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
-                    <span>{r.title}</span>
-                    {r.group && <Badge className={badgeGroup}>{r.group.toUpperCase()}</Badge>}
+                    <span className="font-mono text-sm font-bold text-slate-400">#{idx + 1}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3">
-                  <IconButton onClick={() => openPdf(r)} label="Abrir PDF" disabled={!r.pdfUrl}>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">{r.title}</div>
+                    </div>
+                    {r.group && (
+                      <Badge className={`${badgeGroup} shrink-0`}>{r.group.toUpperCase()}</Badge>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <IconButton onClick={() => openPdf(r)} label="Abrir PDF" disabled={!r.pdfUrl} variant={r.pdfUrl ? "primary" : "default"}>
                     <FileText className="w-5 h-5" />
                   </IconButton>
                 </td>
-                <td className="px-4 py-3">
-                  <div className="inline-flex items-center gap-1.5 text-slate-700">
-                    <CalendarDays className="w-4 h-4 text-slate-400" />
-                    <span>{formatDate(r.due)}</span>
+                <td className="px-6 py-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <CalendarDays className="w-4 h-4 text-indigo-500" />
+                    <span className="font-medium text-slate-700">{formatDate(r.due)}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3">
-                  <button onClick={() => toggleDelivered(r.id)} className="cursor-pointer">
-                    <Badge className={badgeDelivered(r.delivered)}>{r.delivered ? "Sí" : "No"}</Badge>
+                <td className="px-6 py-4">
+                  <button
+                    onClick={() => toggleDelivered(r.id)}
+                    className="cursor-pointer transform hover:scale-105 transition-transform"
+                  >
+                    <Badge className={badgeDelivered(r.delivered)}>
+                      {r.delivered ? "✓ Entregado" : "○ Pendiente"}
+                    </Badge>
                   </button>
                 </td>
-                <td className="px-4 py-3">
-                  <IconButton onClick={() => goToEntregas(r)} label="Visualizar">
+                <td className="px-6 py-4">
+                  {averageGrades[r.id] !== undefined ? (
+                    <div className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-sm ${averageGrades[r.id] < 6
+                      ? 'bg-rose-50 text-rose-700 border-2 border-rose-200'
+                      : 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200'
+                      }`}>
+                      {averageGrades[r.id].toFixed(1)}/10
+                    </div>
+                  ) : (
+                    <span className="text-slate-400 font-medium">—</span>
+                  )}
+                </td>
+                <td className="px-6 py-4">
+                  <IconButton onClick={() => goToEntregas(r)} label="Visualizar entregas" variant="primary">
                     <Eye className="w-5 h-5" />
                   </IconButton>
                 </td>
-                <td className="px-4 py-3">
-                  <select
-                    className="w-24 rounded-lg border border-slate-300 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none"
-                    value={r.grade ?? ""}
-                    onChange={(e) => updateGrade(r.id, e.target.value === "" ? "" : Number(e.target.value))}
-                  >
-                    <option value="">—</option>
-                    {[...Array(11)].map((_, n) => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </td>
-                <td className="px-4 py-3">
+                <td className="px-6 py-4">
                   <div className="flex justify-end gap-2">
                     <IconButton onClick={() => onSaveRow(r)} label="Guardar" variant="primary">
-                      <Save className="w-5 h-5" />
+                      <Save className="w-4 h-4" />
                     </IconButton>
                     <IconButton onClick={() => openEdit(r)} label="Editar">
-                      <Pencil className="w-5 h-5" />
+                      <Pencil className="w-4 h-4" />
                     </IconButton>
                     <IconButton onClick={() => onDelete(r)} label="Eliminar" variant="danger">
-                      <Trash2 className="w-5 h-5" />
+                      <Trash2 className="w-4 h-4" />
                     </IconButton>
                   </div>
                 </td>
               </tr>
             ))}
             {!loading && data.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-500">Sin actividades.</td></tr>
+              <tr>
+                <td colSpan={8} className="px-6 py-12 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                      <FileText className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-slate-700">No hay actividades</p>
+                      <p className="text-sm text-slate-500 mt-1">Crea tu primera actividad para comenzar</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {/* Cards móvil */}
-      <div className="md:hidden space-y-3">
+      {/* Cards móvil mejoradas */}
+      <div className="md:hidden space-y-4">
         {loading && Array.from({ length: 3 }).map((_, i) => (
-          <div key={`m-skeleton-${i}`} className="rounded-xl border border-slate-200 bg-white p-4">
-            <div className="h-4 w-24 bg-slate-200/70 rounded animate-pulse" />
-            <div className="mt-3 h-4 w-40 bg-slate-200/70 rounded animate-pulse" />
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <div className="h-9 bg-slate-200/70 rounded-lg animate-pulse" />
-              <div className="h-9 bg-slate-200/70 rounded-lg animate-pulse" />
-              <div className="h-9 bg-slate-200/70 rounded-lg animate-pulse" />
+          <div key={`m-skeleton-${i}`} className="rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-sm">
+            <div className="h-5 w-32 bg-slate-200/70 rounded-lg animate-pulse mb-3" />
+            <div className="h-4 w-48 bg-slate-200/70 rounded-lg animate-pulse mb-4" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="h-10 bg-slate-200/70 rounded-xl animate-pulse" />
+              <div className="h-10 bg-slate-200/70 rounded-xl animate-pulse" />
             </div>
           </div>
         ))}
         {!loading && data.map((r, idx) => (
-          <div key={r.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-xs text-slate-500 flex items-center gap-1">
-                  <span>No. {idx + 1}</span>
-                  <span>•</span>
-                  <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{formatDate(r.due)}</span>
+          <div key={r.id} className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-lg hover:shadow-xl transition-all">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">#{idx + 1}</span>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    <span className="font-medium">{formatDate(r.due)}</span>
+                  </div>
                 </div>
-                <div className="font-medium flex items-center gap-2">
-                  <span>{r.title}</span>
-                  {r.group && <Badge className={badgeGroup}>{r.group.toUpperCase()}</Badge>}
-                </div>
+                <h3 className="font-semibold text-slate-900 text-base mb-2 leading-tight">{r.title}</h3>
+                {r.group && (
+                  <Badge className={`${badgeGroup} inline-block`}>{r.group.toUpperCase()}</Badge>
+                )}
               </div>
-              <button onClick={() => toggleDelivered(r.id)}>
-                <Badge className={badgeDelivered(r.delivered)}>{r.delivered ? "Entregado" : "Pendiente"}</Badge>
+              <button
+                onClick={() => toggleDelivered(r.id)}
+                className="shrink-0 transform hover:scale-105 transition-transform"
+              >
+                <Badge className={badgeDelivered(r.delivered)}>
+                  {r.delivered ? "✓ Entregado" : "○ Pendiente"}
+                </Badge>
               </button>
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-              <div className="text-slate-500">Recurso</div>
-              <div className="text-right">
-                <IconButton onClick={() => openPdf(r)} label="Abrir PDF" disabled={!r.pdfUrl}>
-                  <FileText className="w-5 h-5" />
-                </IconButton>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="rounded-xl border-2 border-slate-200 bg-white p-3">
+                <div className="text-xs font-medium text-slate-500 mb-2">Recurso</div>
+                <div className="flex justify-start">
+                  <IconButton onClick={() => openPdf(r)} label="Abrir PDF" disabled={!r.pdfUrl} variant={r.pdfUrl ? "primary" : "default"}>
+                    <FileText className="w-4 h-4" />
+                  </IconButton>
+                </div>
               </div>
-              <div className="text-slate-500">Calificación</div>
-              <div className="text-right">
-                <select
-                  className="w-24 rounded-lg border border-slate-300 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none"
-                  value={r.grade ?? ""}
-                  onChange={(e) => updateGrade(r.id, e.target.value === "" ? "" : Number(e.target.value))}
-                >
-                  <option value="">—</option>
-                  {[...Array(11)].map((_, n) => <option key={n} value={n}>{n}</option>)}
-                </select>
+              <div className="rounded-xl border-2 border-slate-200 bg-white p-3">
+                <div className="text-xs font-medium text-slate-500 mb-2">Calificación</div>
+                <div className="flex justify-start">
+                  {averageGrades[r.id] !== undefined ? (
+                    <div className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-sm ${averageGrades[r.id] < 6
+                      ? 'bg-rose-50 text-rose-700 border-2 border-rose-200'
+                      : 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200'
+                      }`}>
+                      {averageGrades[r.id].toFixed(1)}/10
+                    </div>
+                  ) : (
+                    <span className="text-slate-400 font-medium text-sm">—</span>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="mt-3 flex justify-end gap-2">
+            <div className="flex flex-wrap justify-end gap-2 pt-3 border-t border-slate-200">
               <IconButton onClick={() => onSaveRow(r)} label="Guardar" variant="primary">
-                <Save className="w-5 h-5" />
+                <Save className="w-4 h-4" />
               </IconButton>
-              <IconButton onClick={() => goToEntregas(r)} label="Visualizar">
-                <Eye className="w-5 h-5" />
+              <IconButton onClick={() => goToEntregas(r)} label="Visualizar" variant="primary">
+                <Eye className="w-4 h-4" />
               </IconButton>
               <IconButton onClick={() => openEdit(r)} label="Editar">
-                <Pencil className="w-5 h-5" />
+                <Pencil className="w-4 h-4" />
               </IconButton>
               <IconButton onClick={() => onDelete(r)} label="Eliminar" variant="danger">
-                <Trash2 className="w-5 h-5" />
+                <Trash2 className="w-4 h-4" />
               </IconButton>
             </div>
           </div>
         ))}
-        {!loading && data.length === 0 && <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-slate-500">Sin actividades.</div>}
+        {!loading && data.length === 0 && (
+          <div className="rounded-2xl border-2 border-slate-200 bg-white p-8 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                <FileText className="w-8 h-8 text-slate-400" />
+              </div>
+              <div>
+                <p className="text-base font-semibold text-slate-700">No hay actividades</p>
+                <p className="text-sm text-slate-500 mt-1">Crea tu primera actividad para comenzar</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* MODAL crear */}
-  <NewActivityModal open={open} onClose={() => setOpen(false)} onSave={addRow} />
-  <EditActivityModal open={editOpen} onClose={() => { setEditOpen(false); setEditRow(null); }} row={editRow} onSave={saveEdit} />
+      <NewActivityModal open={open} onClose={() => setOpen(false)} onSave={addRow} />
+      <EditActivityModal open={editOpen} onClose={() => { setEditOpen(false); setEditRow(null); }} row={editRow} onSave={saveEdit} />
 
       {/* Modal: Recurso no disponible */}
       {resModal.open && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setResModal({ open:false, title:'', message:'', row:null })} />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setResModal({ open: false, title: '', message: '', row: null })} />
           <div className="absolute inset-0 grid place-items-center p-4">
             <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200">
               <div className="flex items-start justify-between gap-3 border-b bg-gradient-to-r from-amber-50 to-rose-50 px-4 py-3">
@@ -705,7 +931,7 @@ export default function ActivitiesTable({
                     <p className="text-[11px] text-slate-500">Verificación de recurso</p>
                   </div>
                 </div>
-                <button onClick={() => setResModal({ open:false, title:'', message:'', row:null })} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
+                <button onClick={() => setResModal({ open: false, title: '', message: '', row: null })} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
               </div>
               <div className="px-4 py-3">
                 <p className="text-sm text-slate-700">{resModal.message}</p>
@@ -713,14 +939,14 @@ export default function ActivitiesTable({
               <div className="flex justify-end gap-2 border-t px-3 py-2.5">
                 {resModal.row && (
                   <button
-                    onClick={() => { const r = resModal.row; setResModal({ open:false, title:'', message:'', row:null }); if (r) openEdit(r); }}
+                    onClick={() => { const r = resModal.row; setResModal({ open: false, title: '', message: '', row: null }); if (r) openEdit(r); }}
                     className="inline-flex items-center rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-indigo-700"
                   >
                     Editar actividad
                   </button>
                 )}
                 <button
-                  onClick={() => setResModal({ open:false, title:'', message:'', row:null })}
+                  onClick={() => setResModal({ open: false, title: '', message: '', row: null })}
                   className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   Cerrar

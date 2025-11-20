@@ -91,8 +91,21 @@ export const StudentProvider = ({ children }) => {
     // Hidratar inmediatamente desde localStorage para evitar redirecciones tempranas en refresh
     try {
       const raw = localStorage.getItem('currentCourse');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
+      if (!raw || raw === 'null' || raw === 'undefined') {
+        console.log('[Curso] No hay curso en localStorage al inicializar');
+        return null;
+      }
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && (parsed.id || parsed.title)) {
+        console.log('[Curso] ✅ Curso cargado desde localStorage en inicialización:', parsed.title || parsed.id);
+        return parsed;
+      }
+      console.warn('[Curso] Curso inválido en localStorage al inicializar, limpiando...');
+      localStorage.removeItem('currentCourse');
+      return null;
+    } catch (error) {
+      console.error('[Curso] Error al parsear curso desde localStorage en inicialización:', error);
+      localStorage.removeItem('currentCourse');
       return null;
     }
   });
@@ -277,6 +290,8 @@ export const StudentProvider = ({ children }) => {
       
       // TODO: BACKEND - Actualizar el curso actual en el backend
       // updateCurrentCourseOnBackend(courseId);
+    } else {
+      console.warn('⚠️ Curso no encontrado en enrolledCourses:', courseId);
     }
   };
 
@@ -509,6 +524,8 @@ export const StudentProvider = ({ children }) => {
   };
 
   // Cargar estado persistente al inicializar
+  // Este useEffect se ejecuta DESPUÉS del estado inicial, pero necesitamos asegurarnos
+  // de que el curso se cargue lo antes posible para evitar redirecciones innecesarias
   useEffect(() => {
     const storedVerified = localStorage.getItem('studentVerified') === 'true';
     const storedPaid = localStorage.getItem('studentPaid') === 'true';
@@ -521,13 +538,28 @@ export const StudentProvider = ({ children }) => {
     setIsFirstAccess(storedFirstAccess);
     setActiveSection(storedActiveSection);
     
+    // Siempre restaurar currentCourse desde localStorage si existe y es válido
+    // Esto asegura que el curso persista después de refrescar
     if (storedCourse) {
       try {
         const parsedCourse = JSON.parse(storedCourse);
-        setCurrentCourse(parsedCourse);
+        // Verificar que el curso almacenado sea válido
+        if (parsedCourse && typeof parsedCourse === 'object' && (parsedCourse.id || parsedCourse.title)) {
+          // Siempre actualizar para asegurar que el curso se restaure correctamente
+          // incluso si ya está en el estado (por si cambió algo en localStorage)
+          setCurrentCourse(parsedCourse);
+          console.log('[Curso] ✅ Curso restaurado desde localStorage en useEffect:', parsedCourse.title || parsedCourse.id);
+        } else {
+          console.warn('[Curso] Curso inválido en localStorage, limpiando...');
+          localStorage.removeItem('currentCourse');
+        }
       } catch (error) {
-        console.error('Error parsing stored course:', error);
+        console.error('[Curso] Error parsing stored course:', error);
+        // Si hay error al parsear, limpiar el localStorage corrupto
+        localStorage.removeItem('currentCourse');
       }
+    } else {
+      console.log('[Curso] No hay curso guardado en localStorage en useEffect');
     }
 
     // Cargar áreas permitidas y solicitudes - NUEVOS ESTADOS SEPARADOS
@@ -572,6 +604,61 @@ export const StudentProvider = ({ children }) => {
     }
   }, [isAuthenticated, isStudent]);
 
+  // Sincronizar el curso guardado en localStorage con enrolledCourses cuando se cargan los cursos
+  // Esto asegura que el curso persista incluso después de refrescar
+  useEffect(() => {
+    // Solo sincronizar si hay enrolledCourses cargados
+    if (enrolledCourses.length === 0) return;
+    
+    // Si ya hay un currentCourse establecido, verificar que coincida con enrolledCourses
+    if (currentCourse) {
+      const courseExists = enrolledCourses.some(c => c.id === currentCourse.id);
+      if (courseExists) {
+        // Si existe, actualizar con los datos frescos de enrolledCourses (por si cambió algo)
+        const freshCourse = enrolledCourses.find(c => c.id === currentCourse.id);
+        if (freshCourse && JSON.stringify(freshCourse) !== JSON.stringify(currentCourse)) {
+          console.log('🔄 Actualizando curso con datos frescos de enrolledCourses:', freshCourse.title);
+          setCurrentCourse(freshCourse);
+          localStorage.setItem('currentCourse', JSON.stringify(freshCourse));
+        }
+        return; // Ya está sincronizado
+      }
+    }
+    
+    // Si no hay currentCourse pero hay uno guardado en localStorage, restaurarlo
+    if (!currentCourse) {
+      try {
+        const storedCourseRaw = localStorage.getItem('currentCourse');
+        if (!storedCourseRaw || storedCourseRaw === 'null' || storedCourseRaw === 'undefined') return;
+        
+        const storedCourse = JSON.parse(storedCourseRaw);
+        if (!storedCourse || typeof storedCourse !== 'object') return;
+        
+        // Buscar el curso en enrolledCourses por ID o título
+        const matchedCourse = enrolledCourses.find(c => 
+          c.id === storedCourse.id || 
+          c.title === storedCourse.title ||
+          (storedCourse.id && c.id && String(c.id).toLowerCase() === String(storedCourse.id).toLowerCase())
+        );
+        
+        if (matchedCourse) {
+          console.log('✅ Restaurando curso desde localStorage y sincronizando con enrolledCourses:', matchedCourse.title);
+          setCurrentCourse(matchedCourse);
+          localStorage.setItem('currentCourse', JSON.stringify(matchedCourse));
+          setIsFirstAccess(false);
+        } else {
+          // Si el curso guardado no existe en enrolledCourses, restaurarlo de todas formas
+          // Esto permite que el curso persista incluso si hay problemas temporales con enrolledCourses
+          console.warn('⚠️ El curso guardado no coincide con ningún curso matriculado, restaurándolo de todas formas:', storedCourse.id, storedCourse.title);
+          setCurrentCourse(storedCourse);
+          setIsFirstAccess(false);
+        }
+      } catch (error) {
+        console.error('Error al sincronizar curso desde localStorage:', error);
+      }
+    }
+  }, [enrolledCourses]); // Ejecutar cuando enrolledCourses cambie
+
   // WebSocket robusto (notificaciones + estado verificación) con reconexión exponencial
   const [wsStatus, setWsStatus] = useState('idle'); // idle|connecting|open|closed|error|unavailable
   const [wsAttempts, setWsAttempts] = useState(0);
@@ -584,13 +671,28 @@ export const StudentProvider = ({ children }) => {
       setWsStatus('connecting');
       // Importar dinámicamente para evitar ciclos y facilitar tree-shaking
       const { getWsNotificationsUrl, waitForBackendHealth } = await import('../utils/ws.js');
-      const healthy = await waitForBackendHealth(2500);
-      if(!healthy){
-        console.warn('[WS] Backend no responde health; no se abrirá WS aún');
-        setWsStatus('unavailable');
-        scheduleReconnect(attempt);
-        return;
+      
+      // Intentar health check pero no bloquear si falla (puede ser problema temporal)
+      let healthy = false;
+      try {
+        healthy = await waitForBackendHealth(2000);
+        if (!healthy && attempt < 3) {
+          // En los primeros intentos, esperar un poco antes de abrir WS
+          console.warn('[WS] Backend no responde health (intento', attempt, '); reintentando...');
+          scheduleReconnect(attempt);
+          return;
+        }
+      } catch (healthErr) {
+        console.warn('[WS] Error en health check:', healthErr?.message || healthErr);
+        // Si ya hemos intentado varias veces, intentar abrir el WS de todas formas
+        if (attempt < 3) {
+          scheduleReconnect(attempt);
+          return;
+        }
+        // Después de 3 intentos, intentar abrir el WS incluso si el health check falla
+        console.warn('[WS] Health check falló pero intentando abrir WS de todas formas (intento', attempt, ')');
       }
+      
       const url = getWsNotificationsUrl();
       lastUrl = url;
       try {
@@ -662,14 +764,25 @@ export const StudentProvider = ({ children }) => {
   }, [alumno?.verificacion]);
 
   // Resetear selección de curso y sección activa cuando el usuario cierra sesión
+  // IMPORTANTE: Solo limpiar si realmente se perdió la autenticación (no durante verificación inicial)
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Verificar si hay un usuario autenticado en localStorage para saber si realmente se perdió la sesión
+    // Si no hay usuario en localStorage, entonces sí se cerró sesión realmente
+    const hasUserInStorage = localStorage.getItem('mq_user');
+    
+    if (!isAuthenticated && !hasUserInStorage) {
+      // Solo limpiar si realmente se cerró sesión (no hay usuario en localStorage)
+      console.log('[Curso] Sesión cerrada, limpiando curso...');
       setCurrentCourse(null);
       setActiveSection(null);
       setIsFirstAccess(true);
       localStorage.removeItem('currentCourse');
       localStorage.removeItem('activeSection');
       localStorage.setItem('isFirstAccess', 'true');
+    } else if (!isAuthenticated && hasUserInStorage) {
+      // Si no está autenticado pero hay usuario en localStorage, podría ser una verificación temporal
+      // No limpiar el curso, ya que la autenticación podría restaurarse pronto
+      console.log('[Curso] Verificación de autenticación en progreso, manteniendo curso...');
     }
   }, [isAuthenticated]);
 

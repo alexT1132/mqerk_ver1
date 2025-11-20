@@ -111,6 +111,31 @@ export const createOrReplaceSubmission = async (req, res) => {
     }
 
     const latest = await Subs.getSubmissionById(newId);
+    
+    // Crear notificación para el asesor asignado
+    try {
+      const AsesorNotifs = await import('../models/asesor_notifications.model.js');
+      const asesorUserId = await AsesorNotifs.getAsesorUserIdByEstudianteId(id_estudiante);
+      if (asesorUserId) {
+        await AsesorNotifs.createNotification({
+          asesor_user_id: asesorUserId,
+          type: 'feedback_submission',
+          title: 'Nueva entrega de Feedback',
+          message: `${est.nombres} ${est.apellidos} entregó la tarea "${task.nombre}" del mes ${task.mes || 'N/A'}`,
+          action_url: `/asesor/feedback/${id_estudiante}`,
+          metadata: {
+            submission_id: newId,
+            task_id: id_task,
+            estudiante_id: id_estudiante,
+            task_nombre: task.nombre,
+            mes: task.mes
+          }
+        }).catch(err => console.error('Error creando notificación de feedback:', err));
+      }
+    } catch (err) {
+      console.error('Error al crear notificación de feedback:', err);
+    }
+    
     res.status(201).json({ data: latest });
   } catch (e) { console.error('createOrReplaceSubmission error', e); res.status(500).json({ message: 'Error interno' }); }
 };

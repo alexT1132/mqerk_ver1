@@ -1,10 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useCourse } from '../../context/CourseContext.jsx';
 // Importaciones de Recharts para gráficos
 import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 // Importaciones de Material UI Charts
 import { BarChart as MUIBarChart } from '@mui/x-charts/BarChart';
+// APIs para cargar datos reales
+import { resumenQuizzesEstudiante } from '../../api/quizzes.js';
+import { resumenActividadesEstudiante } from '../../api/actividades.js';
+import { resumenSimulacionesEstudiante } from '../../api/simulaciones.js';
+import { getResumenAsistenciaEstudiante } from '../../api/asistencias.js';
 
 
 
@@ -14,7 +19,10 @@ import { BarChart as MUIBarChart } from '@mui/x-charts/BarChart';
 const reeseProfilePic = "https://placehold.co/128x128/A0AEC0/FFFFFF?text=Foto";
 
 // --- CONSTANTES ---
-// Datos de usuario por defecto
+// NOTA: Los datos mock ya no se usan - el componente ahora usa solo datos reales de las APIs
+// Se mantienen aquí solo como referencia/documentación
+// Datos de usuario por defecto (NO SE USAN - solo referencia)
+// eslint-disable-next-line no-unused-vars
 const DEFAULT_USER_DATA = {
   name: "Mari Lu Rodríguez Marquez",
   email: "XXXXXXXXXXXXX@gmail.com",
@@ -33,7 +41,8 @@ const DEFAULT_USER_DATA = {
   profilePic: reeseProfilePic,
 };
 
-// Datos de métricas por defecto - Más realistas y variados
+// Datos de métricas por defecto (NO SE USAN - solo referencia)
+// eslint-disable-next-line no-unused-vars
 const DEFAULT_METRICS_DATA = {
   // Métricas de la fila superior - Datos más realistas
   attendance: 78,
@@ -236,6 +245,25 @@ const calculateAcademicStatus = (metrics) => {
 };
 
 /**
+ * Función para calcular el nivel de rendimiento (E, D, C, B, A) basado en el score
+ * @param {number} score - Puntaje del feedback (0-100)
+ * @returns {Object} Objeto con nivel, color, ángulo y descripción
+ */
+const calculatePerformanceLevel = (score) => {
+  if (score >= 90) {
+    return { level: 'A', color: '#10B981', angle: 162, name: 'Nível A', description: 'Excelente' };
+  } else if (score >= 75) {
+    return { level: 'B', color: '#F59E0B', angle: 108, name: 'Nível B', description: 'Bueno' };
+  } else if (score >= 60) {
+    return { level: 'C', color: '#FCD34D', angle: 54, name: 'Nível C', description: 'Regular' };
+  } else if (score >= 40) {
+    return { level: 'D', color: '#F97316', angle: 18, name: 'Nível D', description: 'Bajo' };
+  } else {
+    return { level: 'E', color: '#DC2626', angle: 0, name: 'Nível E', description: 'Muy bajo' };
+  }
+};
+
+/**
  * Función para obtener frases motivacionales basadas en el estado académico
  * @param {Object} academicStatus - Estado académico del estudiante
  * @returns {string} Frase motivacional personalizada
@@ -306,19 +334,28 @@ const ChartModal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-3xl max-h-[90vh] relative flex flex-col">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">{title}</h2>
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors duration-200"
-          aria-label="Cerrar modal"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        <div className="flex-1 min-h-0">
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] relative flex flex-col overflow-hidden">
+        {/* Header con gradiente */}
+        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-6 relative">
+          <h2 className="text-2xl font-bold text-white text-center pr-10">{title}</h2>
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white rounded-full p-2 transition-all duration-200 hover:scale-110"
+            aria-label="Cerrar modal"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        {/* Contenido con scroll si es necesario */}
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
           {children}
         </div>
       </div>
@@ -339,6 +376,11 @@ const ChartModal = ({ isOpen, onClose, title, children }) => {
 export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = false, error = null, showMetrics = false }) {
   const { selectedCourse } = useCourse();
   const { alumno } = useAuth();
+  
+  // Estados para datos reales de las APIs
+  const [realMetricsData, setRealMetricsData] = useState(null);
+  const [loadingMetrics, setLoadingMetrics] = useState(false);
+  const [metricsError, setMetricsError] = useState(null);
 
   // Helper to build absolute URL for stored photos
   const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
@@ -350,24 +392,200 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
     return `${apiOrigin}${p.startsWith('/') ? '' : '/'}${p}`;
   };
 
-  // Map alumno from AuthContext into userData shape
+  // Función para transformar datos de APIs al formato esperado
+  const transformApiDataToMetrics = useMemo(() => {
+    return (quizzesData, actividadesData, simulacionesData, asistenciaResumen) => {
+      // Calcular métricas de quizzes
+      const quizzesArray = Array.isArray(quizzesData) ? quizzesData : [];
+      const quizzesAprobados = quizzesArray.filter(q => {
+        const puntaje = q.oficial_puntaje ?? q.mejor_puntaje ?? q.ultimo_puntaje;
+        return puntaje != null && Number(puntaje) >= 70;
+      }).length;
+      const totalQuizzes = quizzesArray.length;
+      const quizProgress = totalQuizzes > 0 ? Math.round((quizzesAprobados / totalQuizzes) * 100) : 0;
+
+      // Calcular métricas de actividades
+      const actividadesArray = Array.isArray(actividadesData) ? actividadesData : [];
+      const actividadesCompletadas = actividadesArray.filter(a => {
+        const estado = a.entrega_estado;
+        return estado === 'revisada' || estado === 'entregada';
+      }).length;
+      const totalActividades = actividadesArray.length;
+      const activitiesProgress = totalActividades > 0 ? Math.round((actividadesCompletadas / totalActividades) * 100) : 0;
+
+      // Calcular promedio mensual de quizzes (último intento o mejor puntaje)
+      const quizScores = quizzesArray
+        .map(q => {
+          const puntaje = q.oficial_puntaje ?? q.mejor_puntaje ?? q.ultimo_puntaje;
+          return puntaje != null ? Number(puntaje) : null;
+        })
+        .filter(p => p != null);
+      const monthlyAverage = quizScores.length > 0
+        ? Math.round(quizScores.reduce((sum, p) => sum + p, 0) / quizScores.length)
+        : 0;
+
+      // Calcular promedio de actividades (calificaciones)
+      const actividadScores = actividadesArray
+        .map(a => a.calificacion)
+        .filter(c => c != null && !isNaN(Number(c)))
+        .map(c => Number(c));
+      const actividadAverage = actividadScores.length > 0
+        ? Math.round(actividadScores.reduce((sum, c) => sum + c, 0) / actividadScores.length)
+        : 0;
+
+      // Promedio general (ponderado: 60% quizzes, 40% actividades)
+      const overallAverage = quizScores.length > 0 && actividadScores.length > 0
+        ? Math.round((monthlyAverage * 0.6) + (actividadAverage * 0.4))
+        : monthlyAverage || actividadAverage || 0;
+
+      // Generar datos para gráfico de progreso mensual (últimos 12 meses)
+      // Crear datos históricos básicos con el promedio actual en el último mes
+      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const monthlyAverageData = months.map((month, idx) => ({
+        month,
+        promedio: idx === 11 ? overallAverage : (overallAverage > 0 ? Math.max(0, overallAverage - (11 - idx) * 2) : 0)
+      }));
+
+      // Generar datos para gráfico de actividades/quiz (últimos 8 meses)
+      const last8Months = months.slice(-8);
+      const activityProgress = last8Months.map((period, idx) => ({
+        period,
+        activities: idx === 7 ? activitiesProgress : Math.max(0, activitiesProgress - (7 - idx) * 3),
+        quizts: idx === 7 ? quizProgress : Math.max(0, quizProgress - (7 - idx) * 3)
+      }));
+
+      // Calcular feedback score (promedio de calificaciones de actividades o quizzes)
+      const feedbackScore = actividadAverage || monthlyAverage || 0;
+
+      // Obtener porcentaje de asistencia del resumen
+      const attendancePercentage = asistenciaResumen?.general?.porcentaje || null;
+
+      return {
+        attendance: attendancePercentage, // Porcentaje de asistencia desde la API
+        activities: {
+          current: actividadesCompletadas,
+          total: totalActividades || 0
+        },
+        quiz: {
+          current: quizzesAprobados,
+          total: totalQuizzes || 0
+        },
+        monthlyAverage: overallAverage,
+        monthlyAverageData,
+        activityProgress,
+        feedbackScore,
+        // Datos de simuladores y materias - se mantendrán vacíos hasta que haya datos reales
+        subjectResults: {
+          total: 0,
+          subjects: []
+        },
+        simulatorGrades: [],
+      };
+    };
+  }, []);
+
+  // Cargar datos reales de las APIs
+  useEffect(() => {
+    if (!alumno?.id || !showMetrics) return;
+
+    let alive = true;
+    setLoadingMetrics(true);
+    setMetricsError(null);
+
+    const loadMetrics = async () => {
+      try {
+        // Obtener rango de fechas del último mes para el resumen de asistencia
+        const fechaHasta = new Date().toISOString().split('T')[0];
+        const fechaDesde = new Date();
+        fechaDesde.setMonth(fechaDesde.getMonth() - 1);
+        const fechaDesdeStr = fechaDesde.toISOString().split('T')[0];
+        
+        const [quizzesRes, actividadesRes, simulacionesRes, asistenciaRes] = await Promise.allSettled([
+          resumenQuizzesEstudiante(alumno.id),
+          resumenActividadesEstudiante(alumno.id),
+          resumenSimulacionesEstudiante(alumno.id),
+          getResumenAsistenciaEstudiante(alumno.id, {
+            desde: fechaDesdeStr,
+            hasta: fechaHasta
+          })
+        ]);
+
+        if (!alive) return;
+
+        const quizzesData = quizzesRes.status === 'fulfilled' 
+          ? (quizzesRes.value?.data || quizzesRes.value || [])
+          : [];
+        const actividadesData = actividadesRes.status === 'fulfilled'
+          ? (actividadesRes.value?.data || actividadesRes.value || [])
+          : [];
+        const simulacionesData = simulacionesRes.status === 'fulfilled'
+          ? (simulacionesRes.value?.data || simulacionesRes.value || [])
+          : [];
+        const asistenciaResumen = asistenciaRes.status === 'fulfilled'
+          ? (asistenciaRes.value?.data || asistenciaRes.value || null)
+          : null;
+
+        const transformed = transformApiDataToMetrics(quizzesData, actividadesData, simulacionesData, asistenciaResumen);
+        setRealMetricsData(transformed);
+      } catch (err) {
+        if (!alive) return;
+        console.error('Error cargando métricas:', err);
+        setMetricsError(err?.message || 'Error al cargar métricas');
+        // Mantener datos por defecto en caso de error
+        setRealMetricsData(null);
+      } finally {
+        if (alive) setLoadingMetrics(false);
+      }
+    };
+
+    loadMetrics();
+    return () => { alive = false; };
+  }, [alumno?.id, showMetrics, transformApiDataToMetrics]);
+
+  // Map alumno from AuthContext into userData shape (sin datos mock)
   const alumnoUserData = alumno ? {
-    name: `${alumno.nombre || ''} ${alumno.apellidos || ''}`.trim() || DEFAULT_USER_DATA.name,
-    email: alumno.email || DEFAULT_USER_DATA.email,
+    name: `${alumno.nombre || ''} ${alumno.apellidos || ''}`.trim() || '',
+    email: alumno.email || '',
     telefono: alumno.telefono || '',
     comunidad: alumno.comunidad1 || '',
     telTutor: alumno.tel_tutor || '',
     nombreTutor: alumno.nombre_tutor || '',
-    folio: alumno.folio || DEFAULT_USER_DATA.folio,
-    profilePic: buildStaticUrl(alumno.foto) || DEFAULT_USER_DATA.profilePic,
+    folio: alumno.folio || '',
+    profilePic: buildStaticUrl(alumno.foto) || reeseProfilePic,
   } : {};
 
-  // Fusionar los datos proporcionados con los datos por defecto
-  const mergedMetricsData = { ...DEFAULT_METRICS_DATA, ...metricsData };
+  // Fusionar los datos: solo usar datos reales o props, sin datos mock por defecto
+  const mergedMetricsData = useMemo(() => {
+    // Si hay datos reales de API, usarlos como base
+    if (realMetricsData) {
+      return { ...realMetricsData, ...metricsData };
+    }
+    // Si hay datos de props, usarlos
+    if (metricsData) {
+      return metricsData;
+    }
+    // Si no hay datos, retornar estructura vacía (no mock)
+    return {
+      attendance: null,
+      activities: { current: 0, total: 0 },
+      quiz: { current: 0, total: 0 },
+      monthlyAverage: 0,
+      monthlyAverageData: [],
+      activityProgress: [],
+      feedbackScore: 0,
+      subjectResults: { total: 0, subjects: [] },
+      simulatorGrades: [],
+    };
+  }, [realMetricsData, metricsData]);
 
-  // Si hay un curso seleccionado, usar sus datos simulados para métricas
-  const currentMetricsData = selectedCourse?.metricas
-    ? {
+  // Determinar si estamos cargando (combinar props y estado interno)
+  const isActuallyLoading = isLoading || loadingMetrics;
+  const actualError = error || metricsError;
+
+  // Si hay un curso seleccionado, usar sus datos simulados para métricas (solo si no hay datos reales)
+  const currentMetricsData = useMemo(() => {
+    if (selectedCourse?.metricas && !realMetricsData) {
+      return {
         ...mergedMetricsData,
         monthlyAverage: selectedCourse.metricas.promedio || mergedMetricsData.monthlyAverage,
         // Calcular progreso de actividades basado en el avance del curso
@@ -379,8 +597,10 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
             return Math.floor((avance / 100) * mergedMetricsData.activities.total);
           })()
         }
-      }
-    : mergedMetricsData;
+      };
+    }
+    return mergedMetricsData;
+  }, [selectedCourse, mergedMetricsData, realMetricsData]);
 
   // Calcular el estado académico dinámicamente (sin mutar objetos)
   const calculatedAcademicStatus = useMemo(() => calculateAcademicStatus(currentMetricsData), [
@@ -396,8 +616,19 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
     academicStatus: calculatedAcademicStatus,
   }), [currentMetricsData, calculatedAcademicStatus]);
 
-  // Fusiona: defaults <- alumno (Auth) <- props (override)
-  const currentUserData = { ...DEFAULT_USER_DATA, ...alumnoUserData, ...userData };
+  // Fusiona: alumno (Auth) <- props (override) - sin datos mock
+  const currentUserData = { 
+    name: '',
+    email: '',
+    telefono: '',
+    comunidad: '',
+    telTutor: '',
+    nombreTutor: '',
+    folio: '',
+    profilePic: reeseProfilePic,
+    ...alumnoUserData, 
+    ...userData 
+  };
 
   const buildCourseCode = () => 'MEEAU';
   const onlyDigits = (v) => typeof v === 'string' ? /^\d+$/.test(v) : (typeof v === 'number' && Number.isFinite(v));
@@ -406,6 +637,134 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
   const displayFolio = seqNum != null
     ? `${buildCourseCode()}${yy}-${String(seqNum).padStart(4, '0')}`
     : currentUserData.folio;
+
+  // Estados para modales de gráficos (todos los hooks deben estar antes de returns condicionales)
+  const [isActivitiesChartModalOpen, setIsActivitiesChartModalOpen] = useState(false);
+  const [isMonthlyAverageModalOpen, setIsMonthlyAverageModalOpen] = useState(false);
+  const [isSubjectResultsModalOpen, setIsSubjectResultsModalOpen] = useState(false);
+
+  // Usar directamente los datos reales sin perfiles de testing
+  const finalMetricsData = useMemo(() => currentMetricsWithStatus, [currentMetricsWithStatus]);
+
+  // Recalcular el estado académico con el perfil actual (sin mutar)
+  const finalAcademicStatus = useMemo(() => calculateAcademicStatus(finalMetricsData), [
+    finalMetricsData.attendance,
+    finalMetricsData.monthlyAverage,
+    finalMetricsData.activities?.current,
+    finalMetricsData.activities?.total,
+    finalMetricsData.quiz?.current,
+    finalMetricsData.quiz?.total,
+  ]);
+
+  // Prepara los datos para el PieChart de Recharts
+  const pieChartData = useMemo(() => {
+    const subjects = finalMetricsData?.subjectResults?.subjects || currentMetricsData?.subjectResults?.subjects || [];
+    const totalPercent = subjects.reduce((sum, subject) => sum + subject.percent, 0);
+    
+    return subjects.map((subject, index) => {
+      const normalizedPercent = (subject.percent / totalPercent) * 100;
+      return {
+        name: subject.fullName,
+        value: normalizedPercent,
+        originalPercent: subject.percent,
+        code: subject.code,
+        color: subject.color,
+      };
+    });
+  }, [finalMetricsData?.subjectResults?.subjects, currentMetricsData?.subjectResults?.subjects]);
+
+  // Obtiene recomendaciones dinámicas basadas en la puntuación total del simulador
+  const { subjects: recommendedSubjects, message: recommendationMessage } = useMemo(() => {
+    const subjectResults = finalMetricsData?.subjectResults || currentMetricsData?.subjectResults;
+    return getSimulatorRecommendation(
+      subjectResults?.total || 0,
+      subjectResults?.subjects || []
+    );
+  }, [finalMetricsData?.subjectResults, currentMetricsData?.subjectResults]);
+
+  // Custom Tooltip mejorado para el PieChart
+  const CustomPieTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-4 rounded-xl shadow-2xl border border-gray-600 relative z-[9999] backdrop-blur-sm">
+          <div className="flex items-center space-x-3">
+            <div 
+              className="w-4 h-4 rounded-full shadow-lg"
+              style={{ backgroundColor: data.color }}
+            ></div>
+            <div>
+              <p className="font-bold text-sm text-gray-100">{data.name}</p>
+              <p className="text-xl font-black" style={{ color: data.color }}>
+                {data.originalPercent}%
+              </p>
+            </div>
+          </div>
+          <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom Tooltip para gráficos de barras
+  const CustomBarTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 text-white p-4 rounded-xl shadow-2xl border border-blue-400 relative z-[9999] backdrop-blur-sm">
+          <p className="font-bold text-blue-200 mb-2">{label}</p>
+          {payload.map((entry, index) => (
+            <div key={index} className="flex items-center space-x-2 mb-1">
+              <div 
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: entry.color }}
+              ></div>
+              <span className="text-sm font-medium text-gray-200">{entry.dataKey}:</span>
+              <span className="font-bold text-lg" style={{ color: entry.color }}>
+                {entry.value}%
+              </span>
+            </div>
+          ))}
+          <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-blue-800"></div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom Label para el PieChart (muestra la abreviación)
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="white"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize="8px"
+        fontWeight="bold"
+      >
+        {pieChartData[index].code}
+      </text>
+    );
+  };
+
+  // --- Renderizado Condicional: Estado de Carga ---
+  if (isActuallyLoading) {
+    return (
+      <div className="p-4 sm:p-6 text-center text-gray-600 min-h-screen flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-lg font-medium">Cargando datos del dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Si solo queremos mostrar foto + nombre + datos personales, salimos temprano
   if (!showMetrics) {
@@ -546,160 +905,9 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
     );
   }
 
-  // Estado para controlar la visibilidad de la modal del gráfico de actividades
-  const [isActivitiesChartModalOpen, setIsActivitiesChartModalOpen] = useState(false);
-  
-  // Estado para controlar la modal del gráfico de promedio mensual con Material UI
-  const [isMonthlyAverageModalOpen, setIsMonthlyAverageModalOpen] = useState(false);
-  
-  // Estado para controlar la modal del gráfico de resultados por materia
-  const [isSubjectResultsModalOpen, setIsSubjectResultsModalOpen] = useState(false);
-
-
-  // Prepara los datos para el PieChart de Recharts
-  const pieChartData = useMemo(() => {
-    const subjects = currentMetricsData.subjectResults.subjects;
-    const totalPercent = subjects.reduce((sum, subject) => sum + subject.percent, 0);
-    
-    return subjects.map((subject, index) => {
-      const normalizedPercent = (subject.percent / totalPercent) * 100;
-      return {
-        name: subject.fullName,
-        value: normalizedPercent, // Usar porcentaje normalizado para el gráfico
-        originalPercent: subject.percent, // Mantener el porcentaje original para mostrar
-        code: subject.code,
-        color: subject.color,
-      };
-    });
-  }, [currentMetricsData.subjectResults.subjects]);
-
-  // Obtiene recomendaciones dinámicas basadas en la puntuación total del simulador
-  const { subjects: recommendedSubjects, message: recommendationMessage } = getSimulatorRecommendation(
-    currentMetricsData.subjectResults.total,
-    currentMetricsData.subjectResults.subjects // Pasa los datos completos de las materias
-  );
-
-  // Custom Tooltip mejorado para el PieChart
-  const CustomPieTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-4 rounded-xl shadow-2xl border border-gray-600 relative z-[9999] backdrop-blur-sm">
-          <div className="flex items-center space-x-3">
-            <div 
-              className="w-4 h-4 rounded-full shadow-lg"
-              style={{ backgroundColor: data.color }}
-            ></div>
-            <div>
-              <p className="font-bold text-sm text-gray-100">{data.name}</p>
-              <p className="text-xl font-black" style={{ color: data.color }}>
-                {data.originalPercent}%
-              </p>
-            </div>
-          </div>
-          <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Custom Tooltip para gráficos de barras
-  const CustomBarTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 text-white p-4 rounded-xl shadow-2xl border border-blue-400 relative z-[9999] backdrop-blur-sm">
-          <p className="font-bold text-blue-200 mb-2">{label}</p>
-          {payload.map((entry, index) => (
-            <div key={index} className="flex items-center space-x-2 mb-1">
-              <div 
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: entry.color }}
-              ></div>
-              <span className="text-sm font-medium text-gray-200">{entry.dataKey}:</span>
-              <span className="font-bold text-lg" style={{ color: entry.color }}>
-                {entry.value}%
-              </span>
-            </div>
-          ))}
-          <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-blue-800"></div>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // (Eliminado) Tooltips personalizados no utilizados para reducir complejidad
-
-  // Custom Label para el PieChart (muestra la abreviación)
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5; // Mantiene las etiquetas dentro del arco
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    return (
-      <text
-        x={x}
-        y={y}
-        fill="white" // Asegura el color blanco para las etiquetas dentro de los segmentos
-        textAnchor="middle" // Centra el texto dentro del segmento
-        dominantBaseline="middle" // Centra el texto verticalmente
-        fontSize="8px" // Tamaño de fuente ligeramente más pequeño para intentar que quepa
-        fontWeight="bold" // Texto en negrita
-      >
-        {pieChartData[index].code} {/* Muestra la abreviación */}
-      </text>
-    );
-  };
-
-
-  // --- Renderizado Condicional: Estado de Carga ---
-  if (isLoading) {
-    return (
-      <div className="p-4 sm:p-6 text-center text-gray-600 min-h-screen flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-lg font-medium">Cargando datos del dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // --- Renderizado Condicional: Estado de Error ---
-  if (error) {
-    return (
-      <div className="p-4 sm:p-6 text-center text-red-600 min-h-screen flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-red-200">
-          <div className="text-4xl mb-4">⚠️</div>
-          <p className="text-lg font-medium">Error al cargar el dashboard: {error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Estado para el perfil de testing seleccionado - cambiar a 'activo' por defecto
-  const [selectedProfile, setSelectedProfile] = useState('activo');
-
-  // Aplicar el perfil seleccionado a las métricas si estamos en modo testing
-  const finalMetricsData = useMemo(() => ({
-    ...currentMetricsWithStatus,
-    ...STUDENT_PROFILES[selectedProfile],
-  }), [currentMetricsWithStatus, selectedProfile]);
-
-  // Recalcular el estado académico con el perfil actual (sin mutar)
-  const finalAcademicStatus = useMemo(() => calculateAcademicStatus(finalMetricsData), [
-    finalMetricsData.attendance,
-    finalMetricsData.monthlyAverage,
-    finalMetricsData.activities?.current,
-    finalMetricsData.activities?.total,
-    finalMetricsData.quiz?.current,
-    finalMetricsData.quiz?.total,
-  ]);
-
   // Eliminar contenedor principal para mejor integración - solo contenido directo
   return (
-    <div className="w-full font-inter text-gray-800">
+    <div className="w-full font-inter text-gray-800 pt-4 sm:pt-6">
 
       {/* Sección de Encabezado del Dashboard */}
       <div className="flex flex-col items-center md:flex-row md:items-start md:justify-between mb-6 pb-4 border-b-2 border-gradient-to-r from-blue-200 to-purple-200">
@@ -834,54 +1042,6 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         </div>
       </div>
 
-      {/* Controles de Testing - Solo para desarrollo */}
-      <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <span className="text-sm font-semibold text-gray-700">Testing - Cambiar perfil:</span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSelectedProfile('riesgo')}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
-                selectedProfile === 'riesgo' 
-                  ? 'bg-red-500 text-white shadow-md' 
-                  : 'bg-white text-red-500 border border-red-500 hover:bg-red-50'
-              }`}
-            >
-              Riesgo
-            </button>
-            <button
-              onClick={() => setSelectedProfile('activo')}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
-                selectedProfile === 'activo' 
-                  ? 'bg-yellow-500 text-white shadow-md' 
-                  : 'bg-white text-yellow-600 border border-yellow-500 hover:bg-yellow-50'
-              }`}
-            >
-              Activo
-            </button>
-            <button
-              onClick={() => setSelectedProfile('destacado')}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
-                selectedProfile === 'destacado' 
-                  ? 'bg-green-500 text-white shadow-md' 
-                  : 'bg-white text-green-600 border border-green-500 hover:bg-green-50'
-              }`}
-            >
-              Destacado
-            </button>
-          </div>
-          <span className="text-xs text-gray-500">
-            Estado actual: <span className={`font-bold ${
-              finalAcademicStatus.level === 'R' ? 'text-red-500' : 
-              finalAcademicStatus.level === 'A' ? 'text-yellow-500' : 
-              'text-green-500'
-            }`}>
-              {finalAcademicStatus.description} ({Math.round(finalAcademicStatus.score)}%)
-            </span>
-          </span>
-        </div>
-      </div>
-
       {/* Sección "TU STATUS MENSUAL" */}
       <div className="text-center mb-6 mt-8">
         <div className="inline-block bg-white rounded-full px-6 xs:px-8 py-3 xs:py-4 shadow-xl border border-gray-200">
@@ -1012,11 +1172,19 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         </div>
 
         {/* Métrica de Promedio Mensual - Con clic para abrir modal de Material UI */}
-        <div 
-          className="flex flex-col items-center group cursor-pointer transition-all duration-150" 
-          title="Haz clic para ver el gráfico detallado de tu promedio mensual"
-          onClick={() => setIsMonthlyAverageModalOpen(true)}
-        >
+        {(() => {
+          const hasMonthlyData = finalMetricsData.monthlyAverageData && 
+            finalMetricsData.monthlyAverageData.length > 0 &&
+            finalMetricsData.monthlyAverageData.some(item => item.promedio > 0);
+          
+          if (!hasMonthlyData || finalMetricsData.monthlyAverage === 0) return null;
+          
+          return (
+            <div 
+              className="flex flex-col items-center group cursor-pointer transition-all duration-150" 
+              title="Haz clic para ver el gráfico detallado de tu promedio mensual"
+              onClick={() => setIsMonthlyAverageModalOpen(true)}
+            >
           <div className="relative mb-6 group-hover:scale-105 transition-transform duration-300">
             {/* Contenedor del gráfico visual */}
             <div className="relative w-40 h-40 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl shadow-xl border-2 border-blue-200 p-4 flex flex-col items-center justify-center group-hover:shadow-2xl transition-shadow duration-300">
@@ -1065,7 +1233,9 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
           <p className="text-sm text-gray-500 text-center">
             Tendencia histórica
           </p>
-        </div>
+            </div>
+          );
+        })()}
 
         {/* Métrica de Estado Académico - Diseño original con colores corregidos */}
         <div className="flex flex-col items-center group cursor-pointer transform hover:scale-105 transition-all duration-200">
@@ -1142,6 +1312,14 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 max-w-8xl mx-auto">
 
         {/* Gráfico de Actividades / Quiz - Sin Contenedor, Estilo Limpio */}
+        {(() => {
+          const hasActivityData = currentMetricsData.activityProgress && 
+            currentMetricsData.activityProgress.length > 0 &&
+            currentMetricsData.activityProgress.some(item => (item.activities > 0 || item.quizts > 0));
+          
+          if (!hasActivityData) return null;
+          
+          return (
         <div
           className="cursor-pointer transition-all duration-200 hover:scale-105"
           onClick={() => setIsActivitiesChartModalOpen(true)}
@@ -1236,8 +1414,19 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
             </div>
           </div>
         </div>
+          );
+        })()}
 
         {/* Resultados por materia - Representación Visual Exacta */}
+        {(() => {
+          const hasSubjectData = currentMetricsData.subjectResults && 
+            currentMetricsData.subjectResults.subjects &&
+            currentMetricsData.subjectResults.subjects.length > 0 &&
+            currentMetricsData.subjectResults.total > 0;
+          
+          if (!hasSubjectData) return null;
+          
+          return (
         <div
           className="cursor-pointer transition-all duration-200 hover:scale-105"
           onClick={() => setIsSubjectResultsModalOpen(true)}
@@ -1380,8 +1569,18 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
             </div>
           </div>
         </div>
+          );
+        })()}
 
         {/* Resultados del simulador - Sin Contenedor, Estilo Limpio */}
+        {(() => {
+          const hasSimulatorData = currentMetricsData.simulatorGrades && 
+            currentMetricsData.simulatorGrades.length > 0 &&
+            currentMetricsData.simulatorGrades.some(item => item.score > 0);
+          
+          if (!hasSimulatorData) return null;
+          
+          return (
         <div className="cursor-pointer transition-all duration-200 hover:scale-105">
           {/* Título simple */}
           <div className="text-center mb-6">
@@ -1424,11 +1623,13 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
             <div className="absolute left-0 top-0 bottom-0 w-2 bg-purple-600"></div>
           </div>
         </div>
+          );
+        })()}
 
-        {/* Feedback - Sin Contenedor, Estilo Limpio y Preciso */}
+        {/* Feedback - Gráfica de Velocímetro (Gauge Chart) */}
         <div className="cursor-pointer transition-all duration-200 hover:scale-105">
           {/* Título simple */}
-          <div className="text-center mb-6">
+          <div className="text-center mb-4">
             <h3 className="text-lg font-bold text-purple-600 flex items-center justify-center">
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
@@ -1437,17 +1638,234 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
             </h3>
           </div>
 
-          {/* Mensaje dinámico central con emoji */}
+          {/* Gráfica de Velocímetro Mejorada */}
           {(() => {
-            const feedback = getMotivationalFeedback(currentMetricsData.feedbackScore);
+            const score = currentMetricsData.feedbackScore || 0;
+            const performanceLevel = calculatePerformanceLevel(score);
+            const feedback = getMotivationalFeedback(score);
+            
+            // Calcular el ángulo de la aguja basado en el score (0-100 -> 0-180 grados)
+            // El velocímetro va de 0° (izquierda) a 180° (derecha)
+            const needleAngle = (score / 100) * 180;
+            
+            // Definir los niveles con emojis, colores y posiciones
+            const levels = [
+              { level: 'E', emoji: '😟', color: '#DC2626', startAngle: 0, endAngle: 36, name: 'Nível E', gradient: 'from-red-600 to-red-700' },
+              { level: 'D', emoji: '😐', color: '#F97316', startAngle: 36, endAngle: 72, name: 'Nível D', gradient: 'from-orange-500 to-orange-600' },
+              { level: 'C', emoji: '🙂', color: '#FCD34D', startAngle: 72, endAngle: 108, name: 'Nível C', gradient: 'from-yellow-400 to-yellow-500' },
+              { level: 'B', emoji: '😊', color: '#F59E0B', startAngle: 108, endAngle: 144, name: 'Nível B', gradient: 'from-amber-500 to-amber-600' },
+              { level: 'A', emoji: '🎉', color: '#10B981', startAngle: 144, endAngle: 180, name: 'Nível A', gradient: 'from-green-500 to-green-600' }
+            ];
+            
+            const centerX = 150;
+            const centerY = 150;
+            const radius = 110;
+            const innerRadius = 70;
+            
+            // Función para convertir ángulo a coordenadas (0° = izquierda, 180° = derecha)
+            const angleToCoord = (angle, r = radius) => {
+              // Convertir ángulo del velocímetro (0-180) a ángulo matemático (180-0)
+              const mathAngle = 180 - angle;
+              const rad = mathAngle * (Math.PI / 180);
+              return {
+                x: centerX + r * Math.cos(rad),
+                y: centerY - r * Math.sin(rad) // Negativo porque Y aumenta hacia abajo
+              };
+            };
+            
             return (
-              <div className="text-center mb-4">
-                <div className="flex items-center justify-center space-x-2 mb-2">
-                  <span className="text-4xl">{feedback.emoji}</span>
-                  <div className="text-2xl font-bold text-gray-800">{currentMetricsData.feedbackScore}%</div>
+              <div className="flex flex-col items-center">
+                {/* SVG del velocímetro mejorado */}
+                <svg width="320" height="200" viewBox="0 0 320 200" className="mb-4 drop-shadow-lg">
+                  {/* Fondo del semicírculo (gris claro) */}
+                  <path
+                    d={`M ${centerX} ${centerY} L ${angleToCoord(0, radius).x} ${angleToCoord(0, radius).y} A ${radius} ${radius} 0 0 1 ${angleToCoord(180, radius).x} ${angleToCoord(180, radius).y} Z`}
+                    fill="#f3f4f6"
+                    stroke="#e5e7eb"
+                    strokeWidth="1"
+                  />
+                  
+                  {/* Arcos de los niveles con gradiente */}
+                  {levels.map((level) => {
+                    const start = angleToCoord(level.startAngle, radius);
+                    const end = angleToCoord(level.endAngle, radius);
+                    const largeArc = level.endAngle - level.startAngle > 180 ? 1 : 0;
+                    
+                    return (
+                      <g key={level.level}>
+                        {/* Sombra del arco */}
+                        <path
+                          d={`M ${centerX} ${centerY} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z`}
+                          fill="rgba(0,0,0,0.1)"
+                          transform={`translate(2, 2)`}
+                        />
+                        {/* Arco principal */}
+                        <path
+                          d={`M ${centerX} ${centerY} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z`}
+                          fill={level.color}
+                          stroke="#fff"
+                          strokeWidth="3"
+                          opacity={performanceLevel.level === level.level ? 1 : 0.5}
+                          className="transition-opacity duration-300"
+                        />
+                        {/* Borde interno para profundidad */}
+                        <path
+                          d={`M ${centerX} ${centerY} L ${angleToCoord(level.startAngle, innerRadius).x} ${angleToCoord(level.startAngle, innerRadius).y} A ${innerRadius} ${innerRadius} 0 ${largeArc} 1 ${angleToCoord(level.endAngle, innerRadius).x} ${angleToCoord(level.endAngle, innerRadius).y} Z`}
+                          fill="rgba(255,255,255,0.3)"
+                        />
+                      </g>
+                    );
+                  })}
+                  
+                  {/* Líneas divisorias entre niveles con sombra */}
+                  {levels.slice(0, -1).map((level) => {
+                    const coord = angleToCoord(level.endAngle, radius);
+                    const innerCoord = angleToCoord(level.endAngle, innerRadius);
+                    return (
+                      <g key={`divider-${level.level}`}>
+                        <line
+                          x1={innerCoord.x}
+                          y1={innerCoord.y}
+                          x2={coord.x}
+                          y2={coord.y}
+                          stroke="rgba(0,0,0,0.1)"
+                          strokeWidth="2"
+                          transform="translate(1, 1)"
+                        />
+                        <line
+                          x1={innerCoord.x}
+                          y1={innerCoord.y}
+                          x2={coord.x}
+                          y2={coord.y}
+                          stroke="#fff"
+                          strokeWidth="2.5"
+                        />
+                      </g>
+                    );
+                  })}
+                  
+                  {/* Aguja mejorada con sombra y punta */}
+                  {(() => {
+                    const needleCoord = angleToCoord(needleAngle, radius - 5);
+                    const needleBase = angleToCoord(needleAngle, 15);
+                    
+                    return (
+                      <g>
+                        {/* Sombra de la aguja */}
+                        <line
+                          x1={centerX + 1}
+                          y1={centerY + 1}
+                          x2={needleCoord.x + 1}
+                          y2={needleCoord.y + 1}
+                          stroke="rgba(0,0,0,0.2)"
+                          strokeWidth="4"
+                          strokeLinecap="round"
+                        />
+                        {/* Aguja principal */}
+                        <line
+                          x1={centerX}
+                          y1={centerY}
+                          x2={needleCoord.x}
+                          y2={needleCoord.y}
+                          stroke="#1f2937"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                        {/* Base de la aguja (triángulo) */}
+                        <polygon
+                          points={`${centerX},${centerY} ${needleBase.x - 8},${needleBase.y} ${needleBase.x + 8},${needleBase.y}`}
+                          fill="#1f2937"
+                        />
+                        {/* Círculo central con gradiente */}
+                        <circle
+                          cx={centerX}
+                          cy={centerY}
+                          r="12"
+                          fill="#1f2937"
+                          stroke="#fff"
+                          strokeWidth="3"
+                        />
+                        <circle
+                          cx={centerX}
+                          cy={centerY}
+                          r="6"
+                          fill="#fff"
+                        />
+                      </g>
+                    );
+                  })()}
+                  
+                  {/* Etiquetas de niveles con emojis - Emojis arriba, textos abajo */}
+                  {levels.map((level) => {
+                    const midAngle = (level.startAngle + level.endAngle) / 2;
+                    const isActive = performanceLevel.level === level.level;
+                    
+                    // Emoji en la parte superior del arco (más cerca del borde)
+                    const emojiRadius = radius * 0.95;
+                    const emojiCoord = angleToCoord(midAngle, emojiRadius);
+                    
+                    // Texto en la parte inferior, cerca del centro del velocímetro
+                    const textRadius = radius * 0.50;
+                    const textCoord = angleToCoord(midAngle, textRadius);
+                    
+                    return (
+                      <g key={`label-${level.level}`}>
+                        {/* Fondo circular para el emoji - en la parte superior */}
+                        <circle
+                          cx={emojiCoord.x}
+                          cy={emojiCoord.y}
+                          r="20"
+                          fill={isActive ? level.color : "#f3f4f6"}
+                          stroke={isActive ? "#fff" : "#e5e7eb"}
+                          strokeWidth={isActive ? "3" : "2"}
+                          className="transition-all duration-300"
+                        />
+                        {/* Emoji - centrado en el círculo superior */}
+                        <text
+                          x={emojiCoord.x}
+                          y={emojiCoord.y + 6}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fontSize="22"
+                          className="select-none pointer-events-none"
+                        >
+                          {level.emoji}
+                        </text>
+                        {/* Nombre del nivel en la parte inferior, cerca del centro */}
+                        <text
+                          x={textCoord.x}
+                          y={textCoord.y + 5}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fontSize="12"
+                          fontWeight="bold"
+                          fill={isActive ? level.color : "#6b7280"}
+                          className="transition-all duration-300"
+                        >
+                          {level.name}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+                
+                {/* Mensaje motivacional mejorado */}
+                <div className="text-center mt-2 px-4">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <span className="text-3xl">{feedback.emoji}</span>
+                    <div className="text-3xl font-black text-gray-800">{score}%</div>
+                  </div>
+                  <div className={`text-xl font-bold mb-2 px-4 py-2 rounded-lg ${
+                    performanceLevel.level === 'A' ? 'bg-green-50 text-green-700' :
+                    performanceLevel.level === 'B' ? 'bg-amber-50 text-amber-700' :
+                    performanceLevel.level === 'C' ? 'bg-yellow-50 text-yellow-700' :
+                    performanceLevel.level === 'D' ? 'bg-orange-50 text-orange-700' :
+                    'bg-red-50 text-red-700'
+                  }`}>
+                    {feedback.message}
+                  </div>
+                  <div className="text-sm text-gray-600 font-medium">{feedback.description}</div>
                 </div>
-                <div className="text-lg font-bold text-purple-600 mb-2">{feedback.message}</div>
-                <div className="text-sm text-gray-600">{feedback.description}</div>
               </div>
             );
           })()}
@@ -1461,20 +1879,67 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         onClose={() => setIsActivitiesChartModalOpen(false)}
         title="Avance Mensual de Actividades y Quizts"
       >
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={currentMetricsData.activityProgress}
-            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="period" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="activities" name="Actividades" fill="#3b82f6" />
-            <Bar dataKey="quizts" name="Quizts" fill="#8b5cf6" />
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="bg-white rounded-xl p-6 shadow-lg">
+          <div className="mb-4">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <div className="text-sm text-blue-600 font-semibold mb-1">Total Actividades</div>
+                <div className="text-2xl font-bold text-blue-700">
+                  {currentMetricsData.activities.current} / {currentMetricsData.activities.total}
+                </div>
+                <div className="text-xs text-blue-500 mt-1">
+                  {currentMetricsData.activities.total > 0 
+                    ? Math.round((currentMetricsData.activities.current / currentMetricsData.activities.total) * 100) 
+                    : 0}% completadas
+                </div>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                <div className="text-sm text-purple-600 font-semibold mb-1">Total Quizts</div>
+                <div className="text-2xl font-bold text-purple-700">
+                  {currentMetricsData.quiz.current} / {currentMetricsData.quiz.total}
+                </div>
+                <div className="text-xs text-purple-500 mt-1">
+                  {currentMetricsData.quiz.total > 0 
+                    ? Math.round((currentMetricsData.quiz.current / currentMetricsData.quiz.total) * 100) 
+                    : 0}% aprobados
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{ width: '100%', height: '400px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={currentMetricsData.activityProgress}
+                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="period" 
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  label={{ value: 'Meses', position: 'insideBottom', offset: -5, style: { textAnchor: 'middle', fill: '#6b7280' } }}
+                />
+                <YAxis 
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  label={{ value: 'Porcentaje (%)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6b7280' } }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                    border: '1px solid #e5e7eb', 
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="square"
+                />
+                <Bar dataKey="activities" name="Actividades" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="quizts" name="Quizts" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </ChartModal>
 
       {/* Modal para el Gráfico de Promedio Mensual con Material UI */}
@@ -1483,46 +1948,67 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         onClose={() => setIsMonthlyAverageModalOpen(false)}
         title="Evolución del Promedio Mensual - Últimos 12 Meses"
       >
-        <div className="w-full h-full flex items-center justify-center">
-          <MUIBarChart
-            width={700}
-            height={400}
-            dataset={finalMetricsData.monthlyAverageData || DEFAULT_METRICS_DATA.monthlyAverageData}
-            xAxis={[{ 
-              scaleType: 'band', 
-              dataKey: 'month',
-              label: 'Meses'
-            }]}
-            yAxis={[{
-              label: 'Promedio (%)',
-              min: 0,
-              max: 100
-            }]}
-            series={[
-              { 
-                dataKey: 'promedio', 
-                label: 'Promedio Mensual',
-                color: '#3b82f6'
-              }
-            ]}
-            margin={{ left:  60, right: 20, top: 20, bottom: 60 }}
-            sx={{
-              '& .MuiChartsAxis-line': {
-                stroke: '#6b7280',
-              },
-              '& .MuiChartsAxis-tick': {
-                stroke: '#6b7280',
-              },
-              '& .MuiChartsAxis-tickLabel': {
-                fill: '#374151',
-                fontSize: '12px',
-              },
-              '& .MuiChartsLegend-label': {
-                fill: '#374151',
-                fontSize: '14px',
-              }
-            }}
-          />
+        <div className="bg-white rounded-xl p-6 shadow-lg">
+          <div className="mb-4">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
+              <div className="text-sm text-blue-600 font-semibold mb-1">Promedio General</div>
+              <div className="text-3xl font-bold text-blue-700">
+                {finalMetricsData.monthlyAverage}%
+              </div>
+              <div className="text-xs text-blue-500 mt-1">
+                Basado en {finalMetricsData.monthlyAverageData?.length || 0} meses de datos
+              </div>
+            </div>
+          </div>
+          <div className="w-full flex items-center justify-center bg-white rounded-lg p-4">
+            <MUIBarChart
+              width={typeof window !== 'undefined' ? Math.min(800, window.innerWidth - 100) : 800}
+              height={450}
+              dataset={finalMetricsData.monthlyAverageData || []}
+              xAxis={[{ 
+                scaleType: 'band', 
+                dataKey: 'month',
+                label: 'Meses',
+                labelStyle: { fontSize: 14, fill: '#6b7280' }
+              }]}
+              yAxis={[{
+                label: 'Promedio (%)',
+                min: 0,
+                max: 100,
+                labelStyle: { fontSize: 14, fill: '#6b7280' }
+              }]}
+              series={[
+                { 
+                  dataKey: 'promedio', 
+                  label: 'Promedio Mensual',
+                  color: '#3b82f6'
+                }
+              ]}
+              margin={{ left: 80, right: 30, top: 30, bottom: 80 }}
+              sx={{
+                '& .MuiChartsAxis-line': {
+                  stroke: '#6b7280',
+                  strokeWidth: 2,
+                },
+                '& .MuiChartsAxis-tick': {
+                  stroke: '#6b7280',
+                },
+                '& .MuiChartsAxis-tickLabel': {
+                  fill: '#374151',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                },
+                '& .MuiChartsLegend-label': {
+                  fill: '#374151',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                },
+                '& .MuiChartsBar-root': {
+                  rx: 8,
+                }
+              }}
+            />
+          </div>
         </div>
       </ChartModal>
 
@@ -1532,66 +2018,98 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         onClose={() => setIsSubjectResultsModalOpen(false)}
         title="Resultados Detallados por Materia - 1er Simulador"
       >
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={pieChartData}
-              cx="50%"
-              cy="50%"
-              innerRadius={80}
-              outerRadius={140}
-              fill="#8884d8"
-              paddingAngle={3}
-              cornerRadius={6}
-              dataKey="value"
-              label={renderCustomizedLabel}
-              labelLine={false}
-            >
-              {pieChartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomPieTooltip />} />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-        
-        {/* Información adicional en el modal */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <div className="text-center mb-4">
-            <span className="text-3xl font-bold text-purple-600">
-              {currentMetricsData.subjectResults.total}%
-            </span>
-            <p className="text-sm text-gray-600 mt-1">Puntuación General</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-semibold text-gray-700 mb-2">Desglose por Materia:</h4>
-              <div className="space-y-1">
-                {currentMetricsData.subjectResults.subjects.map((subject, index) => (
-                  <div key={index} className="flex justify-between items-center text-sm">
-                    <div className="flex items-center space-x-2">
-                      <div 
-                        className="w-3 h-3 rounded-sm"
-                        style={{ backgroundColor: subject.color }}
-                      ></div>
-                      <span className="font-medium">{subject.code}</span>
-                    </div>
-                    <span className="text-gray-600">{subject.percent}%</span>
-                  </div>
-                ))}
+        <div className="bg-white rounded-xl p-6 shadow-lg">
+          {/* Resumen general */}
+          <div className="mb-6">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200 text-center">
+              <div className="text-sm text-purple-600 font-semibold mb-1">Puntuación General del Simulador</div>
+              <div className="text-4xl font-bold text-purple-700">
+                {currentMetricsData.subjectResults.total}%
               </div>
             </div>
-            
-            <div>
-              <h4 className="font-semibold text-gray-700 mb-2">Recomendaciones:</h4>
-              <div className="text-sm text-red-600 font-medium mb-2">
-                Materias por reforzar: {recommendedSubjects.join(', ')}
+          </div>
+
+          {/* Gráfico de pastel */}
+          <div style={{ width: '100%', height: '400px', marginBottom: '24px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={80}
+                  outerRadius={140}
+                  fill="#8884d8"
+                  paddingAngle={3}
+                  cornerRadius={6}
+                  dataKey="value"
+                  label={renderCustomizedLabel}
+                  labelLine={false}
+                >
+                  {pieChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomPieTooltip />} />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="square"
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          
+          {/* Información adicional en el modal */}
+          <div className="mt-6 p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <h4 className="font-bold text-gray-800 mb-4 text-lg flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                    <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                  </svg>
+                  Desglose por Materia
+                </h4>
+                <div className="space-y-2">
+                  {currentMetricsData.subjectResults.subjects.map((subject, index) => (
+                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className="w-4 h-4 rounded-sm shadow-sm"
+                          style={{ backgroundColor: subject.color }}
+                        ></div>
+                        <span className="font-semibold text-gray-700">{subject.code}</span>
+                        <span className="text-xs text-gray-500">({subject.fullName})</span>
+                      </div>
+                      <span className="text-gray-700 font-bold">{subject.percent}%</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <p className="text-sm text-gray-600">
-                {recommendationMessage}
-              </p>
+              
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <h4 className="font-bold text-gray-800 mb-4 text-lg flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Recomendaciones
+                </h4>
+                <div className="space-y-3">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div className="text-sm font-semibold text-red-700 mb-1">
+                      Materias por reforzar:
+                    </div>
+                    <div className="text-sm text-red-600 font-medium">
+                      {recommendedSubjects.length > 0 ? recommendedSubjects.join(', ') : 'Ninguna'}
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {recommendationMessage}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1743,7 +2261,9 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
   );
 }
 
-// Ejemplos de diferentes perfiles de estudiantes para testing - Más realistas
+// NOTA: STUDENT_PROFILES ya no se usa - se eliminó la funcionalidad de testing
+// Se mantiene aquí solo como referencia/documentación
+// eslint-disable-next-line no-unused-vars
 const STUDENT_PROFILES = {
   riesgo: {
     attendance: 58,

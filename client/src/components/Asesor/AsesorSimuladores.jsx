@@ -66,7 +66,7 @@ function SimCard({ icon: Icon, title, subtitle, desc, to, accent = "violet" }) {
 
 export default function Simuladores() {
   return (
-  <div className="mx-auto max-w-9xl px-4 sm:px-6 lg:px-8 pt-0 sm:pt-0 pb-6">
+  <div className="mx-auto max-w-9xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-6">
       <div className="space-y-3 sm:space-y-4">
         {/* Hero panel */}
         <section

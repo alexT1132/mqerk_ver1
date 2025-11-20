@@ -733,7 +733,7 @@ function ListaAlumnos_Admin_comp() {
 
       <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
   
-      <div className="pt-2 xs:pt-4 sm:pt-6 pb-2 xs:pb-3 sm:pb-4 px-2 xs:px-4 sm:px-6">
+      <div className="pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-2 xs:pb-3 sm:pb-4 px-2 xs:px-4 sm:px-6">
         <div className="w-full max-w-7xl mx-auto">
           
           <div className="text-center mb-4 xs:mb-6 sm:mb-8">

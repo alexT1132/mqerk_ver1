@@ -99,6 +99,8 @@ export const AuthProvider = ({children}) => {
                         try {
                                 localStorage.removeItem('mq_user');
                                 localStorage.removeItem('rememberMe');
+                                // Limpiar curso seleccionado del asesor al cerrar sesión
+                                localStorage.removeItem('cursoSeleccionado');
                         } catch {}
                 }
 
@@ -199,9 +201,10 @@ export const AuthProvider = ({children}) => {
                         applyUser(res.data);
                         debug('/verify success user id=%s role=%s', res.data.usuario?.id, res.data.usuario?.role);
                     } else {
-                        // 304 o 200 vacío => no usuario => estado invitado
+                        // 200 sin usuario o con reason => no autenticado => estado invitado
+                        const reason = res.data?.reason;
                         setIsAuthenticated(false); setUser(null); setAlumno(null);
-                        debug('/verify no user payload (status=%s) -> guest', res.status);
+                        debug('/verify no user payload (status=%s, reason=%s) -> guest', res.status, reason || 'none');
                     }
                     setLoading(false); initRef.completed = true; debug('loading=false after verify response');
                 }

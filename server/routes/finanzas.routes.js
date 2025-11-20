@@ -428,6 +428,34 @@ router.post('/finanzas/pagos-asesores', async (req, res) => {
       body.ingreso_final = base + hon;
     }
     const created = await PagosAsesores.create(body);
+    
+    // Crear notificación para el asesor si tiene usuario_id
+    if (created.asesor_preregistro_id) {
+      try {
+        const AsesorPerfiles = await import('../models/asesor_perfiles.model.js');
+        const AsesorNotifs = await import('../models/asesor_notifications.model.js');
+        const perfil = await AsesorPerfiles.getByPreRegistro(created.asesor_preregistro_id);
+        if (perfil?.usuario_id) {
+          await AsesorNotifs.createNotification({
+            asesor_user_id: perfil.usuario_id,
+            type: 'payment',
+            title: 'Nuevo pago registrado',
+            message: `Se registró un pago de $${created.ingreso_final?.toLocaleString('es-MX') || 0} por ${created.tipo_servicio || 'servicio'}`,
+            action_url: '/asesor/mis-pagos',
+            metadata: {
+              pago_id: created.id,
+              tipo_servicio: created.tipo_servicio,
+              ingreso_final: created.ingreso_final,
+              fecha_pago: created.fecha_pago,
+              status: created.status
+            }
+          }).catch(err => console.error('Error creando notificación de pago:', err));
+        }
+      } catch (err) {
+        console.error('Error al crear notificación de pago:', err);
+      }
+    }
+    
     res.status(201).json({ pago: created });
   } catch (err) {
     console.error('POST /finanzas/pagos-asesores', err);

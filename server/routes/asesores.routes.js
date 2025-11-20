@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearPreRegistro, obtenerPreRegistro, listarPreRegistros, finalizarProcesoAsesor, guardarPerfilAsesor, obtenerPerfilAsesor, subirDocumentosPerfil, actualizarPreRegistroBasico, actualizarGrupoAsesor, listarAsesoresAdmin, listarGruposDisponibles, asignarAlumnosGrupoAsesor, actualizarStatusAsesor, listarEstudiantesAsesor, actualizarGruposAsesor, guardarResultadosTest, obtenerResultadosTest, generarFormularioTest, calificarFormularioTest, listarHistorialResultadosTest } from '../controllers/asesores.controller.js';
+import { crearPreRegistro, obtenerPreRegistro, listarPreRegistros, finalizarProcesoAsesor, guardarPerfilAsesor, obtenerPerfilAsesor, subirDocumentosPerfil, actualizarPreRegistroBasico, actualizarGrupoAsesor, listarAsesoresAdmin, listarGruposDisponibles, asignarAlumnosGrupoAsesor, actualizarStatusAsesor, listarEstudiantesAsesor, actualizarGruposAsesor, guardarResultadosTest, obtenerResultadosTest, generarFormularioTest, calificarFormularioTest, listarHistorialResultadosTest, listarPagosAsesor, obtenerMiPerfil, actualizarMiPerfil, actualizarMiFoto, listarMisGrupos } from '../controllers/asesores.controller.js';
 import { authREquired } from '../middlewares/validateToken.js';
 import { uploadPerfilDocs } from '../middlewares/asesorPerfilMulter.js';
 
@@ -39,5 +39,15 @@ router.post('/asesores/perfil/:preregistroId/upload', uploadPerfilDocs.fields([
 
 // Estudiantes del asesor autenticado
 router.get('/asesores/mis-estudiantes', authREquired, listarEstudiantesAsesor);
+// Grupos del asesor autenticado con cantidad de estudiantes
+router.get('/asesores/mis-grupos', authREquired, listarMisGrupos);
+
+// Pagos del asesor autenticado
+router.get('/asesores/mis-pagos', authREquired, listarPagosAsesor);
+
+// Configuraciones del asesor autenticado
+router.get('/asesores/mi-perfil', authREquired, obtenerMiPerfil);
+router.put('/asesores/mi-perfil', authREquired, actualizarMiPerfil);
+router.put('/asesores/mi-perfil/foto', authREquired, uploadPerfilDocs.single('foto'), actualizarMiFoto);
 
 export default router;

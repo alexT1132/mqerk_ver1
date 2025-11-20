@@ -169,14 +169,24 @@ export const StudentNotificationProvider = ({ children }) => {
         lastErr = err;
         const code = err?.code;
         const msg = String(err?.message || '');
-        const isNetworky = (!err?.response) && (code === 'ERR_NETWORK' || /Network Error|ERR_NETWORK_CHANGED/i.test(msg));
+        // Detectar errores de red transitorios: ERR_NETWORK, ERR_NETWORK_CHANGED, ECONNABORTED (timeout), etc.
+        const isNetworky = (!err?.response) && (
+          code === 'ERR_NETWORK' || 
+          code === 'ERR_NETWORK_CHANGED' ||
+          code === 'ECONNABORTED' ||
+          /Network Error|ERR_NETWORK_CHANGED|network/i.test(msg)
+        );
         if (!isNetworky) throw err; // no reintentar si es error HTTP o ajeno a red
         // backoff exponencial suave: 250ms, 500ms, 1000ms
         const delay = 250 * Math.pow(2, attempt);
-        await new Promise(r => setTimeout(r, delay));
+        if (attempt < maxAttempts - 1) { // No esperar en el último intento
+          await new Promise(r => setTimeout(r, delay));
+        }
         attempt++;
       }
     }
+    // Si todos los reintentos fallaron, lanzar el error pero marcarlo como error de red
+    lastErr._isNetworkError = true;
     throw lastErr;
   };
 
@@ -214,17 +224,36 @@ export const StudentNotificationProvider = ({ children }) => {
     } catch (error) {
       const code = error?.code;
       const msg = String(error?.message || '');
-      const isNetworky = (!error?.response) && (code === 'ERR_NETWORK' || /Network Error|ERR_NETWORK_CHANGED/i.test(msg));
+      // Detectar errores de red transitorios (incluye los marcados por axiosGetWithRetry)
+      const isNetworky = error?._isNetworkError || (
+        (!error?.response) && (
+          code === 'ERR_NETWORK' || 
+          code === 'ERR_NETWORK_CHANGED' ||
+          code === 'ECONNABORTED' ||
+          /Network Error|ERR_NETWORK_CHANGED|network/i.test(msg)
+        )
+      );
+      
       if (isNetworky) {
-        console.warn('Notificaciones: red inestable o backend reiniciando (se reintenta en breve)...', { code, msg });
+        // Silenciar el error de red transitorio, solo loguear en desarrollo
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[Notificaciones] Red inestable o backend no disponible (se reintentará automáticamente):', { code, msg });
+        }
+        setIsOffline(true);
         // Un reintento suave adicional en ~2s para no esperar al polling de 60s
         if (!quickRetryRef.current) {
-          quickRetryRef.current = setTimeout(() => { quickRetryRef.current = null; loadNotifications(); }, 2000);
+          quickRetryRef.current = setTimeout(() => { 
+            quickRetryRef.current = null; 
+            loadNotifications(); 
+          }, 2000);
         }
       } else {
-        console.error('Error al cargar notificaciones:', error);
+        // Solo loguear errores no relacionados con red (401, 403, 500, etc.)
+        console.error('[Notificaciones] Error al cargar:', error?.response?.status || error?.code, error?.message);
       }
-    } finally { setIsLoading(false); }
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   // TODO: BACKEND - Marcar notificación como leída
@@ -324,7 +353,14 @@ export const StudentNotificationProvider = ({ children }) => {
   const pollRef = useRef(null);
   useEffect(() => {
     // Pausar/retomar según estado de conectividad del navegador
-    const onOnline = () => { setIsOffline(false); loadNotifications(); };
+    const onOnline = () => { 
+      setIsOffline(false);
+      // Esperar un poco para asegurar que la red está estable antes de intentar cargar
+      // Esto ayuda a evitar ERR_NETWORK_CHANGED cuando la conexión acaba de restablecerse
+      setTimeout(() => {
+        loadNotifications();
+      }, 500);
+    };
     const onOffline = () => { setIsOffline(true); };
     if (typeof window !== 'undefined') {
       window.addEventListener('online', onOnline);

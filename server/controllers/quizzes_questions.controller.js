@@ -35,17 +35,24 @@ export const listPreguntasQuiz = async (req, res) => {
 export const getQuizFull = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('[getQuizFull] Buscando quiz ID:', id);
     const quiz = await Quizzes.getQuizById(id);
-    if (!quiz) return res.status(404).json({ message: 'Quiz no encontrado' });
+    if (!quiz) {
+      console.log('[getQuizFull] Quiz no encontrado:', id);
+      return res.status(404).json({ message: 'Quiz no encontrado' });
+    }
+    console.log('[getQuizFull] Quiz encontrado:', quiz.titulo);
     const preguntas = await QQ.listPreguntasQuiz(id);
+    console.log('[getQuizFull] Preguntas encontradas:', preguntas.length);
     const out = [];
     for (const p of preguntas) {
       const opciones = await QQ.listOpcionesPregunta(p.id);
       out.push({ ...p, opciones });
     }
-    res.json({ data: { quiz, preguntas: out } });
+    return res.json({ data: { quiz, preguntas: out } });
   } catch (e) {
-    console.error('getQuizFull', { id: req.params?.id, err: e }); res.status(500).json({ message: 'Error interno' });
+    console.error('[getQuizFull] Error:', { id: req.params?.id, err: e?.message, stack: e?.stack });
+    return res.status(500).json({ message: 'Error interno', error: e?.message });
   }
 };
 
@@ -78,7 +85,24 @@ export const crearSesionQuiz = async (req, res) => {
     const limiteSeg = quiz.time_limit_min ? Number(quiz.time_limit_min) * 60 : null;
     const sesion = await QQ.crearSesion({ id_quiz: id, id_estudiante, intento_num: totalPrevios + 1, tiempo_limite_seg: limiteSeg });
     res.status(201).json({ data: sesion });
-  } catch(e){ console.error('crearSesionQuiz', e); res.status(500).json({ message:'Error interno'}); }
+  } catch(e){ 
+    console.error('crearSesionQuiz', e); 
+    // Si es un error de foreign key, dar un mensaje más específico
+    if (e.code === 'ER_NO_REFERENCED_ROW_2' || e.errno === 1452) {
+      console.error('[crearSesionQuiz] Error de foreign key:', e.sqlMessage);
+      console.error('[crearSesionQuiz] Quiz ID:', id, 'Estudiante ID:', id_estudiante);
+      // Verificar si el quiz existe en quizzes
+      const quizCheck = await Quizzes.getQuizById(id);
+      if (!quizCheck) {
+        return res.status(404).json({ message: 'Quiz no encontrado en la base de datos' });
+      }
+      return res.status(500).json({ 
+        message: 'Error al crear sesión: problema con la estructura de la base de datos. Contacta al administrador.',
+        details: 'El quiz existe pero hay un problema con las foreign keys de la tabla quizzes_sesiones'
+      });
+    }
+    res.status(500).json({ message:'Error interno', details: e.message });
+  }
 };
 
 // Registrar respuestas (batch) - id_sesion path param
@@ -132,9 +156,27 @@ export const finalizarSesionQuiz = async (req, res) => {
       }
     } catch { /* ignore */ }
     // Insertar intento definitivo con tiempo
-    await Quizzes.crearIntentoQuiz({ id_quiz: sesion.id_quiz, id_estudiante: sesion.id_estudiante, puntaje: resultado.puntaje, tiempo_segundos, total_preguntas: resultado.total_preguntas, correctas: resultado.correctas });
+    try {
+      await Quizzes.crearIntentoQuiz({ id_quiz: sesion.id_quiz, id_estudiante: sesion.id_estudiante, puntaje: resultado.puntaje, tiempo_segundos, total_preguntas: resultado.total_preguntas, correctas: resultado.correctas });
+    } catch (e) {
+      // Si es un error de foreign key, dar un mensaje más específico
+      if (e.code === 'ER_NO_REFERENCED_ROW_2' || e.errno === 1452) {
+        console.error('[finalizarSesionQuiz] Error de foreign key:', e.message);
+        console.error('[finalizarSesionQuiz] Quiz ID:', sesion.id_quiz, 'Estudiante ID:', sesion.id_estudiante);
+        return res.status(500).json({ 
+          message: 'Error al guardar el intento del quiz: problema de configuración de la base de datos. Contacta a soporte.', 
+          details: e.message 
+        });
+      }
+      throw e;
+    }
     res.json({ data: { sesion: { id: sesion.id, estado: 'finalizado' }, ...resultado } });
-  } catch(e){ console.error('finalizarSesionQuiz', e); res.status(500).json({ message:'Error interno'}); }
+  } catch(e){ 
+    console.error('finalizarSesionQuiz', e); 
+    const status = e?.response?.status || 500;
+    const msg = e?.message || 'Error interno';
+    res.status(status).json({ message: msg, ...(e?.details && { details: e.details }) });
+  }
 };
 
 // Review detallado por intento: devuelve preguntas, opciones (incluye es_correcta),

@@ -17,10 +17,10 @@ export default function DashboardCard({
   full = false,      // quita borde/redondeado/sombra para full-bleed dentro de un panel
   headerPadding = true // permitir quitar padding sólo del header si se desea
 }) {
-  // Base visual
+  // Base visual - diseño más claro y moderno con mejor contraste
   const base = full
     ? "relative bg-transparent border-none shadow-none rounded-none"
-    : "relative rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md dark:border-slate-700 dark:bg-slate-800";
+    : "relative rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-lg hover:border-slate-300 transition-all duration-200 dark:border-slate-700 dark:bg-slate-800";
 
   const containerClasses = [base, className].join(" ");
 

@@ -276,7 +276,7 @@ export async function analyzeQuizPerformance(params) {
       const mejor = Number(p?.mejorPuntaje || 0);
       const promedio = Math.round(Number(p?.promedio || 0));
       const scores = Array.isArray(p?.scores) ? p.scores : [];
-      const ultimo = Number(p?.ultimoPuntaje ?? (scores.length ? scores[scores.length-1] : 0));
+      const ultimo = Number(p?.ultimoPuntaje ?? (scores.length ? scores[scores.length - 1] : 0));
       const desviacion = (typeof p?.desviacionPuntaje === 'number') ? p.desviacionPuntaje.toFixed(2) : 'N/D';
       const pendiente = (typeof p?.pendienteTendencia === 'number') ? p.pendienteTendencia.toFixed(3) : 'N/D';
       const promDur = (typeof p?.promedioDuracion === 'number') ? Math.round(p.promedioDuracion) : null;
@@ -321,12 +321,12 @@ export async function analyzeQuizPerformance(params) {
         `Vas construyendo base. Con práctica enfocada en los temas críticos y control del ritmo, ` +
         `tu puntaje debería subir en los siguientes intentos.`;
 
-  const intro = buildHumanIntro(p);
-  const explic = buildExplainSection(p?.incorrectasDetalle);
-  const ejemplos = buildExamplesSection(p?.incorrectasLista);
-  const secGuia = buildSecResourceGuide(p);
-  // Orden: Intro humano → Resumen → Tendencia → Progreso → Equilibrio → Oportunidades → Explicación → Recurrentes → Recs → Guía → Conclusión → Ejemplos
-  return [intro, secResumen, secTendencia, secProgreso, secEquilibrio, secOportunidades, explic, secRecurrentes, secRecs, secGuia, secConclusion, ejemplos, '\n\n<<<AI_SOURCE:FALLBACK>>>'].join('');
+      const intro = buildHumanIntro(p);
+      const explic = buildExplainSection(p?.incorrectasDetalle);
+      const ejemplos = buildExamplesSection(p?.incorrectasLista);
+      const secGuia = buildSecResourceGuide(p);
+      // Orden: Intro humano → Resumen → Tendencia → Progreso → Equilibrio → Oportunidades → Explicación → Recurrentes → Recs → Guía → Conclusión → Ejemplos
+      return [intro, secResumen, secTendencia, secProgreso, secEquilibrio, secOportunidades, explic, secRecurrentes, secRecs, secGuia, secConclusion, ejemplos, '\n\n<<<AI_SOURCE:FALLBACK>>>'].join('');
     } catch (e) {
       console.warn('No se pudo construir análisis local de fallback:', e);
       return '### Análisis\n\nNo se pudo obtener la respuesta de la IA. Revisa tu conexión e intenta nuevamente.';
@@ -345,7 +345,7 @@ export async function analyzeQuizPerformance(params) {
       if (!l) continue;
       // Acepta ya sea un heading markdown o una línea que coincide con el título (con o sin dos puntos)
       if (/^#{1,6}\s+/i.test(l)) {
-        const h = stripAccents(l.replace(/^#{1,6}\s+/,'')).toLowerCase();
+        const h = stripAccents(l.replace(/^#{1,6}\s+/, '')).toLowerCase();
         if (h.startsWith(tNorm)) return true;
       } else {
         const w = stripAccents(l.replace(/[:：]+\s*$/, '')).toLowerCase();
@@ -378,7 +378,7 @@ export async function analyzeQuizPerformance(params) {
       'Explicación de preguntas incorrectas',
       'Ejemplos breves de preguntas con error'
     ];
-  const lines = String(text).split('\n');
+    const lines = String(text).split('\n');
     const out = [];
     for (let i = 0; i < lines.length; i++) {
       let l = lines[i];
@@ -420,19 +420,19 @@ export async function analyzeQuizPerformance(params) {
     const mejor = num(p?.mejorPuntaje) ?? 0;
     const promedio = Math.round(num(p?.promedio) ?? 0);
     const scores = Array.isArray(p?.scores) ? p.scores : [];
-    const ultimo = num(p?.ultimoPuntaje ?? (scores.length ? scores[scores.length-1] : 0));
+    const ultimo = num(p?.ultimoPuntaje ?? (scores.length ? scores[scores.length - 1] : 0));
     const oficial = num(p?.oficialPuntaje);
     const prev = num(p?.previoPuntaje);
-    const dLastPrev = (typeof p?.deltaUltimoVsAnterior === 'number') ? p.deltaUltimoVsAnterior : (ultimo!=null&&prev!=null? ultimo-prev : null);
-    const dLastOff = (typeof p?.deltaUltimoVsOficial === 'number') ? p.deltaUltimoVsOficial : (ultimo!=null&&oficial!=null? ultimo-oficial : null);
-    const dBestOff = (typeof p?.deltaMejorVsOficial === 'number') ? p.deltaMejorVsOficial : ((num(p?.mejorPuntaje) != null && oficial!=null)? num(p?.mejorPuntaje) - oficial : null);
+    const dLastPrev = (typeof p?.deltaUltimoVsAnterior === 'number') ? p.deltaUltimoVsAnterior : (ultimo != null && prev != null ? ultimo - prev : null);
+    const dLastOff = (typeof p?.deltaUltimoVsOficial === 'number') ? p.deltaUltimoVsOficial : (ultimo != null && oficial != null ? ultimo - oficial : null);
+    const dBestOff = (typeof p?.deltaMejorVsOficial === 'number') ? p.deltaMejorVsOficial : ((num(p?.mejorPuntaje) != null && oficial != null) ? num(p?.mejorPuntaje) - oficial : null);
     const lines = [
       `- Has realizado ${totalIntentos} intento(s) en "${name}".`,
       `- Mejor puntaje: ${mejor}%. Promedio: ${promedio}%. Último: ${ultimo}%.`,
-      (oficial!=null? `- Oficial (intento 1): ${oficial}%` : null),
-      (dLastPrev!=null? `- Cambio último vs. anterior: ${dLastPrev > 0 ? '+' : ''}${dLastPrev} pts` : null),
-      (dLastOff!=null? `- Cambio último vs. oficial: ${dLastOff > 0 ? '+' : ''}${dLastOff} pts` : null),
-      (dBestOff!=null? `- Cambio mejor vs. oficial: ${dBestOff > 0 ? '+' : ''}${dBestOff} pts` : null),
+      (oficial != null ? `- Oficial (intento 1): ${oficial}%` : null),
+      (dLastPrev != null ? `- Cambio último vs. anterior: ${dLastPrev > 0 ? '+' : ''}${dLastPrev} pts` : null),
+      (dLastOff != null ? `- Cambio último vs. oficial: ${dLastOff > 0 ? '+' : ''}${dLastOff} pts` : null),
+      (dBestOff != null ? `- Cambio mejor vs. oficial: ${dBestOff > 0 ? '+' : ''}${dBestOff} pts` : null),
     ].filter(Boolean);
     return `\n\n### Resumen general\n\n${lines.join('\n')}`;
   };
@@ -451,12 +451,12 @@ export async function analyzeQuizPerformance(params) {
     const name = p?.itemName || 'esta evaluación';
     const total = num(p?.totalIntentos) ?? 0;
     const scores = Array.isArray(p?.scores) ? p.scores : [];
-    const ultimo = num(p?.ultimoPuntaje ?? (scores.length ? scores[scores.length-1] : null));
+    const ultimo = num(p?.ultimoPuntaje ?? (scores.length ? scores[scores.length - 1] : null));
     const best = num(p?.mejorPuntaje);
     const alumno = (p?.alumnoNombre || '').trim();
     const first = alumno ? alumno.split(/\s+/)[0] : '';
     const parts = [];
-    parts.push(`${alumno ? `¡Hola, ${first}!` : '¡Hola!'} Veo que llevas ${total} intento${total===1?'':'s'} en ${name}. Gracias por tu esfuerzo — vamos a convertirlo en aprendizaje útil.`);
+    parts.push(`${alumno ? `¡Hola, ${first}!` : '¡Hola!'} Veo que llevas ${total} intento${total === 1 ? '' : 's'} en ${name}. Gracias por tu esfuerzo — vamos a convertirlo en aprendizaje útil.`);
     if (best != null && ultimo != null && ultimo < best) {
       parts.push(`Aunque el último fue ${ultimo}%, ya demostraste que puedes llegar a ${best}%. Te ayudo a recuperar ese nivel y superarlo.`);
     } else if (ultimo != null) {
@@ -496,9 +496,9 @@ export async function analyzeQuizPerformance(params) {
     })();
     const rows = [
       `- Intentos de práctica (desde el oficial): ${practiceCount}`,
-      (dLastPrev!=null? `- Último vs. anterior: ${dLastPrev > 0 ? '+' : ''}${dLastPrev} pts` : null),
-      (dLastOff!=null? `- Último vs. oficial: ${dLastOff > 0 ? '+' : ''}${dLastOff} pts` : null),
-      (dBestOff!=null? `- Mejor vs. oficial: ${dBestOff > 0 ? '+' : ''}${dBestOff} pts` : null),
+      (dLastPrev != null ? `- Último vs. anterior: ${dLastPrev > 0 ? '+' : ''}${dLastPrev} pts` : null),
+      (dLastOff != null ? `- Último vs. oficial: ${dLastOff > 0 ? '+' : ''}${dLastOff} pts` : null),
+      (dBestOff != null ? `- Mejor vs. oficial: ${dBestOff > 0 ? '+' : ''}${dBestOff} pts` : null),
       `- Veredicto: ${verdict}`
     ].filter(Boolean).join('\n');
     return `\n\n### Progreso respecto al oficial\n\n${rows}`;
@@ -564,11 +564,11 @@ Estudiante: ${alumnoNombre ? alumnoNombre : 'N/D'}.
 - Total de Intentos: ${Number(totalIntentos) || 0}
 - Mejor Puntaje: ${Number(mejorPuntaje) || 0}%
 - Promedio: ${Number(Math.round(Number(promedio) || 0))}%
-- Último Puntaje: ${Number(ultimoPuntaje ?? (scores.length ? scores[scores.length-1] : 0))}%
+- Último Puntaje: ${Number(ultimoPuntaje ?? (scores.length ? scores[scores.length - 1] : 0))}%
 - Intentos de práctica (después del oficial): ${Number(practiceCount || 0)}
-- Delta último vs. anterior: ${typeof deltaUltimoVsAnterior === 'number' ? (deltaUltimoVsAnterior >=0 ? '+' : '') + deltaUltimoVsAnterior : 'N/D'} pts
-- Delta último vs. oficial: ${typeof deltaUltimoVsOficial === 'number' ? (deltaUltimoVsOficial >=0 ? '+' : '') + deltaUltimoVsOficial : 'N/D'} pts
-- Delta mejor vs. oficial: ${typeof deltaMejorVsOficial === 'number' ? (deltaMejorVsOficial >=0 ? '+' : '') + deltaMejorVsOficial : 'N/D'} pts
+- Delta último vs. anterior: ${typeof deltaUltimoVsAnterior === 'number' ? (deltaUltimoVsAnterior >= 0 ? '+' : '') + deltaUltimoVsAnterior : 'N/D'} pts
+- Delta último vs. oficial: ${typeof deltaUltimoVsOficial === 'number' ? (deltaUltimoVsOficial >= 0 ? '+' : '') + deltaUltimoVsOficial : 'N/D'} pts
+- Delta mejor vs. oficial: ${typeof deltaMejorVsOficial === 'number' ? (deltaMejorVsOficial >= 0 ? '+' : '') + deltaMejorVsOficial : 'N/D'} pts
 - Secuencia de puntajes (del más antiguo al más reciente): ${scoresList}
 - Fechas (orden cronológico): ${fechasList}
 - Duraciones en segundos (orden cronológico): ${duracionesList}
@@ -589,8 +589,8 @@ ${(typeof intentoNumero !== 'undefined' || typeof totalPreguntasIntento !== 'und
 - Correctas: ${typeof correctasIntento !== 'undefined' ? correctasIntento : 'N/D'}
 - Incorrectas: ${typeof incorrectasIntento !== 'undefined' ? incorrectasIntento : 'N/D'}
 - Omitidas/sin respuesta: ${typeof omitidasIntento !== 'undefined' ? omitidasIntento : 'N/D'}
-- Tiempo total (s): ${typeof totalTiempoIntento !== 'undefined' && totalTiempoIntento != null ? Math.round(totalTiempoIntento/1000) : 'N/D'}
-- Tiempo promedio por pregunta (s): ${typeof promedioTiempoPregunta !== 'undefined' && promedioTiempoPregunta != null ? Math.round(promedioTiempoPregunta/1000) : 'N/D'}
+- Tiempo total (s): ${typeof totalTiempoIntento !== 'undefined' && totalTiempoIntento != null ? Math.round(totalTiempoIntento / 1000) : 'N/D'}
+- Tiempo promedio por pregunta (s): ${typeof promedioTiempoPregunta !== 'undefined' && promedioTiempoPregunta != null ? Math.round(promedioTiempoPregunta / 1000) : 'N/D'}
 - Preguntas respondidas incorrectamente (muestra): ${(Array.isArray(incorrectasLista) && incorrectasLista.length) ? incorrectasLista.join(' | ') : 'N/D'}` : ''}
 ${Array.isArray(incorrectasDetalle) && incorrectasDetalle.length ? `
 Adicional (para explicar preguntas incorrectas con más detalle):
@@ -600,21 +600,21 @@ Adicional (para explicar preguntas incorrectas con más detalle):
   - Correcta(s): [opción(es) correctas]
   - Breve porqué (1 frase)
 Referencia de datos (no lo pegues literal, úsalo para redactar):
-${JSON.stringify(incorrectasDetalle.slice(0,5))}` : ''}
-\nInstrucciones: comienza con un saludo breve y humano (2–3 frases) dirigido al estudiante, mencionando su número de intentos y ánimo por seguir mejorando. Luego genera un análisis claro y bien estructurado usando estas métricas. RESPETA la regla: el diagnóstico oficial es el intento 1; los demás intentos son práctica y se usan para observar progreso y utilidad. Debes incluir una sección titulada exactamente "Progreso respecto al oficial" con 3–5 bullets que reporten: intentos de práctica, delta último vs. anterior, delta último vs. oficial, delta mejor vs. oficial y un veredicto de utilidad (Alta/Media/Ligera/Neutral/Baja) basado en el delta mejor vs. oficial (≥15 Alta; ≥7 Media; ≥3 Ligera; ≥0 Neutral; <0 Baja). Si recibes una lista de errores recurrentes entre intentos, añade también una sección titulada exactamente "Errores recurrentes y recursos" con 2–5 bullets: resume el enunciado, indica (veces) y da una pista breve útil; sugiere 1–2 recursos abiertos (no privativos) por tema. En las secciones de explicación y ejemplos, evita consejos genéricos de ortografía/gramática (b/v, g/j, tildes, puntuación) a menos que el ENUNCIADO sea explícitamente de Lengua/Gramática; en su lugar, explica el porqué conceptual específico (p. ej., orden de planetas, fecha histórica, propiedad matemática). Estructura la respuesta con estas secciones (usa encabezados markdown ###):
+${JSON.stringify(incorrectasDetalle.slice(0, 5))}` : ''}
+\nInstrucciones: comienza con un saludo breve y humano (2–3 frases) dirigido al estudiante, mencionando su número de intentos y ánimo por seguir mejorando. Luego genera un análisis claro y bien estructurado usando estas métricas. Dado que el estudiante ha realizado al menos 2 intentos, tu análisis debe centrarse fuertemente en la COMPARACIÓN y el PROGRESO. Analiza si los errores se repiten (patrones de fallo persistentes) o si son nuevos. RESPETA la regla: el diagnóstico oficial es el intento 1; los demás intentos son práctica y se usan para observar progreso y utilidad. Debes incluir una sección titulada exactamente "Progreso respecto al oficial" con 3–5 bullets que reporten: intentos de práctica, delta último vs. anterior, delta último vs. oficial, delta mejor vs. oficial y un veredicto de utilidad (Alta/Media/Ligera/Neutral/Baja) basado en el delta mejor vs. oficial (≥15 Alta; ≥7 Media; ≥3 Ligera; ≥0 Neutral; <0 Baja). Si recibes una lista de errores recurrentes entre intentos, añade también una sección titulada exactamente "Errores recurrentes y recursos" con 2–5 bullets: resume el enunciado, indica (veces) y da una pista breve útil; sugiere 1–2 recursos abiertos (no privativos) por tema. En las secciones de explicación y ejemplos, evita consejos genéricos de ortografía/gramática (b/v, g/j, tildes, puntuación) a menos que el ENUNCIADO sea explícitamente de Lengua/Gramática; en su lugar, explica el porqué conceptual específico (p. ej., orden de planetas, fecha histórica, propiedad matemática). Estructura la respuesta con estas secciones (usa encabezados markdown ###):
 - "Resumen general" (2–3 frases).
-- "Tendencia y variabilidad" (3–5 bullets con interpretación clara).
+- "Tendencia y variabilidad" (3–5 bullets con interpretación clara de la evolución).
 - "Progreso respecto al oficial" (3–5 bullets con veredicto de utilidad).
 - "Equilibrio puntaje-tiempo" (2–3 bullets con posibles causas y efectos).
-- "Oportunidades clave" (3–5 bullets, concretas y accionables).
+- "Oportunidades clave" (3–5 bullets, concretas y accionables, enfocadas en lo que falta por mejorar).
 - "Recomendaciones prácticas" (exactamente 3 bullets, cada una con una acción concreta y breve).
 - "Conclusión breve" (2–3 frases motivadoras y realistas).
 Usa bullets y negritas para resaltar conceptos clave. Mantén la respuesta entre 240 y 380 palabras como máximo.
-\n${Array.isArray(erroresRecurrentes) && erroresRecurrentes.length ? `Referencias de errores recurrentes detectados (no lo pegues literal, úsalo para redactar bullets con pistas y recursos):\n${JSON.stringify(erroresRecurrentes.slice(0,5))}` : ''}
+\n${Array.isArray(erroresRecurrentes) && erroresRecurrentes.length ? `Referencias de errores recurrentes detectados (no lo pegues literal, úsalo para redactar bullets con pistas y recursos):\n${JSON.stringify(erroresRecurrentes.slice(0, 5))}` : ''}
 \nIMPORTANTE: Si hay preguntas incorrectas (campo incorrectasLista con textos de enunciado), DEBES agregar al final una sección titulada exactamente "Ejemplos breves de preguntas con error" con 2–3 bullets. En cada bullet, incluye un resumen corto (≤ 110 caracteres) del enunciado y un micro‑consejo práctico (una frase). Si no hay preguntas incorrectas, omite esa sección. No omitas esta sección si incorrectasLista tiene elementos.`;
 
   const payload = {
-    contents: [{ parts: [{ text: userQuery }]}],
+    contents: [{ parts: [{ text: userQuery }] }],
     systemInstruction: { parts: [{ text: systemPrompt }] },
     generationConfig: {
       maxOutputTokens: 3072,

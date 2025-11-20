@@ -38,8 +38,8 @@ export default function SidebarIconOnly({ onLogout = () => {}, active }) {
   const hideTip = useCallback(() => setTip(t => ({ ...t, visible: false })), []);
 
   return (
-  <aside className="hidden md:flex w-20 h-full shrink-0 relative z-[2000] isolate">
-    <div className="flex flex-col h-full border-r border-slate-200 bg-white/90 backdrop-blur px-1 py-0 overflow-x-visible">
+  <aside className="hidden md:flex fixed left-0 top-14 bottom-0 w-24 shrink-0 z-40 isolate border-r border-slate-200 box-border">
+    <div className="flex flex-col h-full w-full bg-white/90 backdrop-blur px-0 py-0 overflow-x-visible">
         {/* Navegación */}
   <nav className="mt-0 space-y-0 w-full flex-1 overflow-y-auto overflow-x-visible overscroll-contain no-scrollbar">
           {NAV_ITEMS.map(({ key, label, icon: Icon, href }) => (
@@ -50,7 +50,7 @@ export default function SidebarIconOnly({ onLogout = () => {}, active }) {
               onMouseEnter={(e) => showTip(e.currentTarget, label, 'dark')}
               onMouseLeave={hideTip}
               className={({ isActive }) => [
-                "group relative flex items-center justify-center rounded-lg p-2 transition",
+                "group relative flex items-center justify-center rounded-lg p-3 transition",
                 (isActive || (!!active && ((active === key) || (key === 'feedback' && path.startsWith('/asesor/feedback')))))
                   ? "bg-violet-50 text-violet-700 ring-1 ring-violet-200"
                   : "text-slate-600 hover:bg-violet-50 hover:text-violet-700 hover:ring-1 hover:ring-violet-200 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
@@ -59,7 +59,7 @@ export default function SidebarIconOnly({ onLogout = () => {}, active }) {
               {({ isActive }) => (
                 <>
                   {/* Solo icono centrado */}
-                  <Icon className={["h-5 w-5 2xl:h-4 2xl:w-4 transition-colors", (isActive || (!!active && ((active === key) || (key === 'feedback' && path.startsWith('/asesor/feedback'))))) ? "text-violet-700" : "text-slate-500 group-hover:text-violet-700"].join(" ")} />
+                  <Icon className={["h-6 w-6 transition-colors", (isActive || (!!active && ((active === key) || (key === 'feedback' && path.startsWith('/asesor/feedback'))))) ? "text-violet-700" : "text-slate-500 group-hover:text-violet-700"].join(" ")} />
                   {/* Indicador lateral al pasar el mouse */}
                   <span className={[
                     "pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded",
@@ -82,9 +82,9 @@ export default function SidebarIconOnly({ onLogout = () => {}, active }) {
           aria-label={LOGOUT.label}
           onMouseEnter={(e) => showTip(e.currentTarget, LOGOUT.label, 'danger')}
           onMouseLeave={hideTip}
-          className="group relative flex w-full items-center justify-center rounded-lg p-1 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:ring-1 hover:ring-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+          className="group relative flex w-full items-center justify-center rounded-lg p-3 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:ring-1 hover:ring-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
         >
-          <LOGOUT.icon className="h-5 w-5 2xl:h-4 2xl:w-4 text-red-500 transition-colors group-hover:text-red-600" />
+          <LOGOUT.icon className="h-6 w-6 text-red-500 transition-colors group-hover:text-red-600" />
           {/* Tooltip via portal */}
         </button>
       </div>

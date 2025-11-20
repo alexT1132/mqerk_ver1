@@ -12,8 +12,16 @@ export const getApiOrigin = () => {
     // Si se define VITE_API_URL (completa), úsala como origen
     if (envApi) return envApi.replace(/\/api\/?$/i, '');
 
-    // En entorno de navegador, usar el mismo origen actual para que actúe el proxy de Vite
-    if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    // En desarrollo, siempre usar el puerto del backend (1002)
+    // En producción, usar el mismo origen si está disponible
+    if (typeof window !== 'undefined' && window.location) {
+      const isDev = import.meta.env?.DEV || import.meta.env?.MODE === 'development';
+      if (isDev) {
+        // En desarrollo, usar el hostname actual pero con el puerto del backend
+        const hostname = window.location.hostname || 'localhost';
+        return `http://${hostname}:1002`;
+      }
+      // En producción, usar el mismo origen
       return window.location.origin;
     }
 

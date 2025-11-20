@@ -1,0 +1,15 @@
+{
+  "server_time": "2025-11-19T18:39:42.000Z",
+  "quizzes": [
+    {
+      "id": 2,
+      "titulo": "Matemáticas y pensamiento analítico (IA · 5 preguntas)",
+      "publicado": 0,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "id_area": 2,
+      "activo": 1,
+      "server_time": "2025-11-19T18:39:42.000Z"
+    }
+  ]
+}

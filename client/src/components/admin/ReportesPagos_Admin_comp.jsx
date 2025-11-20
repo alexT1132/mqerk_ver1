@@ -297,7 +297,7 @@ export function ReportesPagos_Admin_comp() {
   }
 
   return (
-    <div className="px-6 pt-0 pb-6 bg-white min-h-screen">
+    <div className="px-6 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-6 bg-white min-h-screen">
       {(showLoadingScreen || isLoading) && (
         <LoadingOverlay message="Cargando reportes de pagos..." />
       )}

@@ -1631,7 +1631,7 @@ function StudentProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
+    <div className="min-h-screen bg-white pt-8 sm:pt-12 pb-4 sm:pb-8">
       <CustomNotification
         message={notification.message}
         type={notification.type}

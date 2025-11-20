@@ -371,7 +371,7 @@ export function Calendario_Admin_comp() {
     }
   };
   return (
-    <div className="min-h-screen bg-white p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-white px-4 sm:px-6 lg:px-8 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-4 sm:pb-6 lg:pb-8">
       <div className="max-w-7xl mx-auto">
        
         <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
@@ -662,7 +662,7 @@ export function Calendario_Admin_comp() {
         {/* Modal para nuevo recordatorio */}
         {showNewModal && (
           <div 
-            className="fixed inset-0 backdrop-blur-sm bg-white/30 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 backdrop-blur-sm bg-white/30 overflow-y-auto h-full w-full z-50 flex items-start justify-center pt-24 sm:pt-28 md:pt-32 p-4"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowNewModal(false);

@@ -183,6 +183,30 @@ export const crearOReemplazarEntrega = async (req, res) => {
       }
       const entrega = await Entregas.getEntregaById(entregaId);
       const archivos = await EntregaArchivos.listArchivosEntrega(entregaId);
+      
+      // Crear notificación para el asesor asignado
+      try {
+        const AsesorNotifs = await import('../models/asesor_notifications.model.js');
+        const asesorUserId = await AsesorNotifs.getAsesorUserIdByEstudianteId(id_estudiante);
+        if (asesorUserId) {
+          await AsesorNotifs.createNotification({
+            asesor_user_id: asesorUserId,
+            type: 'activity_submission',
+            title: 'Nueva entrega de actividad',
+            message: `${est.nombres} ${est.apellidos} entregó la actividad "${act.titulo}"`,
+            action_url: `/asesor/actividades/${id}/entregas`,
+            metadata: {
+              entrega_id: entregaId,
+              actividad_id: id,
+              estudiante_id: id_estudiante,
+              actividad_titulo: act.titulo
+            }
+          }).catch(err => console.error('Error creando notificación de entrega:', err));
+        }
+      } catch (err) {
+        console.error('Error al crear notificación de entrega:', err);
+      }
+      
       return res.status(201).json({ data: { ...entrega, archivos }, created:true });
     } else {
       if (activa.estado === 'revisada') return res.status(400).json({ message:'Entrega revisada, no se pueden agregar archivos'});

@@ -2,6 +2,7 @@
 // Agrupa todas las rutas y layout del panel de Asesor con el nuevo set de componentes
 import { Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useState, useEffect } from 'react';
 
 // Layout genérico y wrappers de Asesor
 import { Layout } from '../layouts/Layout.jsx';
@@ -38,7 +39,9 @@ import EntregasActividad from './EntregasActividad.jsx';
 // Opcionales / adicionales (por si se usan en navegación interna)
 import Grupos from './Grupos.jsx';
 import ListaAlumnos from './ListaAlumnos.jsx';
+import PerfilEstudiante from './PerfilEstudiante.jsx';
 import DocumentacionAsesor from './DocumentacionAsesor.jsx';
+import RegistroAsistencia from './RegistroAsistencia.jsx';
 // Páginas completas para Feedback dentro del bundle
 import FeedbackListPage from '../../pages/Asesor/Feedback.jsx';
 import FeedbackDetailPage from '../../pages/Asesor/FeedbackDetail.jsx';
@@ -59,12 +62,45 @@ function AsesorLayout({ children }) {
   const handleLogout = async () => { await logout(); navigate('/login', { replace: true }); };
   const location = useLocation();
   const isFeedback = location.pathname.startsWith('/asesor/feedback');
+  
+  // Verificar si estamos en la página de selección de curso (inicio)
+  const isInicioPage = location.pathname === '/asesor/inicio' || location.pathname === '/asesor/inicio/';
+  
+  // Estado reactivo para verificar si hay un curso seleccionado
+  const [cursoSeleccionado, setCursoSeleccionado] = useState(() => {
+    try {
+      return localStorage.getItem("cursoSeleccionado");
+    } catch {
+      return null;
+    }
+  });
+  
+  // Actualizar estado cuando cambia el localStorage o la ruta
+  useEffect(() => {
+    // Verificar el state de la navegación (si viene desde un click en curso)
+    if (location.state?.curso) {
+      setCursoSeleccionado(location.state.curso);
+      return;
+    }
+    
+    // Verificar localStorage al cambiar de ruta
+    try {
+      const current = localStorage.getItem("cursoSeleccionado");
+      if (current !== cursoSeleccionado) {
+        setCursoSeleccionado(current);
+      }
+    } catch {}
+  }, [location.pathname, location.state?.curso]);
+  
+  // Solo mostrar sidebar si NO estamos en la página de inicio Y hay un curso seleccionado
+  const mostrarSidebar = !isInicioPage && cursoSeleccionado;
+  
   return (
     <Layout
       HeaderComponent={Topbar}
-      SideBarDesktopComponent={(props) => <SidebarIconOnly {...props} onLogout={handleLogout} active={isFeedback ? 'feedback' : undefined} />}
-      SideBarSmComponent={SideBarSmWrapper}
-      backgroundClassName="bg-black"
+      SideBarDesktopComponent={mostrarSidebar ? (props) => <SidebarIconOnly {...props} onLogout={handleLogout} active={isFeedback ? 'feedback' : undefined} /> : undefined}
+      SideBarSmComponent={mostrarSidebar ? SideBarSmWrapper : undefined}
+      backgroundClassName="bg-white"
       contentClassName="px-0"
     >
       {children}
@@ -89,8 +125,8 @@ export function AsesorDashboardBundle() {
   return (
     <AsesorLayout>
       <Routes>
-        {/* Redirección por defecto dentro de /asesor */}
-        <Route path="/" element={<Navigate to="dashboard" replace />} />
+        {/* Redirección por defecto dentro de /asesor - siempre a inicio para seleccionar curso */}
+        <Route path="/" element={<Navigate to="inicio" replace />} />
 
         {/* Inicio y tablero maestro */}
         <Route path="inicio" element={<AsesorMaestro />} />
@@ -120,8 +156,8 @@ export function AsesorDashboardBundle() {
         <Route path="mis-pagos" element={<Pagos />} />
         <Route path="configuraciones" element={<Configuraciones />} />
 
-        {/* Correo/documentación (placeholder) */}
-        <Route path="correo" element={<DocumentacionAsesor />} />
+        {/* Documentación */}
+        <Route path="documentacion" element={<DocumentacionAsesor />} />
 
         {/* Simuladores */}
         <Route path="simuladores" element={<AsesorSimuladores />} />
@@ -140,10 +176,12 @@ export function AsesorDashboardBundle() {
         {/* Utilidades adicionales */}
         <Route path="grupos" element={<Grupos />} />
         <Route path="lista-alumnos" element={<ListaAlumnos />} />
+        <Route path="registro-asistencia" element={<RegistroAsistencia />} />
+        <Route path="estudiante/:id" element={<PerfilEstudiante />} />
 
   {/* Rutas de compatibilidad / redirecciones */}
-  {/* Fallback absoluto para evitar concatenaciones relativas */}
-  <Route path="*" element={<Navigate to="/asesor/dashboard" replace />} />
+  {/* Fallback absoluto para evitar concatenaciones relativas - redirigir a inicio para seleccionar curso */}
+  <Route path="*" element={<Navigate to="/asesor/inicio" replace />} />
       </Routes>
     </AsesorLayout>
   );

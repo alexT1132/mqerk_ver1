@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { getEstudiantesRequest } from "../../api/estudiantes.js";
-import api from "../../api/axios.js";
+import { getMisEstudiantes } from "../../api/asesores.js";
+import { buildStaticUrl } from "../../utils/url.js";
 
 /**
  * props:
@@ -95,15 +95,19 @@ const DEMO_STUDENTS = [
 // Página: Lista de alumnos para Asesor (filtrada por grupo del asesor)
 export default function ListaAlumnos() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [rawStudents, setRawStudents] = useState([]);
 
-  const publicOrigin = useMemo(() => {
-    const apiBase = api?.defaults?.baseURL || "";
-    return apiBase.replace(/\/api\/?$/, "");
-  }, []);
+  // Leer parámetro grupo de la URL
+  const grupoFromUrl = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('grupo') || null;
+  }, [location.search]);
+
+  const grupoAsesor = grupoFromUrl || user?.grupo_asesor || user?.asesor_profile?.grupo_asesor || null;
 
   useEffect(() => {
     let cancelled = false;
@@ -111,7 +115,9 @@ export default function ListaAlumnos() {
       setLoading(true);
       setError("");
       try {
-        const { data } = await getEstudiantesRequest();
+        // Usar getMisEstudiantes que filtra por estatus activo y grupo específico
+        const params = grupoAsesor ? { grupo: grupoAsesor } : undefined;
+        const { data } = await getMisEstudiantes(params);
         if (!cancelled) setRawStudents(Array.isArray(data?.data) ? data.data : (data || []));
       } catch (e) {
         if (!cancelled) setError(e?.response?.data?.message || e?.message || "No se pudieron cargar los estudiantes");
@@ -121,19 +127,22 @@ export default function ListaAlumnos() {
     }
     if (isAuthenticated) load();
     return () => { cancelled = true; };
-  }, [isAuthenticated]);
-
-  const grupoAsesor = user?.grupo_asesor || user?.asesor_profile?.grupo_asesor || null;
+  }, [isAuthenticated, grupoAsesor]);
 
   const students = useMemo(() => {
     const list = Array.isArray(rawStudents) ? rawStudents : [];
-    // Filtrar por grupo del asesor si existe; si no, devolver todo
-    const filtered = grupoAsesor ? list.filter(s => (s.grupo || "").toLowerCase() === String(grupoAsesor).toLowerCase()) : list;
+    // El backend ya filtra por grupo y estatus activo, solo mapear
+    // Filtrar también client-side por estatus activo por si acaso
+    const filtered = list.filter(s => {
+      const estatus = s.estatus || 'Activo';
+      return estatus === 'Activo';
+    });
+    
     // Mapear a forma simple para StudentChips
     return filtered.map(s => {
-      const name = `${s.nombre || ""} ${s.apellidos || ""}`.trim();
-      const avatar = s.foto ? `${publicOrigin}${s.foto}` : "";
-      // Edad no está en el esquema garantizado; si viene fecha_nacimiento intentar calcular
+      const name = `${s.nombres || s.nombre || ""} ${s.apellidos || ""}`.trim();
+      const avatar = s.foto ? buildStaticUrl(s.foto) : "";
+      // Calcular edad desde fecha_nacimiento si está disponible
       let edad = "";
       try {
         if (s.fecha_nacimiento) {
@@ -146,19 +155,19 @@ export default function ListaAlumnos() {
       } catch { /* noop */ }
       return { id: s.id, name, avatar, edad, grupo: s.grupo || "" };
     });
-  }, [rawStudents, grupoAsesor, publicOrigin]);
+  }, [rawStudents]);
 
   const handleClick = (s) => {
-    // Navegar al detalle de feedback del alumno dentro del bundle
-    navigate(`/asesor/feedback/${s.id}`);
+    // Navegar al perfil completo del estudiante
+    navigate(`/asesor/estudiante/${s.id}`);
   };
 
   const count = students.length;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-0 sm:pt-0">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
       {/* Header compacto y elevado con botón atrás */}
-      <div className="-mt-3 sm:-mt-5 md:-mt-6 mb-5 sm:mb-6 rounded-2xl border border-slate-200 bg-white shadow-sm px-3 sm:px-6 py-3 sm:py-4">
+      <div className="mb-5 sm:mb-6 rounded-2xl border border-slate-200 bg-white shadow-sm px-3 sm:px-6 py-3 sm:py-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 min-w-0">
             <button

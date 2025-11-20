@@ -49,7 +49,7 @@ function HeaderAct({ total, backTo }) {
 
 function HeaderSim({ title, subtitle, total, onBack }) {
   return (
-    <div className="-mt-3 sm:-mt-5 md:-mt-6 rounded-3xl border border-slate-200 bg-gradient-to-r from-sky-50 to-indigo-50/60 px-4 sm:px-6 py-2 sm:py-3 shadow-sm">
+    <div className="rounded-3xl border border-slate-200 bg-gradient-to-r from-sky-50 to-indigo-50/60 px-4 sm:px-6 py-2 sm:py-3 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
@@ -301,7 +301,7 @@ export default function ModulosEspecificos({
   };
 
   return (
-    <section className="pt-0 sm:pt-0 pb-8 sm:pb-10">
+    <section className="pt-4 sm:pt-6 pb-8 sm:pb-10">
       {variant === 'sim' ? (
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <HeaderSim

@@ -41,7 +41,7 @@ const AREAS = [
 ];
 function SectionBadge() {
   return (
-    <div className="relative -mt-3 sm:-mt-5 md:-mt-6 mx-auto max-w-8xl overflow-hidden rounded-3xl border border-cyan-200/40 bg-gradient-to-r from-cyan-50/70 via-white to-indigo-50/70 p-5 sm:p-7 shadow-sm mb-6">
+    <div className="relative mx-auto max-w-8xl overflow-hidden rounded-3xl border border-cyan-200/40 bg-gradient-to-r from-cyan-50/70 via-white to-indigo-50/70 p-5 sm:p-7 shadow-sm mb-6">
       {/* blobs suaves al fondo */}
       <div className="pointer-events-none absolute -left-10 -top-14 h-56 w-56 rounded-full bg-cyan-200/40 blur-3xl" />
       <div className="pointer-events-none absolute -right-10 -bottom-14 h-56 w-56 rounded-full bg-indigo-200/40 blur-3xl" />
@@ -113,7 +113,7 @@ function AreaCard({ title, subtitle, icon, colors, to: enlace }) {
 
 export default function AreasDeEstudio({ items = AREAS }) {
   return (
-    <section className="px-4 sm:px-6 lg:px-8 pt-0 sm:pt-0 pb-6">
+    <section className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-6">
       <div className="space-y-3 sm:space-y-4">
         <SectionBadge />
 

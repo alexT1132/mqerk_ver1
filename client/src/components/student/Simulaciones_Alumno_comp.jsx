@@ -558,6 +558,33 @@ export function Simulaciones_Alumno_comp() {
     return intentos.reduce((m,i)=> (typeof i.puntaje === 'number' && i.puntaje > m) ? i.puntaje : m, 0);
   };
 
+  // Escuchar eventos de WebSocket para actualizar lista en tiempo real cuando se crea una nueva simulación
+  useEffect(() => {
+    const handler = (e) => {
+      const data = e.detail;
+      if (!data || data.type !== 'notification' || !data.payload) return;
+      const payload = data.payload;
+      
+      // Si es una notificación de nueva simulación asignada
+      if (payload.kind === 'assignment' && (payload.simulacion_id || payload.metadata?.simulacion_id)) {
+        const simulacionId = payload.simulacion_id || payload.metadata?.simulacion_id;
+        const isSimulacion = payload.metadata?.kind === 'simulacion' || payload.message?.toLowerCase().includes('simulación') || payload.message?.toLowerCase().includes('simulacion');
+        
+        if (isSimulacion && simulacionId) {
+          // Recargar la lista de simulaciones para mostrar la nueva simulación
+          console.log('[Simulaciones] Nueva simulación asignada, recargando lista...', simulacionId);
+          // Disparar recarga según el scope actual
+          if (currentLevel === 'simulaciones') {
+            const scope = selectedTipo === 'generales' ? { type: 'generales' } : (selectedModulo ? { type: 'modulo', moduloId: selectedModulo.id } : { type: 'generales' });
+            loadSimulaciones(scope);
+          }
+        }
+      }
+    };
+    window.addEventListener('student-ws-message', handler);
+    return () => window.removeEventListener('student-ws-message', handler);
+  }, [currentLevel, selectedTipo, selectedModulo, estudianteId]);
+
   // Efecto para calcular el puntaje total
   useEffect(() => {
     const calculatedTotal = simulaciones.reduce((sum, sim) => sum + (sim.score || 0), 0);

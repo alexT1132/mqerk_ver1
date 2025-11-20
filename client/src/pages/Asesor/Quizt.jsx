@@ -15,10 +15,11 @@ export default function QuiztPage() {
         active="quizt"
         onLogout={() => console.log("logout")}
       />
-      <div className="mx-auto">
+      {/* Contenido: compensado para topbar y sidebar fijos */}
+      <div className="w-full pt-14 md:pl-24">
         <div className="flex">
           <SidebarIconOnly active="quizt" onLogout={() => console.log("logout")} />
-          <main className="flex-1 p-3 sm:p-6">
+          <main className="flex-1 min-h-[calc(100vh-3.5rem)] p-3 sm:p-6">
             <div className="bg-white rounded-xl shadow p-6">
               <h1 className="text-xl font-semibold">Quizt</h1>
               <p className="text-slate-600 mt-2">Sección en construcción.</p>
