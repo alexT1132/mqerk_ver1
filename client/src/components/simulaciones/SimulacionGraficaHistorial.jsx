@@ -19,12 +19,12 @@ import {
 // Añadimos componentes extra de Recharts si no estaban
 // (ReferenceLine para mostrar umbrales o metas visuales)
 import { ReferenceLine } from 'recharts';
-import { 
-  TrendingUp, 
-  BarChart3, 
+import {
+  TrendingUp,
+  BarChart3,
   BarChart2,
-  Clock, 
-  Trophy, 
+  Clock,
+  Trophy,
   Target,
   Calendar,
   Award,
@@ -51,9 +51,9 @@ import {
 } from 'lucide-react';
 
 // Importar servicios de IA
-import { 
-  generarAnalisisConGemini, 
-  esGeminiConfigurado, 
+import {
+  generarAnalisisConGemini,
+  esGeminiConfigurado,
   obtenerRecursosRecomendados,
   limpiarCacheAnalisisGemini
 } from '../../service/geminiService.js';
@@ -62,26 +62,38 @@ import api from '../../api/axios';
 import { analyzeQuizPerformance } from '../../service/quizAnalysisService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * Página completa responsive para mostrar análisis detallado de rendimiento y retroalimentación
  */
-function SimulacionGraficaHistorial({ 
-  simulacion, 
-  historial, 
-  isOpen, 
+function SimulacionGraficaHistorial({
+  simulacion,
+  historial,
+  isOpen,
   onClose,
   tipo = 'generales',        // 'generales' | 'especificos'
   moduloId = null,           // ID del módulo (para específicas)
   categoria = null,          // Categoría de la simulación
   idEstudiante = null
 }) {
+  // Obtener información del estudiante para el análisis
+  const { alumno, user } = useAuth() || {};
+  const estudianteNombre = (() => {
+    try {
+      if (alumno?.nombre) return `${alumno.nombre} ${alumno.apellidos || ''}`.trim();
+      if (user?.name && user.name !== 'XXXX') return String(user.name);
+      if (user?.nombre) return `${user.nombre} ${user.apellidos || ''}`.trim();
+    } catch { }
+    return null;
+  })();
+
   // Hook para detectar diferentes dispositivos y orientación
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [orientation, setOrientation] = useState('portrait');
-  
+
   // Estados para análisis de IA
   const [analisisIA, setAnalisisIA] = useState(null);
   const [cargandoIA, setCargandoIA] = useState(false);
@@ -114,6 +126,50 @@ function SimulacionGraficaHistorial({
   const IDEAL_INTENTOS_TENDENCIA = 4; // recomendado para mayor estabilidad
   const MIN_MATERIAS_ANALISIS = 2; // mínimo para distinguir fortalezas y debilidades
 
+  // Estado para tracking de uso de IA
+  const [aiUsage, setAiUsage] = useState({ count: 0, limit: 5, remaining: 5 });
+
+  // Obtener rol del usuario (ya tenemos user de useAuth arriba)
+  const userRole = user?.rol || user?.role || 'estudiante';
+
+  // Helpers para tracking de uso de IA (localStorage)
+  const AI_USAGE_KEY = 'ai_analysis_usage';
+  // Límites por rol: Asesores tienen más intentos porque generan preguntas y fórmulas
+  const DAILY_LIMIT = userRole === 'asesor' || userRole === 'admin' ? 20 : 5;
+
+  const getUsageToday = () => {
+    try {
+      const data = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
+      const today = new Date().toISOString().split('T')[0];
+      if (data.date !== today) {
+        return { count: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
+      }
+      return {
+        count: data.count || 0,
+        limit: DAILY_LIMIT,
+        remaining: Math.max(0, DAILY_LIMIT - (data.count || 0))
+      };
+    } catch {
+      return { count: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
+    }
+  };
+
+  const incrementUsage = () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const data = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
+      if (data.date !== today) {
+        localStorage.setItem(AI_USAGE_KEY, JSON.stringify({ date: today, count: 1, limit: DAILY_LIMIT }));
+      } else {
+        data.count = (data.count || 0) + 1;
+        localStorage.setItem(AI_USAGE_KEY, JSON.stringify(data));
+      }
+      setAiUsage(getUsageToday());
+    } catch (e) {
+      console.error('Error incrementando uso de IA:', e);
+    }
+  };
+
   // Helper: convertir texto plano a un markdown amigable (títulos y viñetas)
   const toMarkdownFriendly = (txt = '') => {
     if (!txt || typeof txt !== 'string') return '';
@@ -141,6 +197,21 @@ function SimulacionGraficaHistorial({
     const t = setTimeout(() => setCooldownIA(cooldownIA - 1), 1000);
     return () => clearTimeout(t);
   }, [cooldownIA]);
+
+  // Cargar uso de IA al abrir la página
+  useEffect(() => {
+    if (isOpen) {
+      setAiUsage(getUsageToday());
+    }
+  }, [isOpen]);
+
+  // Incrementar uso cuando se genera un análisis exitoso con Gemini
+  useEffect(() => {
+    if (analisisIA && !analisisIA.esFallbackLocal && !cargandoIA && !errorIA) {
+      incrementUsage();
+    }
+  }, [analisisIA]);
+
 
   // Función para calcular métricas de efectividad comparando el análisis IA con reglas heurísticas locales
   const calcularMetricasIA = (analisis, materiasPromedios) => {
@@ -205,8 +276,8 @@ function SimulacionGraficaHistorial({
   // Generar sugerencias personalizadas basadas en datos locales + salida IA
   const generarSugerenciasPersonalizadas = (analisis, materiasProm) => {
     if (!analisis) return null;
-    const debiles = materiasProm.filter(m => m.promedio < 70).sort((a,b)=>a.promedio-b.promedio);
-    const fuertes = materiasProm.filter(m => m.promedio >= 80).sort((a,b)=>b.promedio-a.promedio);
+    const debiles = materiasProm.filter(m => m.promedio < 70).sort((a, b) => a.promedio - b.promedio);
+    const fuertes = materiasProm.filter(m => m.promedio >= 80).sort((a, b) => b.promedio - a.promedio);
 
     const causas = debiles.map(d => ({
       materia: d.materia,
@@ -215,7 +286,7 @@ function SimulacionGraficaHistorial({
     }));
 
     const plan7Dias = [];
-    const dias = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    const dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     dias.forEach((dia, idx) => {
       const materiaObjetivo = debiles[idx % (debiles.length || 1)];
       if (materiaObjetivo) {
@@ -226,11 +297,11 @@ function SimulacionGraficaHistorial({
           duracion: materiaObjetivo.promedio < 60 ? '45-50 min' : '30-40 min'
         });
       } else {
-        plan7Dias.push({ dia, materia: 'General', foco: 'Lectura activa / descanso activo', duracion: '25-30 min'});
+        plan7Dias.push({ dia, materia: 'General', foco: 'Lectura activa / descanso activo', duracion: '25-30 min' });
       }
     });
 
-    const apalancarFortalezas = fuertes.slice(0,2).map(f => ({
+    const apalancarFortalezas = fuertes.slice(0, 2).map(f => ({
       materia: f.materia,
       estrategia: 'Usar tu dominio para explicar a otro estudiante 1 concepto diario y detectar huecos cognitivos ocultos.'
     }));
@@ -258,17 +329,17 @@ function SimulacionGraficaHistorial({
     const slope = (serie) => {
       if (serie.length < 2) return 0;
       const n = serie.length;
-      const xs = Array.from({length:n}, (_,i)=>i+1);
-      const xMean = xs.reduce((a,b)=>a+b,0)/n;
-      const yMean = serie.reduce((a,b)=>a+b,0)/n;
-      let num=0, den=0;
-      for (let i=0;i<n;i++){ num += (xs[i]-xMean)*(serie[i]-yMean); den += Math.pow(xs[i]-xMean,2);} 
-      return den===0?0:num/den; // pendiente simple
+      const xs = Array.from({ length: n }, (_, i) => i + 1);
+      const xMean = xs.reduce((a, b) => a + b, 0) / n;
+      const yMean = serie.reduce((a, b) => a + b, 0) / n;
+      let num = 0, den = 0;
+      for (let i = 0; i < n; i++) { num += (xs[i] - xMean) * (serie[i] - yMean); den += Math.pow(xs[i] - xMean, 2); }
+      return den === 0 ? 0 : num / den; // pendiente simple
     };
     const stdev = (arr) => {
       if (arr.length < 2) return 0;
-      const m = arr.reduce((a,b)=>a+b,0)/arr.length;
-      return Math.sqrt(arr.reduce((a,b)=>a+Math.pow(b-m,2),0)/arr.length);
+      const m = arr.reduce((a, b) => a + b, 0) / arr.length;
+      return Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - m, 2), 0) / arr.length);
     };
 
     const materiasDetalladas = materiasProm.map(m => {
@@ -278,7 +349,7 @@ function SimulacionGraficaHistorial({
       const severidad = m.promedio < 55 ? 'crítica' : m.promedio < 65 ? 'alta' : m.promedio < 70 ? 'media' : m.promedio < 80 ? 'moderada' : 'baja';
       const momentum = pend > 1 ? 'acelerando' : pend > 0.3 ? 'mejorando' : pend < -1 ? 'retroceso fuerte' : pend < -0.3 ? 'bajando' : 'plano';
       const estabilidad = vol < 3 ? 'muy estable' : vol < 6 ? 'estable' : vol < 10 ? 'variable' : 'volátil';
-      const horasSugeridasSemana = severidad==='crítica' ? 4 : severidad==='alta' ? 3 : severidad==='media' ? 2 : severidad==='moderada' ? 1.5 : 1;
+      const horasSugeridasSemana = severidad === 'crítica' ? 4 : severidad === 'alta' ? 3 : severidad === 'media' ? 2 : severidad === 'moderada' ? 1.5 : 1;
       return {
         materia: m.materia,
         promedio: m.promedio,
@@ -292,48 +363,48 @@ function SimulacionGraficaHistorial({
     });
 
     // Priorización: severidad > momentum negativo > menor promedio
-    const ordenSeveridad = { 'crítica':5,'alta':4,'media':3,'moderada':2,'baja':1 };
-    const ordenMomentum = { 'retroceso fuerte':4,'bajando':3,'plano':2,'mejorando':1,'acelerando':0 };
-    const priorizadas = [...materiasDetalladas].sort((a,b)=>{
-      const s = ordenSeveridad[b.severidad]-ordenSeveridad[a.severidad];
-      if (s!==0) return s;
-      const mo = ordenMomentum[b.momentum]-ordenMomentum[a.momentum];
-      if (mo!==0) return mo;
+    const ordenSeveridad = { 'crítica': 5, 'alta': 4, 'media': 3, 'moderada': 2, 'baja': 1 };
+    const ordenMomentum = { 'retroceso fuerte': 4, 'bajando': 3, 'plano': 2, 'mejorando': 1, 'acelerando': 0 };
+    const priorizadas = [...materiasDetalladas].sort((a, b) => {
+      const s = ordenSeveridad[b.severidad] - ordenSeveridad[a.severidad];
+      if (s !== 0) return s;
+      const mo = ordenMomentum[b.momentum] - ordenMomentum[a.momentum];
+      if (mo !== 0) return mo;
       return a.promedio - b.promedio;
-    }).map((m,i)=>({ prioridad:i+1, ...m }));
+    }).map((m, i) => ({ prioridad: i + 1, ...m }));
 
     // Sugerencia total horas (suma y ajuste a múltiplos de 0.5)
-    let totalHoras = materiasDetalladas.reduce((a,b)=>a + b.horasSugeridasSemana,0);
-    totalHoras = Math.round(totalHoras*2)/2;
+    let totalHoras = materiasDetalladas.reduce((a, b) => a + b.horasSugeridasSemana, 0);
+    totalHoras = Math.round(totalHoras * 2) / 2;
 
     return { materias: priorizadas, totalHoras, timestamp: new Date().toISOString() };
   };
-  
+
   useEffect(() => {
     const checkDevice = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
-      
+
       setIsSmallScreen(width < 360);
       setIsMobile(width < 768);
       setIsTablet(width >= 768 && width < 1024);
       setOrientation(width > height ? 'landscape' : 'portrait');
     };
-    
+
     checkDevice();
-    
+
     // Debounce para evitar demasiadas actualizaciones
     let timeoutId;
     const handleResize = () => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(checkDevice, 100);
     };
-    
+
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', () => {
       setTimeout(checkDevice, 100);
     });
-    
+
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', checkDevice);
@@ -385,14 +456,14 @@ function SimulacionGraficaHistorial({
       }
       setMensajeNoCambio(null);
       setFirmaAnalisis(firmaNueva);
-    } catch(e) {
+    } catch (e) {
       console.warn('No se pudo generar firma de análisis:', e);
     }
 
     setCargandoIA(true);
     setErrorIA(null);
     enProcesoRef.current = true;
-    
+
     try {
       // Preparar datos para el análisis
       // Identificar intento oficial (primer intento) y los de práctica (resto)
@@ -401,6 +472,60 @@ function SimulacionGraficaHistorial({
         : [];
       const intentoOficial = intentosOrdenados[0] || null;
       const intentosPractica = intentosOrdenados.slice(1) || [];
+
+      // ✅ Generar incorrectasDetalle si tenemos analitica
+      let incorrectasDetalle = [];
+      if (analitica && Array.isArray(analitica.intentos) && analitica.intentos.length) {
+        const preguntas = Array.isArray(analitica.preguntas) ? analitica.preguntas : [];
+        const preguntasById = new Map(preguntas.map(p => [p.id, p]));
+        const processedQuestionIds = new Set();
+
+        // Función auxiliar para procesar un intento y añadir sus errores
+        const processAttemptErrors = (intentoData, isOfficialAttempt = false) => {
+          if (!intentoData || !Array.isArray(intentoData.respuestas)) return;
+
+          intentoData.respuestas.forEach(r => {
+            const pq = preguntasById.get(r.id_pregunta);
+            if (!pq || processedQuestionIds.has(pq.id)) return; // Ya procesada o no encontrada
+
+            const esCorrecta = r.id_opcion ? (pq.opciones || []).some(o => o.id === r.id_opcion && Number(o.es_correcta) === 1) : false;
+
+            if (!esCorrecta) {
+              const correctasTxt = (pq.opciones || []).filter(o => Number(o.es_correcta) === 1).map(o => o.texto);
+              const opcionSeleccionada = r.id_opcion ? (pq.opciones || []).find(o => o.id === r.id_opcion) : null;
+              const textoSeleccionado = opcionSeleccionada ? opcionSeleccionada.texto : (r.texto_libre || 'Sin respuesta');
+
+              incorrectasDetalle.push({
+                enunciado: pq.enunciado,
+                seleccion: [textoSeleccionado],
+                correctas: correctasTxt,
+                tipo: pq.tipo,
+                materia: pq.materia || pq.categoria || pq.area || null,
+                esOficial: isOfficialAttempt // Marcar si viene del intento oficial
+              });
+              processedQuestionIds.add(pq.id);
+            }
+          });
+        };
+
+        // Ordenar intentos por fecha (más antiguo primero)
+        const intentosAnaliticaOrdenados = [...analitica.intentos].sort((a, b) => {
+          const fechaA = a?.intento?.fecha || a?.sesion?.finished_at || null;
+          const fechaB = b?.intento?.fecha || b?.sesion?.finished_at || null;
+          if (!fechaA && !fechaB) return 0;
+          if (!fechaA) return 1;
+          if (!fechaB) return -1;
+          return new Date(fechaA).getTime() - new Date(fechaB).getTime();
+        });
+
+        const intentoOficialAnalitica = intentosAnaliticaOrdenados[0];
+        const ultimoIntentoAnalitica = intentosAnaliticaOrdenados[intentosAnaliticaOrdenados.length - 1];
+
+        // Priorizar errores del intento oficial
+        processAttemptErrors(intentoOficialAnalitica, true);
+        // Luego añadir errores del último intento que no estén ya en la lista
+        processAttemptErrors(ultimoIntentoAnalitica, false);
+      }
 
       const datosParaAnalisis = {
         simulacion: simulacion.nombre,
@@ -414,6 +539,8 @@ function SimulacionGraficaHistorial({
         totalPreguntas: Number(simulacion.totalPreguntas || simulacion.total_preguntas || 0),
         intentoOficial: intentoOficial ? { puntaje: Number(intentoOficial.puntaje) || 0, fecha: intentoOficial.fecha } : null,
         intentosPractica: intentosPractica.map(i => ({ puntaje: Number(i.puntaje) || 0, fecha: i.fecha })),
+        alumnoNombre: estudianteNombre || null, // ✅ Agregar nombre del estudiante para el análisis de Gemini
+        incorrectasDetalle: incorrectasDetalle, // ✅ Agregar incorrectasDetalle para análisis detallado
         materias: promediosPorMateria.map(m => ({
           nombre: m.materia,
           promedio: m.promedio,
@@ -455,11 +582,11 @@ function SimulacionGraficaHistorial({
         }
       };
 
-  // Llamar al servicio de IA con telemetría
-  const t0 = Date.now();
-  const analisis = await generarAnalisisConGemini(datosParaAnalisis);
-  setIaLatencyMs(Date.now() - t0);
-  setLastDatosAnalisis(datosParaAnalisis);
+      // Llamar al servicio de IA con telemetría
+      const t0 = Date.now();
+      const analisis = await generarAnalisisConGemini(datosParaAnalisis);
+      setIaLatencyMs(Date.now() - t0);
+      setLastDatosAnalisis(datosParaAnalisis);
       if (analisis.esFallbackLocal) {
         setUltimoAvisoIA('Mostrando análisis heurístico local (límite de cuota 429).');
         setCooldownIA(60); // enfriar 1 minuto
@@ -471,24 +598,24 @@ function SimulacionGraficaHistorial({
       } else {
         setUltimoAvisoIA(null);
       }
-      
+
       // Obtener recursos recomendados para áreas débiles
       const recursosRecomendados = {};
       areasDebiles.forEach(area => {
         recursosRecomendados[area.materia] = obtenerRecursosRecomendados(area.materia);
       });
-      
-  setAnalisisIA(analisis);
+
+      setAnalisisIA(analisis);
       setRecursos(recursosRecomendados);
       setMostrarAnalisisIA(true);
       // Calcular métricas de efectividad
       const m = calcularMetricasIA(analisis, promediosPorMateria);
       setMetricasIA(m);
-  const sug = generarSugerenciasPersonalizadas(analisis, promediosPorMateria);
-  setSugerenciasPersonalizadas(sug);
-  const insights = calcularInsightsAvanzados(promediosPorMateria);
-  setInsightsAvanzados(insights);
-      
+      const sug = generarSugerenciasPersonalizadas(analisis, promediosPorMateria);
+      setSugerenciasPersonalizadas(sug);
+      const insights = calcularInsightsAvanzados(promediosPorMateria);
+      setInsightsAvanzados(insights);
+
     } catch (error) {
       console.error('Error generando análisis IA:', error);
       if (error.message && error.message.includes('Límite de peticiones')) {
@@ -575,17 +702,17 @@ function SimulacionGraficaHistorial({
   // Normalizar materias desde historial o crear una materia "General" como fallback con la serie de puntajes
   let materiasActuales = Array.isArray(historial?.materias)
     ? (historial.materias || []).map(m => ({
-        materia: m.nombre || m.materia || 'General',
-        promedio: Number(m.promedio || m.ratio || 0),
-        icon: '📘',
-        color: '#3B82F6',
-        puntajes: Array.isArray(m.puntajes) ? m.puntajes.map(v => Number(v) || 0) : []
-      }))
+      materia: m.nombre || m.materia || 'General',
+      promedio: Number(m.promedio || m.ratio || 0),
+      icon: '📘',
+      color: '#3B82F6',
+      puntajes: Array.isArray(m.puntajes) ? m.puntajes.map(v => Number(v) || 0) : []
+    }))
     : [];
   if (!Array.isArray(materiasActuales)) materiasActuales = [];
   if (materiasActuales.length === 0) {
     const intentosSerie = Array.isArray(historial?.intentos) ? historial.intentos.map(i => Number(i?.puntaje) || 0) : [];
-    materiasActuales = [{ materia: 'General', promedio: (intentosSerie.length ? intentosSerie.reduce((a,b)=>a+b,0)/intentosSerie.length : 0), icon: '📘', color: '#3B82F6', puntajes: intentosSerie }];
+    materiasActuales = [{ materia: 'General', promedio: (intentosSerie.length ? intentosSerie.reduce((a, b) => a + b, 0) / intentosSerie.length : 0), icon: '📘', color: '#3B82F6', puntajes: intentosSerie }];
   }
 
   // Calcular promedios por materia
@@ -601,7 +728,7 @@ function SimulacionGraficaHistorial({
 
   // Identificar áreas más débiles (promedio < 70)
   const areasDebiles = promediosPorMateria.filter(materia => materia.promedio < 70);
-  
+
   // Preparar datos para gráfica de materias
   const datosMaterias = materiasActuales.map((materia) => {
     const len = Array.isArray(materia.puntajes) ? materia.puntajes.length : 0;
@@ -629,7 +756,7 @@ function SimulacionGraficaHistorial({
   // Generar recomendaciones basadas en el análisis
   const generarRecomendaciones = () => {
     const recomendaciones = [];
-    
+
     areasDebiles.forEach(area => {
       if (area.promedio < 60) {
         recomendaciones.push({
@@ -691,7 +818,7 @@ function SimulacionGraficaHistorial({
   // Función para generar recomendaciones contextuales
   const generarRecomendacionesContextuales = () => {
     const recomendaciones = [];
-    
+
     // Recomendaciones específicas según el tipo
     if (tipo === 'generales') {
       // Recomendaciones para simulaciones generales
@@ -783,9 +910,17 @@ function SimulacionGraficaHistorial({
       const lineas = [];
 
       // Cabecera con métricas clave
-      const intentos = Array.isArray(historial?.intentos) ? historial.intentos.length : 0;
-      const mejor = intentos ? Math.max(...historial.intentos.map(i => Number(i.puntaje) || 0)) : null;
-      const ultimo = intentos ? Number(historial.intentos[intentos - 1].puntaje) || 0 : null;
+      // ✅ IMPORTANTE: Ordenar por fecha para calcular correctamente el último intento
+      const intentosOrdenados = Array.isArray(historial?.intentos)
+        ? [...historial.intentos].sort((a, b) => {
+          const ta = a.fecha ? new Date(a.fecha).getTime() : 0;
+          const tb = b.fecha ? new Date(b.fecha).getTime() : 0;
+          return ta - tb; // Orden ascendente (más antiguo primero)
+        })
+        : [];
+      const intentos = intentosOrdenados.length;
+      const mejor = intentos ? Math.max(...intentosOrdenados.map(i => Number(i.puntaje) || 0)) : null;
+      const ultimo = intentos ? Number(intentosOrdenados[intentos - 1].puntaje) || 0 : null;
       const oficialP = intentoOficial ? (Number(intentoOficial.puntaje) || 0) : null;
       const oficialF = intentoOficial?.fecha ? new Date(intentoOficial.fecha).toLocaleDateString('es-ES') : null;
 
@@ -828,7 +963,7 @@ function SimulacionGraficaHistorial({
         lineas.push('Áreas de mejora:');
         debilidades.slice(0, 8).forEach(d => {
           const acciones = Array.isArray(d.accionesEspecificas) && d.accionesEspecificas.length
-            ? ` | Acciones: ${d.accionesEspecificas.slice(0,2).join('; ')}`
+            ? ` | Acciones: ${d.accionesEspecificas.slice(0, 2).join('; ')}`
             : '';
           lineas.push(`• ${d.materia || 'Área'}: ${d.comentario || 'Reforzar conceptos clave'}${acciones}`);
         });
@@ -849,14 +984,14 @@ function SimulacionGraficaHistorial({
       if (sugerenciasPersonalizadas?.plan7Dias?.length) {
         lineas.push('');
         lineas.push('Plan 7 días (resumen):');
-        sugerenciasPersonalizadas.plan7Dias.slice(0,3).forEach(p => {
+        sugerenciasPersonalizadas.plan7Dias.slice(0, 3).forEach(p => {
           lineas.push(`- ${p.dia}: ${p.materia} · ${p.foco} · ${p.duracion}`);
         });
       }
       if (sugerenciasPersonalizadas?.quickTips?.length) {
         lineas.push('');
         lineas.push('Tips rápidos:');
-        sugerenciasPersonalizadas.quickTips.slice(0,3).forEach(t => lineas.push(`- ${t}`));
+        sugerenciasPersonalizadas.quickTips.slice(0, 3).forEach(t => lineas.push(`- ${t}`));
       }
 
       // Indicador de esfuerzo semanal si está disponible
@@ -885,14 +1020,14 @@ function SimulacionGraficaHistorial({
       `;
       const html = `<!doctype html><html><head><meta charset="utf-8"><title>Resumen de análisis</title><style>${estilos}</style></head><body>
         <h1>Resumen de análisis</h1>
-        <pre>${texto.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        <pre>${texto.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
       </body></html>`;
       popup.document.open();
       popup.document.write(html);
       popup.document.close();
       // Dar tiempo a que renderice antes de imprimir
-      setTimeout(() => { try { popup.focus(); popup.print(); } catch {} }, 300);
-    } catch {}
+      setTimeout(() => { try { popup.focus(); popup.print(); } catch { } }, 300);
+    } catch { }
   };
 
   // Compartir por WhatsApp
@@ -902,7 +1037,7 @@ function SimulacionGraficaHistorial({
       if (!texto) return;
       const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
       window.open(url, '_blank');
-    } catch {}
+    } catch { }
   };
 
   // Preparar datos para las gráficas con verificaciones
@@ -926,9 +1061,9 @@ function SimulacionGraficaHistorial({
       intento: `Intento ${index + 1}`,
       puntaje: Number(intento.puntaje) || 0,
       tiempo: sec > 0 ? Math.round(sec / 60) : 0,
-      fecha: intento.fecha ? new Date(intento.fecha).toLocaleDateString('es-ES', { 
-        day: '2-digit', 
-        month: '2-digit' 
+      fecha: intento.fecha ? new Date(intento.fecha).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit'
       }) : 'N/A'
     });
   });
@@ -946,15 +1081,22 @@ function SimulacionGraficaHistorial({
   const mostrarAvisoPocosDatos = totalIntentos < 2;
 
   // Estadísticas calculadas con verificaciones
-  const intentosList = Array.isArray(historial?.intentos) ? historial.intentos : [];
-  const intentoOficial = intentosList.length ? intentosList[0] : null; // El primer intento es oficial
-  const promedioPuntaje = intentosList.length > 0 
+  // ✅ IMPORTANTE: Ordenar por fecha para asegurar que el primer intento cronológico sea el oficial
+  const intentosList = Array.isArray(historial?.intentos)
+    ? [...historial.intentos].sort((a, b) => {
+      const ta = a.fecha ? new Date(a.fecha).getTime() : 0;
+      const tb = b.fecha ? new Date(b.fecha).getTime() : 0;
+      return ta - tb; // Orden ascendente (más antiguo primero)
+    })
+    : [];
+  const intentoOficial = intentosList.length ? intentosList[0] : null; // El primer intento cronológico es oficial
+  const promedioPuntaje = intentosList.length > 0
     ? intentosList.reduce((sum, i) => sum + (Number(i.puntaje) || 0), 0) / intentosList.length
     : 0;
   const tiemposPositivosSec = intentosList.map(getAttemptSeconds).filter(t => t > 0);
   const mejorTiempo = tiemposPositivosSec.length ? Math.max(1, Math.round(Math.min(...tiemposPositivosSec) / 60)) : 0; // en minutos
-  const promedioTiempo = intentosList.length > 0 
-    ? (tiemposPositivosSec.length ? Math.round((tiemposPositivosSec.reduce((a,b)=>a+b,0) / tiemposPositivosSec.length) / 60) : 0)
+  const promedioTiempo = intentosList.length > 0
+    ? (tiemposPositivosSec.length ? Math.round((tiemposPositivosSec.reduce((a, b) => a + b, 0) / tiemposPositivosSec.length) / 60) : 0)
     : 0;
 
   // Flags de suficiencia de datos
@@ -989,17 +1131,17 @@ function SimulacionGraficaHistorial({
 
     try {
       // Orden cronológico ascendente
-      const ordered = [...historial.intentos].sort((a,b)=>{
+      const ordered = [...historial.intentos].sort((a, b) => {
         const ta = a.fecha ? new Date(a.fecha).getTime() : 0;
         const tb = b.fecha ? new Date(b.fecha).getTime() : 0;
         return ta - tb;
       });
-  const scores = ordered.map(i => Number(i.puntaje) || 0);
-  const fechas = ordered.map(i => i.fecha || null);
-  // Datos del intento oficial (primero)
-  const intentoOficial = ordered[0] || null;
-  const oficialPuntaje = intentoOficial ? (Number(intentoOficial.puntaje) || null) : null;
-  const oficialFecha = intentoOficial ? (intentoOficial.fecha || null) : null;
+      const scores = ordered.map(i => Number(i.puntaje) || 0);
+      const fechas = ordered.map(i => i.fecha || null);
+      // Datos del intento oficial (primero)
+      const intentoOficial = ordered[0] || null;
+      const oficialPuntaje = intentoOficial ? (Number(intentoOficial.puntaje) || null) : null;
+      const oficialFecha = intentoOficial ? (intentoOficial.fecha || null) : null;
       // Duraciones por intento
       const analitica = await cargarAnaliticaDetallada();
       let duraciones = [];
@@ -1007,7 +1149,7 @@ function SimulacionGraficaHistorial({
         duraciones = analitica.intentos.map(it => {
           if (typeof it?.intento?.tiempo_segundos === 'number') return Math.round(it.intento.tiempo_segundos);
           const ms = it?.sesion?.elapsed_ms;
-          return (typeof ms === 'number') ? Math.round(ms/1000) : null;
+          return (typeof ms === 'number') ? Math.round(ms / 1000) : null;
         }).filter(v => v != null);
       }
       if (duraciones.length === 0) {
@@ -1019,7 +1161,8 @@ function SimulacionGraficaHistorial({
         }).filter(v => v != null);
       }
 
-      // Derivar detalle del último intento (preguntas incorrectas con selección vs correctas)
+      // ✅ Derivar detalle de TODOS los intentos, especialmente el oficial y el último
+      // Priorizar preguntas del intento oficial (donde más importa) y también del último intento
       let incorrectasLista = [];
       let incorrectasDetalle = [];
       let totalPreguntasIntento = null;
@@ -1029,14 +1172,33 @@ function SimulacionGraficaHistorial({
       let promedioTiempoPregunta = null;
       let intentoNumero = ordered.length;
       let totalTiempoIntento = null;
+
       if (analitica && Array.isArray(analitica.intentos) && analitica.intentos.length) {
-        const ultimo = analitica.intentos[analitica.intentos.length - 1];
         const preguntas = Array.isArray(analitica.preguntas) ? analitica.preguntas : [];
-        const resp = Array.isArray(ultimo.respuestas) ? ultimo.respuestas : [];
         const preguntasById = new Map(preguntas.map(p => [p.id, p]));
+
+        // ✅ Ordenar intentos por fecha (más antiguo primero) para identificar el oficial
+        const intentosOrdenados = [...analitica.intentos].sort((a, b) => {
+          const fechaA = a?.intento?.fecha || a?.sesion?.finished_at || null;
+          const fechaB = b?.intento?.fecha || b?.sesion?.finished_at || null;
+          if (!fechaA && !fechaB) return 0;
+          if (!fechaA) return 1;
+          if (!fechaB) return -1;
+          return new Date(fechaA).getTime() - new Date(fechaB).getTime();
+        });
+
+        const intentoOficialAnalitica = intentosOrdenados[0] || null;
+        const ultimoIntentoAnalitica = intentosOrdenados[intentosOrdenados.length - 1] || null;
+
+        // ✅ Analizar el último intento para métricas
+        const ultimo = ultimoIntentoAnalitica;
+        const resp = Array.isArray(ultimo?.respuestas) ? ultimo.respuestas : [];
         const detalles = [];
+        const detallesOficial = []; // Preguntas incorrectas del intento oficial
         let corr = 0, inc = 0, omi = 0;
         const tiemposMs = [];
+
+        // Analizar último intento para métricas
         resp.forEach(r => {
           const pq = preguntasById.get(r.id_pregunta);
           if (!pq) return;
@@ -1045,43 +1207,98 @@ function SimulacionGraficaHistorial({
           if (typeof r.tiempo_ms === 'number') tiemposMs.push(r.tiempo_ms);
           if (!esCorrecta) {
             const correctasTxt = (pq.opciones || []).filter(o => Number(o.es_correcta) === 1).map(o => o.texto);
-            detalles.push({ enunciado: pq.enunciado, seleccion: [], correctas: correctasTxt, tipo: pq.tipo, materia: pq.materia || pq.categoria || pq.area || null });
+            const opcionSeleccionada = r.id_opcion ? (pq.opciones || []).find(o => o.id === r.id_opcion) : null;
+            const textoSeleccionado = opcionSeleccionada ? opcionSeleccionada.texto : (r.texto_libre || 'Sin respuesta');
+            detalles.push({
+              enunciado: pq.enunciado,
+              seleccion: [textoSeleccionado],
+              correctas: correctasTxt,
+              tipo: pq.tipo,
+              materia: pq.materia || pq.categoria || pq.area || null,
+              intento: 'último'
+            });
           }
         });
+
+        // ✅ Analizar intento oficial para encontrar preguntas donde falló (más importante)
+        if (intentoOficialAnalitica && intentoOficialAnalitica !== ultimo) {
+          const respOficial = Array.isArray(intentoOficialAnalitica?.respuestas) ? intentoOficialAnalitica.respuestas : [];
+          respOficial.forEach(r => {
+            const pq = preguntasById.get(r.id_pregunta);
+            if (!pq) return;
+            const esCorrecta = r.id_opcion ? (pq.opciones || []).some(o => o.id === r.id_opcion && Number(o.es_correcta) === 1) : false;
+            if (!esCorrecta) {
+              const correctasTxt = (pq.opciones || []).filter(o => Number(o.es_correcta) === 1).map(o => o.texto);
+              const opcionSeleccionada = r.id_opcion ? (pq.opciones || []).find(o => o.id === r.id_opcion) : null;
+              const textoSeleccionado = opcionSeleccionada ? opcionSeleccionada.texto : (r.texto_libre || 'Sin respuesta');
+              detallesOficial.push({
+                enunciado: pq.enunciado,
+                seleccion: [textoSeleccionado],
+                correctas: correctasTxt,
+                tipo: pq.tipo,
+                materia: pq.materia || pq.categoria || pq.area || null,
+                intento: 'oficial'
+              });
+            }
+          });
+        }
+
+        // ✅ Combinar: priorizar preguntas del intento oficial, luego del último
+        // Eliminar duplicados (misma pregunta) pero mantener la del intento oficial si existe
+        const todasLasIncorrectas = [...detallesOficial, ...detalles];
+        const unicas = new Map();
+        todasLasIncorrectas.forEach(d => {
+          const key = d.enunciado;
+          if (!unicas.has(key) || d.intento === 'oficial') {
+            unicas.set(key, d);
+          }
+        });
+
         totalPreguntasIntento = preguntas.length || null;
         correctasIntento = corr; incorrectasIntento = inc; omitidasIntento = omi;
-        incorrectasDetalle = detalles.slice(0, 10);
-        incorrectasLista = detalles.map(d => d.enunciado).slice(0, 12);
+        incorrectasDetalle = Array.from(unicas.values()).slice(0, 10);
+        incorrectasLista = Array.from(unicas.values()).map(d => d.enunciado).slice(0, 12);
         if (tiemposMs.length > 0) {
-          totalTiempoIntento = tiemposMs.reduce((a,b)=>a+b,0);
+          totalTiempoIntento = tiemposMs.reduce((a, b) => a + b, 0);
           promedioTiempoPregunta = totalPreguntasIntento ? (totalTiempoIntento / totalPreguntasIntento) : (totalTiempoIntento / tiemposMs.length);
         } else {
-          const sec = (typeof ultimo?.intento?.tiempo_segundos === 'number') ? ultimo.intento.tiempo_segundos : (typeof ultimo?.sesion?.elapsed_ms === 'number' ? ultimo.sesion.elapsed_ms/1000 : null);
-          totalTiempoIntento = (typeof sec === 'number') ? Math.round(sec*1000) : null;
+          const sec = (typeof ultimo?.intento?.tiempo_segundos === 'number') ? ultimo.intento.tiempo_segundos : (typeof ultimo?.sesion?.elapsed_ms === 'number' ? ultimo.sesion.elapsed_ms / 1000 : null);
+          totalTiempoIntento = (typeof sec === 'number') ? Math.round(sec * 1000) : null;
           promedioTiempoPregunta = (totalTiempoIntento != null && totalPreguntasIntento) ? (totalTiempoIntento / totalPreguntasIntento) : null;
         }
       }
 
       const mejorPuntaje = scores.length ? Math.max(...scores) : 0;
       const promedio = promedioPuntaje;
-      const ultimoPuntaje = scores.length ? scores[scores.length-1] : null;
+      const ultimoPuntaje = scores.length ? scores[scores.length - 1] : null;
       const mejoraDesdePrimero = (scores.length > 1) ? (scores[scores.length - 1] - scores[0]) : 0;
       // Pendiente y desviación
       let pendienteTendencia = null, desviacionPuntaje = null;
       if (scores.length > 1) {
         const n = scores.length;
-        const x = Array.from({length:n}, (_, i) => i + 1);
-        const sumX = x.reduce((a,b)=>a+b,0);
-        const sumY = scores.reduce((a,b)=>a+b,0);
+        const x = Array.from({ length: n }, (_, i) => i + 1);
+        const sumX = x.reduce((a, b) => a + b, 0);
+        const sumY = scores.reduce((a, b) => a + b, 0);
         const sumXY = x.reduce((acc, xi, i) => acc + xi * scores[i], 0);
         const sumX2 = x.reduce((acc, xi) => acc + xi * xi, 0);
         pendienteTendencia = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
         const avg = sumY / n;
         desviacionPuntaje = Math.sqrt(scores.reduce((acc, v) => acc + Math.pow(v - avg, 2), 0) / (n - 1));
       }
-      const promedioDuracion = duraciones.length ? (duraciones.reduce((a,b)=>a+b,0) / duraciones.length) : null;
+      const promedioDuracion = duraciones.length ? (duraciones.reduce((a, b) => a + b, 0) / duraciones.length) : null;
       const mejorDuracion = duraciones.length ? Math.min(...duraciones) : null;
       const peorDuracion = duraciones.length ? Math.max(...duraciones) : null;
+
+      // ✅ Log para verificar que los datos se estén pasando correctamente
+      console.log('[generarAnalisisDetallado] Datos que se envían a la IA:', {
+        totalPreguntasIntento,
+        correctasIntento,
+        incorrectasIntento,
+        omitidasIntento,
+        incorrectasListaCount: incorrectasLista?.length || 0,
+        incorrectasDetalleCount: incorrectasDetalle?.length || 0,
+        incorrectasDetalleSample: incorrectasDetalle?.slice(0, 2) || []
+      });
 
       const metaPayload = {
         itemName: simulacion?.nombre,
@@ -1103,15 +1320,25 @@ function SimulacionGraficaHistorial({
         incorrectasIntento,
         omitidasIntento,
         incorrectasLista,
-        incorrectasDetalle,
+        incorrectasDetalle, // ✅ Asegurar que se pase
         promedioTiempoPregunta,
         totalTiempoIntento,
       };
 
       // Calcular duración oficial (segundos) si posible
+      // ✅ IMPORTANTE: Ordenar analitica.intentos por fecha para asegurar que el primero sea el oficial
       let oficialDuracion = null;
       if (analitica && Array.isArray(analitica.intentos) && analitica.intentos.length) {
-        const primero = analitica.intentos[0];
+        // Ordenar por fecha del intento (más antiguo primero)
+        const intentosAnaliticaOrdenados = [...analitica.intentos].sort((a, b) => {
+          const fechaA = a?.intento?.fecha || a?.sesion?.finished_at || null;
+          const fechaB = b?.intento?.fecha || b?.sesion?.finished_at || null;
+          if (!fechaA && !fechaB) return 0;
+          if (!fechaA) return 1;
+          if (!fechaB) return -1;
+          return new Date(fechaA).getTime() - new Date(fechaB).getTime();
+        });
+        const primero = intentosAnaliticaOrdenados[0]; // Primer intento cronológico (oficial)
         if (typeof primero?.intento?.tiempo_segundos === 'number' && primero.intento.tiempo_segundos > 0) {
           oficialDuracion = Math.round(primero.intento.tiempo_segundos);
         } else if (typeof primero?.sesion?.elapsed_ms === 'number' && primero.sesion.elapsed_ms > 0) {
@@ -1124,6 +1351,7 @@ function SimulacionGraficaHistorial({
         oficialPuntaje,
         oficialFecha,
         oficialDuracion,
+        alumnoNombre: estudianteNombre || null, // ✅ Agregar nombre del estudiante
       });
       setAnalysisMeta({
         itemName: simulacion?.nombre || '',
@@ -1141,8 +1369,8 @@ function SimulacionGraficaHistorial({
         correctasIntento: correctasIntento || 0,
         incorrectasIntento: incorrectasIntento || 0,
         omitidasIntento: omitidasIntento || 0,
-        totalTiempoIntento: totalTiempoIntento != null ? Math.round(totalTiempoIntento/1000) : null,
-        promedioTiempoPregunta: promedioTiempoPregunta != null ? Math.round(promedioTiempoPregunta/1000) : null,
+        totalTiempoIntento: totalTiempoIntento != null ? Math.round(totalTiempoIntento / 1000) : null,
+        promedioTiempoPregunta: promedioTiempoPregunta != null ? Math.round(promedioTiempoPregunta / 1000) : null,
       });
       setAnalysisText(result);
     } catch (error) {
@@ -1154,7 +1382,7 @@ function SimulacionGraficaHistorial({
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-gray-50 overflow-x-hidden"
       style={{
         WebkitOverflowScrolling: 'touch',
@@ -1164,51 +1392,51 @@ function SimulacionGraficaHistorial({
       }}
     >
       {/* Header simplificado sin gradiente, integrado al fondo */}
-  <div className="bg-transparent text-gray-900 border-b border-gray-200 relative z-20 px-2 sm:px-6 lg:px-10">
-          <div className="flex items-center justify-between py-3 sm:py-4">
-            <div className="flex items-center space-x-2 sm:space-x-3 w-full">
-              <button
-                onClick={onClose}
-                className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors flex-shrink-0 min-h-[40px] min-w-[44px] active:scale-[0.97] text-gray-700"
-                style={{ touchAction: 'manipulation' }}
-              >
-                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="text-xs sm:text-sm font-medium">Volver</span>
-              </button>
-              <div className="hidden sm:block w-px h-6 bg-white/20"></div>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-lg sm:text-2xl lg:text-3xl font-semibold flex items-center space-x-1 sm:space-x-2 tracking-tight text-gray-800">
-                  <BarChart2 className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 flex-shrink-0 text-indigo-600" />
-                  <span className="truncate">Análisis de Rendimiento</span>
-                </h1>
-                <p className="text-gray-500 text-xs sm:text-sm mt-1 truncate font-medium">{simulacion.nombre}</p>
-                {/* Información contextual */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[10px] sm:text-xs text-gray-500">
+      <div className="bg-transparent text-gray-900 border-b border-gray-200 relative z-20 px-2 sm:px-6 lg:px-10">
+        <div className="flex items-center justify-between py-3 sm:py-4">
+          <div className="flex items-center space-x-2 sm:space-x-3 w-full">
+            <button
+              onClick={onClose}
+              className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors flex-shrink-0 min-h-[40px] min-w-[44px] active:scale-[0.97] text-gray-700"
+              style={{ touchAction: 'manipulation' }}
+            >
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="text-xs sm:text-sm font-medium">Volver</span>
+            </button>
+            <div className="hidden sm:block w-px h-6 bg-white/20"></div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-2xl lg:text-3xl font-semibold flex items-center space-x-1 sm:space-x-2 tracking-tight text-gray-800">
+                <BarChart2 className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 flex-shrink-0 text-indigo-600" />
+                <span className="truncate">Análisis de Rendimiento</span>
+              </h1>
+              <p className="text-gray-500 text-xs sm:text-sm mt-1 truncate font-medium">{simulacion.nombre}</p>
+              {/* Información contextual */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[10px] sm:text-xs text-gray-500">
+                <span className="flex items-center space-x-1">
+                  <span className="w-2 h-2 bg-indigo-400 rounded-full"></span>
+                  <span>{tipo === 'generales' ? 'Simulación General' : 'Simulación Específica'}</span>
+                </span>
+                {tipo === 'especificos' && moduloId && (
                   <span className="flex items-center space-x-1">
-                    <span className="w-2 h-2 bg-indigo-400 rounded-full"></span>
-                    <span>{tipo === 'generales' ? 'Simulación General' : 'Simulación Específica'}</span>
+                    <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                    <span>{obtenerNombreModulo(moduloId)}</span>
                   </span>
-                  {tipo === 'especificos' && moduloId && (
-                    <span className="flex items-center space-x-1">
-                      <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                      <span>{obtenerNombreModulo(moduloId)}</span>
-                    </span>
-                  )}
-                  {categoria && (
-                    <span className="flex items-center space-x-1">
-                      <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-                      <span>{categoria}</span>
-                    </span>
-                  )}
-                </div>
+                )}
+                {categoria && (
+                  <span className="flex items-center space-x-1">
+                    <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+                    <span>{categoria}</span>
+                  </span>
+                )}
               </div>
             </div>
           </div>
         </div>
+      </div>
       {/* Contenido principal */}
-  <div className="w-full px-1 sm:px-6 lg:px-10 pt-3 sm:pt-4 pb-6 sm:pb-8">
+      <div className="w-full px-1 sm:px-6 lg:px-10 pt-3 sm:pt-4 pb-6 sm:pb-8">
         {/* Estadísticas principales - Grid responsive optimizado */}
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6 lg:mb-8 -mx-2 sm:mx-0">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6 lg:mb-8 -mx-2 sm:mx-0">
           {/* Intento Oficial */}
           <div className="bg-white p-2 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-blue-200 hover:shadow-md transition-shadow col-span-2 md:col-span-1 mx-2 sm:mx-0">
             <div className="flex items-center space-x-2 sm:space-x-3">
@@ -1221,7 +1449,7 @@ function SimulacionGraficaHistorial({
                   {intentoOficial ? (Number(intentoOficial.puntaje) || 0) : 0}%
                 </p>
                 <p className="text-[11px] text-gray-500 truncate">
-                  {intentoOficial?.fecha ? new Date(intentoOficial.fecha).toLocaleDateString('es-ES') : 'Fecha N/D'} · {Number(intentoOficial?.tiempoEmpleado) > 0 ? `${Math.round(Number(intentoOficial.tiempoEmpleado)*60)}s` : 'Tiempo N/D'}
+                  {intentoOficial?.fecha ? new Date(intentoOficial.fecha).toLocaleDateString('es-ES') : 'Fecha N/D'} · {Number(intentoOficial?.tiempoEmpleado) > 0 ? `${Math.round(Number(intentoOficial.tiempoEmpleado) * 60)}s` : 'Tiempo N/D'}
                 </p>
               </div>
             </div>
@@ -1239,7 +1467,7 @@ function SimulacionGraficaHistorial({
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-2 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow mx-2 sm:mx-0">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
@@ -1251,7 +1479,7 @@ function SimulacionGraficaHistorial({
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-2 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow mx-2 sm:mx-0">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg flex-shrink-0">
@@ -1263,7 +1491,7 @@ function SimulacionGraficaHistorial({
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-2 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow mx-2 sm:mx-0">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg flex-shrink-0">
@@ -1280,12 +1508,12 @@ function SimulacionGraficaHistorial({
         </div>
 
         {/* Análisis por Materias/Áreas */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-6 mb-6 sm:mb-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-6 mb-6 sm:mb-8">
           <div className="flex items-center mb-4 sm:mb-6">
             <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 mr-2 flex-shrink-0" />
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">Análisis por Materias/Áreas</h3>
           </div>
-          
+
           <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
             {promediosPorMateria.map((materia, index) => (
               <div key={index} className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
@@ -1294,60 +1522,58 @@ function SimulacionGraficaHistorial({
                     <span className="text-base sm:text-lg flex-shrink-0">{materia.icon}</span>
                     <span className="font-medium text-gray-900 text-xs sm:text-sm truncate">{materia.materia}</span>
                   </div>
-                  <div className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ${
-                    materia.promedio >= 80 ? 'bg-green-100 text-green-800' :
+                  <div className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ${materia.promedio >= 80 ? 'bg-green-100 text-green-800' :
                     materia.promedio >= 70 ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
+                      'bg-red-100 text-red-800'
+                    }`}>
                     {materia.promedio.toFixed(1)}%
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
                   <span>Último: {materia.ultimoPuntaje}%</span>
                   <span>Mejor: {materia.mejorPuntaje}%</span>
                 </div>
-                
+
                 <div className="flex items-center space-x-1">
                   {materia.tendencia === 'mejora' ? (
                     <TrendingUp className="w-3 h-3 text-green-500 flex-shrink-0" />
                   ) : (
                     <TrendingDown className="w-3 h-3 text-red-500 flex-shrink-0" />
                   )}
-                  <span className={`text-xs font-medium truncate ${
-                    materia.tendencia === 'mejora' ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <span className={`text-xs font-medium truncate ${materia.tendencia === 'mejora' ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {materia.tendencia === 'mejora' ? 'Mejorando' : 'Descendente'}
                   </span>
                 </div>
               </div>
             ))}
           </div>
-          
+
           {/* Gráfica de rendimiento por materias - Responsive */}
           <div className="bg-gray-50 rounded-lg p-3 sm:p-4 overflow-hidden">
             <h4 className="font-medium text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">Comparación de Rendimiento</h4>
-            <div className="w-full overflow-x-auto scrollbar-hide" style={{WebkitOverflowScrolling: 'touch'}}>
+            <div className="w-full overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
               <div className="min-w-[320px] sm:min-w-[420px]">
                 <ResponsiveContainer width="100%" height={isSmallScreen ? 150 : isMobile ? 180 : isTablet ? 220 : 250}>
                   <BarChart data={datosMaterias}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="materia" 
+                    <XAxis
+                      dataKey="materia"
                       tick={{ fontSize: isSmallScreen ? 7 : isMobile ? 8 : 10 }}
                       angle={isMobile ? -45 : 0}
                       textAnchor={isMobile ? "end" : "middle"}
                       height={isMobile ? 50 : 60}
                       interval={0}
                     />
-                    <YAxis 
+                    <YAxis
                       domain={[0, 100]}
                       tick={{ fontSize: isSmallScreen ? 7 : isMobile ? 8 : 10 }}
                       width={isMobile ? 25 : 35}
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#F9FAFB', 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#F9FAFB',
                         border: '1px solid #E5E7EB',
                         borderRadius: '8px',
                         fontSize: isSmallScreen ? '10px' : isMobile ? '11px' : '12px',
@@ -1373,14 +1599,13 @@ function SimulacionGraficaHistorial({
             <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500 mr-2 flex-shrink-0" />
             <h3 className="text-base sm:text-lg font-semibold text-gray-900">Retroalimentación y Recomendaciones</h3>
           </div>
-          
+
           <div className="space-y-3 sm:space-y-4">
             {recomendacionesContextuales.map((rec, index) => (
-              <div key={index} className={`p-3 sm:p-4 rounded-lg border-l-4 ${
-                rec.tipo === 'critico' ? 'bg-red-50 border-red-500' :
+              <div key={index} className={`p-3 sm:p-4 rounded-lg border-l-4 ${rec.tipo === 'critico' ? 'bg-red-50 border-red-500' :
                 rec.tipo === 'atencion' ? 'bg-yellow-50 border-yellow-500' :
-                'bg-green-50 border-green-500'
-              }`}>
+                  'bg-green-50 border-green-500'
+                }`}>
                 <div className="flex items-start space-x-2 sm:space-x-3">
                   <div className="flex-shrink-0 mt-1">
                     {rec.tipo === 'critico' ? (
@@ -1392,25 +1617,22 @@ function SimulacionGraficaHistorial({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className={`font-medium text-sm sm:text-base ${
-                      rec.tipo === 'critico' ? 'text-red-800' :
+                    <h4 className={`font-medium text-sm sm:text-base ${rec.tipo === 'critico' ? 'text-red-800' :
                       rec.tipo === 'atencion' ? 'text-yellow-800' :
-                      'text-green-800'
-                    }`}>
+                        'text-green-800'
+                      }`}>
                       {rec.materia}
                     </h4>
-                    <p className={`text-xs sm:text-sm mt-1 ${
-                      rec.tipo === 'critico' ? 'text-red-700' :
+                    <p className={`text-xs sm:text-sm mt-1 ${rec.tipo === 'critico' ? 'text-red-700' :
                       rec.tipo === 'atencion' ? 'text-yellow-700' :
-                      'text-green-700'
-                    }`}>
+                        'text-green-700'
+                      }`}>
                       {rec.mensaje}
                     </p>
-                    <p className={`text-xs mt-2 font-medium ${
-                      rec.tipo === 'critico' ? 'text-red-600' :
+                    <p className={`text-xs mt-2 font-medium ${rec.tipo === 'critico' ? 'text-red-600' :
                       rec.tipo === 'atencion' ? 'text-yellow-600' :
-                      'text-green-600'
-                    }`}>
+                        'text-green-600'
+                      }`}>
                       📋 {rec.accion}
                     </p>
                     {rec.recursos && rec.recursos.length > 0 && (
@@ -1440,7 +1662,7 @@ function SimulacionGraficaHistorial({
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500 mr-2 flex-shrink-0" />
               <h3 className="text-base sm:text-lg font-semibold text-gray-900">Análisis detallado de preguntas</h3>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <button
                 onClick={generarAnalisisDetallado}
@@ -1460,6 +1682,26 @@ function SimulacionGraficaHistorial({
                   </>
                 )}
               </button>
+              {/* Indicador de uso de IA */}
+              <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg">
+                <span className="text-xs text-indigo-700 font-medium">Análisis hoy:</span>
+                <span className={`text-xs font-bold ${aiUsage.remaining <= 1 ? 'text-red-600' :
+                  aiUsage.remaining <= 2 ? 'text-yellow-600' :
+                    'text-emerald-600'
+                  }`}>
+                  {aiUsage.remaining}/{aiUsage.limit}
+                </span>
+                {aiUsage.remaining === 0 && (
+                  <span className="text-[10px] text-red-600 animate-pulse ml-1">
+                    ⚠️
+                  </span>
+                )}
+                {aiUsage.remaining === 1 && (
+                  <span className="text-[10px] text-yellow-600 ml-1">
+                    ⚡
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1528,7 +1770,7 @@ function SimulacionGraficaHistorial({
                   {analysisText && (
                     <button
                       onClick={() => {
-                        try { navigator.clipboard.writeText(analysisText); } catch(e) {}
+                        try { navigator.clipboard.writeText(analysisText); } catch (e) { }
                       }}
                       className="px-2.5 py-1.5 text-xs bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                     >Copiar</button>
@@ -1650,7 +1892,7 @@ function SimulacionGraficaHistorial({
                       try {
                         if (lastDatosAnalisis) limpiarCacheAnalisisGemini(lastDatosAnalisis);
                         setUltimoAvisoIA('Caché de análisis limpiada.');
-                      } catch {}
+                      } catch { }
                     }}
                     className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md"
                   >Limpiar caché</button>
@@ -1663,7 +1905,7 @@ function SimulacionGraficaHistorial({
                             navigator.clipboard.writeText(texto);
                             setUltimoAvisoIA('Resumen copiado.');
                           }
-                        } catch {}
+                        } catch { }
                       }}
                       className="px-3 py-1.5 text-xs bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                     >Copiar resumen</button>
@@ -1678,7 +1920,7 @@ function SimulacionGraficaHistorial({
                       <Lightbulb className="w-4 h-4 mr-2 text-blue-500" />
                       Sugerencias Inteligentes Personalizadas
                     </h4>
-                    <button onClick={()=>setMostrarSugerencias(!mostrarSugerencias)} className="text-xs text-blue-600 hover:underline">
+                    <button onClick={() => setMostrarSugerencias(!mostrarSugerencias)} className="text-xs text-blue-600 hover:underline">
                       {mostrarSugerencias ? 'Ocultar' : 'Mostrar'}
                     </button>
                   </div>
@@ -1687,7 +1929,7 @@ function SimulacionGraficaHistorial({
                       <div>
                         <p className="text-xs sm:text-sm text-blue-800 font-medium mb-2">Diagnóstico de Causas Probables</p>
                         <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
-                          {sugerenciasPersonalizadas.causas.map((c,i)=>(
+                          {sugerenciasPersonalizadas.causas.map((c, i) => (
                             <div key={i} className="bg-blue-50 border border-blue-100 rounded-lg p-3">
                               <p className="text-xs font-semibold text-blue-700 truncate">{c.materia}</p>
                               <p className="text-[11px] text-blue-600 mt-1"><span className="font-medium">Causa:</span> {c.causaProbable}</p>
@@ -1703,7 +1945,7 @@ function SimulacionGraficaHistorial({
                         <p className="text-xs sm:text-sm text-blue-800 font-medium mb-2">Plan de 7 Días (Ciclos Cortos)</p>
                         <div className="overflow-x-auto scrollbar-hide">
                           <div className="flex space-x-2">
-                            {sugerenciasPersonalizadas.plan7Dias.map((p,i)=>(
+                            {sugerenciasPersonalizadas.plan7Dias.map((p, i) => (
                               <div key={i} className="min-w-[110px] bg-white border border-blue-100 rounded-lg p-2 shadow-sm">
                                 <p className="text-[10px] font-semibold text-blue-700">{p.dia}</p>
                                 <p className="text-[10px] text-blue-600 truncate">{p.materia}</p>
@@ -1717,7 +1959,7 @@ function SimulacionGraficaHistorial({
                       <div>
                         <p className="text-xs sm:text-sm text-blue-800 font-medium mb-2">Apalancar Fortalezas</p>
                         <div className="grid gap-3 md:grid-cols-2">
-                          {sugerenciasPersonalizadas.apalancarFortalezas.map((f,i)=>(
+                          {sugerenciasPersonalizadas.apalancarFortalezas.map((f, i) => (
                             <div key={i} className="bg-green-50 border border-green-100 rounded-lg p-3">
                               <p className="text-xs font-semibold text-green-700">{f.materia}</p>
                               <p className="text-[11px] text-green-600 mt-1 leading-snug">{f.estrategia}</p>
@@ -1731,24 +1973,24 @@ function SimulacionGraficaHistorial({
                       <div>
                         <p className="text-xs sm:text-sm text-blue-800 font-medium mb-2">Quick Tips Cognitivos</p>
                         <ul className="list-disc pl-4 space-y-1">
-                          {sugerenciasPersonalizadas.quickTips.map((t,i)=>(
+                          {sugerenciasPersonalizadas.quickTips.map((t, i) => (
                             <li key={i} className="text-[11px] text-blue-700 leading-snug">{t}</li>
                           ))}
                         </ul>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
-                          onClick={()=>{
+                          onClick={() => {
                             try {
                               const texto = JSON.stringify(sugerenciasPersonalizadas, null, 2);
                               navigator.clipboard.writeText(texto);
                               setUltimoAvisoIA('Plan copiado al portapapeles.');
-                            } catch(e) { console.warn('No se pudo copiar', e); }
+                            } catch (e) { console.warn('No se pudo copiar', e); }
                           }}
                           className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md"
                         >Copiar Plan</button>
                         <button
-                          onClick={()=>setMostrarSugerencias(false)}
+                          onClick={() => setMostrarSugerencias(false)}
                           className="px-3 py-1.5 text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md"
                         >Cerrar</button>
                       </div>
@@ -1799,16 +2041,16 @@ function SimulacionGraficaHistorial({
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
-                      onClick={()=>{
+                      onClick={() => {
                         try {
-                          navigator.clipboard.writeText(JSON.stringify(insightsAvanzados,null,2));
+                          navigator.clipboard.writeText(JSON.stringify(insightsAvanzados, null, 2));
                           setUltimoAvisoIA('Métricas avanzadas copiadas.');
-                        } catch(e) {}
+                        } catch (e) { }
                       }}
                       className="px-3 py-1.5 text-xs bg-rose-600 hover:bg-rose-700 text-white rounded-md"
                     >Copiar métricas</button>
                     <button
-                      onClick={()=> setInsightsAvanzados(null)}
+                      onClick={() => setInsightsAvanzados(null)}
                       className="px-3 py-1.5 text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md"
                     >Ocultar</button>
                   </div>
@@ -1830,20 +2072,20 @@ function SimulacionGraficaHistorial({
                     <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
                       <p className="text-xs font-medium text-indigo-800 mb-1">F1 Debilidades</p>
                       <div className="w-full bg-white h-2 rounded overflow-hidden border border-indigo-200">
-                        <div style={{width: `${(metricasIA.debilidades.f1*100).toFixed(0)}%`}} className="h-full bg-indigo-500"></div>
+                        <div style={{ width: `${(metricasIA.debilidades.f1 * 100).toFixed(0)}%` }} className="h-full bg-indigo-500"></div>
                       </div>
                       <p className="text-[10px] mt-1 text-indigo-700">
-                        P {(metricasIA.debilidades.precision*100).toFixed(0)}% · R {(metricasIA.debilidades.recall*100).toFixed(0)}% · F1 {(metricasIA.debilidades.f1*100).toFixed(0)}%
+                        P {(metricasIA.debilidades.precision * 100).toFixed(0)}% · R {(metricasIA.debilidades.recall * 100).toFixed(0)}% · F1 {(metricasIA.debilidades.f1 * 100).toFixed(0)}%
                       </p>
                       <p className="text-[10px] text-indigo-600 mt-1">TP {metricasIA.debilidades.tp} / Pred {metricasIA.debilidades.pred} / Gold {metricasIA.debilidades.gold}</p>
                     </div>
                     <div className="bg-green-50 rounded-lg p-3 border border-green-100">
                       <p className="text-xs font-medium text-green-800 mb-1">F1 Fortalezas</p>
                       <div className="w-full bg-white h-2 rounded overflow-hidden border border-green-200">
-                        <div style={{width: `${(metricasIA.fortalezas.f1*100).toFixed(0)}%`}} className="h-full bg-green-500"></div>
+                        <div style={{ width: `${(metricasIA.fortalezas.f1 * 100).toFixed(0)}%` }} className="h-full bg-green-500"></div>
                       </div>
                       <p className="text-[10px] mt-1 text-green-700">
-                        P {(metricasIA.fortalezas.precision*100).toFixed(0)}% · R {(metricasIA.fortalezas.recall*100).toFixed(0)}% · F1 {(metricasIA.fortalezas.f1*100).toFixed(0)}%
+                        P {(metricasIA.fortalezas.precision * 100).toFixed(0)}% · R {(metricasIA.fortalezas.recall * 100).toFixed(0)}% · F1 {(metricasIA.fortalezas.f1 * 100).toFixed(0)}%
                       </p>
                       <p className="text-[10px] text-green-600 mt-1">TP {metricasIA.fortalezas.tp} / Pred {metricasIA.fortalezas.pred} / Gold {metricasIA.fortalezas.gold}</p>
                     </div>
@@ -1851,12 +2093,12 @@ function SimulacionGraficaHistorial({
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                     <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
                       <p className="text-[10px] font-medium text-yellow-800">Cobertura</p>
-                      <p className="text-sm font-semibold text-yellow-700">{(metricasIA.cobertura.valor*100).toFixed(0)}%</p>
+                      <p className="text-sm font-semibold text-yellow-700">{(metricasIA.cobertura.valor * 100).toFixed(0)}%</p>
                       <p className="text-[10px] text-yellow-600">{metricasIA.cobertura.materiasReferenciadas}/{metricasIA.cobertura.total} materias</p>
                     </div>
                     <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
                       <p className="text-[10px] font-medium text-purple-800">Puntaje Global</p>
-                      <p className="text-sm font-semibold text-purple-700">{(metricasIA.puntajeGlobal*100).toFixed(0)}%</p>
+                      <p className="text-sm font-semibold text-purple-700">{(metricasIA.puntajeGlobal * 100).toFixed(0)}%</p>
                       <p className="text-[10px] text-purple-600">F1 debilidades 60%, fortalezas 30%, cobertura 10%</p>
                     </div>
                     <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
@@ -1887,7 +2129,7 @@ function SimulacionGraficaHistorial({
                     <h4 className="font-semibold text-indigo-900 text-sm sm:text-base mb-2">
                       Resumen del Análisis
                     </h4>
-                    <p className="text-indigo-800 text-xs sm:text-sm leading-relaxed" style={{textAlign:'justify'}}>
+                    <p className="text-indigo-800 text-xs sm:text-sm leading-relaxed" style={{ textAlign: 'justify' }}>
                       {analisisIA.resumen}
                     </p>
                   </div>
@@ -1946,6 +2188,115 @@ function SimulacionGraficaHistorial({
                         )}
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Preguntas Problemáticas - NUEVA SECCIÓN */}
+              {analisisIA.preguntasProblematicas && analisisIA.preguntasProblematicas.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 sm:p-6">
+                  <h4 className="font-semibold text-red-900 text-sm sm:text-base mb-3 flex items-center">
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Preguntas Donde Más Fallas
+                  </h4>
+                  <p className="text-xs text-red-700 mb-4">
+                    La IA analizó todas tus respuestas y identificó las preguntas donde más errores cometes. Enfócate en estas para mejorar.
+                  </p>
+                  <div className="space-y-4">
+                    {analisisIA.preguntasProblematicas.map((pregunta, index) => (
+                      <div key={index} className="bg-white rounded-lg p-3 border border-red-200">
+                        <div className="flex items-start justify-between mb-2">
+                          <h5 className="font-medium text-red-800 text-sm flex-1">
+                            Pregunta {pregunta.idPregunta || index + 1}
+                          </h5>
+                          <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                            Fallada {pregunta.vecesFallada || 'varias'} veces
+                          </span>
+                        </div>
+                        <p className="text-red-900 text-xs sm:text-sm mb-2 font-medium">
+                          {pregunta.enunciado}
+                        </p>
+                        {pregunta.respuestasIncorrectas && pregunta.respuestasIncorrectas.length > 0 && (
+                          <div className="mb-2">
+                            <p className="text-xs font-medium text-red-700 mb-1">Respuestas que diste (incorrectas):</p>
+                            <ul className="text-xs text-red-600 space-y-1 pl-4">
+                              {pregunta.respuestasIncorrectas.map((resp, i) => (
+                                <li key={i} className="list-disc">"{resp}"</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {pregunta.respuestaCorrecta && (
+                          <div className="mb-2">
+                            <p className="text-xs font-medium text-green-700 mb-1">Respuesta correcta:</p>
+                            <p className="text-xs text-green-800 pl-4">"{pregunta.respuestaCorrecta}"</p>
+                          </div>
+                        )}
+                        {pregunta.analisis && (
+                          <div className="mb-2">
+                            <p className="text-xs font-medium text-red-800 mb-1">Análisis:</p>
+                            <p className="text-xs text-red-700 pl-4">{pregunta.analisis}</p>
+                          </div>
+                        )}
+                        {pregunta.recomendacion && (
+                          <div className="mt-2 pt-2 border-t border-red-200">
+                            <p className="text-xs font-medium text-red-800 mb-1">💡 Recomendación:</p>
+                            <p className="text-xs text-red-700 pl-4">{pregunta.recomendacion}</p>
+                          </div>
+                        )}
+                        {pregunta.tipoError && (
+                          <span className="inline-block mt-2 text-[10px] px-2 py-0.5 bg-red-100 text-red-700 rounded">
+                            Tipo: {pregunta.tipoError}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Patrones de Errores - NUEVA SECCIÓN */}
+              {analisisIA.patronesErrores && Object.keys(analisisIA.patronesErrores).length > 0 && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 sm:p-6">
+                  <h4 className="font-semibold text-purple-900 text-sm sm:text-base mb-3 flex items-center">
+                    <Brain className="w-4 h-4 mr-2" />
+                    Patrones de Errores Identificados
+                  </h4>
+                  <div className="space-y-3">
+                    {analisisIA.patronesErrores.tipoPreguntaMasFallada && (
+                      <div className="bg-white rounded-lg p-3 border border-purple-200">
+                        <p className="text-xs font-medium text-purple-800 mb-1">Tipo de pregunta donde más fallas:</p>
+                        <p className="text-xs text-purple-700">{analisisIA.patronesErrores.tipoPreguntaMasFallada}</p>
+                      </div>
+                    )}
+                    {analisisIA.patronesErrores.materiaMasProblematica && (
+                      <div className="bg-white rounded-lg p-3 border border-purple-200">
+                        <p className="text-xs font-medium text-purple-800 mb-1">Materia más problemática:</p>
+                        <p className="text-xs text-purple-700">{analisisIA.patronesErrores.materiaMasProblematica}</p>
+                      </div>
+                    )}
+                    {analisisIA.patronesErrores.longitudPregunta && (
+                      <div className="bg-white rounded-lg p-3 border border-purple-200">
+                        <p className="text-xs font-medium text-purple-800 mb-1">Patrón de longitud:</p>
+                        <p className="text-xs text-purple-700">{analisisIA.patronesErrores.longitudPregunta}</p>
+                      </div>
+                    )}
+                    {analisisIA.patronesErrores.patronTemporal && (
+                      <div className="bg-white rounded-lg p-3 border border-purple-200">
+                        <p className="text-xs font-medium text-purple-800 mb-1">Evolución entre intentos:</p>
+                        <p className="text-xs text-purple-700">{analisisIA.patronesErrores.patronTemporal}</p>
+                      </div>
+                    )}
+                    {analisisIA.patronesErrores.erroresRecurrentes && analisisIA.patronesErrores.erroresRecurrentes.length > 0 && (
+                      <div className="bg-white rounded-lg p-3 border border-purple-200">
+                        <p className="text-xs font-medium text-purple-800 mb-2">Errores que se repiten:</p>
+                        <ul className="text-xs text-purple-700 space-y-1 pl-4">
+                          {analisisIA.patronesErrores.erroresRecurrentes.map((error, i) => (
+                            <li key={i} className="list-disc">{error}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -2035,7 +2386,7 @@ function SimulacionGraficaHistorial({
               <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
                 Análisis Inteligente con IA
               </h4>
-                           <p className="text-gray-600 text-sm sm:text-base mb-4 max-w-md mx-auto">
+              <p className="text-gray-600 text-sm sm:text-base mb-4 max-w-md mx-auto">
                 Obtén recomendaciones personalizadas basadas en tu rendimiento y patrones de aprendizaje
               </p>
               <button
@@ -2065,7 +2416,7 @@ function SimulacionGraficaHistorial({
                 Necesitas al menos 2 intentos para apreciar una tendencia; agrega más práctica para un análisis visual más claro.
               </div>
             )}
-            <div className="w-full overflow-x-auto scrollbar-hide relative" style={{WebkitOverflowScrolling: 'touch'}}>
+            <div className="w-full overflow-x-auto scrollbar-hide relative" style={{ WebkitOverflowScrolling: 'touch' }}>
               {/* Fade lateral cuando hay scroll */}
               {dynamicChartWidth > (isMobile ? window.innerWidth - 32 : 0) && (
                 <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent"></div>
@@ -2096,7 +2447,7 @@ function SimulacionGraficaHistorial({
                         fontSize: isMobile ? '11px' : '12px'
                       }}
                       formatter={(value, _name, props) => {
-                        const labelIdx = props?.payload ? Number(String(props.payload.intento).replace(/[^0-9]/g,'')) - 1 : -1;
+                        const labelIdx = props?.payload ? Number(String(props.payload.intento).replace(/[^0-9]/g, '')) - 1 : -1;
                         const tipo = labelIdx === 0 ? 'Puntaje (oficial)' : 'Puntaje (práctica)';
                         return [value + '%', tipo];
                       }}

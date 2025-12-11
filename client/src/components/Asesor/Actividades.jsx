@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { GraduationCap, BookText, Calculator, Users, Languages, Layers } from "lucide-react";
+import { GraduationCap, BookText, Calculator, Users, Languages, Layers, ArrowRight } from "lucide-react";
 import { areaIdFromName } from "../../api/actividades";
 
 const AREAS = [
@@ -41,25 +41,28 @@ const AREAS = [
 ];
 function SectionBadge() {
   return (
-    <div className="relative mx-auto max-w-8xl overflow-hidden rounded-3xl border border-cyan-200/40 bg-gradient-to-r from-cyan-50/70 via-white to-indigo-50/70 p-5 sm:p-7 shadow-sm mb-6">
+    <div className="relative mx-auto max-w-8xl overflow-hidden rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-6 sm:p-8 shadow-xl ring-2 ring-slate-100/50 mb-8">
       {/* blobs suaves al fondo */}
-      <div className="pointer-events-none absolute -left-10 -top-14 h-56 w-56 rounded-full bg-cyan-200/40 blur-3xl" />
-      <div className="pointer-events-none absolute -right-10 -bottom-14 h-56 w-56 rounded-full bg-indigo-200/40 blur-3xl" />
+      <div className="pointer-events-none absolute -left-10 -top-14 h-64 w-64 rounded-full bg-violet-200/50 blur-3xl" />
+      <div className="pointer-events-none absolute -right-10 -bottom-14 h-64 w-64 rounded-full bg-indigo-200/50 blur-3xl" />
 
-      <div className="relative z-10 flex items-center gap-4">
+      <div className="relative z-10 flex items-center gap-5">
         {/* ícono */}
-        <div className="relative grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-sky-500 to-violet-600 text-white shadow-lg sm:size-14">
-          <GraduationCap className="size-6 sm:size-7 text-white" />
+        <div className="relative grid size-16 sm:size-20 place-items-center rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-600 to-purple-600 text-white shadow-2xl ring-4 ring-white/50">
+          <GraduationCap className="size-8 sm:size-10 text-white" />
+          <div className="absolute -top-1 -right-1 inline-grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white ring-2 ring-white shadow-md">
+            <span className="text-[10px] font-bold">★</span>
+          </div>
         </div>
 
         <div className="flex flex-col">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-sky-700 to-violet-700">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">
             ÁREAS DE ESTUDIO
           </h2>
           {/* subrayado doble */}
-          <div className="mt-1 flex gap-2">
-            <span className="h-1 w-16 rounded-full bg-gradient-to-r from-sky-500 to-sky-300" />
-            <span className="h-1 w-10 rounded-full bg-gradient-to-r from-violet-500 to-violet-300" />
+          <div className="mt-2 flex gap-2">
+            <span className="h-1.5 w-20 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 shadow-sm" />
+            <span className="h-1.5 w-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 shadow-sm" />
           </div>
         </div>
       </div>
@@ -72,41 +75,45 @@ function AreaCard({ title, subtitle, icon, colors, to: enlace }) {
   return (
     <article
       className={[
-        "group relative overflow-hidden rounded-2xl p-6 sm:p-7 shadow-sm",
-        "bg-white/90 backdrop-blur",
-        "ring-1",
+        "group relative overflow-hidden rounded-3xl p-7 sm:p-8 shadow-lg",
+        "bg-white border-2",
         ring,
-        "hover:ring-2 hover:ring-black/5",
-        "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
+        "hover:shadow-2xl",
+        "transition-all duration-300 hover:-translate-y-2",
       ].join(" ")}
     >
-      <div className={`w-12 h-12 rounded-xl grid place-items-center text-white shadow ${tint} ring-8 ring-white/60`}>
-        <div className={`w-12 h-12 absolute -z-10 blur-xl opacity-70 bg-gradient-to-br ${from} ${to} rounded-xl`} />
-        <div className={`w-12 h-12 grid place-items-center rounded-xl bg-gradient-to-br ${from} ${to}`}>
-          {icon}
+      {/* Tint de fondo con gradiente sutil */}
+      <div className={`pointer-events-none absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br ${tint} opacity-50 group-hover:opacity-70 transition-opacity duration-300`} />
+      
+      {/* Overlay sutil en hover */}
+      <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/10 group-hover:to-transparent transition-all duration-300" />
+
+      <div className={`relative w-16 h-16 rounded-3xl grid place-items-center text-white shadow-xl ring-4 ring-white/50 group-hover:scale-110 transition-transform duration-300`}>
+        <div className={`w-16 h-16 absolute -z-10 blur-2xl opacity-60 bg-gradient-to-br ${from} ${to} rounded-3xl group-hover:opacity-80 transition-opacity duration-300`} />
+        <div className={`w-16 h-16 grid place-items-center rounded-3xl bg-gradient-to-br ${from} ${to}`}>
+          <div className="scale-125">
+            {icon}
+          </div>
         </div>
       </div>
 
-      <h3 className="mt-5 text-lg sm:text-xl font-semibold leading-tight text-slate-900">
+      <h3 className="mt-6 text-xl sm:text-2xl font-bold leading-tight text-slate-900">
         {title}
       </h3>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-2 text-sm text-slate-600 font-medium leading-relaxed">
         {subtitle}
       </p>
 
-      <div className="mt-6 flex items-center gap-2 text-sm font-medium">
+      <div className="mt-8 flex items-center">
         <Link
           to={enlace}
           state={{ title, id_area: areaIdFromName(title) || null }}
-          className="inline-flex items-center gap-2 text-slate-800 group-hover:underline"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl group"
         >
           Explorar área
-          <span className="transition-transform group-hover:translate-x-0.5">→</span>
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </Link>
       </div>
-
-      {/* Tint de fondo muy leve */}
-      <div className={`pointer-events-none absolute inset-0 -z-10 rounded-2xl ${tint}`} />
     </article>
   );
 }

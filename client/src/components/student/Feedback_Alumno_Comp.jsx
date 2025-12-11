@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown, RefreshCcw, PlusCircle, Info, MessageSquareText, X } from 'lucide-react';
+import { Upload, Eye, CheckCircle, XCircle, Sparkles, Star, ChevronDown, RefreshCcw, PlusCircle, Info, MessageSquareText, X, Calendar, FileText } from 'lucide-react';
 import PdfMobileViewer from '../common/PdfMobileViewer.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { listTasks, listSubmissionsByStudent, createSubmission, createTask, updateTask, cancelSubmissionApi, getSubmissionNote } from '../../api/feedback.js';
@@ -632,31 +632,37 @@ const Feedback_Alumno_Comp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white p-2 xs:p-3 sm:p-4 md:p-5 lg:p-6 font-sans text-gray-800 flex flex-col items-center relative overflow-hidden">
-      {/* Título responsivo */}
-      <h1 className="text-2xl xs:text-3xl sm:text-5xl font-extrabold mb-4 sm:mb-8 text-purple-700 drop-shadow-lg text-center tracking-tight">
-        FEEDBACK
-      </h1>
+    <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 lg:py-8 font-sans text-gray-800 flex flex-col items-center relative overflow-hidden">
+      {/* Título responsivo - Mejorado */}
+      <div className="w-full max-w-7xl mx-auto mb-6 sm:mb-8">
+        <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-extrabold mb-2 sm:mb-4 text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 drop-shadow-2xl text-center tracking-tight">
+          FEEDBACK
+        </h1>
+      </div>
 
-
-      {/* Puntos + Progreso */}
-      <div className="bg-gradient-to-r from-purple-100 to-indigo-100 border-2 border-purple-200 rounded-xl shadow-lg p-4 sm:p-5 mb-4 sm:mb-6 flex flex-col sm:flex-row gap-5 sm:items-center w-full max-w-3xl">
+      {/* Puntos + Progreso - Mejorado */}
+      <div className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 border-2 border-violet-200/50 rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 mb-6 sm:mb-8 flex flex-col sm:flex-row gap-5 sm:items-center w-full max-w-7xl ring-2 ring-violet-100/50">
         <div className="flex items-center gap-4">
-          <Star className="w-10 h-10 sm:w-12 sm:h-12 text-yellow-500 drop-shadow-lg" fill="currentColor" />
+          <div className="relative">
+            <Star className="w-12 h-12 sm:w-14 sm:h-14 text-amber-400 drop-shadow-xl" fill="currentColor" />
+            <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
+              <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+            </div>
+          </div>
           <div>
-            <p className="text-base sm:text-xl font-semibold text-purple-700">Puntos Totales</p>
-            <p className="text-3xl sm:text-4xl font-bold text-purple-800 drop-shadow-lg">{totalPoints} pts</p>
+            <p className="text-base sm:text-lg md:text-xl font-extrabold text-violet-700">Puntos Totales</p>
+            <p className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600 drop-shadow-lg">{totalPoints} pts</p>
           </div>
         </div>
         <div className="flex-1">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-purple-700">Progreso mensual</span>
-            <span className="text-xs font-bold text-purple-800">{monthProgress}%</span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs sm:text-sm font-extrabold text-violet-700">Progreso mensual</span>
+            <span className="text-xs sm:text-sm font-extrabold text-violet-800 bg-violet-100 px-2.5 py-1 rounded-lg border border-violet-200">{monthProgress}%</span>
           </div>
-          <div className="w-full h-3 bg-purple-200 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 transition-all duration-500" style={{ width: `${monthProgress}%` }} />
+          <div className="w-full h-4 bg-violet-200/50 rounded-full overflow-hidden shadow-inner border border-violet-200/50">
+            <div className="h-full bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500 transition-all duration-500 shadow-lg" style={{ width: `${monthProgress}%` }} />
           </div>
-          <p className="mt-1 text-[10px] text-purple-600 text-right">{monthSubmitted}/{monthTotal} entregadas</p>
+          <p className="mt-2 text-xs sm:text-sm text-violet-600 font-semibold text-right">{monthSubmitted}/{monthTotal} entregadas</p>
         </div>
       </div>
       {fetchError && (
@@ -763,28 +769,29 @@ const Feedback_Alumno_Comp = () => {
         </div>
       )}
 
-      {/* Filtros: Mes + Búsqueda */}
-      <div className="mb-4 sm:mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full max-w-3xl lg:static sticky top-0 z-30 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 px-1 pt-2 rounded-xl">
-        <label className="text-sm sm:text-lg font-medium text-purple-700 drop-shadow-sm text-center sm:text-left">
-          Feedback del mes:
+      {/* Filtros: Mes + Búsqueda - Mejorado */}
+      <div className="mb-4 sm:mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full max-w-7xl lg:static sticky top-0 z-30 bg-white/95 backdrop-blur-sm supports-[backdrop-filter]:bg-white/80 px-3 sm:px-4 pt-3 pb-2 rounded-xl sm:rounded-2xl border-2 border-violet-200/50 shadow-lg">
+        <label className="text-sm sm:text-base md:text-lg font-extrabold text-violet-700 flex items-center gap-2 text-center sm:text-left">
+          <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span>Feedback del mes:</span>
         </label>
         <div className="relative w-full sm:w-auto">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full sm:min-w-[200px] p-3 pr-10 rounded-lg bg-white border-2 border-purple-200 text-purple-700 shadow-lg focus:ring-2 focus:ring-purple-400 focus:outline-none focus:border-purple-400 flex items-center justify-between text-sm sm:text-base"
+            className="w-full sm:min-w-[200px] p-3 pr-10 rounded-xl bg-white border-2 border-violet-300 text-violet-700 shadow-md hover:shadow-lg focus:ring-2 focus:ring-violet-400 focus:outline-none focus:border-violet-400 active:scale-95 transition-all touch-manipulation flex items-center justify-between text-sm sm:text-base font-semibold"
             aria-haspopup="listbox"
             aria-expanded={isDropdownOpen}
             aria-label="Seleccionar mes"
           >
             <span className="truncate">{getSelectedMonthName()}</span>
-            <ChevronDown className={`w-5 h-5 text-purple-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-5 h-5 text-violet-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-purple-200 rounded-lg shadow-xl z-30 max-h-48 overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-violet-200 rounded-xl shadow-xl z-30 max-h-48 overflow-y-auto">
               <div
                 onClick={() => handleMonthSelect('all', 'Todos los meses')}
-                className="px-4 py-3 hover:bg-purple-50 cursor-pointer text-purple-700 border-b border-purple-100"
+                className={`px-4 py-3 hover:bg-violet-50 cursor-pointer text-violet-700 border-b border-violet-100 font-medium transition-colors ${selectedMonth === 'all' ? 'bg-violet-50' : ''}`}
               >
                 Todos los meses
               </div>
@@ -792,7 +799,7 @@ const Feedback_Alumno_Comp = () => {
                 <div
                   key={index}
                   onClick={() => handleMonthSelect(month, month)}
-                  className="px-4 py-3 hover:bg-purple-50 cursor-pointer text-purple-700 border-b border-purple-100 last:border-b-0"
+                  className={`px-4 py-3 hover:bg-violet-50 cursor-pointer text-violet-700 border-b border-violet-100 last:border-b-0 font-medium transition-colors ${selectedMonth === month ? 'bg-violet-50' : ''}`}
                 >
                   {month}
                 </div>
@@ -800,33 +807,38 @@ const Feedback_Alumno_Comp = () => {
             </div>
           )}
         </div>
-        <div className="flex-1">
+        <div className="flex-1 relative">
           <input
             type="text"
             placeholder="Buscar tarea..."
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            className="w-full p-3 rounded-lg bg-white border-2 border-purple-200 text-purple-700 shadow-lg focus:ring-2 focus:ring-purple-400 focus:outline-none focus:border-purple-400 placeholder-purple-300 text-sm sm:text-base"
+            className="w-full p-3 pr-10 rounded-xl bg-white border-2 border-violet-300 text-violet-700 shadow-md hover:shadow-lg focus:ring-2 focus:ring-violet-400 focus:outline-none focus:border-violet-400 placeholder-violet-300 text-sm sm:text-base font-medium transition-all"
             aria-label="Buscar tarea"
           />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-violet-400">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
         </div>
         <div className="flex items-center justify-end">
           <button
             onClick={openCreateTask}
             disabled={studentOwnedCountThisMonth >= perMonthCap || isPastSelectedMonth}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg border-2 ${(studentOwnedCountThisMonth >= perMonthCap || isPastSelectedMonth) ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 text-white border-purple-700'}`}
+            className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl text-sm font-extrabold shadow-lg border-2 transition-all active:scale-95 touch-manipulation ${(studentOwnedCountThisMonth >= perMonthCap || isPastSelectedMonth) ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white border-violet-700 hover:shadow-xl'}`}
             title={studentOwnedCountThisMonth >= perMonthCap ? `Has alcanzado el límite mensual de ${perMonthCap} actividades creadas` : (isPastSelectedMonth ? 'No puedes crear actividades en meses pasados' : 'Crear nueva actividad')}
           >
             <PlusCircle className="w-5 h-5" />
-            Nueva actividad
+            <span className="hidden sm:inline">Nueva actividad</span>
+            <span className="sm:hidden">Nueva</span>
           </button>
         </div>
       </div>
 
-      {/* Vista de escritorio - Tabla */}
-      {/* Contenedor más ancho y con scroll horizontal para evitar que el contenido se mueva o se corte */}
+      {/* Vista de escritorio - Tabla - Mejorada */}
       <div className="hidden lg:block w-full max-w-7xl 2xl:max-w-[1600px]">
-        <div className="bg-purple-100 bg-opacity-70 backdrop-blur-sm border-2 border-purple-300 rounded-2xl shadow-xl overflow-x-auto">
+        <div className="bg-white border-2 border-violet-200/50 rounded-xl sm:rounded-2xl shadow-xl overflow-x-auto ring-2 ring-violet-100/50">
           <table className="min-w-[1200px] 2xl:min-w-[1200px] table-fixed text-[13px] 2xl:text-[12px]">
             <colgroup>
               <col style={{ width: '6%' }} />
@@ -838,51 +850,51 @@ const Feedback_Alumno_Comp = () => {
               <col style={{ width: '6%' }} />
               <col style={{ width: '6%' }} />
             </colgroup>
-            <thead className="bg-gradient-to-r from-purple-500 to-indigo-600">
+            <thead className="bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500">
               <tr>
-                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">No.</th>
-                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Nombre de la tarea</th>
-                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Cargar mi actividad</th>
-                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Fecha de entrega</th>
-                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Visualizar</th>
-                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Nota</th>
-                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Entregado</th>
-                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-bold text-white uppercase tracking-wider">Puntaje</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-extrabold text-white uppercase tracking-widest">No.</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-extrabold text-white uppercase tracking-widest">Nombre de la tarea</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-extrabold text-white uppercase tracking-widest">Cargar mi actividad</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-extrabold text-white uppercase tracking-widest">Fecha de entrega</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-extrabold text-white uppercase tracking-widest">Visualizar</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-extrabold text-white uppercase tracking-widest">Nota</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-extrabold text-white uppercase tracking-widest">Entregado</th>
+                <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-center text-xs 2xl:text-[11px] font-extrabold text-white uppercase tracking-widest">Puntaje</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-purple-300 bg-purple-100 bg-opacity-50">
+            <tbody className="divide-y divide-violet-200/50 bg-white">
               {paginatedTasks.length > 0 ? (
                 paginatedTasks.map((task, index) => (
-                  <tr key={task.id} className="hover:bg-purple-200 hover:bg-opacity-70 transition-all duration-200">
-                    <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px] font-medium text-purple-700">{indexOfFirst + index + 1}</td>
-                    <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px] text-gray-800 font-medium truncate" title={task.name}>{task.name}</td>
+                  <tr key={task.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-violet-50/30'} hover:bg-violet-100/50 transition-colors duration-200`}>
+                    <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px] font-extrabold text-violet-700">{indexOfFirst + index + 1}</td>
+                    <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px] text-gray-800 font-bold truncate" title={task.name}>{task.name}</td>
                     <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
                       <div className="flex justify-center items-center">
                         <button
                           onClick={() => openModal(task)}
                           disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
-                          className={`flex items-center px-4 2xl:px-3 py-2 2xl:py-1.5 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 text-sm 2xl:text-xs ${(!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
-                              ? 'bg-gray-400 cursor-not-allowed text-white'
+                          className={`flex items-center px-4 2xl:px-3 py-2 2xl:py-1.5 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 text-sm 2xl:text-xs font-extrabold border-2 touch-manipulation ${(!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
+                              ? 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
                               : (task.isSubmitted
-                                ? 'bg-purple-500 hover:bg-purple-600 text-white focus:ring-purple-300'
-                                : 'bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-300')
+                                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white focus:ring-violet-300 border-violet-700'
+                                : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white focus:ring-blue-300 border-blue-600')
                             }`}
                         >
-                          <Upload className="w-5 h-5 mr-2" />
-                          {task.isSubmitted ? 'Gestionar Entrega' : (monthlyCapReached ? 'Límite mensual' : 'Subir Tarea')}
+                          <Upload className="w-4 h-4 mr-1.5" />
+                          {task.isSubmitted ? 'Gestionar' : (monthlyCapReached ? 'Límite' : 'Subir')}
                         </button>
                       </div>
                     </td>
                     <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px] text-gray-800">
                       <div className="flex flex-col gap-1">
-                        <span>{(task._isStudentOwned && !task.isSubmitted) ? 'Se genera al subir' : new Date(task.dueDate).toLocaleDateString('es-ES', {
+                        <span className="font-semibold">{(task._isStudentOwned && !task.isSubmitted) ? 'Se genera al subir' : new Date(task.dueDate).toLocaleDateString('es-ES', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
                         })}</span>
                         {(() => {
                           if (task._isStudentOwned && !task.isSubmitted) return null; const u = getUrgencyInfo(task.dueDate, task.isSubmitted); return u ? (
-                            <span className={`inline-block px-2 py-0.5 text-[10px] font-semibold rounded-full ring-1 ${u.color} ${u.ring}`}>{u.label}</span>
+                            <span className={`inline-block px-2 py-0.5 text-[10px] font-extrabold rounded-full border-2 ${u.color} ${u.ring}`}>{u.label}</span>
                           ) : null;
                         })()}
                       </div>
@@ -892,9 +904,9 @@ const Feedback_Alumno_Comp = () => {
                         <button
                           onClick={() => openViewTaskModal(task)}
                           disabled={!task.submittedPdf}
-                          className={`p-3 2xl:p-2.5 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 ${task.submittedPdf
-                              ? 'bg-green-500 hover:bg-green-600 text-white focus:ring-green-300'
-                              : 'bg-gray-400 cursor-not-allowed text-white'
+                          className={`p-3 2xl:p-2.5 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 border-2 touch-manipulation ${task.submittedPdf
+                              ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white focus:ring-emerald-300 border-emerald-600'
+                              : 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
                             }`}
                         >
                           <Eye className="w-5 h-5" />
@@ -907,13 +919,13 @@ const Feedback_Alumno_Comp = () => {
                           (notesBySubmission[task._subId] ? (
                             <button
                               onClick={() => openNoteModal(task)}
-                              className="inline-flex items-center gap-2 px-3 2xl:px-2.5 py-1.5 2xl:py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow text-sm 2xl:text-xs"
+                              className="inline-flex items-center gap-1.5 px-3 2xl:px-2.5 py-1.5 2xl:py-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg text-sm 2xl:text-xs font-extrabold border-2 border-violet-700 transition-all active:scale-95 touch-manipulation"
                               title="Ver nota del asesor"
                             >
                               <MessageSquareText className="w-4 h-4" /> Nota
                             </button>
                           ) : (
-                            <span className="text-gray-500">Sin nota</span>
+                            <span className="text-gray-500 font-medium">Sin nota</span>
                           ))
                         ) : (
                           <span className="text-gray-400">—</span>
@@ -923,20 +935,20 @@ const Feedback_Alumno_Comp = () => {
                     <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
                       <div className="flex justify-center items-center">
                         {task.isSubmitted ? (
-                          <CheckCircle className="w-7 h-7 text-green-500 drop-shadow-lg" />
+                          <CheckCircle className="w-7 h-7 2xl:w-8 2xl:h-8 text-emerald-500 drop-shadow-lg" />
                         ) : (
-                          <XCircle className="w-7 h-7 text-red-500 drop-shadow-lg" />
+                          <XCircle className="w-7 h-7 2xl:w-8 2xl:h-8 text-red-500 drop-shadow-lg" />
                         )}
                       </div>
                     </td>
                     <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
-                      <div className="text-purple-700 font-semibold text-center">{task.score !== null ? `${task.score} pts` : '-'}</div>
+                      <div className="text-violet-700 font-extrabold text-center bg-gradient-to-r from-violet-100 to-indigo-100 px-2.5 py-1 rounded-lg border border-violet-200">{task.score !== null ? `${task.score} pts` : '-'}</div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="px-6 py-8 text-center text-gray-600 text-lg font-medium">
+                  <td colSpan="8" className="px-6 py-8 text-center text-gray-600 text-base sm:text-lg font-medium">
                     No hay tareas para el mes seleccionado.
                   </td>
                 </tr>
@@ -944,31 +956,31 @@ const Feedback_Alumno_Comp = () => {
             </tbody>
           </table>
         </div>
-        {/* Controles de paginación escritorio */}
+        {/* Controles de paginación escritorio - Mejorados */}
         {filteredTasks.length > TASKS_PER_PAGE && (
-          <div className="flex items-center justify-between px-6 py-4 bg-white border-t border-purple-300">
+          <div className="flex items-center justify-between px-6 py-4 bg-white border-t-2 border-violet-200 rounded-b-xl sm:rounded-b-2xl">
             <button
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
-              className={`px-3 py-1 rounded-md text-sm font-medium border ${currentPage === 1 ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+              className={`px-4 py-2 rounded-xl text-sm font-extrabold border-2 transition-all active:scale-95 touch-manipulation ${currentPage === 1 ? 'text-gray-400 border-gray-200 cursor-not-allowed bg-gray-50' : 'text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400 shadow-sm'}`}
             >
               Anterior
             </button>
-            <div className="flex items-center gap-1 flex-wrap justify-center">
+            <div className="flex items-center gap-1.5 flex-wrap justify-center">
               {buildPageList().map((p, idx) => (
                 p === '...'
-                  ? <span key={idx} className="px-2 py-1 text-sm text-gray-500 select-none">...</span>
+                  ? <span key={idx} className="px-2 py-1 text-sm text-gray-500 select-none font-bold">...</span>
                   : <button
                     key={p}
                     onClick={() => goToPage(p)}
-                    className={`w-8 h-8 rounded-md text-sm font-medium border flex items-center justify-center transition ${p === currentPage ? 'bg-purple-600 text-white border-purple-600' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+                    className={`w-9 h-9 rounded-xl text-sm font-extrabold border-2 flex items-center justify-center transition-all active:scale-95 touch-manipulation shadow-sm ${p === currentPage ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-700 shadow-lg' : 'text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400'}`}
                   >{p}</button>
               ))}
             </div>
             <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded-md text-sm font-medium border ${currentPage === totalPages ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+              className={`px-4 py-2 rounded-xl text-sm font-extrabold border-2 transition-all active:scale-95 touch-manipulation ${currentPage === totalPages ? 'text-gray-400 border-gray-200 cursor-not-allowed bg-gray-50' : 'text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400 shadow-sm'}`}
             >
               Siguiente
             </button>
@@ -976,28 +988,28 @@ const Feedback_Alumno_Comp = () => {
         )}
       </div>
 
-      {/* Vista móvil - Cards en 2 columnas */}
-      <div className="lg:hidden w-full max-w-4xl">
+      {/* Vista móvil - Cards en 2 columnas - Mejoradas */}
+      <div className="lg:hidden w-full max-w-7xl">
         {paginatedTasks.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
             {paginatedTasks.map((task, index) => (
               <div
                 key={task.id}
-                className="relative bg-gradient-to-br from-purple-100 via-indigo-100 to-white border-2 border-purple-200 rounded-3xl shadow-2xl p-3 sm:p-4 md:p-5 flex flex-col gap-2 transition-transform duration-200 hover:scale-[1.02] hover:shadow-purple-300/60"
+                className="relative bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 border-2 border-violet-200/50 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-5 flex flex-col gap-2.5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-violet-300/60 ring-1 ring-violet-100/50"
               >
                 {/* Header con badge alineado (sin superponer) */}
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md shrink-0">#{indexOfFirst + index + 1}</span>
+                    <span className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-extrabold px-2.5 py-1 rounded-full shadow-md shrink-0 border-2 border-white">#{indexOfFirst + index + 1}</span>
                     <h3
-                      className="font-bold text-purple-800 text-sm sm:text-base leading-snug break-words line-clamp-2 min-w-0"
+                      className="font-extrabold text-violet-800 text-xs sm:text-sm leading-snug break-words line-clamp-2 min-w-0"
                       title={task.name}
                     >
                       {task.name}
                     </h3>
                     <button
                       type="button"
-                      className="sm:hidden inline-flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 text-purple-700 border border-purple-200 shrink-0"
+                      className="sm:hidden inline-flex items-center justify-center w-6 h-6 rounded-full bg-violet-100 text-violet-700 border-2 border-violet-200 shrink-0 hover:bg-violet-200 transition-colors"
                       aria-label="Ver nombre completo"
                       title="Ver nombre completo"
                       onClick={() => setShowFullNameId(task.id)}
@@ -1005,24 +1017,24 @@ const Feedback_Alumno_Comp = () => {
                       <Info className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm ${task.isSubmitted ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-red-100 text-red-600 border border-red-300'}`}>
+                  <span className={`shrink-0 px-2 py-0.5 rounded-xl text-[10px] font-extrabold shadow-sm border-2 ${task.isSubmitted ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-red-100 text-red-600 border-red-300'}`}>
                     {task.isSubmitted ? 'Entregado' : 'Pendiente'}
                   </span>
                 </div>
                 {/* Overlay con nombre completo (solo móvil) */}
                 {showFullNameId === task.id && (
-                  <div className="lg:hidden absolute left-2 right-2 top-10 z-20 bg-white/95 border border-purple-200 rounded-lg shadow-xl p-2 text-[13px] text-purple-800 break-words">
+                  <div className="lg:hidden absolute left-2 right-2 top-10 z-20 bg-white/95 border-2 border-violet-200 rounded-xl shadow-xl p-2 text-[13px] text-violet-800 break-words font-semibold">
                     {task.name}
                   </div>
                 )}
                 {/* Puntaje */}
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Star className="w-4 h-4 text-yellow-400 drop-shadow" fill="currentColor" />
-                  <span className="text-sm sm:text-base font-bold text-purple-700">{task.score !== null ? `${task.score} pts` : '-'}</span>
+                  <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 drop-shadow" fill="currentColor" />
+                  <span className="text-sm sm:text-base font-extrabold text-violet-700 bg-gradient-to-r from-violet-100 to-indigo-100 px-2 py-0.5 rounded-lg border border-violet-200">{task.score !== null ? `${task.score} pts` : '-'}</span>
                 </div>
                 {/* Fecha de entrega + urgencia */}
-                <div className="flex items-center gap-1.5 text-[11px] text-gray-600 font-medium mb-2 flex-wrap">
-                  <span className="bg-purple-200 text-purple-700 px-2 py-0.5 rounded-lg">Entrega:</span>
+                <div className="flex items-center gap-1.5 text-[11px] text-gray-600 font-semibold mb-2 flex-wrap">
+                  <span className="bg-violet-200 text-violet-700 px-2 py-0.5 rounded-lg border border-violet-300">Entrega:</span>
                   <span className="text-gray-700">{(task._isStudentOwned && !task.isSubmitted) ? 'Se genera al subir' : new Date(task.dueDate).toLocaleDateString('es-ES', {
                     year: 'numeric',
                     month: 'short',
@@ -1030,42 +1042,42 @@ const Feedback_Alumno_Comp = () => {
                   })}</span>
                   {(() => {
                     if (task._isStudentOwned && !task.isSubmitted) return null; const u = getUrgencyInfo(task.dueDate, task.isSubmitted); return u ? (
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${u.color} ring-1 ${u.ring}`}>{u.label}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border-2 ${u.color} ${u.ring}`}>{u.label}</span>
                     ) : null;
                   })()}
                 </div>
                 {/* Estado visual */}
                 <div className="flex items-center gap-1.5 mb-2">
                   {task.isSubmitted ? (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
                   ) : (
-                    <XCircle className="w-5 h-5 text-red-500" />
+                    <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
                   )}
-                  <span className={`font-semibold text-xs ${task.isSubmitted ? 'text-green-600' : 'text-red-500'}`}>{task.isSubmitted ? '¡Entregado!' : 'Sin entregar'}</span>
+                  <span className={`font-extrabold text-xs sm:text-sm ${task.isSubmitted ? 'text-emerald-600' : 'text-red-500'}`}>{task.isSubmitted ? '¡Entregado!' : 'Sin entregar'}</span>
                 </div>
                 {/* Botones de acción */}
                 <div className={`grid ${notesBySubmission[task._subId] ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mt-auto`}>
                   <button
                     onClick={() => openModal(task)}
                     disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
-                    className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold gap-1 ${(!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
-                        ? 'bg-gray-400 cursor-not-allowed text-white'
-                        : (task.isSubmitted ? 'bg-purple-500 hover:bg-purple-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white')
+                    className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-xl shadow-md transition-all duration-200 text-xs font-extrabold gap-1 border-2 active:scale-95 touch-manipulation ${(!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
+                        ? 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
+                        : (task.isSubmitted ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white border-violet-700' : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-blue-600')
                       }`}
                     aria-label={task.isSubmitted ? 'Gestionar entrega' : 'Subir tarea'}
                     title={task.isSubmitted ? 'Gestionar entrega' : (monthlyCapReached ? 'Límite mensual' : 'Subir tarea')}
                   >
                     <Upload className="w-4 h-4 shrink-0" />
                     <span className="hidden sm:inline">
-                      {task.isSubmitted ? 'Gestionar' : (monthlyCapReached ? 'Límite mensual' : 'Subir')}
+                      {task.isSubmitted ? 'Gestionar' : (monthlyCapReached ? 'Límite' : 'Subir')}
                     </span>
                   </button>
                   <button
                     onClick={() => openViewTaskModal(task)}
                     disabled={!task.submittedPdf}
-                    className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold ${task.submittedPdf
-                        ? 'bg-green-500 hover:bg-green-600 text-white'
-                        : 'bg-gray-400 cursor-not-allowed text-white'
+                    className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-xl shadow-md transition-all duration-200 text-xs font-extrabold border-2 active:scale-95 touch-manipulation ${task.submittedPdf
+                        ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-emerald-600'
+                        : 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
                       }`}
                     aria-label="Ver tarea"
                     title={task.submittedPdf ? 'Ver' : 'Sin archivo'}
@@ -1076,7 +1088,7 @@ const Feedback_Alumno_Comp = () => {
                   {notesBySubmission[task._subId] && (
                     <button
                       onClick={() => openNoteModal(task)}
-                      className="w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-lg shadow-md transition-all duration-200 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white"
+                      className="w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-xl shadow-md transition-all duration-200 text-xs font-extrabold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white border-2 border-violet-700 active:scale-95 touch-manipulation"
                       aria-label="Ver nota"
                       title="Ver nota del asesor"
                     >
@@ -1089,75 +1101,77 @@ const Feedback_Alumno_Comp = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white border-2 border-purple-200 rounded-xl shadow-lg p-8 text-center">
-            <p className="text-gray-600 text-base font-medium">
+          <div className="bg-white border-2 border-violet-200/50 rounded-xl sm:rounded-2xl shadow-lg p-8 text-center">
+            <p className="text-gray-600 text-base sm:text-lg font-medium">
               No hay tareas para el mes seleccionado.
             </p>
           </div>
         )}
-        {/* Controles de paginación móvil */}
+        {/* Controles de paginación móvil - Mejorados */}
         {filteredTasks.length > TASKS_PER_PAGE && (
-          <div className="flex items-center justify-between mt-6 bg-white border border-purple-200 rounded-xl p-4 shadow-md">
+          <div className="flex items-center justify-between mt-6 bg-white border-2 border-violet-200/50 rounded-xl p-4 shadow-md">
             <button
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
-              className={`px-3 py-2 rounded-lg text-xs font-medium border ${currentPage === 1 ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+              className={`px-3 py-2 rounded-xl text-xs font-extrabold border-2 transition-all active:scale-95 touch-manipulation ${currentPage === 1 ? 'text-gray-400 border-gray-200 cursor-not-allowed bg-gray-50' : 'text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400 shadow-sm'}`}
             >Anterior</button>
-            <div className="flex items-center gap-1 flex-wrap justify-center text-xs">
+            <div className="flex items-center gap-1.5 flex-wrap justify-center text-xs">
               {buildPageList().map((p, idx) => (
                 p === '...'
-                  ? <span key={idx} className="px-2 py-1 text-gray-500 select-none">...</span>
+                  ? <span key={idx} className="px-2 py-1 text-gray-500 select-none font-bold">...</span>
                   : <button
                     key={p}
                     onClick={() => goToPage(p)}
-                    className={`w-7 h-7 rounded-md border flex items-center justify-center ${p === currentPage ? 'bg-purple-600 text-white border-purple-600' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+                    className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all active:scale-95 touch-manipulation shadow-sm ${p === currentPage ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-700 shadow-lg' : 'text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400'}`}
                   >{p}</button>
               ))}
             </div>
             <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className={`px-3 py-2 rounded-lg text-xs font-medium border ${currentPage === totalPages ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+              className={`px-3 py-2 rounded-xl text-xs font-extrabold border-2 transition-all active:scale-95 touch-manipulation ${currentPage === totalPages ? 'text-gray-400 border-gray-200 cursor-not-allowed bg-gray-50' : 'text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400 shadow-sm'}`}
             >Siguiente</button>
           </div>
         )}
       </div>
 
-      {/* Modal para Subir/Cancelar */}
+      {/* Modal para Subir/Cancelar - Mejorado */}
       {showModal && selectedTask && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100 border-2 border-purple-200">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-purple-700">
-              {selectedTask.isSubmitted ? 'Gestionar Entrega' : 'Subir Tarea'}
-            </h2>
+          <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100 border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+            <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 -m-6 sm:-m-8 mb-6 sm:mb-8 p-5 sm:p-6 rounded-t-2xl sm:rounded-t-3xl">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+                {selectedTask.isSubmitted ? 'Gestionar Entrega' : 'Subir Tarea'}
+              </h2>
+            </div>
             {monthlyCapReached && (
               <div className="mb-3 text-xs sm:text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                 Límite mensual alcanzado ({perMonthCap}). Podrás subir nuevamente el próximo mes.
               </div>
             )}
-            <p className="mb-6 text-gray-700 text-sm sm:text-base">
-              Tarea: <span className="font-semibold text-purple-600">{selectedTask.name}</span>
+            <p className="mb-6 text-gray-700 text-sm sm:text-base font-medium">
+              Tarea: <span className="font-extrabold text-violet-600">{selectedTask.name}</span>
             </p>
 
             {selectedTask.isSubmitted ? (
               <>
-                <p className="mb-4 text-gray-700 text-sm sm:text-base">Ya has subido un archivo. ¿Deseas cancelarlo o subir uno nuevo?</p>
+                <p className="mb-4 text-gray-700 text-sm sm:text-base font-medium">Ya has subido un archivo. ¿Deseas cancelarlo o subir uno nuevo?</p>
                 {fileError && (
-                  <div className="mb-4 text-xs sm:text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+                  <div className="mb-4 text-xs sm:text-sm text-red-600 bg-red-50 border-2 border-red-200 rounded-xl p-3 font-semibold">
                     {fileError} {' '}
                     {fileError.includes('1.5MB') && (
-                      <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Comprimir PDF</a>
+                      <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-bold">Comprimir PDF</a>
                     )}
                   </div>
                 )}
                 <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
                   <button
                     onClick={() => handleCancelSubmission(selectedTask.id)}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-300 text-sm"
+                    className="px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-300 text-sm font-extrabold border-2 border-red-600 touch-manipulation"
                   >
                     Cancelar Entrega
                   </button>
-                  <label className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm cursor-pointer">
+                  <label className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm cursor-pointer font-extrabold border-2 border-blue-600 touch-manipulation text-center">
                     {loadingUpload ? 'Subiendo...' : 'Subir Nuevo PDF'}
                     <input
                       type="file"
@@ -1174,19 +1188,19 @@ const Feedback_Alumno_Comp = () => {
                     />
                   </label>
                 </div>
-                <div className="mt-3 text-[11px] sm:text-xs text-gray-600 leading-snug">
-                  Límite: <span className="font-semibold">1.5MB</span>. {lastSelectedSizeMB && (<span>Archivo elegido: {lastSelectedSizeMB} MB. </span>)}
-                  ¿Pesa más? <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Comprimir PDF</a>
+                <div className="mt-3 text-[11px] sm:text-xs text-gray-600 leading-snug font-medium">
+                  Límite: <span className="font-extrabold">1.5MB</span>. {lastSelectedSizeMB && (<span>Archivo elegido: {lastSelectedSizeMB} MB. </span>)}
+                  ¿Pesa más? <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-bold">Comprimir PDF</a>
                 </div>
               </>
             ) : (
               <>
-                <p className="mb-4 text-gray-700 text-sm sm:text-base">Por favor, sube tu tarea en formato PDF.</p>
+                <p className="mb-4 text-gray-700 text-sm sm:text-base font-medium">Por favor, sube tu tarea en formato PDF.</p>
                 {fileError && (
-                  <div className="mb-4 text-xs sm:text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+                  <div className="mb-4 text-xs sm:text-sm text-red-600 bg-red-50 border-2 border-red-200 rounded-xl p-3 font-semibold">
                     {fileError} {' '}
                     {fileError.includes('1.5MB') && (
-                      <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Comprimir PDF</a>
+                      <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-bold">Comprimir PDF</a>
                     )}
                   </div>
                 )}
@@ -1200,17 +1214,17 @@ const Feedback_Alumno_Comp = () => {
                       handleFileUpload(selectedTask.id, f);
                     }
                   }}
-                  className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 file:shadow-md mb-2"
+                  className="block w-full text-sm text-gray-700 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-2 file:text-sm file:font-extrabold file:bg-gradient-to-r file:from-violet-100 file:to-indigo-100 file:text-violet-700 hover:file:from-violet-200 hover:file:to-indigo-200 file:shadow-md file:border-violet-300 mb-2"
                   disabled={loadingUpload}
                 />
-                <div className="mb-4 text-[11px] sm:text-xs text-gray-600 leading-snug">
-                  Límite: <span className="font-semibold">1.5MB</span>. {lastSelectedSizeMB && (<span>Archivo elegido: {lastSelectedSizeMB} MB. </span>)}
-                  ¿Pesa más? <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Comprimir PDF</a>
+                <div className="mb-4 text-[11px] sm:text-xs text-gray-600 leading-snug font-medium">
+                  Límite: <span className="font-extrabold">1.5MB</span>. {lastSelectedSizeMB && (<span>Archivo elegido: {lastSelectedSizeMB} MB. </span>)}
+                  ¿Pesa más? <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-bold">Comprimir PDF</a>
                 </div>
                 <div className="flex justify-end">
                   <button
                     onClick={closeModal}
-                    className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-300 text-sm"
+                    className="px-4 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-300 text-sm font-extrabold border-2 border-gray-600 touch-manipulation"
                   >
                     Cerrar
                   </button>
@@ -1221,7 +1235,7 @@ const Feedback_Alumno_Comp = () => {
         </div>
       )}
 
-      {/* Modal de visualización de tarea */}
+      {/* Modal de visualización de tarea - Mejorado */}
       {showViewTaskModal && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 pt-16 sm:pt-20"
@@ -1229,18 +1243,18 @@ const Feedback_Alumno_Comp = () => {
             if (e.target === e.currentTarget) closeViewTaskModal();
           }}
         >
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-4xl 2xl:max-w-5xl max-h-[85vh] sm:max-h-[75vh] transform transition-all duration-300 scale-100 border-2 border-purple-200 flex flex-col overflow-hidden">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-4xl 2xl:max-w-5xl max-h-[85vh] sm:max-h-[75vh] transform transition-all duration-300 scale-100 border-2 border-violet-200/50 ring-2 ring-violet-100/50 flex flex-col overflow-hidden">
             {/* Header con gradiente */}
-            <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0">
+            <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 shadow-lg">
               <div className="flex-1 min-w-0 pr-2">
-                <h2 className="text-lg sm:text-2xl font-bold text-white mb-0.5 sm:mb-1">Visualizar Tarea</h2>
-                <p className="text-purple-100 text-xs sm:text-sm truncate">
-                  Tarea: <span className="font-semibold text-white">{viewingTaskName}</span>
+                <h2 className="text-lg sm:text-2xl font-extrabold text-white mb-0.5 sm:mb-1">Visualizar Tarea</h2>
+                <p className="text-violet-100 text-xs sm:text-sm truncate font-medium">
+                  Tarea: <span className="font-extrabold text-white">{viewingTaskName}</span>
                 </p>
               </div>
               <button
                 onClick={closeViewTaskModal}
-                className="bg-white/20 hover:bg-white/30 text-white rounded-full p-1.5 sm:p-2 transition-all duration-200 hover:scale-110 flex-shrink-0"
+                className="bg-white/20 hover:bg-white/30 text-white rounded-xl p-1.5 sm:p-2 transition-all duration-200 hover:scale-110 active:scale-95 flex-shrink-0 border border-white/30"
                 aria-label="Cerrar modal"
               >
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1285,12 +1299,12 @@ const Feedback_Alumno_Comp = () => {
                 </div>
               )}
 
-              {/* Botones de acción */}
+              {/* Botones de acción - Mejorados */}
               <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-3 sm:mt-4 flex-shrink-0">
                 {viewingTaskPdf && (
                   <button
                     onClick={handleOpenPdfInNewTab}
-                    className="w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-4 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 border-2 border-blue-700 touch-manipulation"
                   >
                     <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -1300,7 +1314,7 @@ const Feedback_Alumno_Comp = () => {
                 )}
                 <button
                   onClick={closeViewTaskModal}
-                  className="w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-lg shadow-md transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-300 text-xs sm:text-sm font-semibold"
+                  className="w-full sm:w-auto px-4 sm:px-5 py-2.5 sm:py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-300 text-xs sm:text-sm font-extrabold border-2 border-gray-600 touch-manipulation"
                 >
                   Cerrar
                 </button>
@@ -1311,21 +1325,24 @@ const Feedback_Alumno_Comp = () => {
       )}
 
 
-      {/* Modal: Ver nota del asesor */}
+      {/* Modal: Ver nota del asesor - Mejorado */}
       {showNoteModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeNoteModal}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border-2 border-purple-200" onClick={(e) => e.stopPropagation()}>
-            <div className="px-4 py-3 bg-[#3d18c3] text-white flex items-center justify-between">
-              <div className="font-semibold text-sm truncate">Nota del asesor · {noteView.taskName}</div>
-              <button onClick={closeNoteModal} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white text-xs">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border-2 border-violet-200/50 ring-2 ring-violet-100/50" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white flex items-center justify-between shadow-lg">
+              <div className="font-extrabold text-sm sm:text-base truncate flex items-center gap-2">
+                <MessageSquareText className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Nota del asesor · {noteView.taskName}</span>
+              </div>
+              <button onClick={closeNoteModal} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-extrabold transition-all active:scale-95 border border-white/30">
                 <X className="w-3.5 h-3.5" /> Cerrar
               </button>
             </div>
-            <div className="p-4">
+            <div className="p-4 sm:p-5">
               {noteView.text ? (
-                <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">{noteView.text}</p>
+                <p className="text-sm sm:text-base text-slate-800 whitespace-pre-wrap break-words font-medium leading-relaxed">{noteView.text}</p>
               ) : (
-                <p className="text-sm text-slate-500">No hay nota disponible para esta entrega.</p>
+                <p className="text-sm sm:text-base text-slate-500 font-medium">No hay nota disponible para esta entrega.</p>
               )}
             </div>
           </div>
@@ -1340,25 +1357,30 @@ const Feedback_Alumno_Comp = () => {
         ></div>
       )}
 
-      {/* Modal: Crear nueva actividad */}
+      {/* Modal: Crear nueva actividad - Mejorado */}
       {showCreateTaskModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100 border-2 border-purple-200">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-purple-700">Nueva actividad</h2>
-            <p className="text-sm text-gray-700 mb-3">Crea una actividad con el nombre que prefieras. La fecha de entrega se generará cuando subas tu PDF.</p>
-            <label className="block text-sm font-medium text-purple-700 mb-1">Nombre de la actividad</label>
+          <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100 border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+            <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 -m-6 sm:-m-8 mb-6 sm:mb-8 p-5 sm:p-6 rounded-t-2xl sm:rounded-t-3xl">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-white">Nueva actividad</h2>
+            </div>
+            <p className="text-sm text-gray-700 mb-4 font-medium">Crea una actividad con el nombre que prefieras. La fecha de entrega se generará cuando subas tu PDF.</p>
+            <label className="block text-sm font-extrabold text-violet-700 mb-2 flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              <span>Nombre de la actividad</span>
+            </label>
             <input
               type="text"
               value={newTaskName}
               onChange={(e) => setNewTaskName(e.target.value)}
               maxLength={100}
-              className="w-full p-3 rounded-lg bg-white border-2 border-purple-200 text-purple-700 shadow focus:ring-2 focus:ring-purple-400 focus:outline-none focus:border-purple-400"
+              className="w-full p-3 rounded-xl bg-white border-2 border-violet-300 text-violet-700 shadow-md hover:shadow-lg focus:ring-2 focus:ring-violet-400 focus:outline-none focus:border-violet-400 font-medium transition-all"
               placeholder="Ej. Lectura capítulo 1"
             />
-            {newTaskError && <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-md p-2">{newTaskError}</div>}
-            <div className="mt-6 flex justify-end gap-2">
-              <button onClick={closeCreateTask} className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg shadow text-sm">Cancelar</button>
-              <button onClick={confirmCreateTask} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow text-sm">Crear</button>
+            {newTaskError && <div className="mt-3 text-xs text-red-600 bg-red-50 border-2 border-red-200 rounded-xl p-3 font-extrabold">{newTaskError}</div>}
+            <div className="mt-6 flex justify-end gap-3">
+              <button onClick={closeCreateTask} className="px-4 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm font-extrabold border-2 border-gray-600 touch-manipulation">Cancelar</button>
+              <button onClick={confirmCreateTask} className="px-4 py-2.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm font-extrabold border-2 border-violet-700 touch-manipulation">Crear</button>
             </div>
           </div>
         </div>

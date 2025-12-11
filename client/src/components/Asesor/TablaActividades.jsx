@@ -23,13 +23,13 @@ function getSafeStoredTitle() {
 
 /* ===== UI helpers ===== */
 const Badge = ({ className = "", children }) => (
-  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${className}`}>
+  <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold ring-2 ${className}`}>
     {children}
   </span>
 );
 const badgeDelivered = (ok) =>
-  ok ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-50 text-slate-700 ring-slate-200";
-const badgeGroup = "bg-indigo-50 text-indigo-700 ring-indigo-200";
+  ok ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white ring-emerald-300 shadow-md" : "bg-gradient-to-r from-amber-500 to-orange-600 text-white ring-amber-300 shadow-md";
+const badgeGroup = "bg-gradient-to-r from-indigo-500 to-purple-600 text-white ring-indigo-300 shadow-md";
 
 /* ====== MODAL ====== */
 function NewActivityModal({ open, onClose, onSave }) {
@@ -473,10 +473,21 @@ export default function ActivitiesTable({
           const entregasArray = Array.isArray(entregas) ? entregas : [];
           const calificadas = entregasArray.filter(e => e.calificacion !== null && e.calificacion !== undefined);
           if (calificadas.length > 0) {
-            const suma = calificadas.reduce((acc, e) => acc + Number(e.calificacion || 0), 0);
-            const promedio100 = suma / calificadas.length;
-            // Convertir de escala 0-100 a escala 0-10
-            const promedio10 = promedio100 / 10;
+            // Las calificaciones en BD están en escala 0-100 (nuevas) o 0-10 (antiguas)
+            // Detectar la escala: si alguna calificación es > 10, están en escala 0-100
+            const tieneEscala100 = calificadas.some(e => Number(e.calificacion || 0) > 10);
+            
+            let promedio10;
+            if (tieneEscala100) {
+              // Calificaciones en escala 0-100: calcular promedio y convertir a 0-10
+              const suma = calificadas.reduce((acc, e) => acc + Number(e.calificacion || 0), 0);
+              const promedio100 = suma / calificadas.length;
+              promedio10 = promedio100 / 10;
+            } else {
+              // Calificaciones en escala 0-10: calcular promedio directamente
+              const suma = calificadas.reduce((acc, e) => acc + Number(e.calificacion || 0), 0);
+              promedio10 = suma / calificadas.length;
+            }
             grades[row.id] = Math.round(promedio10 * 10) / 10; // Redondear a 1 decimal
           }
         } catch (e) {
@@ -574,11 +585,11 @@ export default function ActivitiesTable({
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, delivered: !r.delivered } : r)));
 
   const IconButton = ({ onClick, variant = "default", label, children, disabled }) => {
-    const base = "inline-grid place-items-center w-10 h-10 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-105 active:scale-95";
+    const base = "inline-grid place-items-center w-11 h-11 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-110 active:scale-95 shadow-md hover:shadow-lg";
     const look = {
-      default: "border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 focus:ring-slate-300",
-      danger: "border-rose-300 text-rose-700 hover:bg-rose-50 hover:border-rose-400 focus:ring-rose-300",
-      primary: "border-indigo-300 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-400 focus:ring-indigo-300 bg-indigo-50/50",
+      default: "border-slate-200 bg-slate-100 hover:bg-gradient-to-br hover:from-slate-200 hover:to-slate-300 hover:border-slate-300 text-slate-700 focus:ring-slate-300",
+      danger: "border-rose-300 bg-gradient-to-br from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 hover:border-rose-400 text-white focus:ring-rose-300",
+      primary: "border-indigo-300 bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 hover:border-indigo-400 text-white focus:ring-indigo-300",
     }[variant];
     return (
       <button onClick={onClick} title={label} aria-label={label} disabled={disabled}
@@ -677,39 +688,39 @@ export default function ActivitiesTable({
         </div>
 
         {/* Estadísticas rápidas */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div className="rounded-xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm">
-            <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Total</div>
-            <div className="text-2xl font-bold text-slate-900">{data.length}</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
+          <div className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-lg ring-2 ring-slate-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Total</div>
+            <div className="text-3xl font-extrabold text-slate-900">{data.length}</div>
           </div>
-          <div className="rounded-xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
-            <div className="text-xs font-medium text-emerald-600 uppercase tracking-wide mb-1">Entregadas</div>
-            <div className="text-2xl font-bold text-emerald-700">{data.filter(r => r.delivered).length}</div>
+          <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 via-emerald-100/50 to-white p-5 shadow-lg ring-2 ring-emerald-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-2">Entregadas</div>
+            <div className="text-3xl font-extrabold text-emerald-700">{data.filter(r => r.delivered).length}</div>
           </div>
-          <div className="rounded-xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm">
-            <div className="text-xs font-medium text-amber-600 uppercase tracking-wide mb-1">Pendientes</div>
-            <div className="text-2xl font-bold text-amber-700">{data.filter(r => !r.delivered).length}</div>
+          <div className="rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-amber-100/50 to-white p-5 shadow-lg ring-2 ring-amber-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-2">Pendientes</div>
+            <div className="text-3xl font-extrabold text-amber-700">{data.filter(r => !r.delivered).length}</div>
           </div>
-          <div className="rounded-xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-4 shadow-sm">
-            <div className="text-xs font-medium text-indigo-600 uppercase tracking-wide mb-1">Con recurso</div>
-            <div className="text-2xl font-bold text-indigo-700">{data.filter(r => r.pdfUrl).length}</div>
+          <div className="rounded-2xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 via-indigo-100/50 to-white p-5 shadow-lg ring-2 ring-indigo-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">Con recurso</div>
+            <div className="text-3xl font-extrabold text-indigo-700">{data.filter(r => r.pdfUrl).length}</div>
           </div>
         </div>
       </div>
 
       {/* Tabla desktop */}
-      <div className="hidden md:block overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-xl">
+      <div className="hidden md:block overflow-hidden rounded-3xl border-2 border-slate-200 bg-white shadow-xl ring-2 ring-slate-100/50">
         <table className="w-full text-sm">
           <thead className="text-left">
-            <tr className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-slate-50 supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
-              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">No.</th>
-              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Actividad</th>
-              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Recurso</th>
-              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Fecha límite</th>
-              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Estado</th>
-              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Calificación</th>
-              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Visualizar</th>
-              <th className="px-6 py-4 text-right text-slate-600 text-xs font-bold uppercase tracking-wider">Acciones</th>
+            <tr className="border-b-2 border-slate-200 bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
+              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">No.</th>
+              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Actividad</th>
+              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Recurso</th>
+              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Fecha límite</th>
+              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Estado</th>
+              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Calificación</th>
+              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Visualizar</th>
+              <th className="px-6 py-5 text-right text-slate-700 text-xs font-extrabold uppercase tracking-widest">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -728,48 +739,48 @@ export default function ActivitiesTable({
               ))
             )}
             {!loading && data.map((r, idx) => (
-              <tr key={r.id} className="border-b border-slate-100 last:border-0 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/30 transition-all duration-200 group">
-                <td className="px-6 py-4">
+              <tr key={r.id} className="border-b border-slate-200 last:border-0 bg-white hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200 group">
+                <td className="px-6 py-5">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-bold text-slate-400">#{idx + 1}</span>
+                    <span className="font-mono text-sm font-bold text-slate-500">#{idx + 1}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-5">
                   <div className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">{r.title}</div>
+                      <div className="font-bold text-slate-900 group-hover:text-violet-700 transition-colors text-sm">{r.title}</div>
                     </div>
                     {r.group && (
                       <Badge className={`${badgeGroup} shrink-0`}>{r.group.toUpperCase()}</Badge>
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-5">
                   <IconButton onClick={() => openPdf(r)} label="Abrir PDF" disabled={!r.pdfUrl} variant={r.pdfUrl ? "primary" : "default"}>
                     <FileText className="w-5 h-5" />
                   </IconButton>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
-                    <CalendarDays className="w-4 h-4 text-indigo-500" />
-                    <span className="font-medium text-slate-700">{formatDate(r.due)}</span>
+                <td className="px-6 py-5">
+                  <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 ring-1 ring-blue-100">
+                    <CalendarDays className="w-4 h-4 text-indigo-600" />
+                    <span className="font-bold text-slate-700 text-sm">{formatDate(r.due)}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-5">
                   <button
                     onClick={() => toggleDelivered(r.id)}
-                    className="cursor-pointer transform hover:scale-105 transition-transform"
+                    className="cursor-pointer transform hover:scale-110 transition-transform"
                   >
                     <Badge className={badgeDelivered(r.delivered)}>
                       {r.delivered ? "✓ Entregado" : "○ Pendiente"}
                     </Badge>
                   </button>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-5">
                   {averageGrades[r.id] !== undefined ? (
-                    <div className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-sm ${averageGrades[r.id] < 6
-                      ? 'bg-rose-50 text-rose-700 border-2 border-rose-200'
-                      : 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200'
+                    <div className={`inline-flex items-center justify-center px-3 py-2 rounded-xl font-bold text-sm ring-2 ${averageGrades[r.id] < 6
+                      ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white ring-rose-300 shadow-md'
+                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white ring-emerald-300 shadow-md'
                       }`}>
                       {averageGrades[r.id].toFixed(1)}/10
                     </div>
@@ -777,12 +788,12 @@ export default function ActivitiesTable({
                     <span className="text-slate-400 font-medium">—</span>
                   )}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-5">
                   <IconButton onClick={() => goToEntregas(r)} label="Visualizar entregas" variant="primary">
                     <Eye className="w-5 h-5" />
                   </IconButton>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-5">
                   <div className="flex justify-end gap-2">
                     <IconButton onClick={() => onSaveRow(r)} label="Guardar" variant="primary">
                       <Save className="w-4 h-4" />
@@ -799,14 +810,19 @@ export default function ActivitiesTable({
             ))}
             {!loading && data.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
-                      <FileText className="w-8 h-8 text-slate-400" />
+                <td colSpan={8} className="px-6 py-20 text-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 ring-4 ring-violet-200 flex items-center justify-center shadow-lg">
+                      <FileText className="w-10 h-10 text-violet-600" />
                     </div>
-                    <div>
-                      <p className="text-base font-semibold text-slate-700">No hay actividades</p>
-                      <p className="text-sm text-slate-500 mt-1">Crea tu primera actividad para comenzar</p>
+                    <div className="space-y-2">
+                      <p className="text-lg font-bold text-slate-700">No hay actividades</p>
+                      <p className="text-sm text-slate-500">
+                        Crea tu primera actividad con el botón
+                        <span className="mx-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1.5 font-bold text-white shadow-md">
+                          Nueva actividad
+                        </span>
+                      </p>
                     </div>
                   </div>
                 </td>

@@ -5,6 +5,7 @@ import axios from "axios";
 // Base URL configurable via Vite env; fallback to current host for same-site cookies over LAN
 const envBase = import.meta?.env?.VITE_API_URL;
 const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
+// Usar variable de entorno si está disponible, sino usar puerto 1002 por defecto
 const baseURL = envBase || `http://${host}:1002/api`;
 
 const instance = axios.create({
@@ -21,7 +22,7 @@ function readCookie(name) {
                         c = c.trim();
                         if (c.startsWith(target)) return decodeURIComponent(c.slice(target.length));
                 }
-        } catch {}
+        } catch { }
         return null;
 }
 
@@ -34,10 +35,10 @@ instance.interceptors.request.use(
                                 if (!bearer && typeof document !== 'undefined') {
                                         const path = (typeof window !== 'undefined' && window.location && window.location.pathname) ? window.location.pathname : '';
                                         // Prioridad por contexto de ruta para entornos multi-rol
-                                        let order = ['access_token','token_admin','token_asesor','token_estudiante','token'];
-                                        if (path.startsWith('/asesor')) order = ['token_asesor','token_admin','access_token','token_estudiante','token'];
-                                        else if (path.startsWith('/alumno')) order = ['token_estudiante','access_token','token_asesor','token_admin','token'];
-                                        else if (path.startsWith('/admin') || path.startsWith('/administrativo')) order = ['token_admin','access_token','token_asesor','token_estudiante','token'];
+                                        let order = ['access_token', 'token_admin', 'token_asesor', 'token_estudiante', 'token'];
+                                        if (path.startsWith('/asesor')) order = ['token_asesor', 'token_admin', 'access_token', 'token_estudiante', 'token'];
+                                        else if (path.startsWith('/alumno')) order = ['token_estudiante', 'access_token', 'token_asesor', 'token_admin', 'token'];
+                                        else if (path.startsWith('/admin') || path.startsWith('/administrativo')) order = ['token_admin', 'access_token', 'token_asesor', 'token_estudiante', 'token'];
                                         for (const name of order) {
                                                 const v = readCookie(name);
                                                 if (v) { bearer = v; break; }
@@ -47,7 +48,7 @@ instance.interceptors.request.use(
                                         config.headers.Authorization = `Bearer ${bearer}`;
                                 }
                         }
-                } catch {}
+                } catch { }
                 return config;
         },
         (error) => Promise.reject(error)
@@ -58,58 +59,58 @@ let isRefreshing = false;
 let pendingQueue = [];
 
 const processQueue = (err) => {
-    pendingQueue.forEach(({ reject }) => reject(err));
-    pendingQueue = [];
+        pendingQueue.forEach(({ reject }) => reject(err));
+        pendingQueue = [];
 };
 
 instance.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-        const original = error?.config;
-        const status = error?.response?.status;
-        const apiReason = error?.response?.data?.reason;
-        const isAuthLike = status === 401 || status === 403;
-        
-        // Razones que nunca intentan refresh (logout directo)
-        const terminalReasons = new Set(['invalid-token','soft-deleted','user-not-found','no-token','no-rtoken','expired-rtoken']);
-        
-        // Refrescar si el access token expiró o si el backend indica que no hay access token (pero podría existir refresh cookie)
-        const shouldRefresh = isAuthLike && (apiReason === 'expired' || apiReason === 'no-token') && !original?._retry;
+        (response) => response,
+        async (error) => {
+                const original = error?.config;
+                const status = error?.response?.status;
+                const apiReason = error?.response?.data?.reason;
+                const isAuthLike = status === 401 || status === 403;
 
-        // Si la cuenta está suspendida, limpiamos sesión y redirigimos.
-        if (isAuthLike && apiReason === 'suspended') {
-            try { localStorage.clear(); } catch {} // Limpiar todo por seguridad
-            if (typeof window !== 'undefined') {
-                const path = window.location?.pathname || '';
-                if (!path.startsWith('/login')) window.location.href = '/login?reason=suspended';
-            }
-            return Promise.reject(error);
-        }
+                // Razones que nunca intentan refresh (logout directo)
+                const terminalReasons = new Set(['invalid-token', 'soft-deleted', 'user-not-found', 'no-token', 'no-rtoken', 'expired-rtoken']);
 
-        if (shouldRefresh) {
-            original._retry = true;
-            if (isRefreshing) {
-                // Pone en cola las peticiones mientras se refresca el token.
-                return new Promise((_, reject) => pendingQueue.push({ reject }));
-            }
-            isRefreshing = true;
-            try {
-                await instance.post('/token/refresh'); // Llama al endpoint para refrescar el token
-                isRefreshing = false;
-                return instance(original); // Reintenta la petición original con el nuevo token
-            } catch (e) {
-                isRefreshing = false;
-                processQueue(e);
-                // Si el refresh falla, hacemos logout.
-                try { localStorage.clear(); } catch {}
-                if (typeof window !== 'undefined') {
-                    const path = window.location?.pathname || '';
-                    if (!path.startsWith('/login')) window.location.href = '/login';
-                }
-            }
-        }
-        return Promise.reject(error);
-    }
+                // Refrescar si el access token expiró o si el backend indica que no hay access token (pero podría existir refresh cookie)
+                const shouldRefresh = isAuthLike && (apiReason === 'expired' || apiReason === 'no-token') && !original?._retry;
+
+                // Si la cuenta está suspendida, limpiamos sesión y redirigimos.
+                if (isAuthLike && apiReason === 'suspended') {
+                        try { localStorage.clear(); } catch { } // Limpiar todo por seguridad
+                        if (typeof window !== 'undefined') {
+                                const path = window.location?.pathname || '';
+                                if (!path.startsWith('/login')) window.location.href = '/login?reason=suspended';
+                        }
+                        return Promise.reject(error);
+                }
+
+                if (shouldRefresh) {
+                        original._retry = true;
+                        if (isRefreshing) {
+                                // Pone en cola las peticiones mientras se refresca el token.
+                                return new Promise((_, reject) => pendingQueue.push({ reject }));
+                        }
+                        isRefreshing = true;
+                        try {
+                                await instance.post('/token/refresh'); // Llama al endpoint para refrescar el token
+                                isRefreshing = false;
+                                return instance(original); // Reintenta la petición original con el nuevo token
+                        } catch (e) {
+                                isRefreshing = false;
+                                processQueue(e);
+                                // Si el refresh falla, hacemos logout.
+                                try { localStorage.clear(); } catch { }
+                                if (typeof window !== 'undefined') {
+                                        const path = window.location?.pathname || '';
+                                        if (!path.startsWith('/login')) window.location.href = '/login';
+                                }
+                        }
+                }
+                return Promise.reject(error);
+        }
 );
 
 export default instance;

@@ -6,24 +6,34 @@ import axios from "../../../api/axios.js";
 export function Modal({ open, onClose, title, children, footer }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4" style={{ paddingTop: '8vh', paddingBottom: '2vh' }}>
-      <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl h-[85vh] max-h-[85vh] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between border-b p-4 flex-shrink-0">
-          <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" style={{ paddingTop: '8vh', paddingBottom: '2vh' }}>
+      <div className="w-full max-w-4xl rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 h-[85vh] max-h-[85vh] flex flex-col overflow-hidden border-2 border-violet-200/50">
+        <div className="flex items-center justify-between border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/50">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="4" y="3" width="16" height="18" rx="2" />
+                <path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">{title}</h3>
+          </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100"
+            className="rounded-xl p-2.5 text-slate-500 hover:text-slate-700 transition-all hover:bg-white hover:scale-110 active:scale-95 border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md"
             aria-label="Cerrar"
           >
-            ✕
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
-        <div className="overflow-y-auto p-6 flex-1 min-h-0 bg-gradient-to-b from-white to-slate-50/30">{children}</div>
-        <div className="flex justify-end gap-3 border-t p-3 flex-shrink-0">
+        <div className="overflow-y-auto p-6 flex-1 min-h-0 bg-gradient-to-b from-white via-slate-50/20 to-white">{children}</div>
+        <div className="flex justify-end gap-3 border-t-2 border-violet-200/50 bg-gradient-to-r from-slate-50/50 to-white p-4 flex-shrink-0">
           {footer ? footer : (
             <button
               onClick={onClose}
-              className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center rounded-xl border-2 border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
             >
               Cerrar
             </button>
@@ -1294,21 +1304,30 @@ export function PlaceholderModal({ open, onClose, formula, onConfirm }) {
 
   return (
     <div className="fixed inset-0 z-[60] grid place-items-center bg-black/50 backdrop-blur-sm px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200/50 h-[600px] max-h-[600px] flex flex-col overflow-hidden">
-        <div className="border-b border-slate-200 bg-gradient-to-r from-violet-50/50 to-indigo-50/50 p-4 rounded-t-2xl flex-shrink-0">
-          <h3 className="text-lg font-bold text-slate-900">Completar fórmula</h3>
-          <p className="mt-1 text-xs text-slate-600">Ingresa los valores necesarios para personalizar la fórmula</p>
+      <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 border-2 border-violet-200/50 h-[600px] max-h-[600px] flex flex-col overflow-hidden">
+        <div className="border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 rounded-t-3xl flex-shrink-0">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/50">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">Completar fórmula</h3>
+              <p className="mt-1 text-xs text-slate-600 font-medium">Ingresa los valores necesarios para personalizar la fórmula</p>
+            </div>
+          </div>
         </div>
         
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <div className="overflow-y-auto flex-1 min-h-0 p-4 space-y-4 bg-gradient-to-b from-white to-slate-50/30">
             {/* Vista previa única y dinámica */}
-            <div className="rounded-lg border-2 border-violet-300 bg-gradient-to-br from-violet-50 to-indigo-50 p-3 shadow-sm">
-              <p className="text-xs font-bold text-violet-700 uppercase tracking-wider mb-2 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></span>
+            <div className="rounded-2xl border-2 border-violet-300 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 p-4 shadow-md ring-2 ring-violet-100/50">
+              <p className="text-xs font-extrabold text-violet-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
                 Vista previa
               </p>
-              <div className="text-xl font-medium text-slate-900 flex items-center justify-center min-h-[50px] bg-white/70 rounded-lg p-3 border border-violet-200/50">
+              <div className="text-xl font-medium text-slate-900 flex items-center justify-center min-h-[60px] bg-white/80 rounded-xl p-4 border-2 border-violet-200/50 shadow-sm">
               <InlineMath math={(() => {
                 // Generar vista previa con valores ingresados o placeholders
                 let preview = formula;
@@ -1361,7 +1380,7 @@ export function PlaceholderModal({ open, onClose, formula, onConfirm }) {
                       setValues(newValues);
                     }}
                     placeholder={`Ingresa ${label.toLowerCase()}`}
-                    className="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200/50 transition-all duration-200 bg-white hover:border-violet-400"
+                    className="w-full rounded-xl border-2 border-slate-300 px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 bg-white hover:border-violet-400 shadow-sm hover:shadow-md"
                     required
                     autoFocus={idx === 0}
                   />
@@ -1371,17 +1390,17 @@ export function PlaceholderModal({ open, onClose, formula, onConfirm }) {
           </div>
 
           {/* Botones */}
-          <div className="flex justify-end gap-3 p-3 border-t border-slate-200 bg-white flex-shrink-0">
+          <div className="flex justify-end gap-3 p-4 border-t-2 border-violet-200/50 bg-gradient-to-r from-slate-50/50 to-white flex-shrink-0 rounded-b-3xl">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 active:scale-95"
+              className="rounded-xl border-2 border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2 text-sm font-bold text-white hover:from-violet-700 hover:to-indigo-700 shadow-md transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2"
+              className="rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-6 py-2.5 text-sm font-bold text-white hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-violet-300/50 transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2 ring-2 ring-violet-200/50 hover:shadow-xl hover:shadow-violet-400/50"
             >
               <span>Insertar</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1522,6 +1541,7 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
   const [formulasFromDB, setFormulasFromDB] = useState(null);
   const [loadingFormulas, setLoadingFormulas] = useState(false);
   const [errorFormulas, setErrorFormulas] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Cargar fórmulas desde la API cuando se abre el modal
   useEffect(() => {
@@ -1540,7 +1560,6 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
           setLoadingFormulas(false);
         })
         .catch(error => {
-          console.warn('Error al cargar fórmulas desde la API, usando fórmulas por defecto:', error);
           setErrorFormulas(error.message);
           setFormulasFromDB(null); // Usar SECTIONS como fallback
           setLoadingFormulas(false);
@@ -1569,8 +1588,19 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
         setSelectedFormula(null);
       }
       setPlaceholderModal({ open: false, formula: '' });
+      setSearchQuery('');
     }
   }, [open, initialFormula, SECTIONS_TO_USE]);
+
+  // Filtrar fórmulas según la búsqueda
+  const filteredFormulas = searchQuery.trim()
+    ? (SECTIONS_TO_USE[tab] || []).filter(formula => {
+        const formulaName = getFormulaName(formula).toLowerCase();
+        const formulaCode = formula.toLowerCase();
+        const query = searchQuery.toLowerCase();
+        return formulaName.includes(query) || formulaCode.includes(query);
+      })
+    : (SECTIONS_TO_USE[tab] || []);
 
   const handleFormulaClick = (formula) => {
     // Solo mostrar la fórmula seleccionada en la vista previa (no insertar aún)
@@ -1600,28 +1630,57 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
 
   return (
     <Modal open={open} onClose={onClose} title="Insertar fórmula matemática">
-      <div className="space-y-4">
+      <div className="space-y-5">
+        {/* Barra de búsqueda */}
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+            <svg className="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar fórmulas por nombre o código LaTeX..."
+            className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-violet-200 bg-white text-sm font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 shadow-sm hover:shadow-md"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
         {/* Tabs de categorías - mejor diseño */}
-        <div className="sticky top-0 z-10 bg-white pb-2 border-b border-slate-200 -mx-4 px-4 pt-1 mb-4">
-          <p className="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wider">Categorías</p>
-          <div className="flex flex-wrap items-center gap-2.5">
+        <div className="sticky top-0 z-10 bg-white pb-3 border-b-2 border-violet-200/50 -mx-4 px-4 pt-2 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-extrabold text-violet-700 uppercase tracking-widest">Categorías</p>
             {loadingFormulas && (
-              <div className="text-xs text-slate-500 italic">Cargando fórmulas...</div>
+              <div className="text-xs text-violet-600 font-medium italic">Cargando fórmulas...</div>
             )}
             {errorFormulas && !loadingFormulas && (
-              <div className="text-xs text-amber-600 italic">Usando fórmulas por defecto</div>
+              <div className="text-xs text-amber-600 font-medium italic">Usando fórmulas por defecto</div>
             )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5">
             {Object.keys(SECTIONS_TO_USE).map((label) => (
               <button
                 key={label}
                 onClick={() => {
                   setTab(label);
                   setSelectedFormula(null);
+                  setSearchQuery('');
                 }}
-                className={`rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 transform ${
+                className={`rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-200 transform ${
                   tab === label 
-                    ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-200 scale-105" 
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:scale-105 active:scale-95 border border-slate-200"
+                    ? "bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-violet-300/50 scale-105 ring-2 ring-violet-200/50" 
+                    : "bg-slate-100 text-slate-600 hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 hover:text-violet-700 hover:scale-105 active:scale-95 border-2 border-slate-200 hover:border-violet-300 shadow-sm hover:shadow-md"
                 }`}
               >
                 {label}
@@ -1632,7 +1691,7 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
 
         {/* Vista previa de fórmula seleccionada - solo al hacer click */}
         {selectedFormula && (
-          <div className="rounded-2xl border-2 border-violet-400 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 p-5 shadow-lg shadow-violet-100 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="rounded-3xl border-2 border-violet-400 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 p-6 shadow-xl shadow-violet-200/50 ring-4 ring-violet-200/30 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-3">
@@ -1674,7 +1733,7 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
             </div>
             <button
               onClick={handleInsertFormula}
-              className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3.5 text-sm font-bold text-white hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-violet-300/50 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] hover:shadow-xl hover:shadow-violet-400/50 flex items-center justify-center gap-2"
+              className="w-full rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-6 py-3.5 text-sm font-bold text-white hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-violet-300/50 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] hover:shadow-xl hover:shadow-violet-400/50 flex items-center justify-center gap-2 ring-2 ring-violet-200/50"
             >
               <span>{selectedFormula.includes('\\square') ? '📝 Completar e Insertar' : '✨ Insertar Fórmula'}</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1687,15 +1746,27 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
         {/* Grid de fórmulas - más grande y visual */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Selecciona una fórmula
+            <p className="text-xs font-extrabold text-violet-700 uppercase tracking-widest">
+              {searchQuery ? `Resultados de búsqueda` : `Selecciona una fórmula`}
             </p>
-            <span className="text-xs text-slate-500 font-medium">
-              {SECTIONS_TO_USE[tab]?.length || 0} fórmulas
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-xs font-bold ring-2 ring-violet-200 shadow-md">
+              <span className="opacity-90">{filteredFormulas.length}</span>
+              <span className="opacity-90">fórmulas</span>
             </span>
           </div>
+          {filteredFormulas.length === 0 ? (
+            <div className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100/50 p-8 text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-100 mb-4 ring-4 ring-violet-200/50">
+                <svg className="w-8 h-8 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <p className="text-sm font-bold text-slate-700 mb-1">No se encontraron fórmulas</p>
+              <p className="text-xs text-slate-500">Intenta con otros términos de búsqueda o selecciona otra categoría</p>
+            </div>
+          ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 sm:gap-4">
-            {(SECTIONS_TO_USE[tab] || []).map((tok, i) => {
+            {filteredFormulas.map((tok, i) => {
               const hasPlaceholders = tok.includes('\\square');
               // Detectar fórmulas largas o complejas
               const isLongFormula = tok.length > 30 || 
@@ -1728,11 +1799,11 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
                   className={`group relative rounded-2xl border-2 p-3 sm:p-3.5 transition-all duration-200 transform select-none cursor-pointer backdrop-blur-sm ${
                     selectedFormula === tok
                       ? hasPlaceholders
-                        ? 'border-amber-500 bg-gradient-to-br from-amber-100 to-amber-50 ring-4 ring-amber-200/50 shadow-lg shadow-amber-200/50 scale-105 z-10'
-                        : 'border-violet-500 bg-gradient-to-br from-violet-100 to-violet-50 ring-4 ring-violet-200/50 shadow-lg shadow-violet-200/50 scale-105 z-10'
+                        ? 'border-amber-500 bg-gradient-to-br from-amber-100 via-amber-50 to-amber-100 ring-4 ring-amber-200/50 shadow-xl shadow-amber-300/50 scale-105 z-10'
+                        : 'border-violet-500 bg-gradient-to-br from-violet-100 via-indigo-50 to-purple-50 ring-4 ring-violet-200/50 shadow-xl shadow-violet-300/50 scale-105 z-10'
                       : hasPlaceholders
-                        ? 'border-amber-200/80 bg-gradient-to-br from-amber-50/80 to-amber-100/40 hover:border-amber-400 hover:bg-gradient-to-br hover:from-amber-100 hover:to-amber-50 active:scale-95 hover:scale-105 hover:shadow-lg hover:shadow-amber-200/50 active:bg-amber-200'
-                        : 'border-slate-200/80 bg-white hover:border-violet-400 hover:bg-gradient-to-br hover:from-violet-50/80 hover:to-indigo-50/40 active:scale-95 hover:scale-105 hover:shadow-lg hover:shadow-violet-200/50 active:bg-violet-100'
+                        ? 'border-amber-200/80 bg-gradient-to-br from-amber-50/80 to-amber-100/40 hover:border-amber-400 hover:bg-gradient-to-br hover:from-amber-100 hover:via-amber-50 hover:to-amber-100 active:scale-95 hover:scale-105 hover:shadow-lg hover:shadow-amber-200/50 active:bg-amber-200'
+                        : 'border-slate-200/80 bg-white hover:border-violet-400 hover:bg-gradient-to-br hover:from-violet-50/80 hover:via-indigo-50/40 hover:to-purple-50/40 active:scale-95 hover:scale-105 hover:shadow-lg hover:shadow-violet-200/50 active:bg-violet-100'
                   }`}
                   title={hasPlaceholders ? `${getFormulaName(tok)} - Haz clic para completar valores` : getFormulaName(tok)}
                 >
@@ -1743,14 +1814,14 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
                   </div>
                   {hasPlaceholders && (
                     <div className="absolute top-2 right-2 pointer-events-none">
-                      <span className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-amber-600 w-5 h-5 text-[10px] font-bold text-white shadow-md border border-amber-400">
+                      <span className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-amber-600 w-6 h-6 text-xs font-bold text-white shadow-lg border-2 border-amber-400 ring-2 ring-amber-200/50">
                         ⚙
                       </span>
                     </div>
                   )}
                   {selectedFormula === tok && (
                     <div className="absolute top-2 left-2 pointer-events-none">
-                      <span className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 w-5 h-5 text-[10px] font-bold text-white shadow-md">
+                      <span className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 w-6 h-6 text-xs font-bold text-white shadow-lg ring-2 ring-violet-200/50">
                         ✓
                       </span>
                     </div>
@@ -1763,18 +1834,19 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
               );
             })}
           </div>
+          )}
         </div>
 
         {/* Ayuda */}
-        <div className="rounded-xl border-2 border-slate-200/80 bg-gradient-to-r from-slate-50 to-slate-100/50 p-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
-              <span className="text-base">💡</span>
+        <div className="rounded-2xl border-2 border-violet-200/80 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 shadow-md ring-2 ring-violet-100/50">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg ring-2 ring-violet-200/50">
+              <span className="text-lg">💡</span>
             </div>
             <div className="flex-1">
-              <p className="text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Consejo</p>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Haz clic en cualquier fórmula para ver una vista previa detallada y seleccionarla. Las fórmulas marcadas con ⚙ requieren que ingreses valores personalizados antes de insertarlas.
+              <p className="text-xs font-extrabold text-violet-700 mb-2 uppercase tracking-widest">Consejo</p>
+              <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                Haz clic en cualquier fórmula para ver una vista previa detallada y seleccionarla. Las fórmulas marcadas con ⚙ requieren que ingreses valores personalizados antes de insertarlas. Usa la barra de búsqueda para encontrar fórmulas rápidamente.
               </p>
             </div>
           </div>

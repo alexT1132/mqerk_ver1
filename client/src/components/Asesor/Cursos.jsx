@@ -17,60 +17,57 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
         localStorage.setItem("cursoSeleccionado", title);
       }}
       className={[
-        "group relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 p-5 shadow-md transition-all duration-300 min-h-[140px]",
+        "group relative flex flex-col items-center justify-center gap-3 rounded-3xl border-2 p-5 shadow-lg transition-all duration-300 min-h-[140px]",
         selected
           ? "border-emerald-500 ring-4 ring-emerald-400/30 bg-gradient-to-br from-emerald-50 to-green-50 hover:shadow-xl scale-105"
-          : "border-slate-200 bg-white hover:border-indigo-300 hover:shadow-lg hover:-translate-y-1"
+          : "border-slate-200 bg-white hover:border-violet-300 hover:shadow-xl hover:-translate-y-2 ring-2 ring-slate-100/50"
       ].join(" ")}
     >
       {selected && (
-        <>
-          <span className="pointer-events-none absolute -top-3 -right-3 grid h-8 w-8 place-items-center rounded-full bg-emerald-500 text-white text-sm font-bold shadow-xl z-10">
-            ✓
-          </span>
-          <span className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-emerald-500" />
-        </>
+        <span className="pointer-events-none absolute -top-3 -right-3 grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-white text-sm font-extrabold shadow-xl ring-4 ring-white z-10">
+          ✓
+        </span>
       )}
       
       {/* Imagen o icono de respaldo */}
       <div className={[
-        "relative flex items-center justify-center h-16 w-16 rounded-xl overflow-hidden",
-        selected ? "ring-4 ring-emerald-400/50" : "ring-2 ring-slate-200 group-hover:ring-indigo-300"
+        "relative flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 rounded-2xl overflow-hidden transition-all duration-300",
+        selected ? "ring-4 ring-emerald-400/50 shadow-lg" : "ring-2 ring-slate-200 group-hover:ring-violet-300 group-hover:shadow-md"
       ].join(" ")}>
         {!imageError && image ? (
           <img 
             src={image} 
             alt={title}
             onError={() => setImageError(true)}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
           />
         ) : (
           <div className={[
-            "h-full w-full flex items-center justify-center",
+            "h-full w-full flex items-center justify-center transition-all duration-300",
             selected 
-              ? "bg-gradient-to-br from-emerald-500 to-green-600" 
-              : "bg-gradient-to-br from-indigo-500 to-purple-600"
+              ? "bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg" 
+              : "bg-gradient-to-br from-violet-500 to-indigo-600 group-hover:from-violet-600 group-hover:to-indigo-700"
           ].join(" ")}>
             <GraduationCap 
               size={32} 
-              className="text-white" 
+              className="text-white transition-transform duration-300 group-hover:scale-110" 
             />
           </div>
         )}
       </div>
 
       <h3 className={[
-        "text-sm font-bold text-center transition-colors leading-tight",
+        "text-sm font-extrabold text-center transition-colors leading-tight",
         selected 
           ? "text-emerald-700" 
-          : "text-slate-800 group-hover:text-indigo-600"
+          : "text-slate-800 group-hover:text-violet-600"
       ].join(" ")}>
         {title}
       </h3>
 
       {selected && (
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-          <div className="h-1 w-12 rounded-full bg-emerald-500"></div>
+          <div className="h-1.5 w-16 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 shadow-md"></div>
         </div>
       )}
     </Link>
@@ -95,10 +92,8 @@ export default function MisCursos() {
         if (!alive) return;
         const data = response?.data || {};
         const list = data?.data || data?.estudiantes || [];
-        console.log('Estudiantes cargados:', list);
         setEstudiantes(Array.isArray(list) ? list : []);
       } catch (e) {
-        console.error('Error cargando estudiantes:', e);
         setError(e?.response?.data?.message || 'Error al cargar los estudiantes');
         setEstudiantes([]);
       } finally {
@@ -112,8 +107,6 @@ export default function MisCursos() {
   const cursosAsignados = useMemo(() => {
     const cursosSet = new Set();
     const cursosMap = new Map();
-
-    console.log('Procesando estudiantes para cursos:', estudiantes);
 
     estudiantes.forEach(est => {
       // Intentar múltiples campos donde puede estar el curso
@@ -134,7 +127,6 @@ export default function MisCursos() {
     });
 
     const cursos = Array.from(cursosMap.values());
-    console.log('Cursos extraídos:', cursos);
     return cursos;
   }, [estudiantes]);
 
@@ -152,32 +144,44 @@ export default function MisCursos() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // Debug: mostrar información en consola
-  useEffect(() => {
-    console.log('Estado actual - Loading:', loading, 'Estudiantes:', estudiantes.length, 'Cursos:', cursosAsignados.length);
-  }, [loading, estudiantes, cursosAsignados]);
 
   return (
     <div className="w-full min-h-screen bg-transparent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Header siempre visible */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-800 mb-2">Mis Cursos</h1>
-          <p className="text-slate-600">Selecciona un curso para ver su dashboard y gestionar tus estudiantes</p>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-4 rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-xl ring-2 ring-violet-200">
+              <GraduationCap className="size-8 sm:size-10 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-tight">
+                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.1', paddingBottom: '2px' }}>
+                  Mis Cursos
+                </span>
+              </h1>
+              <p className="text-slate-600 text-sm sm:text-base font-medium">
+                Selecciona un curso para ver su dashboard y gestionar tus estudiantes
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Contenido */}
         {error ? (
-          <div className="text-center py-16 bg-red-50 rounded-2xl border border-red-200 shadow-sm">
-            <p className="text-red-600 font-medium text-lg mb-2">Error al cargar los cursos</p>
-            <p className="text-sm text-red-500 mb-4">{error}</p>
+          <div className="text-center py-16 bg-gradient-to-r from-red-50 to-rose-50 rounded-3xl border-2 border-red-200 shadow-lg ring-2 ring-red-100">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-md ring-2 ring-red-200 mb-4">
+              <GraduationCap className="size-8" />
+            </div>
+            <p className="text-red-700 font-extrabold text-lg mb-2">Error al cargar los cursos</p>
+            <p className="text-sm text-red-600 mb-6 font-medium">{error}</p>
             <button
               onClick={() => {
                 setError(null);
                 setLoading(true);
                 window.location.reload();
               }}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105"
             >
               Reintentar
             </button>
@@ -190,8 +194,10 @@ export default function MisCursos() {
           </div>
         ) : cursosAsignados.length > 0 ? (
           <>
-            <div className="mb-4 text-sm text-slate-600">
-              {cursosAsignados.length} {cursosAsignados.length === 1 ? 'curso encontrado' : 'cursos encontrados'}
+            <div className="mb-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-50 to-indigo-50 border-2 border-violet-200 rounded-xl shadow-sm">
+              <span className="text-violet-600 font-extrabold text-sm">
+                {cursosAsignados.length} {cursosAsignados.length === 1 ? 'curso encontrado' : 'cursos encontrados'}
+              </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {cursosAsignados.map((c, i) => (
@@ -206,14 +212,16 @@ export default function MisCursos() {
             </div>
           </>
         ) : (
-          <div className="text-center py-16 bg-transparent rounded-2xl border border-slate-200 shadow-sm">
-            <GraduationCap size={64} className="mx-auto text-slate-400 mb-4" />
-            <p className="text-slate-600 font-medium text-lg mb-2">No tienes cursos asignados aún</p>
-            <p className="text-sm text-slate-500 mb-4">Los cursos aparecerán aquí cuando tengas estudiantes asignados.</p>
+          <div className="text-center py-16 bg-white rounded-3xl border-2 border-slate-200 shadow-lg ring-2 ring-slate-100">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 mb-4 shadow-md ring-4 ring-white">
+              <GraduationCap size={40} className="text-violet-600" />
+            </div>
+            <p className="text-slate-700 font-extrabold text-lg mb-2">No tienes cursos asignados aún</p>
+            <p className="text-sm text-slate-500 mb-4 font-medium">Los cursos aparecerán aquí cuando tengas estudiantes asignados.</p>
             {estudiantes.length > 0 && (
-              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm text-amber-800">
-                  <strong>Nota:</strong> Tienes {estudiantes.length} {estudiantes.length === 1 ? 'estudiante' : 'estudiantes'} asignado{estudiantes.length > 1 ? 's' : ''}, 
+              <div className="mt-6 mx-auto max-w-md p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl shadow-sm ring-2 ring-amber-100">
+                <p className="text-sm text-amber-800 font-medium">
+                  <strong className="font-extrabold">Nota:</strong> Tienes {estudiantes.length} {estudiantes.length === 1 ? 'estudiante' : 'estudiantes'} asignado{estudiantes.length > 1 ? 's' : ''}, 
                   pero {estudiantes.length === 1 ? 'no tiene' : 'no tienen'} curso asignado aún.
                 </p>
               </div>

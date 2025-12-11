@@ -17,25 +17,50 @@ export default function Topbar() {
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const notificationsRef = useRef(null);
 
-  // Cargar foto de perfil
+  // Función para cargar foto de perfil
+  const loadPhoto = async () => {
+    try {
+      const { data } = await getMiPerfil();
+      let fotoUrl = null;
+      if (data?.data?.perfil?.foto_url) {
+        fotoUrl = data.data.perfil.foto_url;
+      } else if (data?.data?.perfil?.doc_fotografia) {
+        fotoUrl = buildStaticUrl(data.data.perfil.doc_fotografia);
+      }
+      // ✅ Agregar timestamp para evitar cache
+      if (fotoUrl) {
+        const separator = fotoUrl.includes('?') ? '&' : '?';
+        setPhotoUrl(`${fotoUrl}${separator}t=${Date.now()}`);
+      } else {
+        setPhotoUrl(null);
+      }
+    } catch (e) {
+      console.error('Error cargando foto de perfil:', e);
+      setPhotoUrl(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cargar foto de perfil al montar
   useEffect(() => {
     let alive = true;
     (async () => {
-      try {
-        const { data } = await getMiPerfil();
-        if (!alive) return;
-        const fotoUrl = data?.data?.perfil?.foto_url || 
-                       (data?.data?.perfil?.doc_fotografia 
-                         ? buildStaticUrl(data.data.perfil.doc_fotografia) 
-                         : null);
-        setPhotoUrl(fotoUrl);
-      } catch (e) {
-        console.error('Error cargando foto de perfil:', e);
-      } finally {
-        if (alive) setLoading(false);
-      }
+      if (!alive) return;
+      await loadPhoto();
     })();
     return () => { alive = false; };
+  }, []);
+
+  // ✅ Escuchar evento cuando se actualiza la foto en Configuraciones
+  useEffect(() => {
+    const handlePhotoUpdated = () => {
+      loadPhoto();
+    };
+    window.addEventListener('asesor-photo-updated', handlePhotoUpdated);
+    return () => {
+      window.removeEventListener('asesor-photo-updated', handlePhotoUpdated);
+    };
   }, []);
 
   // Cargar notificaciones
@@ -170,8 +195,7 @@ export default function Topbar() {
     }
   };
 
-  // Avatar URL
-  const avatarUrl = photoUrl || "https://i.pravatar.cc/150?img=12";
+  // ✅ Avatar URL - sin imagen hardcodeada
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 text-white bg-gradient-to-r from-[#3d18c3] to-[#4816bf] shadow-md supports-[backdrop-filter]:backdrop-blur">
@@ -326,17 +350,30 @@ export default function Topbar() {
               <div className="w-8 h-8 sm:w-9 sm:h-9 bg-white/10 flex items-center justify-center rounded-full">
                 <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
               </div>
-            ) : (
+            ) : photoUrl ? (
               <>
                 <img
-                  src={avatarUrl}
+                  src={photoUrl}
                   alt="Avatar"
+                  key={photoUrl} // ✅ Forzar re-render cuando cambia
                   className="w-8 h-8 sm:w-9 sm:h-9 object-cover rounded-full ring-2 ring-white/30"
                   onError={(e) => {
-                    e.target.src = "https://i.pravatar.cc/150?img=12";
+                    // ✅ Si falla, ocultar y mostrar placeholder
+                    e.target.style.display = 'none';
                   }}
                 />
                 {/* Punto verde de estado en línea - mejorado para que sobresalga más */}
+                <span className="absolute -right-0.5 -bottom-0.5 sm:-right-1 sm:-bottom-1 h-3 w-3 sm:h-3.5 sm:w-3.5 rounded-full bg-emerald-500 border-2 border-white shadow-lg z-10" />
+              </>
+            ) : (
+              <>
+                {/* ✅ Placeholder sin imagen hardcodeada */}
+                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-white/20 flex items-center justify-center rounded-full ring-2 ring-white/30">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                {/* Punto verde de estado en línea */}
                 <span className="absolute -right-0.5 -bottom-0.5 sm:-right-1 sm:-bottom-1 h-3 w-3 sm:h-3.5 sm:w-3.5 rounded-full bg-emerald-500 border-2 border-white shadow-lg z-10" />
               </>
             )}

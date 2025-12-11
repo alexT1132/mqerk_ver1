@@ -247,10 +247,24 @@ export const StudentProvider = ({ children }) => {
         return;
       }
       const c = json?.data;
+      // Validar imagen de la API: solo usar si es una URL válida o ruta absoluta
+      let validImage = eeauImg; // Por defecto usar la imagen importada
+      if (c?.image || c?.imagen || c?.foto_url || c?.fotoUrl) {
+        const apiImage = c.image || c.imagen || c.foto_url || c.fotoUrl;
+        if (apiImage && (
+          apiImage.startsWith('http://') || 
+          apiImage.startsWith('https://') || 
+          apiImage.startsWith('/') ||
+          apiImage.startsWith('data:')
+        )) {
+          validImage = apiImage;
+        }
+      }
       const courseObj = c ? buildCourse({
         id: c.codigo || 'EEAU',
   title: c.titulo || 'Curso EEAU',
-        instructor: c.asesor || 'Kelvin Valentin Ramirez'
+        instructor: c.asesor || 'Kelvin Valentin Ramirez',
+        image: validImage // Usar solo imagen válida
       }) : buildCourse();
       setEnrolledCourses([courseObj]); // el usuario debe hacer click para seleccionar
     } catch (error) {
@@ -617,7 +631,10 @@ export const StudentProvider = ({ children }) => {
         // Si existe, actualizar con los datos frescos de enrolledCourses (por si cambió algo)
         const freshCourse = enrolledCourses.find(c => c.id === currentCourse.id);
         if (freshCourse && JSON.stringify(freshCourse) !== JSON.stringify(currentCourse)) {
-          console.log('🔄 Actualizando curso con datos frescos de enrolledCourses:', freshCourse.title);
+          // Log solo en desarrollo para reducir ruido en consola
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔄 Actualizando curso con datos frescos de enrolledCourses:', freshCourse.title);
+          }
           setCurrentCourse(freshCourse);
           localStorage.setItem('currentCourse', JSON.stringify(freshCourse));
         }
@@ -678,19 +695,27 @@ export const StudentProvider = ({ children }) => {
         healthy = await waitForBackendHealth(2000);
         if (!healthy && attempt < 3) {
           // En los primeros intentos, esperar un poco antes de abrir WS
-          console.warn('[WS] Backend no responde health (intento', attempt, '); reintentando...');
+          // Solo mostrar warning en desarrollo y solo una vez por sesión
+          if (import.meta.env?.DEV && attempt === 1) {
+            console.debug('[WS] Backend no responde health check. Verifica que el servidor esté corriendo en http://localhost:1002');
+          }
           scheduleReconnect(attempt);
           return;
         }
       } catch (healthErr) {
-        console.warn('[WS] Error en health check:', healthErr?.message || healthErr);
+        // Solo mostrar error detallado en desarrollo y en el primer intento
+        if (import.meta.env?.DEV && attempt === 1) {
+          console.debug('[WS] Health check falló:', healthErr?.message || healthErr);
+        }
         // Si ya hemos intentado varias veces, intentar abrir el WS de todas formas
         if (attempt < 3) {
           scheduleReconnect(attempt);
           return;
         }
         // Después de 3 intentos, intentar abrir el WS incluso si el health check falla
-        console.warn('[WS] Health check falló pero intentando abrir WS de todas formas (intento', attempt, ')');
+        if (import.meta.env?.DEV) {
+          console.debug('[WS] Health check falló pero intentando abrir WS de todas formas (intento', attempt, ')');
+        }
       }
       
       const url = getWsNotificationsUrl();

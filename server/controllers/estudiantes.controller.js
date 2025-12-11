@@ -34,7 +34,9 @@ export const crear = async (req, res) => {
   try {
     const { 
       nombre,
-      apellidos, 
+      apellido_paterno,
+      apellido_materno,
+      apellidos, // Mantener para compatibilidad
       email, 
       comunidad1, 
       comunidad2,
@@ -66,10 +68,74 @@ export const crear = async (req, res) => {
   asesor,
     } = req.body;
 
-    // Validación básica
-    if (!req.file || !nombre || !apellidos || !email || !telefono || !nombre_tutor || !tel_tutor || !grupo || !curso || !plan || !anio) {
-      return res.status(400).json({ message: "Todos los campos son obligatorios" });
-    } 
+    // Validación básica - verificar campos obligatorios
+    const camposFaltantes = [];
+    
+    // Log para depuración
+    console.log('📋 Datos recibidos:', {
+      tieneFile: !!req.file,
+      nombre: nombre ? '✓' : '✗',
+      apellido_paterno: apellido_paterno ? '✓' : '✗',
+      apellido_materno: apellido_materno ? '✓' : '✗',
+      apellidos: apellidos ? '✓' : '✗',
+      email: email ? '✓' : '✗',
+      telefono: telefono ? '✓' : '✗',
+      nombre_tutor: nombre_tutor ? '✓' : '✗',
+      tel_tutor: tel_tutor ? '✓' : '✗',
+      grupo: grupo ? '✓' : '✗',
+      curso: curso ? '✓' : '✗',
+      plan: plan ? '✓' : '✗',
+      anio: anio ? '✓' : '✗',
+    });
+    
+    if (!req.file) camposFaltantes.push('foto');
+    if (!nombre || !nombre.trim()) camposFaltantes.push('nombre');
+    if (!email || !email.trim()) camposFaltantes.push('email');
+    if (!telefono || !telefono.trim()) camposFaltantes.push('telefono');
+    if (!nombre_tutor || !nombre_tutor.trim()) camposFaltantes.push('nombre_tutor');
+    if (!tel_tutor || !tel_tutor.trim()) camposFaltantes.push('tel_tutor');
+    if (!grupo || !grupo.trim()) camposFaltantes.push('grupo');
+    if (!curso || !curso.trim()) camposFaltantes.push('curso');
+    if (!plan || !plan.trim()) camposFaltantes.push('plan');
+    if (!anio || !anio.toString().trim()) camposFaltantes.push('anio');
+    
+    // Validar apellidos: aceptar separados o combinados
+    const tieneApellidosSeparados = apellido_paterno && apellido_paterno.trim() && apellido_materno && apellido_materno.trim();
+    const tieneApellidosCombinados = apellidos && apellidos.trim();
+    
+    if (!tieneApellidosSeparados && !tieneApellidosCombinados) {
+      camposFaltantes.push('apellidos (paterno y materno, o apellidos combinados)');
+    }
+    
+    if (camposFaltantes.length > 0) {
+      console.error('❌ Campos faltantes:', camposFaltantes);
+      return res.status(400).json({ 
+        message: "Campos obligatorios faltantes", 
+        campos: camposFaltantes,
+        debug: {
+          recibido: {
+            nombre: !!nombre,
+            apellido_paterno: !!apellido_paterno,
+            apellido_materno: !!apellido_materno,
+            apellidos: !!apellidos,
+            email: !!email,
+            telefono: !!telefono,
+            nombre_tutor: !!nombre_tutor,
+            tel_tutor: !!tel_tutor,
+            grupo: !!grupo,
+            curso: !!curso,
+            plan: !!plan,
+            anio: !!anio,
+            tieneFile: !!req.file
+          }
+        }
+      });
+    }
+    
+    // Si no vienen los campos separados, usar apellidos como respaldo
+    const apellidoPaterno = apellido_paterno || (apellidos ? apellidos.split(' ')[0] : '');
+    const apellidoMaterno = apellido_materno || (apellidos ? apellidos.split(' ').slice(1).join(' ') : '');
+    const apellidosCompletos = apellidos || `${apellidoPaterno} ${apellidoMaterno}`.trim(); 
 
     // Ruta relativa para la imagen
     const imagen = `/public/${req.file.filename}`;
@@ -88,7 +154,9 @@ export const crear = async (req, res) => {
     // Objeto listo para guardar en la base de datos
   const estudianteGenerado = {
       nombre,
-      apellidos, 
+      apellido_paterno: apellidoPaterno,
+      apellido_materno: apellidoMaterno,
+      apellidos: apellidosCompletos, // Mantener para compatibilidad 
       email, 
       foto: imagen,
   grupo,
@@ -123,7 +191,24 @@ export const crear = async (req, res) => {
 
     console.log(estudianteGenerado);
 
-    const result = await Estudiantes.createEstudiante(estudianteGenerado);
+    let result;
+    try {
+      result = await Estudiantes.createEstudiante(estudianteGenerado);
+    } catch (dbError) {
+      console.error('❌ Error en createEstudiante:', {
+        message: dbError.message,
+        code: dbError.code,
+        sqlMessage: dbError.sqlMessage
+      });
+      return res.status(500).json({ 
+        message: "Error al guardar en la base de datos",
+        error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error interno del servidor',
+        detalles: process.env.NODE_ENV === 'development' ? {
+          code: dbError.code,
+          sqlMessage: dbError.sqlMessage
+        } : undefined
+      });
+    }
 
     const idInsertado = result?.insertId || null;
   const basePrefix = (curso || 'EEAU').slice(0,4).toUpperCase();
@@ -137,8 +222,29 @@ export const crear = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error en el controlador:", error);
-  res.status(500).json({ message: "Error interno del servidor" });
+    console.error("❌ Error en el controlador crear estudiante:", {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      sqlMessage: error.sqlMessage
+    });
+    
+    // Si es un error de base de datos, dar más información
+    if (error.code && error.sqlMessage) {
+      return res.status(500).json({ 
+        message: "Error al procesar el registro",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor',
+        detalles: process.env.NODE_ENV === 'development' ? {
+          code: error.code,
+          sqlMessage: error.sqlMessage
+        } : undefined
+      });
+    }
+    
+    res.status(500).json({ 
+      message: "Error interno del servidor",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 

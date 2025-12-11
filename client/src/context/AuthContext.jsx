@@ -52,10 +52,18 @@ export const AuthProvider = ({children}) => {
 
     const signup = async (user) => {
         try {
+            setErrors([]); // Limpiar errores previos
             const res = await registerRequest(user);
             setVerde(true);
         } catch (error) {
             console.log(error);
+            // Capturar y mostrar errores del servidor
+            const errorMessage = error.response?.data?.message || 
+                               (error.response?.status === 409 ? 'Este nombre de usuario ya está en uso. Por favor, elige otro.' : 
+                                error.response?.status === 400 ? 'Todos los campos son obligatorios' :
+                                'Error al crear la cuenta. Por favor, intenta de nuevo.');
+            setErrors([errorMessage]);
+            setVerde(false);
         }
     }
 

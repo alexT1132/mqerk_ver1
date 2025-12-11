@@ -168,54 +168,64 @@ export default function Layout({ embedded = false }) {
   const clearFilters = () => { setSearch(''); setDateFrom(''); setDateTo(''); };
 
   const content = (
-    <>
-      <div className="mx-auto mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2">Feedback de alumnos</h1>
-        <p className="text-sm sm:text-base text-gray-600">Selecciona un alumno asignado para revisar sus entregas y dejar notas.</p>
+    <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-6">
+      <div className="mx-auto mb-6 sm:mb-8">
+        <div className="relative overflow-hidden rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 shadow-xl ring-2 ring-slate-100/50 px-5 sm:px-7 py-5 sm:py-6">
+          <div className="pointer-events-none absolute -left-10 -top-14 h-64 w-64 rounded-full bg-violet-200/50 blur-3xl" />
+          <div className="pointer-events-none absolute -right-10 -bottom-14 h-64 w-64 rounded-full bg-indigo-200/50 blur-3xl" />
+          <div className="relative z-10">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 mb-2">
+              Feedback de alumnos
+            </h1>
+            <p className="text-sm sm:text-base text-slate-600 font-medium">
+              Selecciona un alumno asignado para revisar sus entregas y dejar notas.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <section className="bg-white rounded-2xl shadow p-3 sm:p-4 md:p-5 border border-slate-100">
-        <div className="flex flex-col gap-3 mb-3">
-          <div className="font-semibold text-slate-800 flex flex-wrap items-center gap-2 text-sm sm:text-base">
-            <span className="w-full sm:w-auto">Mis estudiantes</span>
-            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200" title="Activos tras filtro de grupo">
+      <section className="bg-white rounded-3xl shadow-xl p-4 sm:p-5 md:p-6 border-2 border-slate-200 ring-2 ring-slate-100/50">
+        <div className="flex flex-col gap-4 mb-4">
+          <div className="font-bold text-slate-800 flex flex-wrap items-center gap-3 text-sm sm:text-base">
+            <span className="w-full sm:w-auto text-lg">Mis estudiantes</span>
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white ring-2 ring-emerald-300 shadow-md" title="Activos tras filtro de grupo">
               Activos {baseFiltrados.length}
             </span>
-            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200" title="Coincidencias con filtros de texto/fecha">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white ring-2 ring-indigo-300 shadow-md" title="Coincidencias con filtros de texto/fecha">
               Coinciden {estudiantesFiltrados.length}
             </span>
             {hiddenCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200" title="Ocultos por estar inactivos/suspendidos/eliminados">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-slate-400 to-slate-500 text-white ring-2 ring-slate-300 shadow-md" title="Ocultos por estar inactivos/suspendidos/eliminados">
                 Ocultos {hiddenCount}
               </span>
             )}
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
             <input
               type="text"
               value={search}
               onChange={(e)=> setSearch(e.target.value)}
               placeholder="Buscar por folio o nombre"
-              className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="flex-1 px-4 py-2.5 text-sm rounded-xl border-2 border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all shadow-sm hover:shadow-md"
             />
             <div className="flex items-center gap-2">
               <input
                 type="date"
                 value={dateFrom}
                 onChange={(e)=> setDateFrom(e.target.value)}
-                className="flex-1 min-w-0 px-2 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="flex-1 min-w-0 px-3 py-2.5 text-sm rounded-xl border-2 border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all shadow-sm hover:shadow-md"
                 title="Desde"
               />
               <input
                 type="date"
                 value={dateTo}
                 onChange={(e)=> setDateTo(e.target.value)}
-                className="flex-1 min-w-0 px-2 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="flex-1 min-w-0 px-3 py-2.5 text-sm rounded-xl border-2 border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all shadow-sm hover:shadow-md"
                 title="Hasta"
               />
               <button
                 onClick={clearFilters}
-                className="px-3 py-2 rounded-lg border text-sm border-slate-300 hover:bg-slate-50 whitespace-nowrap"
+                className="px-4 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 whitespace-nowrap transition-all shadow-sm hover:shadow-md"
                 title="Limpiar filtros"
               >
                 Limpiar
@@ -230,18 +240,18 @@ export default function Layout({ embedded = false }) {
         </div>
 
         {/* Filtro por grupo */}
-        <div className="mb-3">
+        <div className="mb-4">
           {gruposDisponibles.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs sm:text-sm text-slate-600 font-medium">Grupo:</span>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="text-xs sm:text-sm text-slate-700 font-bold">Grupo:</span>
               {gruposDisponibles.map((g) => (
                 <button
                   key={g}
                   onClick={() => setSelectedGroup(g)}
-                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium border transition ${
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border-2 transition-all duration-200 transform hover:scale-105 active:scale-95 ${
                     selectedGroup === g
-                      ? 'bg-purple-700 text-white border-purple-700 shadow'
-                      : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
+                      ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-600 shadow-lg ring-2 ring-violet-300'
+                      : 'bg-white text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400 shadow-sm hover:shadow-md'
                   }`}
                   aria-pressed={selectedGroup === g}
                 >
@@ -261,33 +271,37 @@ export default function Layout({ embedded = false }) {
             Selecciona un grupo para ver a tus estudiantes asignados.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border-2 border-slate-200 shadow-lg bg-white -mx-3 sm:mx-0">
+          <div className="overflow-x-auto rounded-3xl border-2 border-slate-200 shadow-xl bg-white ring-2 ring-slate-100/50 -mx-3 sm:mx-0">
             <table className="min-w-[980px] table-fixed text-xs sm:text-sm">
               <colgroup>
                 {colWidths.map((w, i) => (
                   <col key={i} style={{ width: w }} />
                 ))}
               </colgroup>
-              <thead className="bg-gradient-to-r from-purple-600 to-indigo-600 sticky top-0 z-10">
-                <tr className="text-left text-white uppercase tracking-wide">
+              <thead className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 sticky top-0 z-10">
+                <tr className="text-left text-white uppercase tracking-widest">
                   {columns.map((c) => (
-                    <th key={c.key} className="px-4 py-4 whitespace-nowrap text-xs font-bold">
+                    <th key={c.key} className="px-4 py-5 whitespace-nowrap text-xs font-extrabold">
                       {c.label}
                     </th>
                   ))}
-                  <th className="px-4 py-4 text-right">
-                    <span className="text-xs font-bold">Acciones</span>
+                  <th className="px-4 py-5 text-right">
+                    <span className="text-xs font-extrabold">Acciones</span>
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {estudiantesFiltrados.length === 0 && !loading ? (
                   <tr>
-                    <td colSpan={columns.length + 1} className="px-4 py-12 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <Users className="size-12 text-slate-400" />
-                        <p className="text-slate-600 font-medium">No hay estudiantes asignados</p>
-                        <p className="text-sm text-slate-500">Los estudiantes aparecerán aquí cuando estén asignados a tu grupo</p>
+                    <td colSpan={columns.length + 1} className="px-4 py-20 text-center">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 ring-4 ring-violet-200 flex items-center justify-center shadow-lg">
+                          <Users className="size-10 text-violet-600" />
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-lg font-bold text-slate-700">No hay estudiantes asignados</p>
+                          <p className="text-sm text-slate-500">Los estudiantes aparecerán aquí cuando estén asignados a tu grupo</p>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -295,26 +309,26 @@ export default function Layout({ embedded = false }) {
                   estudiantesFiltrados.map((e, idx) => (
                     <tr 
                       key={e.id} 
-                      className="hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 transition-colors duration-200 border-b border-slate-100"
+                      className="hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200 border-b border-slate-200 bg-white"
                     >
                       {columns.map((c) => (
-                        <td key={c.key} className="px-4 py-4 whitespace-nowrap text-slate-800">
+                        <td key={c.key} className="px-4 py-5 whitespace-nowrap text-slate-800">
                           {c.key === 'nombreCompleto' ? (
-                            <span className="font-semibold text-slate-900 truncate inline-block max-w-[260px]" title={c.render(e)}>
+                            <span className="font-bold text-slate-900 truncate inline-block max-w-[260px]" title={c.render(e)}>
                               {c.render(e)}
                             </span>
                           ) : (
-                            <span className="text-slate-700">{c.render(e)}</span>
+                            <span className="text-slate-700 font-medium">{c.render(e)}</span>
                           )}
                         </td>
                       ))}
-                      <td className="px-2 sm:px-4 py-3 sm:py-4 text-right whitespace-nowrap">
+                      <td className="px-2 sm:px-4 py-4 text-right whitespace-nowrap">
                         <button
                           onClick={() => navigate(`/asesor/feedback/${e.id}`)}
-                          className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                          className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-110 active:scale-95"
                           title="Revisar actividades y entregas"
                         >
-                          <Eye className="size-3 sm:size-4" /> <span className="hidden sm:inline">Revisar</span>
+                          <Eye className="size-4 sm:size-5" /> <span className="hidden sm:inline">Revisar</span>
                         </button>
                       </td>
                     </tr>
@@ -326,7 +340,7 @@ export default function Layout({ embedded = false }) {
         )}
       </section>
       {/* Página sólo lista: el detalle ahora está en /asesor_feedback/:studentId */}
-    </>
+    </div>
   );
 
   if (embedded) return content;

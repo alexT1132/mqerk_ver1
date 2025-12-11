@@ -3,6 +3,7 @@ import { Sparkles, AlertTriangle, Share2, Printer, ClipboardCopy, Download, Flag
 import ReactMarkdown from 'react-markdown';
 // CORRECCIÓN: Se importa remarkGfm desde una URL de CDN para resolver el error de importación.
 import remarkGfm from 'https://esm.sh/remark-gfm';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * Modal para mostrar el análisis de rendimiento generado por la IA de Gemini.
@@ -22,8 +23,52 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
   const contentRef = useRef(null);
   const [headings, setHeadings] = useState([]);
   const [justHighlightedId, setJustHighlightedId] = useState(null);
+  const [aiUsage, setAiUsage] = useState({ count: 0, limit: 5, remaining: 5 });
 
-  // Helpers para exportar un Markdown enriquecido
+  // Obtener rol del usuario
+  const { user } = useAuth() || {};
+  const userRole = user?.rol || user?.role || 'estudiante';
+
+  // Helpers para tracking de uso de IA (localStorage)
+  const AI_USAGE_KEY = 'ai_analysis_usage';
+  // Límites por rol: Asesores tienen más intentos porque generan preguntas y fórmulas
+  const DAILY_LIMIT = userRole === 'asesor' || userRole === 'admin' ? 20 : 5;
+
+  const getUsageToday = () => {
+    try {
+      const data = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
+      const today = new Date().toISOString().split('T')[0];
+      if (data.date !== today) {
+        return { count: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
+      }
+      return {
+        count: data.count || 0,
+        limit: DAILY_LIMIT,
+        remaining: Math.max(0, DAILY_LIMIT - (data.count || 0))
+      };
+    } catch {
+      return { count: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
+    }
+  };
+
+  const incrementUsage = () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const data = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
+      if (data.date !== today) {
+        localStorage.setItem(AI_USAGE_KEY, JSON.stringify({ date: today, count: 1, limit: DAILY_LIMIT }));
+      } else {
+        data.count = (data.count || 0) + 1;
+        localStorage.setItem(AI_USAGE_KEY, JSON.stringify(data));
+      }
+      setAiUsage(getUsageToday());
+    } catch (e) {
+      console.error('Error incrementando uso de IA:', e);
+    }
+  };
+
+
+  // Helpers para exportar un Markdown 
   const stripMd = (s) => String(s || '')
     .replace(/`{1,3}[^`]*`{1,3}/g, '')
     .replace(/\*\*|__/g, '')
@@ -56,7 +101,7 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
   };
   const buildTechSheet = (meta) => {
     if (!meta) return '';
-    const val = (v, suf='') => (v == null || Number.isNaN(v)) ? 'N/D' : `${v}${suf}`;
+    const val = (v, suf = '') => (v == null || Number.isNaN(v)) ? 'N/D' : `${v}${suf}`;
     const rows = [
       ['Total intentos', val(meta.totalIntentos)],
       ['Mejor puntaje', val(meta.mejorPuntaje, '%')],
@@ -108,7 +153,7 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
     if (!meta) {
       return `${title}\nResumen: análisis de rendimiento disponible en MQerk Academy.`;
     }
-    const v = (x, suf='') => (x == null || Number.isNaN(x)) ? 'N/D' : `${x}${suf}`;
+    const v = (x, suf = '') => (x == null || Number.isNaN(x)) ? 'N/D' : `${x}${suf}`;
     const partes = [
       title,
       `Intentos: ${v(meta.totalIntentos)}`,
@@ -120,6 +165,13 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
     partes.push('Consejos completos en el informe.');
     return partes.join('\n');
   };
+
+  // Cargar uso al abrir el modal
+  useEffect(() => {
+    if (open) {
+      setAiUsage(getUsageToday());
+    }
+  }, [open]);
 
   // Efecto para manejar el foco y el cierre con 'Escape'
   useEffect(() => {
@@ -166,10 +218,23 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
     };
   }, [open]);
 
+  // Incrementar uso cuando se muestra un análisis exitoso de Gemini
+  useEffect(() => {
+    if (open && analysisText && !isLoading && !error) {
+      const sourceMatch = analysisText ? analysisText.match(/<<<AI_SOURCE:(\w+)>>>/) : null;
+      const source = sourceMatch?.[1] || null;
+      if (source === 'GEMINI') {
+        // Solo incrementar si es un análisis de Gemini (no fallback)
+        incrementUsage();
+      }
+    }
+  }, [analysisText, isLoading, error]);
+
+
   // Detectar fuente del análisis y limpiar marcadores ocultos
   const sourceMatch = analysisText ? analysisText.match(/<<<AI_SOURCE:(\w+)>>>/) : null;
   const analysisSource = sourceMatch?.[1] || null; // 'GEMINI' | 'FALLBACK' | null
-  const cleanedAnalysisText = analysisText ? analysisText.replace(/\n*<<<AI_SOURCE:\w+>>>\s*$/,'') : analysisText;
+  const cleanedAnalysisText = analysisText ? analysisText.replace(/\n*<<<AI_SOURCE:\w+>>>\s*$/, '') : analysisText;
 
   const canExport = !!cleanedAnalysisText && !isLoading && !error;
   // Construir TOC de forma reactiva cuando cambia el contenido
@@ -204,12 +269,12 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
       el.classList.add('pulse-highlight');
       setJustHighlightedId(id);
       setTimeout(() => { el.classList.remove('pulse-highlight'); setJustHighlightedId(null); }, 1200);
-    } catch {}
+    } catch { }
   };
   const handleCopy = async () => {
     try {
-    if (!canExport) return;
-  const enriched = buildExportMarkdown(cleanedAnalysisText, itemName, analysisMeta);
+      if (!canExport) return;
+      const enriched = buildExportMarkdown(cleanedAnalysisText, itemName, analysisMeta);
       await navigator.clipboard.writeText(enriched);
     } catch (e) {
       console.warn('No se pudo copiar el análisis al portapapeles:', e);
@@ -227,8 +292,8 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
   };
   const handlePrintPdf = () => {
     try {
-  if (!canExport) return;
-  const enriched = buildExportMarkdown(cleanedAnalysisText, itemName, analysisMeta);
+      if (!canExport) return;
+      const enriched = buildExportMarkdown(cleanedAnalysisText, itemName, analysisMeta);
       const w = window.open('', '_blank');
       if (!w) return;
       const now = new Date().toLocaleString('es-ES');
@@ -310,8 +375,8 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
   }, [open, canExport, cleanedAnalysisText, analysisMeta]);
   const handleDownload = () => {
     try {
-  if (!canExport) return;
-  const enriched = buildExportMarkdown(cleanedAnalysisText, itemName, analysisMeta);
+      if (!canExport) return;
+      const enriched = buildExportMarkdown(cleanedAnalysisText, itemName, analysisMeta);
       const blob = new Blob([enriched], { type: 'text/markdown;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -319,7 +384,7 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
       const safeName = (itemName || 'analisis').replace(/[^\w\-]+/g, '_').slice(0, 48);
       const ts = new Date();
       const pad = (n) => String(n).padStart(2, '0');
-      const stamp = `${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}`;
+      const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}`;
       a.download = `${safeName || 'analisis'}-${stamp}.md`;
       document.body.appendChild(a);
       a.click();
@@ -358,7 +423,7 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
         </div>
       );
     }
-  if (cleanedAnalysisText) {
+    if (cleanedAnalysisText) {
       const meta = analysisMeta || {};
       // Construir mini banda de métricas visible
       const toNum = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
@@ -384,7 +449,7 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
       return (
         <div className="bg-purple-50/50 p-0 rounded-lg animate-fade-in">
           {Boolean(analysisMeta) && (
-            <div className="mx-4 mt-3 mb-1 grid grid-cols-2 gap-2 text-[12px] text-gray-700">
+            <div className="mx-0 sm:mx-2 md:mx-4 mt-2 sm:mt-3 mb-1 grid grid-cols-2 gap-1.5 sm:gap-2 text-[11px] sm:text-[12px] text-gray-700">
               <div className="bg-white/70 border border-gray-200 rounded-md px-2 py-1.5">
                 <div className="font-semibold text-gray-900">Intentos</div>
                 <div>{meta.totalIntentos ?? 'N/D'} • mejor {meta.mejorPuntaje ?? 'N/D'}% • prom {meta.promedio ?? 'N/D'}%</div>
@@ -394,15 +459,15 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
                 <div>
                   último {meta.ultimoPuntaje ?? 'N/D'}%
                   <span className={`ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold ${dLastPrev == null ? 'bg-gray-100 text-gray-500' : dLastPrev > 0 ? 'bg-green-100 text-green-700' : dLastPrev < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
-                    {dLastPrev != null ? (dLastPrev >=0 ? '+' : '') + dLastPrev : 'N/D'} vs ant
+                    {dLastPrev != null ? (dLastPrev >= 0 ? '+' : '') + dLastPrev : 'N/D'} vs ant
                   </span>
                 </div>
               </div>
               <div className="bg-white/70 border border-gray-200 rounded-md px-2 py-1.5">
                 <div className="font-semibold text-gray-900">Oficial</div>
                 <div>
-                  Δ último <span className={`${dLastOff == null ? 'text-gray-500' : dLastOff > 0 ? 'text-green-700' : dLastOff < 0 ? 'text-red-700' : 'text-gray-700'} font-semibold`}>{dLastOff != null ? (dLastOff >=0 ? '+' : '') + dLastOff : 'N/D'}</span> pts •
-                  {' '}Δ mejor <span className={`${dBestOff == null ? 'text-gray-500' : dBestOff > 0 ? 'text-green-700' : dBestOff < 0 ? 'text-red-700' : 'text-gray-700'} font-semibold`}>{dBestOff != null ? (dBestOff >=0 ? '+' : '') + dBestOff : 'N/D'}</span> pts
+                  Δ último <span className={`${dLastOff == null ? 'text-gray-500' : dLastOff > 0 ? 'text-green-700' : dLastOff < 0 ? 'text-red-700' : 'text-gray-700'} font-semibold`}>{dLastOff != null ? (dLastOff >= 0 ? '+' : '') + dLastOff : 'N/D'}</span> pts •
+                  {' '}Δ mejor <span className={`${dBestOff == null ? 'text-gray-500' : dBestOff > 0 ? 'text-green-700' : dBestOff < 0 ? 'text-red-700' : 'text-gray-700'} font-semibold`}>{dBestOff != null ? (dBestOff >= 0 ? '+' : '') + dBestOff : 'N/D'}</span> pts
                 </div>
               </div>
               <div className="bg-white/70 border border-gray-200 rounded-md px-2 py-1.5">
@@ -413,8 +478,8 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
           )}
           {/* Mini TOC chips */}
           {headings && headings.length > 0 && (
-            <div className="px-4 mt-1 mb-2 overflow-x-auto no-scrollbar">
-              <div className="flex items-center gap-1.5 min-w-max">
+            <div className="px-0 sm:px-2 md:px-4 mt-1 mb-2 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1 sm:gap-1.5 min-w-max">
                 {headings.map(h => (
                   <button key={h.id} onClick={() => scrollToId(h.id)} className={`px-2 py-1 rounded-full text-[11px] border transition-colors whitespace-nowrap ${justHighlightedId === h.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white hover:bg-indigo-50 text-gray-700 border-gray-200'}`}>{h.text}</button>
                 ))}
@@ -424,15 +489,15 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
           {/* Contenido scrollable y con formato markdown */}
           <div
             ref={contentRef}
-            className="markdown-body text-sm sm:text-base text-gray-800 px-4 py-3"
+            className="markdown-body text-sm sm:text-base text-gray-800 px-0 sm:px-2 md:px-4 py-2 sm:py-3"
           >
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                a: ({node, ...props}) => (
+                a: ({ node, ...props }) => (
                   <a {...props} target="_blank" rel="noopener noreferrer" />
                 ),
-                h3: ({node, children, ...rest}) => {
+                h3: ({ node, children, ...rest }) => {
                   try {
                     const raw = Array.isArray(children) ? children.map((c) => (typeof c === 'string' ? c : '')).join(' ') : String(children || '');
                     const id = slugify(stripMd(raw));
@@ -468,9 +533,9 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
         - El encabezado y el pie de página tienen `flex-shrink-0` para mantener su tamaño.
         - El div del contenido (`overflow-y-auto`) crecerá para llenar el espacio y mostrará una barra de scroll cuando sea necesario.
       */}
-  <div className="analisis-modal no-scrollbar bg-white/98 rounded-2xl shadow-2xl ring-1 ring-black/5 w-full max-w-lg overflow-hidden transform transition-all animate-scale-in flex flex-col">
+      <div className="analisis-modal no-scrollbar bg-white/98 rounded-2xl sm:rounded-2xl rounded-t-3xl shadow-2xl ring-1 ring-black/5 w-full h-full sm:h-auto sm:max-w-lg overflow-hidden transform transition-all animate-scale-in flex flex-col">
         {/* Encabezado del Modal */}
-  <div className="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-4 flex items-center justify-between flex-shrink-0">
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-3 sm:p-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center min-w-0">
             <Sparkles className="w-6 h-6 mr-3 flex-shrink-0" />
             <div className="min-w-0">
@@ -480,6 +545,25 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
                 {analysisSource === 'GEMINI' && (<span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-400/20 text-emerald-100 border border-emerald-300/40">IA activa</span>)}
                 {analysisSource === 'FALLBACK' && (<span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] bg-yellow-400/20 text-yellow-100 border border-yellow-300/40">Analizador local</span>)}
               </p>
+              {/* Indicador de uso de IA */}
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <div className="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-full">
+                  <span className="text-white/90">Análisis hoy:</span>
+                  <span className={`font-bold ${aiUsage.remaining <= 1 ? 'text-red-300' : aiUsage.remaining <= 2 ? 'text-yellow-300' : 'text-emerald-300'}`}>
+                    {aiUsage.remaining}/{aiUsage.limit}
+                  </span>
+                </div>
+                {aiUsage.remaining === 0 && (
+                  <span className="text-red-200 text-[10px] animate-pulse">
+                    ⚠️ Límite alcanzado
+                  </span>
+                )}
+                {aiUsage.remaining === 1 && (
+                  <span className="text-yellow-200 text-[10px]">
+                    ⚡ Último intento
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <button
@@ -491,14 +575,14 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
-        
+
         {/* Contenido del Modal (con scroll solo en el área de texto) */}
-        <div className="am-content p-6 flex-1 min-h-0 overflow-y-auto">
+        <div className="am-content p-3 sm:p-4 md:p-6 flex-1 min-h-0 overflow-y-auto">
           {renderContent()}
         </div>
 
         {/* Pie del Modal */}
-        <div className="am-footer bg-gray-50 px-3 py-2 flex items-center justify-between gap-2 border-t flex-shrink-0">
+        <div className="am-footer bg-gray-50 px-2 sm:px-3 py-2 flex items-center justify-between gap-1 sm:gap-2 border-t flex-shrink-0">
           <div className="text-[11px] text-gray-500 hidden sm:block">
             {analysisSource === 'GEMINI' && 'Fuente: IA (Gemini) – contenido orientativo'}
             {analysisSource === 'FALLBACK' && 'Fuente: Analizador local – contenido orientativo'}
@@ -558,14 +642,14 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
             </button>
             <button
               onClick={onClose}
-              className="px-3 py-1.5 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
               Cerrar
             </button>
           </div>
         </div>
       </div>
-      
+
       <style>{`
         @keyframes scale-in {
           from { opacity: 0; transform: scale(0.95); }
@@ -582,9 +666,11 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
           animation: fade-in 0.5s ease-out forwards;
         }
         /* Safe areas + dvh para altura confiable y estable (base móvil) */
-        .analisis-modal { max-height: calc(86svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-        @supports (height: 100dvh) {
-          .analisis-modal { max-height: calc(86dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+        @media (min-width: 640px) {
+          .analisis-modal { max-height: calc(86svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+          @supports (height: 100dvh) {
+            .analisis-modal { max-height: calc(86dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+          }
         }
         /* Scroll suave en el contenido y control de barras */
         .analisis-modal { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
@@ -609,7 +695,7 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
           .analisis-modal { margin-left: clamp(40px, 6vw, 100px); }
         }
         @media (max-width: 639.98px) { /* móviles: centrado y compacto */
-          .analisis-modal { margin-left: 0; width: 90vw; height: clamp(420px, 70svh, 640px); margin-top: clamp(8px, 3vh, 20px); }
+          .analisis-modal { margin-left: 0; width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; margin-top: 0; border-radius: 0; }
           .analisis-modal .markdown-body h2 { font-size: 1.05rem; }
           .analisis-modal .markdown-body h3 { font-size: 1rem; }
           .analisis-modal .markdown-body p { font-size: 0.95rem; }

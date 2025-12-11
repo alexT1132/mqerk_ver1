@@ -49,36 +49,38 @@ function HeaderAct({ total, backTo }) {
 
 function HeaderSim({ title, subtitle, total, onBack }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-gradient-to-r from-sky-50 to-indigo-50/60 px-4 sm:px-6 py-2 sm:py-3 shadow-sm">
+    <div className="rounded-3xl border-2 border-slate-200 bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 px-5 sm:px-7 py-4 sm:py-5 shadow-lg ring-2 ring-slate-100/50">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/80 text-slate-600 hover:bg-white shadow-sm"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
             aria-label="Regresar"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </button>
 
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-violet-700 via-indigo-700 to-purple-700 bg-clip-text text-transparent">
               {title || 'Elige un módulo específico'}
             </h1>
             {subtitle && (
-              <p className="text-slate-600 text-sm sm:text-base">
+              <p className="text-slate-600 text-sm sm:text-base font-medium mt-1.5">
                 {subtitle}
               </p>
             )}
           </div>
         </div>
 
-        <div className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-slate-700 shadow-sm">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="opacity-90">
-            <path d="M12 12m-10,0a10,10 0 1,0 20,0a10,10 0 1,0 -20,0" />
-          </svg>
-          <span className="text-sm">{total} módulos disponibles</span>
+        <div className="hidden sm:flex items-center gap-2.5 rounded-xl border-2 border-violet-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-2.5 text-slate-700 shadow-md">
+          <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-sm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 12m-10,0a10,10 0 1,0 20,0a10,10 0 1,0 -20,0" />
+            </svg>
+          </div>
+          <span className="text-sm font-bold">{total} módulos disponibles</span>
         </div>
       </div>
     </div>
@@ -90,46 +92,51 @@ function CardAct({ item, onOpenSolicitudes, badgeCount, to }) {
   const { title, desc } = item;
   const gradient = item?.gradient || item?.color || "from-violet-500 to-fuchsia-600";
   return (
-    <article className="group relative flex h-full min-h-[240px] flex-col rounded-3xl border border-slate-200 bg-white/80 p-6 sm:p-7 shadow-sm ring-1 ring-transparent transition hover:shadow-md hover:ring-violet-200">
+    <article className="group relative flex h-full min-h-[260px] flex-col rounded-3xl border-2 border-slate-200 bg-white p-6 sm:p-7 shadow-lg ring-2 ring-slate-100/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:ring-violet-200/50">
+      <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-50/0 to-indigo-50/0 group-hover:from-violet-50/30 group-hover:to-indigo-50/30 transition-all duration-300" />
       <div
         className={[
-          "mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-md",
-          "ring-1 ring-inset ring-white/40",
+          "mb-6 inline-flex h-16 w-16 items-center justify-center rounded-3xl text-white shadow-xl",
+          "ring-4 ring-white/50",
           "bg-gradient-to-br",
+          "group-hover:scale-110 transition-transform duration-300",
           gradient,
         ].join(" ")}
       >
-        <IconBook className="h-7 w-7" />
+        <IconBook className="h-8 w-8" />
       </div>
-      <h3 className="text-lg font-semibold text-slate-900 inline-flex items-center gap-2">
+      <h3 className="text-xl font-bold text-slate-900 inline-flex items-center gap-2 mb-2">
         <span>{title}</span>
         {badgeCount > 0 && (
-          <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 border border-red-200">
+          <span className="inline-flex items-center justify-center min-w-[1.5rem] px-2.5 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-red-500 to-rose-600 text-white border-2 border-white shadow-lg ring-2 ring-red-200">
             {badgeCount}
           </span>
         )}
       </h3>
-      <p className="mt-1 text-sm text-slate-600 leading-relaxed">{desc}</p>
-      <div className="mt-auto flex items-center gap-4">
+      <p className="mt-1 text-sm text-slate-600 leading-relaxed font-medium">{desc}</p>
+      <div className="mt-auto flex items-center gap-3 pt-4 border-t border-slate-200">
         <button
           type="button"
           onClick={onOpenSolicitudes}
-          className="inline-flex items-center gap-2 text-sm font-medium text-violet-700 hover:text-violet-800"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 border-2 border-violet-200 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
         >
           Solicitudes
         </button>
-        <Link to={to} className="inline-flex items-center gap-2 text-violet-700 hover:text-violet-800">
-          <span className="text-sm font-medium">Acceder</span>
+        <Link 
+          to={to} 
+          className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl group"
+        >
+          <span>Acceder</span>
           <svg
-            width="16"
-            height="16"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="transition-transform group-hover:translate-x-0.5"
+            className="transition-transform group-hover:translate-x-1"
           >
             <path d="M5 12h14" />
             <path d="M12 5l7 7-7 7" />
@@ -145,38 +152,45 @@ function CardSim({ item, onOpenSolicitudes, badgeCount, to }) {
   const { title, desc, icon: Icon } = item;
   const gradient = item?.gradient || item?.color || "from-violet-500 to-fuchsia-600";
   return (
-    <article className="group relative flex h-full min-h-[240px] flex-col rounded-3xl border border-slate-200 bg-white/80 p-6 sm:p-7 shadow-sm ring-1 ring-transparent transition hover:shadow-md hover:ring-violet-200">
-      <div className="pointer-events-none absolute inset-0 rounded-3xl " />
+    <article className="group relative flex h-full min-h-[260px] flex-col rounded-3xl border-2 border-slate-200 bg-white p-6 sm:p-7 shadow-lg ring-2 ring-slate-100/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:ring-violet-200/50">
+      <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-50/0 to-indigo-50/0 group-hover:from-violet-50/30 group-hover:to-indigo-50/30 transition-all duration-300" />
       <div
         className={[
-          "mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-md",
-          "ring-1 ring-inset ring-white/40",
+          "mb-6 inline-flex h-16 w-16 items-center justify-center rounded-3xl text-white shadow-xl",
+          "ring-4 ring-white/50",
           "bg-gradient-to-br",
+          "group-hover:scale-110 transition-transform duration-300",
           gradient,
         ].join(" ")}
       >
-        {Icon ? <Icon className="h-7 w-7" /> : <IconBook className="h-7 w-7" />}
+        {Icon ? <Icon className="h-8 w-8" /> : <IconBook className="h-8 w-8" />}
       </div>
-      <h3 className="text-lg font-semibold text-slate-900 inline-flex items-center gap-2">
+      <h3 className="text-xl font-bold text-slate-900 inline-flex items-center gap-2 mb-2">
         <span>{title}</span>
         {badgeCount > 0 && (
-          <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 border border-red-200">
+          <span className="inline-flex items-center justify-center min-w-[1.5rem] px-2.5 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-red-500 to-rose-600 text-white border-2 border-white shadow-lg ring-2 ring-red-200">
             {badgeCount}
           </span>
         )}
       </h3>
-      <p className="mt-1 text-sm text-slate-600 leading-relaxed">{desc}</p>
-      <div className="mt-auto flex items-center gap-4">
+      <p className="mt-1 text-sm text-slate-600 leading-relaxed font-medium">{desc}</p>
+      <div className="mt-auto flex items-center gap-3 pt-4 border-t border-slate-200">
         <button
           type="button"
           onClick={onOpenSolicitudes}
-          className="inline-flex items-center gap-2 text-sm font-medium text-violet-700 hover:text-violet-800"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 border-2 border-violet-200 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
         >
           Solicitudes
         </button>
-        <Link to={to} className="inline-flex items-center gap-2 text-violet-700 hover:text-violet-800">
-          <span className="text-sm font-medium">Acceder</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-0.5"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        <Link 
+          to={to} 
+          className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl group"
+        >
+          <span>Acceder</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-1">
+            <path d="M5 12h14"/>
+            <path d="M12 5l7 7-7 7"/>
+          </svg>
         </Link>
       </div>
     </article>

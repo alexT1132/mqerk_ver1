@@ -14,7 +14,8 @@ import {
   getSimulacion,
   getSimulacionFull,
   getAnaliticaSimulacionEstudiante,
-  getReviewSimulacionIntento
+  getReviewSimulacionIntento,
+  estudiantesEstadoSimulacion
 } from '../controllers/simulaciones.controller.js';
 
 const router = Router();
@@ -30,6 +31,8 @@ router.get('/simulaciones/:id/intentos/:id_estudiante', authREquired, listIntent
 router.get('/simulaciones/:id/analitica/:id_estudiante', authREquired, getAnaliticaSimulacionEstudiante);
 // Review detallado por intento (similar a quizzes): ?intento=N opcional
 router.get('/simulaciones/:id/review/:id_estudiante', authREquired, getReviewSimulacionIntento);
+// Listar estudiantes con intentos y puntaje oficial (primer intento)
+router.get('/simulaciones/:id/estudiantes', authREquired, estudiantesEstadoSimulacion);
 
 router.get('/simulaciones/:id/preguntas', authREquired, listPreguntasSimulacion);
 router.post('/simulaciones/:id/sesiones', authREquired, crearSesionSimulacion);

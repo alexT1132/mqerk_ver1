@@ -134,7 +134,6 @@ export function ReportesPagos_Admin_comp() {
       const data = await loadFinancialReports(fechaInicio, fechaFin);
       setReportes(data || {});
     } catch (err) {
-      console.error('Error cargando reportes financieros:', err);
       setReportes({});
     }
   };
@@ -178,7 +177,7 @@ export function ReportesPagos_Admin_comp() {
         }
       );
     } catch (error) {
-      console.error('❌ Error exportando a Excel:', error);
+      // Error exportando a Excel
       alert(`❌ Error exportando a Excel: ${error.message}`);
     } finally {
       setExportingExcel(false);
@@ -302,22 +301,23 @@ export function ReportesPagos_Admin_comp() {
         <LoadingOverlay message="Cargando reportes de pagos..." />
       )}
       <div className="max-w-7xl mx-auto">
-  {/* Header (sticky) */}
-  <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-6 mb-6 border border-gray-200 sticky top-0 z-30">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Reportes de Pagos</h1>
-              <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 mt-2 mb-2 rounded-full"></div>
-              <p className="text-sm text-gray-500">
+  {/* Header mejorado */}
+  <div className="bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-xl p-5 sm:p-6 mb-6 sticky top-0 z-30">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 mb-2">Reportes de Pagos</h1>
+              <p className="text-sm sm:text-base font-semibold text-slate-600 mb-3">
                 Análisis detallado de ingresos y estadísticas de pagos
               </p>
               
               {/* Información de actualización */}
               {lastUpdated && (
-                <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 font-medium">
+                  <div className="w-6 h-6 bg-slate-200 rounded-lg flex items-center justify-center border-2 border-slate-300">
+                    <svg className="w-3.5 h-3.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                   <span>
                     Actualizado: {new Date(lastUpdated).toLocaleTimeString('es-MX', { 
                       hour: '2-digit', 
@@ -327,10 +327,10 @@ export function ReportesPagos_Admin_comp() {
                   <button
                     onClick={handleRefreshData}
                     disabled={isLoading}
-                    className="ml-2 text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50"
+                    className="ml-2 text-slate-700 hover:text-slate-900 transition-colors disabled:opacity-50 p-1 hover:bg-white rounded-lg border border-slate-200 hover:border-slate-300"
                     title="Actualizar datos"
                   >
-                    <svg className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                   </button>
@@ -341,7 +341,7 @@ export function ReportesPagos_Admin_comp() {
               <button 
                 onClick={handleExportExcel}
                 disabled={isLoading || exportingExcel}
-                className="inline-flex items-center px-4 py-2 border border-green-600 text-sm font-medium rounded-md text-green-600 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-4 py-2.5 text-sm font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 shadow-sm border border-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {exportingExcel ? (
                   <>
@@ -365,109 +365,109 @@ export function ReportesPagos_Admin_comp() {
         </div>
 
         {/* Filtros de fecha */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 mb-6 border-2 border-slate-200">
           <div className="flex flex-wrap gap-4 items-end">
             <div>
-              <label htmlFor="fechaInicio" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="fechaInicio" className="block text-sm font-semibold text-slate-700 mb-2">
                 Fecha de inicio
               </label>
               <input
                 type="date"
                 id="fechaInicio"
-                className="block w-40 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full sm:w-40 px-3 py-2.5 border-2 border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
         max={fechaFin}
               />
             </div>
             <div>
-              <label htmlFor="fechaFin" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="fechaFin" className="block text-sm font-semibold text-slate-700 mb-2">
                 Fecha de fin
               </label>
               <input
                 type="date"
                 id="fechaFin"
-                className="block w-40 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full sm:w-40 px-3 py-2.5 border-2 border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                 value={fechaFin}
                 onChange={(e) => setFechaFin(e.target.value)}
         min={fechaInicio}
         max={defaultEnd}
               />
             </div>
-      <button onClick={fetchReportes} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+      <button onClick={fetchReportes} className="px-5 py-2.5 bg-slate-600 text-white rounded-lg hover:bg-slate-700 shadow-sm border border-slate-700 font-semibold transition-all duration-200">
               Aplicar Filtros
             </button>
           </div>
         </div>
 
         {/* Métricas principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 mb-6">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 hover:border-green-300 transition-all duration-200">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-xl flex items-center justify-center border-2 border-green-300 shadow-md">
+                  <svg className="w-6 h-6 sm:w-7 sm:h-7 text-green-700" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"></path>
                   </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Ingresos</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-xs sm:text-sm font-semibold text-slate-600 mb-1">Total Ingresos</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900">
                   {formatCurrencyMXN(reportes.resumenGeneral?.totalIngresos || 0)}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 hover:border-blue-300 transition-all duration-200">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center border-2 border-blue-300 shadow-md">
+                  <svg className="w-6 h-6 sm:w-7 sm:h-7 text-blue-700" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                   </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Pagos Procesados</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-xs sm:text-sm font-semibold text-slate-600 mb-1">Pagos Procesados</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900">
                   {reportes.resumenGeneral?.totalPagos || 0}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 hover:border-yellow-300 transition-all duration-200">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-xl flex items-center justify-center border-2 border-yellow-300 shadow-md">
+                  <svg className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-700" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clipRule="evenodd"></path>
                   </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Pagos Pendientes</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-xs sm:text-sm font-semibold text-slate-600 mb-1">Pagos Pendientes</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900">
                   {reportes.resumenGeneral?.pagosPendientes || 0}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 hover:border-slate-400 transition-all duration-200">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 rounded-xl flex items-center justify-center border-2 border-slate-300 shadow-md">
+                  <svg className="w-6 h-6 sm:w-7 sm:h-7 text-slate-700" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path>
                   </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Promedio Mensual</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-xs sm:text-sm font-semibold text-slate-600 mb-1">Promedio Mensual</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900">
                   {formatCurrencyMXN(reportes.resumenGeneral?.promedioMensual || 0)}
                 </p>
               </div>
@@ -481,16 +481,23 @@ export function ReportesPagos_Admin_comp() {
           (reportes.resumenGeneral.totalPagos || 0) === 0 &&
           (reportes.resumenGeneral.pagosPendientes || 0) === 0
         )) && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 mb-4">
-            No se encontraron datos para el rango seleccionado. Ajusta las fechas para ver movimientos.
+          <div className="bg-amber-50 border-2 border-amber-300 text-amber-900 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center border-2 border-amber-300">
+                <svg className="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="font-semibold text-sm sm:text-base">No se encontraron datos para el rango seleccionado. Ajusta las fechas para ver movimientos.</p>
+            </div>
           </div>
         )}
 
         {/* Gráficas principales */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col" data-chart="ingresos-mes">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Ingresos por Mes</h3>
-            <div className="text-xs text-gray-500 mb-4">Solo pagos aprobados</div>
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col" data-chart="ingresos-mes">
+            <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Ingresos por Mes</h3>
+            <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Solo pagos aprobados</div>
             <div className="flex-1 min-h-[240px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={(reportes.ingresosPorMes||[])}>
@@ -504,9 +511,9 @@ export function ReportesPagos_Admin_comp() {
             </div>
           </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col" data-chart="pagos-curso">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Pagos por Curso</h3>
-              <div className="text-xs text-gray-500 mb-4">Cantidad de pagos aprobados</div>
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col" data-chart="pagos-curso">
+              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Pagos por Curso</h3>
+              <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Cantidad de pagos aprobados</div>
               <div className="flex-1 min-h-[240px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={(reportes.pagosPorCurso||[])}>
@@ -523,9 +530,9 @@ export function ReportesPagos_Admin_comp() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col" data-chart="metodos-pago">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Distribución por Método</h3>
-              <div className="text-xs text-gray-500 mb-4">Métodos de pago (aprobados)</div>
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col" data-chart="metodos-pago">
+              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Distribución por Método</h3>
+              <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Métodos de pago (aprobados)</div>
               <div className="flex-1 min-h-[240px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -545,9 +552,9 @@ export function ReportesPagos_Admin_comp() {
 
         {/* Gráficas temporales adicionales */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Ingresos por Semana</h3>
-            <div className="text-xs text-gray-500 mb-4">Semanas en el rango</div>
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col">
+            <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Ingresos por Semana</h3>
+            <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Semanas en el rango</div>
             <div className="flex-1 min-h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={(reportes.ingresosPorSemana||[]).slice().reverse()}>
@@ -560,9 +567,9 @@ export function ReportesPagos_Admin_comp() {
               </ResponsiveContainer>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Ingresos por Año</h3>
-            <div className="text-xs text-gray-500 mb-4">Visión global</div>
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col">
+            <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Ingresos por Año</h3>
+            <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Visión global</div>
             <div className="flex-1 min-h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={(reportes.ingresosPorAnio||[])}>
@@ -578,70 +585,70 @@ export function ReportesPagos_Admin_comp() {
         </div>
 
         {/* Resumen de Estado */}
-        <div className="grid grid-cols-1 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Resumen de Estado</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                <span className="text-sm font-medium text-green-800">Pagos Aprobados</span>
-                <span className="text-lg font-bold text-green-900">{reportes.resumenGeneral?.pagosAprobados || 0}</span>
+        <div className="grid grid-cols-1 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Resumen de Estado</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center p-2.5 bg-green-50 rounded-lg border border-green-200">
+                <span className="text-xs font-medium text-green-700">Pagos Aprobados</span>
+                <span className="text-sm font-semibold text-green-800">{reportes.resumenGeneral?.pagosAprobados || 0}</span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                <span className="text-sm font-medium text-yellow-800">Pagos Pendientes</span>
-                <span className="text-lg font-bold text-yellow-900">{reportes.resumenGeneral?.pagosPendientes || 0}</span>
+              <div className="flex justify-between items-center p-2.5 bg-yellow-50 rounded-lg border border-yellow-200">
+                <span className="text-xs font-medium text-yellow-700">Pagos Pendientes</span>
+                <span className="text-sm font-semibold text-yellow-800">{reportes.resumenGeneral?.pagosPendientes || 0}</span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                <span className="text-sm font-medium text-red-800">Pagos Rechazados</span>
-                <span className="text-lg font-bold text-red-900">{reportes.resumenGeneral?.pagosRechazados || 0}</span>
+              <div className="flex justify-between items-center p-2.5 bg-red-50 rounded-lg border border-red-200">
+                <span className="text-xs font-medium text-red-700">Pagos Rechazados</span>
+                <span className="text-sm font-semibold text-red-800">{reportes.resumenGeneral?.pagosRechazados || 0}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Tabla detallada de pagos */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Pagos Detallados</h3>
-            <span className="text-xs text-gray-500">Mostrando {reportes.pagosDetallados?.length || 0} registros</span>
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-12 border border-slate-200">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-700">Pagos Detallados</h3>
+            <span className="text-xs text-slate-500 font-medium">Mostrando {reportes.pagosDetallados?.length || 0} registros</span>
           </div>
-      <div className="overflow-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="bg-gray-100 text-gray-700">
-                  <th className="px-3 py-2 text-left font-semibold">Folio</th>
-                  <th className="px-3 py-2 text-left font-semibold">Alumno</th>
-                  <th className="px-3 py-2 text-left font-semibold">Curso</th>
-          <th className="px-3 py-2 text-left font-semibold">Grupo</th>
-                  <th className="px-3 py-2 text-left font-semibold">Estado</th>
-                  <th className="px-3 py-2 text-left font-semibold">Importe</th>
-                  <th className="px-3 py-2 text-left font-semibold">Método</th>
-                  <th className="px-3 py-2 text-left font-semibold">Motivo Rechazo</th>
-                  <th className="px-3 py-2 text-left font-semibold">Creado</th>
-                  <th className="px-3 py-2 text-left font-semibold">Actualizado</th>
+      <div className="overflow-auto rounded border border-slate-200">
+            <table className="min-w-full text-xs">
+              <thead className="bg-slate-50">
+                <tr className="border-b border-slate-200">
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Folio</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Alumno</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Curso</th>
+          <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Grupo</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Estado</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Importe</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Método</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Motivo Rechazo</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Creado</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Actualizado</th>
                 </tr>
               </thead>
               <tbody>
                 {(reportes.pagosDetallados||[]).map(r => {
                   const estadoLabel = r.estado === 1 ? 'Pendiente' : r.estado === 2 ? 'Aprobado' : 'Rechazado';
-                  const estadoColor = r.estado === 1 ? 'bg-yellow-100 text-yellow-800' : r.estado === 2 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                  const estadoColor = r.estado === 1 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : r.estado === 2 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200';
                   return (
-                    <tr key={r.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                      <td className="px-3 py-2 font-mono text-xs">{r.folio}</td>
-                      <td className="px-3 py-2">{r.alumno}</td>
-            <td className="px-3 py-2">{r.curso}</td>
-            <td className="px-3 py-2">{r.grupo || '-'}</td>
-                      <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded text-xs font-medium ${estadoColor}`}>{estadoLabel}</span></td>
-                      <td className="px-3 py-2">{r.importe != null ? formatCurrencyMXN(r.importe) : '-'}</td>
-                      <td className="px-3 py-2">{r.metodo || '-'}</td>
-                      <td className="px-3 py-2 text-xs max-w-[160px] truncate" title={r.motivoRechazo || ''}>{r.motivoRechazo || '-'}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs">{formatDateTimeMX(r.created_at)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs">{formatDateTimeMX(r.updated_at)}</td>
+                    <tr key={r.id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50 transition-colors">
+                      <td className="px-2 py-2 font-mono text-[11px] font-medium text-slate-700">{r.folio}</td>
+                      <td className="px-2 py-2 text-slate-600 text-[11px]">{r.alumno}</td>
+            <td className="px-2 py-2 text-slate-600 text-[11px]">{r.curso}</td>
+            <td className="px-2 py-2 text-slate-600 text-[11px]">{r.grupo || '-'}</td>
+                      <td className="px-2 py-2"><span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${estadoColor}`}>{estadoLabel}</span></td>
+                      <td className="px-2 py-2 font-semibold text-slate-700 text-[11px]">{r.importe != null ? formatCurrencyMXN(r.importe) : '-'}</td>
+                      <td className="px-2 py-2 text-slate-600 text-[11px]">{r.metodo || '-'}</td>
+                      <td className="px-2 py-2 text-[10px] max-w-[120px] truncate text-slate-500" title={r.motivoRechazo || ''}>{r.motivoRechazo || '-'}</td>
+                      <td className="px-2 py-2 whitespace-nowrap text-[10px] text-slate-500">{formatDateTimeMX(r.created_at)}</td>
+                      <td className="px-2 py-2 whitespace-nowrap text-[10px] text-slate-500">{formatDateTimeMX(r.updated_at)}</td>
                     </tr>
                   );
                 })}
                 {!(reportes.pagosDetallados||[]).length && (
                   <tr>
-                    <td colSpan="9" className="px-3 py-6 text-center text-gray-400">Sin pagos en el rango seleccionado</td>
+                    <td colSpan="10" className="px-3 py-6 text-center text-slate-400 text-xs">Sin pagos en el rango seleccionado</td>
                   </tr>
                 )}
               </tbody>

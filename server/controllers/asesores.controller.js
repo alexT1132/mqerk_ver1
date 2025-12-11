@@ -753,8 +753,12 @@ export const actualizarMiFoto = async (req, res) => {
     
     if (!file) return res.status(400).json({ message: 'Archivo de imagen requerido' });
     
-    // Actualizar solo el campo doc_fotografia
-    await Perfil.updatePerfilFields(preregistroId, { doc_fotografia: file.path });
+    // ✅ Guardar ruta relativa en lugar de absoluta para que funcione con buildStaticUrl
+    // file.path es absoluta, necesitamos construir la relativa desde uploads/asesores
+    const relativePath = `/uploads/asesores/${file.filename}`;
+    
+    // Actualizar solo el campo doc_fotografia con la ruta relativa
+    await Perfil.updatePerfilFields(preregistroId, { doc_fotografia: relativePath });
     
     // Obtener perfil actualizado
     const perfilActualizado = await Perfil.getByPreRegistro(preregistroId);
@@ -762,7 +766,7 @@ export const actualizarMiFoto = async (req, res) => {
     // Importar buildStaticUrl para construir URLs de archivos
     const { buildStaticUrl } = await import('../utils/url.js');
     
-    // Construir URL de foto
+    // Construir URL de foto usando la ruta relativa
     const fotoUrl = perfilActualizado?.doc_fotografia ? buildStaticUrl(perfilActualizado.doc_fotografia) : null;
     
     res.json({
@@ -894,7 +898,7 @@ export const listarAsesoresAdmin = async (_req, res) => {
   const targetCollation = 'utf8mb4_unicode_ci';
     const [rows] = await db.query(`
       SELECT pr.id, pr.nombres, pr.apellidos, pr.correo, pr.telefono, pr.area, pr.estudios, pr.status,
-             ap.grupo_asesor, ap.id AS perfil_id, ap.usuario_id,
+             ap.grupo_asesor, ap.grupos_asesor, ap.id AS perfil_id, ap.usuario_id,
              COALESCE((
                SELECT COUNT(DISTINCT e.id) FROM estudiantes e 
                WHERE TRIM(e.grupo) COLLATE ${targetCollation} = TRIM(ap.grupo_asesor) COLLATE ${targetCollation}
@@ -910,7 +914,24 @@ export const listarAsesoresAdmin = async (_req, res) => {
       LEFT JOIN asesor_perfiles ap ON ap.preregistro_id = pr.id
       ORDER BY pr.created_at DESC
     `);
-    res.json({ data: rows });
+    // Parsear grupos_asesor (JSON) para cada fila
+    const parsed = rows.map(row => {
+      if (row.grupos_asesor) {
+        try {
+          row.grupos_asesor = typeof row.grupos_asesor === 'string' ? JSON.parse(row.grupos_asesor) : row.grupos_asesor;
+        } catch (e) {
+          // Si falla el parse, mantener como está o usar grupo_asesor como fallback
+          row.grupos_asesor = row.grupo_asesor ? [row.grupo_asesor] : [];
+        }
+      } else if (row.grupo_asesor) {
+        // Si no hay grupos_asesor pero sí grupo_asesor, usar ese como array
+        row.grupos_asesor = [row.grupo_asesor];
+      } else {
+        row.grupos_asesor = [];
+      }
+      return row;
+    });
+    res.json({ data: parsed });
   } catch(err){
     console.error('Error listarAsesoresAdmin', err);
     res.status(500).json({ message:'Error interno' });

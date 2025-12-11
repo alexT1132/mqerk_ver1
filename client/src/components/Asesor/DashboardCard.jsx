@@ -15,12 +15,13 @@ export default function DashboardCard({
   children,
   noPadding = false, // quita el padding interno
   full = false,      // quita borde/redondeado/sombra para full-bleed dentro de un panel
-  headerPadding = true // permitir quitar padding sólo del header si se desea
+  headerPadding = true, // permitir quitar padding sólo del header si se desea
+  titleClassName = "" // permitir personalizar el estilo del título
 }) {
   // Base visual - diseño más claro y moderno con mejor contraste
   const base = full
     ? "relative bg-transparent border-none shadow-none rounded-none"
-    : "relative rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-lg hover:border-slate-300 transition-all duration-200 dark:border-slate-700 dark:bg-slate-800";
+    : "relative rounded-3xl border-2 border-slate-200 bg-white shadow-lg hover:shadow-xl hover:border-violet-300 transition-all duration-300 ring-2 ring-slate-100/50 dark:border-slate-700 dark:bg-slate-800";
 
   const containerClasses = [base, className].join(" ");
 
@@ -35,7 +36,7 @@ export default function DashboardCard({
       {(title || actions) && (
         <div className={headerClasses}>
           {title && (
-            <h3 className="text-sm font-semibold tracking-wide text-slate-800 dark:text-slate-100">
+            <h3 className={`text-sm font-extrabold tracking-wide text-violet-900 dark:text-slate-100 ${titleClassName}`}>
               {title}
             </h3>
           )}

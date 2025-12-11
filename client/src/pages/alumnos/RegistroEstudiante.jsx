@@ -12,7 +12,8 @@ const RegistroEstudiante=()=>{
     const [step, setStep] = useState(0);
 
     const [nombre, setNombre] = useState('');
-    const [apellidos, setApellidos] = useState('');
+    const [apellido_paterno, setApellidoPaterno] = useState('');
+    const [apellido_materno, setApellidoMaterno] = useState('');
     const [email, setEmail] = useState('');
     const [perfil, setPerfil] = useState({ foto: null });
     const [grupo, setGrupo] = useState('');
@@ -52,7 +53,8 @@ const RegistroEstudiante=()=>{
     const validateStep0 = () => {
         const errs = {};
         if (!nombre.trim()) errs.nombre = 'Campo obligatorio';
-        if (!apellidos.trim()) errs.apellidos = 'Campo obligatorio';
+        if (!apellido_paterno.trim()) errs.apellido_paterno = 'Campo obligatorio';
+        if (!apellido_materno.trim()) errs.apellido_materno = 'Campo obligatorio';
         if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) errs.email = 'Correo inválido';
         if (!perfil.foto) errs.foto = 'Debes subir una foto';
         if (comunidad1.length === 0 && !comunidad2.trim()) errs.comunidad = 'Selecciona al menos una opción u “Otra”';
@@ -99,8 +101,9 @@ const RegistroEstudiante=()=>{
 
         const datos = JSON.parse(localStorage.getItem('datos'));
 
-    const numero = folioObtenido ? Number(folioObtenido) : 1;
-    const numeroFormateado = numero.toString().padStart(4, '0');
+    // El folio ya viene del servidor como el siguiente número disponible
+    // No usar valor por defecto de 1, esperar a que llegue del servidor
+    const numeroFormateado = folioObtenido ? String(folioObtenido).padStart(4, '0') : '0000';
 
 
         const Municipios=[`SAN JUAN BAUTISTA TUXTEPEC`,`SAN JOSÉ CHILTEPEC`,`SANTA MARÍA JACATEPEC`,`AYOTZINTEPEC`,`LOMA BONITA`,`SAN LUCAS OJITLÁN`,`SAN JUAN BAUTISTA VALLE NACIONAL`];
@@ -127,8 +130,7 @@ const RegistroEstudiante=()=>{
         useEffect(() => {
             const cargarGrupos = async () => {
                 try {
-                    const curso = datos?.curso;
-                    if (!curso) { setGruposDisponibles([]); return; }
+                    const curso = datos?.curso || 'EEAU'; // Usar EEAU por defecto si no hay curso
                     const res = await getGruposConCantidadRequest(curso, 'todos');
                     const rows = Array.isArray(res?.data) ? res.data : (res?.data ? [res.data] : []);
                     const capacidadPorDefecto = 30;
@@ -145,6 +147,7 @@ const RegistroEstudiante=()=>{
                     });
                     setGruposDisponibles(list);
                 } catch (e) {
+                    console.error('Error al cargar grupos:', e);
                     // Si falla backend, mostrar opciones normales sin deshabilitar
                     setGruposDisponibles(opciones.map(n => ({ value: n, label: n })));
                 }
@@ -181,35 +184,52 @@ const RegistroEstudiante=()=>{
                 setGlobalError('Completa los comentarios requeridos.');
                 return;
             }
+            
+            // Validar que curso y plan estén presentes (deben venir de la selección en la web)
+            const cursoFinal = datos?.curso;
+            const planFinal = datos?.planMensual;
+            
+            if (!cursoFinal || !cursoFinal.trim() || !planFinal || !planFinal.trim()) {
+                setGlobalError(`❌ Faltan datos del curso seleccionado:\n\n1. Curso: ${cursoFinal || 'NO ESPECIFICADO'}\n2. Plan: ${planFinal || 'NO ESPECIFICADO'}\n\nPor favor, regresa a la página de cursos y selecciona un plan antes de continuar.`);
+                setTimeout(() => {
+                    navigate('/');
+                }, 3000);
+                return;
+            }
+            
             try {
                 setSaving(true);
                 const formData = new FormData();
                 formData.append("nombre", nombre);
-                formData.append("apellidos", apellidos);
+                formData.append("apellido_paterno", apellido_paterno);
+                formData.append("apellido_materno", apellido_materno);
+                // Mantener apellidos para compatibilidad (concatenado)
+                formData.append("apellidos", `${apellido_paterno} ${apellido_materno}`.trim());
                 formData.append("email", email);
                 formData.append("foto", foto);
-                formData.append("comunidad1", comunidad1 ?? '');
-                formData.append("comunidad2", comunidad2 ?? '');
-                formData.append("telefono", telefono);
-                formData.append("grupo", grupo);
-                formData.append("nombre_tutor", nombre_tutor);
-                formData.append("tel_tutor", tel_tutor);
-                formData.append("academico1", academico1 ?? '');
-                formData.append("academico2", academico2 ?? '');
-                formData.append("semestre", semestre);
-                formData.append("alergia", alergia);
-                formData.append("alergia2", alergia2 ?? '');
-                formData.append("discapacidad1", discapacidad1);
-                formData.append("discapacidad2", discapacidad2 ?? '');
-                formData.append("orientacion", orientacion);
-                formData.append("universidades1", universidades1 ?? '');
-                formData.append("universidades2", universidades2 ?? '');
-                formData.append("postulacion", postulacion ?? '');
-                formData.append("comentario1", comentario1 ?? '');
-                formData.append("comentario2", comentario2 ?? '');
-                formData.append("curso", datos?.curso ?? '');
-                formData.append("plan", datos?.planMensual ?? '');
-                formData.append("anio", ultimosDosDigitos ?? '');
+                // Enviar arrays como strings separados por comas
+                formData.append("comunidad1", Array.isArray(comunidad1) ? comunidad1.join(',') : (comunidad1 || ''));
+                formData.append("comunidad2", comunidad2 || '');
+                formData.append("telefono", telefono || '');
+                formData.append("grupo", grupo || '');
+                formData.append("nombre_tutor", nombre_tutor || '');
+                formData.append("tel_tutor", tel_tutor || '');
+                formData.append("academico1", Array.isArray(academico1) ? academico1.join(',') : (academico1 || ''));
+                formData.append("academico2", academico2 || '');
+                formData.append("semestre", semestre || '');
+                formData.append("alergia", alergia || '');
+                formData.append("alergia2", alergia2 || '');
+                formData.append("discapacidad1", discapacidad1 || '');
+                formData.append("discapacidad2", discapacidad2 || '');
+                formData.append("orientacion", orientacion || '');
+                formData.append("universidades1", Array.isArray(universidades1) ? universidades1.join(',') : (universidades1 || ''));
+                formData.append("universidades2", universidades2 || '');
+                formData.append("postulacion", postulacion || '');
+                formData.append("comentario1", comentario1 || '');
+                formData.append("comentario2", comentario2 || '');
+                formData.append("curso", cursoFinal);
+                formData.append("plan", planFinal);
+                formData.append("anio", ultimosDosDigitos || '');
                 formData.append("academia", academia || 'MQerKAcademy');
                 formData.append("asesor", asesor || 'Kélvil Valentín Gómez Ramírez');
                 // ya no enviamos folio; el servidor asigna secuencialmente
@@ -221,49 +241,155 @@ const RegistroEstudiante=()=>{
                     setGlobalError('No se pudo guardar el registro.');
                 }
             } catch (error) {
-                const msg = error?.response?.data?.message || 'No se pudo guardar el registro.';
-                setGlobalError(msg);
+                // Mostrar campos faltantes de manera clara
+                const errorData = error?.response?.data;
+                const camposFaltantes = errorData?.campos || [];
+                
+                if (camposFaltantes.length > 0) {
+                    const nombresCampos = {
+                        'foto': 'Foto de perfil',
+                        'nombre': 'Nombre(s)',
+                        'apellido_paterno': 'Apellido Paterno',
+                        'apellido_materno': 'Apellido Materno',
+                        'apellidos (paterno y materno, o apellidos combinados)': 'Apellidos',
+                        'email': 'Correo electrónico',
+                        'telefono': 'Número de teléfono',
+                        'nombre_tutor': 'Nombre del tutor',
+                        'tel_tutor': 'Teléfono del tutor',
+                        'grupo': 'Grupo',
+                        'curso': 'Curso',
+                        'plan': 'Plan',
+                        'anio': 'Año'
+                    };
+                    
+                    const camposTraducidos = camposFaltantes.map(campo => 
+                        nombresCampos[campo] || campo
+                    );
+                    
+                    const mensaje = `❌ Campos faltantes:\n\n${camposTraducidos.map((campo, idx) => `${idx + 1}. ${campo}`).join('\n')}`;
+                    setGlobalError(mensaje);
+                } else {
+                    const msg = errorData?.message || error?.message || 'No se pudo guardar el registro.';
+                    setGlobalError(msg);
+                }
             } finally {
                 setSaving(false);
             }
         };
 
         useEffect(() => {
-            fetch("https://worldtimeapi.org/api/timezone/America/Mexico_City")
-            .then((res) => res.json())
-            .then((data) => {
-                const year = data.datetime.slice(0, 4);   
-                setUltimosDosDigitos(year.slice(-2));     
-            })
-            .catch((err) => {
-                console.error("Error al obtener el año:", err);
-            });
+            // Obtener el año actual usando JavaScript nativo (más confiable que API externa)
+            try {
+                const now = new Date();
+                // Ajustar a zona horaria de México (UTC-6 o UTC-5 según horario de verano)
+                const mexicoTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Mexico_City"}));
+                const year = mexicoTime.getFullYear();
+                const ultimosDos = year.toString().slice(-2);
+                setUltimosDosDigitos(ultimosDos);
+            } catch (err) {
+                // Fallback: usar año local si falla la conversión de zona horaria
+                console.warn("Error al obtener año de México, usando año local:", err);
+                const year = new Date().getFullYear();
+                setUltimosDosDigitos(year.toString().slice(-2));
+            }
         }, []);
 
         useEffect(() => {
+            // Obtener el siguiente folio disponible cuando hay curso y año
             if (datos?.curso && ultimosDosDigitos) {
                 getFolio(datos.curso, ultimosDosDigitos);
+            } else if (ultimosDosDigitos) {
+                // Si no hay curso específico, usar 'EEAU' por defecto
+                getFolio('EEAU', ultimosDosDigitos);
             }
         }, [datos?.curso, ultimosDosDigitos]);
 
         useEffect(() => {
-            if(!datos){
-                navigate('/')
+            // Validar que se haya seleccionado un curso y plan desde la web
+            const datosExistentes = localStorage.getItem('datos');
+            
+            if (!datosExistentes) {
+                // No hay datos, redirigir a la página principal para seleccionar curso
+                setGlobalError('⚠️ Debes seleccionar un curso y plan antes de registrarte.\n\nPor favor, regresa a la página de cursos y selecciona un plan.');
+                setTimeout(() => {
+                    navigate('/');
+                }, 3000);
+                return;
             }
-        }, []);
+            
+            try {
+                const datos = JSON.parse(datosExistentes);
+                
+                // Verificar que curso y plan estén presentes y no vacíos
+                const cursoValido = datos.curso && datos.curso.trim() && datos.curso.trim() !== '';
+                const planValido = datos.planMensual && datos.planMensual.trim() && datos.planMensual.trim() !== '';
+                
+                if (!cursoValido || !planValido) {
+                    // Datos incompletos, redirigir a seleccionar curso
+                    setGlobalError(`⚠️ Faltan datos del curso seleccionado:\n\n${!cursoValido ? '• Curso no seleccionado\n' : ''}${!planValido ? '• Plan no seleccionado\n' : ''}\nPor favor, regresa a la página de cursos y selecciona un plan.`);
+                    setTimeout(() => {
+                        navigate('/');
+                    }, 3000);
+                    return;
+                }
+                
+                // Si todo está bien, usar EEAU como fallback solo si el curso está vacío (no debería pasar)
+                if (!datos.curso || datos.curso.trim() === '') {
+                    datos.curso = 'EEAU';
+                }
+                
+            } catch (e) {
+                // Error al parsear, redirigir
+                console.error('Error al leer datos del curso:', e);
+                setGlobalError('⚠️ Error al cargar los datos del curso.\n\nPor favor, regresa a la página de cursos y selecciona un plan.');
+                setTimeout(() => {
+                    navigate('/');
+                }, 3000);
+            }
+        }, [navigate]);
     
     return(
         <>
         <NavLogin/>
 
         <div className={`flex w-full justify-end px-1 sm:px-4`}>
-            {folioFormateado ? (
-                <h1 className="text-[#53289f] text-end text-xs sm:text-base uppercase font-semibold">Folio: {folioFormateado}</h1>
-            ) : (
-        (() => { const displayAnio = ultimosDosDigitos ? String((Number(ultimosDosDigitos) + 1) % 100).padStart(2,'0') : ''; return (
-            <h1 className="text-[#53289f] text-end text-xs sm:text-base uppercase font-semibold">Folio: {`M${(datos?.curso || 'EEAU').slice(0,4).toUpperCase()}${displayAnio}`} - {numeroFormateado}</h1>
-                ); })()
-            )}
+            {(() => {
+                // Si hay folio formateado del servidor, usarlo (ya incluye el siguiente número disponible)
+                if (folioFormateado) {
+                    return (
+                        <h1 className="text-[#53289f] text-end text-xs sm:text-base uppercase font-semibold">
+                            Folio: {folioFormateado}
+                        </h1>
+                    );
+                }
+                
+                // Si hay folio obtenido pero no formateado, formatearlo con el número correcto
+                if (folioObtenido && ultimosDosDigitos) {
+                    const curso = datos?.curso || 'EEAU';
+                    const basePrefix = curso.slice(0, 4).toUpperCase();
+                    const displayAnio = String((Number(ultimosDosDigitos) + 1) % 100).padStart(2, '0');
+                    const folioNum = String(folioObtenido).padStart(4, '0');
+                    return (
+                        <h1 className="text-[#53289f] text-end text-xs sm:text-base uppercase font-semibold">
+                            Folio: M{basePrefix}{displayAnio}-{folioNum}
+                        </h1>
+                    );
+                }
+                
+                // Mientras carga, mostrar placeholder temporal
+                if (ultimosDosDigitos) {
+                    const curso = datos?.curso || 'EEAU';
+                    const basePrefix = curso.slice(0, 4).toUpperCase();
+                    const displayAnio = String((Number(ultimosDosDigitos) + 1) % 100).padStart(2, '0');
+                    return (
+                        <h1 className="text-[#53289f] text-end text-xs sm:text-base uppercase font-semibold opacity-50">
+                            Folio: M{basePrefix}{displayAnio}-0000 (cargando...)
+                        </h1>
+                    );
+                }
+                
+                return null;
+            })()}
         </div>
 
         {/* <div className={`flex flex-col mt-3`}> */}
@@ -275,13 +401,30 @@ const RegistroEstudiante=()=>{
                 </div>
 
                 {showErrors0 && globalError && (
-                    <div className="mb-4 p-3 rounded bg-red-100 text-red-700 text-sm">
-                        {globalError}
+                    <div className="mb-4 p-4 rounded-lg bg-red-50 border-2 border-red-300 text-red-800">
+                        <div className="font-bold text-lg mb-2 flex items-center gap-2">
+                            <span>⚠️</span>
+                            <span>Error de validación</span>
+                        </div>
+                        <div className="text-sm whitespace-pre-line">
+                            {globalError}
+                        </div>
                     </div>
                 )}
 
                 <form onSubmit={nextStep} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Nombre y Apellidos */}
+                    {/* Línea decorativa superior */}
+                    <div className="md:col-span-2 mb-4">
+                        <div className="flex items-center">
+                            <div className="flex-1 h-0.5 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-full"></div>
+                            <div className="mx-4">
+                                <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
+                            </div>
+                            <div className="flex-1 h-0.5 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-full"></div>
+                        </div>
+                    </div>
+
+                    {/* Nombre */}
                     <div>
                     <label className="block text-sm font-medium text-gray-700">Nombre(s): *</label>
                     <input
@@ -294,20 +437,36 @@ const RegistroEstudiante=()=>{
                     />
                     {showErrors0 && errors.nombre && <p className="text-red-600 text-xs mt-1">{errors.nombre}</p>}
                     </div>
+                    
+                    {/* Apellido Paterno */}
                     <div>
-                    <label className="block text-sm font-medium text-gray-700">Apellido(s): *</label>
+                    <label className="block text-sm font-medium text-gray-700">Apellido Paterno: *</label>
                     <input
                         type="text"
-                        placeholder="Ingrese sus apellidos"
+                        placeholder="Ingrese su apellido paterno"
                         className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                        value={apellidos}
-                        onChange={(e) => setApellidos(e.target.value)}
+                        value={apellido_paterno}
+                        onChange={(e) => setApellidoPaterno(e.target.value)}
                         autoComplete="off"
                     />
-                    {showErrors0 && errors.apellidos && <p className="text-red-600 text-xs mt-1">{errors.apellidos}</p>}
+                    {showErrors0 && errors.apellido_paterno && <p className="text-red-600 text-xs mt-1">{errors.apellido_paterno}</p>}
+                    </div>
+                    
+                    {/* Apellido Materno */}
+                    <div>
+                    <label className="block text-sm font-medium text-gray-700">Apellido Materno: *</label>
+                    <input
+                        type="text"
+                        placeholder="Ingrese su apellido materno"
+                        className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                        value={apellido_materno}
+                        onChange={(e) => setApellidoMaterno(e.target.value)}
+                        autoComplete="off"
+                    />
+                    {showErrors0 && errors.apellido_materno && <p className="text-red-600 text-xs mt-1">{errors.apellido_materno}</p>}
                     </div>
 
-                    {/* Email y Foto */}
+                    {/* Correo electrónico */}
                     <div>
                     <label className="block text-sm font-medium text-gray-700">Correo electrónico *</label>
                     <input
@@ -321,6 +480,7 @@ const RegistroEstudiante=()=>{
                     {showErrors0 && errors.email && <p className="text-red-600 text-xs mt-1">{errors.email}</p>}
                     </div>
 
+                    {/* Foto de perfil */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Foto de perfil</label>
                         <input
@@ -340,109 +500,132 @@ const RegistroEstudiante=()=>{
                         {showErrors0 && errors.foto && <p className="text-red-600 text-xs mt-1">{errors.foto}</p>}
                     </div>
 
-                    {/* Comunidad y Teléfono */}
+                    {/* Teléfono */}
                     <div>
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Municipio/Comunidad*
-                            </label>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 gap-6">
-                                {Municipios.map((comunidad) => (
-                                <label key={comunidad} className="flex items-center space-x-2">
-                                    <input
-                                    type="checkbox"
-                                    checked={comunidad1.includes(comunidad)}
-                                    onChange={() => toggleComunidad(comunidad)}
-                                    className="text-blue-600 border-gray-300 focus:ring-blue-500"
-                                    />
-                                    <span className="text-gray-700 text-sm">{comunidad}</span>
-                                </label>
-                                ))}
-                            </div>
+                    <label className="block text-sm font-medium text-gray-700">Número de teléfono: *</label>
+                    <input
+                        type="tel"
+                        placeholder="Ingrese su número de teléfono"
+                        className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                        value={telefono}
+                        onChange={(e) => setTelefono(e.target.value)}
+                        autoComplete="off"
+                    />
+                    {showErrors0 && errors.telefono && <p className="text-red-600 text-xs mt-1">{errors.telefono}</p>}
+                    </div>
 
-                            <div className="flex items-center gap-5 mt-5">
-                                <label className="block text-sm font-medium text-gray-700">Otra:</label>
-                                <input
-                                    type="text"
-                                    value={comunidad2}
-                                    onChange={(e) => setComunidad2(e.target.value)}
-                                    placeholder="Especifica"
-                                    className="mt-1 block border w-full border-gray-300 rounded-md p-2"
-                                />
+                    {/* Grupo */}
+                    <div>
+                    <label className="block text-sm font-medium text-gray-700">Selecciona tu grupo *</label>
+                    <SelectField
+                        value={grupo}
+                        onChange={(e) => setGrupo(e.target.value)}
+                        options={gruposDisponibles}
+                        placeholder="Selecciona una opción"
+                    />
+                    {showErrors0 && errors.grupo && <p className="text-red-600 text-xs mt-1">{errors.grupo}</p>}
+                    </div>
+
+                    {/* Línea divisoria decorativa */}
+                    <div className="md:col-span-2 my-6">
+                        <div className="flex items-center">
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-300 to-purple-400"></div>
+                            <div className="mx-3 flex gap-1">
+                                <div className="w-2 h-2 rounded-full bg-purple-400"></div>
+                                <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                                <div className="w-2 h-2 rounded-full bg-purple-400"></div>
                             </div>
-                            {showErrors0 && errors.comunidad && <p className="text-red-600 text-xs mt-1">{errors.comunidad}</p>}
+                            <div className="flex-1 h-px bg-gradient-to-l from-transparent via-purple-300 to-purple-400"></div>
                         </div>
                     </div>
-                    <div className="space-y-4 md:space-y-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Número de teléfono: *</label>
-                            <input
-                                type="tel"
-                                placeholder="Ingrese su número de teléfono"
-                                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                                value={telefono}
-                                onChange={(e) => setTelefono(e.target.value)}
-                            />
-                            {showErrors0 && errors.telefono && (
-                                <p className="text-red-600 text-xs mt-1">{errors.telefono}</p>
-                            )}
+
+                    {/* Municipio/Comunidad - Ocupa ambas columnas */}
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Municipio/Comunidad*
+                        </label>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-3">
+                            {Municipios.map((comunidad) => (
+                            <label key={comunidad} className="flex items-center space-x-2">
+                                <input
+                                type="checkbox"
+                                checked={comunidad1.includes(comunidad)}
+                                onChange={() => toggleComunidad(comunidad)}
+                                className="text-blue-600 border-gray-300 focus:ring-blue-500"
+                                />
+                                <span className="text-gray-700 text-sm">{comunidad}</span>
+                            </label>
+                            ))}
                         </div>
 
-                        <div>
-                            <SelectField
-                                label="Selecciona tu grupo *"
-                                value={grupo}
-                                onChange={(e) => setGrupo(e.target.value)}
-                                options={gruposDisponibles.length ? gruposDisponibles : opciones.map((o) => ({ label: o, value: o }))}
-                                placeholder="Selecciona una opción"
-                                error={showErrors0 && !!errors.grupo}
-                                helperText={showErrors0 && errors.grupo ? errors.grupo : ""}
-                            />
-                        </div>
-
-                        {/* Tutor */}
-                        <div className="text-center pt-2">
-                            <h2 className="text-2xl font-bold text-purple-800 mb-6">DATOS DEL TUTOR</h2>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Nombre completo del tutor *</label>
+                        <div className="flex items-center gap-5 mt-5">
+                            <label className="block text-sm font-medium text-gray-700">Otra:</label>
                             <input
                                 type="text"
-                                placeholder="Ingrese el nombre completo de su tutor"
-                                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                                value={nombre_tutor}
-                                onChange={(e) => setTutor(e.target.value)}
+                                value={comunidad2}
+                                onChange={(e) => setComunidad2(e.target.value)}
+                                placeholder="Especifica"
+                                className="mt-1 block border w-full border-gray-300 rounded-md p-2"
                             />
-                            {showErrors0 && errors.nombre_tutor && (
-                                <p className="text-red-600 text-xs mt-1">{errors.nombre_tutor}</p>
-                            )}
                         </div>
+                        {showErrors0 && errors.comunidad && <p className="text-red-600 text-xs mt-1">{errors.comunidad}</p>}
+                    </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Número de teléfono del tutor *</label>
-                            <input
-                                type="tel"
-                                placeholder="Ingrese el número de teléfono del tutor"
-                                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                                value={tel_tutor}
-                                onChange={(e) => setTel_tutor(e.target.value)}
-                            />
-                            {showErrors0 && errors.tel_tutor && (
-                                <p className="text-red-600 text-xs mt-1">{errors.tel_tutor}</p>
-                            )}
+                    {/* Línea divisoria decorativa antes de DATOS DEL TUTOR */}
+                    <div className="md:col-span-2 my-8">
+                        <div className="flex items-center">
+                            <div className="flex-1 h-0.5 bg-gradient-to-r from-transparent via-purple-400 via-pink-400 to-transparent rounded-full"></div>
+                            <div className="mx-4">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-500 border-2 border-purple-200 shadow-lg"></div>
+                            </div>
+                            <div className="flex-1 h-0.5 bg-gradient-to-l from-transparent via-purple-400 via-pink-400 to-transparent rounded-full"></div>
                         </div>
+                    </div>
 
-                        {/* Botón */}
-                        <div className="flex justify-end pt-2">
-                            <button
-                                type="submit"
-                                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
-                            >
-                                Continuar
-                            </button>
-                        </div>
+                    {/* DATOS DEL TUTOR */}
+                    <div className="md:col-span-2">
+                        <h2 className="text-2xl font-bold text-purple-800 mb-6 text-center">DATOS DEL TUTOR</h2>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Nombre completo del tutor *</label>
+                        <input
+                            type="text"
+                            placeholder="Ingrese el nombre completo de su tutor"
+                            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                            value={nombre_tutor}
+                            onChange={(e) => setTutor(e.target.value)}
+                            autoComplete="off"
+                        />
+                        {showErrors0 && errors.nombre_tutor && (
+                            <p className="text-red-600 text-xs mt-1">{errors.nombre_tutor}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Número de teléfono del tutor *</label>
+                        <input
+                            type="tel"
+                            placeholder="Ingrese el número de teléfono del tutor"
+                            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                            value={tel_tutor}
+                            onChange={(e) => setTel_tutor(e.target.value)}
+                            autoComplete="off"
+                        />
+                        {showErrors0 && errors.tel_tutor && (
+                            <p className="text-red-600 text-xs mt-1">{errors.tel_tutor}</p>
+                        )}
+                    </div>
+
+                    {/* Botón Continuar */}
+                    <div className="md:col-span-2 flex justify-end pt-4">
+                        <button
+                            type="submit"
+                            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
+                        >
+                            Continuar
+                        </button>
                     </div>
                 </form>
             </div>
@@ -455,8 +638,14 @@ const RegistroEstudiante=()=>{
                 </div>
 
                 {showErrors1 && globalError && (
-                    <div className="mb-4 p-3 rounded bg-red-100 text-red-700 text-sm">
-                        {globalError}
+                    <div className="mb-4 p-4 rounded-lg bg-red-50 border-2 border-red-300 text-red-800">
+                        <div className="font-bold text-lg mb-2 flex items-center gap-2">
+                            <span>⚠️</span>
+                            <span>Error de validación</span>
+                        </div>
+                        <div className="text-sm whitespace-pre-line">
+                            {globalError}
+                        </div>
                     </div>
                 )}
 

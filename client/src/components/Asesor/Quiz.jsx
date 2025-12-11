@@ -16,6 +16,7 @@ import {
   UploadCloud
 } from "lucide-react";
 import QuiztModal from "./QuiztModal";
+import AnalizadorFallosRepetidos from "./AnalizadorFallosRepetidos";
 import { generarPreguntasIA, getCooldownRemainingMs } from "../../service/simuladoresAI";
 import { logInfo, logError, logDebug } from "../../utils/logger";
 import { listQuizzes, deleteQuiz as apiDeleteQuiz, getQuizFull, getQuizEstudiantesEstado, getQuizIntentoReview, updateQuiz } from "../../api/quizzes";
@@ -26,17 +27,17 @@ import { getAreasCatalog } from "../../api/areas";
 
 function Badge({ children, type = "default" }) {
   const styles = {
-    default: "bg-slate-100 text-slate-700 ring-slate-200",
-    success: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-    draft: "bg-amber-50 text-amber-700 ring-amber-200",
+    default: "bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 ring-2 ring-slate-300",
+    success: "bg-gradient-to-r from-emerald-500 to-teal-600 text-white ring-2 ring-emerald-300 shadow-md",
+    draft: "bg-gradient-to-r from-amber-500 to-orange-600 text-white ring-2 ring-amber-300 shadow-md",
   }[type];
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${styles}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ring-1 ${styles}`}
     >
-      {type === "success" && <CheckCircle2 className="h-3.5 w-3.5" />}
-      {type === "draft" && <CircleDashed className="h-3.5 w-3.5" />}
+      {type === "success" && <CheckCircle2 className="h-4 w-4" />}
+      {type === "draft" && <CircleDashed className="h-4 w-4" />}
       {children}
     </span>
   );
@@ -411,7 +412,14 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
     setReviewOpen(true);
     setReviewLoading(true);
     setReviewData(null);
-    setReviewHeader({ quiz: resultsQuizMeta, estudiante: { id: row.id_estudiante, nombre: `${row.apellidos || ''} ${row.nombre || ''}`.trim() } });
+    setReviewHeader({ 
+      quiz: resultsQuizMeta, 
+      estudiante: { 
+        id: row.id_estudiante, 
+        nombre: `${row.apellidos || ''} ${row.nombre || ''}`.trim(),
+        totalIntentos: row.total_intentos || 0
+      } 
+    });
     try {
       // Forzar intento=1 (oficial)
       const { data } = await getQuizIntentoReview(resultsQuizMeta.id, row.id_estudiante, 1);
@@ -580,7 +588,17 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       setOpen(true);
     } catch (e) {
       const msg = String(e?.message || '').toLowerCase();
-      if (msg.includes('429') || msg.includes('quota') || msg.includes('rate')) {
+      // Detectar error de API key bloqueada (leaked)
+      if (e?.code === 'API_KEY_LEAKED' || msg.includes('leaked') || msg.includes('reported as leaked') || msg.includes('bloqueada porque fue expuesta')) {
+        alert(
+          '⚠️ La API key de Gemini fue bloqueada por Google porque fue expuesta públicamente.\n\n' +
+          'Por favor, contacta al administrador del sistema para obtener una nueva API key. ' +
+          'El administrador debe obtener una nueva clave desde Google AI Studio y actualizarla en el servidor.'
+        );
+        if (e?.helpUrl) {
+          console.error('🔗 Obtén una nueva API key en:', e.helpUrl);
+        }
+      } else if (msg.includes('429') || msg.includes('quota') || msg.includes('rate')) {
         alert('La IA alcanzó el límite de cuota (429). Intenta de nuevo en unos minutos.');
         setCooldownMs(getCooldownRemainingMs());
       } else if (e?.code === 'COOLDOWN') {
@@ -689,7 +707,17 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const msg = String(e?.message || '').toLowerCase();
       const rem = getCooldownRemainingMs();
 
-      if (e?.code === 'RATE_LIMIT' || msg.includes('429') || msg.includes('quota') || msg.includes('rate limit') || msg.includes('límite de solicitudes')) {
+      // Detectar error de API key bloqueada (leaked)
+      if (e?.code === 'API_KEY_LEAKED' || msg.includes('leaked') || msg.includes('reported as leaked') || msg.includes('bloqueada porque fue expuesta')) {
+        setIaError(
+          '⚠️ La API key de Gemini fue bloqueada por Google porque fue expuesta públicamente. ' +
+          'Por favor, contacta al administrador del sistema para obtener una nueva API key. ' +
+          'El administrador debe obtener una nueva clave desde Google AI Studio y actualizarla en el servidor.'
+        );
+        if (e?.helpUrl) {
+          console.error('🔗 Obtén una nueva API key en:', e.helpUrl);
+        }
+      } else if (e?.code === 'RATE_LIMIT' || msg.includes('429') || msg.includes('quota') || msg.includes('rate limit') || msg.includes('límite de solicitudes')) {
         const secs = Math.ceil((e?.remainingMs || rem || 60000) / 1000);
         setIaError(`Se alcanzó el límite de solicitudes a la API de Google. Por favor, espera ${secs} segundo${secs > 1 ? 's' : ''} antes de intentar nuevamente. Esto ayuda a evitar límites de la API.`);
         setCooldownMs(e?.remainingMs || rem || 60000);
@@ -1303,29 +1331,29 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
         </div>
       )}
       {/* Encabezado breve */}
-      <div className="relative overflow-hidden rounded-3xl border border-cyan-200/40 bg-gradient-to-r from-cyan-50/70 via-white to-indigo-50/70 px-5 pt-3 pb-5 sm:px-7 sm:pt-4 sm:pb-7 shadow-sm mb-6">
+      <div className="relative overflow-hidden rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 px-6 pt-4 pb-6 sm:px-8 sm:pt-5 sm:pb-8 shadow-xl ring-2 ring-slate-100/50 mb-8">
         {/* blobs suaves al fondo */}
-        <div className="pointer-events-none absolute -left-10 -top-14 h-56 w-56 rounded-full bg-cyan-200/40 blur-3xl" />
-        <div className="pointer-events-none absolute -right-10 -bottom-14 h-56 w-56 rounded-full bg-indigo-200/40 blur-3xl" />
+        <div className="pointer-events-none absolute -left-10 -top-14 h-64 w-64 rounded-full bg-violet-200/50 blur-3xl" />
+        <div className="pointer-events-none absolute -right-10 -bottom-14 h-64 w-64 rounded-full bg-indigo-200/50 blur-3xl" />
 
-        <div className="relative z-10 flex items-center gap-4">
+        <div className="relative z-10 flex items-center gap-5">
           {/* ícono con badge */}
-          <div className="relative grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-sky-500 to-violet-600 text-white shadow-lg sm:size-14">
-            <Icon className="size-6 sm:size-7" />
-            <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-emerald-500 ring-2 ring-white">
-              <Sparkles className="size-3 text-white" />
+          <div className="relative grid size-16 sm:size-20 place-items-center rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-600 to-purple-600 text-white shadow-2xl ring-4 ring-white/50">
+            <Icon className="size-8 sm:size-10" />
+            <span className="absolute -right-1 -top-1 grid size-6 place-items-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 ring-3 ring-white shadow-lg">
+              <Sparkles className="size-3.5 text-white" />
             </span>
           </div>
 
           <div className="flex flex-col">
-            <h2 className="text-xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-sky-700 to-violet-700 sm:text-2xl">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">
               {headerTitle}
             </h2>
 
             {/* subrayado doble */}
-            <div className="mt-1 flex gap-2">
-              <span className="h-1 w-16 rounded-full bg-gradient-to-r from-sky-500 to-sky-300" />
-              <span className="h-1 w-10 rounded-full bg-gradient-to-r from-violet-500 to-violet-300" />
+            <div className="mt-2 flex gap-2">
+              <span className="h-1.5 w-20 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 shadow-sm" />
+              <span className="h-1.5 w-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 shadow-sm" />
             </div>
           </div>
         </div>
@@ -1419,101 +1447,103 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
 
       {/* Desktop: tabla */}
       <div className="hidden md:block">
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100">
+        <div className="overflow-hidden rounded-3xl border-2 border-slate-200 bg-white shadow-xl ring-2 ring-slate-100/50">
           <div className="overflow-x-auto lg:overflow-x-visible">
             <table className="min-w-full table-fixed divide-y divide-slate-200">
-              <thead className="bg-slate-50">
+              <thead className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50">
                 <tr>
                   <th
                     scope="col"
-                    className="sticky left-0 z-10 bg-slate-50 px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-600 w-[22rem]"
+                    className="sticky left-0 z-10 bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 px-6 py-5 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 w-[22rem] border-r-2 border-slate-200"
                   >
                     Quizt
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-600 w-[8rem]"
+                    className="px-6 py-5 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 w-[8rem]"
                   >
                     Preguntas
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-600 w-[9rem]"
+                    className="px-6 py-5 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 w-[9rem]"
                   >
                     Intentos
                   </th>
 
                   <th
                     scope="col"
-                    className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-600 w-[8rem]"
+                    className="px-6 py-5 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 w-[8rem]"
                   >
                     Estado
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-600 w-[9rem]"
+                    className="px-6 py-5 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 w-[9rem]"
                   >
                     Actualizado
                   </th>
-                  <th scope="col" className="px-6 py-4 w-[12rem]"></th>
+                  <th scope="col" className="px-6 py-5 w-[12rem]"></th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200 bg-white">
                 {!loading && data.map((item, idx) => (
                   <tr
                     key={item.id}
-                    className="bg-white hover:bg-slate-50 transition-colors duration-150"
+                    className="bg-white hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200"
                   >
-                    <td className="sticky left-0 z-10 bg-inherit px-6 py-4 w-[22rem]">
-                      <div className="truncate font-semibold text-slate-900">
+                    <td className="sticky left-0 z-10 bg-inherit hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 px-6 py-5 w-[22rem] border-r-2 border-slate-200">
+                      <div className="truncate font-bold text-slate-900 text-sm">
                         {item.name}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center text-slate-700 whitespace-nowrap font-medium">
-                      {item.questions}
+                    <td className="px-6 py-5 text-center text-slate-700 whitespace-nowrap font-bold">
+                      <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 px-3 py-1.5 text-sm font-bold text-blue-700 ring-2 ring-blue-200">
+                        {item.questions}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 text-center text-slate-700 whitespace-nowrap">
+                    <td className="px-6 py-5 text-center text-slate-700 whitespace-nowrap">
                       {item.total_intentos_global != null ? (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 ring-2 ring-slate-300 shadow-sm">
                           {item.total_intentos_global} / {item.attempts === '∞' ? '∞' : item.attempts}
                         </span>
                       ) : (
-                        <span className="text-slate-500">{item.attempts}</span>
+                        <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-bold text-slate-600">{item.attempts}</span>
                       )}
                     </td>
 
-                    <td className="px-6 py-4 text-center whitespace-nowrap">
+                    <td className="px-6 py-5 text-center whitespace-nowrap">
                       {item.status === "Publicado" ? (
                         <Badge type="success">Publicado</Badge>
                       ) : (
                         <Badge type="draft">Borrador</Badge>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-slate-500 text-sm whitespace-nowrap">
+                    <td className="px-6 py-5 text-slate-600 text-sm font-medium whitespace-nowrap">
                       {item.updatedAt}
                     </td>
-                    <td className="px-6 py-4 w-[12rem]">
-                      <div className="flex items-center justify-end gap-1">
+                    <td className="px-6 py-5 w-[12rem]">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => handleView(item)}
                           title="Vista previa"
-                          className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                          className="rounded-xl p-2.5 text-slate-600 bg-slate-100 hover:bg-gradient-to-br hover:from-slate-200 hover:to-slate-300 hover:text-slate-800 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm hover:shadow-md"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleResultados(item)}
                           title="Resultados"
-                          className="rounded-lg p-2 text-emerald-600 hover:bg-emerald-50 transition-colors"
+                          className="rounded-xl p-2.5 text-white bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 hover:scale-110 active:scale-95 shadow-md hover:shadow-lg"
                         >
-                          %
+                          <span className="font-bold text-sm">%</span>
                         </button>
                         {item.status === "Borrador" && (
                           <button
                             onClick={() => handlePublish(item)}
                             title="Publicar"
-                            className="rounded-lg p-2 text-sky-600 hover:bg-sky-50 transition-colors"
+                            className="rounded-xl p-2.5 text-white bg-gradient-to-br from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 transition-all duration-200 hover:scale-110 active:scale-95 shadow-md hover:shadow-lg"
                           >
                             <UploadCloud className="h-4 w-4" />
                           </button>
@@ -1521,14 +1551,14 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                         <button
                           onClick={() => handleEdit(item)}
                           title="Editar"
-                          className="rounded-lg p-2 text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          className="rounded-xl p-2.5 text-white bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 hover:scale-110 active:scale-95 shadow-md hover:shadow-lg"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openDeleteConfirm(item)}
                           title="Eliminar"
-                          className="rounded-lg p-2 text-rose-600 hover:bg-rose-50 transition-colors"
+                          className="rounded-xl p-2.5 text-white bg-gradient-to-br from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 transition-all duration-200 hover:scale-110 active:scale-95 shadow-md hover:shadow-lg"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -1541,13 +1571,24 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                   <tr>
                     <td
                       colSpan={7}
-                      className="px-4 py-14 text-center text-slate-500"
+                      className="px-4 py-20 text-center"
                     >
-                      Aún no hay quizt. Crea el primero con el botón
-                      <span className="mx-1 rounded bg-slate-100 px-1.5 py-0.5 font-semibold">
-                        Nuevo quizt
-                      </span>
-                      .
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 ring-4 ring-violet-200">
+                          <PlaySquare className="w-10 h-10 text-violet-600" />
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-lg font-bold text-slate-700">
+                            Aún no hay quizt
+                          </p>
+                          <p className="text-sm text-slate-500">
+                            Crea el primero con el botón
+                            <span className="mx-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1.5 font-bold text-white shadow-md">
+                              Nuevo quizt
+                            </span>
+                          </p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -1689,16 +1730,25 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       {/* Review modal */}
       {reviewOpen && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 px-0.5 mt-16">
-          <div className="w-full max-w-lg rounded-lg bg-white shadow-2xl border border-slate-200">
+          <div className="w-full max-w-4xl rounded-lg bg-white shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between border-b px-2 py-1.5">
               <h3 className="text-base font-semibold text-slate-900">Detalle intento 1 • {reviewHeader.quiz?.titulo || 'Quiz'} • {reviewHeader.estudiante?.nombre || 'Alumno'}</h3>
               <button onClick={() => setReviewOpen(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
             </div>
-            <div className="max-h-[60vh] overflow-y-auto px-2 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="max-h-[70vh] overflow-y-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {reviewLoading ? (
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Cargando…</div>
               ) : reviewData && Array.isArray(reviewData.preguntas) ? (
                 <div className="space-y-2.5">
+                  {/* Analizador de fallos repetidos */}
+                  {reviewHeader.estudiante?.totalIntentos >= 2 && (
+                    <AnalizadorFallosRepetidos
+                      tipo="quiz"
+                      id={resultsQuizMeta?.id}
+                      idEstudiante={reviewHeader.estudiante?.id}
+                      totalIntentos={reviewHeader.estudiante?.totalIntentos}
+                    />
+                  )}
                   {reviewData.preguntas.map((p, idx) => {
                     const sel = new Set(p.seleccionadas || []);
                     const corr = !!p.correcta;

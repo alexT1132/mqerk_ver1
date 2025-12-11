@@ -3315,3 +3315,6695 @@
   "text": "Si un artículo cuesta $200 y se le aplica un descu...",
   "optionsCount": 1
 }
+[2025-11-20T19:53:35.004Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T19:53:35.007Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T19:53:35.029Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T19:53:35.032Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T19:53:35.038Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T19:53:35.067Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": true,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T19:53:35.064Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T19:53:35.093Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 5,
+  "questionsIds": [
+    "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "4e7687a9-7c3e-4862-8675-1a55940015ef",
+    "13163ffc-4a49-4326-9923-364d64a43de9",
+    "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+    "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:35.103Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 5,
+  "questionsIds": [
+    "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "4e7687a9-7c3e-4862-8675-1a55940015ef",
+    "13163ffc-4a49-4326-9923-364d64a43de9",
+    "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+    "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:35.112Z] [WARN] [QuiztBuilder] ADVERTENCIA: Hay preguntas pero loading sigue en true, forzando a false
+[2025-11-20T19:53:35.110Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 5,
+  "ids": [
+    "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "4e7687a9-7c3e-4862-8675-1a55940015ef",
+    "13163ffc-4a49-4326-9923-364d64a43de9",
+    "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+    "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54"
+  ],
+  "tipos": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ],
+  "loading": true,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "type": "multiple",
+    "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+    "optionsCount": 4
+  }
+}
+[2025-11-20T19:53:35.115Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "4e7687a9-7c3e-4862-8675-1a55940015ef",
+    "13163ffc-4a49-4326-9923-364d64a43de9",
+    "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+    "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:35.119Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "4e7687a9-7c3e-4862-8675-1a55940015ef",
+    "13163ffc-4a49-4326-9923-364d64a43de9",
+    "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+    "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:35.129Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "964442a8-40bc-456c-8f53-3f6a693d2b95",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:35.131Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "964442a8-40bc-456c-8f53-3f6a693d2b95",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:35.156Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "4e7687a9-7c3e-4862-8675-1a55940015ef",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:35.158Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "4e7687a9-7c3e-4862-8675-1a55940015ef",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:35.177Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "13163ffc-4a49-4326-9923-364d64a43de9",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:35.179Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "13163ffc-4a49-4326-9923-364d64a43de9",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:35.200Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:35.204Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:35.213Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:35.216Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:35.261Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 5,
+  "ids": [
+    "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "4e7687a9-7c3e-4862-8675-1a55940015ef",
+    "13163ffc-4a49-4326-9923-364d64a43de9",
+    "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+    "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54"
+  ],
+  "tipos": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "type": "multiple",
+    "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+    "optionsCount": 4
+  }
+}
+[2025-11-20T19:53:37.073Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "4e7687a9-7c3e-4862-8675-1a55940015ef",
+    "13163ffc-4a49-4326-9923-364d64a43de9",
+    "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+    "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:37.076Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "4e7687a9-7c3e-4862-8675-1a55940015ef",
+    "13163ffc-4a49-4326-9923-364d64a43de9",
+    "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+    "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:37.081Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "964442a8-40bc-456c-8f53-3f6a693d2b95",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:37.084Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "964442a8-40bc-456c-8f53-3f6a693d2b95",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:37.098Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "4e7687a9-7c3e-4862-8675-1a55940015ef",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:37.100Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "4e7687a9-7c3e-4862-8675-1a55940015ef",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:37.115Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "13163ffc-4a49-4326-9923-364d64a43de9",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:37.116Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "13163ffc-4a49-4326-9923-364d64a43de9",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:37.128Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:37.131Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:37.134Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:37.139Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:37.250Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "4e7687a9-7c3e-4862-8675-1a55940015ef",
+    "13163ffc-4a49-4326-9923-364d64a43de9",
+    "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+    "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:37.256Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "4e7687a9-7c3e-4862-8675-1a55940015ef",
+    "13163ffc-4a49-4326-9923-364d64a43de9",
+    "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+    "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:37.261Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "964442a8-40bc-456c-8f53-3f6a693d2b95",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:37.266Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "964442a8-40bc-456c-8f53-3f6a693d2b95",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:37.276Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "4e7687a9-7c3e-4862-8675-1a55940015ef",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:37.277Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "4e7687a9-7c3e-4862-8675-1a55940015ef",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:37.291Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "13163ffc-4a49-4326-9923-364d64a43de9",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:37.293Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "13163ffc-4a49-4326-9923-364d64a43de9",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:37.306Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:37.309Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:37.315Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:37.317Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:38.337Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "4e7687a9-7c3e-4862-8675-1a55940015ef",
+    "13163ffc-4a49-4326-9923-364d64a43de9",
+    "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+    "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:38.343Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "964442a8-40bc-456c-8f53-3f6a693d2b95",
+    "4e7687a9-7c3e-4862-8675-1a55940015ef",
+    "13163ffc-4a49-4326-9923-364d64a43de9",
+    "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+    "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:38.361Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "964442a8-40bc-456c-8f53-3f6a693d2b95",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:38.364Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "964442a8-40bc-456c-8f53-3f6a693d2b95",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:38.374Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "4e7687a9-7c3e-4862-8675-1a55940015ef",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:38.376Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "4e7687a9-7c3e-4862-8675-1a55940015ef",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:38.389Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "13163ffc-4a49-4326-9923-364d64a43de9",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:38.391Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "13163ffc-4a49-4326-9923-364d64a43de9",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:38.410Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:38.412Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bc4beaf6-e35a-446d-bd31-16c025d448ca",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:38.417Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:38.419Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8fdb4cb1-7ab8-4e6f-9a09-cfac56dc9a54",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:41.410Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T19:53:41.412Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T19:53:41.435Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T19:53:41.437Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T19:53:41.440Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T19:53:41.444Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T19:53:41.459Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": true,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T19:53:41.483Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 5,
+  "questionsIds": [
+    "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "41cccaec-0c0f-40a7-8851-f582ed163f07",
+    "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+    "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+    "ac8a92b2-5380-456f-a320-850a14cb87a3"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:41.489Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 5,
+  "questionsIds": [
+    "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "41cccaec-0c0f-40a7-8851-f582ed163f07",
+    "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+    "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+    "ac8a92b2-5380-456f-a320-850a14cb87a3"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:41.505Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 5,
+  "ids": [
+    "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "41cccaec-0c0f-40a7-8851-f582ed163f07",
+    "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+    "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+    "ac8a92b2-5380-456f-a320-850a14cb87a3"
+  ],
+  "tipos": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ],
+  "loading": true,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "type": "multiple",
+    "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+    "optionsCount": 4
+  }
+}
+[2025-11-20T19:53:41.507Z] [WARN] [QuiztBuilder] ADVERTENCIA: Hay preguntas pero loading sigue en true, forzando a false
+[2025-11-20T19:53:41.509Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "41cccaec-0c0f-40a7-8851-f582ed163f07",
+    "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+    "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+    "ac8a92b2-5380-456f-a320-850a14cb87a3"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:41.512Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "41cccaec-0c0f-40a7-8851-f582ed163f07",
+    "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+    "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+    "ac8a92b2-5380-456f-a320-850a14cb87a3"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:41.519Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:41.525Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:41.537Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "41cccaec-0c0f-40a7-8851-f582ed163f07",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:41.539Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "41cccaec-0c0f-40a7-8851-f582ed163f07",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:41.555Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:41.558Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:41.580Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:41.583Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:41.594Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ac8a92b2-5380-456f-a320-850a14cb87a3",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:41.597Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ac8a92b2-5380-456f-a320-850a14cb87a3",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:41.630Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 5,
+  "ids": [
+    "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "41cccaec-0c0f-40a7-8851-f582ed163f07",
+    "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+    "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+    "ac8a92b2-5380-456f-a320-850a14cb87a3"
+  ],
+  "tipos": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "type": "multiple",
+    "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+    "optionsCount": 4
+  }
+}
+[2025-11-20T19:53:44.543Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "41cccaec-0c0f-40a7-8851-f582ed163f07",
+    "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+    "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+    "ac8a92b2-5380-456f-a320-850a14cb87a3"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:44.549Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "41cccaec-0c0f-40a7-8851-f582ed163f07",
+    "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+    "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+    "ac8a92b2-5380-456f-a320-850a14cb87a3"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:44.554Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:44.556Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:44.566Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "41cccaec-0c0f-40a7-8851-f582ed163f07",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:44.568Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "41cccaec-0c0f-40a7-8851-f582ed163f07",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:44.580Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:44.582Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:44.595Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:44.597Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:44.600Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ac8a92b2-5380-456f-a320-850a14cb87a3",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:44.605Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ac8a92b2-5380-456f-a320-850a14cb87a3",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:44.982Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "41cccaec-0c0f-40a7-8851-f582ed163f07",
+    "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+    "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+    "ac8a92b2-5380-456f-a320-850a14cb87a3"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:44.989Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "41cccaec-0c0f-40a7-8851-f582ed163f07",
+    "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+    "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+    "ac8a92b2-5380-456f-a320-850a14cb87a3"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:44.999Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:45.001Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:45.014Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "41cccaec-0c0f-40a7-8851-f582ed163f07",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:45.016Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "41cccaec-0c0f-40a7-8851-f582ed163f07",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:45.029Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:45.031Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:45.043Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:45.055Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:45.056Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ac8a92b2-5380-456f-a320-850a14cb87a3",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:45.058Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ac8a92b2-5380-456f-a320-850a14cb87a3",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:46.014Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "41cccaec-0c0f-40a7-8851-f582ed163f07",
+    "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+    "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+    "ac8a92b2-5380-456f-a320-850a14cb87a3"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:46.023Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+    "41cccaec-0c0f-40a7-8851-f582ed163f07",
+    "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+    "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+    "ac8a92b2-5380-456f-a320-850a14cb87a3"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:46.030Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:46.032Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "16faa634-c59e-4aef-bfd5-45b07cc970cf",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:46.049Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "41cccaec-0c0f-40a7-8851-f582ed163f07",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:46.051Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "41cccaec-0c0f-40a7-8851-f582ed163f07",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:46.065Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:46.067Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "579dabbe-a72a-4edd-aaeb-144de9b0909e",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:46.082Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:46.084Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "bf855206-ce26-43ab-bf54-45bfc1e96eec",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:46.091Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ac8a92b2-5380-456f-a320-850a14cb87a3",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:46.094Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ac8a92b2-5380-456f-a320-850a14cb87a3",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:48.981Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T19:53:48.992Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T19:53:49.011Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T19:53:49.014Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T19:53:49.018Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T19:53:49.028Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T19:53:49.045Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": true,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T19:53:49.062Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:49.070Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:49.085Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 5,
+  "ids": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "tipos": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ],
+  "loading": true,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "type": "multiple",
+    "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+    "optionsCount": 4
+  }
+}
+[2025-11-20T19:53:49.087Z] [WARN] [QuiztBuilder] ADVERTENCIA: Hay preguntas pero loading sigue en true, forzando a false
+[2025-11-20T19:53:49.089Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:49.101Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:49.107Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:49.108Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:49.122Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "6407e880-5f98-444c-b582-80918c21b9f0",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:49.123Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "6407e880-5f98-444c-b582-80918c21b9f0",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:49.139Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:49.141Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:49.159Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:49.163Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:49.166Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "a76189a4-761c-45c1-9f49-c4d75559caf4",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:49.170Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "a76189a4-761c-45c1-9f49-c4d75559caf4",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:49.206Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 5,
+  "ids": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "tipos": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "type": "multiple",
+    "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+    "optionsCount": 4
+  }
+}
+[2025-11-20T19:53:50.890Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:50.898Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:50.903Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:50.905Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:50.917Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "6407e880-5f98-444c-b582-80918c21b9f0",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:50.919Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "6407e880-5f98-444c-b582-80918c21b9f0",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:50.932Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:50.933Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:50.945Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:50.949Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:50.957Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "a76189a4-761c-45c1-9f49-c4d75559caf4",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:50.959Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "a76189a4-761c-45c1-9f49-c4d75559caf4",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:51.908Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:51.916Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:51.922Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:51.924Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:51.934Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "6407e880-5f98-444c-b582-80918c21b9f0",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:51.936Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "6407e880-5f98-444c-b582-80918c21b9f0",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:51.945Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:51.950Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:51.963Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:51.969Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:51.971Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "a76189a4-761c-45c1-9f49-c4d75559caf4",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:51.973Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "a76189a4-761c-45c1-9f49-c4d75559caf4",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:53.639Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:53.646Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:53.651Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:53.652Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:53.664Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "6407e880-5f98-444c-b582-80918c21b9f0",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:53.666Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "6407e880-5f98-444c-b582-80918c21b9f0",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:53.677Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:53.679Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:53.695Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:53.698Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:53.701Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "a76189a4-761c-45c1-9f49-c4d75559caf4",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:53.704Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "a76189a4-761c-45c1-9f49-c4d75559caf4",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:53.784Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:53.789Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:53.797Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:53.798Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:53.811Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "6407e880-5f98-444c-b582-80918c21b9f0",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:53.812Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "6407e880-5f98-444c-b582-80918c21b9f0",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:53.824Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:53.826Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:53.841Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:53.843Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:53.847Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "a76189a4-761c-45c1-9f49-c4d75559caf4",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:53.849Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "a76189a4-761c-45c1-9f49-c4d75559caf4",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:55.201Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:55.211Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+    "6407e880-5f98-444c-b582-80918c21b9f0",
+    "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+    "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+    "a76189a4-761c-45c1-9f49-c4d75559caf4"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T19:53:55.213Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:55.216Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "48efc95e-6876-42ef-b2f2-bbeb43e0d6fe",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes unidades NO pertenece al S...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:55.233Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "6407e880-5f98-444c-b582-80918c21b9f0",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:55.235Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "6407e880-5f98-444c-b582-80918c21b9f0",
+  "type": "multiple",
+  "text": "Un objeto se mueve con una aceleración constante d...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:55.248Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:55.249Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "c0e81cbb-276a-467a-b4c5-ea23cf43fd67",
+  "type": "multiple",
+  "text": "¿Cuál de las siguientes leyes de la termodinámica ...",
+  "optionsCount": 4
+}
+[2025-11-20T19:53:55.263Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:55.265Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fa67e02f-8e64-452c-b34a-b10a200d2ac7",
+  "type": "tf",
+  "text": "La fuerza es una magnitud escalar....",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:55.271Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "a76189a4-761c-45c1-9f49-c4d75559caf4",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T19:53:55.272Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "a76189a4-761c-45c1-9f49-c4d75559caf4",
+  "type": "short",
+  "text": "¿Cuál es el valor de la gravedad estándar en la su...",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:30.107Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T21:38:30.111Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T21:38:30.132Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T21:38:30.137Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T21:38:30.145Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T21:38:30.153Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T21:38:30.168Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": true,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T21:38:30.192Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1e583759-dc07-4396-83f7-457681878614",
+    "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+    "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+    "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+    "908c321b-0e66-442a-9b47-a1cc1fff0957"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T21:38:30.198Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1e583759-dc07-4396-83f7-457681878614",
+    "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+    "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+    "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+    "908c321b-0e66-442a-9b47-a1cc1fff0957"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T21:38:30.208Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 5,
+  "ids": [
+    "1e583759-dc07-4396-83f7-457681878614",
+    "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+    "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+    "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+    "908c321b-0e66-442a-9b47-a1cc1fff0957"
+  ],
+  "tipos": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ],
+  "loading": true,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "1e583759-dc07-4396-83f7-457681878614",
+    "type": "multiple",
+    "text": "Un automóvil viaja a una velocidad constante. Si r...",
+    "optionsCount": 4
+  }
+}
+[2025-11-20T21:38:30.211Z] [WARN] [QuiztBuilder] ADVERTENCIA: Hay preguntas pero loading sigue en true, forzando a false
+[2025-11-20T21:38:30.214Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1e583759-dc07-4396-83f7-457681878614",
+    "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+    "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+    "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+    "908c321b-0e66-442a-9b47-a1cc1fff0957"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T21:38:30.217Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1e583759-dc07-4396-83f7-457681878614",
+    "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+    "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+    "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+    "908c321b-0e66-442a-9b47-a1cc1fff0957"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T21:38:30.226Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1e583759-dc07-4396-83f7-457681878614",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:30.229Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1e583759-dc07-4396-83f7-457681878614",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:30.254Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² - 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:30.258Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² - 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:30.278Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:30.283Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:30.300Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+  "type": "tf",
+  "text": "La solución de la desigualdad 2x + 3 > 7 es x > 2....",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:30.302Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+  "type": "tf",
+  "text": "La solución de la desigualdad 2x + 3 > 7 es x > 2....",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:30.310Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "908c321b-0e66-442a-9b47-a1cc1fff0957",
+  "type": "short",
+  "text": "Si un objeto tiene una masa de 5 kg y se le aplica...",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:30.312Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "908c321b-0e66-442a-9b47-a1cc1fff0957",
+  "type": "short",
+  "text": "Si un objeto tiene una masa de 5 kg y se le aplica...",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:30.353Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 5,
+  "ids": [
+    "1e583759-dc07-4396-83f7-457681878614",
+    "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+    "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+    "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+    "908c321b-0e66-442a-9b47-a1cc1fff0957"
+  ],
+  "tipos": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "1e583759-dc07-4396-83f7-457681878614",
+    "type": "multiple",
+    "text": "Un automóvil viaja a una velocidad constante. Si r...",
+    "optionsCount": 4
+  }
+}
+[2025-11-20T21:38:31.948Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1e583759-dc07-4396-83f7-457681878614",
+    "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+    "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+    "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+    "908c321b-0e66-442a-9b47-a1cc1fff0957"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T21:38:31.954Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1e583759-dc07-4396-83f7-457681878614",
+    "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+    "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+    "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+    "908c321b-0e66-442a-9b47-a1cc1fff0957"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T21:38:31.958Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1e583759-dc07-4396-83f7-457681878614",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:31.960Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1e583759-dc07-4396-83f7-457681878614",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:31.976Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² - 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:31.979Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² - 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:31.994Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:31.996Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:32.007Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+  "type": "tf",
+  "text": "La solución de la desigualdad 2x + 3 > 7 es x > 2....",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:32.008Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+  "type": "tf",
+  "text": "La solución de la desigualdad 2x + 3 > 7 es x > 2....",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:32.015Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "908c321b-0e66-442a-9b47-a1cc1fff0957",
+  "type": "short",
+  "text": "Si un objeto tiene una masa de 5 kg y se le aplica...",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:32.019Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "908c321b-0e66-442a-9b47-a1cc1fff0957",
+  "type": "short",
+  "text": "Si un objeto tiene una masa de 5 kg y se le aplica...",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:32.144Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1e583759-dc07-4396-83f7-457681878614",
+    "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+    "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+    "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+    "908c321b-0e66-442a-9b47-a1cc1fff0957"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T21:38:32.150Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1e583759-dc07-4396-83f7-457681878614",
+    "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+    "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+    "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+    "908c321b-0e66-442a-9b47-a1cc1fff0957"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T21:38:32.156Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1e583759-dc07-4396-83f7-457681878614",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:32.160Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1e583759-dc07-4396-83f7-457681878614",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:32.177Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² - 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:32.179Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² - 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:32.184Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:32.189Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:32.202Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+  "type": "tf",
+  "text": "La solución de la desigualdad 2x + 3 > 7 es x > 2....",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:32.209Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+  "type": "tf",
+  "text": "La solución de la desigualdad 2x + 3 > 7 es x > 2....",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:32.210Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "908c321b-0e66-442a-9b47-a1cc1fff0957",
+  "type": "short",
+  "text": "Si un objeto tiene una masa de 5 kg y se le aplica...",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:32.212Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "908c321b-0e66-442a-9b47-a1cc1fff0957",
+  "type": "short",
+  "text": "Si un objeto tiene una masa de 5 kg y se le aplica...",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:33.310Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1e583759-dc07-4396-83f7-457681878614",
+    "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+    "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+    "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+    "908c321b-0e66-442a-9b47-a1cc1fff0957"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T21:38:33.327Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1e583759-dc07-4396-83f7-457681878614",
+    "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+    "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+    "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+    "908c321b-0e66-442a-9b47-a1cc1fff0957"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T21:38:33.329Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1e583759-dc07-4396-83f7-457681878614",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:33.332Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1e583759-dc07-4396-83f7-457681878614",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:33.349Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² - 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:33.351Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0f2b6ca8-18f0-48d3-9dce-cf1d4c5aa678",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² - 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:33.354Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:33.357Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0b8fa3e2-3a28-477d-9726-bc61a1f5d7e1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T21:38:33.376Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+  "type": "tf",
+  "text": "La solución de la desigualdad 2x + 3 > 7 es x > 2....",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:33.379Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "777a8669-be1c-40f5-97ed-f64a7228bf3e",
+  "type": "tf",
+  "text": "La solución de la desigualdad 2x + 3 > 7 es x > 2....",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:33.381Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "908c321b-0e66-442a-9b47-a1cc1fff0957",
+  "type": "short",
+  "text": "Si un objeto tiene una masa de 5 kg y se le aplica...",
+  "optionsCount": 0
+}
+[2025-11-20T21:38:33.383Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "908c321b-0e66-442a-9b47-a1cc1fff0957",
+  "type": "short",
+  "text": "Si un objeto tiene una masa de 5 kg y se le aplica...",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:29.394Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T22:12:29.397Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T22:12:29.416Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T22:12:29.419Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T22:12:29.424Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T22:12:29.429Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T22:12:29.445Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": true,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T22:12:29.467Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 5,
+  "questionsIds": [
+    "e5572906-771f-4164-9825-6032743b8bf8",
+    "b20632ba-01f6-4094-a39e-8d5093ed401d",
+    "8a2cc741-9677-4fb4-870b-7a022a384986",
+    "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+    "ba666178-c315-4dbf-9efe-47a01d5efa1c"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:12:29.470Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 5,
+  "questionsIds": [
+    "e5572906-771f-4164-9825-6032743b8bf8",
+    "b20632ba-01f6-4094-a39e-8d5093ed401d",
+    "8a2cc741-9677-4fb4-870b-7a022a384986",
+    "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+    "ba666178-c315-4dbf-9efe-47a01d5efa1c"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:12:29.480Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 5,
+  "ids": [
+    "e5572906-771f-4164-9825-6032743b8bf8",
+    "b20632ba-01f6-4094-a39e-8d5093ed401d",
+    "8a2cc741-9677-4fb4-870b-7a022a384986",
+    "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+    "ba666178-c315-4dbf-9efe-47a01d5efa1c"
+  ],
+  "tipos": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ],
+  "loading": true,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "e5572906-771f-4164-9825-6032743b8bf8",
+    "type": "multiple",
+    "text": "Un automóvil viaja a una velocidad constante. Si r...",
+    "optionsCount": 4
+  }
+}
+[2025-11-20T22:12:29.483Z] [WARN] [QuiztBuilder] ADVERTENCIA: Hay preguntas pero loading sigue en true, forzando a false
+[2025-11-20T22:12:29.488Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "e5572906-771f-4164-9825-6032743b8bf8",
+    "b20632ba-01f6-4094-a39e-8d5093ed401d",
+    "8a2cc741-9677-4fb4-870b-7a022a384986",
+    "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+    "ba666178-c315-4dbf-9efe-47a01d5efa1c"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:12:29.492Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "e5572906-771f-4164-9825-6032743b8bf8",
+    "b20632ba-01f6-4094-a39e-8d5093ed401d",
+    "8a2cc741-9677-4fb4-870b-7a022a384986",
+    "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+    "ba666178-c315-4dbf-9efe-47a01d5efa1c"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:12:29.500Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "e5572906-771f-4164-9825-6032743b8bf8",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:29.504Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "e5572906-771f-4164-9825-6032743b8bf8",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:29.521Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "b20632ba-01f6-4094-a39e-8d5093ed401d",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:29.522Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "b20632ba-01f6-4094-a39e-8d5093ed401d",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:29.538Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8a2cc741-9677-4fb4-870b-7a022a384986",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (3x²...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:29.539Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8a2cc741-9677-4fb4-870b-7a022a384986",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (3x²...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:29.557Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:29.561Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:29.563Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ba666178-c315-4dbf-9efe-47a01d5efa1c",
+  "type": "short",
+  "text": "Si 5x + 3 = 18, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:29.567Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ba666178-c315-4dbf-9efe-47a01d5efa1c",
+  "type": "short",
+  "text": "Si 5x + 3 = 18, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:29.611Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 5,
+  "ids": [
+    "e5572906-771f-4164-9825-6032743b8bf8",
+    "b20632ba-01f6-4094-a39e-8d5093ed401d",
+    "8a2cc741-9677-4fb4-870b-7a022a384986",
+    "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+    "ba666178-c315-4dbf-9efe-47a01d5efa1c"
+  ],
+  "tipos": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "e5572906-771f-4164-9825-6032743b8bf8",
+    "type": "multiple",
+    "text": "Un automóvil viaja a una velocidad constante. Si r...",
+    "optionsCount": 4
+  }
+}
+[2025-11-20T22:12:31.749Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "e5572906-771f-4164-9825-6032743b8bf8",
+    "b20632ba-01f6-4094-a39e-8d5093ed401d",
+    "8a2cc741-9677-4fb4-870b-7a022a384986",
+    "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+    "ba666178-c315-4dbf-9efe-47a01d5efa1c"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:12:31.752Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "e5572906-771f-4164-9825-6032743b8bf8",
+    "b20632ba-01f6-4094-a39e-8d5093ed401d",
+    "8a2cc741-9677-4fb4-870b-7a022a384986",
+    "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+    "ba666178-c315-4dbf-9efe-47a01d5efa1c"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:12:31.758Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "e5572906-771f-4164-9825-6032743b8bf8",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:31.762Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "e5572906-771f-4164-9825-6032743b8bf8",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:31.769Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "b20632ba-01f6-4094-a39e-8d5093ed401d",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:31.772Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "b20632ba-01f6-4094-a39e-8d5093ed401d",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:31.781Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8a2cc741-9677-4fb4-870b-7a022a384986",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (3x²...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:31.783Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8a2cc741-9677-4fb4-870b-7a022a384986",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (3x²...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:31.794Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:31.799Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:31.802Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ba666178-c315-4dbf-9efe-47a01d5efa1c",
+  "type": "short",
+  "text": "Si 5x + 3 = 18, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:31.804Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ba666178-c315-4dbf-9efe-47a01d5efa1c",
+  "type": "short",
+  "text": "Si 5x + 3 = 18, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:31.907Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "e5572906-771f-4164-9825-6032743b8bf8",
+    "b20632ba-01f6-4094-a39e-8d5093ed401d",
+    "8a2cc741-9677-4fb4-870b-7a022a384986",
+    "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+    "ba666178-c315-4dbf-9efe-47a01d5efa1c"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:12:31.913Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "e5572906-771f-4164-9825-6032743b8bf8",
+    "b20632ba-01f6-4094-a39e-8d5093ed401d",
+    "8a2cc741-9677-4fb4-870b-7a022a384986",
+    "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+    "ba666178-c315-4dbf-9efe-47a01d5efa1c"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:12:31.921Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "e5572906-771f-4164-9825-6032743b8bf8",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:31.923Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "e5572906-771f-4164-9825-6032743b8bf8",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:31.934Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "b20632ba-01f6-4094-a39e-8d5093ed401d",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:31.936Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "b20632ba-01f6-4094-a39e-8d5093ed401d",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:31.946Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8a2cc741-9677-4fb4-870b-7a022a384986",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (3x²...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:31.948Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8a2cc741-9677-4fb4-870b-7a022a384986",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (3x²...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:31.960Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:31.970Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:31.972Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ba666178-c315-4dbf-9efe-47a01d5efa1c",
+  "type": "short",
+  "text": "Si 5x + 3 = 18, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:31.973Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ba666178-c315-4dbf-9efe-47a01d5efa1c",
+  "type": "short",
+  "text": "Si 5x + 3 = 18, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:33.446Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "e5572906-771f-4164-9825-6032743b8bf8",
+    "b20632ba-01f6-4094-a39e-8d5093ed401d",
+    "8a2cc741-9677-4fb4-870b-7a022a384986",
+    "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+    "ba666178-c315-4dbf-9efe-47a01d5efa1c"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:12:33.453Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "e5572906-771f-4164-9825-6032743b8bf8",
+    "b20632ba-01f6-4094-a39e-8d5093ed401d",
+    "8a2cc741-9677-4fb4-870b-7a022a384986",
+    "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+    "ba666178-c315-4dbf-9efe-47a01d5efa1c"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:12:33.460Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "e5572906-771f-4164-9825-6032743b8bf8",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:33.462Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "e5572906-771f-4164-9825-6032743b8bf8",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:33.474Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "b20632ba-01f6-4094-a39e-8d5093ed401d",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:33.476Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "b20632ba-01f6-4094-a39e-8d5093ed401d",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:33.485Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8a2cc741-9677-4fb4-870b-7a022a384986",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (3x²...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:33.487Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "8a2cc741-9677-4fb4-870b-7a022a384986",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (3x²...",
+  "optionsCount": 4
+}
+[2025-11-20T22:12:33.497Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:33.500Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "0138807c-b419-42b8-b2e9-ba94ed8f0448",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:33.504Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ba666178-c315-4dbf-9efe-47a01d5efa1c",
+  "type": "short",
+  "text": "Si 5x + 3 = 18, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:12:33.505Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "ba666178-c315-4dbf-9efe-47a01d5efa1c",
+  "type": "short",
+  "text": "Si 5x + 3 = 18, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:27:03.056Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T22:27:03.061Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T22:27:03.071Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T22:27:03.077Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T22:27:03.088Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T22:27:03.089Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T22:27:03.098Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": true,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T22:27:03.133Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:03.136Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:03.145Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": true,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:03.156Z] [WARN] [QuiztBuilder] ADVERTENCIA: Hay preguntas pero loading sigue en true, forzando a false
+[2025-11-20T22:27:03.162Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:03.159Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:03.165Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:03.167Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:03.276Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:09.115Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:09.117Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:09.123Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "z...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:09.125Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "z...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:09.140Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "z...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:09.447Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:09.454Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:09.457Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zs...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:09.459Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zs...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:09.474Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zs...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:09.483Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:09.493Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:09.496Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zsa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:09.499Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zsa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:09.502Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zsa...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:11.624Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:11.630Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:11.635Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zs...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:11.636Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zs...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:11.643Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zs...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:11.939Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:11.945Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:11.947Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "z...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:11.949Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "z...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:11.956Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "z...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:13.654Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.659Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.666Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zk...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:13.667Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zk...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:13.670Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zk...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:13.687Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.691Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.695Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkj...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:13.700Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkj...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:13.704Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkj...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:13.713Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.717Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.721Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjs...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:13.724Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjs...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:13.729Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjs...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:13.745Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.753Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.760Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:13.762Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:13.772Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsa...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:13.902Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.908Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.914Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaH...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:13.916Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaH...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:13.918Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaH...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:13.948Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.953Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.959Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHS...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:13.961Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHS...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:13.964Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHS...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:13.983Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.991Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:13.999Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJ...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.001Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJ...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.005Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJ...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.097Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.101Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.105Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJH...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.109Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJH...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.117Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJH...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.124Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.132Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.134Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHA...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.136Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHA...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.141Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHA...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.196Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.199Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.203Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAj...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.207Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAj...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.214Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAj...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.232Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.238Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.241Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjs...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.243Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjs...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.251Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjs...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.263Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.271Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsk...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.269Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.276Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsk...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.288Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsk...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.293Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.297Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.301Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjskl...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.305Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjskl...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.309Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjskl...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.392Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.398Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.403Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklL...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.404Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklL...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.414Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklL...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.450Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.453Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.457Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLK...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.461Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLK...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.471Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLK...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.545Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.552Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.555Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKS...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.557Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKS...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.561Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLKS...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.577Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.584Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.586Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSH...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.587Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSH...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.590Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLKSH...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.619Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.624Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.627Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHK...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.630Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHK...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.637Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLKSHK...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.646Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.652Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.661Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJ...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.663Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJ...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.666Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLKSHKJ...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:14.703Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.708Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:14.715Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.716Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:14.724Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLKSHKJa...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:16.610Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:16.618Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:16.624Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:16.625Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:16.629Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLKSHKJa...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:16.967Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:16.973Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:16.975Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:16.987Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:16.991Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLKSHKJa...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:17.101Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:17.107Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:17.113Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:17.111Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:17.121Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLKSHKJa...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:17.291Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:17.300Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:17.303Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:17.305Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:17.313Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLKSHKJa...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:17.410Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:17.418Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:17.420Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:17.422Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:17.429Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLKSHKJa...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:17.569Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:17.575Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:17.578Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:17.583Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:17.586Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLKSHKJa...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:17.705Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:17.708Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:17.713Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:17.716Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:17.725Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+    "type": "multiple",
+    "text": "zkjsaHSJHAjsklLKSHKJa...",
+    "optionsCount": 1
+  }
+}
+[2025-11-20T22:27:20.427Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:20.434Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:20.436Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:20.438Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:25.454Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:25.470Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:25.466Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:25.469Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:26.563Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:26.566Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:26.572Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:26.574Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:27.239Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:27.242Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:27.249Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:27.252Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:28.037Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:28.045Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "66113be6-2082-4c9d-82c5-1d512f9ec034"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-20T22:27:28.047Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:27:28.050Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "66113be6-2082-4c9d-82c5-1d512f9ec034",
+  "type": "multiple",
+  "text": "zkjsaHSJHAjsklLKSHKJa...",
+  "optionsCount": 1
+}
+[2025-11-20T22:30:03.356Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T22:30:03.360Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T22:30:03.379Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T22:30:03.381Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T22:30:03.385Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T22:30:03.390Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-20T22:30:03.402Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": true,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-20T22:30:03.427Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "53c5d118-c028-4417-8117-7683c1decda7",
+    "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+    "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+    "2a42ee46-6590-47da-835a-fc6ce29f26cc"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:30:03.433Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "53c5d118-c028-4417-8117-7683c1decda7",
+    "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+    "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+    "2a42ee46-6590-47da-835a-fc6ce29f26cc"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:30:03.447Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 5,
+  "ids": [
+    "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "53c5d118-c028-4417-8117-7683c1decda7",
+    "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+    "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+    "2a42ee46-6590-47da-835a-fc6ce29f26cc"
+  ],
+  "tipos": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ],
+  "loading": true,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "type": "multiple",
+    "text": "Un automóvil viaja a una velocidad constante. Si r...",
+    "optionsCount": 4
+  }
+}
+[2025-11-20T22:30:03.449Z] [WARN] [QuiztBuilder] ADVERTENCIA: Hay preguntas pero loading sigue en true, forzando a false
+[2025-11-20T22:30:03.452Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "53c5d118-c028-4417-8117-7683c1decda7",
+    "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+    "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+    "2a42ee46-6590-47da-835a-fc6ce29f26cc"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:30:03.455Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "53c5d118-c028-4417-8117-7683c1decda7",
+    "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+    "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+    "2a42ee46-6590-47da-835a-fc6ce29f26cc"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:30:03.461Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1aa96911-0305-4b7b-98c0-2d728c686832",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:03.465Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1aa96911-0305-4b7b-98c0-2d728c686832",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:03.484Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "53c5d118-c028-4417-8117-7683c1decda7",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:03.487Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "53c5d118-c028-4417-8117-7683c1decda7",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:03.510Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:03.512Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:03.524Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:03.527Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:03.532Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "2a42ee46-6590-47da-835a-fc6ce29f26cc",
+  "type": "short",
+  "text": "Si 3x + 5 = 14, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:03.534Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "2a42ee46-6590-47da-835a-fc6ce29f26cc",
+  "type": "short",
+  "text": "Si 3x + 5 = 14, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:03.581Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 5,
+  "ids": [
+    "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "53c5d118-c028-4417-8117-7683c1decda7",
+    "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+    "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+    "2a42ee46-6590-47da-835a-fc6ce29f26cc"
+  ],
+  "tipos": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "type": "multiple",
+    "text": "Un automóvil viaja a una velocidad constante. Si r...",
+    "optionsCount": 4
+  }
+}
+[2025-11-20T22:30:04.974Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "53c5d118-c028-4417-8117-7683c1decda7",
+    "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+    "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+    "2a42ee46-6590-47da-835a-fc6ce29f26cc"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:30:04.980Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "53c5d118-c028-4417-8117-7683c1decda7",
+    "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+    "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+    "2a42ee46-6590-47da-835a-fc6ce29f26cc"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:30:04.986Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1aa96911-0305-4b7b-98c0-2d728c686832",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:04.988Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1aa96911-0305-4b7b-98c0-2d728c686832",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:04.998Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "53c5d118-c028-4417-8117-7683c1decda7",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:05.000Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "53c5d118-c028-4417-8117-7683c1decda7",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:05.011Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:05.013Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:05.025Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:05.030Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:05.032Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "2a42ee46-6590-47da-835a-fc6ce29f26cc",
+  "type": "short",
+  "text": "Si 3x + 5 = 14, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:05.033Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "2a42ee46-6590-47da-835a-fc6ce29f26cc",
+  "type": "short",
+  "text": "Si 3x + 5 = 14, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:05.113Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "53c5d118-c028-4417-8117-7683c1decda7",
+    "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+    "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+    "2a42ee46-6590-47da-835a-fc6ce29f26cc"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:30:05.119Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "53c5d118-c028-4417-8117-7683c1decda7",
+    "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+    "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+    "2a42ee46-6590-47da-835a-fc6ce29f26cc"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:30:05.126Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1aa96911-0305-4b7b-98c0-2d728c686832",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:05.127Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1aa96911-0305-4b7b-98c0-2d728c686832",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:05.138Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "53c5d118-c028-4417-8117-7683c1decda7",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:05.140Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "53c5d118-c028-4417-8117-7683c1decda7",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:05.150Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:05.153Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:05.163Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:05.168Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:05.174Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "2a42ee46-6590-47da-835a-fc6ce29f26cc",
+  "type": "short",
+  "text": "Si 3x + 5 = 14, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:05.176Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "2a42ee46-6590-47da-835a-fc6ce29f26cc",
+  "type": "short",
+  "text": "Si 3x + 5 = 14, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:06.636Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "53c5d118-c028-4417-8117-7683c1decda7",
+    "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+    "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+    "2a42ee46-6590-47da-835a-fc6ce29f26cc"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:30:06.645Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 5,
+  "questionsIds": [
+    "1aa96911-0305-4b7b-98c0-2d728c686832",
+    "53c5d118-c028-4417-8117-7683c1decda7",
+    "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+    "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+    "2a42ee46-6590-47da-835a-fc6ce29f26cc"
+  ],
+  "questionsTypes": [
+    "multiple",
+    "multiple",
+    "multiple",
+    "tf",
+    "short"
+  ]
+}
+[2025-11-20T22:30:06.648Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1aa96911-0305-4b7b-98c0-2d728c686832",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:06.651Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "1aa96911-0305-4b7b-98c0-2d728c686832",
+  "type": "multiple",
+  "text": "Un automóvil viaja a una velocidad constante. Si r...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:06.664Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "53c5d118-c028-4417-8117-7683c1decda7",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:06.666Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "53c5d118-c028-4417-8117-7683c1decda7",
+  "type": "multiple",
+  "text": "Resuelve la siguiente ecuación cuadrática: x² + 5x...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:06.678Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:06.679Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "d21ff580-b91e-4519-b4d9-1411b994c9c1",
+  "type": "multiple",
+  "text": "Simplifica la siguiente expresión algebraica: (4x³...",
+  "optionsCount": 4
+}
+[2025-11-20T22:30:06.690Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:06.692Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "fb0ff28c-bb47-4838-a18a-13d25b53ddfd",
+  "type": "tf",
+  "text": "La expresión (a + b)² es equivalente a a² + b²....",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:06.695Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "2a42ee46-6590-47da-835a-fc6ce29f26cc",
+  "type": "short",
+  "text": "Si 3x + 5 = 14, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-20T22:30:06.696Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "2a42ee46-6590-47da-835a-fc6ce29f26cc",
+  "type": "short",
+  "text": "Si 3x + 5 = 14, ¿cuál es el valor de x?...",
+  "optionsCount": 0
+}
+[2025-11-22T00:18:56.592Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-22T00:18:56.596Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-22T00:18:56.623Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-22T00:18:56.625Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": false,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-22T00:18:56.636Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-22T00:18:56.646Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 0,
+  "questionsIds": [],
+  "questionsTypes": []
+}
+[2025-11-22T00:18:56.651Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 0,
+  "ids": [],
+  "tipos": [],
+  "loading": true,
+  "tienePreguntas": false,
+  "primeraPregunta": null
+}
+[2025-11-22T00:18:56.675Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:18:56.679Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": true,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:18:56.691Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": true,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+    "type": "multiple",
+    "text": "...",
+    "optionsCount": 1
+  }
+}
+[2025-11-22T00:18:56.702Z] [WARN] [QuiztBuilder] ADVERTENCIA: Hay preguntas pero loading sigue en true, forzando a false
+[2025-11-22T00:18:56.704Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:18:56.706Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:18:56.708Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:18:56.713Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:18:56.793Z] [DEBUG] [QuiztBuilder] Estado de questions actualizado
+{
+  "cantidad": 1,
+  "ids": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "tipos": [
+    "multiple"
+  ],
+  "loading": false,
+  "tienePreguntas": true,
+  "primeraPregunta": {
+    "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+    "type": "multiple",
+    "text": "...",
+    "optionsCount": 1
+  }
+}
+[2025-11-22T00:20:33.773Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:20:33.781Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:20:33.791Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:20:33.794Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:20:41.769Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:20:41.776Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:20:41.779Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:20:41.790Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:20:50.770Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:20:50.774Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:20:50.786Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:20:50.788Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:00.584Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:00.587Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:00.605Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:00.602Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:08.553Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:08.558Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:08.570Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:08.573Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:16.390Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:16.394Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:16.417Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:16.420Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:24.011Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:24.020Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:24.025Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:24.032Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:32.423Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:32.428Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:32.439Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:32.441Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:40.985Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:40.989Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:40.992Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:41.001Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:48.311Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:48.316Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:21:48.323Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:21:48.327Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:22:02.937Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:02.947Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:02.951Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:22:02.955Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:22:10.502Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:10.504Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:10.516Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:22:10.518Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:22:17.936Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:17.938Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:17.941Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:22:17.947Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:22:25.855Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:25.857Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:25.872Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:22:25.870Z] [DEBUG] [QuestionCard] Renderizando pregunta
+{
+  "id": "33f881ae-df03-406a-9b9d-41e6b39fb6f4",
+  "type": "multiple",
+  "text": "...",
+  "optionsCount": 1
+}
+[2025-11-22T00:22:36.428Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:36.430Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:44.442Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:44.450Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:51.660Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:22:51.663Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:23:00.278Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:23:00.280Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:23:07.713Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:23:07.716Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:23:15.470Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:23:15.472Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:23:23.579Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:23:23.589Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:23:31.777Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:23:31.781Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:23:40.097Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-22T00:23:40.099Z] [DEBUG] [QuiztBuilder] Renderizando sección de preguntas
+{
+  "loading": false,
+  "questionsLength": 1,
+  "questionsIds": [
+    "33f881ae-df03-406a-9b9d-41e6b39fb6f4"
+  ],
+  "questionsTypes": [
+    "multiple"
+  ]
+}
+[2025-11-24T15:49:32.335Z] [INFO] [Quiz.jsx] Creando quiz con IA
+{
+  "titulo": "Matemáticas y pensamiento analítico (IA · 5 preguntas)",
+  "cantidadPreguntas": 5,
+  "preguntas": [
+    {
+      "type": "multiple",
+      "text": "Un automóvil viaja a una velocidad constante de 80...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Si un artículo cuesta $500 y se le aplica un descu...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Resuelve la siguiente ecuación cuadrática: x² - 5x...",
+      "optionsCount": 4
+    },
+    {
+      "type": "tf",
+      "text": "El teorema de Pitágoras establece que en un triáng...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "Un tanque de agua tiene forma cúbica con un lado d...",
+      "optionsCount": 0
+    }
+  ]
+}
+[2025-11-24T15:49:33.112Z] [INFO] [Quiz.jsx] Quiz creado
+{
+  "id": 3,
+  "titulo": "Matemáticas y pensamiento analítico (IA · 5 preguntas)",
+  "respuesta": {
+    "data": {
+      "id": 3,
+      "titulo": "Matemáticas y pensamiento analítico (IA · 5 preguntas)",
+      "descripcion": "Lee cada pregunta y selecciona la respuesta correcta. Este quiz cubre contenido general del área.",
+      "id_area": 2,
+      "materia": "Matemáticas y pensamiento analítico",
+      "puntos_max": 100,
+      "peso_calificacion": "0.00",
+      "fecha_limite": null,
+      "grupos": "[\"V1\"]",
+      "max_intentos": null,
+      "requiere_revision": 0,
+      "activo": 1,
+      "publicado": 0,
+      "creado_por": 21,
+      "time_limit_min": 60,
+      "passing_score": null,
+      "shuffle_questions": 1,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "imagen_portada": null,
+      "recursos_json": null,
+      "created_at": "2025-11-24T15:49:33.000Z",
+      "updated_at": null
+    }
+  }
+}
+[2025-11-24T15:49:33.136Z] [INFO] [Quiz.jsx] Verificación de preguntas guardadas
+{
+  "quizId": 3,
+  "cantidadEsperada": 5,
+  "cantidadGuardada": 5,
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Un automóvil viaja a una velocidad constante de 80..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Si un artículo cuesta $500 y se le aplica un descu..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Resuelve la siguiente ecuación cuadrática: x² - 5x..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "El teorema de Pitágoras establece que en un triáng..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "Un tanque de agua tiene forma cúbica con un lado d..."
+    }
+  ]
+}
+[2025-11-24T15:49:33.138Z] [INFO] [Quiz.jsx] Quiz creado con IA exitosamente
+{
+  "quizId": 3,
+  "titulo": "Matemáticas y pensamiento analítico (IA · 5 preguntas)",
+  "cantidadPreguntas": 5
+}

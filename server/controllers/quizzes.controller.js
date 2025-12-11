@@ -368,16 +368,28 @@ export const createQuiz = async (req, res) => {
         }
       }
 
-      // Solo notificar si el quiz está publicado Y tiene grupos o área
-      const isPublished = created?.publicado === 1 || publico === true;
+      // ✅ SOLO notificar si el quiz está PUBLICADO (publicado = 1)
+      // No enviar notificaciones si está en borrador
+      const isPublished = created?.publicado === 1 || publico === 1 || publico === true;
       if (isPublished) {
         let rows = [];
 
         // Si hay grupos, notificar solo a esos grupos
         if (Array.isArray(grupos) && grupos.length) {
-          const placeholders = grupos.map(() => '?').join(',');
-          const [gruposRows] = await db.query(`SELECT id FROM estudiantes WHERE grupo IN (${placeholders})`, grupos);
+          // ✅ IMPORTANTE: Normalizar grupos para comparación (el grupo en BD puede estar en mayúsculas)
+          const gruposNormalizados = grupos.map(g => String(g).trim());
+          const placeholders = gruposNormalizados.map(() => 'UPPER(TRIM(?))').join(',');
+          // ✅ IMPORTANTE: Solo estudiantes activos y sin soft delete
+          const [gruposRows] = await db.query(`
+            SELECT e.id 
+            FROM estudiantes e
+            LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+            WHERE UPPER(TRIM(e.grupo)) IN (${placeholders})
+              AND e.estatus = 'Activo'
+              AND sd.id IS NULL
+          `, gruposNormalizados);
           rows = gruposRows;
+          console.log(`[createQuiz] Notificando a ${rows.length} estudiantes activos de grupos ${JSON.stringify(grupos)}`);
         }
         // Si no hay grupos pero hay área, notificar a todos los estudiantes con acceso a esa área
         else if (created?.id_area) {
@@ -386,13 +398,25 @@ export const createQuiz = async (req, res) => {
               SELECT DISTINCT e.id 
               FROM estudiantes e
               INNER JOIN student_area_access saa ON saa.id_estudiante = e.id
-              WHERE saa.area_id = ? AND saa.status = 'approved'
+              LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+              WHERE saa.area_id = ? 
+                AND saa.status = 'approved'
+                AND e.estatus = 'Activo'
+                AND sd.id IS NULL
             `, [created.id_area]);
             rows = areaRows;
+            console.log(`[createQuiz] Notificando a ${rows.length} estudiantes activos con acceso al área ${created.id_area}`);
           } catch (areaErr) {
             console.error('[createQuiz] Error al obtener estudiantes por área:', areaErr);
-            // Fallback: intentar obtener estudiantes por grupo si hay algún grupo en el sistema
-            const [fallbackRows] = await db.query(`SELECT id FROM estudiantes WHERE estatus = 'Activo' LIMIT 100`);
+            // Fallback: intentar obtener estudiantes activos sin soft delete
+            const [fallbackRows] = await db.query(`
+              SELECT e.id 
+              FROM estudiantes e
+              LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+              WHERE e.estatus = 'Activo'
+                AND sd.id IS NULL
+              LIMIT 100
+            `);
             rows = fallbackRows;
           }
         }
@@ -661,9 +685,20 @@ export const updateQuiz = async (req, res) => {
         let rows = [];
         // Si hay grupos, notificar solo a esos grupos
         if (Array.isArray(grupos) && grupos.length) {
-          const placeholders = grupos.map(() => '?').join(',');
-          const [gruposRows] = await db.query(`SELECT id FROM estudiantes WHERE grupo IN (${placeholders})`, grupos);
+          // ✅ IMPORTANTE: Normalizar grupos para comparación (el grupo en BD puede estar en mayúsculas)
+          const gruposNormalizados = grupos.map(g => String(g).trim());
+          const placeholders = gruposNormalizados.map(() => 'UPPER(TRIM(?))').join(',');
+          // ✅ IMPORTANTE: Solo estudiantes activos y sin soft delete
+          const [gruposRows] = await db.query(`
+            SELECT e.id 
+            FROM estudiantes e
+            LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+            WHERE UPPER(TRIM(e.grupo)) IN (${placeholders})
+              AND e.estatus = 'Activo'
+              AND sd.id IS NULL
+          `, gruposNormalizados);
           rows = gruposRows;
+          console.log(`[updateQuiz] Notificando a ${rows.length} estudiantes activos de grupos ${JSON.stringify(grupos)}`);
         }
         // Si no hay grupos pero hay área, notificar a todos los estudiantes con acceso a esa área
         else if (updated?.id_area) {
@@ -672,13 +707,25 @@ export const updateQuiz = async (req, res) => {
               SELECT DISTINCT e.id 
               FROM estudiantes e
               INNER JOIN student_area_access saa ON saa.id_estudiante = e.id
-              WHERE saa.area_id = ? AND saa.status = 'approved'
+              LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+              WHERE saa.area_id = ? 
+                AND saa.status = 'approved'
+                AND e.estatus = 'Activo'
+                AND sd.id IS NULL
             `, [updated.id_area]);
             rows = areaRows;
+            console.log(`[updateQuiz] Notificando a ${rows.length} estudiantes activos con acceso al área ${updated.id_area}`);
           } catch (areaErr) {
             console.error('Error al obtener estudiantes por área:', areaErr);
-            // Fallback: intentar obtener estudiantes por grupo si hay algún grupo en el sistema
-            const [fallbackRows] = await db.query(`SELECT id FROM estudiantes WHERE estatus = 'Activo' LIMIT 100`);
+            // Fallback: intentar obtener estudiantes activos sin soft delete
+            const [fallbackRows] = await db.query(`
+              SELECT e.id 
+              FROM estudiantes e
+              LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+              WHERE e.estatus = 'Activo'
+                AND sd.id IS NULL
+              LIMIT 100
+            `);
             rows = fallbackRows;
           }
         }

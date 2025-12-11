@@ -27,16 +27,16 @@ export async function runPlantillasJob(fechaTarget, opts = {}) {
 
   const conn = await pool.getConnection();
   try {
-    // Traemos todas las plantillas auto activas cuyo periodo ya inició y no ha terminado.
+    // Traemos todas las plantillas auto activas cuyo periodo ya inició.
     // Aplicamos la lógica de frecuencia en JS porque el SQL original no consideraba 'frecuencia'
     // ni el fallback de dia_pago desde fecha_inicio.
+    // Nota: La tabla no tiene columna fecha_fin, solo fecha_inicio y cadencia_anchor
     const [plantillas] = await conn.query(`
       SELECT * FROM gastos_fijos_plantillas
       WHERE auto_instanciar = 1
         AND activo = 1
         AND (fecha_inicio IS NULL OR fecha_inicio <= ?)
-        AND (fecha_fin IS NULL OR fecha_fin >= ?)
-    `, [fechaISO, fechaISO]);
+    `, [fechaISO]);
 
     if (debug) console.log(`[plantillasAuto] ${plantillas.length} plantillas cargadas para evaluar (${fechaISO})`);
     if (!plantillas.length) return { created: 0, skipped: 0, details: [] };

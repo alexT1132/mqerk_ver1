@@ -92,3 +92,21 @@ export async function getIngresoByCalendarEventId(eventId) {
   const [rows] = await db.query('SELECT * FROM ingresos WHERE calendar_event_id = ? LIMIT 1', [eventId]);
   return rows[0] || null;
 }
+
+// Obtener ingresos (asesorías) asignadas a un asesor específico
+export async function getIngresosByAsesor(asesorPreregistroId, { from, to } = {}) {
+  const where = ['i.asesor_preregistro_id = ?'];
+  const params = [asesorPreregistroId];
+  
+  if (from) { where.push('i.fecha >= ?'); params.push(from); }
+  if (to) { where.push('i.fecha <= ?'); params.push(to); }
+  
+  const sql = `
+    SELECT i.*, e.nombre AS estudiante_nombre, e.apellidos AS estudiante_apellidos
+    FROM ingresos i
+    LEFT JOIN estudiantes e ON e.id = i.estudiante_id
+    WHERE ${where.join(' AND ')}
+    ORDER BY i.fecha ASC, i.hora ASC`;
+  const [rows] = await db.query(sql, params);
+  return rows;
+}

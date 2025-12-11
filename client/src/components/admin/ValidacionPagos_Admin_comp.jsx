@@ -925,11 +925,14 @@ function ValidacionPagos_Admin_comp() {
         <div className="w-full max-w-7xl mx-auto">
           {/* Título principal */}
           <div className="text-center mb-4 xs:mb-6 sm:mb-8">
-            <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-1 xs:mb-2 px-2">
+            <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold 
+              bg-gradient-to-r from-purple-600 to-purple-700
+              bg-clip-text text-transparent
+              mb-2 xs:mb-3 sm:mb-4 px-2">
               Generar Contratos
             </h1>
-            <div className="w-8 xs:w-12 sm:w-16 lg:w-20 h-0.5 xs:h-1 bg-gradient-to-r from-blue-500/80 to-indigo-500/80 mx-auto mb-2 rounded-full"></div>
-            <p className="text-xs xs:text-sm sm:text-base text-gray-600 px-4">
+            <div className="w-12 xs:w-16 sm:w-20 md:w-24 lg:w-28 h-0.5 xs:h-1 sm:h-1.5 bg-gradient-to-r from-purple-500/80 to-purple-600/80 mx-auto mb-2 xs:mb-3 sm:mb-4 rounded-full"></div>
+            <p className="text-xs xs:text-sm sm:text-base text-gray-700 font-semibold px-4">
               Gestiona la generación de contratos de los estudiantes por curso y turno
             </p>
 
@@ -948,12 +951,13 @@ function ValidacionPagos_Admin_comp() {
                 <button
                   onClick={handleRefreshData}
                   disabled={isLoading}
-                  className="ml-2 text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50"
+                  className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-95 touch-manipulation font-semibold text-xs"
                   title="Actualizar datos"
                 >
-                  <svg className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <svg className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
+                  <span>{isLoading ? 'Actualizando...' : 'Actualizar'}</span>
                 </button>
                 <button
                   onClick={generarPDFDeCalibracion}
@@ -970,8 +974,8 @@ function ValidacionPagos_Admin_comp() {
 
           {/* Botones de categoría (filtros por curso) */}
           <div className="mb-4 xs:mb-6 sm:mb-8">
-            <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-6 shadow-lg border border-gray-200">
-              <h2 className="text-base xs:text-lg sm:text-xl font-bold text-gray-800 mb-3 xs:mb-4 sm:mb-6 text-center px-2">
+            <div className="bg-gradient-to-br from-white via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border border-gray-200">
+              <h2 className="text-base xs:text-lg sm:text-xl font-extrabold text-gray-800 mb-3 xs:mb-4 sm:mb-5 text-center px-2">
                 Filtrar por Curso
               </h2>
               <div className="grid grid-cols-3 xs:grid-cols-3 sm:grid-cols-6 md:grid-cols-6 gap-1 xs:gap-1.5 sm:gap-2 md:gap-3 place-items-center">
@@ -990,8 +994,8 @@ function ValidacionPagos_Admin_comp() {
           {/* Selector de grupos/turnos dinámico */}
           {activeCategory && getGruposDisponibles().length > 0 && (
             <div className="mb-3 xs:mb-4 sm:mb-6">
-              <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-6 shadow-lg border border-gray-200">
-                <h2 className="text-base xs:text-lg sm:text-xl font-bold text-gray-800 mb-3 xs:mb-4 sm:mb-6 text-center px-2">
+              <div className="bg-gradient-to-br from-white via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border border-gray-200">
+                <h2 className="text-base xs:text-lg sm:text-xl font-extrabold text-gray-800 mb-3 xs:mb-4 sm:mb-5 text-center px-2">
                   Grupos Disponibles para {activeCategory}
                 </h2>
                 <div className="flex flex-wrap gap-1.5 xs:gap-2 sm:gap-3 justify-center items-center max-w-4xl mx-auto">
@@ -1007,18 +1011,18 @@ function ValidacionPagos_Admin_comp() {
                 </div>
 
                 {/* Leyenda de colores por tipo de turno */}
-                <div className="mt-4 flex flex-wrap gap-2 justify-center text-xs">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                    <span>Matutino</span>
+                <div className="mt-4 xs:mt-5 sm:mt-6 flex flex-wrap gap-3 xs:gap-4 justify-center text-xs xs:text-sm">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="w-4 h-4 xs:w-5 xs:h-5 bg-blue-500 rounded-full ring-1 ring-blue-300/30"></div>
+                    <span className="font-semibold text-blue-600">Matutino</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-purple-500 rounded"></div>
-                    <span>Vespertino</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="w-4 h-4 xs:w-5 xs:h-5 bg-purple-500 rounded-full ring-1 ring-purple-300/30"></div>
+                    <span className="font-semibold text-purple-600">Vespertino</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-green-500 rounded"></div>
-                    <span>Sabatino</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg border border-green-200">
+                    <div className="w-4 h-4 xs:w-5 xs:h-5 bg-green-500 rounded-full ring-1 ring-green-300/30"></div>
+                    <span className="font-semibold text-green-600">Sabatino</span>
                   </div>
                 </div>
               </div>
@@ -1028,12 +1032,12 @@ function ValidacionPagos_Admin_comp() {
           {/* Información del grupo seleccionado */}
           {activeCategory && activeTurno && (
             <div className="mb-4 xs:mb-6">
-              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 xs:px-6 sm:px-8 py-4 xs:py-5 sm:py-6 rounded-lg xs:rounded-xl sm:rounded-2xl shadow-lg">
+              <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 xs:px-6 sm:px-8 py-4 xs:py-5 sm:py-6 rounded-xl sm:rounded-2xl shadow-lg border-2 border-purple-400/40 ring-2 ring-purple-200/20">
                 <div className="text-center">
-                  <p className="text-sm xs:text-base sm:text-lg md:text-xl font-semibold mb-1 xs:mb-2">
+                  <p className="text-base xs:text-lg sm:text-xl md:text-2xl font-extrabold mb-2 xs:mb-3">
                     Grupo Activo: {activeCategory} - {activeTurno}
                   </p>
-                  <p className="text-xs xs:text-sm sm:text-base text-blue-100">
+                  <p className="text-xs xs:text-sm sm:text-base md:text-lg text-purple-50 font-semibold">
                     Validando pagos del grupo seleccionado
                   </p>
                 </div>
@@ -1044,7 +1048,7 @@ function ValidacionPagos_Admin_comp() {
           {/* Barra de búsqueda - Solo se muestra cuando ambos filtros están activos */}
           {activeCategory && activeTurno && (
             <div className="mb-4 xs:mb-6">
-              <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl p-3 xs:p-4 shadow-lg border border-gray-200">
+              <div className="bg-gradient-to-br from-white via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl p-3 xs:p-4 shadow-lg border border-gray-200">
                 <div className="max-w-sm xs:max-w-md mx-auto">
                   <div className="relative">
                     <input

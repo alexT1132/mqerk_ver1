@@ -7,21 +7,21 @@ import {
   Mail, MapPin, Phone, CalendarDays, Flag, User2, HeartHandshake,
   GraduationCap, School, Ruler, Languages, Clock, BadgeCheck,
   BriefcaseBusiness, Sparkles, Boxes, BookOpenCheck, Brain, Users2,
-  Edit, X, Save, Loader2, CheckCircle2, XCircle
+  Edit, X, Save, Loader2, CheckCircle2, XCircle, ShieldCheck
 } from "lucide-react";
 
 /* --------------------------- helpers UI --------------------------- */
 
 const SectionCard = ({ title, children }) => (
-  <section className="rounded-2xl border border-slate-200 bg-white/90 shadow-sm">
-    <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-100">
-      <div className="inline-flex items-center gap-2 rounded-xl bg-violet-50/80 px-3 py-1 ring-1 ring-violet-200">
-        <span className="text-sm font-black tracking-wide text-violet-700">
+  <section className="rounded-3xl border-2 border-slate-200 bg-white shadow-lg hover:shadow-xl transition-all duration-300 ring-2 ring-slate-100/50">
+    <div className="px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-slate-200 bg-gradient-to-r from-violet-50/50 to-indigo-50/50">
+      <div className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 px-4 py-2 ring-2 ring-violet-200 shadow-md">
+        <span className="text-sm font-extrabold tracking-wide text-white">
           {title.toUpperCase()}
         </span>
       </div>
     </div>
-    <div className="px-4 sm:px-6 py-4 sm:py-5">{children}</div>
+    <div className="px-4 sm:px-6 py-5 sm:py-6">{children}</div>
   </section>
 );
 
@@ -29,18 +29,18 @@ const Row = ({ icon: Icon, label, value, editing, name, type = "text", onChange,
   if (editing) {
     return (
       <li className="flex items-start gap-3 py-2">
-        <span className="mt-1 inline-flex h-5 w-5 items-center justify-center text-violet-600 shrink-0">
+        <span className="mt-1 inline-flex h-6 w-6 items-center justify-center text-white bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg shrink-0 shadow-md ring-1 ring-violet-200">
           <Icon className="h-4 w-4" />
         </span>
         <label className="flex-1">
-          <span className="block text-xs font-semibold text-slate-700 mb-1">{label}</span>
+          <span className="block text-xs font-bold text-slate-700 mb-1.5">{label}</span>
           {type === "textarea" ? (
             <textarea
               name={name}
               value={value || ""}
               onChange={onChange}
               placeholder={placeholder}
-              className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-transparent transition placeholder:text-slate-400 hover:border-violet-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200"
+              className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-transparent transition-all duration-200 placeholder:text-slate-400 hover:border-violet-300 hover:shadow-md focus:border-violet-500 focus:ring-4 focus:ring-violet-500/30 font-medium"
               rows={3}
             />
           ) : options ? (
@@ -48,7 +48,7 @@ const Row = ({ icon: Icon, label, value, editing, name, type = "text", onChange,
               name={name}
               value={value || ""}
               onChange={onChange}
-              className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-transparent transition hover:border-violet-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200"
+              className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-transparent transition-all duration-200 hover:border-violet-300 hover:shadow-md focus:border-violet-500 focus:ring-4 focus:ring-violet-500/30 font-medium"
             >
               <option value="">Seleccionar...</option>
               {options.map(opt => (
@@ -62,7 +62,7 @@ const Row = ({ icon: Icon, label, value, editing, name, type = "text", onChange,
               value={value || ""}
               onChange={onChange}
               placeholder={placeholder}
-              className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-transparent transition placeholder:text-slate-400 hover:border-violet-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200"
+              className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-transparent transition-all duration-200 placeholder:text-slate-400 hover:border-violet-300 hover:shadow-md focus:border-violet-500 focus:ring-4 focus:ring-violet-500/30 font-medium"
             />
           )}
         </label>
@@ -71,12 +71,12 @@ const Row = ({ icon: Icon, label, value, editing, name, type = "text", onChange,
   }
   
   return (
-    <li className="flex items-start gap-3 py-1.5">
-      <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center text-violet-600">
+    <li className="flex items-start gap-3 py-2 group">
+      <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center text-white bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg group-hover:from-violet-600 group-hover:to-indigo-700 shadow-md ring-1 ring-violet-200 transition-all duration-200 group-hover:scale-110">
         <Icon className="h-4 w-4" />
       </span>
-      <p className="text-[15px] leading-relaxed">
-        <span className="font-semibold text-slate-800">{label}: </span>
+      <p className="text-[15px] leading-relaxed flex-1">
+        <span className="font-bold text-slate-800">{label}: </span>
         <span className="text-slate-700">{value || "—"}</span>
       </p>
     </li>
@@ -84,11 +84,11 @@ const Row = ({ icon: Icon, label, value, editing, name, type = "text", onChange,
 };
 
 const StatPill = ({ value, label }) => (
-  <div className="flex items-center gap-3 rounded-xl bg-white/90 px-4 py-3 shadow-sm ring-1 ring-slate-200">
-    <span className="grid h-8 w-8 place-items-center rounded-lg bg-pink-50 font-extrabold text-pink-600">
+  <div className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-white/95 px-3 sm:px-4 py-3 sm:py-4 shadow-md ring-2 ring-white/50 hover:shadow-lg hover:scale-105 transition-all duration-200 min-w-0">
+    <span className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-violet-600 to-indigo-600">
       {value}
     </span>
-    <span className="text-[13px] font-semibold tracking-wide text-slate-800">
+    <span className="text-[10px] sm:text-[11px] font-extrabold tracking-wide text-slate-800 text-center break-words">
       {label.toUpperCase()}
     </span>
   </div>
@@ -100,24 +100,34 @@ const ProfileCard = ({ user, stats = {}, onEdit, editing }) => {
   const { cursos=0, estudiantes=0, certificados=0, generaciones=0 } = stats;
 
   return (
-    <aside className="rounded-3xl border border-violet-200/70 bg-gradient-to-br from-violet-600/10 via-indigo-600/10 to-sky-600/10 p-5 shadow-lg">
-      <div className="rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 p-5 text-white ring-1 ring-white/20 shadow-xl">
+    <aside className="rounded-3xl border-2 border-violet-200/70 bg-gradient-to-br from-violet-50/50 via-indigo-50/50 to-purple-50/50 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 ring-2 ring-violet-100/50">
+      <div className="rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 p-5 sm:p-6 text-white ring-4 ring-white/20 shadow-2xl">
         {/* avatar + nombre */}
         <div className="flex flex-col items-center text-center">
-          <img
-            src={user?.avatar || "https://i.pravatar.cc/150?img=12"}
-            alt={user?.name || "Asesor"}
-            className="h-24 w-24 rounded-2xl object-cover ring-4 ring-white/30 shadow-lg"
-          />
-          <h3 className="mt-4 text-lg font-black">{user?.name}</h3>
-          <p className="text-sm opacity-90">{user?.role || "Asesor"}</p>
-          <p className="mt-1 text-[12px] tracking-wide opacity-80">
-            ASESOR DESDE {user?.since || "2023"}
+          <div className="relative group">
+            <img
+              src={user?.avatar || "https://i.pravatar.cc/150?img=12"}
+              alt={user?.name || "Asesor"}
+              className="h-28 w-28 rounded-3xl object-cover ring-4 ring-white/40 shadow-2xl transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </div>
+          <h3 className="mt-5 text-lg sm:text-xl font-black tracking-tight break-words max-w-full px-2 line-clamp-2">
+            {user?.name || "Asesor"}
+          </h3>
+          <p className="text-xs sm:text-sm font-medium opacity-95 mt-1 break-words max-w-full px-2">
+            {user?.role || "Asesor"}
           </p>
+          <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm ring-2 ring-white/30 shadow-md max-w-full">
+            <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+            <p className="text-[11px] sm:text-[12px] font-extrabold tracking-wide whitespace-nowrap">
+              ASESOR DESDE {user?.since || "2023"}
+            </p>
+          </div>
         </div>
 
         {/* stats */}
-        <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="mt-6 grid grid-cols-2 gap-2 sm:gap-3">
           <StatPill value={cursos} label="Cursos" />
           <StatPill value={estudiantes} label="Estudiantes" />
           <StatPill value={certificados} label="Certificados" />
@@ -128,13 +138,23 @@ const ProfileCard = ({ user, stats = {}, onEdit, editing }) => {
       <button
         onClick={onEdit}
         disabled={editing}
-        className={`mt-4 w-full rounded-2xl px-4 py-3 font-semibold shadow-lg transition ${
+        className={`mt-5 w-full rounded-2xl px-4 py-3.5 font-bold shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ring-2 ${
           editing 
-            ? 'bg-slate-400 text-white cursor-not-allowed' 
-            : 'bg-violet-600 text-white hover:bg-violet-700'
+            ? 'bg-slate-400 text-white cursor-not-allowed ring-slate-300' 
+            : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] ring-violet-200'
         }`}
       >
-        {editing ? 'Editando...' : 'Editar perfil'}
+        {editing ? (
+          <>
+            <Loader2 className="h-5 w-5 animate-spin flex-shrink-0" />
+            <span className="whitespace-nowrap">Editando...</span>
+          </>
+        ) : (
+          <>
+            <Edit className="h-5 w-5 flex-shrink-0" />
+            <span className="whitespace-nowrap">Editar perfil</span>
+          </>
+        )}
       </button>
     </aside>
   );
@@ -404,18 +424,55 @@ export default function AsesorPerfil() {
   return (
     <div className="w-full min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-4 rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-xl ring-2 ring-violet-200">
+              <User2 className="size-8 sm:size-10 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-tight">
+                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.1', paddingBottom: '2px' }}>
+                  Mi Perfil
+                </span>
+              </h1>
+              <p className="text-slate-600 text-sm sm:text-base font-medium">
+                Gestiona tu información personal y profesional
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Mensajes de éxito/error */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center gap-2">
-            <XCircle className="h-5 w-5 shrink-0" />
-            <span>{error}</span>
+          <div className="mb-6 p-4 bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-xl text-red-700 flex items-center gap-3 shadow-md ring-2 ring-red-100">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-md">
+              <XCircle className="size-4" />
+            </div>
+            <span className="flex-1 font-bold">{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="ml-auto p-1 hover:bg-red-100 rounded-lg transition-colors"
+              aria-label="Cerrar mensaje de error"
+            >
+              <X className="size-4" />
+            </button>
           </div>
         )}
         
         {success && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 shrink-0" />
-            <span>{success}</span>
+          <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl text-green-700 flex items-center gap-3 shadow-md ring-2 ring-green-100">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-md">
+              <CheckCircle2 className="size-4" />
+            </div>
+            <span className="flex-1 font-bold">{success}</span>
+            <button
+              onClick={() => setSuccess(null)}
+              className="ml-auto p-1 hover:bg-green-100 rounded-lg transition-colors"
+              aria-label="Cerrar mensaje de éxito"
+            >
+              <X className="size-4" />
+            </button>
           </div>
         )}
 
@@ -425,30 +482,35 @@ export default function AsesorPerfil() {
             <div className="xl:col-span-2 space-y-6">
               {/* Barra de acciones en modo edición */}
               {editing && (
-                <div className="flex items-center justify-between p-4 bg-violet-50 rounded-xl border-2 border-violet-200">
-                  <span className="text-violet-700 font-semibold">Modo edición</span>
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between p-5 bg-gradient-to-r from-violet-50 to-indigo-50 rounded-3xl border-2 border-violet-200 shadow-lg ring-2 ring-violet-100">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 p-2 shadow-md ring-2 ring-violet-200">
+                      <Edit className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-violet-700 font-extrabold text-lg">Modo edición</span>
+                  </div>
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={handleCancel}
                       disabled={saving}
-                      className="px-4 py-2 rounded-lg border-2 border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors disabled:opacity-50"
+                      className="px-5 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 font-bold hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 disabled:opacity-50 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
                     >
-                      <X className="h-4 w-4 inline mr-1" />
+                      <X className="h-5 w-5" />
                       Cancelar
                     </button>
                     <button
                       onClick={handleSave}
                       disabled={saving}
-                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold hover:from-violet-700 hover:to-indigo-700 transition-all disabled:opacity-50 flex items-center gap-2"
+                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-extrabold hover:from-violet-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] ring-2 ring-violet-200"
                     >
                       {saving ? (
                         <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-5 w-5 animate-spin" />
                           Guardando...
                         </>
                       ) : (
                         <>
-                          <Save className="h-4 w-4" />
+                          <Save className="h-5 w-5" />
                           Guardar cambios
                         </>
                       )}

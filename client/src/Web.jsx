@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Logo from "./assets/mqerk/mqerk.png";
 import Navbar from "./components/mqerk/Navbar";
 import Video from "./assets/mqerk/video.mp4";
@@ -223,10 +223,44 @@ function Web() {
     const getLeftImage = () => images[(currentIndex - 1 + images.length) % images.length];
     const getRightImage = () => images[(currentIndex + 1) % images.length];
 
+    const navigate = useNavigate();
+
     const scrollToCursos = () => {
       const section = document.getElementById('cursos');
       if (section) {
         section.scrollIntoView({ behavior: 'smooth' });
+      }
+    };
+
+    const handleRegistro = () => {
+      // Verificar que se haya seleccionado un curso y plan
+      const datosExistentes = localStorage.getItem('datos');
+      
+      if (!datosExistentes) {
+        // No hay datos, redirigir a la sección de cursos
+        alert('⚠️ Por favor, primero selecciona un curso y plan desde la página de cursos.');
+        scrollToCursos();
+        return;
+      }
+      
+      try {
+        const datos = JSON.parse(datosExistentes);
+        const cursoValido = datos.curso && datos.curso.trim() && datos.curso.trim() !== '';
+        const planValido = datos.planMensual && datos.planMensual.trim() && datos.planMensual.trim() !== '';
+        
+        if (!cursoValido || !planValido) {
+          // Datos incompletos, redirigir a cursos
+          alert('⚠️ Por favor, primero selecciona un curso y plan desde la página de cursos.');
+          scrollToCursos();
+          return;
+        }
+        
+        // Si todo está bien, navegar al registro
+        navigate('/registro_alumno');
+      } catch (e) {
+        // Error al parsear
+        alert('⚠️ Error al cargar los datos. Por favor, selecciona un curso y plan nuevamente.');
+        scrollToCursos();
       }
     };
 
@@ -252,7 +286,7 @@ function Web() {
                     <h1 className="text-white text-md font-bold mt-5">igual mentes que transforman el mundo.</h1>
                     <h1 className="text-white text-xl font-bold mt-5" style={{color: '#fff50c'}}>¡Da el primer paso hacia tu</h1>
                     <h1 className="text-white text-xl font-bold" style={{color: '#fff50c'}}>éxito académico!</h1>
-                    <button className='bg-[#3c24ba] font-bold text-lg text-white mt-6 px-6 py-3 rounded-4xl'>¡Regístrate aquí!</button>
+                    <button onClick={handleRegistro} className='bg-[#3c24ba] font-bold text-lg text-white mt-6 px-6 py-3 rounded-4xl'>¡Regístrate aquí!</button>
                 </div>
             </div>
 
@@ -623,7 +657,7 @@ function Web() {
             <h1 className="text-white text-3xl font-bold mt-6">igual mentes que transforman el mundo.</h1>
             <h1 className="text-white text-5xl font-bold mt-6" style={{color: '#fff50c'}}>¡Da el primer paso hacia tu</h1>
             <h1 className="text-white text-5xl font-bold" style={{color: '#fff50c'}}>éxito académico!</h1>
-            <button onClick={scrollToCursos} className="fancy-button bg-[#3c24ba] mt-8 py-5 px-14 rounded-[52px]">
+            <button onClick={handleRegistro} className="fancy-button bg-[#3c24ba] mt-8 py-5 px-14 rounded-[52px]">
               <svg className="border-svg bg-[#3c24ba]" viewBox="0 0 100 40" preserveAspectRatio="none">
                 <rect className="border-rect" x="0" y="0" width="100" height="39" rx="0" ry="0" />
               </svg>

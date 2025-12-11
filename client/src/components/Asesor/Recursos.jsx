@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Download, Eye, Trash2, UploadCloud, Search, FileText, File, Video, Image, Archive, FileEdit, X, Save, Loader2, Tag, Plus } from 'lucide-react';
-import { listRecursos, createRecurso, updateRecurso, deleteRecurso, downloadRecurso } from '../../api/recursos.js';
+import { Download, Eye, Trash2, UploadCloud, Search, FileText, File, Video, Image, Archive, FileEdit, X, Save, Loader2, Tag, Plus, CheckCircle, GraduationCap, Shield } from 'lucide-react';
+import { 
+  listRecursos, createRecurso, updateRecurso, deleteRecurso, downloadRecurso,
+  listRecursosAdmin, downloadRecursoAdmin
+} from '../../api/recursos.js';
 import { buildStaticUrl } from '../../utils/url.js';
+import ConfirmModal from '../shared/ConfirmModal.jsx';
 
 // Iconos según tipo de archivo
 const getFileIcon = (type) => {
@@ -21,7 +25,45 @@ const getFileBorderColor = (type) => {
   return 'border-slate-300';
 };
 
+// Helper para construir URL de archivo
+const buildFileUrl = (resource) => {
+  // Usar file_url si está disponible (ya viene construida del backend)
+  if (resource.file_url) {
+    return resource.file_url;
+  }
+
+  const path = resource.file_path;
+  if (!path) return '';
+
+  // Si ya es URL completa, usarla
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+
+  // Normalizar la ruta
+  let normalized = path.replace(/\\/g, '/');
+
+  // Extraer solo el nombre del archivo si contiene la ruta completa
+  const match = normalized.match(/uploads\/recursos-educativos\/([^\/]+)$/);
+  if (match) {
+    return `/uploads/recursos-educativos/${match[1]}`;
+  }
+
+  // Si ya es una ruta relativa que empieza con /uploads/
+  if (normalized.startsWith('/uploads/recursos-educativos/')) {
+    return normalized;
+  }
+
+  // Si solo tiene el nombre del archivo, agregar la ruta base
+  if (!normalized.includes('/')) {
+    return `/uploads/recursos-educativos/${normalized}`;
+  }
+
+  return normalized.startsWith('/') ? normalized : `/${normalized}`;
+};
+
 export default function Recursos() {
+  const [activeTab, setActiveTab] = useState('asesor'); // 'asesor' | 'admin'
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,17 +75,27 @@ export default function Recursos() {
   const [editing, setEditing] = useState(null);
   const [editForm, setEditForm] = useState({ title: '', description: '', tags: [] });
   const [newTag, setNewTag] = useState('');
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' });
+  const [successMessage, setSuccessMessage] = useState('');
 
-  // Cargar recursos
+  // Cargar recursos según el tab activo
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
       setError(null);
+      setSelected(new Set()); // Limpiar selección al cambiar de tab
       try {
-        const { data } = await listRecursos();
+        let data;
+        if (activeTab === 'asesor') {
+          const res = await listRecursos();
+          data = res.data?.data || [];
+        } else if (activeTab === 'admin') {
+          const res = await listRecursosAdmin();
+          data = res.data?.data || [];
+        }
         if (!alive) return;
-        setResources(data?.data || []);
+        setResources(data || []);
       } catch (e) {
         if (alive) setError(e?.response?.data?.message || 'Error cargando recursos');
       } finally {
@@ -51,7 +103,7 @@ export default function Recursos() {
       }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [activeTab]);
 
   // Filtrar recursos
   const filtered = useMemo(() => {
@@ -97,8 +149,17 @@ export default function Recursos() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validar tamaño (máximo 100MB)
+    const maxSize = 100 * 1024 * 1024; // 100MB en bytes
+    if (file.size > maxSize) {
+      setError(`El archivo es demasiado grande. Tamaño máximo: 100MB`);
+      e.target.value = '';
+      return;
+    }
+
     setUploading(true);
     setError(null);
+    setSuccessMessage('');
 
     try {
       const formData = new FormData();
@@ -107,11 +168,24 @@ export default function Recursos() {
       formData.append('description', '');
       formData.append('tags', JSON.stringify([]));
 
-      const { data } = await createRecurso(formData);
-      setResources(prev => [data.data, ...prev]);
+      // Solo se puede subir en "Mis Recursos" (asesor)
+      if (activeTab !== 'asesor') {
+        setError('Solo puedes subir archivos en "Mis Recursos"');
+        e.target.value = '';
+        setUploading(false);
+        return;
+      }
+
+      const response = await createRecurso(formData);
+
+      setResources(prev => [response.data.data, ...prev]);
+      setSuccessMessage(`Archivo "${file.name}" subido correctamente`);
 
       // Reset input
       e.target.value = '';
+      
+      // Ocultar mensaje de éxito después de 3 segundos
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
       setError(err?.response?.data?.message || 'Error subiendo archivo');
     } finally {
@@ -121,37 +195,83 @@ export default function Recursos() {
 
   // Eliminar recurso
   const handleDelete = async (id) => {
-    if (!confirm('¿Estás seguro de eliminar este recurso?')) return;
-
-    try {
-      await deleteRecurso(id);
-      setResources(prev => prev.filter(r => r.id !== id));
-      const s = new Set(selected);
-      s.delete(id);
-      setSelected(s);
-    } catch (err) {
-      setError(err?.response?.data?.message || 'Error eliminando recurso');
+    const resource = resources.find(r => r.id === id);
+    
+    // Los recursos del admin no se pueden eliminar desde aquí (solo el admin puede)
+    if (activeTab === 'admin') {
+      setError('No tienes permiso para eliminar recursos del administrador');
+      return;
     }
+    
+    setConfirmModal({
+      isOpen: true,
+      message: '¿Estás seguro de eliminar este recurso?',
+      details: resource ? `Se eliminará "${resource.title}" permanentemente.` : '',
+      variant: 'danger',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      onConfirm: async () => {
+        try {
+          await deleteRecurso(id);
+          setResources(prev => prev.filter(r => r.id !== id));
+          const s = new Set(selected);
+          s.delete(id);
+          setSelected(s);
+          setSuccessMessage('Recurso eliminado correctamente');
+          setTimeout(() => setSuccessMessage(''), 3000);
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' });
+        } catch (err) {
+          setError(err?.response?.data?.message || 'Error eliminando recurso');
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' });
+        }
+      },
+      onCancel: () => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' })
+    });
   };
 
   // Eliminación masiva
   const handleBulkDelete = async () => {
     if (selected.size === 0) return;
-    if (!confirm(`¿Estás seguro de eliminar ${selected.size} recurso(s)?`)) return;
-
-    try {
-      await Promise.all(Array.from(selected).map(id => deleteRecurso(id)));
-      setResources(prev => prev.filter(r => !selected.has(r.id)));
-      setSelected(new Set());
-    } catch (err) {
-      setError(err?.response?.data?.message || 'Error eliminando recursos');
+    
+    // Los recursos del admin no se pueden eliminar desde aquí
+    if (activeTab === 'admin') {
+      setError('No tienes permiso para eliminar recursos del administrador');
+      return;
     }
+    
+    setConfirmModal({
+      isOpen: true,
+      message: `¿Estás seguro de eliminar ${selected.size} recurso(s)?`,
+      details: 'Esta acción no se puede deshacer.',
+      variant: 'danger',
+      confirmText: 'Eliminar todos',
+      cancelText: 'Cancelar',
+      onConfirm: async () => {
+        try {
+          await Promise.all(Array.from(selected).map(id => deleteRecurso(id)));
+          setResources(prev => prev.filter(r => !selected.has(r.id)));
+          setSelected(new Set());
+          setSuccessMessage(`${selected.size} recurso(s) eliminado(s) correctamente`);
+          setTimeout(() => setSuccessMessage(''), 3000);
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' });
+        } catch (err) {
+          setError(err?.response?.data?.message || 'Error eliminando recursos');
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' });
+        }
+      },
+      onCancel: () => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' })
+    });
   };
 
   // Descargar recurso
   const handleDownload = async (id, fileName) => {
     try {
-      const response = await downloadRecurso(id);
+      let response;
+      if (activeTab === 'asesor') {
+        response = await downloadRecurso(id);
+      } else if (activeTab === 'admin') {
+        response = await downloadRecursoAdmin(id);
+      }
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -186,6 +306,13 @@ export default function Recursos() {
   // Guardar edición
   const saveEdit = async (id) => {
     try {
+      // Los recursos del admin no se pueden editar desde aquí
+      if (activeTab === 'admin') {
+        setError('No tienes permiso para editar recursos del administrador');
+        cancelEdit();
+        return;
+      }
+
       await updateRecurso(id, {
         title: editForm.title.trim(),
         description: editForm.description.trim() || null,
@@ -197,6 +324,8 @@ export default function Recursos() {
           ? { ...r, title: editForm.title.trim(), description: editForm.description.trim() || null, tags: editForm.tags }
           : r
       ));
+      setSuccessMessage('Recurso actualizado correctamente');
+      setTimeout(() => setSuccessMessage(''), 3000);
       cancelEdit();
     } catch (err) {
       setError(err?.response?.data?.message || 'Error actualizando recurso');
@@ -227,34 +356,81 @@ export default function Recursos() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-800 mb-2">Recursos Educativos</h1>
-          <p className="text-slate-600">Biblioteca personal del asesor — sube, organiza, visualiza y descarga tus materiales.</p>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-4 rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-xl ring-2 ring-violet-200">
+              <GraduationCap className="size-8 sm:size-10 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-tight">
+                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.1', paddingBottom: '2px' }}>
+                  Recursos Educativos
+                </span>
+              </h1>
+              <p className="text-slate-600 text-sm sm:text-base font-medium">
+                {activeTab === 'asesor' && 'Recursos que subes para tus grupos y alumnos — organiza, visualiza y descarga tus materiales.'}
+                {activeTab === 'admin' && 'Recursos que el administrador sube para ti — materiales proporcionados por la academia.'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-6 flex gap-2 border-b border-slate-200">
+          <button
+            onClick={() => setActiveTab('asesor')}
+            className={`px-6 py-3 font-semibold text-sm rounded-t-xl transition-all ${
+              activeTab === 'asesor'
+                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
+                : 'text-slate-600 hover:text-violet-600 hover:bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <GraduationCap className="size-4" />
+              <span>Mis Recursos</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('admin')}
+            className={`px-6 py-3 font-semibold text-sm rounded-t-xl transition-all ${
+              activeTab === 'admin'
+                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
+                : 'text-slate-600 hover:text-violet-600 hover:bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Shield className="size-4" />
+              <span>Recursos del Administrador</span>
+            </div>
+          </button>
         </div>
 
         {/* Acciones principales */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-medium shadow-md hover:shadow-lg transition-all cursor-pointer">
-              {uploading ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  <span>Subiendo...</span>
-                </>
-              ) : (
-                <>
-                  <UploadCloud className="size-4" />
-                  <span>Subir archivo</span>
-                </>
-              )}
-              <input type="file" onChange={handleUpload} className="hidden" disabled={uploading} />
-            </label>
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Solo mostrar botón de subir en "Mis Recursos" */}
+            {activeTab === 'asesor' && (
+              <label className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer">
+                {uploading ? (
+                  <>
+                    <Loader2 className="size-5 animate-spin" />
+                    <span>Subiendo...</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="size-5" />
+                    <span>Subir archivo</span>
+                  </>
+                )}
+                <input type="file" onChange={handleUpload} className="hidden" disabled={uploading} />
+              </label>
+            )}
 
-            {selected.size > 0 && (
+            {selected.size > 0 && activeTab !== 'admin' && (
               <button
                 onClick={handleBulkDelete}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium shadow-md hover:shadow-lg transition-all"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
               >
-                <Trash2 className="size-4" />
+                <Trash2 className="size-5" />
                 Eliminar ({selected.size})
               </button>
             )}
@@ -263,38 +439,64 @@ export default function Recursos() {
           <div className="flex items-center gap-2">
             <button
               onClick={selectAll}
-              className="text-sm text-slate-600 hover:text-slate-800 font-medium"
+              className="text-sm text-slate-600 hover:text-slate-800 font-semibold px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
             >
               {selected.size === filtered.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
             </button>
           </div>
         </div>
 
-        {/* Error */}
+        {/* Mensajes */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
+          <div className="mb-6 p-4 bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-xl text-red-700 flex items-center gap-3 shadow-md ring-2 ring-red-100">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-md">
+              <X className="size-4" />
+            </div>
+            <span className="font-bold flex-1">{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="p-1 hover:bg-red-100 rounded-lg transition-colors"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl text-green-700 flex items-center gap-3 shadow-md ring-2 ring-green-100">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-md">
+              <CheckCircle className="size-4" />
+            </div>
+            <span className="font-bold flex-1">{successMessage}</span>
+            <button
+              onClick={() => setSuccessMessage('')}
+              className="p-1 hover:bg-green-100 rounded-lg transition-colors"
+            >
+              <X className="size-4" />
+            </button>
           </div>
         )}
 
         {/* Buscador y filtros */}
-        <div className="bg-white rounded-2xl shadow-md border-2 border-slate-200 p-4 sm:p-6 mb-6">
+        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg ring-2 ring-slate-100/50 p-5 sm:p-6 mb-6">
           <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <div className="flex items-center gap-3 flex-1 w-full border-2 border-slate-200 rounded-lg px-4 py-2.5 focus-within:border-violet-500 focus-within:ring-2 focus-within:ring-violet-200 transition-all">
-              <Search className="size-5 text-slate-400" />
+            <div className="flex items-center gap-3 flex-1 w-full border-2 border-slate-200 rounded-xl px-4 py-3 focus-within:border-violet-500 focus-within:ring-4 focus-within:ring-violet-500/30 transition-all shadow-sm hover:shadow-md">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
+                <Search className="size-4" />
+              </div>
               <input
                 type="text"
                 placeholder="Buscar por título, etiqueta o palabra clave"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                className="flex-1 outline-none text-slate-700 placeholder-slate-400"
+                className="flex-1 outline-none text-slate-700 placeholder-slate-400 font-medium"
               />
             </div>
 
             <select
               value={filterType}
               onChange={e => setFilterType(e.target.value)}
-              className="px-4 py-2.5 rounded-lg border-2 border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all"
+              className="px-4 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all shadow-sm hover:shadow-md font-medium"
             >
               <option value="ALL">Todos</option>
               <option value="PDF">PDF</option>
@@ -304,7 +506,7 @@ export default function Recursos() {
               <option value="FILE">Otros</option>
             </select>
 
-            <div className="px-4 py-2 bg-violet-50 text-violet-700 rounded-lg font-semibold text-sm">
+            <div className="px-4 py-3 bg-gradient-to-r from-violet-500 to-indigo-600 text-white rounded-xl font-bold text-sm shadow-md ring-2 ring-violet-200">
               {filtered.length} {filtered.length === 1 ? 'resultado' : 'resultados'}
             </div>
           </div>
@@ -316,12 +518,14 @@ export default function Recursos() {
             <Loader2 className="size-8 animate-spin text-violet-600" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border-2 border-slate-200 shadow-sm">
-            <FileText className="size-16 text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-600 font-medium text-lg mb-2">
+          <div className="text-center py-16 bg-white rounded-2xl border-2 border-slate-200 shadow-lg ring-2 ring-slate-100/50">
+            <div className="inline-flex p-4 rounded-3xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-xl ring-4 ring-violet-200 mb-4">
+              <FileText className="size-16" />
+            </div>
+            <p className="text-slate-600 font-bold text-lg mb-2">
               {query || filterType !== 'ALL' ? 'No se encontraron recursos' : 'No tienes recursos aún'}
             </p>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 font-medium">
               {query || filterType !== 'ALL'
                 ? 'Intenta con otros términos de búsqueda o filtros'
                 : 'Sube tu primer archivo para comenzar'}
@@ -332,7 +536,7 @@ export default function Recursos() {
             {filtered.map(r => (
               <div
                 key={r.id}
-                className={`bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border-2 ${getFileBorderColor(r.file_type_display)}`}
+                className={`bg-white rounded-2xl p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-200 border-2 ${getFileBorderColor(r.file_type_display)} hover:-translate-y-1 ring-2 ring-slate-100/50 hover:ring-slate-200`}
               >
                 {/* Header de la tarjeta */}
                 <div className="flex items-start justify-between gap-3 mb-4">
@@ -367,54 +571,59 @@ export default function Recursos() {
                       onChange={() => toggleSelect(r.id)}
                       className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer"
                     />
-                    <div className="flex gap-1">
+                    <div className="flex gap-1.5">
                       <button
                         onClick={() => openPreview(r)}
-                        className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-violet-100 text-slate-600 hover:text-violet-600 transition-all duration-200 shadow-sm hover:shadow-md"
                         title="Vista previa"
                       >
-                        <Eye className="size-4 text-slate-600" />
+                        <Eye className="size-4" />
                       </button>
                       <button
                         onClick={() => handleDownload(r.id, r.file_name)}
-                        className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-600 transition-all duration-200 shadow-sm hover:shadow-md"
                         title="Descargar"
                       >
-                        <Download className="size-4 text-slate-600" />
+                        <Download className="size-4" />
                       </button>
                       {editing === r.id ? (
                         <>
                           <button
                             onClick={() => saveEdit(r.id)}
-                            className="p-1.5 rounded-lg hover:bg-green-100 transition-colors"
+                            className="p-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition-all duration-200 shadow-sm hover:shadow-md"
                             title="Guardar"
                           >
-                            <Save className="size-4 text-green-600" />
+                            <Save className="size-4" />
                           </button>
                           <button
                             onClick={cancelEdit}
-                            className="p-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all duration-200 shadow-sm hover:shadow-md"
                             title="Cancelar"
                           >
-                            <X className="size-4 text-red-600" />
+                            <X className="size-4" />
                           </button>
                         </>
                       ) : (
                         <>
-                          <button
-                            onClick={() => startEdit(r)}
-                            className="p-1.5 rounded-lg hover:bg-blue-100 transition-colors"
-                            title="Editar"
-                          >
-                            <FileEdit className="size-4 text-blue-600" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(r.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-100 transition-colors"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="size-4 text-red-600" />
-                          </button>
+                          {/* Solo mostrar editar/eliminar si no es recurso del admin */}
+                          {activeTab !== 'admin' && (
+                            <button
+                              onClick={() => startEdit(r)}
+                              className="p-2 rounded-xl bg-slate-100 hover:bg-violet-100 text-slate-600 hover:text-violet-600 transition-all duration-200 shadow-sm hover:shadow-md"
+                              title="Editar"
+                            >
+                              <FileEdit className="size-4" />
+                            </button>
+                          )}
+                          {activeTab !== 'admin' && (
+                            <button
+                              onClick={() => handleDelete(r.id)}
+                              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all duration-200 shadow-sm hover:shadow-md"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
@@ -491,7 +700,14 @@ export default function Recursos() {
 
                 {/* Footer */}
                 <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-400">
-                  <span>Subido: {new Date(r.created_at).toLocaleDateString('es-ES')}</span>
+                  <div className="flex flex-col gap-1">
+                    <span>Subido: {new Date(r.created_at).toLocaleDateString('es-ES')}</span>
+                    {activeTab === 'admin' && r.admin_usuario && (
+                      <span className="text-indigo-600 font-medium">
+                        Por: {r.admin_usuario}
+                      </span>
+                    )}
+                  </div>
                   <span>ID: {r.id}</span>
                 </div>
               </div>
@@ -502,26 +718,26 @@ export default function Recursos() {
         {/* Modal de preview */}
         {preview && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setPreview(null)}>
-            <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col border-2 border-slate-200 ring-4 ring-violet-100" onClick={e => e.stopPropagation()}>
               {/* Header del modal */}
-              <div className="px-4 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between shrink-0">
+              <div className="px-5 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between shrink-0 shadow-lg">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-semibold truncate">{preview.title}</h3>
-                  <p className="text-xs text-white/80">{preview.file_type_display} • {preview.file_size_mb} MB</p>
+                  <h3 className="text-lg font-bold truncate">{preview.title}</h3>
+                  <p className="text-xs text-white/90 font-medium mt-1">{preview.file_type_display} • {preview.file_size_mb} MB</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
                   <button
                     onClick={() => handleDownload(preview.id, preview.file_name)}
-                    className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition-colors flex items-center gap-1"
+                    className="px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 shadow-md hover:shadow-lg"
                   >
-                    <Download className="size-3" />
+                    <Download className="size-4" />
                     Descargar
                   </button>
                   <button
                     onClick={() => setPreview(null)}
-                    className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
+                    className="p-2 rounded-xl hover:bg-white/20 transition-all duration-200 ring-2 ring-white/20 hover:ring-white/40"
                   >
-                    <X className="size-4 text-white" />
+                    <X className="size-5 text-white" />
                   </button>
                 </div>
               </div>
@@ -531,64 +747,13 @@ export default function Recursos() {
                 {preview.file_type_display === 'PDF' ? (
                   <iframe
                     allowFullScreen
-                    src={preview.file_url || (() => {
-                      const path = preview.file_path;
-                      if (!path) return '';
-                      if (path.startsWith('http://') || path.startsWith('https://')) return path;
-
-                      // Normalizar la ruta
-                      let normalized = path.replace(/\\/g, '/');
-
-                      // Extraer solo el nombre del archivo si contiene la ruta completa
-                      // Buscar la parte después de 'uploads/recursos-educativos/'
-                      const match = normalized.match(/uploads\/recursos-educativos\/([^\/]+)$/);
-                      if (match) {
-                        return `/uploads/recursos-educativos/${match[1]}`;
-                      }
-
-                      // Si ya es una ruta relativa que empieza con /uploads/
-                      if (normalized.startsWith('/uploads/recursos-educativos/')) {
-                        return normalized;
-                      }
-
-                      // Si solo tiene el nombre del archivo, agregar la ruta base
-                      if (!normalized.includes('/')) {
-                        return `/uploads/recursos-educativos/${normalized}`;
-                      }
-
-                      return normalized.startsWith('/') ? normalized : `/${normalized}`;
-                    })()}
+                    src={buildFileUrl(preview)}
                     className="w-full h-full min-h-[400px] max-h-[60vh] rounded-lg border-2 border-slate-200"
                     title={preview.title}
                   />
                 ) : preview.file_type_display === 'VIDEO' ? (
                   <video
-                    src={preview.file_url || (() => {
-                      const path = preview.file_path;
-                      if (!path) return '';
-                      if (path.startsWith('http://') || path.startsWith('https://')) return path;
-
-                      // Normalizar la ruta
-                      let normalized = path.replace(/\\/g, '/');
-
-                      // Extraer solo el nombre del archivo si contiene la ruta completa
-                      const match = normalized.match(/uploads\/recursos-educativos\/([^\/]+)$/);
-                      if (match) {
-                        return `/uploads/recursos-educativos/${match[1]}`;
-                      }
-
-                      // Si ya es una ruta relativa que empieza con /uploads/
-                      if (normalized.startsWith('/uploads/recursos-educativos/')) {
-                        return normalized;
-                      }
-
-                      // Si solo tiene el nombre del archivo, agregar la ruta base
-                      if (!normalized.includes('/')) {
-                        return `/uploads/recursos-educativos/${normalized}`;
-                      }
-
-                      return normalized.startsWith('/') ? normalized : `/${normalized}`;
-                    })()}
+                    src={buildFileUrl(preview)}
                     controls
                     className="w-full max-h-[60vh] rounded-lg border-2 border-slate-200"
                   >
@@ -597,49 +762,7 @@ export default function Recursos() {
                 ) : preview.file_type_display === 'IMAGE' ? (
                   <div className="flex items-center justify-center max-h-[60vh] overflow-auto">
                     <img
-                      src={(() => {
-                        // Usar file_url si está disponible (ya viene construida del backend)
-                        if (preview.file_url) {
-                          return preview.file_url;
-                        }
-
-                        // Construir URL desde file_path
-                        const path = preview.file_path;
-                        if (!path) return '';
-
-                        // Si ya es URL completa, usarla
-                        if (path.startsWith('http://') || path.startsWith('https://')) {
-                          return path;
-                        }
-
-                        // Normalizar la ruta
-                        let normalizedPath = path.replace(/\\/g, '/');
-
-                        // Extraer solo el nombre del archivo si contiene la ruta completa
-                        // Buscar la parte después de 'uploads/recursos-educativos/'
-                        const match = normalizedPath.match(/uploads\/recursos-educativos\/([^\/]+)$/);
-                        if (match) {
-                          return `/uploads/recursos-educativos/${match[1]}`;
-                        }
-
-                        // Si ya es una ruta relativa que empieza con /uploads/
-                        if (normalizedPath.startsWith('/uploads/recursos-educativos/')) {
-                          return normalizedPath;
-                        }
-
-                        // Si solo tiene el nombre del archivo, agregar la ruta base
-                        if (!normalizedPath.includes('/')) {
-                          return `/uploads/recursos-educativos/${normalizedPath}`;
-                        }
-
-                        // Si empieza con /, usar directamente
-                        if (normalizedPath.startsWith('/')) {
-                          return normalizedPath;
-                        }
-
-                        // Si no empieza con /, agregarlo
-                        return `/${normalizedPath}`;
-                      })()}
+                      src={buildFileUrl(preview)}
                       alt={preview.title}
                       className="max-w-full max-h-[60vh] object-contain rounded-lg border-2 border-slate-200 shadow-lg"
                       onError={(e) => {
@@ -648,21 +771,15 @@ export default function Recursos() {
                         if (!path) return;
 
                         const normalizedPath = path.replace(/\\/g, '/');
-
-                        // Extraer solo el nombre del archivo
                         const fileNameMatch = normalizedPath.match(/([^\/]+)$/);
                         const fileName = fileNameMatch ? fileNameMatch[1] : null;
 
                         const variants = [
-                          // Intentar con /uploads/recursos-educativos/ + nombre archivo
                           fileName ? `/uploads/recursos-educativos/${fileName}` : null,
-                          // Intentar extrayendo de la ruta completa
                           normalizedPath.includes('recursos-educativos')
                             ? `/uploads/recursos-educativos/${normalizedPath.split('recursos-educativos/').pop()}`
                             : null,
-                          // Intentar con buildStaticUrl
                           buildStaticUrl(normalizedPath),
-                          // Intentar directamente
                           normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`,
                         ].filter(Boolean);
 
@@ -686,6 +803,18 @@ export default function Recursos() {
             </div>
           </div>
         )}
+
+        {/* Modal de confirmación */}
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          message={confirmModal.message}
+          details={confirmModal.details}
+          variant={confirmModal.variant}
+          confirmText={confirmModal.confirmText}
+          cancelText={confirmModal.cancelText}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' })}
+        />
       </div>
     </div>
   );

@@ -414,29 +414,45 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
       const activitiesProgress = totalActividades > 0 ? Math.round((actividadesCompletadas / totalActividades) * 100) : 0;
 
       // Calcular promedio mensual de quizzes (último intento o mejor puntaje)
+      // Convertir de escala 0-100 a 0-10 para el cálculo
       const quizScores = quizzesArray
         .map(q => {
           const puntaje = q.oficial_puntaje ?? q.mejor_puntaje ?? q.ultimo_puntaje;
-          return puntaje != null ? Number(puntaje) : null;
+          if (puntaje == null) return null;
+          const score = Number(puntaje);
+          // Si el puntaje es mayor a 10, asumimos que está en escala 0-100 y lo convertimos
+          return score > 10 ? score / 10 : score;
         })
-        .filter(p => p != null);
+        .filter(p => p != null && p >= 0 && p <= 10);
       const monthlyAverage = quizScores.length > 0
-        ? Math.round(quizScores.reduce((sum, p) => sum + p, 0) / quizScores.length)
+        ? Math.round((quizScores.reduce((sum, p) => sum + p, 0) / quizScores.length) * 10) // Convertir de vuelta a 0-100
         : 0;
 
       // Calcular promedio de actividades (calificaciones)
+      // Convertir de escala 0-100 a 0-10 para el cálculo
       const actividadScores = actividadesArray
-        .map(a => a.calificacion)
-        .filter(c => c != null && !isNaN(Number(c)))
-        .map(c => Number(c));
+        .map(a => {
+          const calif = a.calificacion;
+          if (calif == null || isNaN(Number(calif))) return null;
+          const score = Number(calif);
+          // Si la calificación es mayor a 10, asumimos que está en escala 0-100 y la convertimos
+          return score > 10 ? score / 10 : score;
+        })
+        .filter(c => c != null && c >= 0 && c <= 10);
       const actividadAverage = actividadScores.length > 0
-        ? Math.round(actividadScores.reduce((sum, c) => sum + c, 0) / actividadScores.length)
+        ? Math.round((actividadScores.reduce((sum, c) => sum + c, 0) / actividadScores.length) * 10) // Convertir de vuelta a 0-100
         : 0;
 
       // Promedio general (ponderado: 60% quizzes, 40% actividades)
-      const overallAverage = quizScores.length > 0 && actividadScores.length > 0
-        ? Math.round((monthlyAverage * 0.6) + (actividadAverage * 0.4))
-        : monthlyAverage || actividadAverage || 0;
+      // Solo calcular si hay al menos un tipo de datos
+      let overallAverage = 0;
+      if (quizScores.length > 0 && actividadScores.length > 0) {
+        overallAverage = Math.round((monthlyAverage * 0.6) + (actividadAverage * 0.4));
+      } else if (quizScores.length > 0) {
+        overallAverage = monthlyAverage;
+      } else if (actividadScores.length > 0) {
+        overallAverage = actividadAverage;
+      }
 
       // Generar datos para gráfico de progreso mensual (últimos 12 meses)
       // Crear datos históricos básicos con el promedio actual en el último mes
@@ -458,10 +474,28 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
       const feedbackScore = actividadAverage || monthlyAverage || 0;
 
       // Obtener porcentaje de asistencia del resumen
-      const attendancePercentage = asistenciaResumen?.general?.porcentaje || null;
+      // El backend devuelve el porcentaje ya calculado, pero también tenemos total y asistidas
+      const attendanceGeneral = asistenciaResumen?.general;
+      let attendancePercentage = null;
+      let attendanceData = null;
+      if (attendanceGeneral) {
+        // Usar el porcentaje calculado por el backend, o calcularlo si no está disponible
+        attendancePercentage = attendanceGeneral.porcentaje != null 
+          ? Number(attendanceGeneral.porcentaje) 
+          : (attendanceGeneral.total > 0 
+              ? Math.round((attendanceGeneral.asistidas / attendanceGeneral.total) * 100) 
+              : null);
+        // Guardar también los datos de total y asistidas para mostrar información más precisa
+        attendanceData = {
+          total: attendanceGeneral.total || 0,
+          asistidas: attendanceGeneral.asistidas || 0,
+          faltas: attendanceGeneral.faltas || 0
+        };
+      }
 
       return {
         attendance: attendancePercentage, // Porcentaje de asistencia desde la API
+        attendanceData, // Datos adicionales de asistencia (total, asistidas, faltas)
         activities: {
           current: actividadesCompletadas,
           total: totalActividades || 0
@@ -1069,19 +1103,59 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               
               {/* Información principal - Porcentaje grande */}
               <div className="text-center mb-3">
-                <div className="text-2xl font-black text-blue-600 mb-1">
-                  {finalMetricsData.attendance}%
-                </div>
-                <div className="text-sm text-blue-500 font-bold">
-                  {Math.round(finalMetricsData.attendance * 0.28)} de 28 días
-                </div>
+                {(() => {
+                  const attendance = finalMetricsData.attendance ?? null;
+                  
+                  // Intentar obtener datos reales del resumen de asistencia si están disponibles
+                  const attendanceData = finalMetricsData.attendanceData;
+                  const totalDays = attendanceData?.total ?? null;
+                  const attendedDays = attendanceData?.asistidas ?? null;
+                  
+                  if (attendance === null || attendance === undefined) {
+                    return (
+                      <>
+                        <div className="text-2xl font-black text-gray-400 mb-1">
+                          —
+                        </div>
+                        <div className="text-xs text-gray-400 font-bold">
+                          Sin datos
+                        </div>
+                      </>
+                    );
+                  }
+                  
+                  // Si tenemos datos reales de días, usarlos; si no, calcular basado en el mes actual
+                  let displayDays = null;
+                  let displayTotal = null;
+                  
+                  if (totalDays != null && attendedDays != null) {
+                    displayDays = attendedDays;
+                    displayTotal = totalDays;
+                  } else {
+                    // Fallback: calcular basado en días del mes actual
+                    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+                    displayDays = Math.round((attendance / 100) * daysInMonth);
+                    displayTotal = daysInMonth;
+                  }
+                  
+                  return (
+                    <>
+                      <div className="text-2xl font-black text-blue-600 mb-1">
+                        {Math.round(attendance)}%
+                      </div>
+                      <div className="text-sm text-blue-500 font-bold">
+                        {displayDays} de {displayTotal} días
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
               
               {/* Barra de progreso horizontal */}
               <div className="w-full h-3 bg-blue-100 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-blue-400 to-cyan-500 rounded-full transition-all duration-150 ease-out"
-                  style={{ width: `${finalMetricsData.attendance}%` }}
+                  style={{ width: `${Math.min(100, Math.max(0, finalMetricsData.attendance ?? 0))}%` }}
                 ></div>
               </div>
             </div>
@@ -1109,20 +1183,50 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               
               {/* Progreso principal */}
               <div className="text-center mb-3">
-                <div className="text-xl font-black text-orange-600 mb-1">
-                  {finalMetricsData.activities.current}/{finalMetricsData.activities.total}
-                </div>
-                <div className="text-sm text-orange-500 font-bold">
-                  {Math.round((finalMetricsData.activities.current / finalMetricsData.activities.total) * 100)}%
-                </div>
+                {(() => {
+                  const current = finalMetricsData.activities?.current ?? 0;
+                  const total = finalMetricsData.activities?.total ?? 0;
+                  const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+                  
+                  if (total === 0) {
+                    return (
+                      <>
+                        <div className="text-xl font-black text-gray-400 mb-1">
+                          0/0
+                        </div>
+                        <div className="text-xs text-gray-400 font-bold">
+                          Sin actividades
+                        </div>
+                      </>
+                    );
+                  }
+                  
+                  return (
+                    <>
+                      <div className="text-xl font-black text-orange-600 mb-1">
+                        {current}/{total}
+                      </div>
+                      <div className="text-sm text-orange-500 font-bold">
+                        {percentage}%
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
               
               {/* Barra de progreso */}
               <div className="w-full h-3 bg-orange-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full transition-all duration-150 ease-out"
-                  style={{ width: `${(finalMetricsData.activities.current / finalMetricsData.activities.total) * 100}%` }}
-                ></div>
+                {(() => {
+                  const current = finalMetricsData.activities?.current ?? 0;
+                  const total = finalMetricsData.activities?.total ?? 0;
+                  const percentage = total > 0 ? Math.min(100, Math.max(0, (current / total) * 100)) : 0;
+                  return (
+                    <div 
+                      className="h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full transition-all duration-150 ease-out"
+                      style={{ width: `${percentage}%` }}
+                    ></div>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -1150,15 +1254,38 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               
               {/* Datos principales */}
               <div className="text-emerald-700 text-center">
-                <div className="text-2xl font-black mb-1">
-                  {Math.round((finalMetricsData.quiz.current / finalMetricsData.quiz.total) * 100)}%
-                </div>
-                <div className="text-sm font-bold">
-                  {finalMetricsData.quiz.current} de {finalMetricsData.quiz.total}
-                </div>
-                <div className="text-xs mt-1">
-                  aprobados
-                </div>
+                {(() => {
+                  const current = finalMetricsData.quiz?.current ?? 0;
+                  const total = finalMetricsData.quiz?.total ?? 0;
+                  const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+                  
+                  if (total === 0) {
+                    return (
+                      <>
+                        <div className="text-2xl font-black text-gray-400 mb-1">
+                          —
+                        </div>
+                        <div className="text-xs text-gray-400 font-bold">
+                          Sin quizzes
+                        </div>
+                      </>
+                    );
+                  }
+                  
+                  return (
+                    <>
+                      <div className="text-2xl font-black mb-1">
+                        {percentage}%
+                      </div>
+                      <div className="text-sm font-bold">
+                        {current} de {total}
+                      </div>
+                      <div className="text-xs mt-1">
+                        aprobados
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -1173,11 +1300,13 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
 
         {/* Métrica de Promedio Mensual - Con clic para abrir modal de Material UI */}
         {(() => {
+          const monthlyAverage = finalMetricsData.monthlyAverage ?? 0;
           const hasMonthlyData = finalMetricsData.monthlyAverageData && 
             finalMetricsData.monthlyAverageData.length > 0 &&
             finalMetricsData.monthlyAverageData.some(item => item.promedio > 0);
           
-          if (!hasMonthlyData || finalMetricsData.monthlyAverage === 0) return null;
+          // Mostrar siempre, incluso si no hay datos (mostrará 0%)
+          // if (!hasMonthlyData || monthlyAverage === 0) return null;
           
           return (
             <div 
@@ -1197,26 +1326,34 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   </svg>
                 </div>
                 <span className="text-2xl font-black text-blue-600">
-                  {finalMetricsData.monthlyAverage}%
+                  {monthlyAverage > 0 ? `${Math.round(monthlyAverage)}%` : '—'}
                 </span>
               </div>
               
               {/* Gráfico de barras simplificado */}
-              <div className="flex items-end justify-center space-x-1 h-12 mb-2">
-                {[65, 72, 78, 85, finalMetricsData.monthlyAverage].map((value, index) => (
-                  <div key={index} className="flex flex-col items-center">
-                    <div 
-                      className="w-3 bg-gradient-to-t from-blue-400 to-purple-500 rounded-t-sm"
-                      style={{ height: `${(value / 100) * 40}px` }}
-                    ></div>
-                  </div>
-                ))}
-              </div>
+              {hasMonthlyData ? (
+                <div className="flex items-end justify-center space-x-1 h-12 mb-2">
+                  {finalMetricsData.monthlyAverageData.slice(-5).map((item, index) => (
+                    <div key={index} className="flex flex-col items-center">
+                      <div 
+                        className="w-3 bg-gradient-to-t from-blue-400 to-purple-500 rounded-t-sm"
+                        style={{ height: `${Math.max(4, (item.promedio / 100) * 40)}px` }}
+                      ></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-12 mb-2">
+                  <span className="text-xs text-gray-400">Sin datos históricos</span>
+                </div>
+              )}
               
               {/* Indicador de clic */}
-              <div className="text-center">
-                <span className="text-xs text-blue-600 font-bold">Clic para ver detalle</span>
-              </div>
+              {hasMonthlyData && (
+                <div className="text-center">
+                  <span className="text-xs text-blue-600 font-bold">Clic para ver detalle</span>
+                </div>
+              )}
               
               {/* Icono de expansión */}
               <div className="absolute top-2 right-2 w-5 h-5 text-blue-400 opacity-70">

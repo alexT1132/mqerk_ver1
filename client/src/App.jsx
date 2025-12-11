@@ -65,6 +65,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { Error404, Error500 } from './pages/Error/ErrorPages.jsx';
 import QuizResultadosPage from './pages/alumnos/QuizResultadosPage.jsx';
 import SimulacionResultadosPage from './pages/alumnos/SimulacionResultadosPage.jsx';
+import { InactivityHandler } from './components/InactivityHandler.jsx';
 
 export default function App(){
     return(
@@ -72,6 +73,7 @@ export default function App(){
       // Árbol de proveedores de contexto y enrutador principal
       <AsesorProvider>
         <AuthProvider>
+          <InactivityHandler />
           <EstudiantesProvider>
             <ComprobanteProvider>
               <StudentProvider>

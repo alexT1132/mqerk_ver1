@@ -133,7 +133,9 @@ export async function getAsistenciasPorAsesor(id_asesor, options = {}) {
   
   let sql = `
     SELECT a.*, 
-           e.nombre, e.apellidos, e.grupo,
+           e.nombre as estudiante_nombre, 
+           e.apellidos as estudiante_apellidos, 
+           e.grupo as estudiante_grupo,
            u.usuario as asesor_nombre
     FROM asistencias a
     INNER JOIN estudiantes e ON a.id_estudiante = e.id

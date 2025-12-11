@@ -200,59 +200,59 @@ function AttendanceStats({ resumenData, attendanceData }) {
   }
   
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
       {/* Asistencia General */}
-      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-2xl border border-blue-200">
-        <div className="flex items-center justify-between mb-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-            <IconoAsistencia className="text-white" />
+      <div className="bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-50 p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl border-2 border-blue-200 transition-all duration-300 hover:-translate-y-1">
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md ring-2 ring-blue-200/50">
+            <IconoAsistencia className="text-white w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
           </div>
-          <span className="text-2xl sm:text-3xl font-bold text-blue-600">{Math.round(overallRate)}%</span>
+          <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{Math.round(overallRate)}%</span>
         </div>
-        <h3 className="text-sm font-semibold text-blue-800 mb-1">Asistencia General</h3>
-        <p className="text-xs text-blue-600">{attendedActivities} de {totalActivities} actividades</p>
+        <h3 className="text-xs sm:text-sm font-extrabold text-blue-800 mb-0.5 sm:mb-1">Asistencia General</h3>
+        <p className="text-[10px] sm:text-xs text-blue-600 font-semibold">{attendedActivities} de {totalActivities} actividades</p>
       </div>
       
       {/* Clases */}
-      <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-2xl border border-green-200">
-        <div className="flex items-center justify-between mb-3">
-          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-            <IconoClase className="text-white" />
+      <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl border-2 border-green-200 transition-all duration-300 hover:-translate-y-1">
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md ring-2 ring-green-200/50">
+            <IconoClase className="text-white w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
           </div>
-          <span className="text-2xl sm:text-3xl font-bold text-green-600">
+          <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">
             {typeStats.clase.total > 0 ? Math.round((typeStats.clase.attended / typeStats.clase.total) * 100) : 0}%
           </span>
         </div>
-        <h3 className="text-sm font-semibold text-green-800 mb-1">Clases</h3>
-        <p className="text-xs text-green-600">{typeStats.clase.attended} de {typeStats.clase.total}</p>
+        <h3 className="text-xs sm:text-sm font-extrabold text-green-800 mb-0.5 sm:mb-1">Clases</h3>
+        <p className="text-[10px] sm:text-xs text-green-600 font-semibold">{typeStats.clase.attended} de {typeStats.clase.total}</p>
       </div>
       
       {/* Tareas */}
-      <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-2xl border border-purple-200">
-        <div className="flex items-center justify-between mb-3">
-          <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-            <IconoTarea className="text-white" />
+      <div className="bg-gradient-to-br from-purple-50 via-violet-50 to-purple-100 p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl border-2 border-purple-200 transition-all duration-300 hover:-translate-y-1">
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center shadow-md ring-2 ring-purple-200/50">
+            <IconoTarea className="text-white w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
           </div>
-          <span className="text-2xl sm:text-3xl font-bold text-purple-600">
+          <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">
             {typeStats.tarea.total > 0 ? Math.round((typeStats.tarea.attended / typeStats.tarea.total) * 100) : 0}%
           </span>
         </div>
-        <h3 className="text-sm font-semibold text-purple-800 mb-1">Tareas</h3>
-        <p className="text-xs text-purple-600">{typeStats.tarea.attended} de {typeStats.tarea.total}</p>
+        <h3 className="text-xs sm:text-sm font-extrabold text-purple-800 mb-0.5 sm:mb-1">Tareas</h3>
+        <p className="text-[10px] sm:text-xs text-purple-600 font-semibold">{typeStats.tarea.attended} de {typeStats.tarea.total}</p>
       </div>
       
       {/* Simulaciones */}
-      <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-2xl border border-orange-200">
-        <div className="flex items-center justify-between mb-3">
-          <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
-            <IconoSimulacion className="text-white" />
+      <div className="bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl border-2 border-orange-200 transition-all duration-300 hover:-translate-y-1">
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center shadow-md ring-2 ring-orange-200/50">
+            <IconoSimulacion className="text-white w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
           </div>
-          <span className="text-2xl sm:text-3xl font-bold text-orange-600">
+          <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-600">
             {typeStats.simulacion.total > 0 ? Math.round((typeStats.simulacion.attended / typeStats.simulacion.total) * 100) : 0}%
           </span>
         </div>
-        <h3 className="text-sm font-semibold text-orange-800 mb-1">Simulaciones</h3>
-        <p className="text-xs text-orange-600">{typeStats.simulacion.attended} de {typeStats.simulacion.total}</p>
+        <h3 className="text-xs sm:text-sm font-extrabold text-orange-800 mb-0.5 sm:mb-1">Simulaciones</h3>
+        <p className="text-[10px] sm:text-xs text-orange-600 font-semibold">{typeStats.simulacion.attended} de {typeStats.simulacion.total}</p>
       </div>
     </div>
   );
@@ -301,23 +301,23 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
   }
   
   return (
-    <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-6">
-        <h3 className="text-lg sm:text-xl font-bold text-white capitalize">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-violet-200/50 overflow-hidden ring-2 ring-violet-100/50">
+      <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 p-3 sm:p-4 md:p-6 shadow-lg">
+        <h3 className="text-base sm:text-lg md:text-xl font-extrabold text-white capitalize">
           Calendario de Asistencia - {monthName}
         </h3>
       </div>
       
-      <div className="p-4 sm:p-6">
-        <div className="grid grid-cols-7 gap-2 mb-4">
+      <div className="p-2 sm:p-3 md:p-4 lg:p-6">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-3 sm:mb-4">
           {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
-            <div key={day} className="text-center text-xs font-semibold text-gray-500 py-2">
+            <div key={day} className="text-center text-[10px] sm:text-xs md:text-sm font-extrabold text-violet-700 py-1 sm:py-2">
               {day}
             </div>
           ))}
         </div>
         
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {calendarDays.map((item, index) => {
             if (item.isPlaceholder) {
               return <div key={`placeholder-${index}`} className="aspect-square" />;
@@ -341,34 +341,34 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
             return (
               <div
                 key={day}
-                className={`aspect-square flex flex-col items-center justify-center text-xs rounded-lg border-2 transition-all duration-200 ${
+                className={`aspect-square flex flex-col items-center justify-center text-[10px] sm:text-xs md:text-sm rounded-lg sm:rounded-xl border-2 transition-all duration-200 touch-manipulation ${
                   isToday 
-                    ? 'border-blue-500 bg-blue-50 shadow-md' 
+                    ? 'border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-300' 
                     : hasFilteredActivities
                       ? allAttended
-                        ? 'border-green-300 bg-green-50 hover:bg-green-100'
+                        ? 'border-green-300 bg-green-50 hover:bg-green-100 shadow-md'
                         : someAttended
-                          ? 'border-yellow-300 bg-yellow-50 hover:bg-yellow-100'
-                          : 'border-red-300 bg-red-50 hover:bg-red-100'
+                          ? 'border-yellow-300 bg-yellow-50 hover:bg-yellow-100 shadow-md'
+                          : 'border-red-300 bg-red-50 hover:bg-red-100 shadow-md'
                       : isFutureDay
                         ? 'border-gray-200 bg-gray-50 text-gray-400'
                         : 'border-gray-200 bg-gray-50'
                 }`}
               >
-                <span className={`font-semibold ${isToday ? 'text-blue-700' : ''}`}>{day}</span>
+                <span className={`font-extrabold ${isToday ? 'text-blue-700' : ''}`}>{day}</span>
                 {hasFilteredActivities && (
-                  <div className="flex flex-wrap justify-center gap-0.5 mt-1 max-w-full">
+                  <div className="flex flex-wrap justify-center gap-0.5 sm:gap-1 mt-0.5 sm:mt-1 max-w-full">
                     {filteredActivities.slice(0, 3).map((activity, idx) => (
                       <div
                         key={idx}
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          activity.attended ? 'bg-green-500' : 'bg-red-500'
+                        className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shadow-sm ${
+                          activity.attended ? 'bg-green-500 ring-1 ring-green-300' : 'bg-red-500 ring-1 ring-red-300'
                         }`}
                         title={`${activity.title}: ${activity.attended ? 'Asistió' : 'Faltó'}`}
                       />
                     ))}
                     {filteredActivities.length > 3 && (
-                      <span className="text-[8px] text-gray-500">+{filteredActivities.length - 3}</span>
+                      <span className="text-[8px] sm:text-[9px] text-gray-500 font-bold">+{filteredActivities.length - 3}</span>
                     )}
                   </div>
                 )}
@@ -377,19 +377,19 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
           })}
         </div>
         
-        {/* Leyenda */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span>Asistió/Completó</span>
+        {/* Leyenda - Mejorada */}
+        <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[10px] sm:text-xs">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 bg-green-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-green-200">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full ring-1 ring-green-300"></div>
+            <span className="font-extrabold text-green-700">Asistió/Completó</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <span>Faltó/No completó</span>
+          <div className="flex items-center space-x-1.5 sm:space-x-2 bg-red-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-red-200">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full ring-1 ring-red-300"></div>
+            <span className="font-extrabold text-red-700">Faltó/No completó</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 border-2 border-blue-500 rounded-full"></div>
-            <span>Hoy</span>
+          <div className="flex items-center space-x-1.5 sm:space-x-2 bg-blue-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-blue-200">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-blue-500 rounded-full bg-blue-100"></div>
+            <span className="font-extrabold text-blue-700">Hoy</span>
           </div>
         </div>
       </div>
@@ -475,9 +475,9 @@ export function Asistencia_Alumno_comp() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-white">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-lg font-medium text-gray-700">Cargando asistencia...</p>
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8 border-2 border-violet-200/50 text-center ring-2 ring-violet-100/50">
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
+          <p className="text-sm sm:text-base md:text-lg font-extrabold text-violet-700">Cargando asistencia...</p>
         </div>
       </div>
     );
@@ -486,26 +486,30 @@ export function Asistencia_Alumno_comp() {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-white">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-red-200 text-center max-w-md">
-          <div className="text-red-500 text-4xl mb-4">⚠️</div>
-          <p className="text-lg font-medium text-gray-700 mb-2">{error}</p>
-          <p className="text-sm text-gray-500">Intenta recargar la página</p>
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8 border-2 border-red-200 text-center max-w-md">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-gradient-to-br from-red-100 to-rose-100 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 sm:w-10 sm:h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <p className="text-sm sm:text-base md:text-lg font-extrabold text-gray-700 mb-2">{error}</p>
+          <p className="text-xs sm:text-sm text-gray-500 font-medium">Intenta recargar la página</p>
         </div>
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen bg-white p-3 sm:p-4 lg:p-6 font-inter text-gray-800">
-      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+    <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 lg:py-8 font-inter text-gray-800">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
         
-        {/* Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+        {/* Header - Mejorado */}
+        <div className="text-center mb-4 sm:mb-6 md:mb-8">
+          <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 mb-2 sm:mb-3 tracking-tight">
             CONTROL DE ASISTENCIA
           </h1>
           {currentCourse && (
-            <p className="text-sm sm:text-base text-gray-600 font-medium">
+            <p className="text-xs sm:text-sm md:text-base text-gray-600 font-semibold">
               {currentCourse.title}
             </p>
           )}
@@ -514,21 +518,21 @@ export function Asistencia_Alumno_comp() {
         {/* Estadísticas */}
         <AttendanceStats resumenData={resumenData} attendanceData={attendanceData} />
         
-        {/* Filtros */}
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-6">
+        {/* Filtros - Mejorados */}
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
           {[
-            { key: 'todos', label: 'Todas', color: 'blue' },
-            { key: 'clases', label: 'Clases', color: 'green' },
-            { key: 'tareas', label: 'Tareas', color: 'purple' },
-            { key: 'simulaciones', label: 'Simulaciones', color: 'orange' }
+            { key: 'todos', label: 'Todas', color: 'blue', gradient: 'from-blue-500 to-indigo-600' },
+            { key: 'clases', label: 'Clases', color: 'green', gradient: 'from-green-500 to-emerald-600' },
+            { key: 'tareas', label: 'Tareas', color: 'purple', gradient: 'from-purple-500 to-violet-600' },
+            { key: 'simulaciones', label: 'Simulaciones', color: 'orange', gradient: 'from-orange-500 to-amber-600' }
           ].map(filter => (
             <button
               key={filter.key}
               onClick={() => setSelectedFilter(filter.key)}
-              className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 ${
+              className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-extrabold text-xs sm:text-sm md:text-base transition-all duration-200 active:scale-95 touch-manipulation border-2 shadow-md hover:shadow-lg ${
                 selectedFilter === filter.key
-                  ? `bg-${filter.color}-500 text-white shadow-lg`
-                  : `bg-white text-${filter.color}-600 border border-${filter.color}-200 hover:bg-${filter.color}-50`
+                  ? `bg-gradient-to-r ${filter.gradient} text-white border-transparent shadow-lg`
+                  : `bg-white text-${filter.color}-600 border-${filter.color}-300 hover:bg-${filter.color}-50 hover:border-${filter.color}-400`
               }`}
             >
               {filter.label}
@@ -539,20 +543,28 @@ export function Asistencia_Alumno_comp() {
         {/* Calendario */}
         <AttendanceCalendar attendanceData={attendanceData} selectedFilter={selectedFilter} />
         
-        {/* Lista detallada de actividades recientes */}
-        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-4 sm:p-6">
-            <h3 className="text-lg sm:text-xl font-bold text-white">
+        {/* Lista detallada de actividades recientes - Mejorada */}
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-violet-200/50 overflow-hidden ring-2 ring-violet-100/50">
+          <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 p-3 sm:p-4 md:p-6 shadow-lg">
+            <h3 className="text-base sm:text-lg md:text-xl font-extrabold text-white flex items-center gap-2">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               Actividades Recientes
             </h3>
           </div>
           
-          <div className="p-4 sm:p-6">
-            <div className="space-y-3">
+          <div className="p-3 sm:p-4 md:p-6">
+            <div className="space-y-2 sm:space-y-3">
               {filteredAttendanceData.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p className="text-sm">No hay registros de asistencia aún.</p>
-                  <p className="text-xs mt-2">Las asistencias aparecerán aquí cuando tu asesor las registre.</p>
+                <div className="text-center py-8 sm:py-12 text-gray-500">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 sm:w-10 sm:h-10 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm sm:text-base font-semibold">No hay registros de asistencia aún.</p>
+                  <p className="text-xs sm:text-sm mt-2 text-gray-400">Las asistencias aparecerán aquí cuando tu asesor las registre.</p>
                 </div>
               ) : (
                 filteredAttendanceData
@@ -561,40 +573,46 @@ export function Asistencia_Alumno_comp() {
                     day.activities.map(activity => (
                       <div 
                         key={activity.id}
-                        className={`flex items-center justify-between p-3 sm:p-4 rounded-lg border ${
+                        className={`flex items-center justify-between p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all duration-200 hover:shadow-md ${
                           activity.attended 
-                            ? 'border-green-200 bg-green-50' 
-                            : 'border-red-200 bg-red-50'
+                            ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50' 
+                            : 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50'
                         }`}
                       >
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            activity.type === 'clase' ? 'bg-green-500' :
-                            activity.type === 'tarea' ? 'bg-purple-500' :
-                            'bg-orange-500'
+                        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/50 flex-shrink-0 ${
+                            activity.type === 'clase' ? 'bg-gradient-to-br from-green-500 to-emerald-600' :
+                            activity.type === 'tarea' ? 'bg-gradient-to-br from-purple-500 to-violet-600' :
+                            'bg-gradient-to-br from-orange-500 to-amber-600'
                           }`}>
-                            {activity.type === 'clase' && <IconoClase className="text-white" />}
-                            {activity.type === 'tarea' && <IconoTarea className="text-white" />}
-                            {activity.type === 'simulacion' && <IconoSimulacion className="text-white" />}
+                            {activity.type === 'clase' && <IconoClase className="text-white w-5 h-5 sm:w-6 sm:h-6" />}
+                            {activity.type === 'tarea' && <IconoTarea className="text-white w-5 h-5 sm:w-6 sm:h-6" />}
+                            {activity.type === 'simulacion' && <IconoSimulacion className="text-white w-5 h-5 sm:w-6 sm:h-6" />}
                           </div>
-                          <div>
-                            <h4 className="font-semibold text-sm sm:text-base text-gray-800">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-extrabold text-xs sm:text-sm md:text-base text-gray-800 truncate">
                               {activity.title}
                             </h4>
-                            <p className="text-xs sm:text-sm text-gray-600">
+                            <p className="text-[10px] sm:text-xs md:text-sm text-gray-600 font-medium truncate">
                               {day.date} - {activity.time}
                             </p>
                           </div>
                         </div>
                         
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
                           {activity.attended ? (
-                            <IconoAsistencia className="text-green-600" />
+                            <div className="p-1.5 sm:p-2 bg-green-100 rounded-full">
+                              <IconoAsistencia className="text-green-600 w-4 h-4 sm:w-5 sm:h-5" />
+                            </div>
                           ) : (
-                            <IconoFalta className="text-red-600" />
+                            <div className="p-1.5 sm:p-2 bg-red-100 rounded-full">
+                              <IconoFalta className="text-red-600 w-4 h-4 sm:w-5 sm:h-5" />
+                            </div>
                           )}
-                          <span className={`text-xs sm:text-sm font-semibold ${
-                            activity.attended ? 'text-green-600' : 'text-red-600'
+                          <span className={`text-[10px] sm:text-xs md:text-sm font-extrabold px-2 sm:px-2.5 py-1 rounded-lg border ${
+                            activity.attended 
+                              ? 'text-green-700 bg-green-50 border-green-200' 
+                              : 'text-red-700 bg-red-50 border-red-200'
                           }`}>
                             {activity.attended ? 'Asistió' : 'Faltó'}
                           </span>

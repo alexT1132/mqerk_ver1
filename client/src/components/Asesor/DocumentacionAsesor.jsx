@@ -26,23 +26,24 @@ import { getDocumentos, uploadDocumento, downloadDocumento, deleteDocumento } fr
 /* ---------- UI helpers ---------- */
 
 const TitleBar = ({ icon: Icon, text }) => (
-  <div className="relative mx-auto w-max">
-    <div className="flex items-center gap-3 rounded-2xl bg-white/80 px-5 py-2.5 shadow-lg ring-1 ring-slate-200">
-      <div className="grid h-7 w-7 place-items-center rounded-xl bg-violet-600 text-white shadow">
-        <Icon className="h-4 w-4" />
+  <div className="relative mx-auto w-max mb-8">
+    <div className="flex items-center gap-4 rounded-3xl bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 px-6 py-4 shadow-xl ring-2 ring-slate-100/50 border-2 border-violet-200/60">
+      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 text-white shadow-2xl ring-4 ring-white/50">
+        <Icon className="h-6 w-6" />
       </div>
-      <h2 className="text-lg sm:text-xl font-black tracking-wide text-slate-900">
+      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">
         {text.toUpperCase()}
       </h2>
     </div>
-    <div className="absolute inset-x-0 -bottom-2 mx-auto h-2 w-24 rounded-full bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500 opacity-70" />
+    <div className="absolute inset-x-0 -bottom-3 mx-auto h-2 w-32 rounded-full bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500 shadow-md" />
   </div>
 );
 
 const Pill = ({ icon: Icon, label, hint, status = "pending", documento, onUpload, onDownload, onView, esLineamiento = false, onShowModal }) => {
-  const isDone = status === "done";
   const fileInputRef = useRef(null);
   const hasFile = documento?.archivo_path;
+  // Si tiene archivo, se considera completado independientemente del estado del backend
+  const isDone = status === "done" || !!hasFile;
 
   const handleUploadClick = (e) => {
     e.stopPropagation();
@@ -143,28 +144,28 @@ const Pill = ({ icon: Icon, label, hint, status = "pending", documento, onUpload
   return (
     <div
       className={[
-        "group relative flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3",
-        "text-left shadow-sm ring-1 transition",
+        "group relative flex w-full items-center justify-between gap-4 rounded-2xl px-5 py-4",
+        "text-left shadow-md ring-2 transition-all duration-200 hover:shadow-xl hover:-translate-y-1",
         isDone
-          ? "bg-white ring-emerald-200 hover:ring-emerald-300"
-          : "bg-white ring-violet-200 hover:ring-violet-300",
+          ? "bg-white ring-emerald-200 hover:ring-emerald-300 border-2 border-emerald-200"
+          : "bg-white ring-violet-200 hover:ring-violet-300 border-2 border-violet-200",
       ].join(" ")}
     >
-      <span className="flex min-w-0 items-center gap-3 flex-1">
+      <span className="flex min-w-0 items-center gap-4 flex-1">
         <span
           className={[
-            "grid h-8 w-8 shrink-0 place-items-center rounded-lg text-white shadow",
-            isDone ? "bg-emerald-500" : "bg-violet-600",
+            "grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white shadow-lg ring-2 transition-transform duration-200 group-hover:scale-110",
+            isDone ? "bg-gradient-to-br from-emerald-500 to-teal-600 ring-emerald-300" : "bg-gradient-to-br from-violet-600 to-indigo-600 ring-violet-300",
           ].join(" ")}
         >
-          <Icon className="h-4 w-4" />
+          <Icon className="h-5 w-5" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-slate-800">
+          <span className="block truncate text-sm font-bold text-slate-900">
             {label}
           </span>
           {hint && (
-            <span className="block truncate text-xs text-slate-500">
+            <span className="block truncate text-xs text-slate-600 font-medium mt-0.5">
               {hint}
             </span>
           )}
@@ -176,17 +177,17 @@ const Pill = ({ icon: Icon, label, hint, status = "pending", documento, onUpload
           <>
             <button
               onClick={handleView}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition"
+              className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-110 active:scale-95"
               title="Ver documento"
             >
-              <Eye className="h-4 w-4 text-blue-600" />
+              <Eye className="h-4 w-4" />
             </button>
             <button
               onClick={handleDownload}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition"
+              className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-110 active:scale-95"
               title="Descargar documento"
             >
-              <Download className="h-4 w-4 text-green-600" />
+              <Download className="h-4 w-4" />
             </button>
           </>
         )}
@@ -194,10 +195,10 @@ const Pill = ({ icon: Icon, label, hint, status = "pending", documento, onUpload
           <>
             <button
               onClick={handleUploadClick}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition"
+              className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-110 active:scale-95"
               title={hasFile ? "Reemplazar archivo" : "Subir archivo"}
             >
-              <Upload className="h-4 w-4 text-violet-600" />
+              <Upload className="h-4 w-4" />
             </button>
             <input
               ref={fileInputRef}
@@ -210,10 +211,10 @@ const Pill = ({ icon: Icon, label, hint, status = "pending", documento, onUpload
         )}
         <span
           className={[
-            "ml-3 grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold shrink-0",
+            "ml-2 grid h-6 w-6 place-items-center rounded-full text-xs font-extrabold shrink-0 ring-2 shadow-md",
             isDone
-              ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200"
-              : "bg-violet-100 text-violet-700 ring-1 ring-violet-200",
+              ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white ring-emerald-300"
+              : "bg-gradient-to-r from-amber-500 to-orange-600 text-white ring-amber-300",
           ].join(" ")}
           title={isDone ? "Completado" : "Pendiente"}
         >
@@ -225,15 +226,15 @@ const Pill = ({ icon: Icon, label, hint, status = "pending", documento, onUpload
 };
 
 const Card = ({ title, items, onUpload, onDownload, esLineamientos = false, onShowModal }) => (
-  <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 sm:p-5 shadow-sm">
-    <div className="mb-3">
-      <div className="inline-flex rounded-xl bg-violet-50 px-3 py-1 ring-1 ring-violet-200">
-        <span className="text-[13px] font-black tracking-wide text-violet-700">
+  <div className="rounded-3xl border-2 border-slate-200 bg-white p-5 sm:p-6 shadow-xl ring-2 ring-slate-100/50">
+    <div className="mb-5">
+      <div className="inline-flex rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2 ring-2 ring-violet-300 shadow-md">
+        <span className="text-sm font-extrabold tracking-widest text-white">
           {title.toUpperCase()}
         </span>
       </div>
     </div>
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {items.map((it) => (
         <Pill 
           key={it.id || it.label} 
@@ -272,16 +273,22 @@ const CustomModal = ({ isOpen, onClose, type, title, message }) => {
   if (!isOpen) return null;
 
   const iconClass = {
-    success: 'text-green-600',
-    error: 'text-red-600',
-    loading: 'text-blue-600 animate-spin'
+    success: 'text-white',
+    error: 'text-white',
+    loading: 'text-white animate-spin'
   }[type] || 'text-gray-600';
 
   const bgClass = {
-    success: 'bg-green-50 border-green-200',
-    error: 'bg-red-50 border-red-200',
-    loading: 'bg-blue-50 border-blue-200'
+    success: 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-300',
+    error: 'bg-gradient-to-br from-rose-50 to-red-50 border-rose-300',
+    loading: 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300'
   }[type] || 'bg-gray-50 border-gray-200';
+
+  const iconBgClass = {
+    success: 'bg-gradient-to-br from-emerald-500 to-teal-600',
+    error: 'bg-gradient-to-br from-rose-500 to-red-600',
+    loading: 'bg-gradient-to-br from-blue-500 to-indigo-600'
+  }[type] || 'bg-gray-500';
 
   const Icon = {
     success: CheckCircle,
@@ -291,26 +298,28 @@ const CustomModal = ({ isOpen, onClose, type, title, message }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className={`relative w-full max-w-md rounded-2xl border-2 ${bgClass} p-6 shadow-2xl`}>
+      <div className={`relative w-full max-w-md rounded-3xl border-2 ${bgClass} p-8 shadow-2xl ring-2 ring-slate-100/50`}>
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-all p-1.5 rounded-lg hover:bg-white/50"
         >
           <X className="h-5 w-5" />
         </button>
         
         <div className="flex flex-col items-center text-center">
-          <Icon className={`h-16 w-16 mb-4 ${iconClass}`} />
-          <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
-          <p className="text-sm text-gray-600 mb-6">{message}</p>
+          <div className={`inline-flex items-center justify-center h-20 w-20 rounded-full ${iconBgClass} mb-5 shadow-xl ring-4 ring-white/50`}>
+            <Icon className={`h-10 w-10 ${iconClass}`} />
+          </div>
+          <h3 className="text-2xl font-extrabold text-slate-800 mb-3">{title}</h3>
+          <p className="text-sm text-slate-600 font-medium mb-8">{message}</p>
           
           {type !== 'loading' && (
             <button
               onClick={onClose}
-              className={`px-6 py-2 rounded-lg font-semibold transition ${
+              className={`px-6 py-3 rounded-xl font-bold transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
                 type === 'success'
-                  ? 'bg-green-600 text-white hover:bg-green-700'
-                  : 'bg-red-600 text-white hover:bg-red-700'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
+                  : 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white'
               }`}
             >
               Cerrar
@@ -385,8 +394,10 @@ export default function DocumentCenter() {
       <div className="w-full mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando documentos...</p>
+            <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 mb-5 shadow-xl ring-4 ring-violet-200">
+              <Loader className="h-8 w-8 text-white animate-spin" />
+            </div>
+            <p className="text-lg font-bold text-slate-700">Cargando documentos...</p>
           </div>
         </div>
       </div>
@@ -398,11 +409,13 @@ export default function DocumentCenter() {
       <div className="w-full mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="text-red-500 text-4xl mb-4">⚠️</div>
-            <p className="text-lg font-medium text-gray-700 mb-2">{error}</p>
+            <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-rose-500 to-red-600 mb-5 shadow-xl ring-4 ring-rose-200">
+              <AlertCircle className="h-10 w-10 text-white" />
+            </div>
+            <p className="text-xl font-bold text-slate-700 mb-4">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
+              className="px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
             >
               Reintentar
             </button>

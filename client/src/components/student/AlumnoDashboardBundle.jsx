@@ -21,6 +21,7 @@ import { SideBarDesktop_Alumno_comp, SideBarSm_Alumno_comp } from '../layouts/Si
 import CourseDetailDashboard from '../shared/CourseDetailDashboard.jsx';
 import { Actividades_Alumno_comp } from './Actividades_Alumno_comp.jsx';
 import { Simulaciones_Alumno_comp } from './Simulaciones_Alumno_comp.jsx';
+import Recursos_Alumno_comp from './Recursos_Alumno_comp.jsx';
 import { CerrarSesion_Alumno_comp } from './CerrarSesion_Alumno_comp.jsx';
 import { AccessGuard } from './AccessGuard.jsx';
 import Quizz_Review from './Quizz_Review.jsx';
@@ -165,7 +166,10 @@ function StudentAwareLayout() {
   // ✅ FORZAR RE-RENDER cuando cambie currentCourse
   useEffect(() => {
     if (currentCourse) {
-      console.log('🔄 currentCourse cambió, forzando re-render:', currentCourse.title);
+      // Log solo en desarrollo para reducir ruido en consola
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 currentCourse cambió, forzando re-render:', currentCourse.title);
+      }
       setForceUpdate(prev => prev + 1);
     }
   }, [currentCourse]);
@@ -218,6 +222,7 @@ function StudentAwareLayout() {
           <Route path="/simulaciones" element={<AccessGuard><Simulaciones_Alumno_comp /></AccessGuard>} />
           <Route path="/simulaciones/tomar/:simId" element={<AccessGuard><Simulacion_Review /></AccessGuard>} />
           <Route path="/simulaciones/tomar/:simId/resultados" element={<AccessGuard><SimulacionResultadosPage /></AccessGuard>} />
+          <Route path="/recursos" element={<AccessGuard><Recursos_Alumno_comp /></AccessGuard>} />
           <Route path="/feedback" element={<AccessGuard><Feedback_Alumno_Comp /></AccessGuard>} />
           <Route path="/asistencia" element={<AccessGuard><Asistencia_Alumno_comp /></AccessGuard>} />
           <Route path="/calendario" element={<AccessGuard><Calendar_Alumno_comp /></AccessGuard>} />

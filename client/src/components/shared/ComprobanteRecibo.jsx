@@ -40,7 +40,10 @@ function CategoryButton({ label, isActive, onClick }) {
                 w-full min-w-[60px] xs:min-w-[70px] sm:min-w-[80px] max-w-[100px] xs:max-w-[110px] sm:max-w-[130px]
                 h-8 xs:h-10 sm:h-12 md:h-14
                 flex items-center justify-center
-                border-2 transform hover:scale-105 hover:shadow-lg
+                border-2 transform 
+                active:scale-95 touch-manipulation
+                hover:scale-105 hover:shadow-md
+                ring-1 ring-transparent hover:ring-purple-200/20
                 ${isActive
                     ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white border-purple-500 shadow-md shadow-purple-500/30' 
                     : 'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-purple-400 shadow-sm hover:from-purple-600 hover:to-purple-700 hover:border-purple-500'
@@ -64,40 +67,26 @@ function VespertinoButton({ label, isActive, onClick, profesorAsignado, grupo })
 
     // Función para obtener estilos sobrios basados en el tipo de turno
     const getGrupoStyles = (grupo, isActive) => {
-        const baseStyles = "relative overflow-hidden px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-3 rounded-md xs:rounded-lg font-medium text-xs xs:text-sm transition-all duration-200 ease-out w-full min-w-[100px] max-w-[140px] h-10 xs:h-12 sm:h-14 flex flex-col items-center justify-center gap-0.5 border hover:shadow-md";
+        const baseStyles = "relative overflow-hidden px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-3 rounded-lg xs:rounded-xl sm:rounded-2xl font-extrabold text-xs xs:text-sm sm:text-base transition-all duration-300 ease-out w-full min-w-[100px] max-w-[140px] h-10 xs:h-12 sm:h-14 flex flex-col items-center justify-center gap-0.5 border-2 hover:shadow-lg active:scale-95 touch-manipulation ring-2 ring-transparent hover:ring-opacity-50";
         
         switch (grupo) {
             case 'V1':
-                return isActive 
-                    ? `${baseStyles} bg-purple-500 text-white border-purple-500`
-                    : `${baseStyles} bg-white text-purple-600 border-purple-300 hover:bg-purple-50`;
-            
             case 'V2':
-                return isActive 
-                    ? `${baseStyles} bg-purple-500 text-white border-purple-500`
-                    : `${baseStyles} bg-white text-purple-600 border-purple-300 hover:bg-purple-50`;
-            
             case 'V3':
                 return isActive 
-                    ? `${baseStyles} bg-purple-500 text-white border-purple-500`
+                    ? `${baseStyles} bg-purple-500 text-white border-purple-500 shadow-md`
                     : `${baseStyles} bg-white text-purple-600 border-purple-300 hover:bg-purple-50`;
             
-
             case 'M1':
-                return isActive 
-                    ? `${baseStyles} bg-blue-500 text-white border-blue-500`
-                    : `${baseStyles} bg-white text-blue-600 border-blue-300 hover:bg-blue-50`;
-            
             case 'M2':
                 return isActive 
-                    ? `${baseStyles} bg-blue-500 text-white border-blue-500`
-                    : `${baseStyles} bg-white text-blue-600 border-blue-300 hover:bg-blue-50`;
+                    ? `${baseStyles} bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500 shadow-md ring-blue-300/30`
+                    : `${baseStyles} bg-gradient-to-r from-blue-400/60 to-indigo-400/60 text-white border-blue-300/50 shadow-sm hover:from-blue-500/70 hover:to-indigo-500/70 hover:border-blue-400/60 hover:ring-blue-200/20`;
             
-                    
             case 'S1':
                 return isActive 
-                    ? `${baseStyles} bg-green-500 text-white border-green-500`
-                    : `${baseStyles} bg-white text-green-600 border-green-300 hover:bg-green-50`;
+                    ? `${baseStyles} bg-gradient-to-r from-green-600 to-teal-600 text-white border-green-500 shadow-md ring-green-300/30`
+                    : `${baseStyles} bg-gradient-to-r from-green-400/60 to-teal-400/60 text-white border-green-300/50 shadow-sm hover:from-green-500/70 hover:to-teal-500/70 hover:border-green-400/60 hover:ring-green-200/20`;
             
             default:
                 return isActive 
@@ -305,33 +294,7 @@ export function ComprobanteRecibo() {
     // Asignaciones pueden cambiar: reasignar profesores a diferentes grupos
     // TODO: CONECTAR CON BACKEND - Endpoint: GET /api/profesores/asignaciones
     // ¡¡¡ ESTOS DATOS SÍ VIENEN DEL BACKEND !!!
-    const [profesoresAsignados, setProfesoresAsignados] = useState({
-        // DATOS MOCK TEMPORALES PARA PRUEBAS - ELIMINAR EN PRODUCCIÓN
-        'EEAU': {
-            'V1': { nombre: 'García López', id: 123 },
-            'V2': { nombre: 'Martínez Silva', id: 124 },
-            'M1': { nombre: 'Pérez García', id: 125 }
-        },
-        'EEAP': {
-            'V1': { nombre: 'Fernández Ruiz', id: 126 },
-            'S1': { nombre: 'López Herrera', id: 127 }
-        },
-        'DIGI-START': {
-            'V1': { nombre: 'Rodríguez Tech', id: 128 },
-            'M1': { nombre: 'González Code', id: 129 }
-        },
-        'MINDBRIDGE': {
-            'V1': { nombre: 'Morales Mind', id: 130 }
-        },
-        'SPEAKUP': {
-            'V1': { nombre: 'Jiménez Speak', id: 131 },
-            'V2': { nombre: 'Castro Talk', id: 132 }
-        },
-        'PCE': {
-            'M1': { nombre: 'Vargas Prep', id: 133 },
-            'S1': { nombre: 'Medina Exam', id: 134 }
-        }
-    });
+    const [profesoresAsignados, setProfesoresAsignados] = useState({});
 
     /*
     ========== ESTRUCTURA DE DATOS BACKEND - ACLARACIÓN IMPORTANTE ==========
@@ -571,8 +534,7 @@ export function ComprobanteRecibo() {
                 // setComprobantesRechazados(rechazados.data);
                 
             } catch (error) {
-                console.error('Error cargando datos iniciales:', error);
-                // TODO: Mostrar mensaje de error al usuario
+                // Error manejado por el contexto
             }
         };
         
@@ -650,7 +612,14 @@ export function ComprobanteRecibo() {
     const mergedArray = Object.values(mergedMap);
 
     // Derivar listas por estado/verificacion
-    const pendientes = mergedArray.filter(c => Number(c.verificacion) === 1 || (!c.verificacion && c.estado !== 'rechazado' && c.estado !== 'aprobado'));
+    // Solo mostrar como pendiente si tiene comprobante subido (tiene campo comprobante o id de comprobante)
+    const pendientes = mergedArray.filter(c => {
+        // Debe tener un comprobante subido (tiene campo comprobante o es un registro de comprobante válido)
+        const tieneComprobante = c.comprobante || c.id || (c.verificacion !== undefined && c.verificacion !== null);
+        if (!tieneComprobante) return false;
+        // Solo pendientes: verificacion === 1 O (sin verificacion pero con comprobante y no está rechazado/aprobado)
+        return Number(c.verificacion) === 1 || (!c.verificacion && c.comprobante && c.estado !== 'rechazado' && c.estado !== 'aprobado');
+    });
     const aprobados = mergedArray.filter(c => Number(c.verificacion) === 2 || c.estado === 'aprobado');
     const rechazados = mergedArray.filter(c => {
         const v = Number(c.verificacion);
@@ -877,7 +846,7 @@ export function ComprobanteRecibo() {
             try {
                 await rejectVerificacionComprobante(folioParaRechazo, { motivo: motivoRechazo, importe: importeActualizado, metodo: metodoPagoActualizado });
             } catch (apiErr) {
-                console.error('Fallo rechazo backend:', apiErr);
+                // Error manejado por el contexto
                 alert('Rechazo local aplicado, pero falló guardar en servidor. Reintenta.');
             }
             // Limpiar campos editables de ese comprobante
@@ -901,7 +870,7 @@ export function ComprobanteRecibo() {
             // Opcional: limpiar override si backend ya refleja estado
             // (mantener por ahora por consistencia con aprobación)
         } catch (error) {
-            console.error('Error al rechazar comprobante:', error);
+            // Error manejado por el contexto
             alert('Error al procesar el rechazo. Intenta nuevamente.');
         }
     };
@@ -957,11 +926,11 @@ export function ComprobanteRecibo() {
                 await getVerificacionComprobante(folio, dataComplete);
                 await getComprobantes(activeVespertino, activeCategory);
             } catch (apiErr) {
-                console.error('Fallo aprobación backend:', apiErr);
+                // Error manejado por el contexto
                 alert('Aprobación mostrada localmente, pero falló guardar en servidor. Reintenta.');
             }
         } catch (error) {
-            console.error('Error al aprobar comprobante:', error);
+            // Error manejado por el contexto
             alert('Error al procesar la aprobación. Intenta nuevamente.');
         }
     };
@@ -1000,7 +969,6 @@ export function ComprobanteRecibo() {
         setShowPdfTip(false);
     };
 
-    console.log(comprobantesObtenidos)
 
     // ==================== RENDER ====================
 
@@ -1013,19 +981,22 @@ export function ComprobanteRecibo() {
             <div className="pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-2 xs:pb-2 sm:pb-3 w-full max-w-full mx-auto">
                 <div className="w-full max-w-full mx-auto px-2 xs:px-3 sm:px-4">
                     {/* Título principal */}
-                    <div className="text-center mb-2 xs:mb-3 sm:mb-4">
-                        <h1 className="text-base xs:text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-1">
+                    <div className="text-center mb-3 xs:mb-4 sm:mb-5">
+                        <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold 
+                            bg-gradient-to-r from-purple-600 to-purple-700
+                            bg-clip-text text-transparent
+                            mb-2 xs:mb-3 sm:mb-4">
                             Seleccionar Curso para Comprobantes de Pago
                         </h1>
-                        <p className="text-xs xs:text-sm text-gray-600">
+                        <p className="text-xs xs:text-sm sm:text-base text-gray-700 font-semibold">
                             Selecciona el curso para gestionar los comprobantes de pago
                         </p>
                     </div>
 
                     {/* Selector de cursos */}
-                    <div className="mb-2 xs:mb-3 sm:mb-4">
-                        <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl sm:rounded-2xl p-2 xs:p-3 sm:p-4 shadow-lg border border-gray-200">
-                            <h2 className="text-sm xs:text-base sm:text-lg font-bold text-gray-800 mb-2 xs:mb-3 sm:mb-4 text-center">
+                    <div className="mb-3 xs:mb-4 sm:mb-5">
+                        <div className="bg-gradient-to-br from-white via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border border-gray-200">
+                            <h2 className="text-base xs:text-lg sm:text-xl font-extrabold text-gray-800 mb-3 xs:mb-4 sm:mb-5 text-center">
                                 Cursos Disponibles
                             </h2>
                             <div className="grid grid-cols-3 xs:grid-cols-3 sm:grid-cols-6 md:grid-cols-6 gap-1 xs:gap-1.5 sm:gap-2 justify-items-center">
@@ -1043,9 +1014,9 @@ export function ComprobanteRecibo() {
 
                     {/* Selector de grupos/turnos dinámico */}
                     {activeCategory && (
-                        <div className="mb-2 xs:mb-2 sm:mb-3">
-                            <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl sm:rounded-2xl p-2 xs:p-3 sm:p-4 shadow-lg border border-gray-200">
-                                <h2 className="text-sm xs:text-base sm:text-lg font-bold text-gray-800 mb-2 xs:mb-3 sm:mb-4 text-center">
+                        <div className="mb-3 xs:mb-4 sm:mb-5">
+                            <div className="bg-gradient-to-br from-white via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border border-gray-200">
+                                <h2 className="text-base xs:text-lg sm:text-xl font-extrabold text-gray-800 mb-3 xs:mb-4 sm:mb-5 text-center">
                                     Grupos Disponibles para {activeCategory}
                                 </h2>
                                 <div className="flex flex-wrap gap-1.5 xs:gap-2 sm:gap-3 justify-center items-center w-full max-w-full mx-auto">
@@ -1084,18 +1055,18 @@ export function ComprobanteRecibo() {
                                 </div>
                                 
                                 {/* Leyenda de colores por tipo de turno */}
-                                <div className="mt-4 flex flex-wrap gap-2 justify-center text-xs">
-                                    <div className="flex items-center gap-1">
-                                        <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                                        <span>Matutino</span>
+                                <div className="mt-4 xs:mt-5 sm:mt-6 flex flex-wrap gap-3 xs:gap-4 justify-center text-xs xs:text-sm">
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">
+                                        <div className="w-4 h-4 xs:w-5 xs:h-5 bg-blue-500 rounded-full ring-1 ring-blue-300/30"></div>
+                                        <span className="font-semibold text-blue-600">Matutino</span>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <div className="w-3 h-3 bg-purple-500 rounded"></div>
-                                        <span>Vespertino</span>
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-lg border border-purple-200">
+                                        <div className="w-4 h-4 xs:w-5 xs:h-5 bg-purple-500 rounded-full ring-1 ring-purple-300/30"></div>
+                                        <span className="font-semibold text-purple-600">Vespertino</span>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <div className="w-3 h-3 bg-green-500 rounded"></div>
-                                        <span>Sabatino</span>
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg border border-green-200">
+                                        <div className="w-4 h-4 xs:w-5 xs:h-5 bg-green-500 rounded-full ring-1 ring-green-300/30"></div>
+                                        <span className="font-semibold text-green-600">Sabatino</span>
                                     </div>
                                 </div>
                             </div>
@@ -1104,15 +1075,17 @@ export function ComprobanteRecibo() {
 
                     {/* Información del grupo seleccionado */}
                     {activeCategory && activeVespertino && (
-                        <div className="mb-3 xs:mb-4 sm:mb-5">
-                            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 xs:px-6 sm:px-8 py-4 xs:py-5 sm:py-6 rounded-lg xs:rounded-xl sm:rounded-2xl shadow-lg">
+                        <div className="mb-4 xs:mb-5 sm:mb-6">
+                            <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 xs:px-6 sm:px-8 py-4 xs:py-5 sm:py-6 rounded-xl sm:rounded-2xl shadow-lg border-2 border-purple-400/40 ring-2 ring-purple-200/20">
                                 <div className="text-center">
-                                    <p className="text-sm xs:text-base sm:text-lg md:text-xl font-semibold mb-1 xs:mb-2">
+                                    <p className="text-base xs:text-lg sm:text-xl md:text-2xl font-extrabold mb-2 xs:mb-3">
                                         Grupo Activo: {activeCategory} - {activeVespertino}
                                     </p>
-                                    <p className="text-xs xs:text-sm sm:text-base text-blue-100">
-                                        Profesor Asignado: <span className="font-bold text-white">{getProfesorAsignado()}</span>
-                                    </p>
+                                    {getProfesorAsignado() && getProfesorAsignado() !== 'Sin asignar' && (
+                                        <p className="text-xs xs:text-sm sm:text-base md:text-lg text-purple-50 font-semibold">
+                                            Profesor Asignado: <span className="font-extrabold text-white">{getProfesorAsignado()}</span>
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1120,45 +1093,54 @@ export function ComprobanteRecibo() {
 
                     {/* Navegación entre vistas */}
                     {activeCategory && activeVespertino && (
-                        <div className="mb-3 xs:mb-4 sm:mb-5">
-                            <div className="bg-white rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-6 shadow-lg border border-gray-200">
-                                <div className="flex flex-wrap gap-2 xs:gap-3 justify-center">
+                        <div className="mb-4 xs:mb-5 sm:mb-6">
+                            <div className="bg-white rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border border-gray-200">
+                                <div className="flex flex-wrap gap-2 xs:gap-3 sm:gap-4 justify-center">
                                     <button
                                         onClick={() => setVistaActual('pendientes')}
-                                        className={`px-4 xs:px-6 py-2 xs:py-3 rounded-lg font-semibold text-sm xs:text-base transition-all duration-300 flex items-center space-x-2 ${
+                                        className={`px-4 xs:px-5 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-extrabold text-xs xs:text-sm sm:text-base transition-all duration-300 flex items-center space-x-2 
+                                        active:scale-95 touch-manipulation
+                                        ring-2 ring-transparent
+                                        ${
                                             vistaActual === 'pendientes'
-                                                ? 'bg-orange-500 text-white shadow-lg transform scale-105'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-orange-100'
+                                                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg transform scale-105 ring-orange-200/30'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-orange-50 hover:ring-orange-100/30 border-2 border-gray-300'
                                         }`}
                                     >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                         <span>Pendientes ({pendientes.length})</span>
                                     </button>
                                     <button
                                         onClick={() => setVistaActual('aprobados')}
-                                        className={`px-4 xs:px-6 py-2 xs:py-3 rounded-lg font-semibold text-sm xs:text-base transition-all duration-300 flex items-center space-x-2 ${
+                                        className={`px-4 xs:px-5 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-extrabold text-xs xs:text-sm sm:text-base transition-all duration-300 flex items-center space-x-2 
+                                        active:scale-95 touch-manipulation
+                                        ring-2 ring-transparent
+                                        ${
                                             vistaActual === 'aprobados'
-                                                ? 'bg-green-500 text-white shadow-lg transform scale-105'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                                                ? 'bg-gradient-to-r from-green-500 to-teal-500 text-white shadow-lg transform scale-105 ring-green-200/30'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-green-50 hover:ring-green-100/30 border-2 border-gray-300'
                                         }`}
                                     >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                         <span>Aprobados ({aprobados.length})</span>
                                     </button>
                                     <button
                                         onClick={() => setVistaActual('rechazados')}
-                                        className={`px-4 xs:px-6 py-2 xs:py-3 rounded-lg font-semibold text-sm xs:text-base transition-all duration-300 flex items-center space-x-2 ${
+                                        className={`px-4 xs:px-5 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-extrabold text-xs xs:text-sm sm:text-base transition-all duration-300 flex items-center space-x-2 
+                                        active:scale-95 touch-manipulation
+                                        ring-2 ring-transparent
+                                        ${
                                             vistaActual === 'rechazados'
-                                                ? 'bg-red-500 text-white shadow-lg transform scale-105'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                                                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg transform scale-105 ring-red-200/30'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:ring-red-100/30 border-2 border-gray-300'
                                         }`}
                                     >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                         <span>Rechazados ({rechazados.length})</span>
                                     </button>
@@ -1295,7 +1277,7 @@ export function ComprobanteRecibo() {
                                                 }`}>
                                     {/* Columna Folio */}
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
-                                        <div className="font-mono text-blue-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{String(comprobante.folio).padStart(4, '0')}</div>
+                                        <div className="font-mono text-purple-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{String(comprobante.folio).padStart(4, '0')}</div>
                                     </td>
                                     
                                     {/* Columna Nombre del Alumno */}
@@ -1340,7 +1322,7 @@ export function ComprobanteRecibo() {
                                                                 if (formatted !== '') handleFieldChange(comprobante, 'importe', formatted);
                                                             }
                                                         }}
-                                                        className={`w-full px-2 py-1 text-center border rounded hide-spinner focus:outline-none focus:ring-2 transition-colors duration-150 ${invalid ? 'border-red-500 focus:ring-red-400 focus:border-red-500 bg-red-50 placeholder-red-400' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'}`}
+                                                        className={`w-full px-2 py-1 text-center border rounded hide-spinner focus:outline-none focus:ring-2 transition-colors duration-150 ${invalid ? 'border-red-500 focus:ring-red-400 focus:border-red-500 bg-red-50 placeholder-red-400' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'}`}
                                                         placeholder="0.00"
                                                     />
                                                     {invalid && (
@@ -1408,7 +1390,7 @@ export function ComprobanteRecibo() {
                                                         type="text"
                                                         value={val}
                                                         onChange={(e) => handleFieldChange(comprobante, 'metodoPago', e.target.value)}
-                                                        className={`w-full px-2 py-1 text-center border rounded focus:outline-none focus:ring-2 transition-colors duration-150 ${invalid ? 'border-red-500 focus:ring-red-400 focus:border-red-500 bg-red-50 placeholder-red-400' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'}`}
+                                                        className={`w-full px-2 py-1 text-center border rounded focus:outline-none focus:ring-2 transition-colors duration-150 ${invalid ? 'border-red-500 focus:ring-red-400 focus:border-red-500 bg-red-50 placeholder-red-400' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'}`}
                                                         placeholder="Método de pago"
                                                     />
                                                     {invalid && (
@@ -1472,7 +1454,7 @@ export function ComprobanteRecibo() {
                                     )}
                                     
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
-                                        <button onClick={() => handleVerComprobante(`${apiOrigin}${comprobante.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
+                                        <button onClick={() => handleVerComprobante(`${apiOrigin}${comprobante.comprobante}`)} className="text-purple-600 hover:text-purple-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-purple-50">
                                             Ver comprobante
                                         </button>
                                     </td>
@@ -1494,7 +1476,7 @@ export function ComprobanteRecibo() {
                                             <tr>
                                                 {/* Columna Folio */}
                                                 <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
-                                                    <div className="font-mono text-blue-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{String(comprobantesObtenidos.folio).padStart(4, '0')}</div>
+                                                    <div className="font-mono text-purple-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{String(comprobantesObtenidos.folio).padStart(4, '0')}</div>
                                                 </td>
 
                                     {/* Columna Nombre del Alumno */}
@@ -1523,7 +1505,7 @@ export function ComprobanteRecibo() {
                                     )}
                                     
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
-                                        <button onClick={() => handleVerComprobante(`${(import.meta?.env?.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/api\/?$/, '')}${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
+                                        <button onClick={() => handleVerComprobante(`${(import.meta?.env?.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/api\/?$/, '')}${comprobantesObtenidos.comprobante}`)} className="text-purple-600 hover:text-purple-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-purple-50">
                                             Ver comprobante
                                         </button>
                                     </td>
@@ -1536,7 +1518,7 @@ export function ComprobanteRecibo() {
                                                 }`}>
                                     {/* Columna Folio */}
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
-                                        <div className="font-mono text-blue-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{comprobante.folio}</div>
+                                        <div className="font-mono text-purple-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{comprobante.folio}</div>
                                     </td>
                                     
                                     {/* Columna Nombre del Alumno */}
@@ -1556,7 +1538,7 @@ export function ComprobanteRecibo() {
                                                 type="text"
                                                 value={getFieldValue(comprobante, 'importe')}
                                                 onChange={(e) => handleFieldChange(comprobante, 'importe', e.target.value)}
-                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                                 placeholder="0.00"
                                             />
                                         ) : (
@@ -1571,7 +1553,7 @@ export function ComprobanteRecibo() {
                                                 type="text"
                                                 value={getFieldValue(comprobante, 'metodoPago')}
                                                 onChange={(e) => handleFieldChange(comprobante, 'metodoPago', e.target.value)}
-                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                                 placeholder="Método de pago"
                                             />
                                         ) : (
@@ -1601,7 +1583,7 @@ export function ComprobanteRecibo() {
                                     )}
                                     
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
-                                        <button onClick={() => handleVerComprobante(`${(import.meta?.env?.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/api\/?$/, '')}${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
+                                        <button onClick={() => handleVerComprobante(`${(import.meta?.env?.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/api\/?$/, '')}${comprobantesObtenidos.comprobante}`)} className="text-purple-600 hover:text-purple-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-purple-50">
                                             Ver comprobante
                                         </button>
                                     </td>
@@ -1613,7 +1595,7 @@ export function ComprobanteRecibo() {
                                             <tr>
                                                 {/* Columna Folio */}
                                                 <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
-                                                    <div className="font-mono text-blue-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{String(comprobantesObtenidos.folio).padStart(4, '0')}</div>
+                                                    <div className="font-mono text-purple-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{String(comprobantesObtenidos.folio).padStart(4, '0')}</div>
                                                 </td>
 
                                     {/* Columna Nombre del Alumno */}
@@ -1633,7 +1615,7 @@ export function ComprobanteRecibo() {
                                                 type="text"
                                                 value={getFieldValue(comprobantesObtenidos, 'importe')}
                                                 onChange={(e) => handleFieldChange(comprobantesObtenidos, 'importe', e.target.value)}
-                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                                 placeholder="0.00"
                                             />
                                         ) : (
@@ -1648,7 +1630,7 @@ export function ComprobanteRecibo() {
                                                 type="text"
                                                 value={getFieldValue(comprobantesObtenidos, 'metodoPago')}
                                                 onChange={(e) => handleFieldChange(comprobantesObtenidos, 'metodoPago', e.target.value)}
-                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                                 placeholder="Método de pago"
                                             />
                                         ) : (
@@ -1678,7 +1660,7 @@ export function ComprobanteRecibo() {
                                     )}
                                     
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
-                                        <button onClick={() => handleVerComprobante(`${(import.meta?.env?.VITE_API_URL || `http://${window.location.hostname}:1002/api`).replace(/\/api\/?$/, '')}${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
+                                        <button onClick={() => handleVerComprobante(`${(import.meta?.env?.VITE_API_URL || `http://${window.location.hostname}:1002/api`).replace(/\/api\/?$/, '')}${comprobantesObtenidos.comprobante}`)} className="text-purple-600 hover:text-purple-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-purple-50">
                                             Ver comprobante
                                         </button>
                                     </td>
@@ -1705,7 +1687,7 @@ export function ComprobanteRecibo() {
                                                 }`}>
                                     {/* Columna Folio */}
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
-                                        <div className="font-mono text-blue-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{comprobante.folio}</div>
+                                        <div className="font-mono text-purple-600 font-medium">M{activeCategory}{obtenerDosUltimosDigitosAnioSiguiente()}-{comprobante.folio}</div>
                                     </td>
                                     
                                     {/* Columna Nombre del Alumno */}
@@ -1725,7 +1707,7 @@ export function ComprobanteRecibo() {
                                                 type="text"
                                                 value={getFieldValue(comprobante, 'importe')}
                                                 onChange={(e) => handleFieldChange(comprobante, 'importe', e.target.value)}
-                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                                 placeholder="0.00"
                                             />
                                         ) : (
@@ -1740,7 +1722,7 @@ export function ComprobanteRecibo() {
                                                 type="text"
                                                 value={getFieldValue(comprobante, 'metodoPago')}
                                                 onChange={(e) => handleFieldChange(comprobante, 'metodoPago', e.target.value)}
-                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                                 placeholder="Método de pago"
                                             />
                                         ) : (
@@ -1770,7 +1752,7 @@ export function ComprobanteRecibo() {
                                     )}
                                     
                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 whitespace-nowrap text-xs xs:text-sm text-center">
-                                        <button onClick={() => handleVerComprobante(`${(import.meta?.env?.VITE_API_URL || `http://${window.location.hostname}:1002/api`).replace(/\/api\/?$/, '')}${comprobantesObtenidos.comprobante}`)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-blue-50">
+                                        <button onClick={() => handleVerComprobante(`${(import.meta?.env?.VITE_API_URL || `http://${window.location.hostname}:1002/api`).replace(/\/api\/?$/, '')}${comprobantesObtenidos.comprobante}`)} className="text-purple-600 hover:text-purple-800 font-medium transition-colors duration-150 px-2 xs:px-3 py-1 rounded-lg hover:bg-purple-50">
                                             Ver comprobante
                                         </button>
                                     </td>

@@ -341,21 +341,32 @@ html, body, #root{
 
 /* Ocultar scrollbars del contenedor principal en móviles para ahorrar espacio */
 @media (max-width: 640px) {
-  html, body, #root { -ms-overflow-style: none; scrollbar-width: none; }
+  html, body, #root { -ms-overflow-style: none; scrollbar-width: thin; }
   html::-webkit-scrollbar,
   body::-webkit-scrollbar,
-  #root::-webkit-scrollbar { display: none; width: 0; height: 0; background: transparent; }
+  #root::-webkit-scrollbar { display: block; width: 4px; height: 4px; background: transparent; }
+  html::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb,
+  #root::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #a855f7, #6366f1); border-radius: 10px; }
 }
 
-/* Ocultar barras de desplazamiento en TODAS las plataformas (PC, tablets y móviles) */
-html, body, #root { -ms-overflow-style: none; scrollbar-width: none; }
+/* Barras de desplazamiento ocultas por defecto (se ve mejor) */
+html, body, #root { 
+  -ms-overflow-style: none; 
+  scrollbar-width: none;
+}
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
-#root::-webkit-scrollbar { display: none; width: 0; height: 0; background: transparent; }
+#root::-webkit-scrollbar { 
+  display: none; 
+  width: 0; 
+  height: 0; 
+  background: transparent; 
+}
 
 /* Utilidad para reactivar barras cuando se necesite explícitamente */
-.with-scrollbars { -ms-overflow-style: auto; scrollbar-width: auto; }
-.with-scrollbars::-webkit-scrollbar { display: initial; width: 12px; height: 12px; }
+.with-scrollbars { -ms-overflow-style: auto; scrollbar-width: thin; }
+.with-scrollbars::-webkit-scrollbar { display: block; width: 6px; height: 6px; }
 
 @keyframes draw-reverse {
   0% {
@@ -533,3 +544,49 @@ body::-webkit-scrollbar,
 
 /* Ensure app fills viewport height consistently across browsers */
 html, body, #root { min-height: 100dvh; }
+
+/* ================= Scrollbar delgada y fina ================= */
+/* Estilos para barras de scroll más delgadas en todos los navegadores */
+/* NOTA: html, body, #root mantienen scrollbar oculta (ver líneas 353-365) */
+
+/* WebKit (Chrome, Safari, Edge) - Aplica a todos EXCEPTO html, body, #root */
+:not(html):not(body):not(#root)::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+:not(html):not(body):not(#root)::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+:not(html):not(body):not(#root)::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #a855f7, #6366f1);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+:not(html):not(body):not(#root)::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #9333ea, #4f46e5);
+}
+
+/* Firefox - Aplica a todos EXCEPTO html, body, #root */
+:not(html):not(body):not(#root) {
+  scrollbar-width: thin;
+  scrollbar-color: #a855f7 #f3f4f6;
+}
+
+/* ================= Ocultar scrollbar principal (html, body, #root) ================= */
+/* Estas reglas tienen prioridad para asegurar que la barra principal esté oculta */
+html, body, #root { 
+  -ms-overflow-style: none !important; 
+  scrollbar-width: none !important;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar { 
+  display: none !important; 
+  width: 0 !important; 
+  height: 0 !important; 
+  background: transparent !important; 
+}

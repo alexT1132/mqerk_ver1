@@ -13,12 +13,29 @@ import {
   CartesianGrid,
 } from 'recharts';
 
+// Constantes
+const UNDO_TIMEOUT_MS = 7000; // Tiempo para deshacer eliminación (7 segundos)
+const CHART_MONTHS_COUNT = 6; // Número de meses a mostrar en la gráfica
+const DEFAULT_EVENT_TIME = '09:00'; // Hora por defecto para eventos futuros
+const DEFAULT_EVENT_HOUR = 21; // Hora máxima del día para eventos de hoy
+const MINUTES_ROUNDING = 5; // Redondeo de minutos para eventos
+const MINUTES_ADDITION = 15; // Minutos a agregar a la hora actual
+const RECORDAR_MINUTOS_HOY = 10; // Minutos de recordatorio para eventos de hoy
+const RECORDAR_MINUTOS_FUTURO = 30; // Minutos de recordatorio para eventos futuros
+
 export default function FinanzasIngresos() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [exportExcelLoading, setExportExcelLoading] = useState(false);
   const [exportExcelError, setExportExcelError] = useState('');
+  
+  // Estado para modal de confirmación de asesorías
+  const [showConfirmacionModal, setShowConfirmacionModal] = useState(false);
+  const [asesoriasPendientes, setAsesoriasPendientes] = useState([]);
+  const [loadingPendientes, setLoadingPendientes] = useState(false);
+  const [confirmandoId, setConfirmandoId] = useState(null);
+  const [confirmacionObservaciones, setConfirmacionObservaciones] = useState('');
 
   // Filtros (historial / meses anteriores)
   const [showFilters, setShowFilters] = useState(false);
@@ -76,26 +93,26 @@ export default function FinanzasIngresos() {
     return v || '';
   };
 
-  // Hora “inteligente” para el evento del calendario
+  // Hora "inteligente" para el evento del calendario
   // - Si la fecha es hoy: usar hora local actual +15 min (redondeado al siguiente múltiplo de 5)
   // - Si es otra fecha: usar 09:00
   const getSmartEventTime = (fechaYYYYMMDD) => {
     const today = dayjs();
     const eventDate = dayjs(fechaYYYYMMDD, 'YYYY-MM-DD');
     if (eventDate.isSame(today, 'day')) {
-      let t = today.add(15, 'minute');
+      let t = today.add(MINUTES_ADDITION, 'minute');
       const mins = t.minute();
-      const rounded = Math.ceil(mins / 5) * 5;
+      const rounded = Math.ceil(mins / MINUTES_ROUNDING) * MINUTES_ROUNDING;
       if (rounded === 60) {
         t = t.add(1, 'hour').minute(0);
       } else {
         t = t.minute(rounded);
       }
       // No ir al siguiente día por overflow
-      if (!t.isSame(today, 'day')) t = today.endOf('day').hour(21).minute(0); // 21:00 como tope
+      if (!t.isSame(today, 'day')) t = today.endOf('day').hour(DEFAULT_EVENT_HOUR).minute(0);
       return t.format('HH:mm'); // 24h
     }
-    return '09:00';
+    return DEFAULT_EVENT_TIME;
   };
 
   // Estilos por estatus
@@ -110,6 +127,82 @@ export default function FinanzasIngresos() {
     if (s === 'Impartida') return 'border border-emerald-200 bg-emerald-50 text-emerald-700';
     if (String(s).toLowerCase().includes('alumno')) return 'border border-amber-200 bg-amber-50 text-amber-700';
     return 'border border-rose-200 bg-rose-50 text-rose-700';
+  };
+
+  // Helper: Parsear asistencia desde el campo notas (JSON)
+  const parseAsistenciaFromNotas = (notas) => {
+    if (!notas) return {};
+    try {
+      const parsed = JSON.parse(notas);
+      const asistencia = parsed?.asistencia;
+      if (!asistencia) return {};
+      return {
+        asistenciaEstado: asistencia.estado || null,
+        asistenciaNota: asistencia.nota || '',
+        asistenciaFecha: asistencia.fecha || null,
+      };
+    } catch {
+      return {};
+    }
+  };
+
+  // Helper: Obtener nombre del alumno desde diferentes fuentes
+  const getAlumnoNombre = (r) => {
+    if (r.alumno_nombre) return r.alumno_nombre;
+    if (r.estudiante_nombre) {
+      const apellidos = r.estudiante_apellidos || '';
+      return `${r.estudiante_nombre} ${apellidos}`.trim();
+    }
+    if (r.estudiante_id) return `#${r.estudiante_id}`;
+    return `Ingreso ${r.id}`;
+  };
+
+  // Helper: Mapear datos de ingreso del backend al formato del frontend
+  const mapIngresoData = (r) => ({
+    alumno: getAlumnoNombre(r),
+    curso: r.curso,
+    fechaInicio: toDateLabel(r.fecha),
+    horaInicio: r.hora || '',
+    asesor: r.asesor_nombre || '',
+    metodo: r.metodo,
+    importe: Number(r.importe || 0),
+    estatus: r.estatus,
+    descripcion: r.descripcion || '',
+    calendarEventId: r.calendar_event_id || null,
+    ...parseAsistenciaFromNotas(r.notas),
+    _id: r.id,
+  });
+
+  // Helper: Formatear moneda
+  const formatCurrency = (n) => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+
+  // Helper: Crear evento de calendario para un ingreso
+  const createCalendarEvent = async (ingresoData) => {
+    try {
+      const titulo = `Inicio ${ingresoData.curso} - ${ingresoData.alumno}`;
+      const descripcion = `Asesor: ${ingresoData.asesor || '-'} | Método: ${ingresoData.metodo} | Importe: ${formatCurrency(ingresoData.importe)} | Estatus: ${ingresoData.estatus}` + 
+        (ingresoData.descripcion ? ` | Nota: ${ingresoData.descripcion}` : '');
+      const horaEvento = ingresoData.horaInicio || getSmartEventTime(ingresoData.fechaInicio);
+      const recordarMinutos = dayjs(ingresoData.fechaInicio).isSame(dayjs(), 'day') 
+        ? RECORDAR_MINUTOS_HOY 
+        : RECORDAR_MINUTOS_FUTURO;
+      
+      const evRes = await api.post('/admin/calendar/events', {
+        titulo,
+        descripcion,
+        fecha: ingresoData.fechaInicio,
+        hora: horaEvento,
+        tipo: 'trabajo',
+        prioridad: 'media',
+        recordarMinutos,
+        completado: false,
+      });
+      
+      return evRes?.data;
+    } catch (error) {
+      console.warn('No se pudo crear el evento de calendario para el ingreso:', error?.response?.status || error?.message || error);
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -127,20 +220,7 @@ export default function FinanzasIngresos() {
         setLoading(true); setError('');
         // Sin filtro por defecto para mostrar historial completo (manual + externo)
         const res = await api.get('/finanzas/ingresos');
-        const list = (res.data?.data || []).map((r) => ({
-          alumno: r.alumno_nombre || (r.estudiante_nombre ? `${r.estudiante_nombre} ${r.estudiante_apellidos || ''}`.trim() : (r.estudiante_id ? `#${r.estudiante_id}` : `Ingreso ${r.id}`)),
-          curso: r.curso,
-          fechaInicio: toDateLabel(r.fecha),
-          horaInicio: r.hora || '',
-          asesor: r.asesor_nombre || '',
-          metodo: r.metodo,
-          importe: Number(r.importe || 0),
-          estatus: r.estatus,
-          descripcion: r.descripcion || '',
-          calendarEventId: r.calendar_event_id || null,
-          ...( (()=>{ try { const n = r.notas && JSON.parse(r.notas); const a = n?.asistencia; return a ? { asistenciaEstado: a.estado || null, asistenciaNota: a.nota || '', asistenciaFecha: a.fecha || null } : {}; } catch { return {}; } })() ),
-          _id: r.id,
-        }));
+        const list = (res.data?.data || []).map(mapIngresoData);
         setRows(list);
       } catch (e) {
         setError('No se pudieron cargar los ingresos');
@@ -150,7 +230,49 @@ export default function FinanzasIngresos() {
     };
     loadAsesores();
     loadIngresos();
+    loadAsesoriasPendientes();
   }, []);
+  
+  // Cargar asesorías pendientes de confirmación
+  const loadAsesoriasPendientes = async () => {
+    try {
+      setLoadingPendientes(true);
+      const res = await api.get('/admin/asesorias-pendientes');
+      setAsesoriasPendientes(res.data?.data || []);
+    } catch (e) {
+      console.error('Error cargando asesorías pendientes:', e);
+    } finally {
+      setLoadingPendientes(false);
+    }
+  };
+  
+  // Confirmar o rechazar una asesoría
+  const handleConfirmarAsesoria = async (confirmacionId, accion) => {
+    try {
+      setConfirmandoId(confirmacionId);
+      await api.post('/admin/confirmar-asesoria', {
+        confirmacion_id: confirmacionId,
+        accion, // 'confirmar' | 'rechazar'
+        observaciones: confirmacionObservaciones || null,
+      });
+      
+      // Recargar datos
+      await loadAsesoriasPendientes();
+      await applyFilters(); // Recargar ingresos para ver cambios
+      
+      // Cerrar modal si no hay más pendientes
+      if (asesoriasPendientes.length <= 1) {
+        setShowConfirmacionModal(false);
+      }
+      
+      setConfirmacionObservaciones('');
+    } catch (e) {
+      console.error('Error confirmando asesoría:', e);
+      alert(e?.response?.data?.message || 'Error al procesar la confirmación');
+    } finally {
+      setConfirmandoId(null);
+    }
+  };
 
   // Aplicar filtros manualmente (para no crear loops con useEffect)
   const applyFilters = async () => {
@@ -164,20 +286,7 @@ export default function FinanzasIngresos() {
       if (filterEstatus) params.append('estatus', filterEstatus);
       const qs = params.toString();
       const res = await api.get(`/finanzas/ingresos${qs ? ('?' + qs) : ''}`);
-      const list = (res.data?.data || []).map((r) => ({
-        alumno: r.alumno_nombre || (r.estudiante_nombre ? `${r.estudiante_nombre} ${r.estudiante_apellidos || ''}`.trim() : (r.estudiante_id ? `#${r.estudiante_id}` : `Ingreso ${r.id}`)),
-        curso: r.curso,
-        fechaInicio: toDateLabel(r.fecha),
-        horaInicio: r.hora || '',
-        asesor: r.asesor_nombre || '',
-        metodo: r.metodo,
-        importe: Number(r.importe || 0),
-        estatus: r.estatus,
-        descripcion: r.descripcion || '',
-        calendarEventId: r.calendar_event_id || null,
-        ...( (()=>{ try { const n = r.notas && JSON.parse(r.notas); const a = n?.asistencia; return a ? { asistenciaEstado: a.estado || null, asistenciaNota: a.nota || '', asistenciaFecha: a.fecha || null } : {}; } catch { return {}; } })() ),
-        _id: r.id,
-      }));
+      const list = (res.data?.data || []).map(mapIngresoData);
       setRows(list);
     } catch (e) {
       setError('No se pudieron cargar los ingresos filtrados');
@@ -229,43 +338,16 @@ export default function FinanzasIngresos() {
       const createdRes = await api.post('/finanzas/ingresos', payload);
       const createdIngreso = createdRes?.data?.ingreso;
       // Crear evento en Calendario para la misma fecha/hora de inicio
-      try {
-        const titulo = `Inicio ${nuevo.curso} - ${nuevo.alumno}`;
-        const descripcion = `Asesor: ${asesorNombre || '-'} | Método: ${nuevo.metodo} | Importe: ${formatCurrency(nuevo.importe)} | Estatus: ${nuevo.estatus}` + (nuevo.descripcion ? ` | Nota: ${nuevo.descripcion}` : '');
-        const horaEvento = nuevo.horaInicio ? nuevo.horaInicio : getSmartEventTime(nuevo.fechaInicio);
-        const recordarMinutos = dayjs(nuevo.fechaInicio).isSame(dayjs(), 'day') ? 10 : 30;
-        const evRes = await api.post('/admin/calendar/events', {
-          titulo,
-          descripcion,
-          fecha: nuevo.fechaInicio,
-          hora: horaEvento,
-          tipo: 'trabajo',
-          prioridad: 'media',
-          recordarMinutos,
-          completado: false,
-        });
-        const ev = evRes?.data;
-        if (createdIngreso?.id && ev?.id) {
-          try { await api.put(`/finanzas/ingresos/${createdIngreso.id}`, { calendar_event_id: ev.id }); } catch {}
+      const ev = await createCalendarEvent({ ...nuevo, asesor: asesorNombre });
+      if (createdIngreso?.id && ev?.id) {
+        try { 
+          await api.put(`/finanzas/ingresos/${createdIngreso.id}`, { calendar_event_id: ev.id }); 
+        } catch (err) {
+          console.warn('No se pudo vincular el evento de calendario al ingreso:', err);
         }
-      } catch (calErr) {
-        console.warn('No se pudo crear el evento de calendario para el ingreso:', calErr?.response?.status || calErr?.message || calErr);
       }
       const res = await api.get('/finanzas/ingresos?origen=manual');
-      const list = (res.data?.data || []).map((r) => ({
-        alumno: r.alumno_nombre || (r.estudiante_nombre ? `${r.estudiante_nombre} ${r.estudiante_apellidos || ''}`.trim() : (r.estudiante_id ? `#${r.estudiante_id}` : `Ingreso ${r.id}`)),
-        curso: r.curso,
-        fechaInicio: toDateLabel(r.fecha),
-        horaInicio: r.hora || '',
-        asesor: r.asesor_nombre || '',
-        metodo: r.metodo,
-        importe: Number(r.importe || 0),
-        estatus: r.estatus,
-        descripcion: r.descripcion || '',
-        calendarEventId: r.calendar_event_id || null,
-        ...( (()=>{ try { const n = r.notas && JSON.parse(r.notas); const a = n?.asistencia; return a ? { asistenciaEstado: a.estado || null, asistenciaNota: a.nota || '', asistenciaFecha: a.fecha || null } : {}; } catch { return {}; } })() ),
-        _id: r.id,
-      }));
+      const list = (res.data?.data || []).map(mapIngresoData);
       setRows(list);
     } catch (_e) {
       // Fallback local si hay error
@@ -274,8 +356,6 @@ export default function FinanzasIngresos() {
   setForm({ alumno: '', curso: '', fechaInicio: '', horaInicio: '', asesorId: '', metodo: 'Efectivo', importe: '', estatus: 'Pagado', descripcion: '' });
     closeModal();
   };
-
-  const formatCurrency = (n) => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 
   // (Eliminado) Exportar CSV: mantenemos solo Excel como opción principal
 
@@ -315,8 +395,11 @@ export default function FinanzasIngresos() {
       // Agregar filas
       for (const r of data) {
         let asisEstado = '', asisNota = '', asisFecha = '';
-        try { const n = r.notas && JSON.parse(r.notas); const a = n?.asistencia; if (a){ asisEstado = a.estado || ''; asisNota = a.nota || ''; asisFecha = a.fecha || ''; } } catch {}
-        const alumno = r.alumno_nombre || (r.estudiante_nombre ? `${r.estudiante_nombre} ${r.estudiante_apellidos || ''}`.trim() : (r.estudiante_id ? `#${r.estudiante_id}` : `Ingreso ${r.id}`));
+        const asistenciaData = parseAsistenciaFromNotas(r.notas);
+        asisEstado = asistenciaData.asistenciaEstado || '';
+        asisNota = asistenciaData.asistenciaNota || '';
+        asisFecha = asistenciaData.asistenciaFecha || '';
+        const alumno = getAlumnoNombre(r);
         ws.addRow({
           id: r.id,
           fecha: r.fecha || '',
@@ -440,10 +523,10 @@ export default function FinanzasIngresos() {
     year: counts.year ? (totals.year / counts.year) : 0,
   }), [totals, counts]);
 
-  // Datos para gráfica: últimos 6 meses por mes
+  // Datos para gráfica: últimos N meses por mes
   const monthlyData = useMemo(() => {
     const now = dayjs();
-    const months = Array.from({ length: 6 }, (_, i) => now.subtract(5 - i, 'month'));
+    const months = Array.from({ length: CHART_MONTHS_COUNT }, (_, i) => now.subtract(CHART_MONTHS_COUNT - 1 - i, 'month'));
     return months.map(m => {
       const value = rows.reduce((acc, r) => {
         if (String(r.estatus) !== 'Pagado') return acc;
@@ -482,7 +565,7 @@ export default function FinanzasIngresos() {
     undoTimerRef.current = setTimeout(() => {
       setUndoState({ open: false, row: null, index: null, saving: false, error: '' });
       undoTimerRef.current = null;
-    }, 7000);
+    }, UNDO_TIMEOUT_MS);
   };
 
   const handleUndo = async () => {
@@ -511,27 +594,19 @@ export default function FinanzasIngresos() {
 
       let newCalendarEventId = null;
       // Recrear evento de calendario
-      try {
-        const titulo = `Inicio ${r.curso} - ${r.alumno}`;
-        const descripcion = `Asesor: ${r.asesor || '-'} | Método: ${r.metodo} | Importe: ${formatCurrency(Number(r.importe)||0)} | Estatus: ${r.estatus || 'Pagado'}` + (r.descripcion ? ` | Nota: ${r.descripcion}` : '');
-        const horaEvento = r.horaInicio || getSmartEventTime(r.fechaInicio);
-        const recordarMinutos = dayjs(r.fechaInicio).isSame(dayjs(), 'day') ? 10 : 30;
-        const evRes = await api.post('/admin/calendar/events', {
-          titulo,
-          descripcion,
-          fecha: r.fechaInicio,
-          hora: horaEvento,
-          tipo: 'trabajo',
-          prioridad: 'media',
-          recordarMinutos,
-          completado: false,
-        });
-        const ev = evRes?.data;
-        if (createdIngreso?.id && ev?.id) {
-          newCalendarEventId = ev.id;
-          try { await api.put(`/finanzas/ingresos/${createdIngreso.id}`, { calendar_event_id: ev.id }); } catch {}
+      const ev = await createCalendarEvent({
+        ...r,
+        estatus: r.estatus || 'Pagado',
+        importe: Number(r.importe) || 0,
+      });
+      if (createdIngreso?.id && ev?.id) {
+        newCalendarEventId = ev.id;
+        try { 
+          await api.put(`/finanzas/ingresos/${createdIngreso.id}`, { calendar_event_id: ev.id }); 
+        } catch (err) {
+          console.warn('No se pudo vincular el evento de calendario al ingreso restaurado:', err);
         }
-      } catch (_) { /* opcional: ignorar */ }
+      }
 
       // Insertar de vuelta en la posición original
       const restored = {
@@ -598,7 +673,10 @@ export default function FinanzasIngresos() {
       await api.put(`/finanzas/ingresos/${editData._id}`, body);
       setRows(prev => prev.map(x => x._id === editData._id ? { ...x, ...editData } : x));
       closeEdit();
-    } catch { alert('No se pudo guardar cambios'); }
+    } catch (err) {
+      console.error('Error al guardar cambios del ingreso:', err);
+      alert('No se pudo guardar los cambios. Por favor, intenta de nuevo.');
+    }
   };
 
 
@@ -661,6 +739,18 @@ export default function FinanzasIngresos() {
             <button onClick={handleExportExcel} disabled={exportExcelLoading} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60">
               {exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}
             </button>
+            {asesoriasPendientes.length > 0 && (
+              <button 
+                onClick={() => setShowConfirmacionModal(true)} 
+                className="px-3 py-1.5 text-sm font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm relative"
+              >
+                <span className="hidden sm:inline">Confirmar Asesorías</span>
+                <span className="sm:hidden">Confirmar</span>
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {asesoriasPendientes.length}
+                </span>
+              </button>
+            )}
             <button onClick={openModal} className="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
               <span className="sm:hidden">Nuevo</span>
               <span className="hidden sm:inline">Nuevo ingreso</span>
@@ -734,7 +824,11 @@ export default function FinanzasIngresos() {
                       await api.put(`/finanzas/ingresos/${r._id}`, { estatus: newVal });
                       if (r.calendarEventId) {
                         const desc = `Asesor: ${r.asesor || '-'} | Método: ${r.metodo} | Importe: ${formatCurrency(r.importe)} | Estatus: ${newVal}` + (r.descripcion ? ` | Nota: ${r.descripcion}` : '');
-                        try { await api.put(`/admin/calendar/events/${r.calendarEventId}`, { descripcion: desc }); } catch {}
+                        try { 
+                          await api.put(`/admin/calendar/events/${r.calendarEventId}`, { descripcion: desc }); 
+                        } catch (calErr) {
+                          console.warn('No se pudo actualizar el evento de calendario:', calErr);
+                        }
                       }
                     } catch (err) {
                       setRows(prev => prev.map(x => x._id === r._id ? { ...x, estatus: r.estatus } : x));
@@ -828,7 +922,11 @@ export default function FinanzasIngresos() {
                           // Si hay evento de calendario, actualizar su descripción para reflejar el nuevo estatus
                           if (r.calendarEventId) {
                             const desc = `Asesor: ${r.asesor || '-'} | Método: ${r.metodo} | Importe: ${formatCurrency(r.importe)} | Estatus: ${newVal}` + (r.descripcion ? ` | Nota: ${r.descripcion}` : '');
-                            try { await api.put(`/admin/calendar/events/${r.calendarEventId}`, { descripcion: desc }); } catch {}
+                            try { 
+                              await api.put(`/admin/calendar/events/${r.calendarEventId}`, { descripcion: desc }); 
+                            } catch (calErr) {
+                              console.warn('No se pudo actualizar el evento de calendario:', calErr);
+                            }
                           }
                         } catch (err) {
                           // revertir en caso de error
@@ -1160,6 +1258,126 @@ export default function FinanzasIngresos() {
                 className="px-4 py-2 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-70"
                 disabled={confirmLoading}
               >{confirmLoading ? 'Eliminando…' : 'Eliminar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación de Asesorías */}
+      {showConfirmacionModal && (
+        <div className="fixed inset-0 z-[10000] bg-black/40 p-3 sm:p-4 flex items-center justify-center">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Confirmar Asesorías Realizadas</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {asesoriasPendientes.length} {asesoriasPendientes.length === 1 ? 'asesoría pendiente' : 'asesorías pendientes'}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowConfirmacionModal(false)} 
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {loadingPendientes ? (
+                <div className="text-center py-8 text-gray-500">Cargando...</div>
+              ) : asesoriasPendientes.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">No hay asesorías pendientes</div>
+              ) : (
+                <div className="space-y-4">
+                  {asesoriasPendientes.map((asesoria) => (
+                    <div key={asesoria.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <div className="text-xs text-gray-500 mb-1">Asesor</div>
+                          <div className="text-sm font-medium text-gray-900">{asesoria.asesor_nombre}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500 mb-1">Curso/Asesoría</div>
+                          <div className="text-sm font-medium text-gray-900">{asesoria.curso}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500 mb-1">Alumno</div>
+                          <div className="text-sm text-gray-900">{asesoria.alumno_nombre || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500 mb-1">Fecha y Hora</div>
+                          <div className="text-sm text-gray-900">
+                            {(() => {
+                              // Formatear fecha de manera robusta
+                              let fechaFormateada = 'Sin fecha';
+                              if (asesoria.fecha) {
+                                // Normalizar fecha: puede venir como DATE de MySQL (YYYY-MM-DD)
+                                let fechaStr = String(asesoria.fecha).split('T')[0];
+                                const fechaParsed = dayjs(fechaStr);
+                                if (fechaParsed.isValid()) {
+                                  fechaFormateada = fechaParsed.format('DD/MM/YYYY');
+                                }
+                              }
+                              
+                              // Formatear hora de manera robusta
+                              let horaFormateada = '';
+                              if (asesoria.hora) {
+                                const horaStr = String(asesoria.hora);
+                                // Si viene como TIME de MySQL (HH:mm:ss), extraer solo HH:mm
+                                if (horaStr.includes(':')) {
+                                  const partes = horaStr.split(':');
+                                  if (partes.length >= 2) {
+                                    const h = partes[0].padStart(2, '0');
+                                    const m = partes[1].padStart(2, '0');
+                                    horaFormateada = `${h}:${m}`;
+                                  }
+                                }
+                              }
+                              
+                              return `${fechaFormateada}${horaFormateada ? ' ' + horaFormateada : ''}`;
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                      {asesoria.observaciones && (
+                        <div className="mb-3">
+                          <div className="text-xs text-gray-500 mb-1">Observaciones del Asesor</div>
+                          <div className="text-sm text-gray-700 bg-white p-2 rounded border border-gray-200">
+                            {asesoria.observaciones}
+                          </div>
+                        </div>
+                      )}
+                      <div className="mb-3">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          Observaciones (opcional)
+                        </label>
+                        <textarea
+                          value={confirmacionObservaciones}
+                          onChange={(e) => setConfirmacionObservaciones(e.target.value)}
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          rows={2}
+                          placeholder="Agrega observaciones sobre la confirmación..."
+                        />
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleConfirmarAsesoria(asesoria.id, 'rechazar')}
+                          disabled={confirmandoId === asesoria.id}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          {confirmandoId === asesoria.id ? 'Procesando...' : 'Rechazar'}
+                        </button>
+                        <button
+                          onClick={() => handleConfirmarAsesoria(asesoria.id, 'confirmar')}
+                          disabled={confirmandoId === asesoria.id}
+                          className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          {confirmandoId === asesoria.id ? 'Procesando...' : 'Confirmar y Registrar Asistencia'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -47,6 +47,14 @@ export async function getActividad(id) {
   return body; // { data: {...} }
 }
 
+export async function getEstudiantesAsignadosActividad(actividadId) {
+  const url = buildApiUrl(`/actividades/${actividadId}/estudiantes-asignados`);
+  const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || 'Error obteniendo estudiantes asignados');
+  return body; // { data: [...] }
+}
+
 // === Entregas ===
 export async function listEntregasActividad(actividadId, params = {}) {
   const usp = new URLSearchParams();
@@ -177,4 +185,60 @@ export async function listEntregasEstudiante(id_estudiante, { limit = 100, offse
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body.message || 'Error listando entregas');
   return body; // { data: [...] }
+}
+
+// === Extensiones de fecha límite ===
+export async function extenderFechaLimiteGrupo(actividadId, { grupo, nueva_fecha_limite, notas }) {
+  const url = buildApiUrl(`/actividades/${actividadId}/extender-fecha/grupo`);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ grupo, nueva_fecha_limite, notas }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || 'Error al extender fecha límite');
+  return body; // { data: {...} }
+}
+
+export async function extenderFechaLimiteEstudiante(actividadId, { id_estudiante, nueva_fecha_limite, notas }) {
+  const url = buildApiUrl(`/actividades/${actividadId}/extender-fecha/estudiante`);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ id_estudiante, nueva_fecha_limite, notas }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || 'Error al extender fecha límite');
+  return body; // { data: {...} }
+}
+
+export async function listExtensionesActividad(actividadId) {
+  const url = buildApiUrl(`/actividades/${actividadId}/extensiones`);
+  const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || 'Error listando extensiones');
+  return body; // { data: [...] }
+}
+
+export async function eliminarExtension(extensionId) {
+  const url = buildApiUrl(`/actividades/extensiones/${extensionId}`);
+  const res = await fetch(url, { method: 'DELETE', credentials: 'include' });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || 'Error eliminando extensión');
+  return body; // { data: {...} }
+}
+
+export async function permitirEditarDespuesCalificada(entregaId, permite) {
+  const url = buildApiUrl(`/actividades/entregas/${entregaId}/permite-editar`);
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ permite }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || 'Error al actualizar permiso');
+  return body; // { data: {...} }
 }

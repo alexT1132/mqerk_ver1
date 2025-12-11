@@ -17,7 +17,7 @@ export default defineConfig({
   server:{
     host: true,
     port: 5173,
-    strictPort: true, // evita que cambie de puerto si 5173 está ocupado (útil para reglas de firewall)
+    strictPort: false, // permite que cambie de puerto si 5173 está ocupado
     // Permitir acceso desde dominios de túneles (loca.lt cambia el subdominio en cada sesión)
     allowedHosts: ['.loca.lt'],
     // HMR: solo sobreescribimos si hay variables de entorno; de lo contrario Vite autodetecta

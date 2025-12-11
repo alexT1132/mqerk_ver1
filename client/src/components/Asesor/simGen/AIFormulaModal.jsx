@@ -21,8 +21,45 @@ const getCooldownRemainingMs = () => {
 const startCooldown = () => {
   try {
     localStorage.setItem(COOLDOWN_KEY, String(Date.now() + COOLDOWN_MS));
-  } catch {}
+  } catch { }
 };
+
+// Sistema de tracking de uso diario (separado de preguntas y análisis)
+const USAGE_KEY = 'ai_formulas_usage';
+const DAILY_LIMIT_ASESOR = 20; // Asesores pueden generar más fórmulas
+
+const getFormulaUsageToday = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem(USAGE_KEY) || '{}');
+    const today = new Date().toISOString().split('T')[0];
+    if (data.date !== today) {
+      return { count: 0, limit: DAILY_LIMIT_ASESOR, remaining: DAILY_LIMIT_ASESOR };
+    }
+    return {
+      count: data.count || 0,
+      limit: DAILY_LIMIT_ASESOR,
+      remaining: Math.max(0, DAILY_LIMIT_ASESOR - (data.count || 0))
+    };
+  } catch {
+    return { count: 0, limit: DAILY_LIMIT_ASESOR, remaining: DAILY_LIMIT_ASESOR };
+  }
+};
+
+const incrementFormulaUsage = () => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const data = JSON.parse(localStorage.getItem(USAGE_KEY) || '{}');
+    if (data.date !== today) {
+      localStorage.setItem(USAGE_KEY, JSON.stringify({ date: today, count: 1, limit: DAILY_LIMIT_ASESOR }));
+    } else {
+      data.count = (data.count || 0) + 1;
+      localStorage.setItem(USAGE_KEY, JSON.stringify(data));
+    }
+  } catch (e) {
+    console.error('Error incrementando uso de fórmulas IA:', e);
+  }
+};
+
 
 /** Modal para generar fórmulas usando IA */
 export function AIFormulaModal({ open, onClose, onInsert }) {
@@ -35,20 +72,22 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
   const [history, setHistory] = useState([]); // Historial de fórmulas generadas recientemente
   const [cooldownMs, setCooldownMs] = useState(0); // Tiempo restante de cooldown
 
+
+
   // Verificar cooldown periódicamente
   useEffect(() => {
     if (!open) return;
-    
+
     const checkCooldown = () => {
       setCooldownMs(getCooldownRemainingMs());
     };
-    
+
     checkCooldown();
     const interval = setInterval(checkCooldown, 1000); // Actualizar cada segundo
-    
+
     return () => clearInterval(interval);
   }, [open]);
-  
+
   // Ejemplos de fórmulas comunes organizadas por categoría
   const formulaExamples = {
     'Álgebra': [
@@ -120,19 +159,20 @@ Fórmula solicitada: ${query.trim()}`;
       const response = await fetch('/api/ai/gemini/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.3, // Baja temperatura para respuestas más determinísticas
             maxOutputTokens: 500,
           },
-          model: 'gemini-2.0-flash'
+          model: 'gemini-2.5-flash'
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        
+
         // Manejo especial para error 429 (Too Many Requests)
         if (response.status === 429) {
           startCooldown();
@@ -140,12 +180,14 @@ Fórmula solicitada: ${query.trim()}`;
           const secs = Math.ceil(COOLDOWN_MS / 1000);
           throw new Error(`Se alcanzó el límite de solicitudes a la API. Por favor, espera ${secs} segundo${secs > 1 ? 's' : ''} antes de intentar nuevamente.`);
         }
-        
+
         throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      
+
+
+
       // Extraer el texto de la respuesta de Gemini
       let formula = '';
       if (data.candidates && data.candidates[0] && data.candidates[0].content) {
@@ -161,18 +203,21 @@ Fórmula solicitada: ${query.trim()}`;
       formula = formula.replace(/^\$+|\$+$/g, '').trim();
       formula = formula.replace(/^La fórmula es[:]?\s*/i, '').trim();
       formula = formula.replace(/^Fórmula[:]?\s*/i, '').trim();
-      
+
       setGeneratedFormula(formula);
+
+      // Incrementar contador de uso exitoso
+      incrementFormulaUsage();
+
       // Agregar al historial (máximo 5)
       setHistory(prev => {
         const newHistory = [{ query: query.trim(), formula, timestamp: Date.now() }, ...prev];
         return newHistory.slice(0, 5);
       });
     } catch (err) {
-      console.error('Error generando fórmula:', err);
       const errorMsg = err.message || 'Error al generar la fórmula. Por favor intenta de nuevo.';
       setError(errorMsg);
-      
+
       // Si el error menciona cooldown, actualizar el estado
       if (errorMsg.includes('espera') || errorMsg.includes('límite')) {
         setCooldownMs(getCooldownRemainingMs());
@@ -201,8 +246,8 @@ Fórmula solicitada: ${query.trim()}`;
 
   // Usar fórmula del historial
   const handleUseHistory = (historyItem) => {
-    const formulaWithDelimiters = historyItem.formula.startsWith('$') 
-      ? historyItem.formula 
+    const formulaWithDelimiters = historyItem.formula.startsWith('$')
+      ? historyItem.formula
       : `$${historyItem.formula}$`;
     onInsert(formulaWithDelimiters);
     handleClose();
@@ -216,10 +261,10 @@ Fórmula solicitada: ${query.trim()}`;
       } else {
         // Si no tiene placeholders, insertar directamente
         // El usuario podrá editarla después haciendo clic en la fórmula insertada
-        const formulaWithDelimiters = generatedFormula.startsWith('$') 
-          ? generatedFormula 
+        const formulaWithDelimiters = generatedFormula.startsWith('$')
+          ? generatedFormula
           : `$${generatedFormula}$`;
-        
+
         onInsert(formulaWithDelimiters);
         handleClose();
       }
@@ -235,10 +280,10 @@ Fórmula solicitada: ${query.trim()}`;
 
   const handlePlaceholderConfirm = (completedFormula) => {
     // Agregar delimitadores si no los tiene
-    const formulaWithDelimiters = completedFormula.startsWith('$') 
-      ? completedFormula 
+    const formulaWithDelimiters = completedFormula.startsWith('$')
+      ? completedFormula
       : `$${completedFormula}$`;
-    
+
     onInsert(formulaWithDelimiters);
     setShowPlaceholderModal(false);
     setQuery('');
@@ -271,17 +316,24 @@ Fórmula solicitada: ${query.trim()}`;
     <>
       {/* Modal compacta personalizada */}
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-        <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200/50 h-[600px] max-h-[600px] flex flex-col overflow-hidden">
+        <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 border-2 border-violet-200/50 h-[600px] max-h-[600px] flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-violet-50/50 to-indigo-50/50 p-4 flex-shrink-0">
-            <h3 className="text-lg font-bold text-slate-900">Generar fórmula con IA</h3>
+          <div className="flex items-center justify-between border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/50">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">Generar fórmula con IA</h3>
+            </div>
             <button
               onClick={handleClose}
-              className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 transition-colors"
+              className="rounded-xl p-2.5 text-slate-500 hover:text-slate-700 transition-all hover:bg-white hover:scale-110 active:scale-95 border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md"
               aria-label="Cerrar"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
@@ -291,7 +343,7 @@ Fórmula solicitada: ${query.trim()}`;
             <div className="space-y-4">
               {/* Input para la solicitud */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">
+                <label className="block text-sm font-extrabold text-violet-700 mb-2">
                   Describe la fórmula <span className="text-rose-500 font-bold">*</span>
                 </label>
                 <div className="relative">
@@ -303,14 +355,14 @@ Fórmula solicitada: ${query.trim()}`;
                     }}
                     onKeyPress={handleKeyPress}
                     placeholder="Ej: Fórmula cuadrática, Teorema de Pitágoras, Ley de Ohm..."
-                    className="w-full rounded-lg border-2 border-slate-300 px-3 py-2 pr-24 text-sm focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200/50 transition-all duration-200 resize-none hover:border-violet-400 bg-white h-24 font-mono"
+                    className="w-full rounded-xl border-2 border-slate-300 px-4 py-3 pr-28 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 resize-none hover:border-violet-400 bg-white h-24 shadow-sm hover:shadow-md"
                     style={{ whiteSpace: 'pre-wrap' }}
                     disabled={loading}
                   />
                   <button
                     onClick={handleGenerate}
                     disabled={loading || !query.trim() || cooldownMs > 0}
-                    className="absolute right-2 bottom-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:from-violet-700 hover:to-indigo-700 shadow-md transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-1.5"
+                    className="absolute right-2 bottom-2 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 py-2 text-xs font-bold text-white hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-violet-300/50 transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-1.5 ring-2 ring-violet-200/50"
                   >
                     {loading ? (
                       <>
@@ -337,26 +389,33 @@ Fórmula solicitada: ${query.trim()}`;
                     )}
                   </button>
                 </div>
-                <p className="mt-1.5 text-xs text-slate-500">
-                  💡 Presiona Enter para generar
-                </p>
+                <div className="mt-2 flex items-center gap-2 text-xs text-violet-600 font-medium bg-gradient-to-r from-violet-50 to-indigo-50 px-3 py-2 rounded-xl border border-violet-200">
+                  <span className="text-base">💡</span>
+                  <span>Presiona Enter para generar</span>
+                </div>
               </div>
 
               {/* Mensaje de error */}
               {error && (
-                <div className={`rounded-lg border-2 p-3 shadow-sm ${
-                  error.includes('espera') || error.includes('límite') 
-                    ? 'border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/50' 
-                    : 'border-rose-300 bg-gradient-to-r from-rose-50 to-rose-100/50'
-                }`}>
-                  <div className="flex items-start gap-2">
-                    <span className="text-sm flex-shrink-0">
-                      {(error.includes('espera') || error.includes('límite')) ? '⏱️' : '⚠️'}
-                    </span>
+                <div className={`rounded-2xl border-2 p-4 shadow-md ring-2 ${error.includes('espera') || error.includes('límite')
+                  ? 'border-amber-300 bg-gradient-to-r from-amber-50 via-amber-100/50 to-amber-50 ring-amber-200/50'
+                  : 'border-rose-300 bg-gradient-to-r from-rose-50 via-rose-100/50 to-rose-50 ring-rose-200/50'
+                  }`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${error.includes('espera') || error.includes('límite')
+                      ? 'bg-gradient-to-br from-amber-500 to-amber-600'
+                      : 'bg-gradient-to-br from-rose-500 to-rose-600'
+                      } shadow-lg ring-2 ring-white/50`}>
+                      <span className="text-base text-white">
+                        {(error.includes('espera') || error.includes('límite')) ? '⏱️' : '⚠️'}
+                      </span>
+                    </div>
                     <div className="flex-1">
-                      <p className="text-xs font-semibold text-rose-700 leading-relaxed">{error}</p>
+                      <p className="text-sm font-bold leading-relaxed ${
+                        error.includes('espera') || error.includes('límite') ? 'text-amber-800' : 'text-rose-700'
+                      }">{error}</p>
                       {(error.includes('espera') || error.includes('límite')) && cooldownMs > 0 && (
-                        <p className="text-[10px] text-amber-700 mt-1.5">
+                        <p className="text-xs text-amber-700 mt-2 font-medium">
                           Esto ayuda a evitar límites de la API de Google. El temporizador se actualiza automáticamente.
                         </p>
                       )}
@@ -367,31 +426,31 @@ Fórmula solicitada: ${query.trim()}`;
 
               {/* Vista previa de la fórmula generada */}
               {generatedFormula && (
-                <div className="rounded-lg border-2 border-violet-300 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 p-4 shadow-md">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="rounded-3xl border-2 border-violet-400 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 p-5 shadow-xl shadow-violet-200/50 ring-4 ring-violet-200/30">
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></div>
-                      <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Fórmula generada</p>
+                      <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></div>
+                      <p className="text-xs font-extrabold text-violet-700 uppercase tracking-widest">Fórmula generada</p>
                     </div>
                     <button
                       onClick={handleRegenerate}
                       disabled={loading || cooldownMs > 0}
-                      className="text-xs text-violet-600 hover:text-violet-700 font-semibold px-2 py-1 rounded-lg hover:bg-white/60 transition-colors flex items-center gap-1 disabled:opacity-50"
+                      className="text-xs text-violet-600 hover:text-violet-700 font-bold px-3 py-1.5 rounded-xl hover:bg-white/80 transition-all flex items-center gap-1.5 disabled:opacity-50 hover:scale-105 active:scale-95 border border-violet-200 hover:border-violet-300 shadow-sm hover:shadow-md"
                       title={cooldownMs > 0 ? `Espera ${Math.ceil(cooldownMs / 1000)}s para regenerar` : 'Regenerar fórmula'}
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
                       Regenerar
                     </button>
                   </div>
-                  <div className="text-2xl font-medium text-slate-900 bg-white/70 rounded-lg p-4 border border-violet-200/50 min-h-[60px] flex items-center justify-center leading-relaxed">
+                  <div className="text-2xl font-medium text-slate-900 bg-white/80 rounded-xl p-5 border-2 border-violet-200/50 min-h-[70px] flex items-center justify-center leading-relaxed shadow-sm">
                     <InlineMath math={generatedFormula} />
                   </div>
                   {generatedFormula.includes('\\square') && (
-                    <div className="mt-3 flex items-center gap-2 rounded-lg bg-amber-100/80 border border-amber-300/50 px-3 py-2">
-                      <span className="text-sm">⚙</span>
-                      <p className="text-xs text-amber-800 font-semibold flex-1">
+                    <div className="mt-4 flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-100 to-amber-50 border-2 border-amber-300/50 px-4 py-2.5 shadow-sm">
+                      <span className="text-base">⚙</span>
+                      <p className="text-xs text-amber-800 font-bold flex-1">
                         Requiere completar parámetros antes de insertar
                       </p>
                     </div>
@@ -401,22 +460,27 @@ Fórmula solicitada: ${query.trim()}`;
 
               {/* Ejemplos de uso organizados por categoría */}
               {!generatedFormula && !loading && (
-                <div className="space-y-3">
-                  <div className="rounded-lg border-2 border-slate-200/80 bg-gradient-to-r from-slate-50 to-slate-100/50 p-3 shadow-sm">
-                    <p className="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide flex items-center gap-1.5">
-                      💡 Ejemplos rápidos
-                    </p>
-                    <div className="space-y-3">
+                <div className="space-y-4">
+                  <div className="rounded-2xl border-2 border-violet-200/80 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 shadow-md ring-2 ring-violet-100/50">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg ring-2 ring-violet-200/50">
+                        <span className="text-lg">💡</span>
+                      </div>
+                      <p className="text-xs font-extrabold text-violet-700 uppercase tracking-widest">
+                        Ejemplos rápidos
+                      </p>
+                    </div>
+                    <div className="space-y-4">
                       {Object.entries(formulaExamples).map(([category, examples]) => (
                         <div key={category}>
-                          <p className="text-[10px] font-semibold text-slate-500 mb-1.5 uppercase">{category}</p>
-                          <div className="flex flex-wrap gap-1.5">
+                          <p className="text-xs font-extrabold text-violet-600 mb-2 uppercase tracking-wide">{category}</p>
+                          <div className="flex flex-wrap gap-2">
                             {examples.map((example, idx) => (
                               <button
                                 key={idx}
                                 type="button"
                                 onClick={() => handleExampleClick(example)}
-                                className="text-xs px-2.5 py-1 bg-white border border-slate-200 rounded-lg hover:bg-violet-50 hover:border-violet-300 hover:text-violet-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                                className="text-xs px-3 py-2 bg-white border-2 border-violet-200 rounded-xl hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 hover:border-violet-400 hover:text-violet-700 transition-all duration-200 font-bold shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
                                 title={`Generar: ${example}`}
                               >
                                 {example}
@@ -430,18 +494,23 @@ Fórmula solicitada: ${query.trim()}`;
 
                   {/* Historial de fórmulas generadas */}
                   {history.length > 0 && (
-                    <div className="rounded-lg border-2 border-violet-200/80 bg-gradient-to-r from-violet-50/50 to-indigo-50/50 p-3 shadow-sm">
-                      <p className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide flex items-center gap-1.5">
-                        📝 Recientes
-                      </p>
+                    <div className="rounded-2xl border-2 border-violet-200/80 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 shadow-md ring-2 ring-violet-100/50">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg ring-2 ring-violet-200/50">
+                          <span className="text-lg">📝</span>
+                        </div>
+                        <p className="text-xs font-extrabold text-violet-700 uppercase tracking-widest">
+                          Recientes
+                        </p>
+                      </div>
                       <div className="space-y-2">
                         {history.map((item, idx) => (
                           <div
                             key={idx}
-                            className="flex items-center justify-between gap-2 p-2 bg-white/70 rounded-lg border border-slate-200 hover:border-violet-300 transition-colors"
+                            className="flex items-center justify-between gap-3 p-3 bg-white/80 rounded-xl border-2 border-violet-200/50 hover:border-violet-400 hover:bg-white transition-all shadow-sm hover:shadow-md"
                           >
                             <div className="flex-1 min-w-0">
-                              <p className="text-[10px] text-slate-500 truncate mb-1">{item.query}</p>
+                              <p className="text-xs text-violet-600 truncate mb-1.5 font-bold">{item.query}</p>
                               <div className="text-sm font-medium text-slate-900">
                                 <InlineMath math={item.formula} />
                               </div>
@@ -449,11 +518,11 @@ Fórmula solicitada: ${query.trim()}`;
                             <button
                               type="button"
                               onClick={() => handleUseHistory(item)}
-                              className="flex-shrink-0 text-violet-600 hover:text-violet-700 hover:bg-violet-50 rounded-lg p-1.5 transition-colors"
+                              className="flex-shrink-0 text-violet-600 hover:text-violet-700 hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 rounded-xl p-2 transition-all border border-violet-200 hover:border-violet-400 hover:scale-110 active:scale-95 shadow-sm hover:shadow-md"
                               title="Usar esta fórmula"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                               </svg>
                             </button>
                           </div>
@@ -467,21 +536,21 @@ Fórmula solicitada: ${query.trim()}`;
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between border-t border-slate-200 p-3 bg-white flex-shrink-0">
-        <button
-          onClick={handleClose}
-          className="rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 active:scale-95"
-        >
-          Cancelar
-        </button>
+          <div className="flex items-center justify-between border-t-2 border-violet-200/50 p-4 bg-gradient-to-r from-slate-50/50 to-white flex-shrink-0 rounded-b-3xl">
+            <button
+              onClick={handleClose}
+              className="rounded-xl border-2 border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+            >
+              Cancelar
+            </button>
             {generatedFormula && (
               <button
                 onClick={handleInsert}
-                className="rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2 text-sm font-bold text-white hover:from-violet-700 hover:to-indigo-700 shadow-md transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2"
+                className="rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-6 py-2.5 text-sm font-bold text-white hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-violet-300/50 transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2 ring-2 ring-violet-200/50 hover:shadow-xl hover:shadow-violet-400/50"
               >
                 <span>Insertar fórmula</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </button>
             )}

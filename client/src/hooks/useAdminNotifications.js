@@ -47,9 +47,15 @@ export function useAdminNotifications() {
           if (pend === 0 && hasSynthetic) {
             return prev.filter(n => n._synthetic !== 'pending_summary');
           }
-          // Update message if count changed
+          // Update message if count changed, but preserve isRead state
           if (hasSynthetic) {
-            return prev.map(n => n._synthetic === 'pending_summary' ? { ...n, message: `Tienes ${pend} pagos pendientes por revisar`, isRead: false, timestamp: new Date() } : n);
+            return prev.map(n => {
+              if (n._synthetic === 'pending_summary') {
+                // Preserve the existing isRead state when updating the message
+                return { ...n, message: `Tienes ${pend} pagos pendientes por revisar`, timestamp: new Date() };
+              }
+              return n;
+            });
           }
           return prev;
         });
@@ -82,11 +88,37 @@ export function useAdminNotifications() {
         const msg = alumnoTxt
           ? `Nuevo comprobante: ${alumnoTxt} • ${cursoTxt}-${grupoTxt} • ${folioTxt}`
           : `Nuevo comprobante recibido • ${cursoTxt}-${grupoTxt} • ${folioTxt}`;
-        // Insertar notificación visible con más contexto
-        setNotifications(prev => [
-          { id: `cmp-${Date.now()}`, timestamp: new Date(), isRead: false, priority: 'normal', type: 'payment_pending', message: msg, meta: { curso: p.curso, grupo: p.grupo, folio: p.folio, id_estudiante: p.id_estudiante } },
-          ...prev
-        ]);
+        
+        // Generar ID único basado en id_estudiante y folio para evitar duplicados
+        const uniqueId = `cmp-${p.id_estudiante}-${p.folio || 'unknown'}`;
+        
+        // Insertar notificación visible con más contexto, evitando duplicados
+        setNotifications(prev => {
+          // Verificar si ya existe una notificación con el mismo id_estudiante y folio
+          const exists = prev.some(n => 
+            n.id === uniqueId || 
+            (n.meta?.id_estudiante === p.id_estudiante && n.meta?.folio === p.folio && n.type === 'payment_pending')
+          );
+          
+          // Si ya existe, no agregar duplicado
+          if (exists) {
+            return prev;
+          }
+          
+          // Agregar nueva notificación
+          return [
+            { 
+              id: uniqueId, 
+              timestamp: new Date(), 
+              isRead: false, 
+              priority: 'normal', 
+              type: 'payment_pending', 
+              message: msg, 
+              meta: { curso: p.curso, grupo: p.grupo, folio: p.folio, id_estudiante: p.id_estudiante } 
+            },
+            ...prev
+          ];
+        });
       }
     };
     window.addEventListener('admin-ws-message', wsListener);
@@ -140,9 +172,10 @@ export function useAdminNotifications() {
     );
   };
 
-  // Calculamos el número de notificaciones no leídas; ensure at least pendingCount shows as badge
+  // Calculamos el número de notificaciones no leídas
   const unreadCountFromList = notifications.filter(notif => !notif.isRead).length;
-  const unreadCount = pendingCount > 0 ? pendingCount : unreadCountFromList;
+  // El badge debe reflejar solo las notificaciones no leídas, no el conteo de pagos pendientes
+  const unreadCount = unreadCountFromList;
 
   // Obtenemos solo las notificaciones no leídas para mostrar en el dropdown
   const unreadNotifications = notifications.filter(notif => !notif.isRead);

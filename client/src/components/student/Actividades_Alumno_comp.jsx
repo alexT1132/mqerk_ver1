@@ -85,7 +85,7 @@ export function Actividades_Alumno_comp() {
   } = useStudent();
 
   // BACKEND: Determinar si el estudiante ya tiene al menos un área permitida
-  const hasInitialArea = allowedActivityAreas.length > 0;
+  const hasInitialArea = Array.isArray(allowedActivityAreas) && allowedActivityAreas.length > 0;
 
   // Estados de navegación (ampliado para módulos específicos)
   const [currentLevel, setCurrentLevel] = useState('areas'); // 'areas', 'modulos', 'buttons', 'table'
@@ -288,7 +288,9 @@ export function Actividades_Alumno_comp() {
         const calMatch = /(?:Calificación:|calificada\s+con)\s*(\d+)/i.exec(latestGrade.message || '');
         const calValue = calMatch ? parseInt(calMatch[1], 10) : null;
         if (calValue !== null && latestGrade.metadata?.actividadId) {
-          setActividades(prev => prev.map(a => a.id === latestGrade.metadata.actividadId ? { ...a, score: calValue, mejorPuntaje: calValue, estado: 'revisada' } : a));
+          // Convertir de escala 0-100 a escala 0-10 (si viene de BD en escala 100)
+          const cal10 = calValue > 10 ? calValue / 10 : calValue;
+          setActividades(prev => prev.map(a => a.id === latestGrade.metadata.actividadId ? { ...a, score: cal10, mejorPuntaje: cal10, estado: 'revisada' } : a));
         }
       }
     }
@@ -637,16 +639,23 @@ export function Actividades_Alumno_comp() {
             const firstRecurso = recursos[0];
             const cal = r.calificacion ?? r.entrega_calificacion ?? null;
             const estadoCalc = (r.estado_revision || r.entrega_estado || 'pendiente');
+            // Normalizar el valor de permite_editar_despues_calificada
+            const permiteEditar = r.permite_editar_despues_calificada === 1 || 
+                                  r.permite_editar_despues_calificada === true || 
+                                  r.permite_editar_despues_calificada === '1' ||
+                                  String(r.permite_editar_despues_calificada) === '1';
             return {
               id: r.id,
               nombre: r.titulo,
               descripcion: r.descripcion || '',
-              fechaEntrega: r.fecha_limite,
+              // Usar fecha límite efectiva si existe (con extensiones), sino usar la fecha límite base
+              fechaEntrega: r.fecha_limite_efectiva || r.fecha_limite,
+              fecha_limite_original: r.fecha_limite, // Guardar fecha original para comparar
               fechaSubida: r.entrega_estado ? (r.entregada_at ? new Date(r.entregada_at).toISOString().split('T')[0] : null) : null,
               archivo: r.archivo || null,
               entregada: !!r.entrega_estado,
-              // score puede venir null aunque calificacion exista: mantenemos cal como score para mostrarla
-              score: cal,
+              // Convertir calificación de escala 0-100 (BD) a escala 0-10 (UI)
+              score: cal !== null && cal !== undefined ? (cal > 10 ? cal / 10 : cal) : null,
               maxScore: r.puntos_max || 100,
               estado: cal !== null ? 'revisada' : estadoCalc,
               areaId: r.id_area,
@@ -654,6 +663,7 @@ export function Actividades_Alumno_comp() {
               intentos: [],
               totalIntentos: r.version || (r.entrega_estado ? 1 : 0),
               mejorPuntaje: cal,
+              permite_editar_despues_calificada: permiteEditar,
               // Compatibilidad: usamos 'plantilla' para mostrar el botón de descarga con el primer recurso
               plantilla: r.plantilla || (firstRecurso ? firstRecurso.archivo : null),
               recursos,
@@ -884,10 +894,12 @@ export function Actividades_Alumno_comp() {
             const list = Array.isArray(resp.data?.data) ? resp.data.data : [];
             const mine = list.find(e => String(e.id_estudiante) === String(estudianteId));
             if (mine && (mine.calificacion !== null && mine.calificacion !== undefined)) {
+              // Convertir de escala 0-100 a escala 0-10
+              const cal10 = mine.calificacion > 10 ? mine.calificacion / 10 : mine.calificacion;
               setActividades(prev => prev.map(p => p.id === act.id ? {
                 ...p,
-                score: mine.calificacion,
-                mejorPuntaje: mine.calificacion,
+                score: cal10,
+                mejorPuntaje: cal10,
                 estado: 'revisada',
                 notas: mine.notas || mine.comentarios || mine.observaciones || mine.retroalimentacion || p.notas || '',
                 notas_at: mine.updated_at || p.notas_at || null
@@ -922,10 +934,12 @@ export function Actividades_Alumno_comp() {
             const list = Array.isArray(resp.data?.data) ? resp.data.data : [];
             const mine = list.find(e => String(e.id_estudiante) === String(estudianteId));
             if (mine && (mine.calificacion !== null && mine.calificacion !== undefined)) {
+              // Convertir de escala 0-100 a escala 0-10
+              const cal10 = mine.calificacion > 10 ? mine.calificacion / 10 : mine.calificacion;
               setActividades(prev => prev.map(p => p.id === act.id ? {
                 ...p,
-                score: mine.calificacion,
-                mejorPuntaje: mine.calificacion,
+                score: cal10,
+                mejorPuntaje: cal10,
                 estado: 'revisada',
                 notas: mine.notas || mine.comentarios || mine.observaciones || mine.retroalimentacion || p.notas || '',
                 notas_at: mine.updated_at || p.notas_at || null
@@ -1228,21 +1242,30 @@ export function Actividades_Alumno_comp() {
             id: r.id,
             nombre: r.titulo,
             descripcion: r.descripcion || '',
-            fechaEntrega: r.fecha_limite,
+            // Usar fecha límite efectiva si existe (con extensiones), sino usar la fecha límite base
+            fechaEntrega: r.fecha_limite_efectiva || r.fecha_limite,
+            fecha_limite_original: r.fecha_limite, // Guardar fecha original para comparar
             fechaSubida: r.entregada_at ? new Date(r.entregada_at).toISOString().split('T')[0] : null,
             archivo: r.archivo || null,
             entregada: !!r.entrega_estado,
-            score: r.calificacion ?? null,
+            // Convertir calificación de escala 0-100 (BD) a escala 0-10 (UI)
+            score: r.calificacion !== null && r.calificacion !== undefined ? (r.calificacion > 10 ? r.calificacion / 10 : r.calificacion) : null,
             maxScore: r.puntos_max || 100,
             estado: r.entrega_estado || 'pendiente',
             areaId: r.id_area,
             tipo: 'actividades',
             intentos: [],
             totalIntentos: r.version || (r.entrega_estado ? 1 : 0),
-            mejorPuntaje: r.calificacion ?? null,
+            // Convertir mejorPuntaje de escala 0-100 a escala 0-10
+            mejorPuntaje: r.calificacion !== null && r.calificacion !== undefined ? (r.calificacion > 10 ? r.calificacion / 10 : r.calificacion) : null,
             plantilla: r.plantilla || (firstRecurso ? firstRecurso.archivo : null),
             recursos,
             entrega_id: r.entrega_id || r.entregaId || null,
+            // Normalizar el valor de permite_editar_despues_calificada
+            permite_editar_despues_calificada: (r.permite_editar_despues_calificada === 1 || 
+                                                r.permite_editar_despues_calificada === true || 
+                                                r.permite_editar_despues_calificada === '1' ||
+                                                String(r.permite_editar_despues_calificada) === '1'),
           };
         });
         setActividades(mapped);
@@ -1658,7 +1681,14 @@ export function Actividades_Alumno_comp() {
 
   // Abrir quiz en nueva pestaña (ventaja: aislamiento y bloqueos sin afectar dashboard)
   const openQuizInNewTab = (qid, reuseWin = null) => {
-    const target = `/alumno/actividades/quiz/${qid}`;
+    // Construir URL con areaId si está disponible
+    const returnTo = buildReturnTo();
+    const areaIdValue = (selectedArea?.id === 5) ? (selectedModulo?.id) : selectedArea?.id;
+    let target = `/alumno/actividades/quiz/${qid}`;
+    if (areaIdValue != null) {
+      target += `?areaId=${areaIdValue}`;
+    }
+    
     try {
       // Pre-marcar este quiz como "abierto" para reflejar el estado de inmediato en UI
       try { localStorage.setItem(`quiz_open_${qid}`, JSON.stringify({ ts: Date.now(), pid: 'preopen' })); } catch { }
@@ -1667,7 +1697,7 @@ export function Actividades_Alumno_comp() {
       const win = window.open('', '_blank');
       if (!win) {
         // Popup bloqueado -> fallback misma pestaña
-        navigate(target, { replace: true, state: { returnTo: window.location.pathname + window.location.search } });
+        navigate(target, { replace: true, state: { returnTo } });
       }
       else {
         try {
@@ -1677,7 +1707,7 @@ export function Actividades_Alumno_comp() {
         win.location.href = target;
       }
     } catch {
-      navigate(target, { replace: true, state: { returnTo: window.location.pathname + window.location.search } });
+      navigate(target, { replace: true, state: { returnTo } });
     } finally {
       setStartModal({ open: false, quizId: null, seconds: 5 });
     }
@@ -1924,7 +1954,7 @@ export function Actividades_Alumno_comp() {
                   </span>
                 )}
                 {selectedActividad.estado === 'revisada' && selectedActividad.score !== null && (
-                  <span className="flex items-center gap-1 text-green-600 font-medium">Calificación: {selectedActividad.score}%</span>
+                  <span className="flex items-center gap-1 text-green-600 font-medium">Calificación: {Number(selectedActividad.score).toFixed(1)}/10</span>
                 )}
               </div>
             </div>
@@ -2365,60 +2395,60 @@ export function Actividades_Alumno_comp() {
         {catalogError && (
           <div className="mb-4 p-3 rounded-xl bg-yellow-50 border border-yellow-200 text-sm text-yellow-800">{catalogError}</div>
         )}
-        {/* Header */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-8">
-          <div className="px-6 py-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+        {/* Header - Mejorado para móviles */}
+        <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
+          <div className="px-4 sm:px-6 py-6 sm:py-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
-                <h1 className="text-3xl xs:text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2 tracking-tight">
                   ACTIVIDADES Y EVALUACIONES
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600 font-medium">
                   Selecciona el área de estudio que deseas explorar
                 </p>
               </div>
-              <div className="mt-4 lg:mt-0 flex items-center text-sm text-gray-500">
-                <Clock className="w-4 h-4 mr-1" />
-                <span>Actualizado hoy</span>
+              <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                <Clock className="w-4 h-4 mr-1.5 text-violet-600" />
+                <span className="font-semibold">Actualizado hoy</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Título estilizado */}
-        <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 rounded-xl border border-purple-200 shadow-md p-8 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100/30 to-blue-100/30 rounded-full blur-2xl"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-indigo-100/30 to-purple-100/30 rounded-full blur-xl"></div>
+        {/* Título estilizado - Mejorado para móviles */}
+        <div className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 rounded-xl sm:rounded-2xl border-2 border-violet-200/50 shadow-lg p-6 sm:p-8 mb-6 sm:mb-8 relative overflow-hidden ring-2 ring-violet-100/50">
+          <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-violet-100/40 to-indigo-100/40 rounded-full blur-2xl"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-tr from-indigo-100/40 to-purple-100/40 rounded-full blur-xl"></div>
 
           <div className="flex items-center justify-center relative z-10">
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
               <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-indigo-600 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                  <FileText className="w-6 h-6 text-white" />
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-violet-500 via-indigo-600 to-purple-600 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-xl ring-4 ring-violet-200/50 group-hover:scale-110 transition-transform">
+                  <FileText className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                  <Trophy className="w-2 h-2 text-white" />
+                <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
+                  <Trophy className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
                 </div>
               </div>
 
               <div className="flex flex-col items-center">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-indigo-700 to-blue-700 bg-clip-text text-transparent">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-700 to-purple-700 bg-clip-text text-transparent tracking-wide">
                   ÁREAS DE ESTUDIO
                 </h2>
-                <div className="flex items-center space-x-2 mt-1">
-                  <div className="w-12 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full"></div>
-                  <div className="w-12 h-0.5 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-full"></div>
+                <div className="flex items-center space-x-2 mt-2">
+                  <div className="w-12 sm:w-16 h-1 bg-gradient-to-r from-violet-500 to-indigo-600 rounded-full"></div>
+                  <div className="w-12 sm:w-16 h-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full"></div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Grid de áreas */}
-        {/* Grid responsive: compacta en tablets para aprovechar ancho */}
-        <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr gap-3 md:gap-4 lg:gap-5">
+        {/* Grid de áreas - Mejorado para móviles */}
+        {/* Grid responsive: optimizado para móviles y tablets */}
+        <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr gap-3 sm:gap-4 md:gap-5 lg:gap-6">
           {(loadingCatalog || loading) && areasData.length === 0 && (
-            <div className="col-span-full py-8 text-center text-sm text-gray-500">Cargando áreas...</div>
+            <div className="col-span-full py-8 text-center text-sm sm:text-base text-gray-500 font-medium">Cargando áreas...</div>
           )}
           {areasData.map((area) => (
             <div key={area.id} className="[tap-highlight-color:transparent]">
@@ -2426,11 +2456,11 @@ export function Actividades_Alumno_comp() {
                 title={area.titulo}
                 description={area.descripcion}
                 icon={area.icono}
-                containerClasses={`${area.bgColor} ${area.borderColor} bg-gradient-to-br`}
-                iconWrapperClass={`bg-gradient-to-br ${area.color}`}
+                containerClasses={`${area.bgColor} ${area.borderColor} bg-gradient-to-br border-2 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
+                iconWrapperClass={`bg-gradient-to-br ${area.color} ring-2 ring-white/50`}
                 minHeight={CARD_HEIGHT_PX}
                 onClick={() => handleSelectArea(area)}
-                footer={<div className="inline-flex items-center text-gray-600 font-medium tracking-wide"><span className="group-hover:text-gray-800 transition-colors text-xs sm:text-sm">Explorar área</span><ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
+                footer={<div className="inline-flex items-center text-gray-700 font-bold tracking-wide"><span className="group-hover:text-gray-900 transition-colors text-xs sm:text-sm">Explorar área</span><ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
               />
             </div>
           ))}
@@ -2446,41 +2476,40 @@ export function Actividades_Alumno_comp() {
     return (
       <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header con navegación */}
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-8">
-            <div className="px-6 py-8">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex items-center space-x-4">
+          {/* Header con navegación - Mejorado para móviles */}
+          <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
+            <div className="px-4 sm:px-6 py-5 sm:py-8">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex items-center space-x-3 sm:space-x-4">
                   <button
                     onClick={handleGoBack}
-                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 active:scale-95 rounded-xl transition-all touch-manipulation"
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   <div>
-                    <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 mb-2">
                       {hasInitialArea ? 'Módulos Específicos' : 'Elige tu Área de Interés'}
                     </h1>
-                    <p className="text-gray-600">
+                    <p className="text-sm sm:text-base text-gray-600 font-medium">
                       {hasInitialArea
                         ? 'Accede a tus áreas permitidas o solicita acceso a nuevas.'
                         : 'Selecciona tu primera área de conocimiento para empezar.'}
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 lg:mt-0 flex items-center text-sm text-gray-500">
-                  <Brain className="w-4 h-4 mr-1" />
-                  <span>{modulosEspecificos.length} módulos disponibles</span>
+                <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                  <Brain className="w-4 h-4 mr-1.5 text-violet-600" />
+                  <span className="font-semibold">{modulosEspecificos.length} módulos disponibles</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Grid de módulos específicos con lógica de acceso y estilo restaurado */}
-          {/* Grid responsive para módulos específicos */}
-          <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr gap-3 md:gap-4 lg:gap-5">
+          {/* Grid de módulos específicos - Mejorado para móviles */}
+          <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr gap-3 sm:gap-4 md:gap-5 lg:gap-6">
             {(loadingCatalog || loading) && modulosEspecificos.length === 0 && (
-              <div className="col-span-full py-6 text-center text-sm text-gray-500">Cargando módulos...</div>
+              <div className="col-span-full py-6 text-center text-sm sm:text-base text-gray-500 font-medium">Cargando módulos...</div>
             )}
             {modulosEspecificos.map((modulo) => {
               const isAllowed = allowedActivityAreas.includes(modulo.id);
@@ -2489,37 +2518,33 @@ export function Actividades_Alumno_comp() {
 
               let actionHandler = () => { };
               let footerContent;
-              let cardClassName = `${modulo.bgColor} ${modulo.borderColor} border rounded-2xl shadow-md hover:shadow-xl transition-all duration-200 group px-4 py-5 sm:px-6 sm:py-6 flex flex-col select-none`;
               let isClickable = false;
 
               if (hasInitialArea) {
                 if (isAllowed) {
                   isClickable = true;
                   actionHandler = () => handleSelectModulo(modulo);
-                  cardClassName += " cursor-pointer";
                   footerContent = (
-                    <div className="inline-flex items-center text-gray-600 font-medium text-sm">
+                    <div className="inline-flex items-center text-gray-700 font-extrabold text-xs sm:text-sm bg-gradient-to-r from-gray-100 to-slate-100 px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm group-hover:shadow-md transition-all">
                       <span>Ver actividades</span>
-                      <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
+                      <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 rotate-180 group-hover:translate-x-1.5 transition-transform" />
                     </div>
                   );
                 } else if (isPending) {
                   // Estado pendiente: no permitir entrar ni acceso temporal
                   isClickable = false;
-                  cardClassName += " opacity-60";
                   footerContent = (
-                    <div className="inline-flex items-center text-yellow-800 font-medium text-sm bg-yellow-200/80 px-3 py-1 rounded-full">
-                      <Hourglass className="w-4 h-4 mr-2" />
+                    <div className="inline-flex items-center text-amber-800 font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-100 to-yellow-100 px-3 py-1.5 rounded-xl border-2 border-amber-200 shadow-sm">
+                      <Hourglass className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
                       <span>Pendiente</span>
                     </div>
                   );
                 } else {
                   isClickable = true;
                   actionHandler = () => handleRequestAccess(modulo.id);
-                  cardClassName += " cursor-pointer";
                   footerContent = (
-                    <div className="inline-flex items-center text-blue-600 font-medium text-sm">
-                      <Send className="w-4 h-4 mr-2" />
+                    <div className="inline-flex items-center text-blue-700 font-extrabold text-xs sm:text-sm bg-gradient-to-r from-blue-100 to-indigo-100 px-3 py-1.5 rounded-lg border border-blue-200 shadow-sm group-hover:shadow-md transition-all">
+                      <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
                       <span>Solicitar Acceso</span>
                     </div>
                   );
@@ -2528,11 +2553,10 @@ export function Actividades_Alumno_comp() {
                 // Estado inicial: Elige tu primera área
                 isClickable = true;
                 actionHandler = () => handleInitialAreaSelection(modulo.id);
-                cardClassName += " cursor-pointer ring-4 ring-transparent hover:ring-indigo-400";
                 footerContent = (
-                  <div className="inline-flex items-center text-indigo-600 font-medium text-sm">
-                    <span>Seleccionar esta área</span>
-                    <CheckCircle2 className="w-4 h-4 ml-2" />
+                  <div className="inline-flex items-center text-indigo-700 font-extrabold text-xs sm:text-sm bg-gradient-to-r from-indigo-100 to-violet-100 px-3 py-1.5 rounded-lg border border-indigo-200 shadow-sm group-hover:shadow-md transition-all ring-2 ring-indigo-200/50">
+                    <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
+                    <span>Solicitar acceso</span>
                   </div>
                 );
               }
@@ -2546,8 +2570,8 @@ export function Actividades_Alumno_comp() {
                     title={modulo.titulo}
                     description={modulo.descripcion}
                     icon={modulo.icono}
-                    containerClasses={`${modulo.bgColor} ${modulo.borderColor} bg-gradient-to-br`}
-                    iconWrapperClass={`bg-gradient-to-br ${modulo.color}`}
+                    containerClasses={`${modulo.bgColor} ${modulo.borderColor} bg-gradient-to-br border-2 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
+                    iconWrapperClass={`bg-gradient-to-br ${modulo.color} ring-2 ring-white/50`}
                     minHeight={CARD_HEIGHT_PX}
                     onClick={isClickable ? actionHandler : undefined}
                     interactive={isClickable}
@@ -2558,7 +2582,7 @@ export function Actividades_Alumno_comp() {
               );
             })}
             {!loadingCatalog && !catalogError && modulosEspecificos.length === 0 && (
-              <div className="col-span-full text-center text-xs sm:text-sm text-gray-500 py-6">No hay módulos específicos disponibles.</div>
+              <div className="col-span-full text-center text-xs sm:text-sm text-gray-500 py-6 font-medium">No hay módulos específicos disponibles.</div>
             )}
           </div>
         </div>
@@ -2570,107 +2594,107 @@ export function Actividades_Alumno_comp() {
   const renderButtons = () => (
     <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header con navegación */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-8">
-          <div className="px-6 py-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center space-x-4">
+        {/* Header con navegación - Mejorado para móviles */}
+        <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
+          <div className="px-4 sm:px-6 py-5 sm:py-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="flex items-center space-x-3 sm:space-x-4">
                 <button
                   onClick={handleGoBack}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 active:scale-95 rounded-xl transition-all touch-manipulation"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 mb-2">
                     {selectedModulo ? selectedModulo.titulo : selectedArea?.titulo}
                   </h1>
-                  <p className="text-gray-600">Selecciona el tipo de contenido que deseas revisar</p>
+                  <p className="text-sm sm:text-base text-gray-600 font-medium">Selecciona el tipo de contenido que deseas revisar</p>
                 </div>
               </div>
-              <div className="mt-4 lg:mt-0 flex items-center text-sm text-gray-500">
-                <Target className="w-4 h-4 mr-1" />
-                <span>2 tipos disponibles</span>
+              <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                <Target className="w-4 h-4 mr-1.5 text-violet-600" />
+                <span className="font-semibold">2 tipos disponibles</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Título estilizado */}
-        <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl border border-cyan-200 shadow-md p-8 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-100/30 to-indigo-100/30 rounded-full blur-2xl"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-100/30 to-cyan-100/30 rounded-full blur-xl"></div>
+        {/* Título estilizado - Mejorado para móviles */}
+        <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl border-2 border-cyan-200/50 shadow-lg p-6 sm:p-8 mb-6 sm:mb-8 relative overflow-hidden ring-2 ring-cyan-100/50">
+          <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-cyan-100/40 to-indigo-100/40 rounded-full blur-2xl"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-tr from-blue-100/40 to-cyan-100/40 rounded-full blur-xl"></div>
 
           <div className="flex items-center justify-center relative z-10">
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
               <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Target className="w-6 h-6 text-white" />
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-xl ring-4 ring-cyan-200/50">
+                  <Target className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-2 h-2 text-white" />
+                <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
+                  <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
                 </div>
               </div>
 
               <div className="flex flex-col items-center">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent tracking-wide">
                   Actividades y Quizzes
                 </h2>
-                <div className="flex items-center space-x-2 mt-1">
-                  <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
-                  <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
+                <div className="flex items-center space-x-2 mt-2">
+                  <div className="w-12 sm:w-16 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
+                  <div className="w-12 sm:w-16 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tarjetas tipo (responsive + altura uniforme usando UnifiedCard) */}
+        {/* Tarjetas tipo (responsive + altura uniforme usando UnifiedCard) - Mejoradas */}
         <div className="mx-auto w-full">
-          {/* En desktop mostramos exactamente dos tarjetas grandes centradas */}
-          <div className="hidden lg:flex justify-center gap-10 max-w-6xl mx-auto">
+          {/* En desktop mostramos exactamente dos tarjetas grandes centradas - Mejoradas */}
+          <div className="hidden lg:flex justify-center gap-8 xl:gap-10 max-w-6xl mx-auto">
             <UnifiedCard
               title="Actividades"
               description="Tareas y ejercicios prácticos para reforzar tu aprendizaje"
-              icon={<FileText className="w-6 h-6 text-white" />}
-              containerClasses="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 lg:w-[380px] xl:w-[420px]"
-              iconWrapperClass="bg-gradient-to-br from-blue-500 to-indigo-600"
-              minHeight={CARD_HEIGHT_PX + 40}
+              icon={<FileText className="w-8 h-8 text-white" />}
+              containerClasses="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 border-2 border-blue-300/50 lg:w-[400px] xl:w-[450px] shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 ring-2 ring-blue-100/50"
+              iconWrapperClass="bg-gradient-to-br from-blue-500 via-indigo-600 to-cyan-600 ring-4 ring-blue-200/50 shadow-lg"
+              minHeight={CARD_HEIGHT_PX + 60}
               onClick={() => handleSelectType('actividades')}
-              footer={<div className="inline-flex items-center text-blue-600 font-medium text-xs sm:text-sm"><span>ACCEDER</span><ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
+              footer={<div className="inline-flex items-center text-blue-700 font-extrabold text-sm sm:text-base bg-gradient-to-r from-blue-100 to-indigo-100 px-4 py-2 rounded-xl border-2 border-blue-200 shadow-sm group-hover:shadow-md transition-all"><span>ACCEDER</span><ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 ml-2 rotate-180 group-hover:translate-x-2 transition-transform" /></div>}
             />
             <UnifiedCard
               title="Quizzes"
               description="Cuestionarios y evaluaciones en línea"
-              icon={<Brain className="w-6 h-6 text-white" />}
-              containerClasses="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 lg:w-[380px] xl:w-[420px]"
-              iconWrapperClass="bg-gradient-to-br from-purple-500 to-pink-600"
-              minHeight={CARD_HEIGHT_PX + 40}
+              icon={<Brain className="w-8 h-8 text-white" />}
+              containerClasses="bg-gradient-to-br from-purple-50 via-pink-50 to-fuchsia-50 border-2 border-purple-300/50 lg:w-[400px] xl:w-[450px] shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 ring-2 ring-purple-100/50"
+              iconWrapperClass="bg-gradient-to-br from-purple-500 via-pink-600 to-fuchsia-600 ring-4 ring-purple-200/50 shadow-lg"
+              minHeight={CARD_HEIGHT_PX + 60}
               onClick={() => handleSelectType('quiz')}
-              footer={<div className="inline-flex items-center text-purple-600 font-medium text-xs sm:text-sm"><span>ACCEDER</span><ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
+              footer={<div className="inline-flex items-center text-purple-700 font-extrabold text-sm sm:text-base bg-gradient-to-r from-purple-100 to-pink-100 px-4 py-2 rounded-xl border-2 border-purple-200 shadow-sm group-hover:shadow-md transition-all"><span>ACCEDER</span><ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 ml-2 rotate-180 group-hover:translate-x-2 transition-transform" /></div>}
             />
           </div>
-          {/* Mobile / tablet grid: 2 columnas en todas las resoluciones < lg (corrige iPad) */}
-          <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:hidden auto-rows-fr gap-3 sm:gap-5 max-w-5xl mx-auto">
+          {/* Mobile / tablet grid: 2 columnas en todas las resoluciones < lg - Mejoradas */}
+          <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:hidden auto-rows-fr gap-4 sm:gap-5 md:gap-6 max-w-5xl mx-auto">
             <UnifiedCard
               title="Actividades"
               description="Tareas y ejercicios prácticos para reforzar tu aprendizaje"
-              icon={<FileText className="w-6 h-6 text-white" />}
-              containerClasses="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200"
-              iconWrapperClass="bg-gradient-to-br from-blue-500 to-indigo-600"
-              minHeight={CARD_HEIGHT_PX}
+              icon={<FileText className="w-7 h-7 sm:w-8 sm:h-8 text-white" />}
+              containerClasses="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 border-2 border-blue-300/50 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 ring-2 ring-blue-100/50"
+              iconWrapperClass="bg-gradient-to-br from-blue-500 via-indigo-600 to-cyan-600 ring-3 ring-blue-200/50 shadow-lg"
+              minHeight={CARD_HEIGHT_PX + 20}
               onClick={() => handleSelectType('actividades')}
-              footer={<div className="inline-flex items-center text-blue-600 font-medium text-[10px] xs:text-xs sm:text-sm"><span>ACCEDER</span><ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 ml-1 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
+              footer={<div className="inline-flex items-center text-blue-700 font-extrabold text-xs sm:text-sm bg-gradient-to-r from-blue-100 to-indigo-100 px-3 py-1.5 rounded-lg border-2 border-blue-200 shadow-sm group-hover:shadow-md transition-all"><span>ACCEDER</span><ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 rotate-180 group-hover:translate-x-1.5 transition-transform" /></div>}
             />
             <UnifiedCard
               title="Quizzes"
               description="Cuestionarios y evaluaciones en línea"
-              icon={<Brain className="w-6 h-6 text-white" />}
-              containerClasses="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200"
-              iconWrapperClass="bg-gradient-to-br from-purple-500 to-pink-600"
-              minHeight={CARD_HEIGHT_PX}
+              icon={<Brain className="w-7 h-7 sm:w-8 sm:h-8 text-white" />}
+              containerClasses="bg-gradient-to-br from-purple-50 via-pink-50 to-fuchsia-50 border-2 border-purple-300/50 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 ring-2 ring-purple-100/50"
+              iconWrapperClass="bg-gradient-to-br from-purple-500 via-pink-600 to-fuchsia-600 ring-3 ring-purple-200/50 shadow-lg"
+              minHeight={CARD_HEIGHT_PX + 20}
               onClick={() => handleSelectType('quiz')}
-              footer={<div className="inline-flex items-center text-purple-600 font-medium text-[10px] xs:text-xs sm:text-sm"><span>ACCEDER</span><ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 ml-1 rotate-180 group-hover:translate-x-1 transition-transform" /></div>}
+              footer={<div className="inline-flex items-center text-purple-700 font-extrabold text-xs sm:text-sm bg-gradient-to-r from-purple-100 to-pink-100 px-3 py-1.5 rounded-lg border-2 border-purple-200 shadow-sm group-hover:shadow-md transition-all"><span>ACCEDER</span><ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 rotate-180 group-hover:translate-x-1.5 transition-transform" /></div>}
             />
           </div>
         </div>
@@ -2682,62 +2706,65 @@ export function Actividades_Alumno_comp() {
   const renderTablaActividades = () => (
     <div className="px-0 sm:px-3 md:px-4 lg:px-6 py-6">
 
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-8">
-        <div className="px-6 py-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center space-x-4">
+      <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
+        <div className="px-4 sm:px-6 py-5 sm:py-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
               <button
                 onClick={handleGoBack}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 active:scale-95 rounded-xl transition-all touch-manipulation"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Actividades</h1>
-                <p className="text-gray-600">{selectedArea?.titulo}</p>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 mb-2">Actividades</h1>
+                <p className="text-sm sm:text-base text-gray-600 font-medium">{selectedArea?.titulo}</p>
               </div>
             </div>
-            <div className="mt-4 lg:mt-0 flex items-center text-sm text-gray-500">
-              <Target className="w-4 h-4 mr-1" />
-              <span>{filteredActividades.length} actividades disponibles</span>
+            <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+              <Target className="w-4 h-4 mr-1.5 text-violet-600" />
+              <span className="font-semibold">{filteredActividades.length} actividades disponibles</span>
             </div>
           </div>
         </div>
       </div>
 
 
-      <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl border border-cyan-200 shadow-md p-8 mb-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-100/30 to-indigo-100/30 rounded-full blur-2xl"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-100/30 to-cyan-100/30 rounded-full blur-xl"></div>
+      <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl border-2 border-cyan-200/50 shadow-lg p-6 sm:p-8 mb-6 sm:mb-8 relative overflow-hidden ring-2 ring-cyan-100/50">
+        <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-cyan-100/40 to-indigo-100/40 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-tr from-blue-100/40 to-cyan-100/40 rounded-full blur-xl"></div>
 
         <div className="flex items-center justify-center relative z-10">
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
             <div className="relative">
-              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <FileText className="w-6 h-6 text-white" />
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-xl ring-4 ring-cyan-200/50">
+                <FileText className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
               </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-                <CheckCircle2 className="w-2 h-2 text-white" />
+              <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
+                <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
               </div>
             </div>
 
             <div className="flex flex-col items-center">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent tracking-wide">
                 ACTIVIDADES DISPONIBLES
               </h2>
-              <div className="flex items-center space-x-2 mt-1">
-                <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
-                <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
+              <div className="flex items-center space-x-2 mt-2">
+                <div className="w-12 sm:w-16 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
+                <div className="w-12 sm:w-16 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filtros (UX optimizada para móviles) */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6 mb-8">
+      {/* Filtros (UX optimizada para móviles) - Mejorado */}
+      <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-gray-200/50 shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
-          <div className="text-base sm:text-lg font-semibold text-gray-800">Filtrar actividades</div>
+          <div className="text-sm sm:text-base md:text-lg font-extrabold text-gray-800 flex items-center gap-2">
+            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-violet-600" />
+            <span>Filtrar actividades</span>
+          </div>
           {isMobile ? (
             <div className="relative w-full">
               <button
@@ -2820,48 +2847,65 @@ export function Actividades_Alumno_comp() {
         </div>
       </div>
 
-      {/* Nueva tabla single-submission */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+      {/* Nueva tabla single-submission - Mejorada para móviles */}
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden border-2 border-gray-200/50 ring-2 ring-gray-100/50">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gradient-to-r from-blue-500 to-indigo-600">
+            <thead className="bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500">
               <tr>
-                <th className="px-4 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">No.</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Actividad</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Recursos</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Fecha Límite</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Subir / Editar</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Entregado</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Visualizar</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Calificación</th>
+                <th className="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">No.</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Actividad</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Recursos</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Fecha Límite</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Subir / Editar</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Entregado</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Visualizar</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Calificación</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200/50">
               {loading && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">Cargando actividades...</td>
+                  <td colSpan={8} className="px-4 sm:px-6 py-6 sm:py-8 text-center text-sm sm:text-base text-gray-500 font-medium">Cargando actividades...</td>
                 </tr>
               )}
               {!loading && error && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-sm text-red-600">{error}</td>
+                  <td colSpan={8} className="px-4 sm:px-6 py-6 sm:py-8 text-center text-sm sm:text-base text-red-600 font-semibold">{error}</td>
                 </tr>
               )}
               {!loading && !error && filteredActividades.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">No hay actividades.</td>
+                  <td colSpan={8} className="px-4 sm:px-6 py-6 sm:py-8 text-center text-sm sm:text-base text-gray-500 font-medium">No hay actividades.</td>
                 </tr>
               )}
               {!loading && !error && filteredActividades.map((actividad, index) => {
                 const vencida = !isWithinDeadline(actividad.fechaEntrega);
-                // Bloqueado si ya fue revisada (calificada) o vencida
-                const puedeEditar = actividad.entregada && !vencida && actividad.estado !== 'revisada';
+                // Verificar permiso de edición (puede venir como 0/1, true/false, o string)
+                const tienePermisoEditar = actividad.permite_editar_despues_calificada === true ||
+                  actividad.permite_editar_despues_calificada === 1 ||
+                  actividad.permite_editar_despues_calificada === '1' ||
+                  String(actividad.permite_editar_despues_calificada) === '1';
+                // Bloqueado si ya fue revisada (calificada) y no permite editar, o si está vencida
+                const puedeEditar = actividad.entregada && !vencida && 
+                  (actividad.estado !== 'revisada' || tienePermisoEditar);
+                
+                // Debug temporal
+                if (actividad.estado === 'revisada' && actividad.entregada) {
+                  console.log(`[DEBUG] Actividad ${actividad.id}:`, {
+                    estado: actividad.estado,
+                    permite_editar_despues_calificada: actividad.permite_editar_despues_calificada,
+                    tienePermisoEditar,
+                    puedeEditar,
+                    vencida
+                  });
+                }
                 return (
-                  <tr key={actividad.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-4 py-4 text-sm text-gray-700 font-medium">{index + 1}</td>
-                    <td className="px-6 py-4">
+                  <tr key={actividad.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-violet-50/30 transition-colors duration-200`}>
+                    <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-700 font-extrabold">{index + 1}</td>
+                    <td className="px-4 sm:px-6 py-3 sm:py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{actividad.nombre}</div>
+                        <div className="text-sm sm:text-base font-bold text-gray-900">{actividad.nombre}</div>
                         {actividad.descripcion && (
                           <div className="text-xs text-gray-500 mt-0.5">
                             <p
@@ -2889,38 +2933,42 @@ export function Actividades_Alumno_comp() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       {actividad.recursos && actividad.recursos.length > 0 && (
                         <button
                           onClick={() => openResourcesModal(actividad)}
-                          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200"
+                          className="inline-flex items-center px-2.5 py-1.5 text-xs font-bold rounded-lg text-blue-700 hover:text-blue-900 hover:bg-blue-50 border-2 border-blue-200 active:scale-95 transition-all touch-manipulation shadow-sm"
                         >
-                          <Download className="w-4 h-4 mr-1" /> {actividad.recursos.length} PDF{actividad.recursos.length > 1 ? 's' : ''}
+                          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" /> {actividad.recursos.length} PDF{actividad.recursos.length > 1 ? 's' : ''}
                         </button>
                       )}
                       {!actividad.recursos?.length && actividad.plantilla && (
                         <button
                           onClick={() => handleDownload(actividad.id)}
-                          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200"
+                          className="inline-flex items-center px-2.5 py-1.5 text-xs font-bold rounded-lg text-blue-700 hover:text-blue-900 hover:bg-blue-50 border-2 border-blue-200 active:scale-95 transition-all touch-manipulation shadow-sm"
                         >
-                          <Download className="w-4 h-4 mr-1" /> PDF
+                          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" /> PDF
                         </button>
                       )}
                       {!actividad.plantilla && (!actividad.recursos || actividad.recursos.length === 0) && (
                         <span className="text-xs text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{new Date(actividad.fechaEntrega).toLocaleDateString('es-ES')}</div>
-                      <div className={`text-xs ${vencida ? 'text-red-600' : 'text-green-600'}`}>{vencida ? 'Vencida' : 'A tiempo'}</div>
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-gray-900 font-semibold">{new Date(actividad.fechaEntrega).toLocaleDateString('es-ES')}</div>
+                      {actividad.fecha_limite_original && actividad.fechaEntrega && 
+                       new Date(actividad.fechaEntrega).getTime() > new Date(actividad.fecha_limite_original).getTime() && (
+                        <div className="text-[10px] sm:text-xs text-purple-600 font-bold bg-purple-50 px-1.5 py-0.5 rounded mt-0.5">✨ Fecha extendida</div>
+                      )}
+                      <div className={`text-[10px] sm:text-xs font-bold ${vencida ? 'text-red-600' : 'text-green-600'}`}>{vencida ? 'Vencida' : 'A tiempo'}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       {!actividad.entregada ? (
                         <button
                           onClick={() => openUploadModal(actividad)}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm"
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-95 shadow-md transition-all touch-manipulation"
                         >
-                          <Upload className="w-4 h-4 mr-1" /> Subir
+                          <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" /> Subir
                         </button>
                       ) : (
                         <div className="flex flex-col items-start">
@@ -2928,44 +2976,53 @@ export function Actividades_Alumno_comp() {
                             onClick={() => openUploadModal(actividad)}
                             disabled={!puedeEditar}
                             title={!puedeEditar && actividad.estado === 'revisada' ? 'Esta entrega ya fue calificada y no puede modificarse' : (!puedeEditar ? 'No disponible' : 'Editar entrega')}
-                            className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md shadow-sm ${puedeEditar ? 'text-white bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                            className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm active:scale-95 transition-all touch-manipulation ${puedeEditar ? 'text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                               }`}
                           >
-                            {puedeEditar ? <Upload className="w-4 h-4 mr-1" /> : null}
+                            {puedeEditar ? <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" /> : null}
                             {puedeEditar ? 'Editar' : 'Bloqueado'}
                           </button>
-                          {!puedeEditar && actividad.estado === 'revisada' && (
-                            <span className="mt-1 text-[10px] font-medium text-purple-600">Ya calificada - no editable</span>
+                          {!puedeEditar && actividad.estado === 'revisada' && !tienePermisoEditar && (
+                            <span className="mt-1 text-[10px] font-bold text-purple-600">Ya calificada - no editable</span>
+                          )}
+                          {actividad.estado === 'revisada' && tienePermisoEditar && (
+                            <span className="mt-1 text-[10px] font-bold text-emerald-600">✨ Edición permitida</span>
                           )}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       {actividad.entregada ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
                       ) : (
-                        <XCircle className="w-5 h-5 text-red-500" />
+                        <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <button
                         onClick={() => openViewModal(actividad)}
                         disabled={!actividad.entregada}
-                        className={`p-2 rounded-md ${actividad.entregada ? 'text-green-600 hover:text-green-800 hover:bg-green-50' : 'text-gray-400 cursor-not-allowed'} transition-colors`}
+                        className={`p-2 rounded-lg active:scale-95 transition-all touch-manipulation ${actividad.entregada ? 'text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50' : 'text-gray-400 cursor-not-allowed'}`}
                         title="Ver entrega"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm">
                       {actividad.entregada ? (
                         actividad.estado === 'revisada' ? (
-                          <span className="font-medium text-gray-900 inline-flex items-center gap-2">
-                            {actividad.score !== null && actividad.score !== undefined ? actividad.score : (actividad.mejorPuntaje ?? 0)}
+                          <span className="font-extrabold text-gray-900 inline-flex items-center gap-2">
+                            <span className="bg-gradient-to-r from-emerald-100 to-green-100 px-2.5 py-1 rounded-lg border-2 border-emerald-200 text-emerald-700">
+                              {actividad.score !== null && actividad.score !== undefined 
+                                ? `${Number(actividad.score).toFixed(1)}/10` 
+                                : (actividad.mejorPuntaje !== null && actividad.mejorPuntaje !== undefined 
+                                  ? `${Number(actividad.mejorPuntaje > 10 ? actividad.mejorPuntaje / 10 : actividad.mejorPuntaje).toFixed(1)}/10` 
+                                  : '—')}
+                            </span>
                             {actividad.notas && String(actividad.notas).trim().length > 0 && (
                               <button
                                 onClick={() => openNotasModal(actividad)}
-                                className="relative p-1 rounded hover:bg-blue-50 text-blue-600"
+                                className="relative p-1.5 rounded-lg hover:bg-blue-50 active:scale-95 text-blue-600 transition-all touch-manipulation border border-blue-200"
                                 title="Ver notas del asesor"
                               >
                                 <MessageSquareText className="w-4 h-4" />
@@ -2976,7 +3033,7 @@ export function Actividades_Alumno_comp() {
                                     const seenAt = seen ? new Date(seen).getTime() : 0;
                                     const isNew = notasAt && notasAt > seenAt;
                                     return isNew ? (
-                                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
                                     ) : null;
                                   } catch { return null; }
                                 })()}
@@ -2984,7 +3041,7 @@ export function Actividades_Alumno_comp() {
                             )}
                           </span>
                         ) : (
-                          <span className="text-xs text-yellow-600 font-medium">En revisión</span>
+                          <span className="text-xs sm:text-sm text-amber-600 font-bold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">En revisión</span>
                         )
                       ) : (
                         <span className="text-xs text-gray-400">-</span>
@@ -3004,62 +3061,65 @@ export function Actividades_Alumno_comp() {
   const renderTablaQuiz = () => (
     <div className="px-0 sm:px-3 md:px-4 lg:px-6 py-6">
 
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-8">
-        <div className="px-6 py-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center space-x-4">
+      <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
+        <div className="px-4 sm:px-6 py-5 sm:py-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
               <button
                 onClick={handleGoBack}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 active:scale-95 rounded-xl transition-all touch-manipulation"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Quizzes</h1>
-                <p className="text-gray-600">{selectedArea?.titulo}</p>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 mb-2">Quizzes</h1>
+                <p className="text-sm sm:text-base text-gray-600 font-medium">{selectedArea?.titulo}</p>
               </div>
             </div>
-            <div className="mt-4 lg:mt-0 flex items-center text-sm text-gray-500">
-              <Target className="w-4 h-4 mr-1" />
-              <span>{filteredActividades.length} quizzes disponibles</span>
+            <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+              <Target className="w-4 h-4 mr-1.5 text-violet-600" />
+              <span className="font-semibold">{filteredActividades.length} quizzes disponibles</span>
             </div>
           </div>
         </div>
       </div>
 
 
-      <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl border border-cyan-200 shadow-md p-8 mb-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-100/30 to-indigo-100/30 rounded-full blur-2xl"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-100/30 to-cyan-100/30 rounded-full blur-xl"></div>
+      <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl border-2 border-cyan-200/50 shadow-lg p-6 sm:p-8 mb-6 sm:mb-8 relative overflow-hidden ring-2 ring-cyan-100/50">
+        <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-cyan-100/40 to-indigo-100/40 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-tr from-blue-100/40 to-cyan-100/40 rounded-full blur-xl"></div>
 
         <div className="flex items-center justify-center relative z-10">
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
             <div className="relative">
-              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Play className="w-6 h-6 text-white" />
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-xl ring-4 ring-cyan-200/50">
+                <Play className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
               </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-                <CheckCircle2 className="w-2 h-2 text-white" />
+              <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
+                <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
               </div>
             </div>
 
             <div className="flex flex-col items-center">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent tracking-wide">
                 QUIZZES DISPONIBLES
               </h2>
-              <div className="flex items-center space-x-2 mt-1">
-                <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
-                <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
+              <div className="flex items-center space-x-2 mt-2">
+                <div className="w-12 sm:w-16 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
+                <div className="w-12 sm:w-16 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filtros (UX optimizada para móviles) */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6 mb-8">
+      {/* Filtros (UX optimizada para móviles) - Mejorado */}
+      <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-gray-200/50 shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
-          <div className="text-base sm:text-lg font-semibold text-gray-800">Filtrar quizzes</div>
+          <div className="text-sm sm:text-base md:text-lg font-extrabold text-gray-800 flex items-center gap-2">
+            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-violet-600" />
+            <span>Filtrar quizzes</span>
+          </div>
           {isMobile ? (
             <div className="relative w-full">
               <button
@@ -3143,12 +3203,14 @@ export function Actividades_Alumno_comp() {
         </div>
       </div>
 
-      {/* Quizzes responsive: tarjetas en móviles, tabla en tablets/desktop */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-        {/* Vista móvil: lista de tarjetas (sin scroll horizontal) */}
-        <div className="sm:hidden p-3 space-y-3">
+      {/* Quizzes responsive: tarjetas en móvil, tabla en desktop */}
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden border-2 border-gray-200/50 ring-2 ring-gray-100/50">
+        {/* Vista de tarjetas para móviles */}
+        <div className="block md:hidden space-y-3 p-3">
           {!loading && !error && filteredActividades.length === 0 && (
-            <div className="text-center text-gray-500 text-sm py-8">No hay quizzes disponibles por ahora en esta materia.</div>
+            <div className="text-center py-8 text-gray-500 text-sm">
+              No hay quizzes disponibles por ahora en esta materia. Intenta cambiar de mes o vuelve más tarde.
+            </div>
           )}
           {pagedQuizzes.map((quiz) => {
             const est = computeQuizEstado(quiz);
@@ -3158,172 +3220,208 @@ export function Actividades_Alumno_comp() {
             const displayResults = showResults || !available;
             const isOpen = isQuizOpenElsewhere(quiz.id);
             return (
-              <div key={quiz.id} className="rounded-xl border border-gray-200 shadow-sm p-3 bg-white">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="font-semibold text-gray-900 text-[15px] leading-snug break-words">{quiz.nombre}</div>
-                    {quiz.descripcion && (
-                      <div className="text-xs text-gray-600 mt-1">
-                        <p style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textAlign: 'justify', maxWidth: '46ch', wordBreak: 'break-word' }}>
-                          {quiz.descripcion}
-                        </p>
-                        {String(quiz.descripcion).length > 200 && (
-                          <button onClick={() => openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id })} className="mt-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline">Ver más</button>
-                        )}
-                      </div>
+              <div key={quiz.id} className="bg-white border-2 border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                {/* Header con título y estado */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 pr-2">
+                    <h3 className="text-sm font-bold text-gray-900 leading-tight mb-1">{quiz.nombre}</h3>
+                    <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded-full border ${
+                      est === 'completado' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                      est === 'disponible' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                      'bg-red-100 text-red-800 border-red-200'
+                    }`}>
+                      {est === 'completado' ? 'Completado' : est === 'disponible' ? 'Disponible' : 'Vencido'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => { if (available && !isOpen) handleIniciarSimulacion(quiz.id); }}
+                      className={`p-2 rounded-lg transition-all ${(!available || isOpen) ? 'text-gray-400 cursor-not-allowed' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                      disabled={!available || isOpen}
+                    >
+                      <Play className="w-5 h-5" />
+                    </button>
+                    {displayResults && (
+                      <button
+                        onClick={() => handleVisualizarResultados(quiz.id)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </button>
                     )}
                   </div>
-                  <div className="flex-shrink-0 text-right">
-                    <div className="text-[11px] text-gray-500">Fecha límite</div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {quiz.fechaEntrega ? new Date(quiz.fechaEntrega).toLocaleDateString('es-ES') : 'Sin fecha límite'}
-                    </div>
-                    <div className={`${isWithinDeadline(quiz.fechaEntrega) ? 'text-green-600' : 'text-red-600'} text-[11px]`}>{isWithinDeadline(quiz.fechaEntrega) ? 'Disponible' : (quiz.fechaEntrega ? 'Vencido' : 'Disponible')}</div>
-                  </div>
                 </div>
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className={`inline-flex px-2 py-0.5 text-[11px] font-semibold rounded-full ${est === 'completado' ? 'bg-green-100 text-green-800' : est === 'disponible' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                    {est === 'completado' ? 'Completado' : est === 'disponible' ? 'Disponible' : 'Vencido'}
-                  </span>
-                  <div className="text-[12px] text-gray-700">
-                    Mejor: {getBestScore(quiz.id) !== 'En revisión' ? `${getBestScore(quiz.id)}%` : getBestScore(quiz.id)} · Intentos: {attempts}/{quiz.maxIntentos}
-                  </div>
-                </div>
-                <div className="mt-3 flex items-center justify-end gap-2">
-                  <button
-                    onClick={() => { if (available && !isOpen) handleIniciarSimulacion(quiz.id); }}
-                    title={isOpen ? 'Ya abierto en otra pestaña' : (available ? 'Iniciar quiz' : 'No disponible')}
-                    disabled={!available || isOpen}
-                    className={`px-3 py-1.5 text-xs rounded-lg border ${(!available || isOpen) ? 'border-gray-200 text-gray-400 bg-gray-100 cursor-not-allowed' : 'border-green-200 text-green-700 bg-green-50 hover:bg-green-100'}`}
+
+                {/* Descripción */}
+                {quiz.descripcion && (
+                  <div 
+                    onClick={() => openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id })}
+                    className="mb-3 cursor-pointer"
                   >
-                    Iniciar
-                  </button>
-                  {displayResults && (
-                    <button onClick={() => handleVisualizarResultados(quiz.id)} title={showResults ? 'Ver resultados' : 'Ver resultados (no hay intentos registrados)'} className="px-3 py-1.5 text-xs rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100">Resultados</button>
-                  )}
-                  {attempts > 0 && (
-                    <button onClick={() => handleVerHistorial(quiz)} className="px-3 py-1.5 text-xs rounded-lg border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100">Historial</button>
-                  )}
+                    <p className="text-xs text-gray-600 line-clamp-2 mb-1">{quiz.descripcion}</p>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id }); }}
+                      className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                    >
+                      Ver instrucciones
+                    </button>
+                  </div>
+                )}
+
+                {/* Información en grid */}
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <div className="text-gray-500 font-medium mb-0.5">Fecha límite</div>
+                    <div className="text-gray-900 font-semibold">
+                      {quiz.fechaEntrega ? new Date(quiz.fechaEntrega).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) : 'Sin fecha'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 font-medium mb-0.5">Mejor puntaje</div>
+                    <div className="text-gray-900 font-bold">
+                      {getBestScore(quiz.id) !== 'En revisión' ? `${getBestScore(quiz.id)}%` : getBestScore(quiz.id)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 font-medium mb-0.5">Intentos</div>
+                    <div className="text-gray-900 font-bold">
+                      {attempts} / {quiz.maxIntentos}
+                    </div>
+                    {attempts > 0 && (
+                      <button
+                        onClick={() => handleVerHistorial(quiz)}
+                        className="text-xs text-purple-600 hover:text-purple-800 font-bold underline mt-0.5"
+                      >
+                        Ver historial
+                      </button>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-gray-500 font-medium mb-0.5">Tiempo</div>
+                    <div className="text-gray-900 font-semibold">{quiz.tiempoLimite}</div>
+                  </div>
                 </div>
-                <div className="mt-2 text-[11px] text-gray-500">Tiempo límite: {quiz.tiempoLimite} · Máx. intentos: {quiz.maxIntentos}</div>
               </div>
             );
           })}
         </div>
 
-        {/* Vista sm+ : tabla tradicional */}
-        <div className="hidden sm:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gradient-to-r from-purple-500 to-pink-600 text-xs">
+        {/* Tabla para desktop */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200/50 text-sm">
+            <thead className="bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500">
               <tr>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
+                <th className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs">
                   Quiz
                 </th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
+                <th className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs">
                   Fecha Límite
                 </th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
+                <th className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs">
                   Estado
                 </th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
+                <th className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs">
                   Mejor Puntaje
                 </th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-medium text-white uppercase tracking-wider">
+                <th className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs">
                   Intentos
                 </th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-medium text-white uppercase tracking-wider">
+                <th className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 text-center font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200/50">
               {!loading && !error && filteredActividades.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-gray-500 text-sm">
+                  <td colSpan={6} className="px-2 sm:px-4 md:px-6 py-6 sm:py-8 md:py-10 text-center text-gray-500 text-[10px] sm:text-xs md:text-sm">
                     No hay quizzes disponibles por ahora en esta materia. Intenta cambiar de mes o vuelve más tarde.
                   </td>
                 </tr>
               )}
               {pagedQuizzes.map((quiz, index) => (
-                <tr key={quiz.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-6 py-4">
+                <tr key={quiz.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-violet-50/30 transition-colors duration-200`}>
+                  <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{quiz.nombre}</div>
+                      <div className="text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-900 leading-tight">{quiz.nombre}</div>
                       {quiz.descripcion && (
-                        <div className="text-sm text-gray-500 mt-0.5">
+                        <div 
+                          onClick={() => openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id })}
+                          className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-500 mt-0.5 cursor-pointer group"
+                        >
                           <p
                             style={{
                               display: '-webkit-box',
-                              WebkitLineClamp: 2,
+                              WebkitLineClamp: isMobile ? 1 : 2,
                               WebkitBoxOrient: 'vertical',
                               overflow: 'hidden',
                               textAlign: 'justify',
-                              maxWidth: descMaxCh,
-                              wordBreak: 'break-word'
+                              maxWidth: isMobile ? '100%' : descMaxCh,
+                              wordBreak: 'break-word',
+                              lineHeight: '1.3'
                             }}
+                            className="group-hover:text-gray-700 transition-colors"
                           >
                             {quiz.descripcion}
                           </p>
-                          {String(quiz.descripcion).length > 200 && (
-                            <button
-                              onClick={() => openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id })}
-                              className="mt-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
-                            >
-                              Ver más
-                            </button>
-                          )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id }); }}
+                            className="mt-0.5 text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                          >
+                            Ver instrucciones
+                          </button>
                         </div>
                       )}
-                      <div className="text-xs text-gray-400 mt-1">
-                        Tiempo límite: {quiz.tiempoLimite} | Máx. intentos: {quiz.maxIntentos}
+                      <div className="text-[8px] sm:text-[9px] md:text-xs text-gray-400 mt-0.5">
+                        Tiempo: {quiz.tiempoLimite} | Intentos: {quiz.maxIntentos}
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {quiz.fechaEntrega ? new Date(quiz.fechaEntrega).toLocaleDateString('es-ES') : 'Sin fecha límite'}
+                  <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 whitespace-nowrap">
+                    <div className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-900 font-semibold leading-tight">
+                      {quiz.fechaEntrega ? new Date(quiz.fechaEntrega).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) : 'Sin fecha'}
                     </div>
-                    <div className={`text-xs ${isWithinDeadline(quiz.fechaEntrega) ? 'text-green-600' : 'text-red-600'}`}>
+                    <div className={`text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs font-bold ${isWithinDeadline(quiz.fechaEntrega) ? 'text-emerald-600' : 'text-red-600'}`}>
                       {isWithinDeadline(quiz.fechaEntrega) ? 'Disponible' : (quiz.fechaEntrega ? 'Vencido' : 'Disponible')}
                     </div>
                   </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                  <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 whitespace-nowrap">
                     {(() => {
                       const est = computeQuizEstado(quiz); return (
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${est === 'completado' ? 'bg-green-100 text-green-800' :
-                          est === 'disponible' ? 'bg-blue-100 text-blue-800' :
-                            'bg-red-100 text-red-800'
+                        <span className={`inline-flex px-1 sm:px-1.5 md:px-2.5 py-0.5 text-[8px] sm:text-[9px] md:text-xs font-extrabold rounded-full border ${est === 'completado' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                          est === 'disponible' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                            'bg-red-100 text-red-800 border-red-200'
                           }`}>
                           {est === 'completado' ? 'Completado' : est === 'disponible' ? 'Disponible' : 'Vencido'}
                         </span>
                       );
                     })()}
-                  </td><td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
+                  </td>
+                  <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 whitespace-nowrap">
+                    <div className="text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-900">
                       {getBestScore(quiz.id) !== 'En revisión' ? `${getBestScore(quiz.id)}%` : getBestScore(quiz.id)}
                     </div>
                     {quiz.score && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-[8px] sm:text-[9px] md:text-xs text-gray-500 font-medium">
                         de {quiz.maxScore}%
                       </div>
                     )}
                   </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
+                  <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 whitespace-nowrap">
+                    <div className="text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-900">
                       {getTotalAttempts(quiz.id)} / {quiz.maxIntentos}
                     </div>
                     {getTotalAttempts(quiz.id) > 0 && (
                       <button
                         onClick={() => handleVerHistorial(quiz)}
-                        className="text-xs text-purple-600 hover:text-purple-800"
+                        className="text-[8px] sm:text-[9px] md:text-xs text-purple-600 hover:text-purple-800 font-bold underline"
                       >
                         Ver historial
                       </button>
                     )}
                   </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-center">
-                    <div className="flex items-center justify-center space-x-2">
+                  <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center space-x-0.5 sm:space-x-1 md:space-x-2">
                       {(() => {
                         const available = isQuizAvailable(quiz);
                         const retryable = canRetry(quiz);
@@ -3335,24 +3433,24 @@ export function Actividades_Alumno_comp() {
                           <>
                             <button
                               onClick={() => { if (available && !isOpen) handleIniciarSimulacion(quiz.id); }}
-                              className={`p-2 rounded-lg transition-colors ${(!available || isOpen) ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:text-green-800 hover:bg-green-50'}`}
+                              className={`p-1 sm:p-1.5 md:p-2 rounded-lg transition-all active:scale-95 touch-manipulation ${(!available || isOpen) ? 'text-gray-400 cursor-not-allowed' : 'text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50'}`}
                               title={isOpen ? 'Ya abierto en otra pestaña' : (available ? 'Iniciar quiz' : 'No disponible')}
                               disabled={!available || isOpen}
                             >
-                              <Play className="w-4 h-4" />
+                              <Play className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5" />
                             </button>
                             {displayResults && (
                               <button
                                 onClick={() => handleVisualizarResultados(quiz.id)}
-                                className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-1 sm:p-1.5 md:p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all active:scale-95 touch-manipulation"
                                 title={showResults ? 'Ver resultados' : 'Ver resultados (no hay intentos registrados)'}
                               >
-                                <Eye className="w-4 h-4" />
+                                <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5" />
                               </button>
                             )}
                             {/* Botón de reintento removido: los reintentos se gestionan al iniciar si hay intentos disponibles */}
                             {!available && !retryable && !showResults && (
-                              <span className="text-xs text-gray-500">No disponible</span>
+                              <span className="text-[8px] sm:text-[9px] md:text-xs text-gray-500">No disponible</span>
                             )}
                           </>
                         );
@@ -3398,22 +3496,34 @@ export function Actividades_Alumno_comp() {
       {renderStartQuizModal()}
       {renderResourcesModal()}
       {longTextModal.open && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-start z-50 px-2 sm:px-3 lg:px-4 2xl:px-6 pt-32 md:pt-40 pb-6" onClick={closeLongText}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 px-2 sm:px-3 lg:px-4 2xl:px-6 py-4 sm:py-6" onClick={closeLongText}>
           <div
-            className="bg-white rounded-xl shadow-2xl w-full overflow-hidden"
+            className="bg-white rounded-xl shadow-2xl w-full flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden"
             style={{ width: modalWidth, transform: modalOffsetX ? `translateX(${modalOffsetX}px)` : undefined }}
             onClick={e => e.stopPropagation()}
           >
-            <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-3 sm:py-4">
+            {/* Header fijo */}
+            <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-3 sm:py-4 flex-shrink-0">
               <h2 className="text-base sm:text-lg lg:text-[15px] 2xl:text-[14px] font-bold break-words" title={longTextModal.title}>{longTextModal.title}</h2>
             </div>
-            <div className="px-3 py-2 sm:p-3 lg:p-4">
-              <div className="text-sm sm:text-base lg:text-[12px] xl:text-[12.5px] 2xl:text-[12.5px] text-gray-800 whitespace-pre-wrap pr-1 sm:pr-2" style={{ maxHeight: (isMobile ? '60vh' : (isTablet && isLandscape ? '58vh' : '60vh')), overflowY: 'auto', textAlign: 'justify', lineHeight: 1.42, wordBreak: 'break-word', maxWidth: (isMobile ? '42ch' : (isTablet ? (isLandscape ? '40ch' : '44ch') : '44ch')), margin: '0 auto' }}>
+            {/* Contenido con scroll */}
+            <div className="flex-1 overflow-y-auto px-3 py-2 sm:p-3 lg:p-4 min-h-0">
+              <div 
+                className="text-sm sm:text-base lg:text-[12px] xl:text-[12.5px] 2xl:text-[12.5px] text-gray-800 whitespace-pre-wrap pr-1 sm:pr-2" 
+                style={{ 
+                  textAlign: 'justify', 
+                  lineHeight: 1.42, 
+                  wordBreak: 'break-word', 
+                  maxWidth: (isMobile ? '42ch' : (isTablet ? (isLandscape ? '40ch' : '44ch') : '44ch')), 
+                  margin: '0 auto' 
+                }}
+              >
                 {longTextModal.content}
               </div>
-              <div className="mt-3 sm:mt-4 lg:mt-5 flex justify-end">
-                <button onClick={closeLongText} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-[13px] sm:text-sm lg:text-[12px] 2xl:text-[11px]">Cerrar</button>
-              </div>
+            </div>
+            {/* Footer fijo */}
+            <div className="px-3 py-2 sm:p-3 lg:p-4 border-t border-gray-200 flex-shrink-0 flex justify-end bg-white">
+              <button onClick={closeLongText} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-[13px] sm:text-sm lg:text-[12px] 2xl:text-[11px] transition-colors">Cerrar</button>
             </div>
           </div>
         </div>

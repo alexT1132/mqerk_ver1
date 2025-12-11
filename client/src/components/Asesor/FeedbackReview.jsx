@@ -226,12 +226,14 @@ export default function FeedbackReview({ studentId, className = '' }) {
   return (
     <div className={`space-y-6 w-full ${className}`}>
       {/* Controls: month selector + pagination */}
-      <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-6 sm:p-8">
+      <div className="bg-white rounded-3xl shadow-xl border-2 border-slate-200 ring-2 ring-slate-100/50 p-6 sm:p-8">
         {/* Selector de meses con botones */}
-        <div className="mb-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="size-5 text-purple-600" />
-            <h3 className="text-base font-bold text-slate-800">Selecciona el mes para revisar y calificar:</h3>
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg">
+              <Calendar className="size-5" />
+            </div>
+            <h3 className="text-lg font-extrabold text-slate-800">Selecciona el mes para revisar y calificar:</h3>
           </div>
           {availableOrdinals.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2">
@@ -247,26 +249,26 @@ export default function FeedbackReview({ studentId, className = '' }) {
                     key={opt}
                     onClick={() => setSelectedMonth(opt)}
                     className={`
-                      relative px-5 py-3 rounded-xl font-semibold text-sm transition-all duration-200 transform
+                      relative px-6 py-4 rounded-2xl font-bold text-sm transition-all duration-200 transform shadow-md hover:shadow-lg
                       ${isSelected
-                        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg scale-105 ring-4 ring-purple-200'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:scale-[1.02] border-2 border-slate-200'
+                        ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-xl scale-105 ring-4 ring-violet-300'
+                        : 'bg-white text-slate-700 hover:bg-gradient-to-br hover:from-violet-50 hover:to-indigo-50 hover:scale-[1.02] border-2 border-slate-200 hover:border-violet-300'
                       }
                     `}
                   >
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="text-base font-bold">{opt}</span>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <span className="text-lg font-extrabold">{opt}</span>
                       {tasksInMonth > 0 && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${isSelected
-                            ? 'bg-white/20 text-white'
-                            : 'bg-slate-200 text-slate-600'
+                        <span className={`text-xs font-bold px-3 py-1 rounded-full ring-2 ${isSelected
+                            ? 'bg-white/30 text-white ring-white/50'
+                            : 'bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 ring-slate-300'
                           }`}>
                           {submittedInMonth}/{tasksInMonth} entregadas
                         </span>
                       )}
                     </div>
                     {isSelected && (
-                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-1 bg-white rounded-full"></div>
+                      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-16 h-1.5 bg-white rounded-full shadow-md"></div>
                     )}
                   </button>
                 );
@@ -281,13 +283,13 @@ export default function FeedbackReview({ studentId, className = '' }) {
 
         {/* Paginación y contador */}
         {selectedMonth && (
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-200">
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-5 border-t-2 border-slate-200">
             <div className="flex items-center gap-2">
-              <div className="px-4 py-2 bg-purple-50 rounded-lg border border-purple-200">
-                <span className="text-sm text-slate-600 font-medium">
-                  Mostrando <span className="text-purple-700 font-bold">{pageItems.length}</span> de{' '}
-                  <span className="text-slate-800 font-bold">{filtered.length}</span> tareas en{' '}
-                  <span className="text-purple-700 font-bold">{selectedMonth}</span>
+              <div className="px-5 py-2.5 bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl border-2 border-violet-200 ring-2 ring-violet-100/50 shadow-sm">
+                <span className="text-sm text-slate-700 font-bold">
+                  Mostrando <span className="text-violet-700 font-extrabold">{pageItems.length}</span> de{' '}
+                  <span className="text-slate-800 font-extrabold">{filtered.length}</span> tareas en{' '}
+                  <span className="text-violet-700 font-extrabold">{selectedMonth}</span>
                 </span>
               </div>
             </div>
@@ -296,17 +298,17 @@ export default function FeedbackReview({ studentId, className = '' }) {
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={currentPage <= 1}
-                  className="px-4 py-2 border-2 border-slate-300 rounded-lg bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 hover:border-slate-400 transition-colors font-medium text-sm"
+                  className="px-4 py-2.5 border-2 border-slate-300 rounded-xl bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 hover:border-slate-400 transition-all font-bold text-sm shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
                 >
                   ← Anterior
                 </button>
-                <span className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-semibold text-sm min-w-[80px] text-center">
+                <span className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-extrabold text-sm min-w-[90px] text-center shadow-lg ring-2 ring-violet-300">
                   {currentPage} / {pageCount}
                 </span>
                 <button
                   onClick={() => setPage(p => Math.min(pageCount, p + 1))}
                   disabled={currentPage >= pageCount}
-                  className="px-4 py-2 border-2 border-slate-300 rounded-lg bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 hover:border-slate-400 transition-colors font-medium text-sm"
+                  className="px-4 py-2.5 border-2 border-slate-300 rounded-xl bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 hover:border-slate-400 transition-all font-bold text-sm shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
                 >
                   Siguiente →
                 </button>
@@ -319,14 +321,18 @@ export default function FeedbackReview({ studentId, className = '' }) {
       {/* Items: Cards with modern design */}
       <section className="space-y-4">
         {!selectedMonth ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
-            <Calendar className="size-12 text-slate-400 mx-auto mb-3" />
-            <p className="text-slate-600 font-medium">Selecciona un mes para ver las actividades</p>
+          <div className="bg-white rounded-3xl shadow-xl border-2 border-slate-200 ring-2 ring-slate-100/50 p-12 text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 ring-4 ring-violet-200 mb-4 shadow-lg">
+              <Calendar className="size-10 text-violet-600" />
+            </div>
+            <p className="text-lg font-bold text-slate-700">Selecciona un mes para ver las actividades</p>
           </div>
         ) : pageItems.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
-            <FileText className="size-12 text-slate-400 mx-auto mb-3" />
-            <p className="text-slate-600 font-medium">No hay tareas para mostrar en este mes</p>
+          <div className="bg-white rounded-3xl shadow-xl border-2 border-slate-200 ring-2 ring-slate-100/50 p-12 text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 ring-4 ring-slate-200 mb-4 shadow-lg">
+              <FileText className="size-10 text-slate-500" />
+            </div>
+            <p className="text-lg font-bold text-slate-700">No hay tareas para mostrar en este mes</p>
           </div>
         ) : (
           pageItems.map((r, idx) => {
@@ -334,53 +340,52 @@ export default function FeedbackReview({ studentId, className = '' }) {
             const showHeader = !prev || prev._month !== r._month;
             const noteState = r.submissionId ? notes[r.submissionId] : null;
             const isSubmitted = !!r.submittedPdf;
-            const isGraded = r.score != null;
 
             return (
               <div key={`${r.id}-${idx}`} className="space-y-3">
                 {showHeader && (
-                  <div className="mb-4">
-                    <h2 className="text-lg font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                      <div className="h-1 w-8 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full"></div>
+                  <div className="mb-5">
+                    <h2 className="text-xl font-extrabold text-slate-800 uppercase tracking-widest flex items-center gap-3">
+                      <div className="h-2 w-12 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 rounded-full shadow-md"></div>
                       {ordinalForMonthKey(r._month)}
                     </h2>
                   </div>
                 )}
 
                 {/* Card principal */}
-                <div className="bg-white rounded-2xl shadow-md border-2 border-slate-200 hover:border-purple-300 hover:shadow-lg transition-all duration-300 overflow-hidden">
-                  <div className="p-5 sm:p-6 space-y-5">
+                <div className="bg-white rounded-3xl shadow-lg border-2 border-slate-200 hover:border-violet-300 hover:shadow-xl transition-all duration-300 overflow-hidden ring-2 ring-slate-100/50 hover:ring-violet-200/50">
+                  <div className="p-6 sm:p-7 space-y-6">
                     {/* Header de la tarea */}
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-start gap-3">
-                          <div className={`p-2.5 rounded-xl ${isSubmitted ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+                        <div className="flex items-start gap-4">
+                          <div className={`p-3 rounded-2xl shadow-md ring-2 ${isSubmitted ? 'bg-gradient-to-br from-emerald-500 to-teal-600 ring-emerald-300' : 'bg-gradient-to-br from-amber-500 to-orange-600 ring-amber-300'}`}>
                             {isSubmitted ? (
-                              <CheckCircle2 className={`size-5 ${isSubmitted ? 'text-emerald-600' : 'text-amber-600'}`} />
+                              <CheckCircle2 className="size-6 text-white" />
                             ) : (
-                              <Clock className="size-5 text-amber-600" />
+                              <Clock className="size-6 text-white" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-bold text-slate-900 mb-2">{r.name}</h3>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
-                                <Calendar className="size-3.5" />
-                                <span className="text-xs font-medium">Vence: {r.dueDate ? new Date(r.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
+                            <h3 className="text-xl font-extrabold text-slate-900 mb-3">{r.name}</h3>
+                            <div className="flex flex-wrap items-center gap-2.5">
+                              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 text-slate-700 border-2 border-blue-200 ring-1 ring-blue-100">
+                                <Calendar className="size-4 text-indigo-600" />
+                                <span className="text-xs font-bold">Vence: {r.dueDate ? new Date(r.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
                               </div>
-                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-100 text-indigo-700 border border-indigo-200">
-                                <Award className="size-3.5" />
-                                <span className="text-xs font-medium">{r.puntos} puntos</span>
+                              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-2 border-indigo-300 ring-2 ring-indigo-200 shadow-md">
+                                <Award className="size-4" />
+                                <span className="text-xs font-bold">{r.puntos} puntos</span>
                               </div>
                               {isSubmitted ? (
-                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                  <CheckCircle2 className="size-3.5" />
-                                  <span className="text-xs font-semibold">Entregado</span>
+                                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-2 border-emerald-300 ring-2 ring-emerald-200 shadow-md">
+                                  <CheckCircle2 className="size-4" />
+                                  <span className="text-xs font-bold">Entregado</span>
                                 </div>
                               ) : (
-                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
-                                  <XCircle className="size-3.5" />
-                                  <span className="text-xs font-semibold">Pendiente</span>
+                                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white border-2 border-amber-300 ring-2 ring-amber-200 shadow-md">
+                                  <XCircle className="size-4" />
+                                  <span className="text-xs font-bold">Pendiente</span>
                                 </div>
                               )}
                             </div>
@@ -390,83 +395,89 @@ export default function FeedbackReview({ studentId, className = '' }) {
                     </div>
 
                     {/* Divider */}
-                    <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                    <div className="h-0.5 bg-gradient-to-r from-transparent via-slate-300 to-transparent"></div>
 
-                    {/* Contenido: Entrega y Calificación */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Columna izquierda: Entrega */}
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText className="size-4 text-purple-600" />
-                          <h4 className="text-sm font-semibold text-slate-700">Entrega</h4>
+                    {/* Contenido: Entrega */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2.5 mb-3">
+                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
+                          <FileText className="size-4" />
                         </div>
-                        {r.submittedPdf ? (
-                          <div className="space-y-2">
-                            <button
-                              type="button"
-                              onClick={() => openPdf(r.submittedPdf, r.originalName || r.name)}
-                              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-[1.02]"
-                            >
-                              <Eye className="size-4" /> Ver PDF
-                            </button>
+                        <h4 className="text-base font-extrabold text-slate-700">Entrega</h4>
+                      </div>
+                      {r.submittedPdf ? (
+                        <div className="space-y-4">
+                          <button
+                            type="button"
+                            onClick={() => openPdf(r.submittedPdf, r.originalName || r.name)}
+                            className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+                          >
+                            <Eye className="size-5" /> Ver PDF
+                          </button>
+                          <div className="bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 rounded-xl border-2 border-violet-200 ring-2 ring-violet-100/50 p-4 space-y-3 shadow-sm">
                             {r.originalName && (
-                              <p className="text-xs text-slate-500 truncate px-2" title={r.originalName}>
-                                <span className="font-medium">Archivo:</span> {r.originalName}
-                              </p>
+                              <div className="flex items-start gap-2">
+                                <FileText className="size-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-semibold text-purple-700 mb-0.5">Archivo entregado:</p>
+                                  <p className="text-xs text-slate-700 truncate" title={r.originalName}>
+                                    {r.originalName}
+                                  </p>
+                                </div>
+                              </div>
                             )}
                             {r.submittedAt && (
-                              <p className="text-xs text-slate-500 px-2">
-                                <span className="font-medium">Entregado:</span> {new Date(r.submittedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                              </p>
+                              <div className="flex items-start gap-2">
+                                <Calendar className="size-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <p className="text-xs font-semibold text-purple-700 mb-0.5">Fecha de entrega:</p>
+                                  <p className="text-xs text-slate-700">
+                                    {new Date(r.submittedAt).toLocaleDateString('es-ES', { 
+                                      weekday: 'long',
+                                      day: 'numeric', 
+                                      month: 'long', 
+                                      year: 'numeric',
+                                      hour: '2-digit', 
+                                      minute: '2-digit' 
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
                             )}
                           </div>
-                        ) : (
-                          <div className="text-center py-4 px-3 bg-slate-50 rounded-lg border border-slate-200">
-                            <XCircle className="size-8 text-slate-400 mx-auto mb-2" />
-                            <p className="text-sm text-slate-500 font-medium">Sin entrega</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Columna derecha: Calificación */}
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Award className="size-4 text-purple-600" />
-                          <h4 className="text-sm font-semibold text-slate-700">Calificación</h4>
                         </div>
-                        {isGraded ? (
-                          <div className="text-center py-4 px-3 bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg border-2 border-emerald-200">
-                            <div className="text-3xl font-bold text-emerald-700 mb-1">{r.score}</div>
-                            <p className="text-xs text-emerald-600 font-medium">de {r.puntos} puntos</p>
+                      ) : (
+                        <div className="text-center py-6 px-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200 ring-2 ring-slate-100/50">
+                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 ring-4 ring-slate-100 mb-3">
+                            <XCircle className="size-8 text-slate-500" />
                           </div>
-                        ) : (
-                          <div className="text-center py-4 px-3 bg-slate-50 rounded-lg border border-slate-200">
-                            <p className="text-sm text-slate-500 font-medium">Sin calificar</p>
-                          </div>
-                        )}
-                      </div>
+                          <p className="text-sm text-slate-600 font-bold">Sin entrega</p>
+                        </div>
+                      )}
                     </div>
 
                     {/* Nota del asesor */}
                     {r.submissionId && (
                       <>
-                        <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <MessageSquare className="size-4 text-purple-600" />
-                            <h4 className="text-sm font-semibold text-slate-700">Nota del asesor</h4>
+                        <div className="h-0.5 bg-gradient-to-r from-transparent via-slate-300 to-transparent"></div>
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
+                              <MessageSquare className="size-4" />
+                            </div>
+                            <h4 className="text-base font-extrabold text-slate-700">Nota del asesor</h4>
                           </div>
                           {noteState && noteState.original && !noteState.editing ? (
-                            <div className="space-y-3">
-                              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 border-l-4 border-purple-500">
-                                <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
+                            <div className="space-y-4">
+                              <div className="bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 rounded-xl p-5 border-l-4 border-violet-500 ring-2 ring-violet-100/50 shadow-sm">
+                                <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed font-medium">
                                   {noteState.original}
                                 </p>
                               </div>
                               <div className="flex items-center justify-between">
                                 <button
                                   onClick={() => enterEdit(r.submissionId)}
-                                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-sm font-medium shadow-sm transition-colors"
+                                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white text-sm font-bold shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
                                 >
                                   <MessageSquare className="size-4" /> Editar nota
                                 </button>
@@ -479,20 +490,20 @@ export default function FeedbackReview({ studentId, className = '' }) {
                               </div>
                             </div>
                           ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                               <textarea
-                                className="w-full border-2 border-slate-300 rounded-xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none h-32 overflow-auto bg-white shadow-sm transition-all"
+                                className="w-full border-2 border-slate-300 rounded-xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 resize-none h-32 overflow-auto bg-white shadow-md hover:shadow-lg transition-all"
                                 maxLength={NOTE_MAX_CHARS}
                                 placeholder="Escribe una nota para el alumno sobre esta entrega…"
                                 value={noteState?.text || ''}
                                 onChange={e => onChangeNote(r.submissionId, e.target.value)}
                               />
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2.5">
                                   <button
                                     disabled={noteState?.saving || (noteState && (noteState.text || '').trim() === (noteState.original || '').trim())}
                                     onClick={() => onSave(r.submissionId)}
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-sm font-bold disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
                                   >
                                     {noteState?.saving ? (
                                       <> <Loader2 className="size-4 animate-spin" /> Guardando…</>
@@ -503,7 +514,7 @@ export default function FeedbackReview({ studentId, className = '' }) {
                                   {noteState && noteState.original !== undefined && (
                                     <button
                                       onClick={() => cancelEdit(r.submissionId)}
-                                      className="px-4 py-2 rounded-lg border-2 border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+                                      className="px-4 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 text-sm font-bold hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
                                     >
                                       Cancelar
                                     </button>

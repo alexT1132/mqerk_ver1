@@ -72,54 +72,77 @@ const useDailyQuote = (currentTime) => {
 
 
 const InfoCard = memo(({ title, icon, content, color }) => {
+  // Mapeo de colores para evitar problemas con Tailwind
+  const colorMap = {
+    blue: {
+      bg: 'bg-gradient-to-br from-blue-50 via-white to-cyan-50',
+      border: 'border-blue-200',
+      iconBg: 'bg-gradient-to-br from-blue-100 to-cyan-200',
+      shadow: 'shadow-blue-200/50',
+      hover: 'hover:border-blue-300 hover:shadow-blue-300/60'
+    },
+    purple: {
+      bg: 'bg-gradient-to-br from-purple-50 via-white to-violet-50',
+      border: 'border-purple-200',
+      iconBg: 'bg-gradient-to-br from-purple-100 to-violet-200',
+      shadow: 'shadow-purple-200/50',
+      hover: 'hover:border-purple-300 hover:shadow-purple-300/60'
+    },
+    orange: {
+      bg: 'bg-gradient-to-br from-orange-50 via-white to-amber-50',
+      border: 'border-orange-200',
+      iconBg: 'bg-gradient-to-br from-orange-100 to-amber-200',
+      shadow: 'shadow-orange-200/50',
+      hover: 'hover:border-orange-300 hover:shadow-orange-300/60'
+    }
+  };
 
-  const bgColor = `bg-gradient-to-br from-${color}-50 via-white to-${color}-100`;
-  const borderColor = `border-${color}-200`;
-  const bgIconColor = `bg-gradient-to-br from-${color}-100 to-${color}-200`;
-  const shadowColor = `shadow-${color}-200/50`;
+  const colors = colorMap[color] || colorMap.blue;
 
   return (
     <div className={`
       relative text-center 
-      p-2 xs:p-3 sm:p-5 md:p-6 lg:p-7 xl:p-8
-      ${bgColor} 
-      rounded-lg xs:rounded-xl sm:rounded-2xl lg:rounded-3xl 
-      border-2 ${borderColor} 
+      p-3 xs:p-3.5 sm:p-4 md:p-5 lg:p-6 xl:p-7
+      ${colors.bg} 
+      rounded-xl sm:rounded-2xl lg:rounded-3xl 
+      border-2 ${colors.border} 
       flex flex-col items-center justify-center
-      shadow-md xs:shadow-lg sm:shadow-xl lg:shadow-2xl ${shadowColor}
+      shadow-lg sm:shadow-xl lg:shadow-2xl ${colors.shadow}
       backdrop-blur-sm
       transition-all duration-300 ease-in-out
-      min-h-[88px] xs:min-h-[110px] sm:min-h-[140px] md:min-h-[150px] lg:min-h-[160px] xl:min-h-[180px]
+      min-h-[90px] xs:min-h-[100px] sm:min-h-[120px] md:min-h-[140px] lg:min-h-[160px] xl:min-h-[180px]
       w-full
       group
+      active:scale-95 touch-manipulation
+      hover:scale-[1.02] hover:-translate-y-1
+      ${colors.hover}
+      ring-2 ring-transparent group-hover:ring-opacity-50
     `}>
       
-      <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-xl sm:rounded-2xl lg:rounded-3xl"></div>
-      
+      <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-xl sm:rounded-2xl lg:rounded-3xl"></div>
       
       <div className={`
         relative z-10 
-        w-7 h-7 xs:w-9 xs:h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 xl:w-18 xl:h-18
-        ${bgIconColor} 
+        w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 xl:w-18 xl:h-18
+        ${colors.iconBg} 
         rounded-full flex items-center justify-center mx-auto 
-        mb-2 xs:mb-3 sm:mb-4 md:mb-5 lg:mb-6
-        shadow-sm xs:shadow-md sm:shadow-lg lg:shadow-xl
-        ring-1 xs:ring-2 ring-white/50
+        mb-2 xs:mb-3 sm:mb-4 md:mb-5
+        shadow-lg sm:shadow-xl lg:shadow-2xl
+        ring-2 ring-white/50
         transform transition-all duration-300
-        group-hover:scale-105 xs:group-hover:scale-110 group-hover:shadow-lg xs:group-hover:shadow-xl
+        group-active:scale-95
+        group-hover:scale-110 group-hover:shadow-2xl group-hover:ring-4
       `}>
-        <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent rounded-full"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent rounded-full"></div>
         <div className="relative z-10">
           {icon} 
         </div>
       </div>
       
-      
-      <h3 className="relative z-10 font-bold text-gray-800 mb-1 xs:mb-2 sm:mb-3 text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl tracking-wide leading-tight group-hover:text-indigo-600">
+      <h3 className="relative z-10 font-extrabold text-gray-800 mb-1.5 xs:mb-2 sm:mb-3 md:mb-4 text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl tracking-wide leading-tight group-hover:text-indigo-700 transition-colors duration-300 px-1">
         {title}
       </h3>
       
-     
       <div className="relative z-10 w-full">
         {content}
       </div>
@@ -140,57 +163,76 @@ const GreetingHeader = memo(({ greeting, adminName }) => {
   }, []);
 
   return (
-    <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 text-white relative overflow-hidden
+    <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-violet-700 text-white relative overflow-hidden
       px-3 py-5
       xs:px-4 xs:py-6
-      sm:px-6 sm:py-8
-      md:px-8 md:py-10
-      lg:px-10 lg:py-12
-      xl:px-12 xl:py-14
-      2xl:px-14 2xl:py-16
+      sm:px-5 sm:py-7
+      md:px-6 md:py-8
+      lg:px-8 lg:py-10
+      xl:px-10 xl:py-12
+      2xl:px-12 2xl:py-14
+      shadow-2xl
     ">
      
-      <div className="absolute top-0 right-0 w-16 h-16 xs:w-24 xs:h-24 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-64 lg:h-64 xl:w-80 xl:h-80 bg-white bg-opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 animate-pulse"></div>
+      <div className="absolute top-0 right-0 w-32 h-32 xs:w-40 xs:h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 bg-gradient-to-br from-white/20 to-white/5 rounded-full -translate-y-1/2 translate-x-1/2 animate-pulse blur-2xl"></div>
      
-      <div className="absolute bottom-0 left-0 w-12 h-12 xs:w-20 xs:h-20 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 xl:w-64 xl:h-64 bg-white bg-opacity-5 rounded-full translate-y-1/2 -translate-x-1/2 animate-pulse animation-delay-1000"></div>
+      <div className="absolute bottom-0 left-0 w-24 h-24 xs:w-32 xs:h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 xl:w-80 xl:h-80 bg-gradient-to-br from-white/10 to-white/5 rounded-full translate-y-1/2 -translate-x-1/2 animate-pulse animation-delay-1000 blur-xl"></div>
 
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 xs:w-48 xs:h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 lg:w-80 lg:h-80 bg-gradient-to-br from-purple-400/20 to-indigo-400/20 rounded-full animate-pulse animation-delay-2000 blur-3xl"></div>
     
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 text-white/20 text-2xl animate-float-slow">✨</div>
-        <div className="absolute top-3/4 right-1/4 text-white/20 text-xl animate-float-slow animation-delay-2000">⭐</div>
-        <div className="absolute top-1/2 left-3/4 text-white/20 text-lg animate-float-slow animation-delay-3000">💫</div>
+        <div className="absolute top-1/4 left-1/4 text-white/30 text-2xl sm:text-3xl animate-float-slow">✨</div>
+        <div className="absolute top-3/4 right-1/4 text-white/30 text-xl sm:text-2xl animate-float-slow animation-delay-2000">⭐</div>
+        <div className="absolute top-1/2 left-3/4 text-white/30 text-lg sm:text-xl animate-float-slow animation-delay-3000">💫</div>
+        <div className="absolute top-2/3 right-1/3 text-white/20 text-base sm:text-lg animate-float-slow animation-delay-1500">🌟</div>
       </div>
 
       <div className="relative z-10 text-center">
       
-  <h1 className="font-bold leading-tight animate-slide-down mb-2 sm:mb-3 lg:mb-4
-    text-[clamp(1.35rem,4vw,2.75rem)]
-    sm:text-[clamp(1.75rem,3.2vw,3.2rem)]
-    lg:text-[clamp(2.2rem,2.8vw,3.6rem)]
-    tracking-tight">
+        <h1 className="font-extrabold leading-tight animate-slide-down mb-2 xs:mb-3 sm:mb-4 lg:mb-5
+          text-[clamp(1.25rem,5vw,2.5rem)]
+          xs:text-[clamp(1.5rem,4.5vw,3rem)]
+          sm:text-[clamp(2rem,4vw,3.5rem)]
+          md:text-[clamp(2.25rem,3.5vw,3.75rem)]
+          lg:text-[clamp(2.5rem,3vw,4rem)]
+          tracking-tight
+          bg-gradient-to-r from-white via-yellow-100 to-white
+          bg-clip-text text-transparent
+          drop-shadow-lg
+          px-2
+        ">
           {greeting}
-          <span className="block absolute left-1/2 -translate-x-1/2 bottom-0 w-2/3 h-0.5 bg-gradient-to-r from-indigo-500/80 to-purple-500/80 rounded-full origin-center scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></span>
         </h1>
         
-       
-  <h2 className="font-light opacity-90 leading-tight animate-slide-up mb-2 sm:mb-3 md:mb-4 lg:mb-5
-    text-[clamp(.9rem,2.6vw,1.4rem)] sm:text-[clamp(1rem,2.2vw,1.8rem)] lg:text-[clamp(1.1rem,2vw,2.2rem)]">
-          Admin <span className="font-semibold text-yellow-200">{adminName}</span>
+        <h2 className="font-bold opacity-95 leading-tight animate-slide-up mb-2 xs:mb-3 sm:mb-4 md:mb-5 lg:mb-6
+          text-[clamp(.9rem,3vw,1.4rem)] 
+          xs:text-[clamp(1rem,2.8vw,1.6rem)] 
+          sm:text-[clamp(1.2rem,2.5vw,2rem)] 
+          md:text-[clamp(1.25rem,2.3vw,2.2rem)]
+          lg:text-[clamp(1.3rem,2.2vw,2.4rem)]
+          drop-shadow-md
+          px-2
+        ">
+          Admin <span className="font-extrabold text-yellow-200 drop-shadow-lg">{adminName}</span>
         </h2>
         
-      
-        <p className="opacity-80 leading-relaxed animate-fade-in-delayed
-          text-[clamp(.7rem,2.4vw,.95rem)] sm:text-[clamp(.85rem,2vw,1.05rem)] md:text-[clamp(.95rem,1.8vw,1.25rem)] lg:text-[clamp(1rem,1.6vw,1.35rem)]
-          px-2 sm:px-4 md:px-6 lg:px-8">
+        <p className="opacity-90 leading-relaxed animate-fade-in-delayed
+          text-[clamp(.7rem,2.6vw,.9rem)] 
+          xs:text-[clamp(.8rem,2.4vw,1rem)] 
+          sm:text-[clamp(.9rem,2.2vw,1.1rem)] 
+          md:text-[clamp(1rem,2vw,1.3rem)] 
+          lg:text-[clamp(1.1rem,1.8vw,1.4rem)]
+          px-2 xs:px-3 sm:px-4 md:px-6 lg:px-8
+          font-medium
+        ">
           Bienvenido al panel administrativo de MQerKAcademy
         </p>
 
-       
         {showWelcome && (
-          <div className="mt-4 inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 animate-welcome-banner text-[clamp(.65rem,2.2vw,.8rem)] sm:text-sm">
-            <span className="text-yellow-300 text-lg animate-bounce">🎉</span>
-            <span className="text-sm font-medium">¡Que tengas un excelente día!</span>
-            <span className="text-yellow-300 text-lg animate-bounce animation-delay-500">🚀</span>
+          <div className="mt-4 xs:mt-5 sm:mt-6 inline-flex items-center gap-1.5 xs:gap-2 sm:gap-3 bg-gradient-to-r from-white/20 via-white/15 to-white/20 backdrop-blur-md rounded-full px-3 py-1.5 xs:px-4 xs:py-2 sm:px-5 sm:py-2.5 animate-welcome-banner text-[clamp(.65rem,2.4vw,.8rem)] xs:text-[clamp(.7rem,2.2vw,.85rem)] sm:text-sm md:text-base shadow-lg border border-white/20 ring-2 ring-white/10">
+            <span className="text-yellow-300 text-base xs:text-lg sm:text-xl animate-bounce drop-shadow-lg">🎉</span>
+            <span className="font-semibold text-white drop-shadow-md whitespace-nowrap">¡Que tengas un excelente día!</span>
+            <span className="text-yellow-300 text-base xs:text-lg sm:text-xl animate-bounce animation-delay-500 drop-shadow-lg">🚀</span>
           </div>
         )}
       </div>
@@ -246,29 +288,33 @@ const NotificationsCard = memo(({ notifications, hasUnread }) => {
       color="orange"
       icon={
         <div className="relative">
-          <svg className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5zm0-8h5l-5-5-5 5h5z" />
+          <svg className="h-5 w-5 xs:h-6 xs:w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 lg:h-9 lg:w-9 xl:h-10 xl:w-10 text-orange-600 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
           </svg>
           {/* Indicador visual de notificaciones pendientes */}
           {hasUnread && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            <span className="absolute -top-0.5 -right-0.5 w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 bg-gradient-to-br from-red-500 to-red-600 rounded-full animate-pulse ring-2 ring-white shadow-lg"></span>
           )}
         </div>
       }
       content={
-        <div className="space-y-1">
+        <div className="space-y-2">
           {/* Contador de notificaciones sin leer */}
-          <p className="text-xs text-gray-700">
-            <span className="font-semibold">{notifications?.unreadCount || 0}</span> sin leer
+          <p className="text-xs xs:text-sm sm:text-base text-gray-800 font-extrabold">
+            <span className="text-orange-600">{notifications?.unreadCount || 0}</span> sin leer
           </p>
           {/* Contador de notificaciones del día */}
-          <p className="text-xs text-gray-700">
-            <span className="font-semibold">{notifications?.totalToday || 0}</span> hoy
+          <p className="text-xs xs:text-sm sm:text-base text-gray-800 font-extrabold">
+            <span className="text-orange-600">{notifications?.totalToday || 0}</span> hoy
           </p>
           {/* Preview de la notificación más reciente */}
-          {notifications?.latest && (
-            <p className="text-xs text-gray-500 truncate">
+          {notifications?.latest && notifications.latest !== "No hay notificaciones" ? (
+            <p className="text-xs xs:text-sm text-gray-600 truncate font-medium px-1">
               {notifications.latest}
+            </p>
+          ) : (
+            <p className="text-xs xs:text-sm text-gray-400 italic">
+              No hay notificaciones
             </p>
           )}
         </div>
@@ -278,47 +324,54 @@ const NotificationsCard = memo(({ notifications, hasUnread }) => {
 });
 const QuoteCard = memo(({ quote, author }) => {
   return (
-    <div className="mt-4 xs:mt-6 sm:mt-8 md:mt-10 lg:mt-12 text-center">
+    <div className="mt-4 xs:mt-6 sm:mt-8 md:mt-10 lg:mt-12 text-center px-2 xs:px-3 sm:px-4">
       <div className="
-        bg-gradient-to-br from-white via-gray-50 to-gray-100 
-        rounded-xl xs:rounded-2xl sm:rounded-3xl lg:rounded-3xl 
-        p-4 xs:p-6 sm:p-8 md:p-10 lg:p-12 xl:p-14
-        shadow-lg xs:shadow-xl sm:shadow-2xl lg:shadow-2xl
-        border-2 border-gray-200/50
+        bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30 
+        rounded-xl sm:rounded-2xl lg:rounded-3xl 
+        p-4 xs:p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12
+        shadow-xl sm:shadow-2xl
+        border-2 border-indigo-200/50
         backdrop-blur-sm
         transform transition-all duration-300 ease-in-out
-        hover:scale-[1.01] xs:hover:scale-[1.02] hover:shadow-xl xs:hover:shadow-2xl hover:shadow-gray-300/50
+        active:scale-[0.98] touch-manipulation
+        hover:scale-[1.01] hover:shadow-2xl hover:border-indigo-300/60
         relative overflow-hidden
-        max-w-xs xs:max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto
+        max-w-full xs:max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto
+        ring-2 ring-indigo-100/50
       ">
        
-        <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-xl xs:rounded-2xl sm:rounded-3xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-100/20 via-purple-100/10 to-transparent rounded-2xl sm:rounded-3xl"></div>
         
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-200/20 to-purple-200/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-200/20 to-indigo-200/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl"></div>
        
-        <div className="relative z-10 mb-3 xs:mb-4 sm:mb-6">
-          <svg className="w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-gray-400 mx-auto opacity-60" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
-          </svg>
+        <div className="relative z-10 mb-3 xs:mb-4 sm:mb-5 md:mb-6">
+          <div className="inline-flex items-center justify-center w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full ring-2 ring-indigo-200/50 shadow-lg">
+            <svg className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+          </div>
         </div>
         
         {/* Texto de la cita */}
         <p className="
-          relative z-10 text-gray-700 
+          relative z-10 text-gray-800 
           text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl
-          italic leading-relaxed xs:leading-relaxed sm:leading-loose
-          font-medium tracking-wide
-          mb-3 xs:mb-4 sm:mb-6 md:mb-8 lg:mb-10
-          px-1 xs:px-2 sm:px-4 md:px-6 lg:px-8
+          italic leading-relaxed sm:leading-loose
+          font-semibold tracking-wide
+          mb-3 xs:mb-4 sm:mb-5 md:mb-6 lg:mb-8
+          px-1 xs:px-2 sm:px-3 md:px-4 lg:px-6
+          drop-shadow-sm
         ">
           "{quote}"
         </p>
         
         {/* Autor de la cita */}
         <p className="
-          relative z-10 text-gray-500 
-          text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl
-          font-semibold tracking-wider
-          border-t border-gray-200 pt-3 xs:pt-4 sm:pt-6
+          relative z-10 text-indigo-700 
+          text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl
+          font-extrabold tracking-wider
+          border-t-2 border-indigo-200/50 pt-3 xs:pt-4 sm:pt-5
         ">
           — {author}
         </p>
@@ -427,18 +480,18 @@ function Bienvenida_Admin1() {
   // Si hay error cargando datos del AdminContext
   if (adminError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-md mx-auto border border-red-200">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-red-50 via-white to-rose-50">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 text-center max-w-md mx-auto border-2 border-red-200 ring-2 ring-red-100/50">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 ring-2 ring-red-200/50 shadow-lg">
+            <svg className="w-8 h-8 sm:w-10 sm:h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-red-600 mb-2">Error de Conexión</h2>
-          <p className="text-gray-600 mb-6">No se pudieron cargar los datos del administrador: {adminError}</p>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-red-700 mb-3 sm:mb-4">Error de Conexión</h2>
+          <p className="text-gray-700 mb-6 sm:mb-8 text-sm sm:text-base font-medium">No se pudieron cargar los datos del administrador: {adminError}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl sm:rounded-2xl hover:from-red-700 hover:to-rose-700 transition-all duration-200 font-extrabold shadow-lg hover:shadow-xl active:scale-95 ring-2 ring-red-200/50"
           >
             Reintentar
           </button>
@@ -448,8 +501,13 @@ function Bienvenida_Admin1() {
   }
 
   return (
-    <div className="flex flex-col w-full min-h-screen p-0 sm:p-0 md:p-0 lg:p-0 font-sans bg-gradient-to-br from-gray-50 via-white to-indigo-50">
-      <div className="bg-white rounded-none sm:rounded-none md:rounded-xl shadow-xl hover:shadow-2xl transition-shadow duration-300 overflow-hidden w-full max-w-full mx-auto border-0 md:border-2 md:rounded-3xl md:border-gray-200/80 md:hover:border-indigo-200/80">
+    <div className="w-full min-h-screen font-sans bg-gradient-to-br from-gray-50 via-white to-indigo-50" style={{ 
+      margin: 0,
+      padding: 0,
+      minHeight: '100vh',
+      width: '100%'
+    }}>
+      <div className="w-full min-h-full">
 
         {/* Header con saludo y nombre (GreetingHeader solo muestra lo que le pasas) */}
         <GreetingHeader 
@@ -458,8 +516,8 @@ function Bienvenida_Admin1() {
         />
 
         {/* Tarjetas con info - los datos vienen de los contextos/hooks */}
-  <div className="px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10 lg:py-10 bg-white">
-          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8 w-full max-w-full md:max-w-6xl mx-auto">
+        <div className="px-3 py-4 xs:px-4 xs:py-5 sm:px-5 sm:py-6 md:px-6 md:py-8 lg:px-8 lg:py-10 xl:px-10 xl:py-12">
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 gap-4 xs:gap-5 sm:gap-6 md:gap-7 lg:gap-8 xl:gap-10 w-full max-w-full md:max-w-6xl mx-auto">
 
             {/* Tarjeta de Fecha (esto se queda en frontend) */}
             <InfoCard
@@ -471,7 +529,7 @@ function Bienvenida_Admin1() {
                 </svg>
               }
               content={
-                <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 capitalize leading-tight font-medium px-1 xs:px-2">
+                <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-800 capitalize leading-tight font-extrabold px-1 xs:px-2 drop-shadow-sm">
                   {formatDate(currentTime)}
                 </p>
               }
@@ -487,7 +545,7 @@ function Bienvenida_Admin1() {
                 </svg>
               }
               content={
-                <p className="text-sm xs:text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-mono text-gray-700 font-bold tracking-wider">
+                <p className="text-base xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-mono text-gray-800 font-extrabold tracking-wider drop-shadow-sm bg-gradient-to-br from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                   {formatTime(currentTime)}
                 </p>
               }

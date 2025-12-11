@@ -100,8 +100,8 @@ function AsesorLayout({ children }) {
       HeaderComponent={Topbar}
       SideBarDesktopComponent={mostrarSidebar ? (props) => <SidebarIconOnly {...props} onLogout={handleLogout} active={isFeedback ? 'feedback' : undefined} /> : undefined}
       SideBarSmComponent={mostrarSidebar ? SideBarSmWrapper : undefined}
-      backgroundClassName="bg-white"
-      contentClassName="px-0"
+      backgroundClassName="bg-transparent"
+      contentClassName="!px-0 !pb-0"
     >
       {children}
     </Layout>

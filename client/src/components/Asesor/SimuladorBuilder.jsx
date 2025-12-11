@@ -209,7 +209,13 @@ export default function SimuladorBuilder(){
       setShowSaveReminder(true);
     } catch (e) {
       const msg = String(e?.message || '').toLowerCase();
-      if (msg.includes('429') || msg.includes('quota') || msg.includes('rate')) {
+      // Detectar error de API key bloqueada (leaked)
+      if (e?.code === 'API_KEY_LEAKED' || msg.includes('leaked') || msg.includes('reported as leaked') || msg.includes('bloqueada porque fue expuesta')) {
+        setIaErr(
+          '⚠️ La API key de Gemini fue bloqueada por Google porque fue expuesta públicamente. ' +
+          'Por favor, contacta al administrador del sistema para obtener una nueva API key.'
+        );
+      } else if (msg.includes('429') || msg.includes('quota') || msg.includes('rate')) {
         setIaErr('La IA alcanzó el límite de cuota (429). Intenta de nuevo en unos minutos.');
       } else {
         setIaErr(e?.message || 'No se pudieron generar preguntas con IA');

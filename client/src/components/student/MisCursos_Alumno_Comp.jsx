@@ -84,19 +84,37 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
       mx-auto ${isCurrentCourse ? 'transform scale-[1.01]' : 'hover:scale-[1.01]'}`}>
       {/* BACKEND: Imagen del curso - debe venir como URL desde la API */}
     <div className="relative w-full h-16 sm:h-18 md:h-20 lg:h-32 xl:h-36 2xl:h-40 bg-gray-200 flex-shrink-0">
-        <img
-          src={image || "https://placehold.co/400x250/e0e0e0/555555?text=Curso"}
-          alt={title}
-      className="w-full h-full object-cover"
-  loading={isCurrentCourse ? "eager" : "lazy"}
-  decoding="async"
-      // Provide intrinsic sizes to avoid Chrome auto-lazy placeholder warning
-      width={640}
-      height={360}
-      // Prioritize image a bit more if es el curso actual
-          fetchPriority={isCurrentCourse ? "high" : "low"}
-          onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x250/e0e0e0/555555?text=Curso"; }}
-        />
+        {(() => {
+          // Validar que la imagen sea una URL válida antes de intentar cargarla
+          const isValidImage = image && (
+            image.startsWith('http://') || 
+            image.startsWith('https://') || 
+            image.startsWith('/') ||
+            image.startsWith('data:')
+          );
+          const defaultImage = "https://placehold.co/400x250/e0e0e0/555555?text=Curso";
+          const imageSrc = isValidImage ? image : defaultImage;
+          
+          return (
+            <img
+              src={imageSrc}
+              alt={title}
+              className="w-full h-full object-cover"
+              loading={isCurrentCourse ? "eager" : "lazy"}
+              decoding="async"
+              width={640}
+              height={360}
+              fetchPriority={isCurrentCourse ? "high" : "low"}
+              onError={(e) => {
+                // Evitar loops infinitos de errores
+                if (e.target.src !== defaultImage) {
+                  e.target.onerror = null;
+                  e.target.src = defaultImage;
+                }
+              }}
+            />
+          );
+        })()}
         {/* BACKEND: Badge con la categoría o tipo del curso */}
         <div className={`absolute top-1.5 left-1.5 sm:top-2 sm:left-2 lg:top-3 lg:left-3 px-1.5 py-0.5 sm:px-2 lg:px-2.5 sm:py-1 rounded-full text-xs font-semibold text-white ${badgeColor} shadow-md z-10 ${isCurrentCourse ? 'ring-1 ring-white/70' : ''}`}>
           {category || type}
@@ -265,14 +283,16 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
   const activeCourses = enrolledCourses.filter(course => course?.isActive && course?.status === 'active');
   
   // BACKEND: Ordenar cursos para mostrar el curso currentCourse primero
-  const sortedActiveCourses = activeCourses.sort((a, b) => {
-    const aIsCurrent = currentCourseId === a.id;
-    const bIsCurrent = currentCourseId === b.id;
-    
-    if (aIsCurrent && !bIsCurrent) return -1;
-    if (!aIsCurrent && bIsCurrent) return 1;
-    return 0;
-  });
+  const sortedActiveCourses = React.useMemo(() => {
+    return [...activeCourses].sort((a, b) => {
+      const aIsCurrent = currentCourseId === a.id;
+      const bIsCurrent = currentCourseId === b.id;
+      
+      if (aIsCurrent && !bIsCurrent) return -1;
+      if (!aIsCurrent && bIsCurrent) return 1;
+      return 0;
+    });
+  }, [activeCourses, currentCourseId]);
 
   // Paginación simple para grandes cantidades (hasta 20+)
   const PAGE_SIZE = 8; // 2x4 o 4x2 en md+
@@ -282,6 +302,14 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
   const pageItems = sortedActiveCourses.slice(start, start + PAGE_SIZE);
   React.useEffect(() => { if (page > totalPages) setPage(1); }, [totalPages]);
 
+  // Estado local para forzar re-render cuando cambia el curso
+  const [selectedCourseId, setSelectedCourseId] = React.useState(currentCourseId);
+  
+  // Sincronizar estado local con el contexto
+  React.useEffect(() => {
+    setSelectedCourseId(currentCourseId);
+  }, [currentCourseId]);
+
   // BACKEND: Función para seleccionar/cambiar un curso matriculado
   // Si ya hay un curso seleccionado, solo lo cambiamos sin navegar
   // Si no hay curso, seleccionamos y navegamos al dashboard
@@ -290,6 +318,14 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
       // Actualizar el contexto local (cambiar curso si ya hay uno, o seleccionar si no hay)
       if (selectCourse && course?.id) {
         selectCourse(course.id);
+        // Actualizar estado local inmediatamente para feedback visual
+        setSelectedCourseId(course.id);
+        // Guardar en localStorage para persistencia
+        try {
+          localStorage.setItem('currentCourse', JSON.stringify({ id: course.id, title: course.title }));
+        } catch (e) {
+          console.warn('No se pudo guardar en localStorage:', e);
+        }
         console.log('✅ Curso seleccionado/cambiado:', course.title);
       }
       
@@ -362,16 +398,17 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
             if (count <= 1) gridCols = 'grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 xl:grid-cols-1 2xl:grid-cols-1';
             else if (count === 2) gridCols = 'grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-2';
             else if (count === 3) gridCols = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3';
-            // Usar inline-grid + mx-auto para que el grid se centre y no ocupe todo el ancho con columnas vacías
-            const base = `inline-grid ${gridCols} gap-2 sm:gap-3 md:gap-4 lg:gap-6 xl:gap-8 2xl:gap-10 auto-rows-min`;
+            // Usar grid normal en móvil para mejor layout, inline-grid en desktop
+            const base = `grid ${gridCols} gap-2 sm:gap-3 md:gap-4 lg:gap-6 xl:gap-8 2xl:gap-10 auto-rows-min`;
             return (
-              <div className={`${base} w-full sm:w-auto mx-auto`}>
+              <div className={`${base} w-full justify-items-center sm:justify-items-start`}>
                 {pageItems && pageItems.length > 0 ? (
                   // BACKEND: Mapear los cursos matriculados obtenidos de la API
                   pageItems.map(course => {
-                    const isCurrentCourse = currentCourseId === course.id;
+                    // Usar estado local para feedback visual inmediato
+                    const isCurrentCourse = selectedCourseId === course.id || currentCourseId === course.id;
                     return (
-                      <div key={course.id} className="relative flex justify-center">
+                      <div key={course.id} className="relative flex justify-center w-full">
                         <CourseCard
                           course={course}
                           onAction={handleCourseAction}

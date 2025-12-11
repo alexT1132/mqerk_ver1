@@ -61,13 +61,12 @@ export default function FeedbackDetail({ embedded = false }) {
   const content = (
     <div className="w-full min-h-screen bg-transparent overflow-x-visible">
       {/* Header band - Ocupa todo el ancho correctamente sin márgenes negativos */}
-      <header className="relative isolate overflow-hidden bg-gradient-to-r from-violet-700 to-indigo-600 w-full">
-        <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(white_1px,transparent_1px)] [background-size:24px_24px]"></div>
+      <header className="relative isolate overflow-hidden bg-white border-b border-slate-200 shadow-sm w-full">
         {/* Contenedor interno con padding para el contenido */}
-        <div className="relative w-full pl-4 sm:pl-6 md:pl-8 lg:pl-12 pr-4 sm:pr-6 md:pr-8 lg:pr-12 py-10 sm:py-12">
+        <div className="relative w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-10 sm:py-12">
           <button
             onClick={() => navigate('/asesor/feedback')}
-            className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-white/15"
+            className="mb-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-200"
             aria-label="Regresar"
           >
             <ArrowLeft className="size-4" /> Volver
@@ -82,21 +81,21 @@ export default function FeedbackDetail({ embedded = false }) {
                   alt={nombreCompleto}
                   onError={() => setAvatarError(true)}
                   onClick={() => setShowPhotoModal(true)}
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-white/50 shadow-xl cursor-zoom-in"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-slate-200 shadow-xl cursor-zoom-in"
                 />
               ) : (
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center font-bold text-2xl sm:text-3xl shadow-xl ring-4 ring-white/50">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-2xl sm:text-3xl shadow-xl ring-4 ring-slate-200">
                   {getInitials(nombreCompleto)}
                 </div>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 leading-tight">{nombreCompleto}</h1>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-3 leading-tight">{nombreCompleto}</h1>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/15 backdrop-blur-sm text-white border border-white/25 text-sm font-medium">Folio: {alumno?.folio_formateado || alumno?.folio || '—'}</span>
-                <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/15 backdrop-blur-sm text-white border border-white/25 text-sm font-medium">Grupo: {alumno?.grupo || '—'}</span>
+                <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-sm font-medium">Folio: {alumno?.folio_formateado || alumno?.folio || '—'}</span>
+                <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-sm font-medium">Grupo: {alumno?.grupo || '—'}</span>
                 {alumno?.curso && (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/15 backdrop-blur-sm text-white border border-white/25 text-sm font-medium">Curso: {alumno.curso}</span>
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-sm font-medium">Curso: {alumno.curso}</span>
                 )}
               </div>
             </div>
@@ -105,7 +104,7 @@ export default function FeedbackDetail({ embedded = false }) {
       </header>
 
       {/* Contenido principal - Ocupa todo el ancho con padding adecuado */}
-      <main className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8" aria-labelledby="feedback-title">
+      <main className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-6 sm:py-8" aria-labelledby="feedback-title">
         <div className="max-w-7xl mx-auto">
           {loading && (
             <div className="flex items-center gap-2 text-sm text-purple-600 bg-white rounded-xl p-4 shadow-sm">

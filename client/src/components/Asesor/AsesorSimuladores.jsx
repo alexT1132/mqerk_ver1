@@ -22,43 +22,52 @@ const ACCENTS = {
 
 function SimCard({ icon: Icon, title, subtitle, desc, to, accent = "violet" }) {
   const a = ACCENTS[accent] || ACCENTS.violet;
+  const isViolet = accent === "violet";
+  const gradientClass = isViolet 
+    ? "from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
+    : "from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700";
 
   return (
     <article
       className={[
-        "group rounded-2xl border border-slate-200/60 ring-1",
-        "bg-gradient-to-b transition shadow-sm hover:shadow-xl",
-        "p-8 sm:p-10 hover:-translate-y-0.5",
-        "focus-within:ring-2 focus-within:ring-offset-1 focus-within:ring-offset-white",
-        "dark:focus-within:ring-offset-slate-900",
+        "group rounded-3xl border-2 border-slate-200/60 ring-2",
+        "bg-gradient-to-br from-white to-slate-50/50 transition-all duration-300",
+        "shadow-lg hover:shadow-2xl hover:-translate-y-2",
+        "p-8 sm:p-10",
+        "focus-within:ring-4 focus-within:ring-offset-2 focus-within:ring-offset-white",
         a.ring,
       ].join(" ")}
     >
       <div
         className={[
-          "mb-6 inline-grid h-16 w-16 place-items-center rounded-2xl",
-          "bg-gradient-to-br from-white/60 to-slate-100",
-          "shadow-inner ring-1 ring-slate-200/70",
+          "mb-6 inline-grid h-20 w-20 place-items-center rounded-3xl",
+          "bg-gradient-to-br shadow-xl ring-4 ring-white/50",
+          isViolet 
+            ? "from-violet-500 to-indigo-500" 
+            : "from-indigo-500 to-purple-500",
+          "group-hover:scale-110 transition-transform duration-300",
         ].join(" ")}
       >
-        <Icon className={["h-9 w-9", a.icon].join(" ")} />
+        <Icon className={["h-10 w-10 text-white"].join(" ")} />
       </div>
 
-      <h3 className="text-2xl font-semibold text-slate-900">{title}</h3>
-      <p className={["mt-1 text-lg font-semibold", a.link.split(" ")[0]].join(" ")}>{subtitle}</p>
+      <h3 className="text-2xl sm:text-3xl font-bold text-slate-900">{title}</h3>
+      <p className={["mt-2 text-xl font-bold", a.link.split(" ")[0]].join(" ")}>{subtitle}</p>
 
-      <p className="mt-4 max-w-prose text-slate-600">{desc}</p>
+      <p className="mt-4 max-w-prose text-slate-600 leading-relaxed">{desc}</p>
 
       <Link
         to={to}
         className={[
-          "mt-8 inline-flex items-center gap-2 font-semibold",
-          "outline-none focus-visible:underline",
-          a.link,
+          "mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white",
+          "bg-gradient-to-r shadow-lg hover:shadow-xl",
+          "transition-all duration-200 hover:scale-105 active:scale-95",
+          "outline-none focus-visible:ring-4 focus-visible:ring-offset-2",
+          gradientClass,
         ].join(" ")}
       >
         ACCEDER
-        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
       </Link>
     </article>
   );
@@ -67,45 +76,50 @@ function SimCard({ icon: Icon, title, subtitle, desc, to, accent = "violet" }) {
 export default function Simuladores() {
   return (
   <div className="mx-auto max-w-9xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-6">
-      <div className="space-y-3 sm:space-y-4">
+      <div className="space-y-4 sm:space-y-6">
         {/* Hero panel */}
         <section
           aria-label="encabezado de simulaciones"
-          className="rounded-3xl border border-slate-200/70 ring-1 ring-slate-200/60 bg-gradient-to-tr from-white to-violet-50/50 px-4 py-2 sm:px-5 sm:py-3 lg:px-6 lg:py-4 shadow-sm"
+          className="rounded-3xl border-2 border-slate-200/70 ring-2 ring-slate-200/40 bg-gradient-to-br from-white via-violet-50/30 to-indigo-50/30 px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 shadow-lg"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="min-w-0">
-              <h1 className="uppercase tracking-tight text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-700 to-indigo-700 bg-clip-text text-transparent">
-                Simulaciones
-              </h1>
-              <p className="mt-2 text-sm sm:text-base text-slate-600 max-w-2xl">
-                Simuladores para exámenes de ingreso y evaluaciones académicas.
-              </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-violet-100 via-indigo-100 to-purple-100 shadow-lg ring-4 ring-white">
+                <Zap className="h-8 w-8 sm:h-10 sm:w-10 text-violet-600" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
+                  SIMULACIONES
+                </h1>
+                <p className="mt-3 text-base sm:text-lg text-slate-600 max-w-2xl font-medium">
+                  Simuladores para exámenes de ingreso y evaluaciones académicas.
+                </p>
+              </div>
             </div>
 
-            <div className="inline-flex items-center gap-2 self-start sm:self-auto rounded-full bg-white/80 backdrop-blur px-3 py-1.5 text-sm text-slate-600 ring-1 ring-slate-200 shadow-xs">
-              <Clock className="h-4 w-4 text-violet-600" />
-              <span className="font-medium">Actualizado hoy</span>
+            <div className="inline-flex items-center gap-2.5 self-start sm:self-auto rounded-full bg-gradient-to-r from-violet-50 to-indigo-50 backdrop-blur-sm px-4 py-2.5 text-sm text-slate-700 ring-2 ring-violet-200/50 shadow-md">
+              <Clock className="h-5 w-5 text-violet-600" />
+              <span className="font-semibold">Actualizado hoy</span>
             </div>
           </div>
         </section>
 
         {/* Ribbon section header */}
-  <header className="rounded-2xl border border-slate-200/70 ring-1 ring-slate-200/60 bg-gradient-to-r from-violet-50/70 to-indigo-50/70 px-3 py-2 sm:px-3.5 sm:py-2.5 shadow-sm">
-          <div className="flex items-start gap-3 sm:gap-4">
-            <div className="relative inline-grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
-              <Zap className="h-6 w-6" />
-              <span className="absolute -top-1 -right-1 inline-grid h-4 w-4 place-items-center rounded-full bg-amber-400 text-[9px] font-bold text-slate-900 ring-2 ring-white">
+  <header className="rounded-2xl border-2 border-violet-200/60 ring-2 ring-violet-200/40 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 px-5 py-4 sm:px-6 sm:py-5 shadow-md hover:shadow-lg transition-shadow duration-300">
+          <div className="flex items-start gap-4 sm:gap-5">
+            <div className="relative inline-grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-xl ring-4 ring-white/50">
+              <Zap className="h-7 w-7 sm:h-8 sm:w-8" />
+              <span className="absolute -top-1 -right-1 inline-grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-[10px] font-bold text-white ring-2 ring-white shadow-md">
                 ★
               </span>
             </div>
 
-            <div className="min-w-0">
-              <h2 className="text-xl sm:text-2xl leading-none font-extrabold tracking-tight text-slate-900">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-2xl sm:text-3xl leading-none font-extrabold tracking-tight text-slate-900">
                 SIMULADORES
               </h2>
-              <div className="mt-2 h-1 w-24 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600"></div>
-              <p className="mt-2 text-sm text-slate-500">Elige el tipo de simulación que deseas gestionar</p>
+              <div className="mt-3 h-1.5 w-32 rounded-full bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 shadow-sm"></div>
+              <p className="mt-3 text-sm sm:text-base text-slate-600 font-medium">Elige el tipo de simulación que deseas gestionar</p>
             </div>
           </div>
         </header>

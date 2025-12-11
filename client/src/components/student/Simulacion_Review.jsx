@@ -504,8 +504,8 @@ export default function Simulacion_Review() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-    <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg shadow-sm">
-      <div className="w-full px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
+    <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg shadow-sm mb-6 pt-8 sm:pt-12">
+      <div className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-5">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2 min-w-0">
@@ -533,7 +533,7 @@ export default function Simulacion_Review() {
         )}
       </div>
 
-  <div className="w-full px-3 sm:px-6 lg:px-10 py-4 sm:py-8">
+  <div className="w-full px-3 sm:px-6 lg:px-10 pt-16 sm:pt-24 pb-4 sm:pb-8">
         {loading && (
           <div className="py-24 text-center text-gray-500 flex flex-col items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />

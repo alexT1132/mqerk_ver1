@@ -25,6 +25,7 @@ export const deleteSimulacion = async (id) => api.delete(`/simulaciones/${id}`);
 export const getSimulacion = async (id) => api.get(`/simulaciones/${id}`);
 export const getSimulacionFull = async (id) => api.get(`/simulaciones/${id}/full`);
 export const getSimulacionIntentoReview = async (id_simulacion, id_estudiante, intentoNum) => api.get(`/simulaciones/${id_simulacion}/review/${id_estudiante}`, { params: intentoNum ? { intento: intentoNum } : {} });
+export const estudiantesEstadoSimulacion = async (id_simulacion) => api.get(`/simulaciones/${id_simulacion}/estudiantes`);
 
 export default {
   // quizzes compat

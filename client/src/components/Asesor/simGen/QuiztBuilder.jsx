@@ -8,7 +8,6 @@ import MathExamplesHint from './MathExamplesHint.jsx';
 import MathPalette, { SECTIONS, Modal, FormulaEditModal } from './MathPalette.jsx';
 import { AIFormulaModal } from './AIFormulaModal.jsx';
 import { useAlert } from '../../../components/shared/AlertModal.jsx';
-import { logInfo, logError, logWarn, logDebug } from '../../../utils/logger';
 
 const genId = () => {
   // Navegador moderno y https/localhost
@@ -570,16 +569,8 @@ function OptionRow({ option, optionIndex = 0, optionLabel = 'a', onChange, onRem
 
 /* --------------------------- Tarjeta de Pregunta ------------------------- */
 function QuestionCard({ q, onChange, onRemove }) {
-  logDebug('QuestionCard', 'Renderizando pregunta', {
-    id: q?.id,
-    type: q?.type,
-    text: q?.text?.substring(0, 50) + '...',
-    optionsCount: q?.options?.length || 0
-  });
-
   // Validación adicional
   if (!q || !q.id) {
-    console.error('[QuestionCard] ERROR: Pregunta inválida recibida', q);
     return (
       <div className="rounded-xl border-2 border-rose-300 bg-rose-50 p-4">
         <p className="text-sm font-semibold text-rose-700">Error: Pregunta inválida</p>
@@ -703,10 +694,10 @@ function QuestionCard({ q, onChange, onRemove }) {
   const hasMath = q.text && /\$[^$]+\$/.test(q.text);
 
   return (
-    <div className="rounded-xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/30 p-5 shadow-md hover:shadow-lg transition-shadow">
+    <div className="rounded-3xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/30 p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-200 ring-2 ring-slate-100/50 hover:ring-violet-200/50">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
-          <span className="inline-grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white font-semibold shadow-md">
+          <span className="inline-grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 text-white font-extrabold text-lg shadow-lg ring-2 ring-violet-200/50">
             Q
           </span>
           <select
@@ -733,7 +724,7 @@ function QuestionCard({ q, onChange, onRemove }) {
           />
           <button
             onClick={onRemove}
-            className="rounded-lg border-2 border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 hover:border-rose-400 transition-colors"
+            className="rounded-xl border-2 border-rose-300 bg-gradient-to-r from-rose-50 to-red-50 px-4 py-2.5 text-sm font-bold text-rose-700 hover:from-rose-100 hover:to-red-100 hover:border-rose-400 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
           >
             Eliminar
           </button>
@@ -997,23 +988,14 @@ export default function EspanolFormBuilder() {
       try {
         setLoading(true);
         if (quizId) {
-          logInfo('QuiztBuilder', 'Cargando quiz con ID', { quizId, intento: retryCount + 1 });
           const { data } = await getQuizFull(quizId);
           const payload = data?.data || {};
           const quiz = payload.quiz || {};
           const pregs = Array.isArray(payload.preguntas) ? payload.preguntas : [];
 
-          logInfo('QuiztBuilder', 'Datos recibidos', {
-            quizId,
-            tieneQuiz: !!quiz,
-            cantidadPreguntas: pregs.length,
-            preguntas: pregs.map(p => ({ tipo: p.tipo, enunciado: p.enunciado?.substring(0, 50) + '...', opcionesCount: p.opciones?.length || 0 }))
-          });
-
           // Si no hay preguntas y aún tenemos reintentos, intentar de nuevo
           if (pregs.length === 0 && retryCount < MAX_RETRIES && alive) {
             retryCount++;
-            logInfo('QuiztBuilder', `No se encontraron preguntas, reintentando (${retryCount}/${MAX_RETRIES})...`, { quizId });
             setTimeout(() => {
               if (alive) loadQuiz();
             }, RETRY_DELAY);
@@ -1030,7 +1012,6 @@ export default function EspanolFormBuilder() {
           // IMPORTANTE: Cargar el id_area del quiz existente si no está establecido
           if (quiz.id_area && !areaId) {
             setAreaId(quiz.id_area);
-            logInfo('QuiztBuilder', 'Cargando id_area del quiz existente', { quizId, id_area: quiz.id_area });
           }
           // También cargar el título del área si está disponible
           if (quiz.materia && !areaTitle) {
@@ -1048,8 +1029,6 @@ export default function EspanolFormBuilder() {
             } else if (tipoBD === 'opcion_multiple' || tipoBD === 'opción múltiple' || tipoBD === 'opcion multiple' || !p.tipo || p.tipo === '' || tipoBD === '') {
               type = 'multiple';
             }
-
-            logDebug('QuiztBuilder', `Mapeando tipo de BD: "${p.tipo}" -> "${type}"`, { tipoOriginal: p.tipo, tipoMapeado: type });
 
             const opts = Array.isArray(p.opciones) ? p.opciones : [];
             let answer = '';
@@ -1085,13 +1064,6 @@ export default function EspanolFormBuilder() {
               }
             }
 
-            logDebug('QuiztBuilder', `Pregunta mapeada: tipo=${type}, answer="${answer}", opciones=${finalOptions.length}`, {
-              tipo: type,
-              answer,
-              opcionesCount: finalOptions.length,
-              tieneEnunciado: !!(p.enunciado)
-            });
-
             return {
               id: genId(),
               type,
@@ -1103,20 +1075,8 @@ export default function EspanolFormBuilder() {
             };
           });
 
-          logInfo('QuiztBuilder', 'Preguntas mapeadas', {
-            cantidad: mapped.length,
-            tipos: mapped.map(m => m.type),
-            usandoDefault: mapped.length === 0,
-            primeraPregunta: mapped.length > 0 ? mapped[0] : null
-          });
-
           // Solo establecer preguntas si hay preguntas mapeadas
           if (mapped.length > 0) {
-            logInfo('QuiztBuilder', 'Estableciendo preguntas en estado', {
-              cantidad: mapped.length,
-              ids: mapped.map(q => q.id),
-              tipos: mapped.map(q => q.type)
-            });
 
             // Crear una copia profunda del array para asegurar una nueva referencia
             const preguntasFinales = mapped.map(q => ({
@@ -1127,20 +1087,7 @@ export default function EspanolFormBuilder() {
             // Actualizar el estado directamente
             setQuestions(preguntasFinales);
             setQuestionsLoaded(true); // Marcar que las preguntas se cargaron
-
-            // Verificar inmediatamente después
-            logDebug('QuiztBuilder', 'setQuestions ejecutado', {
-              cantidad: preguntasFinales.length,
-              ids: preguntasFinales.map(q => q.id),
-              primeraPregunta: preguntasFinales.length > 0 ? {
-                id: preguntasFinales[0].id,
-                type: preguntasFinales[0].type,
-                text: preguntasFinales[0].text?.substring(0, 50) + '...',
-                optionsCount: preguntasFinales[0].options?.length || 0
-              } : null
-            });
           } else {
-            logWarn('QuiztBuilder', 'No hay preguntas para establecer en el estado', { mapped });
             // Si no hay preguntas, dejar el array vacío (no crear una por defecto)
             setQuestions([]);
             setQuestionsLoaded(true); // Marcar que se completó la carga (aunque no haya preguntas)
@@ -1149,18 +1096,7 @@ export default function EspanolFormBuilder() {
           // Asegurar que loading se desactive después de establecer las preguntas
           if (alive) {
             setLoading(false);
-            logDebug('QuiztBuilder', 'Loading desactivado después de cargar preguntas', {
-              cantidadPreguntas: mapped.length
-            });
           }
-
-          // Verificar después de un pequeño delay que el estado se actualizó
-          setTimeout(() => {
-            logDebug('QuiztBuilder', 'Estado después de setQuestions (verificación)', {
-              timestamp: new Date().toISOString(),
-              cantidadEsperada: mapped.length
-            });
-          }, 200);
         } else if (simId) {
           retryCount = 0; // Reset retry count for simId
           const { data } = await getSimulacionFull(simId);
@@ -1197,11 +1133,9 @@ export default function EspanolFormBuilder() {
           setQuestionsLoaded(true); // Marcar que se completó la carga
         }
       } catch (e) {
-        logError('QuiztBuilder', 'Error al cargar quiz/simulación', e);
         // Si hay error y aún tenemos reintentos, intentar de nuevo
         if (retryCount < MAX_RETRIES && alive && quizId) {
           retryCount++;
-          logInfo('QuiztBuilder', `Error al cargar, reintentando (${retryCount}/${MAX_RETRIES})...`, { quizId, error: e?.message });
           setTimeout(() => {
             if (alive) loadQuiz();
           }, RETRY_DELAY);
@@ -1229,40 +1163,11 @@ export default function EspanolFormBuilder() {
     [questions]
   );
 
-  // Debug: verificar el estado de questions
+  // Verificar el estado de questions
   useEffect(() => {
-    logDebug('QuiztBuilder', 'Estado de questions actualizado', {
-      cantidad: questions.length,
-      ids: questions.map(q => q.id),
-      tipos: questions.map(q => q.type),
-      loading,
-      tienePreguntas: questions.length > 0,
-      primeraPregunta: questions.length > 0 ? {
-        id: questions[0].id,
-        type: questions[0].type,
-        text: questions[0].text?.substring(0, 50) + '...',
-        optionsCount: questions[0].options?.length || 0
-      } : null
-    });
-
     // Si hay preguntas pero loading es true, forzar a false
     if (questions.length > 0 && loading) {
-      logWarn('QuiztBuilder', 'ADVERTENCIA: Hay preguntas pero loading sigue en true, forzando a false');
       setLoading(false);
-    }
-
-    // Log adicional para verificar el estado
-    if (questions.length > 0) {
-      console.log('[QuiztBuilder] Estado verificado - Preguntas disponibles:', {
-        cantidad: questions.length,
-        ids: questions.map(q => q?.id),
-        primeraPregunta: questions[0] ? {
-          id: questions[0].id,
-          type: questions[0].type,
-          text: questions[0].text?.substring(0, 50) + '...',
-          optionsCount: questions[0].options?.length || 0
-        } : null
-      });
     }
   }, [questions, loading]);
 
@@ -1486,22 +1391,28 @@ export default function EspanolFormBuilder() {
       <AlertComponent />
       <div className="min-h-screen bg-transparent w-full overflow-x-visible">
 
-        {/* Header - Sin fondo de color */}
-        <header className="relative w-full px-4 sm:px-6 md:px-8 lg:px-12 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
-            <div className="flex-1 min-w-0 max-w-full">
-              <h1 className="text-xl sm:text-2xl font-bold mb-1.5 text-slate-800 break-words">{isSim ? (isNew ? 'Crear Simulador' : 'Editar Simulador') : (quizId ? 'Editar Quizt' : 'Crear Quizt')} • {isSim ? (areaTitle || 'General') : (areaTitle || 'Español')}</h1>
-              <p className="text-xs sm:text-sm font-medium text-slate-600">
-                Construye preguntas con imágenes, fórmulas LaTeX, opción múltiple, verdadero/falso y respuesta corta.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold shrink-0 whitespace-nowrap">
-              <span className="rounded-lg bg-slate-100 border border-slate-300 px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-sm text-slate-700 whitespace-nowrap">
-                <span className="opacity-70">Preguntas:</span> <span className="font-bold">{questions.length}</span>
-              </span>
-              <span className="rounded-lg bg-slate-100 border border-slate-300 px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-sm text-slate-700 whitespace-nowrap">
-                <span className="opacity-70">Puntos:</span> <span className="font-bold">{totalPoints}</span>
-              </span>
+        {/* Header mejorado */}
+        <header className="relative w-full px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8">
+          <div className="relative overflow-hidden rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 shadow-xl ring-2 ring-slate-100/50 px-5 sm:px-7 py-5 sm:py-6">
+            <div className="pointer-events-none absolute -left-10 -top-14 h-64 w-64 rounded-full bg-violet-200/50 blur-3xl" />
+            <div className="pointer-events-none absolute -right-10 -bottom-14 h-64 w-64 rounded-full bg-indigo-200/50 blur-3xl" />
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+              <div className="flex-1 min-w-0 max-w-full">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-2 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 break-words">
+                  {isSim ? (isNew ? 'Crear Simulador' : 'Editar Simulador') : (quizId ? 'Editar Quizt' : 'Crear Quizt')} • {isSim ? (areaTitle || 'General') : (areaTitle || 'Español')}
+                </h1>
+                <p className="text-sm sm:text-base font-medium text-slate-600">
+                  Construye preguntas con imágenes, fórmulas LaTeX, opción múltiple, verdadero/falso y respuesta corta.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold shrink-0 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white ring-2 ring-violet-200 shadow-md font-bold whitespace-nowrap">
+                  <span className="opacity-90">Preguntas:</span> <span className="font-extrabold">{questions.length}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white ring-2 ring-indigo-200 shadow-md font-bold whitespace-nowrap">
+                  <span className="opacity-90">Puntos:</span> <span className="font-extrabold">{totalPoints}</span>
+                </span>
+              </div>
             </div>
           </div>
         </header>
@@ -1509,7 +1420,7 @@ export default function EspanolFormBuilder() {
         {/* Contenido principal */}
         <main className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-6">
           {/* Acciones */}
-          <section className="mb-6 rounded-xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-md">
+          <section className="mb-6 rounded-3xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-5 sm:p-6 shadow-lg ring-2 ring-slate-100/50">
             {isSim && (
               <div className="mb-5 grid gap-4 sm:grid-cols-2 border-b border-slate-200 pb-5">
                 <div>
@@ -1534,16 +1445,16 @@ export default function EspanolFormBuilder() {
               </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-2 text-sm text-slate-600">
-                <svg className="h-5 w-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+              <div className="flex items-center gap-2 text-sm text-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-2.5 rounded-xl border-2 border-amber-200 shadow-sm">
+                <svg className="h-5 w-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
-                <span className="font-medium">Guarda tu progreso antes de publicar</span>
+                <span className="font-bold">Guarda tu progreso antes de publicar</span>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => setPreviewOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1556,7 +1467,7 @@ export default function EspanolFormBuilder() {
                     <button
                       onClick={handleDraft}
                       disabled={saving || loading}
-                      className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-600 bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 hover:border-slate-700 transition-all shadow-md hover:shadow-lg disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-600 bg-gradient-to-r from-slate-700 to-slate-900 px-5 py-2.5 text-sm font-bold text-white hover:from-slate-800 hover:to-slate-950 hover:border-slate-700 transition-all shadow-md hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -1566,7 +1477,7 @@ export default function EspanolFormBuilder() {
                     <button
                       onClick={() => handleSaveSim({ publish: true })}
                       disabled={publishing || loading}
-                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-emerald-700 hover:to-green-700 transition-all shadow-md hover:shadow-lg disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-5 py-2.5 text-sm font-bold text-white hover:from-emerald-700 hover:to-green-700 transition-all shadow-md hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-60 disabled:hover:scale-100 ring-2 ring-emerald-200/50"
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -1578,7 +1489,7 @@ export default function EspanolFormBuilder() {
                   <>
                     <button
                       onClick={handleDraft}
-                      className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-600 bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 hover:border-slate-700 transition-all shadow-md hover:shadow-lg"
+                      className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-600 bg-gradient-to-r from-slate-700 to-slate-900 px-5 py-2.5 text-sm font-bold text-white hover:from-slate-800 hover:to-slate-950 hover:border-slate-700 transition-all shadow-md hover:shadow-xl hover:scale-105 active:scale-95"
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -1589,7 +1500,7 @@ export default function EspanolFormBuilder() {
                       <button
                         onClick={handleSave}
                         disabled={saving || loading}
-                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-violet-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg disabled:opacity-60"
+                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:from-violet-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-60 disabled:hover:scale-100 ring-2 ring-violet-200/50"
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -1599,7 +1510,7 @@ export default function EspanolFormBuilder() {
                     ) : (
                       <button
                         onClick={() => showAlert('Usa "Nuevo" para crear. Este builder está en modo edición si llegas desde Editar.', 'Información', 'info')}
-                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-violet-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
+                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:from-violet-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-xl hover:scale-105 active:scale-95 ring-2 ring-violet-200/50"
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -1614,7 +1525,7 @@ export default function EspanolFormBuilder() {
           </section>
 
           {/* Constructor */}
-          <section className="rounded-xl border-2 border-slate-200 bg-white p-5 shadow-md">
+          <section className="rounded-3xl border-2 border-slate-200 bg-white p-5 sm:p-6 shadow-lg ring-2 ring-slate-100/50">
             {loading && (
               <div className="mb-4 rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
                 <div className="flex items-center gap-2">
@@ -1626,36 +1537,36 @@ export default function EspanolFormBuilder() {
                 </div>
               </div>
             )}
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-4 pb-4 border-b-2 border-slate-200">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Preguntas</h2>
-                <p className="text-xs text-slate-500 mt-1">Agrega diferentes tipos de preguntas a tu formulario</p>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">Preguntas</h2>
+                <p className="text-sm text-slate-600 mt-1 font-medium">Agrega diferentes tipos de preguntas a tu formulario</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => addQuestion("multiple")}
-                  className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-violet-300 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-2.5 text-sm font-bold text-violet-700 hover:from-violet-100 hover:to-indigo-100 hover:border-violet-400 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v14M5 12h14" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v14M5 12h14" />
                   </svg>
                   Opción múltiple
                 </button>
                 <button
                   onClick={() => addQuestion("tf")}
-                  className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-2.5 text-sm font-bold text-indigo-700 hover:from-indigo-100 hover:to-purple-100 hover:border-indigo-400 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v14M5 12h14" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v14M5 12h14" />
                   </svg>
                   Verdadero/Falso
                 </button>
                 <button
                   onClick={() => addQuestion("short")}
-                  className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2.5 text-sm font-bold text-purple-700 hover:from-purple-100 hover:to-pink-100 hover:border-purple-400 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v14M5 12h14" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v14M5 12h14" />
                   </svg>
                   Respuesta corta
                 </button>
@@ -1666,15 +1577,6 @@ export default function EspanolFormBuilder() {
               className="space-y-4"
               key={`questions-container-${questions.length}`}
             >
-              {(() => {
-                logDebug('QuiztBuilder', 'Renderizando sección de preguntas', {
-                  loading,
-                  questionsLength: questions.length,
-                  questionsIds: questions.map(q => q?.id),
-                  questionsTypes: questions.map(q => q?.type)
-                });
-                return null; // Solo para logging, no afecta el render
-              })()}
               {loading ? (
                 <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-8 text-center">
                   <div className="flex items-center justify-center gap-2">
@@ -1707,7 +1609,6 @@ export default function EspanolFormBuilder() {
                       // Validar que el tipo sea válido
                       let validQ = { ...q };
                       if (!validQ.type || (validQ.type !== 'multiple' && validQ.type !== 'tf' && validQ.type !== 'short')) {
-                        logWarn('QuiztBuilder', `Tipo inválido, forzando a multiple`, { tipoOriginal: validQ.type });
                         validQ.type = 'multiple';
                         if (!validQ.options || validQ.options.length === 0) {
                           validQ.options = [{ id: genId(), text: '', correct: false, image: null }];

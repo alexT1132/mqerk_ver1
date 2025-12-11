@@ -2,7 +2,7 @@
 // No modifica ni depende del geminiService existente
 
 const PROXY_ENDPOINT = '/api/ai/gemini/generate';
-const MODEL = (import.meta?.env?.VITE_GEMINI_MODEL) || 'gemini-2.0-flash';
+const MODEL = (import.meta?.env?.VITE_GEMINI_MODEL) || 'gemini-2.5-flash';
 const TIMEOUT = 30000;
 const COOLDOWN_MS = Number(import.meta?.env?.VITE_IA_COOLDOWN_MS || 45000);
 const COOLDOWN_KEY = 'ia_cooldown_until';
@@ -25,8 +25,45 @@ export const getCooldownRemainingMs = () => {
   }
 };
 const startCooldown = () => {
-  try { localStorage.setItem(COOLDOWN_KEY, String(Date.now() + COOLDOWN_MS)); } catch {}
+  try { localStorage.setItem(COOLDOWN_KEY, String(Date.now() + COOLDOWN_MS)); } catch { }
 };
+
+// Sistema de tracking de uso diario (separado del análisis)
+const USAGE_KEY = 'ai_questions_usage';
+const DAILY_LIMIT_ASESOR = 20; // Asesores pueden generar más preguntas
+
+export const getQuestionUsageToday = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem(USAGE_KEY) || '{}');
+    const today = new Date().toISOString().split('T')[0];
+    if (data.date !== today) {
+      return { count: 0, limit: DAILY_LIMIT_ASESOR, remaining: DAILY_LIMIT_ASESOR };
+    }
+    return {
+      count: data.count || 0,
+      limit: DAILY_LIMIT_ASESOR,
+      remaining: Math.max(0, DAILY_LIMIT_ASESOR - (data.count || 0))
+    };
+  } catch {
+    return { count: 0, limit: DAILY_LIMIT_ASESOR, remaining: DAILY_LIMIT_ASESOR };
+  }
+};
+
+const incrementQuestionUsage = () => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const data = JSON.parse(localStorage.getItem(USAGE_KEY) || '{}');
+    if (data.date !== today) {
+      localStorage.setItem(USAGE_KEY, JSON.stringify({ date: today, count: 1, limit: DAILY_LIMIT_ASESOR }));
+    } else {
+      data.count = (data.count || 0) + 1;
+      localStorage.setItem(USAGE_KEY, JSON.stringify(data));
+    }
+  } catch (e) {
+    console.error('Error incrementando uso de preguntas IA:', e);
+  }
+};
+
 
 // Parseo robusto de JSON incrustado en texto
 const extractJson = (src) => {
@@ -47,35 +84,65 @@ const extractJson = (src) => {
     if (end !== -1) t = t.slice(firstBrace, end + 1);
   }
   t = t.replace(/[""]/g, '"').replace(/['']/g, "'").replace(/,\s*(\}|\])/g, '$1');
-  
+
   // Reparar valores booleanos truncados comunes ANTES del parseo
   // Orden importante: primero los más específicos, luego los más generales
-  
+
   // Caso más común: "correct": fals] o "correct": fals, (sin espacio, seguido directamente de delimitador)
   t = t.replace(/:\s*fals([,\}\]\n\s])/gi, ': false$1');
   t = t.replace(/:\s*tru([,\}\]\n\s])/gi, ': true$1');
-  
+
   // Caso con espacio: "correct": fals ] o "correct": fals ,
   t = t.replace(/:\s*fals\s+([,\}\]\n])/gi, ': false$1');
   t = t.replace(/:\s*tru\s+([,\}\]\n])/gi, ': true$1');
-  
+
   // Casos más cortos truncados
   t = t.replace(/:\s*fal\s*([,\}\]\n\s])/gi, ': false$1');
   t = t.replace(/:\s*tr\s*([,\}\]\n\s])/gi, ': true$1');
-  
+
   // Caso más agresivo: cualquier carácter no alfanumérico después (excepto comillas que ya están manejadas)
   t = t.replace(/:\s*fals([^a-z0-9_"])/gi, ': false$1');
   t = t.replace(/:\s*tru([^a-z0-9_"])/gi, ': true$1');
-  
+
   // Reparar null truncado
   t = t.replace(/:\s*nul\s*([,\}\]\n\s])/gi, ': null$1');
   t = t.replace(/:\s*nu\s*([,\}\]\n\s])/gi, ': null$1');
   t = t.replace(/:\s*nul([^a-z0-9_"])/gi, ': null$1');
-  
+
   // Intentar parsear, si falla, intentar reparar
   try {
     return JSON.parse(t);
   } catch (e) {
+    console.error('[SimuladoresAI] ❌ Error parseando JSON:', e.message);
+    console.log('[SimuladoresAI] 📄 JSON que falló:', t);
+
+
+    // REPARACIÓN PRIORITARIA: Falta coma entre propiedades
+    if (e.message && e.message.includes("Expected ',' or '}'")) {
+      console.warn('[SimuladoresAI] 🔧 Reparando: falta coma entre propiedades');
+      let fixed = t;
+
+      // Patrón: "valor" "propiedad": (falta coma)
+      fixed = fixed.replace(/("\s*)\s+("[\w]+"\s*:)/g, '$1, $2');
+
+      // Patrón: true/false "propiedad": (falta coma)
+      fixed = fixed.replace(/(true|false)\s+("[\w]+"\s*:)/g, '$1, $2');
+
+      // Patrón: número "propiedad": (falta coma)
+      fixed = fixed.replace(/(\d)\s+("[\w]+"\s*:)/g, '$1, $2');
+
+      // Patrón: } { (falta coma entre objetos)
+      fixed = fixed.replace(/}\s*{/g, '}, {');
+
+      console.log('[SimuladoresAI] ✅ Intentando parsear JSON reparado');
+
+      try {
+        return JSON.parse(fixed);
+      } catch (e2) {
+        console.error('[SimuladoresAI] ❌ Reparación de comas falló:', e2.message);
+        // Continuar con otras reparaciones
+      }
+    }
     // Reparar errores de array (elementos faltantes o valores truncados)
     if (e.message && (e.message.includes("Expected ','") || e.message.includes("Expected ']'") || e.message.includes("after array element"))) {
       // Buscar y reparar valores booleanos truncados que causan el error
@@ -90,11 +157,11 @@ const extractJson = (src) => {
       fixed = fixed.replace(/:\s*tru([,\}\]])/gi, ': true$1');
       fixed = fixed.replace(/:\s*fal([,\}\]])/gi, ': false$1');
       fixed = fixed.replace(/:\s*tr([,\}\]])/gi, ': true$1');
-      
+
       // Reparar null truncado
       fixed = fixed.replace(/:\s*nul\s*([,\}\]\n])/gi, ': null$1');
       fixed = fixed.replace(/:\s*nu\s*([,\}\]\n])/gi, ': null$1');
-      
+
       try {
         return JSON.parse(fixed);
       } catch (e2) {
@@ -107,14 +174,14 @@ const extractJson = (src) => {
           const start = Math.max(0, errorPos - 50);
           const end = Math.min(fixed.length, errorPos + 50);
           const context = fixed.slice(start, end);
-          
+
           // Intentar reparar valores truncados en el contexto del error
           let contextFixed = context;
           contextFixed = contextFixed.replace(/fals([,\}\]\n\s])/gi, 'false$1');
           contextFixed = contextFixed.replace(/tru([,\}\]\n\s])/gi, 'true$1');
           contextFixed = contextFixed.replace(/fal([,\}\]\n\s])/gi, 'false$1');
           contextFixed = contextFixed.replace(/tr([,\}\]\n\s])/gi, 'true$1');
-          
+
           if (contextFixed !== context) {
             fixed = fixed.slice(0, start) + contextFixed + fixed.slice(end);
             try {
@@ -127,14 +194,14 @@ const extractJson = (src) => {
         // Continuar con otros intentos de reparación
       }
     }
-    
+
     if (e.message && (e.message.includes('Unterminated string') || e.message.includes('Unexpected end'))) {
       // Intentar reparar strings sin cerrar
       let fixed = t;
       let inString = false;
       let escapeNext = false;
       const openStrings = []; // Array de posiciones donde se abren strings
-      
+
       // Encontrar todos los strings y detectar cuáles están sin cerrar
       for (let i = 0; i < fixed.length; i++) {
         const ch = fixed[i];
@@ -160,12 +227,12 @@ const extractJson = (src) => {
           }
         }
       }
-      
+
       // Si hay strings sin cerrar, cerrarlos
       if (inString && openStrings.length > 0) {
         const lastOpenPos = openStrings[openStrings.length - 1];
         const lastBrace = fixed.lastIndexOf('}');
-        
+
         if (lastBrace > lastOpenPos) {
           // Cerrar el string antes del último }
           // Buscar el último carácter antes del } que no sea espacio
@@ -182,7 +249,7 @@ const extractJson = (src) => {
           fixed = fixed.trim() + '"';
         }
       }
-      
+
       try {
         return JSON.parse(fixed);
       } catch (e2) {
@@ -218,70 +285,86 @@ const areaHints = (area) => {
   const a = canonArea(area);
   if (!a) return { tag: null, directrices: null };
   if (/mate|álgebra|algebra|aritm|geom|matemática|pensamiento.*analítico|analítico/.test(a)) {
-    return { tag: 'matematica', directrices: (
-      'ESTILO EXAMEN IPN - PROBLEMAS PRÁCTICOS:\n' +
-      '- Incluye problemas reales con situaciones cotidianas, aplicaciones prácticas, análisis de gráficas y tablas.\n' +
-      '- Usa fórmulas matemáticas fundamentales: ecuaciones de primer y segundo grado, sistemas de ecuaciones, funciones lineales y cuadráticas.\n' +
-      '- Geometría: área, perímetro, volumen, teorema de Pitágoras, trigonometría básica, semejanza de triángulos.\n' +
-      '- Aritmética: fracciones, porcentajes, regla de tres, proporciones, interés simple y compuesto.\n' +
-      '- Álgebra: factorización, productos notables, ecuaciones con raíces, logaritmos básicos.\n' +
-      '- Los problemas deben incluir datos numéricos realistas y requerir aplicación de fórmulas. Muestra la fórmula cuando sea relevante.\n' +
-      '- Nivel básico: operaciones simples, problemas de la vida diaria. Nivel intermedio: aplicaciones más complejas. Nivel avanzado: problemas multi-paso con análisis.\n' +
-      '- Opciones de respuesta deben incluir el resultado numérico correcto y distractoras cercanas por errores comunes.'
-    )};
+    return {
+      tag: 'matematica', directrices: (
+        'ESTILO EXAMEN IPN - PROBLEMAS PRÁCTICOS:\n' +
+        '- Incluye problemas reales con situaciones cotidianas, aplicaciones prácticas, análisis de gráficas y tablas.\n' +
+        '- Usa fórmulas matemáticas fundamentales: ecuaciones de primer y segundo grado, sistemas de ecuaciones, funciones lineales y cuadráticas.\n' +
+        '- Geometría: área, perímetro, volumen, teorema de Pitágoras, trigonometría básica, semejanza de triángulos.\n' +
+        '- Aritmética: fracciones, porcentajes, regla de tres, proporciones, interés simple y compuesto.\n' +
+        '- Álgebra: factorización, productos notables, ecuaciones con raíces, logaritmos básicos.\n' +
+        '- Los problemas deben incluir datos numéricos realistas y requerir aplicación de fórmulas. Muestra la fórmula cuando sea relevante.\n' +
+        '- Nivel básico: operaciones simples, problemas de la vida diaria. Nivel intermedio: aplicaciones más complejas. Nivel avanzado: problemas multi-paso con análisis.\n' +
+        '- Opciones de respuesta deben incluir el resultado numérico correcto y distractoras cercanas por errores comunes.'
+      )
+    };
   }
   if (/español|lengua|comunica|lectura|comprensión|gramática|redacción/.test(a)) {
-    return { tag: 'espanol', directrices: (
-      '- Incluye ortografía básica, sinónimos/antónimos, comprensión de lectura corta, clases de palabras.\n' +
-      '- Evita tecnicismos; prioriza claridad y contexto.'
-    )};
+    return {
+      tag: 'espanol', directrices: (
+        '- Incluye ortografía básica, sinónimos/antónimos, comprensión de lectura corta, clases de palabras.\n' +
+        '- Evita tecnicismos; prioriza claridad y contexto.'
+      )
+    };
   }
   if (/física|fisica/.test(a)) {
-    return { tag: 'fisica', directrices: (
-      'ESTILO EXAMEN IPN - PROBLEMAS CON FÓRMULAS:\n' +
-      '- Incluye problemas prácticos que requieren aplicación de fórmulas físicas fundamentales.\n' +
-      '- Cinemática: MRU, MRUV, caída libre. Fórmulas: v=d/t, vf=vi+at, d=vit+½at², vf²=vi²+2ad.\n' +
-      '- Dinámica: leyes de Newton, fuerza, peso, fricción. Fórmulas: F=ma, W=mg, Fr=μN.\n' +
-      '- Energía y trabajo: energía cinética, potencial, conservación. Fórmulas: Ec=½mv², Ep=mgh, W=Fd.\n' +
-      '- Termodinámica: calor específico, cambio de temperatura. Fórmulas: Q=mcΔT, conversión de escalas.\n' +
-      '- Electricidad básica: ley de Ohm, circuitos simples. Fórmulas: V=IR, P=VI, P=I²R.\n' +
-      '- Los problemas deben incluir valores numéricos y unidades SI. Las opciones deben mostrar resultados con unidades correctas.\n' +
-      '- Presenta problemas donde se requiera despejar variables, sustituir valores y calcular resultados finales.\n' +
-      '- Nivel básico: aplicación directa de una fórmula. Nivel intermedio: combinar fórmulas o despejar variables. Nivel avanzado: problemas multi-paso o conceptuales.'
-    )};
+    return {
+      tag: 'fisica', directrices: (
+        'ESTILO EXAMEN IPN - PROBLEMAS CON FÓRMULAS:\n' +
+        '- Incluye problemas prácticos que requieren aplicación de fórmulas físicas fundamentales.\n' +
+        '- Cinemática: MRU, MRUV, caída libre. Fórmulas: v=d/t, vf=vi+at, d=vit+½at², vf²=vi²+2ad.\n' +
+        '- Dinámica: leyes de Newton, fuerza, peso, fricción. Fórmulas: F=ma, W=mg, Fr=μN.\n' +
+        '- Energía y trabajo: energía cinética, potencial, conservación. Fórmulas: Ec=½mv², Ep=mgh, W=Fd.\n' +
+        '- Termodinámica: calor específico, cambio de temperatura. Fórmulas: Q=mcΔT, conversión de escalas.\n' +
+        '- Electricidad básica: ley de Ohm, circuitos simples. Fórmulas: V=IR, P=VI, P=I²R.\n' +
+        '- Los problemas deben incluir valores numéricos y unidades SI. Las opciones deben mostrar resultados con unidades correctas.\n' +
+        '- Presenta problemas donde se requiera despejar variables, sustituir valores y calcular resultados finales.\n' +
+        '- Nivel básico: aplicación directa de una fórmula. Nivel intermedio: combinar fórmulas o despejar variables. Nivel avanzado: problemas multi-paso o conceptuales.'
+      )
+    };
   }
   if (/quím|quim/.test(a)) {
-    return { tag: 'quimica', directrices: (
-      'ESTILO EXAMEN IPN - PROBLEMAS CON ECUACIONES QUÍMICAS:\n' +
-      '- Incluye problemas que requieren balanceo de ecuaciones químicas, cálculos estequiométricos y aplicaciones prácticas.\n' +
-      '- Estequiometría: relaciones molares, masa-mol, volumen en condiciones normales. Fórmulas: n=m/M, PV=nRT.\n' +
-      '- Soluciones: molaridad, porcentaje en masa/volumen, diluciones. Fórmulas: M=n/V, %m/v=(m/V)×100, C1V1=C2V2.\n' +
-      '- Balanceo de ecuaciones químicas: método de tanteo y por redox básico.\n' +
-      '- Tabla periódica: propiedades periódicas, configuración electrónica básica, valencias comunes.\n' +
-      '- Reacciones químicas: ácido-base básicas, óxido-reducción simples, reacciones de combustión.\n' +
-      '- Los problemas deben incluir datos numéricos y requerir cálculos. Las opciones deben mostrar resultados con unidades correctas (moles, gramos, litros, molaridad).\n' +
-      '- Nivel básico: identificación, clasificación. Nivel intermedio: cálculos simples con una fórmula. Nivel avanzado: problemas estequiométricos complejos.'
-    )};
+    return {
+      tag: 'quimica', directrices: (
+        'ESTILO EXAMEN IPN - PROBLEMAS CON ECUACIONES QUÍMICAS:\n' +
+        '- Incluye problemas que requieren balanceo de ecuaciones químicas, cálculos estequiométricos y aplicaciones prácticas.\n' +
+        '- Estequiometría: relaciones molares, masa-mol, volumen en condiciones normales. Fórmulas: n=m/M, PV=nRT.\n' +
+        '- Soluciones: molaridad, porcentaje en masa/volumen, diluciones. Fórmulas: M=n/V, %m/v=(m/V)×100, C1V1=C2V2.\n' +
+        '- Balanceo de ecuaciones químicas: método de tanteo y por redox básico.\n' +
+        '- Tabla periódica: propiedades periódicas, configuración electrónica básica, valencias comunes.\n' +
+        '- Reacciones químicas: ácido-base básicas, óxido-reducción simples, reacciones de combustión.\n' +
+        '- Los problemas deben incluir datos numéricos y requerir cálculos. Las opciones deben mostrar resultados con unidades correctas (moles, gramos, litros, molaridad).\n' +
+        '- Nivel básico: identificación, clasificación. Nivel intermedio: cálculos simples con una fórmula. Nivel avanzado: problemas estequiométricos complejos.'
+      )
+    };
   }
   if (/biolog/.test(a)) {
-    return { tag: 'biologia', directrices: (
-      '- Célula, tejidos, sistemas del cuerpo, ecosistemas, genética básica.'
-    )};
+    return {
+      tag: 'biologia', directrices: (
+        '- Célula, tejidos, sistemas del cuerpo, ecosistemas, genética básica.'
+      )
+    };
   }
   if (/historia|geograf/.test(a)) {
-    return { tag: 'ciencias_sociales', directrices: (
-      '- Hechos y periodos clave, ubicación geográfica, causas y consecuencias simples.'
-    )};
+    return {
+      tag: 'ciencias_sociales', directrices: (
+        '- Hechos y periodos clave, ubicación geográfica, causas y consecuencias simples.'
+      )
+    };
   }
   if (/razonamiento.*(verbal|lect|leng)/.test(a)) {
-    return { tag: 'razonamiento_verbal', directrices: (
-      '- Analogías, relaciones de palabras, inferencias de enunciados cortos.'
-    )};
+    return {
+      tag: 'razonamiento_verbal', directrices: (
+        '- Analogías, relaciones de palabras, inferencias de enunciados cortos.'
+      )
+    };
   }
   if (/razonamiento.*(mate|num|lóg|log)/.test(a)) {
-    return { tag: 'razonamiento_matematico', directrices: (
-      '- Series numéricas, patrones, problemas lógicos breves.'
-    )};
+    return {
+      tag: 'razonamiento_matematico', directrices: (
+        '- Series numéricas, patrones, problemas lógicos breves.'
+      )
+    };
   }
   return { tag: 'general', directrices: null };
 };
@@ -305,7 +388,7 @@ const distribucionTipos = (cantidad, tag) => {
 const normalizarPreguntas = (arr, cantidad, dist = null) => {
   const seen = new Set();
   const ensureUniqueText = (t, idx) => {
-    let base = String(t || '').trim() || `Pregunta ${idx+1}`;
+    let base = String(t || '').trim() || `Pregunta ${idx + 1}`;
     let out = base, k = 2;
     while (seen.has(out.toLowerCase())) { out = `${base} (${k++})`; }
     seen.add(out.toLowerCase());
@@ -319,11 +402,14 @@ const normalizarPreguntas = (arr, cantidad, dist = null) => {
       let options = Array.isArray(q.options) ? q.options.map(o => ({ text: String(o.text || ''), correct: !!o.correct })) : [];
       // Garantizar 4 opciones y exactamente 1 correcta
       // 1) Normalizar textos
-      options = options.map((o, j) => ({ text: o.text || `Opción ${j+1}`, correct: !!o.correct }));
+      options = options.map((o, j) => ({ text: o.text || `Opción ${j + 1}`, correct: !!o.correct }));
       // 2) Si hay más de 4, truncar; si menos, completar hasta 4
-      if (options.length > 4) options = options.slice(0,4);
+      if (options.length > 4) options = options.slice(0, 4);
       const baseLen = options.length;
-      for (let k = baseLen; k < 4; k++) options.push({ text: `Opción ${k+1}`, correct: false });
+      if (baseLen < 4) {
+        console.warn(`[SimuladoresAI] ⚠️ Pregunta ${i + 1} de opción múltiple solo tiene ${baseLen} opciones. Completando hasta 4...`);
+      }
+      for (let k = baseLen; k < 4; k++) options.push({ text: `Opción ${k + 1}`, correct: false });
       // 3) Asegurar exactamente una correcta
       const idxCorrect = options.findIndex(o => o.correct);
       if (idxCorrect === -1) {
@@ -342,7 +428,7 @@ const normalizarPreguntas = (arr, cantidad, dist = null) => {
   // Aplicar distribución si se especificó
   let out = norm.slice(0, cantidad);
   if (dist && typeof dist === 'object') {
-    const need = { multi: dist.multi|0, tf: dist.tf|0, short: dist.short|0 };
+    const need = { multi: dist.multi | 0, tf: dist.tf | 0, short: dist.short | 0 };
     const have = { multi: 0, tf: 0, short: 0 };
     out.forEach(q => { if (have[q.type] != null) have[q.type]++; });
     // Si sobran de un tipo y faltan de otro, convertir los excedentes del final
@@ -352,7 +438,7 @@ const normalizarPreguntas = (arr, cantidad, dist = null) => {
         if (idx < 0) break;
         const q = out[idx];
         if (to === 'tf') { out[idx] = { ...q, type: 'tf', answer: 'true', options: undefined }; }
-        else if (to === 'short') { out[idx] = { ...q, type: 'short', answer: q.answer || '' , options: undefined }; }
+        else if (to === 'short') { out[idx] = { ...q, type: 'short', answer: q.answer || '', options: undefined }; }
         else { // to multi
           const baseOpts = [
             { text: 'Opción 1', correct: true },
@@ -365,9 +451,9 @@ const normalizarPreguntas = (arr, cantidad, dist = null) => {
         have[from]--; have[to]++;
       }
     };
-    convert('short','multi'); convert('tf','multi');
-    convert('multi','tf'); convert('short','tf');
-    convert('tf','short'); convert('multi','short');
+    convert('short', 'multi'); convert('tf', 'multi');
+    convert('multi', 'tf'); convert('short', 'tf');
+    convert('tf', 'short'); convert('multi', 'short');
   }
 
   while (out.length < cantidad) out.push({ order: out.length + 1, text: 'Pregunta adicional', type: 'short', points: 1, answer: '' });
@@ -390,9 +476,9 @@ const normalizarPreguntas = (arr, cantidad, dist = null) => {
  * @param {number} [opts.maxOutputTokens] - Tokens máximos de salida (default: calculado automáticamente)
  * @returns {Promise<Array>} preguntas normalizadas
  */
-export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined, nivel = 'intermedio', modo = 'general', temas = undefined, distribucion = undefined, temperature = 0.6, topP = undefined, topK = undefined, maxOutputTokens = undefined }){
+export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined, nivel = 'intermedio', modo = 'general', temas = undefined, distribucion = undefined, temperature = 0.6, topP = undefined, topK = undefined, maxOutputTokens = undefined }) {
   // Normalizar temas a array si se provee como string
-  let temasList = Array.isArray(temas) ? temas : (typeof temas === 'string' ? temas.split(',').map(s=>s.trim()).filter(Boolean) : []);
+  let temasList = Array.isArray(temas) ? temas : (typeof temas === 'string' ? temas.split(',').map(s => s.trim()).filter(Boolean) : []);
   // Validación flexible: requiere al menos uno de tema | area | temas
   if (!tema && !area && (!temasList || temasList.length === 0)) {
     throw new Error('Se requiere al menos un "tema", o "area", o lista de "temas".');
@@ -400,7 +486,7 @@ export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined,
   // Bloqueo si está en cooldown
   const rem = getCooldownRemainingMs();
   if (rem > 0) {
-    const err = new Error(`En enfriamiento ${Math.ceil(rem/1000)}s por límite de cuota.`);
+    const err = new Error(`En enfriamiento ${Math.ceil(rem / 1000)}s por límite de cuota.`);
     // adjuntar metadatos para que la UI pueda decidir
     err.code = 'COOLDOWN';
     err.remainingMs = rem;
@@ -418,14 +504,14 @@ export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined,
   const dirLine = directrices ? `\nLineamientos específicos del área:\n${directrices}` : '';
   const distLine = `\nDistribución EXACTA por tipo: ${dist.multi} multi, ${dist.tf} tf, ${dist.short} short.`;
   const modoLine = (modo === 'temas' && temasList.length)
-    ? `\nEnfoque por TEMAS específicos: ${temasList.map(t=>`"${t}"`).join(', ')}. Distribuye las preguntas entre estos temas de forma equilibrada.`
+    ? `\nEnfoque por TEMAS específicos: ${temasList.map(t => `"${t}"`).join(', ')}. Distribuye las preguntas entre estos temas de forma equilibrada.`
     : `\nCobertura GENERAL del tema/área indicada.`;
 
   // Determinar si requiere problemas con fórmulas/ecuaciones (matemáticas, física, química)
   const requiereFormulas = /matemática|matematica|física|fisica|química|quimica|álgebra|algebra|geometría|geometria|pensamiento.*analítico|analítico/.test(
     (area || '').toLowerCase() + ' ' + temaEfectivo.toLowerCase()
   );
-  
+
   const instruccionesFormulas = requiereFormulas ? `
 
 IMPORTANTE PARA ÁREAS DE MATEMÁTICAS, FÍSICA O QUÍMICA (ESTILO EXAMEN IPN):
@@ -443,7 +529,7 @@ Nivel: ${nivel}. Tipos permitidos: ${tiposDesc}.${distLine}${modoLine}${dirLine}
 
 Requisitos estrictos:
 - EXACTAMENTE ${cantidadFinal} preguntas.
-- Opción múltiple: 4 opciones, UNA sola correcta ("correct": true solo en una).
+- Opción múltiple: SIEMPRE 4 opciones (nunca menos), UNA sola correcta ("correct": true solo en una, las otras 3 con "correct": false).
 - Verdadero/falso: usar "answer": "true" | "false".
 - Respuesta corta: "answer" con texto breve y objetivo. ${requiereFormulas ? 'Para problemas numéricos, incluye el resultado numérico con unidades si aplica (ej: "25 m/s", "3.5", "42%").' : 'Sin explicaciones.'}
 - Enunciados claros, con datos suficientes para resolver. ${requiereFormulas ? 'Para problemas numéricos, incluye las fórmulas necesarias en el enunciado o presenta problemas donde se requiera aplicarlas. Muestra fórmulas en notación matemática estándar.' : ''} Evita dependencias de imágenes.
@@ -463,11 +549,11 @@ Devuelve SOLO JSON con este esquema:
   try {
     // Construir generationConfig con parámetros configurables
     const generationConfig = {
-      temperature: Math.max(0.0, Math.min(1.0, temperature || 0.6)),
-      maxOutputTokens: maxOutputTokens || Math.max(1200, cantidadFinal * 45),
+      temperature: Math.max(0.0, Math.min(1.0, temperature || 0.3)),
+      maxOutputTokens: maxOutputTokens || Math.max(2000, cantidadFinal * 200),
       response_mime_type: 'application/json'
     };
-    
+
     // Agregar parámetros opcionales solo si se especifican
     if (topP !== undefined && topP !== null) {
       generationConfig.topP = Math.max(0.0, Math.min(1.0, topP));
@@ -475,19 +561,35 @@ Devuelve SOLO JSON con este esquema:
     if (topK !== undefined && topK !== null) {
       generationConfig.topK = Math.max(1, Math.floor(topK));
     }
-    
+
     const body = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig,
       model: MODEL
     };
+    console.log('[SimuladoresAI] Sending request with model:', MODEL);
     const resp = await fetch(PROXY_ENDPOINT, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: controller.signal
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+      signal: controller.signal
     });
     clear();
     if (!resp.ok) {
       const status = resp.status;
       const err = await resp.json().catch(() => ({}));
+
+      // Detectar error de API key bloqueada (leaked)
+      if (status === 403 && (err?.code === 'API_KEY_LEAKED' ||
+        String(err?.error || err?.message || '').toLowerCase().includes('leaked'))) {
+        const e = new Error(err?.message || 'La API key de Gemini fue bloqueada porque fue expuesta públicamente. Por favor, contacta al administrador para obtener una nueva API key.');
+        e.code = 'API_KEY_LEAKED';
+        e.status = 403;
+        e.helpUrl = err?.helpUrl;
+        throw e;
+      }
+
       if (status === 429) {
         // iniciar cooldown y propagar error con mensaje claro
         startCooldown();
@@ -515,7 +617,12 @@ Devuelve SOLO JSON con este esquema:
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const parsed = extractJson(text);
     const arr = Array.isArray(parsed?.preguntas) ? parsed.preguntas : [];
-    return normalizarPreguntas(arr, cantidadFinal, dist);
+    const result = normalizarPreguntas(arr, cantidadFinal, dist);
+
+    // Incrementar contador de uso exitoso
+    incrementQuestionUsage();
+
+    return result;
   } catch (e) {
     clear();
     throw e;

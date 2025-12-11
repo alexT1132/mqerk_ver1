@@ -9,6 +9,7 @@ import {
   getEntregaActual,
   calificarEntrega,
   listEntregasActividad,
+  getEstudiantesAsignadosActividad,
   listEntregasEstudiante,
   historialEntregasActividadEstudiante,
   agregarEntrega,
@@ -16,6 +17,11 @@ import {
   addArchivoEntrega,
   deleteArchivoEntrega,
   resumenActividadesEstudiante,
+  extenderFechaLimiteGrupo,
+  extenderFechaLimiteEstudiante,
+  listExtensionesActividad,
+  eliminarExtension,
+  permitirEditarDespuesCalificada,
   actividadUploadMiddleware,
   actividadAssetsUpload
 } from '../controllers/actividades.controller.js';
@@ -36,7 +42,17 @@ router.post('/actividades/entregas/:entregaId/archivos', authREquired, actividad
 router.delete('/actividades/entregas/:entregaId/archivos/:archivoId', authREquired, deleteArchivoEntrega);
 router.put('/actividades/entregas/:id/calificar', authREquired, calificarEntrega);
 router.get('/actividades/:id/entregas', authREquired, listEntregasActividad);
+router.get('/actividades/:id/estudiantes-asignados', authREquired, getEstudiantesAsignadosActividad);
 router.get('/actividades/entregas/estudiante/:id_estudiante', authREquired, listEntregasEstudiante);
 router.get('/actividades/estudiante/:id_estudiante/resumen', authREquired, resumenActividadesEstudiante);
+
+// Extensiones de fecha límite
+router.post('/actividades/:id/extender-fecha/grupo', authREquired, extenderFechaLimiteGrupo);
+router.post('/actividades/:id/extender-fecha/estudiante', authREquired, extenderFechaLimiteEstudiante);
+router.get('/actividades/:id/extensiones', authREquired, listExtensionesActividad);
+router.delete('/actividades/extensiones/:extensionId', authREquired, eliminarExtension);
+
+// Permitir editar después de calificada
+router.put('/actividades/entregas/:entregaId/permite-editar', authREquired, permitirEditarDespuesCalificada);
 
 export default router;

@@ -361,7 +361,6 @@ function StudentProfilePage() {
         setError(response.message || 'Error al cargar los datos del estudiante');
       }
     } catch (err) {
-      console.error('Error al cargar estudiante:', err);
       setError('Error de conexión - Revisa tu conexión a internet');
     } finally {
       setIsLoadingStudent(false);
@@ -557,14 +556,7 @@ function StudentProfilePage() {
         result.course.modality = mod.charAt(0).toUpperCase() + mod.slice(1);
       }
     }
-    if (process.env.NODE_ENV !== 'production') {
-      console.debug('[MAP ADMIN] bachillerato origen/actual ->', {
-        academico2: st.academico2,
-        bachilleratoNorm: st.bachillerato,
-        academico1: st.academico1,
-        resultado: result.academic.bachillerato
-      });
-    }
+    // Mapeo de bachillerato completado
     return result;
   }, []);
 
@@ -572,7 +564,7 @@ function StudentProfilePage() {
   useEffect(() => {
     if (!student) return;
     if (process.env.NODE_ENV !== 'production') {
-      console.debug('[ADMIN PAGE] student recibido:', student);
+      // Estudiante cargado correctamente
     }
     let mapped = mapBackendStudentToFormData(student);
     // Fallback extra: si mapping salió vacío pero student ya está normalizado desde service
@@ -669,7 +661,6 @@ function StudentProfilePage() {
       await loadStudentData(true);
       setNotification({ type: 'success', message: 'Foto actualizada' });
     } catch (err) {
-      console.error('Error subiendo foto:', err);
       setNotification({ type: 'error', message: 'No se pudo actualizar la foto' });
     } finally {
       setIsUploadingPhoto(false);
@@ -760,7 +751,6 @@ function StudentProfilePage() {
         showNotification(`❌ ${response.message || 'Error al actualizar la información'}`, 'error');
       }
     } catch (error) {
-      console.error('Error al actualizar estudiante:', error);
       showNotification('❌ Error de conexión al actualizar la información', 'error');
     } finally {
       setIsLoading(false);
@@ -795,7 +785,6 @@ function StudentProfilePage() {
         showNotification(`❌ ${response.message || 'Error al cambiar el estatus'}`, 'error');
       }
     } catch (error) {
-      console.error('Error al cambiar estatus:', error);
       showNotification('❌ Error de conexión al cambiar el estatus', 'error');
     } finally {
       setIsLoading(false);
@@ -827,7 +816,6 @@ function StudentProfilePage() {
             showNotification(`❌ ${response.message || 'Error al eliminar el estudiante'}`, 'error');
           }
         } catch (error) {
-          console.error('Error al eliminar:', error);
           showNotification('❌ Error de conexión al eliminar el estudiante', 'error');
         }
       }
@@ -942,11 +930,11 @@ function StudentProfilePage() {
         return (
           <div className="max-w-6xl mx-auto space-y-6">
             {/* Sección Superior: Foto y Datos Básicos */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
@@ -954,7 +942,7 @@ function StudentProfilePage() {
                 </h3>
               </div>
               
-              <div className="p-6">
+              <div className="p-5 sm:p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                   {/* Foto del estudiante */}
                   <div className="lg:col-span-4 flex flex-col items-center space-y-4">
@@ -962,15 +950,15 @@ function StudentProfilePage() {
                       <img
                         src={student?.fotoAbs || defaultStudentPhoto}
                         alt={`Foto de ${formData.nombres} ${formData.apellidos}`}
-                        className="w-48 h-48 object-cover rounded-full border-4 border-gray-200 shadow-lg"
+                        className="w-40 h-40 sm:w-48 sm:h-48 object-cover rounded-full border-4 border-slate-300 shadow-xl ring-4 ring-slate-100"
                       />
-                      <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
+                      <div className="absolute bottom-2 right-2 w-7 h-7 sm:w-8 sm:h-8 bg-green-500 border-4 border-white rounded-full shadow-lg"></div>
                     </div>
                     
-                    <div className="text-center space-y-1">
-                      <p className="text-lg font-semibold text-gray-900">{formData.nombres} {formData.apellidos}</p>
-                      <p className="text-sm text-gray-600">Folio: {displayFolio}</p>
-                      <p className="text-sm text-gray-600">Registrado: {formData.fechaRegistro}</p>
+                    <div className="text-center space-y-2">
+                      <p className="text-xl sm:text-2xl font-extrabold text-slate-900">{formData.nombres} {formData.apellidos}</p>
+                      <p className="text-sm sm:text-base font-semibold text-slate-600">Folio: {displayFolio}</p>
+                      <p className="text-sm sm:text-base font-semibold text-slate-600">Registrado: {formData.fechaRegistro}</p>
                     </div>
                     
                     {isEditing && (
@@ -986,7 +974,7 @@ function StudentProfilePage() {
                           type="button"
                           disabled={isUploadingPhoto}
                           onClick={triggerPhotoSelect}
-                          className="w-full px-4 py-2 bg-blue-600 disabled:opacity-60 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center"
+                          className="w-full px-4 py-2 bg-slate-600 disabled:opacity-60 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 transition-colors shadow-sm border border-slate-700 flex items-center justify-center"
                         >
                           {isUploadingPhoto && (
                             <svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1003,11 +991,13 @@ function StudentProfilePage() {
                   
                   {/* Datos básicos */}
                   <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2 border-b border-gray-200 pb-3 mb-3">
-                      <h4 className="text-md font-medium text-gray-800 flex items-center">
-                        <svg className="w-4 h-4 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                        </svg>
+                    <div className="md:col-span-2 border-b-2 border-slate-200 pb-4 mb-4">
+                      <h4 className="text-lg sm:text-xl font-extrabold text-slate-800 flex items-center">
+                        <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center mr-3 border-2 border-slate-300">
+                          <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                          </svg>
+                        </div>
                         Datos de Identificación
                       </h4>
                     </div>
@@ -1059,11 +1049,11 @@ function StudentProfilePage() {
 
             {/* Sección: Información de Contacto */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl shadow-lg border border-gray-300 overflow-hidden">
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                     </div>
@@ -1100,11 +1090,11 @@ function StudentProfilePage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg border border-gray-300 overflow-hidden">
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
@@ -1154,11 +1144,11 @@ function StudentProfilePage() {
         return (
           <div className="max-w-6xl mx-auto space-y-6">
             {/* Sección: Nivel Educativo Actual */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-purple-50 to-violet-50 px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
                     </svg>
@@ -1194,11 +1184,11 @@ function StudentProfilePage() {
             </div>
 
             {/* Sección: Aspiraciones Académicas */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                     </svg>
                   </div>
@@ -1244,11 +1234,11 @@ function StudentProfilePage() {
       case 'course':
         return (
           <div className="max-w-5xl mx-auto">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
-                    <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
@@ -1340,11 +1330,11 @@ function StudentProfilePage() {
         return (
           <div className="max-w-6xl mx-auto space-y-6">
             {/* Sección: Información Médica */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-red-50 to-pink-50 px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                  <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
-                    <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
@@ -1436,11 +1426,11 @@ function StudentProfilePage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg border border-gray-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
@@ -1470,7 +1460,7 @@ function StudentProfilePage() {
                           <button 
                             onClick={() => handleStatusChange('Activo')} 
                             disabled={isLoading} 
-                            className="flex-1 min-w-[120px] inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 transition-all duration-200 disabled:opacity-50"
+                            className="flex-1 min-w-[120px] inline-flex items-center justify-center px-3 py-2 text-sm font-semibold rounded-lg text-green-700 bg-green-50 border-2 border-green-300 hover:bg-green-100 transition-all duration-200 disabled:opacity-50 shadow-sm"
                           >
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -1483,7 +1473,7 @@ function StudentProfilePage() {
                           <button 
                             onClick={() => handleStatusChange('Suspendido')} 
                             disabled={isLoading} 
-                            className="flex-1 min-w-[120px] inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 transition-all duration-200 disabled:opacity-50"
+                            className="flex-1 min-w-[120px] inline-flex items-center justify-center px-3 py-2 text-sm font-semibold rounded-lg text-red-700 bg-red-50 border-2 border-red-300 hover:bg-red-100 transition-all duration-200 disabled:opacity-50 shadow-sm"
                           >
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636" />
@@ -1503,11 +1493,11 @@ function StudentProfilePage() {
       case 'expectations':
         return (
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-yellow-50 to-amber-50 px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                  <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
-                    <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                   </div>
@@ -1528,11 +1518,11 @@ function StudentProfilePage() {
       case 'account':
         return (
           <div className="max-w-3xl mx-auto space-y-6">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
-                    <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0-1.657-1.343-3-3-3S6 9.343 6 11v2H5a2 2 0 00-2 2v3a2 2 0 002 2h8a2 2 0 002-2v-3a2 2 0 00-2-2h-1v-2zM9 8a3 3 0 016 0v3" />
                     </svg>
                   </div>
@@ -1566,7 +1556,7 @@ function StudentProfilePage() {
                           showNotification(msg, 'error');
                         } finally { setSavingAccount(false); }
                       }}
-                      className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                      className="px-4 py-2 bg-slate-600 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 transition-colors shadow-sm border border-slate-700 disabled:opacity-50"
                       disabled={accountLoading || savingAccount}
                     >
                       {savingAccount ? 'Guardando...' : 'Guardar Usuario'}
@@ -1616,7 +1606,7 @@ function StudentProfilePage() {
                           showNotification(msg, 'error');
                         } finally { setResettingPass(false); }
                       }}
-                      className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                      className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-sm border border-red-700 disabled:opacity-50"
                       disabled={resettingPass}
                     >
                       {resettingPass ? 'Restableciendo…' : 'Restablecer Contraseña'}
@@ -1674,31 +1664,38 @@ function StudentProfilePage() {
       )}
 
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-  <div className="mb-4 sm:mb-8">
+        {/* Header mejorado con fondo destacado */}
+        <div className="mb-6 sm:mb-8 bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-lg p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
               <button 
                 onClick={() => navigate(-1)}
-                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors self-start"
+                className="flex items-center px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-all duration-200 self-start border border-slate-200 hover:border-slate-300 shadow-sm"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Volver a Lista
+                <span className="font-medium">Volver a Lista</span>
               </button>
-              <div className="hidden sm:block h-6 w-px bg-gray-300"></div>
-              <div>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+              <div className="hidden sm:block h-8 w-px bg-slate-300"></div>
+              <div className="flex-1">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 mb-2">
                   {formData.nombres} {formData.apellidos}
-                  {isEditing && <span className="block sm:inline ml-0 sm:ml-3 mt-1 sm:mt-0 text-sm sm:text-lg text-blue-600">(Editando)</span>}
+                  {isEditing && <span className="block sm:inline ml-0 sm:ml-3 mt-1 sm:mt-0 text-base sm:text-xl text-blue-600 font-semibold">(Editando)</span>}
                 </h1>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">Folio: {displayFolio}</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-white text-slate-700 border-2 border-slate-300 shadow-sm">Folio: {displayFolio}</span>
                   {formData.fechaRegistro && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">Registro: {formData.fechaRegistro}</span>
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-white text-slate-700 border-2 border-slate-300 shadow-sm">Registro: {formData.fechaRegistro}</span>
                   )}
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getNestedValue(formData,'status.estatus') === 'Activo' ? 'bg-green-50 text-green-700 border-green-200' : getNestedValue(formData,'status.estatus') === 'Suspendido' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}
+                    className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold border-2 shadow-sm ${
+                      getNestedValue(formData,'status.estatus') === 'Activo' 
+                        ? 'bg-green-50 text-green-800 border-green-400' 
+                        : getNestedValue(formData,'status.estatus') === 'Suspendido' 
+                        ? 'bg-red-50 text-red-800 border-red-400' 
+                        : 'bg-white text-slate-700 border-slate-300'
+                    }`}
                   >
                     {getNestedValue(formData,'status.estatus') || 'Sin estatus'}
                   </span>
@@ -1713,7 +1710,7 @@ function StudentProfilePage() {
                     onClick={() => {
                       setIsEditing(true);
                     }}
-                    className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+                    className="inline-flex items-center justify-center px-4 py-2 bg-slate-600 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 transition-colors shadow-sm border border-slate-700"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1722,7 +1719,7 @@ function StudentProfilePage() {
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-md"
+                    className="inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-sm border border-red-700"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1734,14 +1731,14 @@ function StudentProfilePage() {
                 <>
                   <button
                     onClick={handleCancel}
-                    className="inline-flex items-center justify-center px-4 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-400 transition-colors shadow-md"
+                    className="inline-flex items-center justify-center px-4 py-2 bg-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-400 transition-colors shadow-sm border border-gray-400"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={isLoading}
-                    className="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-md disabled:opacity-50"
+                    className="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-sm border border-green-700 disabled:opacity-50"
                   >
                     {isLoading ? 'Guardando...' : 'Guardar Cambios'}
                   </button>
@@ -1753,7 +1750,7 @@ function StudentProfilePage() {
 
         {/* Navegación + Contenido unificados en un solo contenedor para aprovechar mejor el espacio */}
         <div className="mb-6">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-xl overflow-hidden">
             {/* Tabs en el header del mismo contenedor (todas las vistas) */}
             <div className="border-b">
               <nav className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-2 sm:gap-3 p-2 sm:p-3">
@@ -1761,10 +1758,10 @@ function StudentProfilePage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full inline-flex items-center justify-start gap-2 px-2.5 py-2 rounded-lg border text-[13px] sm:text-sm leading-5 transition-all duration-200 ${
+                    className={`w-full inline-flex items-center justify-start gap-2 px-3 py-2.5 rounded-xl border-2 text-[13px] sm:text-sm leading-5 transition-all duration-200 ${
                       activeTab === tab.id
-                        ? 'bg-indigo-50 text-indigo-600 border-indigo-300 shadow'
-                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                        ? 'bg-gradient-to-r from-slate-100 to-gray-100 text-slate-900 border-slate-400 shadow-md font-extrabold'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-slate-400 hover:shadow-sm'
                     }`}
                   >
                     <span className="shrink-0">{tab.icon}</span>

@@ -196,6 +196,12 @@ export const crear = async (req, res) => {
       return res.status(400).json({ message: "Todos los campos son obligatorios" });
     } 
 
+    // Validar que el usuario no exista (seguridad: evitar duplicados)
+    const usuarioExistente = await Usuarios.getUsuarioPorusername(usuario);
+    if (usuarioExistente) {
+      return res.status(409).json({ message: "Este nombre de usuario ya está en uso. Por favor, elige otro." });
+    }
+
     const hash = await bcrypt.hash(contraseña, 10);
 
     const usuarioGenerado = { usuario, contraseña: hash, role, id_estudiante };
@@ -211,6 +217,10 @@ export const crear = async (req, res) => {
 
   } catch (error) {
     console.error("Error en el controlador:", error);
+    // Si es un error de duplicado de MySQL, devolver mensaje más claro
+    if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+      return res.status(409).json({ message: "Este nombre de usuario ya está en uso. Por favor, elige otro." });
+    }
     res.status(500).json({ message: "Error interno del servidor", error });
   }
 };
@@ -747,8 +757,17 @@ export const getDashboardMetrics = async (req, res) => {
       ingresosMesActualRows,
       ultimoMesConIngresosRows
     ] = await Promise.all([
-      // Pagos pendientes: estudiantes con verificacion = 1 (enviado esperando validación)
-      db.query(`SELECT COUNT(*) AS total FROM estudiantes WHERE verificacion = 1`).then(r => r[0]),
+      // Pagos pendientes: estudiantes con verificacion = 1 Y que tengan un comprobante subido
+      db.query(`
+        SELECT COUNT(DISTINCT e.id) AS total 
+        FROM estudiantes e
+        INNER JOIN comprobantes c ON c.id_estudiante = e.id
+        LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+        WHERE e.verificacion = 1 
+          AND c.comprobante IS NOT NULL 
+          AND c.comprobante != ''
+          AND sd.id IS NULL
+      `).then(r => r[0]),
 
       // Nuevos alumnos del mes actual (por created_at)
       db.query(

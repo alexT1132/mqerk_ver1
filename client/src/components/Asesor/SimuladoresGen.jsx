@@ -19,8 +19,9 @@ import {
   UploadCloud
 } from "lucide-react";
 import SimuladorModalGen from "./SimulatorModal";
+import AnalizadorFallosRepetidos from "./AnalizadorFallosRepetidos";
 import { generarPreguntasIA, getCooldownRemainingMs } from "../../service/simuladoresAI";
-import { listSimulaciones, deleteSimulacion, createSimulacion, updateSimulacion, getSimulacion, getSimulacionFull } from "../../api/simulaciones";
+import { listSimulaciones, deleteSimulacion, createSimulacion, updateSimulacion, getSimulacion, getSimulacionFull, estudiantesEstadoSimulacion, getSimulacionIntentoReview } from "../../api/simulaciones";
 import InlineMath from "./simGen/InlineMath.jsx";
 
 
@@ -66,23 +67,23 @@ function MathText({ text = "" }) {
 function Badge({ children, type = "default" }) {
   const styles = {
     default: "bg-slate-100 text-slate-700 ring-slate-200",
-    success: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-    draft: "bg-amber-50 text-amber-700 ring-amber-200",
+    success: "bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 ring-2 ring-emerald-200 shadow-sm",
+    draft: "bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 ring-2 ring-amber-200 shadow-sm",
   }[type];
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${styles}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ring-1 ${styles}`}
     >
-      {type === "success" && <CheckCircle2 className="h-3.5 w-3.5" />}
-      {type === "draft" && <CircleDashed className="h-3.5 w-3.5" />}
+      {type === "success" && <CheckCircle2 className="h-4 w-4" />}
+      {type === "draft" && <CircleDashed className="h-4 w-4" />}
       {children}
     </span>
   );
 }
 
 /* Tarjeta compacta para móvil */
-function MobileRow({ item, onView, onEdit, onDelete, onPublish }) {
+function MobileRow({ item, onView, onEdit, onDelete, onPublish, onResultados }) {
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-100">
       <div className="flex items-start justify-between gap-3">
@@ -121,6 +122,13 @@ function MobileRow({ item, onView, onEdit, onDelete, onPublish }) {
         >
           <Eye className="mr-2 h-4 w-4" />
           Vista previa
+        </button>
+        <button
+          onClick={() => onResultados(item)}
+          className="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+        >
+          <span className="mr-2 font-bold">%</span>
+          Resultados
         </button>
         {item.status === "Borrador" && (
           <button
@@ -277,6 +285,14 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewSim, setPreviewSim] = useState(null);
+  const [resultsOpen, setResultsOpen] = useState(false);
+  const [resultsLoading, setResultsLoading] = useState(false);
+  const [resultsRows, setResultsRows] = useState([]);
+  const [resultsSimMeta, setResultsSimMeta] = useState(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewData, setReviewData] = useState(null);
+  const [reviewHeader, setReviewHeader] = useState({ simulacion: null, estudiante: null });
 
   const navigate = useNavigate();
   const headerTitle = useMemo(() => {
@@ -312,43 +328,158 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   const load = useCallback(async () => {
     setLoading(true); setError("");
     try {
-      const baseParams = { visible: 'false' };
-      const params = areaId ? { ...baseParams, id_area: areaId } : baseParams;
+      // ✅ IMPORTANTE: Para asesores, NO filtrar por fecha límite (visible)
+      // Los asesores deben ver TODOS sus simuladores (tanto borradores como publicados, con o sin fecha límite)
+      // Enviar visible: false para desactivar el filtro de fecha límite
+      const baseParams = { visible: 'false' }; // Desactivar filtro de fecha límite para asesores
+      // ✅ CRÍTICO: Para vista general (sin areaId), enviar id_area: 0 para que el backend filtre solo generales
+      // Si no se envía id_area, el backend devuelve TODOS los simuladores (de todas las áreas)
+      const params = areaId ? { ...baseParams, id_area: areaId } : { ...baseParams, id_area: 0 };
+      
+      console.log('[SimuladoresGen] load - llamando a listSimulaciones con params:', {
+        areaId,
+        params,
+        esVistaGeneral: !areaId
+      });
+      
       const res = await listSimulaciones(params);
       let rows = res.data?.data || res.data || [];
       if (!Array.isArray(rows)) rows = [];
-      // Fallback: si viene vacío, intenta sin el flag visible
+      
+      console.log('[SimuladoresGen] load - respuesta del backend:', {
+        totalRows: rows.length,
+        rows: rows.map(r => ({
+          id: r.id,
+          titulo: r.titulo,
+          id_area: r.id_area,
+          tipoIdArea: typeof r.id_area,
+          esNull: r.id_area === null,
+          esUndefined: r.id_area === undefined,
+          esCero: Number(r.id_area) === 0
+        }))
+      });
+      // ✅ IMPORTANTE: NO hacer fallback sin filtro de área
+      // Si estamos en vista general y no hay resultados, está bien (no hay simuladores generales)
+      // Si estamos en área específica y no hay resultados, está bien (no hay simuladores en esa área)
+      // El fallback anterior estaba cargando simuladores de otras áreas, lo cual es incorrecto
+      
+      // Solo intentar hidratar desde el último creado si realmente no hay resultados
+      // y el último creado coincide con la vista actual
       if (rows.length === 0) {
         try {
-          const res2 = await listSimulaciones(areaId ? { id_area: areaId } : undefined);
-          const rows2 = res2.data?.data || res2.data || [];
-          if (Array.isArray(rows2) && rows2.length) rows = rows2;
-        } catch { }
-        // Si sigue vacío, intentar hidratar desde el último creado
-        if (rows.length === 0) {
-          try {
-            const lastIdRaw = localStorage.getItem('last_sim_id');
-            const lastId = lastIdRaw ? Number(lastIdRaw) : null;
-            if (lastId) {
-              const r = await getSimulacion(lastId).catch(err => {
-                if (err?.response?.status === 404) {
-                  try { localStorage.removeItem('last_sim_id'); } catch { }
+          const lastIdRaw = localStorage.getItem('last_sim_id');
+          const lastId = lastIdRaw ? Number(lastIdRaw) : null;
+          if (lastId) {
+            const r = await getSimulacion(lastId).catch(err => {
+              // ✅ Si el simulador no existe (404), limpiar localStorage silenciosamente
+              if (err?.response?.status === 404) {
+                try { localStorage.removeItem('last_sim_id'); } catch { }
+                if (process.env.NODE_ENV === 'development') {
+                  console.log(`[SimuladoresGen] Simulador id=${lastId} no encontrado, limpiando localStorage`);
                 }
-                return null;
-              });
-              const sim = r?.data?.data || r?.data || null;
-              if (sim) rows = [sim];
+              } else {
+                console.error('[SimuladoresGen] Error al cargar simulador desde localStorage:', err);
+              }
+              return null;
+            });
+            const sim = r?.data?.data || r?.data || null;
+            
+            // ✅ CRÍTICO: Solo agregar si coincide con la vista actual
+            if (sim) {
+              const simIdArea = sim.id_area !== null && sim.id_area !== undefined ? Number(sim.id_area) : null;
+              const isGeneralView = !areaId || areaId === null || areaId === undefined;
+              const isGeneralSim = simIdArea === null || simIdArea === undefined || Number(simIdArea) === 0;
+              
+              // Solo agregar si:
+              // - Estamos en vista general Y el simulador es general, O
+              // - Estamos en área específica Y el simulador tiene ese id_area
+              const coincide = (isGeneralView && isGeneralSim) || 
+                              (!isGeneralView && Number(areaId) === simIdArea);
+              
+              if (coincide) {
+                rows = [sim];
+                console.log('[SimuladoresGen] Hidratando desde localStorage (coincide con vista):', {
+                  id: sim.id,
+                  id_area: sim.id_area,
+                  areaIdVista: areaId
+                });
+              } else {
+                console.log('[SimuladoresGen] Último simulador no coincide con vista actual, no hidratando:', {
+                  id: sim.id,
+                  simIdArea,
+                  areaIdVista: areaId,
+                  isGeneralView,
+                  isGeneralSim
+                });
+                // Limpiar localStorage si no coincide
+                try { localStorage.removeItem('last_sim_id'); } catch { }
+              }
+            } else if (lastId) {
+              // Si el simulador no existe, limpiar localStorage
+              try { localStorage.removeItem('last_sim_id'); } catch { }
             }
-          } catch { }
+          }
+        } catch (err) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[SimuladoresGen] Error al intentar cargar desde localStorage:', err);
+          }
         }
       }
       // Filtro fuerte por área en cliente (si areaId -> solo de esa área; si no -> solo generales sin área)
       const filtered = Array.isArray(rows) ? rows.filter(r => {
-        const rid = Number(r?.id_area ?? 0);
-        if (areaId) return Number(areaId) === rid;
+        if (areaId) {
+          const rid = Number(r?.id_area ?? 0);
+          const matches = Number(areaId) === rid;
+          // ✅ Log para debugging cuando hay areaId
+          if (process.env.NODE_ENV === 'development' && !matches && rid > 0) {
+            console.log('[SimuladoresGen] load - simulador filtrado (área diferente):', {
+              id: r.id,
+              titulo: r.titulo,
+              id_area: r.id_area,
+              rid,
+              areaIdEsperado: areaId,
+              coincide: matches
+            });
+          }
+          return matches;
+        }
         // generales: id_area nulo / 0 / undefined
-        return !r?.id_area || Number(r.id_area) === 0;
+        // ✅ CRÍTICO: Verificar explícitamente null, undefined y 0
+        const ridGeneral = r?.id_area;
+        const isGeneral = ridGeneral === null || ridGeneral === undefined || Number(ridGeneral) === 0;
+        return isGeneral;
       }) : [];
+
+      // ✅ Log para debugging (tanto para áreas específicas como generales)
+      if (process.env.NODE_ENV === 'development') {
+        if (areaId) {
+          console.log('[SimuladoresGen] load - filtrado por área específica:', {
+            areaId,
+            totalRows: Array.isArray(rows) ? rows.length : 0,
+            filteredCount: filtered.length,
+            filteredIds: filtered.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area }))
+          });
+        } else {
+          const rowsConIdArea = rows.filter(r => {
+            const rid = r?.id_area;
+            return rid !== null && rid !== undefined && Number(rid) !== 0;
+          });
+          const rowsGenerales = rows.filter(r => {
+            const rid = r?.id_area;
+            return rid === null || rid === undefined || Number(rid) === 0;
+          });
+          
+          console.log('[SimuladoresGen] load - filtrado por generales:', {
+            areaId: null,
+            totalRows: Array.isArray(rows) ? rows.length : 0,
+            filteredCount: filtered.length,
+            filteredIds: filtered.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area })),
+            rowsConIdArea: rowsConIdArea.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area, tipoIdArea: typeof r.id_area })),
+            rowsGenerales: rowsGenerales.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area, tipoIdArea: typeof r.id_area })),
+            todosLosRows: rows.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area, tipoIdArea: typeof r.id_area, esNull: r.id_area === null, esUndefined: r.id_area === undefined, esCero: Number(r.id_area) === 0 }))
+          });
+        }
+      }
 
       setDebugInfo({ fetched: filtered.length, raw: Array.isArray(rows) ? rows.length : -1 });
       const mapped = filtered.map(r => ({
@@ -360,6 +491,23 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         status: r.publico ? "Publicado" : "Borrador",
         updatedAt: r.updated_at ? new Date(r.updated_at).toLocaleDateString('es-MX') : ""
       }));
+      
+      // ✅ Log para debugging después de mapear
+      if (process.env.NODE_ENV === 'development' && areaId) {
+        console.log('[SimuladoresGen] load - items mapeados para la lista:', {
+          areaId,
+          areaTitle,
+          totalItems: mapped.length,
+          items: mapped.map(item => ({
+            id: item.id,
+            name: item.name,
+            type: item.type,
+            status: item.status,
+            id_area: filtered.find(r => r.id === item.id)?.id_area
+          }))
+        });
+      }
+      
       setItems(mapped);
     } catch (e) { console.error(e); setError(e?.response?.data?.message || "No se pudieron cargar simulaciones"); }
     finally { setLoading(false); }
@@ -371,6 +519,46 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     didLoadRef.current = true;
     load();
   }, [areaId]);
+  
+  // ✅ Verificar y limpiar localStorage de simuladores eliminados al cargar
+  useEffect(() => {
+    const checkAndCleanLastSimId = async () => {
+      try {
+        const lastIdRaw = localStorage.getItem('last_sim_id');
+        const lastId = lastIdRaw ? Number(lastIdRaw) : null;
+        if (lastId) {
+          // Verificar si el simulador existe
+          try {
+            const r = await getSimulacion(lastId);
+            const sim = r?.data?.data || r?.data || null;
+            // Si el simulador no existe, limpiar localStorage
+            if (!sim) {
+              localStorage.removeItem('last_sim_id');
+              if (process.env.NODE_ENV === 'development') {
+                console.log(`[SimuladoresGen] Limpiando last_sim_id (id=${lastId} no existe)`);
+              }
+            }
+          } catch (err) {
+            // Si hay un error 404, el simulador no existe, limpiar localStorage
+            if (err?.response?.status === 404) {
+              localStorage.removeItem('last_sim_id');
+              if (process.env.NODE_ENV === 'development') {
+                console.log(`[SimuladoresGen] Limpiando last_sim_id (id=${lastId} eliminado)`);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        // Ignorar errores al verificar
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[SimuladoresGen] Error al verificar last_sim_id:', err);
+        }
+      }
+    };
+    
+    // Verificar solo una vez al montar el componente
+    checkAndCleanLastSimId();
+  }, []); // Solo ejecutar una vez al montar
 
   // Recargar cuando se regresa de editar (detectar cuando se navega desde el builder)
   useEffect(() => {
@@ -396,11 +584,18 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
   // Inicializar y actualizar cooldown cada segundo
   useEffect(() => {
-    const updateCd = () => setCooldownMs(getCooldownRemainingMs());
+    const updateCd = () => {
+      const remaining = getCooldownRemainingMs();
+      setCooldownMs(remaining);
+      // Limpiar el error cuando el cooldown termine
+      if (remaining === 0 && iaError && (iaError.includes('429') || iaError.includes('Límite de solicitudes') || iaError.includes('Espera requerida'))) {
+        setIaError('');
+      }
+    };
     updateCd();
     const id = setInterval(updateCd, 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [iaError]);
 
   // Lista derivada para la vista (búsqueda + filtro)
   const viewItems = useMemo(() => {
@@ -429,33 +624,117 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   }, [generalTopic, areaId]);
 
   /* handlers */
-  // Vista previa: cargar y mostrar el simulador completo
-  const handlePreview = async (item) => {
+  // Vista previa: cargar y mostrar el simulador completo (igual que en Quiz.jsx)
+  const handleView = async (item) => {
+    if (!item || !item.id) {
+      alert('Error: No se puede cargar la vista previa de un simulador sin ID');
+      return;
+    }
+    
     setPreviewOpen(true);
     setPreviewLoading(true);
     setPreviewSim(null);
     try {
       const { data } = await getSimulacionFull(item.id);
-      setPreviewSim(data?.data || null);
+      const sim = data?.data || null;
+      if (!sim) {
+        throw new Error('Simulador no encontrado');
+      }
+      setPreviewSim(sim);
     } catch (e) {
-      console.error(e);
-      alert(e?.response?.data?.message || 'No se pudo cargar la vista previa');
+      // ✅ Manejar error 404 de forma más amigable
+      if (e?.response?.status === 404) {
+        alert(`El simulador "${item.name || 'seleccionado'}" ya no existe. Será removido de la lista.`);
+        // Remover el simulador de la lista y recargar
+        setItems(prev => prev.filter(x => x.id !== item.id));
+        load();
+      } else {
+        console.error('[SimuladoresGen] Error al cargar vista previa:', e);
+        alert(e?.response?.data?.message || 'No se pudo cargar la vista previa');
+      }
       setPreviewOpen(false);
     } finally {
       setPreviewLoading(false);
     }
   };
-
-  const handleView = (item) => {
-    // Propagar contexto de área al builder para que al guardar/regresar no se pierda y no parezca "general"
-    const navState = areaId ? { simId: item.id, areaId, areaTitle } : { simId: item.id };
-    navigate(`/asesor/quizt/builder?simId=${item.id}`, { state: navState });
-  };
-  const handleEdit = (item) => {
-    setEditing(item);
-    setOpen(true);
+  const handleEdit = async (item) => {
+    if (!item || !item.id) {
+      alert('Error: No se puede editar un simulador sin ID');
+      return;
+    }
+    
+    try {
+      // Cargar los datos completos del simulador
+      const { data } = await getSimulacion(item.id);
+      const simData = data?.data || data || {};
+      
+      // Mapear los datos del simulador al formato del initialForm
+      const gruposArray = simData.grupos 
+        ? (typeof simData.grupos === 'string' ? simData.grupos.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(simData.grupos) ? simData.grupos : []))
+        : [];
+      
+      // Calcular horas y minutos desde time_limit_min
+      const timeLimitMin = Number(simData.time_limit_min || 0);
+      const horas = Math.floor(timeLimitMin / 60);
+      const minutos = timeLimitMin % 60;
+      
+      // Formatear fecha_limite para el input type="date" (YYYY-MM-DD)
+      let fechaLimiteFormatted = '';
+      if (simData.fecha_limite) {
+        try {
+          // Si viene como string de MySQL (YYYY-MM-DD o YYYY-MM-DD HH:mm:ss)
+          const fecha = new Date(simData.fecha_limite);
+          if (!isNaN(fecha.getTime())) {
+            fechaLimiteFormatted = fecha.toISOString().split('T')[0]; // YYYY-MM-DD
+          }
+        } catch (e) {
+          console.warn('[SimuladoresGen] Error al formatear fecha_limite:', e);
+        }
+      }
+      
+      // Preparar el objeto de edición con todos los datos
+      const editData = {
+        ...item,
+        // Datos del simulador completo
+        titulo: simData.titulo || simData.nombre || item.name || '',
+        nombre: simData.nombre || simData.titulo || item.name || '',
+        instrucciones: simData.instrucciones || simData.descripcion || '',
+        descripcion: simData.descripcion || simData.instrucciones || '',
+        fechaLimite: fechaLimiteFormatted || simData.fechaLimite || '',
+        publico: simData.publico !== undefined ? Boolean(simData.publico) : (simData.status === 'Publicado'),
+        horas: horas,
+        minutos: minutos,
+        grupos: gruposArray,
+        areaId: simData.id_area !== undefined && simData.id_area !== null ? Number(simData.id_area) : null,
+        areaTitle: simData.materia || simData.titulo_area || null
+      };
+      
+      console.log('[SimuladoresGen] handleEdit - Datos cargados para editar:', {
+        id: item.id,
+        titulo: editData.titulo,
+        nombre: editData.nombre,
+        instrucciones: editData.instrucciones,
+        descripcion: editData.descripcion,
+        fechaLimite: editData.fechaLimite,
+        horas: editData.horas,
+        minutos: editData.minutos,
+        grupos: editData.grupos,
+        areaId: editData.areaId
+      });
+      
+      setEditing(editData);
+      setOpen(true);
+    } catch (error) {
+      console.error('[SimuladoresGen] Error al cargar datos del simulador para editar:', error);
+      alert('No se pudieron cargar los datos del simulador. Intenta de nuevo.');
+    }
   };
   const handleDelete = (item) => {
+    if (!item || !item.id) {
+      alert('Error: No se puede eliminar un simulador sin ID');
+      return;
+    }
+    
     setConfirmModal({
       open: true,
       title: 'Eliminar simulador',
@@ -466,35 +745,143 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         // Optimista: quitar de UI
         const prev = items;
         setItems((prev) => prev.filter((x) => x.id !== item.id));
+        // ✅ Limpiar localStorage si es el último creado
+        try {
+          const lastIdRaw = localStorage.getItem('last_sim_id');
+          const lastId = lastIdRaw ? Number(lastIdRaw) : null;
+          if (lastId === item.id) {
+            localStorage.removeItem('last_sim_id');
+          }
+        } catch {}
+        
         try {
           await deleteSimulacion(item.id);
           setConfirmModal(prev => ({ ...prev, open: false }));
+          // Recargar la lista después de eliminar
+          setTimeout(() => load(), 300);
         } catch (e) {
-          console.error(e);
-          // Revertir en error
-          setItems(prev);
-          alert(e?.response?.data?.message || "No se pudo eliminar");
+          // ✅ Si el simulador ya no existe (404), no revertir (ya se eliminó de la UI)
+          if (e?.response?.status === 404) {
+            console.log(`[SimuladoresGen] Simulador id=${item.id} ya no existe, manteniendo eliminación de la UI`);
+            setConfirmModal(prev => ({ ...prev, open: false }));
+            // Recargar la lista para asegurar sincronización
+            setTimeout(() => load(), 300);
+          } else {
+            console.error('[SimuladoresGen] Error al eliminar simulador:', e);
+            // Revertir en error inesperado
+            setItems(prev);
+            alert(e?.response?.data?.message || "No se pudo eliminar");
+          }
         }
       }
     });
   };
 
   const handleCreate = async (form) => {
-    // Usar el área preservada en iaPrefill si está disponible (para flujo IA), sino usar el actual
-    const currentAreaId = iaPrefill?.areaId ?? areaId ?? null;
-    const currentAreaTitle = iaPrefill?.areaTitle ?? areaTitle ?? null;
+    // ✅ CRÍTICO: Prioridad para determinar el areaId:
+    // 1. Si el form tiene areaId/areaTitle (viene del modal que preservó iaPrefill) → usarlo
+    // 2. Si hay iaPrefill con areaId → usarlo
+    // 3. Si no, usar el área actual del componente
+    
+    const hasFormArea = form && (form.areaId !== undefined || form.areaTitle !== undefined);
+    const hasIaPrefill = iaPrefill && iaPrefill !== null;
+    
+    let currentAreaId = null;
+    let currentAreaTitle = null;
+    
+    if (hasFormArea) {
+      // ✅ PRIORIDAD 1: El form del modal tiene areaId/areaTitle (preservados desde iaPrefill)
+      currentAreaId = form.areaId !== undefined ? form.areaId : null;
+      currentAreaTitle = form.areaTitle !== undefined ? form.areaTitle : null;
+      console.log('[SimuladoresGen] Usando areaId del form (preservado en modal):', {
+        areaId: currentAreaId,
+        areaTitle: currentAreaTitle,
+        desdeForm: true
+      });
+    } else if (hasIaPrefill) {
+      // ✅ PRIORIDAD 2: Usar iaPrefill (preservado cuando se generó con IA)
+      currentAreaId = iaPrefill.areaId !== undefined ? iaPrefill.areaId : null;
+      currentAreaTitle = iaPrefill.areaTitle !== undefined ? iaPrefill.areaTitle : null;
+      console.log('[SimuladoresGen] Usando areaId de iaPrefill:', {
+        areaId: currentAreaId,
+        areaTitle: currentAreaTitle,
+        desdeIaPrefill: true
+      });
+    } else {
+      // ✅ PRIORIDAD 3: Usar el área actual del componente
+      const isGeneralView = !areaId || areaId === null || areaId === undefined;
+      currentAreaId = isGeneralView ? null : (areaId ?? null);
+      currentAreaTitle = isGeneralView ? null : (areaTitle ?? null);
+      console.log('[SimuladoresGen] Usando areaId del componente:', {
+        areaId: currentAreaId,
+        areaTitle: currentAreaTitle,
+        desdeComponente: true
+      });
+    }
 
+    // ✅ IMPORTANTE: Validar que el título no esté vacío antes de crear
+    // También verificar si viene del iaPrefill como respaldo
+    const tituloDelIaPrefill = iaPrefill?.titulo || iaPrefill?.nombre || '';
+    const tituloFinal = (form.nombre || form.titulo || tituloDelIaPrefill || '').trim();
+    if (!tituloFinal || tituloFinal.length < 3) {
+      alert('Error: El título del simulador es requerido y debe tener al menos 3 caracteres. Por favor, ingresa un nombre.');
+      return;
+    }
+    
+    // ✅ Log para debugging
+    console.log('[SimuladoresGen] handleCreate - Validación de título:', {
+      formNombre: form.nombre,
+      formTitulo: form.titulo,
+      iaPrefillTitulo: iaPrefill?.titulo,
+      iaPrefillNombre: iaPrefill?.nombre,
+      tituloFinal,
+      tituloFinalLength: tituloFinal.length
+    });
+    
     // Mapear campos del modal al backend
+    // ✅ IMPORTANTE: Priorizar descripción del form (si viene de iaPrefill), luego instrucciones
+    // ✅ CRÍTICO: También buscar en iaPrefill si no hay descripción en el form
+    // Esto es especialmente importante cuando se crea con IA, ya que la descripción viene en iaPrefill
+    const descripcionDelIaPrefill = iaPrefill?.descripcion || iaPrefill?.instrucciones || '';
+    const descripcionFinal = (form.descripcion || form.instrucciones || descripcionDelIaPrefill || '').trim();
+    
+    // ✅ Log para debugging
+    if (!descripcionFinal || descripcionFinal.length === 0) {
+      console.warn('[SimuladoresGen] ⚠️ DESCRIPCIÓN VACÍA al crear simulador:', {
+        formDescripcion: form.descripcion,
+        formInstrucciones: form.instrucciones,
+        iaPrefillDescripcion: iaPrefill?.descripcion,
+        iaPrefillInstrucciones: iaPrefill?.instrucciones,
+        descripcionFinal
+      });
+    }
     const payload = {
-      titulo: form.nombre || form.titulo,
-      descripcion: form.instrucciones || null,
+      titulo: tituloFinal, // ✅ Usar título validado (no puede estar vacío)
+      descripcion: descripcionFinal || null, // ✅ Usar descripción del form (generada por IA) o instrucciones como fallback
       fecha_limite: form.fechaLimite || null,
       // No fijar tiempo por defecto; el asesor lo define explícitamente
       time_limit_min: (Number(form.horas || 0) * 60 + Number(form.minutos || 0)),
       publico: false, // Crear como borrador para que pueda editarlo antes de publicar (cuando tiene preguntas IA)
+      activo: true, // ✅ IMPORTANTE: Siempre crear como activo para que aparezca en la lista del asesor
       grupos: form.grupos ? String(form.grupos).split(',').map(s => s.trim()).filter(Boolean) : null,
-      ...(currentAreaId ? { id_area: currentAreaId } : {})
+      // ✅ CRÍTICO: Incluir id_area siempre (null para generales, el valor numérico para áreas específicas)
+      // Si currentAreaId es un número válido, usarlo; si es null/undefined, usar null explícitamente
+      id_area: (currentAreaId !== null && currentAreaId !== undefined && Number(currentAreaId) > 0) 
+        ? Number(currentAreaId) 
+        : null
     };
+    
+    // Log del payload para debugging
+    console.log('[SimuladoresGen] Payload de creación:', {
+      titulo: payload.titulo,
+      id_area: payload.id_area,
+      currentAreaId: currentAreaId,
+      currentAreaTitle: currentAreaTitle,
+      tienePreguntasIA: iaPreguntas && Array.isArray(iaPreguntas) && iaPreguntas.length > 0,
+      desdeIaPrefill: hasIaPrefill,
+      iaPrefillAreaId: iaPrefill?.areaId,
+      iaPrefillAreaTitle: iaPrefill?.areaTitle
+    });
     try {
       const hasIaQuestions = iaPreguntas && Array.isArray(iaPreguntas) && iaPreguntas.length > 0;
       // Si tenemos un banco IA pendiente, crear con preguntas incluidas
@@ -502,68 +889,323 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         ? { ...payload, preguntas: iaPreguntas }
         : { ...payload, publico: !!form.publico }; // Solo usar form.publico si no tiene preguntas IA
 
+      console.log('[SimuladoresGen] Enviando al backend:', {
+        id_area: withQuestions.id_area,
+        titulo: withQuestions.titulo,
+        descripcion: withQuestions.descripcion,
+        cantidadPreguntas: withQuestions.preguntas?.length || 0,
+        tienePreguntas: hasIaQuestions,
+        payloadCompleto: {
+          titulo: payload.titulo,
+          descripcion: payload.descripcion,
+          id_area: payload.id_area,
+          fecha_limite: payload.fecha_limite,
+          time_limit_min: payload.time_limit_min,
+          publico: payload.publico,
+          activo: payload.activo,
+          grupos: payload.grupos
+        }
+      });
+
       const res = await createSimulacion(withQuestions);
       const s = res.data?.data || res.data;
+      
+      console.log('[SimuladoresGen] Respuesta del backend:', {
+        id: s?.id,
+        titulo: s?.titulo,
+        tituloTipo: typeof s?.titulo,
+        tituloVacio: !s?.titulo || s?.titulo.trim() === '',
+        nombre: s?.nombre,
+        descripcion: s?.descripcion,
+        descripcionTipo: typeof s?.descripcion,
+        descripcionVacia: !s?.descripcion || s?.descripcion.trim() === '',
+        id_area: s?.id_area,
+        id_areaEsperado: currentAreaId,
+        coincide: s?.id_area === currentAreaId,
+        payloadTitulo: withQuestions.titulo,
+        payloadDescripcion: withQuestions.descripcion,
+        payloadTituloVacio: !withQuestions.titulo || withQuestions.titulo.trim() === '',
+        payloadDescripcionVacia: !withQuestions.descripcion || withQuestions.descripcion.trim() === '',
+        todosLosCampos: Object.keys(s || {})
+      });
+      
+      // ✅ IMPORTANTE: Verificar que el simulador se guardó correctamente con el id_area correcto
+      if (hasIaQuestions && s?.id) {
+        try {
+          const { getSimulacion } = await import('../../api/simulaciones');
+          const verifyRes = await getSimulacion(s.id);
+          const simuladorVerificado = verifyRes?.data?.data || verifyRes?.data;
+          
+          // ✅ Verificar también las preguntas guardadas
+          const { getSimulacionFull } = await import('../../api/simulaciones');
+          const fullRes = await getSimulacionFull(s.id);
+          const simuladorCompleto = fullRes?.data?.data || fullRes?.data;
+          
+          console.log('[SimuladoresGen] Verificación post-creación:', {
+            id: simuladorVerificado?.id,
+            titulo: simuladorVerificado?.titulo,
+            descripcion: simuladorVerificado?.descripcion,
+            id_area: simuladorVerificado?.id_area,
+            id_areaEsperado: currentAreaId,
+            coincide: simuladorVerificado?.id_area === currentAreaId,
+            preguntasGuardadas: simuladorCompleto?.preguntas?.length || 0,
+            preguntasEsperadas: iaPreguntas?.length || 0,
+            todasLasPropiedades: Object.keys(simuladorVerificado || {})
+          });
+          
+          if (simuladorVerificado) {
+            const idAreaGuardado = simuladorVerificado.id_area;
+            const idAreaEsperado = currentAreaId;
+            
+            // Comparar como números para evitar problemas de tipo
+            const guardadoNum = idAreaGuardado !== null && idAreaGuardado !== undefined ? Number(idAreaGuardado) : null;
+            const esperadoNum = idAreaEsperado !== null && idAreaEsperado !== undefined ? Number(idAreaEsperado) : null;
+            
+            if (guardadoNum !== esperadoNum) {
+              console.error('[SimuladoresGen] ❌ ERROR: id_area no se guardó correctamente', {
+                esperado: esperadoNum,
+                guardado: guardadoNum,
+                simuladorId: s.id,
+                payloadEnviado: withQuestions.id_area
+              });
+              alert(`⚠️ Advertencia: El simulador se creó pero el área no se guardó correctamente.\n\nEsperado: ${esperadoNum || 'null'} (${currentAreaTitle || 'General'})\nGuardado: ${guardadoNum || 'null'}\n\nPor favor, verifica en la lista y edita el simulador si es necesario.`);
+            } else {
+              console.log('[SimuladoresGen] ✅ id_area se guardó correctamente:', {
+                id_area: guardadoNum,
+                areaTitle: currentAreaTitle
+              });
+            }
+          }
+        } catch (verifyError) {
+          console.error('[SimuladoresGen] Error al verificar simulador creado:', verifyError);
+        }
+      }
+      
       try { localStorage.setItem('last_sim_id', String(s.id)); } catch { }
+      
+      // ✅ CRÍTICO: Usar el id_area del simulador guardado (s.id_area), no el currentAreaId del componente
+      // Esto asegura que el tipo se muestre correctamente según donde realmente se guardó
+      const idAreaGuardado = s.id_area !== null && s.id_area !== undefined ? Number(s.id_area) : null;
+      const tipoItem = idAreaGuardado 
+        ? (currentAreaTitle || `Área ${idAreaGuardado}`) 
+        : 'General';
+      
+      console.log('[SimuladoresGen] Creando newItem para la lista:', {
+        id: s.id,
+        id_area: idAreaGuardado,
+        tipo: tipoItem,
+        currentAreaId: currentAreaId,
+        s_id_area: s.id_area
+      });
+      
+      // ✅ CRÍTICO: Usar el título del simulador guardado, con fallback a nombre si titulo está vacío
+      const tituloFinal = s.titulo || s.nombre || payload.titulo || 'Sin título';
+      
+      console.log('[SimuladoresGen] Creando newItem - título:', {
+        titulo: s.titulo,
+        nombre: s.nombre,
+        payloadTitulo: payload.titulo,
+        tituloFinal,
+        tieneTitulo: !!s.titulo,
+        tieneNombre: !!s.nombre
+      });
+      
       const newItem = {
         id: s.id,
-        name: s.titulo,
-        type: currentAreaId ? (currentAreaTitle || `Área ${s.id_area}`) : 'General',
+        name: tituloFinal, // ✅ Usar título con fallback
+        type: tipoItem, // ✅ Usar tipo basado en id_area guardado, no en currentAreaId
         questions: hasIaQuestions ? iaPreguntas.length : 0,
         attempts: 0,
         status: hasIaQuestions ? 'Borrador' : (s.publico ? 'Publicado' : 'Borrador'), // Borrador si tiene preguntas IA para que pueda editarlo
         updatedAt: s.updated_at ? new Date(s.updated_at).toLocaleDateString('es-MX') : ''
       };
-      setItems(prev => [newItem, ...prev]);
+      
+      // ✅ IMPORTANTE: Solo agregar a la lista si el id_area coincide con la vista actual
+      // Si se guardó en área 101 pero estamos en vista general, no agregarlo aquí (aparecerá cuando recargues)
+      // ✅ CRÍTICO: Considerar tanto null como undefined como vista general
+      const isGeneralView = !areaId || areaId === null || areaId === undefined;
+      const isGeneralSaved = !idAreaGuardado || idAreaGuardado === null || idAreaGuardado === undefined || Number(idAreaGuardado) === 0;
+      
+      const coincideConVista = (isGeneralView && isGeneralSaved) || 
+                               (!isGeneralView && !isGeneralSaved && Number(areaId) === idAreaGuardado);
+      
+      console.log('[SimuladoresGen] Verificando coincideConVista:', {
+        areaId,
+        idAreaGuardado,
+        isGeneralView,
+        isGeneralSaved,
+        coincideConVista,
+        simuladorId: s.id
+      });
+      
+      if (coincideConVista) {
+        setItems(prev => [newItem, ...prev]);
+        console.log('[SimuladoresGen] ✅ Simulador agregado a la lista (coincide con vista)');
+      } else {
+        console.log('[SimuladoresGen] ⚠️ Simulador guardado en área diferente, no agregando a lista actual:', {
+          id_areaGuardado: idAreaGuardado,
+          areaIdVista: areaId,
+          isGeneralView,
+          isGeneralSaved,
+          simuladorId: s.id
+        });
+      }
       setOpen(false);
       // Limpiar estado IA temporal
       setIaPreguntas(null);
       setIaPrefill(null);
-      // Si tiene preguntas IA, mostrar modal de éxito antes de navegar
+      
+      // ✅ IMPORTANTE: Si tiene preguntas IA, NO navegar al builder, quedarse en la lista (igual que Quiz.jsx)
+      // Esto permite que el simulador aparezca en la lista del asesor y pueda ser editado/publicado desde allí
       if (hasIaQuestions) {
+        // Mostrar modal de éxito y quedarse en la lista
         setSuccessModal({
           open: true,
-          message: `Simulador creado exitosamente con ${iaPreguntas.length} pregunta(s)`,
+          message: `Simulador creado exitosamente con ${iaPreguntas.length} pregunta(s)${currentAreaId ? ` en el área ${currentAreaTitle || ''}` : ''}`,
           count: iaPreguntas.length
         });
-        // Cerrar automáticamente después de 4 segundos y navegar
+        // Cerrar automáticamente después de 4 segundos
         setTimeout(() => {
           setSuccessModal(prev => ({ ...prev, open: false }));
-          const navState = currentAreaId ? { simId: s.id, areaId: currentAreaId, areaTitle: currentAreaTitle } : { simId: s.id };
-          navigate(`/asesor/quizt/builder?simId=${s.id}&new=1`, { state: navState });
         }, 4000);
+        // Recargar la lista para asegurar que el simulador aparezca correctamente
+        setTimeout(() => load(), 500);
+        // NO navegar, quedarse en la lista para que pueda verlo y editarlo/publicarlo
+        return;
       } else {
-        // Si no tiene preguntas IA, navegar inmediatamente
+        // Si no tiene preguntas IA, navegar inmediatamente al builder para agregarlas
         const navState = currentAreaId ? { simId: s.id, areaId: currentAreaId, areaTitle: currentAreaTitle } : { simId: s.id };
         navigate(`/asesor/quizt/builder?simId=${s.id}&new=1`, { state: navState });
       }
-    } catch (e) { console.error(e); alert('No se pudo crear'); }
+    } catch (e) { 
+      console.error('[SimuladoresGen] Error al crear simulador:', e);
+      alert(e?.response?.data?.message || e?.message || 'No se pudo crear el simulador. Por favor, intenta de nuevo.');
+    }
   };
 
   const handleUpdate = async (form) => {
     if (!editing) return;
+    
+    // ✅ CRÍTICO: Obtener el id_area actual del simulador antes de actualizar
+    // para preservarlo si no se está cambiando explícitamente
+    let currentIdArea = null;
+    try {
+      const currentSim = await getSimulacion(editing.id);
+      const simData = currentSim?.data?.data || currentSim?.data || null;
+      if (simData && (simData.id_area !== null && simData.id_area !== undefined)) {
+        currentIdArea = Number(simData.id_area);
+        console.log('[SimuladoresGen] handleUpdate - id_area actual del simulador:', currentIdArea);
+      }
+    } catch (err) {
+      console.warn('[SimuladoresGen] No se pudo obtener id_area actual del simulador:', err);
+    }
+    
+    // ✅ CRÍTICO: Preservar id_area:
+    // 1. Si el form tiene areaId (viene del modal con iaPrefill preservado) → usarlo
+    // 2. Si estamos en vista de área específica (areaId del componente) → usarlo
+    // 3. Si no, preservar el id_area actual del simulador (no cambiarlo)
+    let finalIdArea = null;
+    if (form && (form.areaId !== undefined && form.areaId !== null)) {
+      finalIdArea = Number(form.areaId);
+      console.log('[SimuladoresGen] handleUpdate - usando areaId del form:', finalIdArea);
+    } else if (areaId && areaId !== null && areaId !== undefined) {
+      finalIdArea = Number(areaId);
+      console.log('[SimuladoresGen] handleUpdate - usando areaId del componente:', finalIdArea);
+    } else if (currentIdArea !== null && currentIdArea !== undefined) {
+      finalIdArea = currentIdArea;
+      console.log('[SimuladoresGen] handleUpdate - preservando id_area actual:', finalIdArea);
+    } else {
+      finalIdArea = null;
+      console.log('[SimuladoresGen] handleUpdate - estableciendo id_area como null (general)');
+    }
+    
+    // ✅ IMPORTANTE: El form usa "instrucciones" como descripción (ya que el modal mapea descripcion->instrucciones)
+    const descripcionFinal = (form.descripcion || form.instrucciones || '').trim();
+    
+    // ✅ IMPORTANTE: Validar título antes de enviarlo (no enviar si está vacío para preservar el existente)
+    const tituloDelForm = (form.nombre || form.titulo || '').trim();
+    const tituloParaEnviar = tituloDelForm && tituloDelForm.length >= 3 ? tituloDelForm : undefined;
+    
     const payload = {
-      titulo: form.nombre || form.titulo,
-      descripcion: form.instrucciones || null,
+      ...(tituloParaEnviar !== undefined ? { titulo: tituloParaEnviar } : {}), // Solo incluir si es válido
+      descripcion: descripcionFinal || null, // ✅ Usar instrucciones del form (puede contener descripción generada por IA)
       fecha_limite: form.fechaLimite || null,
       time_limit_min: Number(form.horas || 0) * 60 + Number(form.minutos || 0),
       publico: !!form.publico,
+      activo: true, // ✅ IMPORTANTE: Siempre mantener activo al actualizar
       grupos: form.grupos ? String(form.grupos).split(',').map(s => s.trim()).filter(Boolean) : null,
-      // Asegurar que no se pierda la asociación con el área al actualizar
-      ...(areaId ? { id_area: areaId } : {})
+      // ✅ CRÍTICO: Incluir id_area siempre para preservarlo (null para generales, número para áreas específicas)
+      id_area: (finalIdArea !== null && finalIdArea !== undefined && Number(finalIdArea) > 0) 
+        ? Number(finalIdArea) 
+        : null
     };
+    
+    console.log('[SimuladoresGen] handleUpdate - payload final:', {
+      id_area: payload.id_area,
+      titulo: payload.titulo,
+      publico: payload.publico
+    });
+    
     try {
       const res = await updateSimulacion(editing.id, payload);
       const s = res.data?.data || res.data;
       setItems(prev => prev.map(x => x.id === editing.id ? ({
-        id: s.id, name: s.titulo, type: areaId ? (areaTitle || `Área ${s.id_area}`) : 'General',
+        id: s.id, name: s.titulo, type: (s.id_area && Number(s.id_area) > 0) ? (areaTitle || `Área ${s.id_area}`) : 'General',
         questions: Number(x.questions || 0), attempts: Number(x.attempts || 0), status: s.publico ? 'Publicado' : 'Borrador', updatedAt: s.updated_at ? new Date(s.updated_at).toLocaleDateString('es-MX') : ''
       }) : x));
+      
       setEditing(null);
       setOpen(false);
-    } catch (e) { console.error(e); alert('No se pudo guardar'); }
+    } catch (e) { 
+      console.error(e); 
+      alert('No se pudo guardar'); 
+    }
   };
 
+  const handleResultados = async (item) => {
+    if (!item || !item.id) {
+      alert('Error: No se puede cargar los resultados de un simulador sin ID');
+      return;
+    }
+    setResultsOpen(true);
+    setResultsLoading(true);
+    setResultsRows([]);
+    setResultsSimMeta({ id: item.id, titulo: item.name || item.titulo || 'Simulación' });
+    try {
+      const { data } = await estudiantesEstadoSimulacion(item.id);
+      const rows = data?.data || [];
+      setResultsRows(rows);
+    } catch (e) {
+      alert(e?.response?.data?.message || 'No se pudo cargar el estado de estudiantes');
+      setResultsOpen(false);
+    } finally {
+      setResultsLoading(false);
+    }
+  };
+  const openReview = async (row) => {
+    if (!resultsSimMeta?.id || !row?.id_estudiante) return;
+    setReviewOpen(true);
+    setReviewLoading(true);
+    setReviewData(null);
+    setReviewHeader({ 
+      simulacion: resultsSimMeta, 
+      estudiante: { 
+        id: row.id_estudiante, 
+        nombre: `${row.apellidos || ''} ${row.nombre || ''}`.trim(),
+        totalIntentos: row.total_intentos || 0
+      } 
+    });
+    try {
+      // Forzar intento=1 (oficial)
+      const { data } = await getSimulacionIntentoReview(resultsSimMeta.id, row.id_estudiante, 1);
+      setReviewData(data?.data || null);
+    } catch (e) {
+      alert(e?.response?.data?.message || 'No se pudo cargar el detalle del intento');
+      setReviewOpen(false);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
   const handlePublish = async (item) => {
     setConfirmModal({
       open: true,
@@ -572,13 +1214,69 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       type: 'success',
       confirmText: 'Publicar',
       onConfirm: async () => {
+        // ✅ CRÍTICO: Obtener el id_area actual del simulador antes de publicar
+        // para preservarlo y evitar que se mueva a "Generales"
+        let currentIdArea = null;
+        try {
+          const currentSim = await getSimulacion(item.id);
+          const simData = currentSim?.data?.data || currentSim?.data || null;
+          if (simData && (simData.id_area !== null && simData.id_area !== undefined)) {
+            currentIdArea = Number(simData.id_area);
+            console.log('[SimuladoresGen] handlePublish - id_area actual del simulador:', currentIdArea);
+          }
+        } catch (err) {
+          console.warn('[SimuladoresGen] No se pudo obtener id_area actual del simulador:', err);
+        }
+        
         // Optimista
         const prev = [...items];
         setItems(prev => prev.map(x => x.id === item.id ? { ...x, status: 'Publicado' } : x));
 
         try {
-          await updateSimulacion(item.id, { publico: true });
+          // ✅ CRÍTICO: Al publicar, preservar el id_area actual del simulador
+          // Esto evita que se mueva a "Generales" cuando se publica
+          const publishPayload = {
+            publico: true,
+            activo: true
+          };
+          
+          // ✅ Solo incluir id_area si existe (para preservarlo)
+          if (currentIdArea !== null && currentIdArea !== undefined && Number(currentIdArea) > 0) {
+            publishPayload.id_area = Number(currentIdArea);
+            console.log('[SimuladoresGen] handlePublish - preservando id_area:', publishPayload.id_area);
+          } else {
+            publishPayload.id_area = null;
+            console.log('[SimuladoresGen] handlePublish - estableciendo id_area como null (general)');
+          }
+          
+          await updateSimulacion(item.id, publishPayload);
+          
+          // ✅ Verificar que el id_area se preservó después de publicar
+          try {
+            const verifyRes = await getSimulacion(item.id);
+            const simuladorVerificado = verifyRes?.data?.data || verifyRes?.data;
+            console.log('[SimuladoresGen] handlePublish - verificación post-publicación:', {
+              id: simuladorVerificado?.id,
+              id_area: simuladorVerificado?.id_area,
+              id_areaEsperado: currentIdArea,
+              publico: simuladorVerificado?.publico,
+              coincide: simuladorVerificado?.id_area === currentIdArea
+            });
+            
+            if (simuladorVerificado && simuladorVerificado.id_area !== currentIdArea) {
+              console.error('[SimuladoresGen] ❌ ERROR: id_area se perdió después de publicar', {
+                esperado: currentIdArea,
+                guardado: simuladorVerificado.id_area,
+                simuladorId: item.id
+              });
+            }
+          } catch (verifyErr) {
+            console.warn('[SimuladoresGen] No se pudo verificar id_area después de publicar:', verifyErr);
+          }
+          
           setConfirmModal(prev => ({ ...prev, open: false }));
+          // Recargar la lista para reflejar los cambios
+          setTimeout(() => load(), 500);
         } catch (e) {
           // Revertir
           setItems(prev);
@@ -599,7 +1297,15 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         setLoading(false);
         return;
       }
-      const tema = areaId ? (areaTitle || 'Simulador de área') : generalTopic.trim();
+      // ✅ IMPORTANTE: Validar que el tema no esté vacío (ya hay validación arriba, pero aseguramos un valor válido)
+      const temaRaw = areaId ? (areaTitle || 'Simulador de área') : generalTopic.trim();
+      const tema = temaRaw || 'Simulador General'; // Fallback si está vacío
+      if (!tema || !tema.trim()) {
+        setError('Error: Debes ingresar un tema para generar el simulador con IA.');
+        setLoading(false);
+        return;
+      }
+      
       // Calcular cantidad total desde distribución personalizada
       const cantidad = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
       if (cantidad > MAX_IA) {
@@ -618,7 +1324,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       };
       // Preparar parámetros avanzados de IA
       const aiParams = {
-        tema,
+        tema: tema.trim(), // ✅ Asegurar que el tema tenga un valor válido
         cantidad,
         area: areaId ? (areaTitle || undefined) : undefined,
         nivel: iaNivel || 'intermedio',
@@ -645,28 +1351,66 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       });
       // Guardar banco IA en estado y abrir modal prellenado
       setIaPreguntas(preguntas);
-      const tituloSugerido = `${tema} (IA · ${cantidad} preguntas)`;
+      // ✅ IMPORTANTE: Generar título y descripción basados en el tema
+      // Asegurar que el título tenga un valor válido y descriptivo
+      const tituloSugerido = `${tema} (IA · ${cantidad} pregunta${cantidad > 1 ? 's' : ''})`.trim();
+      // ✅ IMPORTANTE: Generar descripción más completa, natural y fluida basada en el tema y tipo (funciona tanto para generales como por área)
+      const esPorArea = areaId && areaTitle;
+      const contextoSimulador = esPorArea 
+        ? `Simulación de práctica sobre ${tema} enfocada en el área de ${areaTitle}. Contiene ${cantidad} pregunta${cantidad > 1 ? 's' : ''} de contenido específico del área, generadas con inteligencia artificial para ayudarte a prepararte para tu examen de ingreso universitario.`
+        : `Simulación de práctica general sobre ${tema} para examen de ingreso universitario. Contiene ${cantidad} pregunta${cantidad > 1 ? 's' : ''} de contenido general, generadas con inteligencia artificial para reforzar tus conocimientos.`;
+      const descripcionGenerada = `${contextoSimulador} Lee cada pregunta cuidadosamente y selecciona la respuesta correcta.`;
       const instrucciones = `Lee cada pregunta y selecciona la respuesta correcta. Responde con calma y revisa tus opciones antes de continuar.`;
+      // ✅ IMPORTANTE: Preservar siempre el areaId y areaTitle cuando se genera con IA
+      // Esto asegura que el simulador se guarde en el área correcta incluso si el componente cambia de vista
+      const isGeneralView = !areaId || areaId === null || areaId === undefined;
+      // ✅ IMPORTANTE: Asegurar que todos los datos necesarios estén presentes en iaPrefill
+      // Validar que el título no esté vacío antes de establecerlo
+      const tituloFinal = tituloSugerido && tituloSugerido.length >= 3 
+        ? tituloSugerido 
+        : `Simulador ${tema || 'General'} (IA)`;
       setIaPrefill({
-        titulo: tituloSugerido,
-        instrucciones,
-        nombre: tituloSugerido,
-        fechaLimite: '',
-        publico: false,
-        horas: 0,
-        minutos: 0,
-        grupos: '',
-        areaId: areaId || null, // Preservar el área actual
-        areaTitle: areaTitle || null, // Preservar el título del área
+        titulo: tituloFinal, // ✅ Asegurar que siempre tenga un valor válido (mínimo 3 caracteres)
+        instrucciones: instrucciones || 'Lee cada pregunta y selecciona la respuesta correcta. Responde con calma y revisa tus opciones antes de continuar.',
+        descripcion: descripcionGenerada || `Simulación de práctica sobre ${tema || 'temas generales'}. Contiene ${cantidad} pregunta${cantidad > 1 ? 's' : ''} para ayudarte a prepararte para tu examen.`, // ✅ Agregar descripción generada (IMPORTANTE: debe tener contenido)
+        nombre: tituloFinal, // ✅ Asegurar que siempre tenga un valor válido (mínimo 3 caracteres)
+        fechaLimite: '', // El usuario debe completar esto en el modal
+        publico: false, // Siempre crear como borrador cuando tiene preguntas IA
+        horas: 0, // El usuario debe completar esto en el modal
+        minutos: 0, // El usuario debe completar esto en el modal
+        grupos: '', // El usuario debe completar esto en el modal
+        // ✅ CRÍTICO: Preservar areaId y areaTitle siempre cuando se genera con IA
+        // Si estamos en un área específica (areaId es un número válido), preservarlo
+        // Si estamos en vista general (areaId es null/undefined), preservar null
+        areaId: isGeneralView ? null : (areaId !== null && areaId !== undefined ? Number(areaId) : null),
+        areaTitle: isGeneralView ? null : (areaTitle || null),
       });
+      
+      // Log para debugging
+      console.log('[SimuladoresGen] IA generada - iaPrefill establecido:', {
+        areaId: isGeneralView ? null : (areaId !== null && areaId !== undefined ? Number(areaId) : null),
+        areaTitle: isGeneralView ? null : (areaTitle || null),
+        isGeneralView,
+        areaIdOriginal: areaId
+      });
+      
       setOpen(true);
     } catch (e) {
       console.error(e);
       const msg = String(e?.message || '').toLowerCase();
       const rem = getCooldownRemainingMs();
 
-      // Manejar error 429 (Too Many Requests) o errores de límite de cuota
-      if (e?.code === 'RATE_LIMIT' || e?.status === 429 || msg.includes('429') || msg.includes('quota') || msg.includes('rate limit') || msg.includes('límite de solicitudes') || msg.includes('error de cuota')) {
+      // Detectar error de API key bloqueada (leaked)
+      if (e?.code === 'API_KEY_LEAKED' || msg.includes('leaked') || msg.includes('reported as leaked') || msg.includes('bloqueada porque fue expuesta')) {
+        setError(
+          '⚠️ La API key de Gemini fue bloqueada por Google porque fue expuesta públicamente.\n\n' +
+          'Por favor, contacta al administrador del sistema para obtener una nueva API key. ' +
+          'El administrador debe obtener una nueva clave desde Google AI Studio y actualizarla en el servidor.'
+        );
+        if (e?.helpUrl) {
+          console.error('🔗 Obtén una nueva API key en:', e.helpUrl);
+        }
+      } else if (e?.code === 'RATE_LIMIT' || e?.status === 429 || msg.includes('429') || msg.includes('quota') || msg.includes('rate limit') || msg.includes('límite de solicitudes') || msg.includes('error de cuota')) {
         const cooldownTime = e?.remainingMs || rem || 45000; // 45 segundos por defecto
         const secs = Math.ceil(cooldownTime / 1000);
         setError(`⚠️ Límite de solicitudes alcanzado (Error 429)\n\nSe alcanzó el límite de solicitudes a la API de Google. Por favor, espera ${secs} segundo${secs > 1 ? 's' : ''} antes de intentar nuevamente.\n\nEl botón de generar quedará deshabilitado durante el tiempo de espera.`);
@@ -690,6 +1434,18 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
   // Crear simulador con IA eligiendo modo/temas (para vista de área)
   const crearSimuladorConIAOpciones = async ({ modo = 'general', temasText = '' } = {}) => {
+    // Verificar cooldown ANTES de cualquier otra validación
+    const rem = getCooldownRemainingMs();
+    if (rem > 0) {
+      const secs = Math.ceil(rem / 1000);
+      const mins = Math.floor(secs / 60);
+      const secsRem = secs % 60;
+      const timeStr = mins > 0 ? `${mins} minuto${mins > 1 ? 's' : ''} y ${secsRem} segundo${secsRem > 1 ? 's' : ''}` : `${secs} segundo${secs > 1 ? 's' : ''}`;
+      setIaError(`⏳ Espera requerida\n\nDebes esperar ${timeStr} antes de volver a generar con IA. El botón quedará deshabilitado durante este tiempo.\n\nPuedes cerrar este modal y volver a intentarlo cuando termine el tiempo de espera.`);
+      setCooldownMs(rem);
+      return;
+    }
+    
     if (!areaId) {
       // Para simuladores generales, usar generalTopic y la misma lógica
       if (!generalTopic.trim()) {
@@ -738,7 +1494,15 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         return;
       }
 
-      const tema = areaId ? (areaTitle || 'Simulador de área') : generalTopic.trim();
+      // ✅ IMPORTANTE: Validar que el tema no esté vacío para simuladores generales
+      const temaRaw = areaId ? (areaTitle || 'Simulador de área') : generalTopic.trim();
+      const tema = temaRaw || 'Simulador General'; // Fallback si está vacío
+      if (!tema || !tema.trim()) {
+        setIaError('Error: Debes ingresar un tema para generar el simulador con IA.');
+        setLoading(false);
+        return;
+      }
+      
       // Distribución personalizada
       const distribucion = {
         multi: iaCountMultiple,
@@ -746,7 +1510,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         short: iaCountCorta
       };
       const opts = {
-        tema,
+        tema: tema.trim(), // ✅ Asegurar que el tema tenga un valor válido
         cantidad,
         area: areaId ? (areaTitle || undefined) : undefined,
         nivel: iaNivel,
@@ -779,20 +1543,55 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         return { orden: idx + 1, text: q.text, type: 'short', puntos: Number(q.points || 1), answer: String(q.answer || '') };
       });
       setIaPreguntas(preguntas);
-      const tituloSugerido = `${tema} (IA · ${cantidad} preguntas${opts.modo === 'temas' ? ' · por temas' : ''})`;
+      // ✅ IMPORTANTE: Generar título y descripción basados en el tema y modo
+      // Asegurar que el título tenga un valor válido y descriptivo
+      const tituloSugerido = `${tema} (IA · ${cantidad} pregunta${cantidad > 1 ? 's' : ''}${opts.modo === 'temas' ? ' · por temas' : ''})`.trim();
+      // ✅ IMPORTANTE: Generar descripción más completa, natural y fluida basada en el tema, modo y área
+      const esPorArea = areaId && areaTitle;
+      let descripcionGenerada = '';
+      if (opts.modo === 'temas') {
+        // Modo por temas específicos
+        const temasList = opts.temasText ? opts.temasText.split(',').map(t => t.trim()).filter(Boolean).join(', ') : 'varios temas';
+        descripcionGenerada = `Simulación de práctica sobre ${tema}${esPorArea ? ` del área de ${areaTitle}` : ''} organizada por temas específicos: ${temasList}. Contiene ${cantidad} pregunta${cantidad > 1 ? 's' : ''} generadas con inteligencia artificial para ayudarte a prepararte para tu examen de ingreso universitario.`;
+      } else {
+        // Modo general
+        descripcionGenerada = `Simulación de práctica sobre ${tema}${esPorArea ? ` del área de ${areaTitle}` : ''}. Cubre contenido general${esPorArea ? ' del área' : ''} y contiene ${cantidad} pregunta${cantidad > 1 ? 's' : ''} generadas con inteligencia artificial para ayudarte a prepararte para tu examen de ingreso universitario.`;
+      }
       const instrucciones = `Lee cada pregunta y selecciona la respuesta correcta. ${opts.modo === 'temas' ? 'Este simulador incluye preguntas por temas específicos.' : 'Este simulador cubre contenido general del área.'}`;
+      // ✅ IMPORTANTE: Preservar siempre el areaId y areaTitle cuando se genera con IA
+      // Esto asegura que el simulador se guarde en el área correcta incluso si el componente cambia de vista
+      const isGeneralView = !areaId || areaId === null || areaId === undefined;
+      // ✅ IMPORTANTE: Asegurar que todos los datos necesarios estén presentes en iaPrefill
+      // Validar que el título no esté vacío antes de establecerlo
+      const tituloFinal = tituloSugerido && tituloSugerido.length >= 3 
+        ? tituloSugerido 
+        : `Simulador ${tema || 'General'} (IA${opts.modo === 'temas' ? ' · por temas' : ''})`;
       setIaPrefill({
-        titulo: tituloSugerido,
-        instrucciones,
-        nombre: tituloSugerido,
-        fechaLimite: '',
-        publico: false,
-        horas: 0,
-        minutos: 0,
-        grupos: '',
-        areaId: areaId || null, // Preservar el área actual
-        areaTitle: areaTitle || null, // Preservar el título del área
+        titulo: tituloFinal, // ✅ Asegurar que siempre tenga un valor válido (mínimo 3 caracteres)
+        instrucciones: instrucciones || 'Lee cada pregunta y selecciona la respuesta correcta. Este simulador cubre contenido general del área.',
+        descripcion: descripcionGenerada || `Simulación de práctica sobre ${tema || 'temas generales'}. Contiene ${cantidad} pregunta${cantidad > 1 ? 's' : ''} para ayudarte a prepararte para tu examen.`, // ✅ Agregar descripción generada
+        nombre: tituloFinal, // ✅ Asegurar que siempre tenga un valor válido (mínimo 3 caracteres)
+        fechaLimite: '', // El usuario debe completar esto en el modal
+        publico: false, // Siempre crear como borrador cuando tiene preguntas IA
+        horas: 0, // El usuario debe completar esto en el modal
+        minutos: 0, // El usuario debe completar esto en el modal
+        grupos: '', // El usuario debe completar esto en el modal
+        // ✅ CRÍTICO: Preservar areaId y areaTitle siempre cuando se genera con IA
+        // Si estamos en un área específica (areaId es un número válido), preservarlo
+        // Si estamos en vista general (areaId es null/undefined), preservar null
+        areaId: isGeneralView ? null : (areaId !== null && areaId !== undefined ? Number(areaId) : null),
+        areaTitle: isGeneralView ? null : (areaTitle || null),
       });
+      
+      // Log para debugging
+      console.log('[SimuladoresGen] IA generada (con opciones) - iaPrefill establecido:', {
+        areaId: isGeneralView ? null : (areaId !== null && areaId !== undefined ? Number(areaId) : null),
+        areaTitle: isGeneralView ? null : (areaTitle || null),
+        isGeneralView,
+        areaIdOriginal: areaId,
+        modo: opts.modo
+      });
+      
       // Cerrar modal de IA y abrir modal de creación
       setIaChoiceOpen(false);
       setIaError('');
@@ -802,21 +1601,48 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       const msg = String(e?.message || '').toLowerCase();
       const rem = getCooldownRemainingMs();
 
-      // Manejar error 429 (Too Many Requests) o errores de límite de cuota
-      if (e?.code === 'RATE_LIMIT' || e?.status === 429 || msg.includes('429') || msg.includes('quota') || msg.includes('rate limit') || msg.includes('límite de solicitudes') || msg.includes('error de cuota')) {
-        const cooldownTime = e?.remainingMs || rem || 45000; // 45 segundos por defecto
+      // Detectar error de API key bloqueada (leaked)
+      if (e?.code === 'API_KEY_LEAKED' || msg.includes('leaked') || msg.includes('reported as leaked') || msg.includes('bloqueada porque fue expuesta')) {
+        setIaError(
+          '⚠️ La API key de Gemini fue bloqueada por Google porque fue expuesta públicamente.\n\n' +
+          'Por favor, contacta al administrador del sistema para obtener una nueva API key. ' +
+          'El administrador debe obtener una nueva clave desde Google AI Studio y actualizarla en el servidor.'
+        );
+        if (e?.helpUrl) {
+          console.error('🔗 Obtén una nueva API key en:', e.helpUrl);
+        }
+      } else if (e?.code === 'RATE_LIMIT' || e?.status === 429 || msg.includes('429') || msg.includes('quota') || msg.includes('rate limit') || msg.includes('límite de solicitudes') || msg.includes('error de cuota')) {
+        // Obtener el cooldown actualizado del servicio
+        const currentRem = getCooldownRemainingMs();
+        const cooldownTime = e?.remainingMs || currentRem || 45000; // 45 segundos por defecto
         const secs = Math.ceil(cooldownTime / 1000);
-        setIaError(`⚠️ Límite de solicitudes alcanzado (Error 429)\n\nSe alcanzó el límite de solicitudes a la API de Google. Por favor, espera ${secs} segundo${secs > 1 ? 's' : ''} antes de intentar nuevamente.\n\nEl botón de generar quedará deshabilitado durante el tiempo de espera.`);
+        const mins = Math.floor(secs / 60);
+        const secsRem = secs % 60;
+        const timeStr = mins > 0 ? `${mins} minuto${mins > 1 ? 's' : ''} y ${secsRem} segundo${secsRem > 1 ? 's' : ''}` : `${secs} segundo${secs > 1 ? 's' : ''}`;
+        setIaError(`⚠️ Límite de solicitudes alcanzado (Error 429)\n\nSe alcanzó el límite de solicitudes a la API de Google Gemini. Esto ocurre cuando se hacen demasiadas solicitudes en poco tiempo.\n\n⏱️ Tiempo de espera: ${timeStr}\n\nEl botón de generar quedará deshabilitado automáticamente durante este tiempo. Puedes cerrar este modal y volver a intentarlo cuando termine el tiempo de espera.`);
+        // Actualizar el cooldown inmediatamente
         setCooldownMs(cooldownTime);
-        // Asegurar que el cooldown se actualice inmediatamente
-        setTimeout(() => setCooldownMs(getCooldownRemainingMs()), 100);
+        // Forzar actualización inmediata del cooldown
+        setTimeout(() => {
+          const updatedRem = getCooldownRemainingMs();
+          setCooldownMs(updatedRem);
+        }, 50);
       } else if (e?.code === 'COOLDOWN' || msg.includes('enfriamiento') || msg.includes('cooldown')) {
-        const cooldownTime = e?.remainingMs || rem || 45000; // 45 segundos por defecto
+        // Obtener el cooldown actualizado del servicio
+        const currentRem = getCooldownRemainingMs();
+        const cooldownTime = e?.remainingMs || currentRem || 45000; // 45 segundos por defecto
         const secs = Math.ceil(cooldownTime / 1000);
-        setIaError(`⏳ Espera requerida\n\nDebes esperar ${secs} segundo${secs > 1 ? 's' : ''} antes de volver a generar con IA. El botón quedará deshabilitado durante este tiempo.`);
+        const mins = Math.floor(secs / 60);
+        const secsRem = secs % 60;
+        const timeStr = mins > 0 ? `${mins} minuto${mins > 1 ? 's' : ''} y ${secsRem} segundo${secsRem > 1 ? 's' : ''}` : `${secs} segundo${secs > 1 ? 's' : ''}`;
+        setIaError(`⏳ Espera requerida\n\nDebes esperar ${timeStr} antes de volver a generar con IA. El botón quedará deshabilitado durante este tiempo.\n\nPuedes cerrar este modal y volver a intentarlo cuando termine el tiempo de espera.`);
+        // Actualizar el cooldown inmediatamente
         setCooldownMs(cooldownTime);
-        // Asegurar que el cooldown se actualice inmediatamente
-        setTimeout(() => setCooldownMs(getCooldownRemainingMs()), 100);
+        // Forzar actualización inmediata del cooldown
+        setTimeout(() => {
+          const updatedRem = getCooldownRemainingMs();
+          setCooldownMs(updatedRem);
+        }, 50);
       } else {
         setIaError(e?.response?.data?.message || e?.message || 'No se pudieron generar las preguntas con IA. Por favor, intenta de nuevo.');
       }
@@ -867,13 +1693,13 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       </div>
 
       {/* Toolbar superior rediseñada */}
-      <div className="mb-6 rounded-2xl border border-slate-200 bg-white/80 backdrop-blur px-3 py-3 shadow-sm ring-1 ring-slate-100">
+      <div className="mb-6 rounded-2xl border-2 border-slate-200 bg-white/90 backdrop-blur-sm px-4 py-4 shadow-lg ring-2 ring-slate-100/50">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           {/* Lado izquierdo: acciones y filtros */}
-          <div className="flex flex-1 flex-wrap items-center gap-2">
+          <div className="flex flex-1 flex-wrap items-center gap-3">
             <button
               onClick={load}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
               title="Refrescar"
               aria-label="Refrescar"
             >
@@ -882,14 +1708,16 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
             </button>
 
             {/* Segmentado por estado */}
-            <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 p-0.5">
+            <div className="inline-flex items-center rounded-xl border-2 border-slate-200 bg-slate-50 p-1 shadow-sm">
               {['all', 'Publicado', 'Borrador'].map(v => (
                 <button
                   key={v}
                   onClick={() => setStatusFilter(v)}
                   className={[
-                    'px-3 py-1.5 text-sm rounded-lg transition',
-                    statusFilter === v ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'
+                    'px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200',
+                    statusFilter === v 
+                      ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md scale-105' 
+                      : 'text-slate-600 hover:text-slate-800 hover:bg-white'
                   ].join(' ')}
                 >
                   {v === 'all' ? 'Todos' : v}
@@ -899,12 +1727,12 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
             {/* Búsqueda */}
             <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-violet-500" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar simulador..."
-                className="w-52 rounded-lg border border-slate-200 bg-white pl-8 pr-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-300"
+                className="w-56 rounded-xl border-2 border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all duration-200 shadow-sm hover:shadow-md"
               />
             </div>
 
@@ -962,9 +1790,9 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           <div className="flex items-center gap-2">
             <button
               onClick={() => setOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-violet-700 hover:to-indigo-700"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:from-violet-700 hover:to-indigo-700 hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-5 w-5" />
               Nuevo simulador
             </button>
           </div>
@@ -990,6 +1818,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
             onEdit={handleEdit}
             onDelete={handleDelete}
             onPublish={handlePublish}
+            onResultados={handleResultados}
           />
         ))}
         {viewItems.length === 0 && !loading && (
@@ -1001,94 +1830,106 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
       {/* Desktop: tabla */}
       <div className="hidden md:block">
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-md ring-1 ring-slate-100">
+        <div className="overflow-hidden rounded-3xl border-2 border-slate-200 bg-white shadow-xl ring-2 ring-slate-100/50">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-gradient-to-r from-slate-50 to-slate-50/60">
+              <thead className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50">
                 <tr>
                   <th
                     scope="col"
-                    className="sticky left-0 z-10 bg-slate-50/60 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 whitespace-nowrap"
+                    className="sticky left-0 z-10 bg-gradient-to-r from-violet-50 to-indigo-50 px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap border-r border-slate-200"
                   >
                     Simulador
                   </th>
                   <th
                     scope="col"
-                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 whitespace-nowrap"
+                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap"
                   >
                     Tipo
                   </th>
                   <th
                     scope="col"
-                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 whitespace-nowrap"
+                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap"
                   >
                     Preguntas
                   </th>
                   <th
                     scope="col"
-                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 whitespace-nowrap"
+                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap"
                   >
                     Intentos
                   </th>
                   <th
                     scope="col"
-                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 whitespace-nowrap"
+                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap"
                   >
                     Estado
                   </th>
                   <th
                     scope="col"
-                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 whitespace-nowrap"
+                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap"
                   >
                     Actualizado
                   </th>
-                  <th scope="col" className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600 whitespace-nowrap">
+                  <th scope="col" className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap">
                     Acciones
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200 bg-white">
                 {viewItems.map((item, idx) => (
                   <tr
                     key={item.id}
-                    className={(idx % 2 === 0 ? "bg-white" : "bg-slate-50/30") + " hover:bg-slate-50"}
+                    className={(idx % 2 === 0 ? "bg-white" : "bg-slate-50/50") + " hover:bg-violet-50/30 transition-colors duration-150"}
                   >
-                    <td className="sticky left-0 z-10 bg-inherit px-5 py-4">
-                      <div className="max-w-xs truncate font-medium text-slate-900">
+                    <td className="sticky left-0 z-10 bg-inherit px-6 py-4 border-r border-slate-200">
+                      <div className="max-w-xs truncate font-semibold text-slate-900">
                         {item.name}
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-slate-700">{item.type}</td>
-                    <td className="px-5 py-4 text-slate-700">
-                      {item.questions}
+                    <td className="px-6 py-4 text-slate-700 font-medium">{item.type}</td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-lg bg-violet-100 text-violet-700 font-bold text-sm">
+                        {item.questions}
+                      </span>
                     </td>
-                    <td className="px-5 py-4 text-slate-700">
-                      {item.attempts}
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
+                        {item.attempts}
+                      </span>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-6 py-4">
                       {item.status === "Publicado" ? (
                         <Badge type="success">Publicado</Badge>
                       ) : (
                         <Badge type="draft">Borrador</Badge>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-slate-700">
+                    <td className="px-6 py-4 text-slate-600 font-medium text-sm">
                       {item.updatedAt}
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleView(item)}
-                          className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                          className="rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                          title="Vista previa"
                         >
                           <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleResultados(item)}
+                          title="Resultados"
+                          className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:from-emerald-100 hover:to-green-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                        >
+                          <span className="font-bold text-sm">%</span>
                         </button>
                         {item.status === "Borrador" && (
                           <button
                             onClick={() => handlePublish(item)}
                             title="Publicar"
-                            className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
+                            className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:from-emerald-100 hover:to-green-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                           >
                             <UploadCloud className="h-4 w-4" />
                           </button>
@@ -1097,7 +1938,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                           onClick={() => handleEdit(item)}
                           title="Editar"
                           aria-label="Editar"
-                          className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+                          className="rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
@@ -1105,7 +1946,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                           onClick={() => handleDelete(item)}
                           title="Eliminar"
                           aria-label="Eliminar"
-                          className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-100"
+                          className="rounded-xl border-2 border-rose-300 bg-gradient-to-r from-rose-50 to-red-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:from-rose-100 hover:to-red-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -1118,13 +1959,24 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                   <tr>
                     <td
                       colSpan={7}
-                      className="px-5 py-14 text-center text-slate-500"
+                      className="px-6 py-16 text-center"
                     >
-                      Aún no hay simuladores. Crea el primero con el botón
-                      <span className="mx-1 rounded bg-slate-100 px-1.5 py-0.5 font-semibold">
-                        Nuevo simulador
-                      </span>
-                      .
+                      <div className="flex flex-col items-center justify-center gap-4">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-100 via-indigo-100 to-purple-100 shadow-lg ring-4 ring-white">
+                          <PlaySquare className="h-10 w-10 text-violet-600" />
+                        </div>
+                        <div>
+                          <p className="text-base font-bold text-slate-700 mb-2">
+                            Aún no hay simuladores
+                          </p>
+                          <p className="text-sm text-slate-500">
+                            Crea el primero con el botón
+                            <span className="mx-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-3 py-1 font-bold text-sm shadow-md">
+                              Nuevo simulador
+                            </span>
+                          </p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -1140,15 +1992,28 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         onUpdate={handleUpdate}
         mode={editing ? 'edit' : 'create'}
         initialForm={editing ? {
-          titulo: editing.name,
-          nombre: editing.name,
-          instrucciones: '',
-          fechaLimite: '',
-          publico: editing.status === 'Publicado',
-          horas: 0,
-          minutos: 0,
-          grupos: ''
+          titulo: editing.titulo || editing.nombre || editing.name || '',
+          nombre: editing.nombre || editing.titulo || editing.name || '',
+          instrucciones: editing.instrucciones || editing.descripcion || '',
+          descripcion: editing.descripcion || editing.instrucciones || '',
+          fechaLimite: editing.fechaLimite || editing.fecha_limite || '',
+          publico: editing.publico ?? (editing.status === 'Publicado'),
+          horas: editing.horas ?? 0,
+          minutos: editing.minutos ?? 0,
+          grupos: editing.grupos || [],
+          areaId: editing.areaId !== undefined ? editing.areaId : null,
+          areaTitle: editing.areaTitle || null
         } : (iaPrefill || null)}
+        onEditQuestions={editing ? () => {
+          // Navegar al builder después de guardar
+          const finalIdArea = editing.areaId !== undefined && editing.areaId !== null ? Number(editing.areaId) : (areaId || null);
+          const navState = finalIdArea ? { 
+            simId: editing.id, 
+            areaId: finalIdArea, 
+            areaTitle: editing.areaTitle || areaTitle 
+          } : { simId: editing.id };
+          navigate(`/asesor/quizt/builder?simId=${editing.id}`, { state: navState });
+        } : null}
       />
 
       {/* Modal: elección de IA (para vista de área y simuladores generales) */}
@@ -1586,9 +2451,24 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
               {/* Mensaje de error */}
               {iaError && (
-                <div className="rounded-lg border-2 border-rose-200 bg-rose-50 px-3 py-2 flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-rose-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-rose-700 flex-1 leading-relaxed whitespace-pre-line">{iaError}</p>
+                <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3 shadow-sm">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs sm:text-sm text-amber-800 font-semibold mb-1 leading-relaxed whitespace-pre-line">{iaError}</p>
+                    {cooldownMs > 0 && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-amber-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-amber-500 transition-all duration-1000 ease-linear"
+                            style={{ width: `${Math.min(100, (cooldownMs / 45000) * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-bold text-amber-700 whitespace-nowrap">
+                          {Math.ceil(cooldownMs / 1000)}s
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1760,6 +2640,209 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         </div>
       )}
 
+      {/* Resultados modal */}
+      {resultsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col">
+            {/* Header mejorado */}
+            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg">
+                  <span className="text-white font-bold text-lg">%</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Resultados de la Simulación</h3>
+                  <p className="text-sm text-slate-600 mt-0.5">{resultsSimMeta?.titulo || 'Simulación'}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setResultsOpen(false)} 
+                className="rounded-xl p-2 text-slate-500 hover:bg-white/80 hover:text-slate-700 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Contenido con scroll */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 bg-slate-50/30">
+              {resultsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+                    <p className="text-sm font-medium text-slate-600">Cargando resultados...</p>
+                  </div>
+                </div>
+              ) : resultsRows.length ? (
+                <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-slate-200/60">
+                      <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50">
+                        <tr>
+                          <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Estudiante
+                          </th>
+                          <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Grupo
+                          </th>
+                          <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Intentos
+                          </th>
+                          <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Puntaje Oficial
+                          </th>
+                          <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Acción
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {resultsRows.map((r, idx) => (
+                          <tr 
+                            key={r.id_estudiante}
+                            className={`hover:bg-indigo-50/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                          >
+                            <td className="px-5 py-4">
+                              <div className="font-semibold text-slate-900 text-sm">
+                                {`${r.apellidos || ''} ${r.nombre || ''}`.trim() || 'Sin nombre'}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 text-center">
+                              <span className="inline-flex items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold text-sm">
+                                {r.grupo || '—'}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-center">
+                              <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
+                                {r.total_intentos || 0}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-center">
+                              {r.total_intentos > 0 ? (
+                                <span className={`inline-flex items-center justify-center min-w-[4rem] px-4 py-2 rounded-xl font-bold text-sm shadow-sm ${
+                                  (Number(r.oficial_puntaje || 0) >= 70)
+                                    ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white ring-2 ring-emerald-200'
+                                    : (Number(r.oficial_puntaje || 0) >= 50)
+                                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white ring-2 ring-amber-200'
+                                      : 'bg-gradient-to-r from-rose-500 to-red-600 text-white ring-2 ring-rose-200'
+                                }`}>
+                                  {Number(r.oficial_puntaje || 0)}%
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-sm font-medium">
+                                  Sin intento
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              <button
+                                disabled={r.total_intentos === 0}
+                                onClick={() => openReview(r)}
+                                className="inline-flex items-center gap-1.5 rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-4 py-2 text-xs font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 hover:border-indigo-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                Ver detalle
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 px-4">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mb-4">
+                    <PlaySquare className="h-10 w-10 text-slate-400" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-slate-700 mb-2">Sin resultados aún</h4>
+                  <p className="text-sm text-slate-500 text-center max-w-sm">
+                    Aún no hay estudiantes que hayan completado esta simulación.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer mejorado */}
+            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t border-slate-200/60">
+              <div className="text-sm text-slate-600">
+                {resultsRows.length > 0 && (
+                  <span className="font-medium">
+                    {resultsRows.length} {resultsRows.length === 1 ? 'estudiante' : 'estudiantes'}
+                  </span>
+                )}
+              </div>
+              <button 
+                onClick={() => setResultsOpen(false)} 
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-violet-700 transition-all hover:shadow-lg"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review modal */}
+      {reviewOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 px-0.5 mt-16">
+          <div className="w-full max-w-4xl rounded-lg bg-white shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between border-b px-2 py-1.5">
+              <h3 className="text-base font-semibold text-slate-900">Detalle intento 1 • {reviewHeader.simulacion?.titulo || 'Simulación'} • {reviewHeader.estudiante?.nombre || 'Alumno'}</h3>
+              <button onClick={() => setReviewOpen(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {reviewLoading ? (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Cargando…</div>
+              ) : reviewData && Array.isArray(reviewData.preguntas) ? (
+                <div className="space-y-2.5">
+                  {/* Analizador de fallos repetidos */}
+                  {reviewHeader.estudiante?.totalIntentos >= 2 && (
+                    <AnalizadorFallosRepetidos
+                      tipo="simulacion"
+                      id={resultsSimMeta?.id}
+                      idEstudiante={reviewHeader.estudiante?.id}
+                      totalIntentos={reviewHeader.estudiante?.totalIntentos}
+                    />
+                  )}
+                  {reviewData.preguntas.map((p, idx) => {
+                    const sel = new Set(p.seleccionadas || []);
+                    const corr = !!p.correcta;
+                    return (
+                      <div key={p.id || idx} className="rounded border border-slate-200 p-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="text-sm font-medium text-slate-900">{p.orden || (idx + 1)}. <MathText text={p.enunciado || ''} /></div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${corr ? 'bg-green-50 text-green-700 border-green-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{corr ? 'Correcta' : 'Incorrecta'}</span>
+                        </div>
+                        <ul className="mt-1.5 space-y-1">
+                          {(p.opciones || []).map((o) => {
+                            const isSel = sel.has(o.id);
+                            const isOk = o.es_correcta === 1;
+                            const base = 'text-xs rounded-lg border px-3 py-1.5 flex items-center justify-between';
+                            const cl = isSel && isOk ? 'bg-emerald-50 border-emerald-300' : isSel && !isOk ? 'bg-rose-50 border-rose-300' : !isSel && isOk ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200';
+                            return (
+                              <li key={o.id} className={`${base} ${cl}`}>
+                                <span><MathText text={o.texto || ''} /></span>
+                                {isSel && <span className="text-[10px] font-bold">✓ Seleccionada</span>}
+                                {!isSel && isOk && <span className="text-[10px] font-bold text-green-700">Correcta</span>}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-slate-600 text-sm">No se pudo cargar el detalle del intento.</div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 border-t px-2 py-1.5">
+              <button onClick={() => setReviewOpen(false)} className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de confirmación genérico */}
       {confirmModal.open && (
         <ConfirmModal
@@ -1835,3 +2918,5 @@ function SuccessModal({ message, count = 0, onClose }) {
     </div>
   );
 }
+
+

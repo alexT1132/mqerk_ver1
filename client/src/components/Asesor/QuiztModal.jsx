@@ -235,7 +235,7 @@ export default function SimulatorModal({ open, onClose, onCreate, areaTitle, are
   };
 
   // Layout dinámico por paso
-  const containerPad = step === 2 ? "pt-20 sm:pt-24" : "pt-32 sm:pt-36";
+  const containerPad = step === 2 ? "pt-36 sm:pt-40" : "pt-48 sm:pt-52";
   const contentMaxW = step === 2 ? "max-w-md sm:max-w-lg" : "max-w-sm sm:max-w-md";
 
   return (

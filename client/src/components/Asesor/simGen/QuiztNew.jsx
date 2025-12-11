@@ -671,10 +671,10 @@ function QuestionCard({ q, onChange, onRemove }) {
   const hasMath = q.text && /\$[^$]+\$/.test(q.text);
 
   return (
-    <div className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-white via-slate-50/30 to-white p-6 shadow-lg hover:shadow-xl transition-all duration-200">
+    <div className="rounded-3xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/30 p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-200 ring-2 ring-slate-100/50 hover:ring-violet-200/50">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
-          <span className="inline-grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white font-semibold shadow-md">
+          <span className="inline-grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 text-white font-extrabold text-lg shadow-lg ring-2 ring-violet-200/50">
             Q
           </span>
           <select
@@ -701,7 +701,7 @@ function QuestionCard({ q, onChange, onRemove }) {
           />
           <button
             onClick={onRemove}
-            className="rounded-xl border-2 border-rose-300 bg-rose-50 px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-100 hover:border-rose-400 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm"
+            className="rounded-xl border-2 border-rose-300 bg-gradient-to-r from-rose-50 to-red-50 px-4 py-2.5 text-sm font-bold text-rose-700 hover:from-rose-100 hover:to-red-100 hover:border-rose-400 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
           >
             Eliminar
           </button>
@@ -1161,13 +1161,10 @@ export default function EspanolFormBuilder() {
         }))
       };
 
-      console.log('[QuiztNew] Creando quiz con:', { titulo, id_area, materia: areaTitle, preguntas: body.preguntas.length });
-
       const { data } = await createQuiz(body);
       await showAlert('Quizt creado exitosamente', 'Éxito', 'success');
       navigate('/asesor/quizt', { replace: true });
     } catch (e) {
-      console.error('[QuiztNew] Error al crear quiz:', e);
       await showAlert(e?.response?.data?.message || 'No se pudo crear el quiz', 'Error', 'error');
     }
   };
@@ -1176,22 +1173,28 @@ export default function EspanolFormBuilder() {
     <>
       <AlertComponent />
       <div className="min-h-screen bg-transparent w-full overflow-x-visible">
-        {/* Header - Sin fondo de color */}
-        <header className="relative w-full px-4 sm:px-6 md:px-8 lg:px-12 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
-            <div className="flex-1 min-w-0 max-w-full">
-              <h1 className="text-xl sm:text-2xl font-bold mb-1.5 text-slate-800 break-words">Crear formulario • {areaTitle}</h1>
-              <p className="text-xs sm:text-sm font-medium text-slate-600">
-                Construye preguntas con imágenes, fórmulas LaTeX, opción múltiple, verdadero/falso y respuesta corta.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold shrink-0 whitespace-nowrap">
-              <span className="rounded-lg bg-slate-100 border border-slate-300 px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-sm text-slate-700 whitespace-nowrap">
-                <span className="opacity-70">Preguntas:</span> <span className="font-bold">{questions.length}</span>
-              </span>
-              <span className="rounded-lg bg-slate-100 border border-slate-300 px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-sm text-slate-700 whitespace-nowrap">
-                <span className="opacity-70">Puntos:</span> <span className="font-bold">{totalPoints}</span>
-              </span>
+        {/* Header mejorado */}
+        <header className="relative w-full px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8">
+          <div className="relative overflow-hidden rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 shadow-xl ring-2 ring-slate-100/50 px-5 sm:px-7 py-5 sm:py-6">
+            <div className="pointer-events-none absolute -left-10 -top-14 h-64 w-64 rounded-full bg-violet-200/50 blur-3xl" />
+            <div className="pointer-events-none absolute -right-10 -bottom-14 h-64 w-64 rounded-full bg-indigo-200/50 blur-3xl" />
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+              <div className="flex-1 min-w-0 max-w-full">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-2 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 break-words">
+                  Crear formulario • {areaTitle}
+                </h1>
+                <p className="text-sm sm:text-base font-medium text-slate-600">
+                  Construye preguntas con imágenes, fórmulas LaTeX, opción múltiple, verdadero/falso y respuesta corta.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold shrink-0 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white ring-2 ring-violet-200 shadow-md font-bold whitespace-nowrap">
+                  <span className="opacity-90">Preguntas:</span> <span className="font-extrabold">{questions.length}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white ring-2 ring-indigo-200 shadow-md font-bold whitespace-nowrap">
+                  <span className="opacity-90">Puntos:</span> <span className="font-extrabold">{totalPoints}</span>
+                </span>
+              </div>
             </div>
           </div>
         </header>
@@ -1199,13 +1202,13 @@ export default function EspanolFormBuilder() {
         {/* Contenido principal */}
         <main className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-6">
           {/* Acciones */}
-          <section className="mb-6 rounded-xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-md">
+          <section className="mb-6 rounded-3xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-5 sm:p-6 shadow-lg ring-2 ring-slate-100/50">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-2 text-sm text-slate-600">
-                <svg className="h-5 w-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+              <div className="flex items-center gap-2 text-sm text-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-2.5 rounded-xl border-2 border-amber-200 shadow-sm">
+                <svg className="h-5 w-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
-                <span className="font-medium">Guarda tu progreso antes de publicar</span>
+                <span className="font-bold">Guarda tu progreso antes de publicar</span>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
@@ -1220,7 +1223,7 @@ export default function EspanolFormBuilder() {
                 </button>
                 <button
                   onClick={handleDraft}
-                  className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-600 bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 hover:border-slate-700 transition-all shadow-md hover:shadow-lg"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-600 bg-gradient-to-r from-slate-700 to-slate-900 px-5 py-2.5 text-sm font-bold text-white hover:from-slate-800 hover:to-slate-950 hover:border-slate-700 transition-all shadow-md hover:shadow-xl hover:scale-105 active:scale-95"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -1229,7 +1232,7 @@ export default function EspanolFormBuilder() {
                 </button>
                 <button
                   onClick={handlePublish}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-violet-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:from-violet-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-xl hover:scale-105 active:scale-95 ring-2 ring-violet-200/50"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -1241,37 +1244,37 @@ export default function EspanolFormBuilder() {
           </section>
 
           {/* Constructor */}
-          <section className="rounded-xl border-2 border-slate-200 bg-white p-5 shadow-md">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+          <section className="rounded-3xl border-2 border-slate-200 bg-white p-5 sm:p-6 shadow-lg ring-2 ring-slate-100/50">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-4 pb-4 border-b-2 border-slate-200">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Preguntas</h2>
-                <p className="text-xs text-slate-500 mt-1">Agrega diferentes tipos de preguntas a tu formulario</p>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">Preguntas</h2>
+                <p className="text-sm text-slate-600 mt-1 font-medium">Agrega diferentes tipos de preguntas a tu formulario</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => addQuestion("multiple")}
-                  className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-violet-300 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-2.5 text-sm font-bold text-violet-700 hover:from-violet-100 hover:to-indigo-100 hover:border-violet-400 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v14M5 12h14" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v14M5 12h14" />
                   </svg>
                   Opción múltiple
                 </button>
                 <button
                   onClick={() => addQuestion("tf")}
-                  className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-2.5 text-sm font-bold text-indigo-700 hover:from-indigo-100 hover:to-purple-100 hover:border-indigo-400 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v14M5 12h14" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v14M5 12h14" />
                   </svg>
                   Verdadero/Falso
                 </button>
                 <button
                   onClick={() => addQuestion("short")}
-                  className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2.5 text-sm font-bold text-purple-700 hover:from-purple-100 hover:to-pink-100 hover:border-purple-400 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v14M5 12h14" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v14M5 12h14" />
                   </svg>
                   Respuesta corta
                 </button>

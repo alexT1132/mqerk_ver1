@@ -482,9 +482,36 @@ export default function Quizz_Review() {
     return Math.max(0, Math.min(100, Math.round((remainingSec / timeLimitSec) * 100)));
   }, [timeLimitSec, remainingSec]);
 
+  // Función para construir la ruta de retorno preservando el área correcta
+  const getReturnPath = () => {
+    // 1. Intentar usar returnTo del state (si se pasó al navegar)
+    const returnTo = location.state?.returnTo;
+    if (returnTo && typeof returnTo === 'string' && returnTo.includes('/alumno/actividades')) {
+      return returnTo;
+    }
+    
+    // 2. Intentar obtener areaId del quizMeta
+    const areaIdFromMeta = quizMeta?.id_area || quizMeta?.area_id;
+    if (areaIdFromMeta && Number.isFinite(Number(areaIdFromMeta))) {
+      return `/alumno/actividades?type=quiz&areaId=${areaIdFromMeta}`;
+    }
+    
+    // 3. Intentar obtener areaId de la URL actual (si se pasó como parámetro)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const areaIdFromUrl = urlParams.get('areaId');
+      if (areaIdFromUrl && Number.isFinite(Number(areaIdFromUrl))) {
+        return `/alumno/actividades?type=quiz&areaId=${areaIdFromUrl}`;
+      }
+    } catch {}
+    
+    // 4. Fallback: área por defecto (Español)
+    return '/alumno/actividades?type=quiz&areaId=1';
+  };
+
   // Cerrar pestaña con fallback: intenta cerrar y, si el navegador lo bloquea, vuelve a Actividades
-  const DEFAULT_RETURN_PATH = '/alumno/actividades?type=quiz&areaId=1';
   const handleCloseTab = () => {
+    const returnPath = getReturnPath();
     try { localStorage.removeItem(`quiz_open_${quizId}`); } catch {}
     try {
       if (window.opener && !window.opener.closed) {
@@ -495,15 +522,16 @@ export default function Quizz_Review() {
     try { window.close(); } catch {}
     // Si window.close() no cierra (pestaña no abierta por script), redirigir como fallback
     setTimeout(() => {
-      try { navigate(DEFAULT_RETURN_PATH, { replace: true }); }
-      catch { try { window.location.href = DEFAULT_RETURN_PATH; } catch {} }
+      try { navigate(returnPath, { replace: true }); }
+      catch { try { window.location.href = returnPath; } catch {} }
     }, 150);
   };
 
   // ---------------- Navegación de retorno flexible ----------------
-  // --- Navegación de retorno SIEMPRE a la tabla de quizzes con áreaId=1 ---
+  // --- Navegación de retorno a la tabla de quizzes con el área correcta ---
   const handleReturnButton = () => {
-    navigate(DEFAULT_RETURN_PATH, { replace: true });
+    const returnPath = getReturnPath();
+    navigate(returnPath, { replace: true });
   };
 
   // Cerrar automáticamente la pestaña cuando el quiz termina
@@ -512,6 +540,9 @@ export default function Quizz_Review() {
     
     // Limpiar localStorage
     try { localStorage.removeItem(`quiz_open_${quizId}`); } catch {}
+    
+    // Obtener la ruta de retorno correcta
+    const returnPath = getReturnPath();
     
     // Función para intentar cerrar la pestaña de manera más agresiva
     const attemptClose = () => {
@@ -539,25 +570,25 @@ export default function Quizz_Review() {
                 // La pestaña aún está visible, usar fallback
                 window.location.href = 'about:blank';
                 setTimeout(() => {
-                  try { navigate(DEFAULT_RETURN_PATH, { replace: true }); }
-                  catch { try { window.location.href = DEFAULT_RETURN_PATH; } catch {} }
+                  try { navigate(returnPath, { replace: true }); }
+                  catch { try { window.location.href = returnPath; } catch {} }
                 }, 100);
               }
             }, 100);
           } catch (e) {
             console.log('[Quiz] window.close() falló:', e.message);
             // Fallback inmediato si window.close() falla
-            window.location.href = DEFAULT_RETURN_PATH;
+            window.location.href = returnPath;
           }
         } else {
           // No se puede cerrar porque no fue abierta por script, redirigir directamente
-          window.location.href = DEFAULT_RETURN_PATH;
+          window.location.href = returnPath;
         }
       } catch (e) {
         console.log('[Quiz] Error al cerrar pestaña:', e.message);
         // Fallback final: redirigir
-        try { navigate(DEFAULT_RETURN_PATH, { replace: true }); }
-        catch { try { window.location.href = DEFAULT_RETURN_PATH; } catch {} }
+        try { navigate(returnPath, { replace: true }); }
+        catch { try { window.location.href = returnPath; } catch {} }
       }
     };
     
@@ -578,7 +609,7 @@ export default function Quizz_Review() {
         clearTimeout(closeTimer);
       };
     }
-  }, [finalizado, forcedSubmitMessage, autoTimeout, quizId, sesionId, navigate]);
+  }, [finalizado, forcedSubmitMessage, autoTimeout, quizId, sesionId, navigate, location, quizMeta]);
 
   // Permisos: solicitud rápida si hay 403 por área
   const handleRequestAccess = async () => {
@@ -602,10 +633,10 @@ export default function Quizz_Review() {
       <div className="w-full px-3 sm:px-6 lg:px-8 py-1 sm:py-1.5">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 min-w-0">
-                <h1 className="text-xs sm:text-sm md:text-base font-bold text-gray-900 truncate">{quizTitle}</h1>
+              <div className="flex items-start gap-2">
+                <h1 className="text-xs sm:text-sm md:text-base font-bold text-gray-900 break-words leading-tight flex-1">{quizTitle}</h1>
                 {/* Contador compacto para móviles */}
-                <span className="sm:hidden text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium whitespace-nowrap">{answeredCount}/{totalQuestions}</span>
+                <span className="sm:hidden text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium whitespace-nowrap flex-shrink-0 mt-0.5">{answeredCount}/{totalQuestions}</span>
               </div>
               <p className="text-[9px] sm:text-[10px] text-gray-500 hidden sm:block mt-0.5 leading-tight">Modo seguro activado. Concéntrate en tus respuestas.</p>
             </div>

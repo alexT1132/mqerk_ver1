@@ -277,6 +277,111 @@ export const download = async (req, res) => {
 };
 
 /**
+ * Listar recursos del asesor del estudiante autenticado
+ */
+export const listByEstudianteAsesor = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'No autenticado' });
+    
+    // Obtener el estudiante desde el user ID
+    const user = await Usuarios.getUsuarioPorid(userId).catch(() => null);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    
+    if (user.role !== 'estudiante' || !user.id_estudiante) {
+      return res.status(403).json({ message: 'Solo estudiantes' });
+    }
+    
+    // Obtener el asesor del estudiante usando la función existente
+    const AsesorNotifs = await import('../models/asesor_notifications.model.js');
+    const asesorUserId = await AsesorNotifs.getAsesorUserIdByEstudianteId(user.id_estudiante);
+    
+    if (!asesorUserId) {
+      // Si no tiene asesor asignado, devolver array vacío
+      return res.json({ data: [] });
+    }
+    
+    // Obtener recursos del asesor
+    const resources = await AsesorResources.listByAsesor(asesorUserId);
+    
+    // Formatear respuesta con tags parseados y URLs
+    const formatted = resources.map(r => {
+      let fileUrl = null;
+      if (r.file_path) {
+        const normalized = r.file_path.replace(/\\/g, '/');
+        const match = normalized.match(/uploads\/recursos-educativos\/([^\/]+)$/);
+        if (match) {
+          fileUrl = `/uploads/recursos-educativos/${match[1]}`;
+        } else {
+          fileUrl = buildStaticUrl(r.file_path);
+        }
+      }
+      
+      return {
+        ...r,
+        tags: r.tags ? (typeof r.tags === 'string' ? JSON.parse(r.tags) : r.tags) : [],
+        file_url: fileUrl,
+        file_size_mb: (r.file_size / (1024 * 1024)).toFixed(2),
+        file_type_display: getFileTypeDisplay(r.file_type, r.file_name)
+      };
+    });
+    
+    res.json({ data: formatted });
+  } catch (e) {
+    console.error('asesor_resources listByEstudianteAsesor error:', e);
+    res.status(500).json({ message: 'Error interno' });
+  }
+};
+
+/**
+ * Descargar recurso del asesor (para estudiantes)
+ */
+export const downloadByEstudiante = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'No autenticado' });
+    
+    const user = await Usuarios.getUsuarioPorid(userId).catch(() => null);
+    if (!user || user.role !== 'estudiante' || !user.id_estudiante) {
+      return res.status(403).json({ message: 'Solo estudiantes' });
+    }
+    
+    const { id } = req.params;
+    
+    // Obtener el asesor del estudiante
+    const AsesorNotifs = await import('../models/asesor_notifications.model.js');
+    const asesorUserId = await AsesorNotifs.getAsesorUserIdByEstudianteId(user.id_estudiante);
+    
+    if (!asesorUserId) {
+      return res.status(404).json({ message: 'No se encontró tu asesor' });
+    }
+    
+    // Verificar que el recurso pertenece al asesor del estudiante
+    const resource = await AsesorResources.getById(Number(id), asesorUserId);
+    if (!resource) return res.status(404).json({ message: 'Recurso no encontrado' });
+    
+    const filePath = path.resolve(resource.file_path);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'Archivo no encontrado' });
+    }
+    
+    res.download(filePath, resource.file_name, (err) => {
+      if (err) {
+        console.error('Error descargando archivo:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ message: 'Error al descargar archivo' });
+        }
+      }
+    });
+  } catch (e) {
+    console.error('asesor_resources downloadByEstudiante error:', e);
+    res.status(500).json({ message: 'Error interno' });
+  }
+};
+
+/**
  * Helper: Obtener tipo de archivo para display
  */
 function getFileTypeDisplay(mimeType, fileName) {
