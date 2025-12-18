@@ -141,7 +141,7 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
           <div className={`flex flex-col gap-0.5 sm:gap-1 md:gap-1 lg:gap-1 xl:gap-1.5 text-xs sm:text-xs md:text-xs lg:text-sm xl:text-base 2xl:text-lg mb-2 sm:mb-2 md:mb-2 lg:mb-3 xl:mb-3 ${isCurrentCourse ? 'text-blue-600' : 'text-gray-700'}`}>
             {metadata.slice(0, 3).map((item, index) => (
               <div key={index} className="flex items-center">
-                <div className="w-3 h-3 sm:w-4 sm:h-4 md:w-4 md:h-4 lg:w-5 lg:h-5 xl:w-5 xl:h-5 mr-1 sm:mr-1.5 md:mr-1.5 lg:mr-2 xl:mr-2 flex-shrink-0">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 md:w-4 md:h-4 lg:w-5 lg:h-5 xl:w-5 xl:h-5 mr-2 sm:mr-2 md:mr-2 lg:mr-2.5 xl:mr-3 flex-shrink-0">
                   {item.icon === 'reloj' && <IconoReloj />}
                   {item.icon === 'libro' && <IconoLibro />}
                   {item.icon === 'estudiante' && <IconoEstudiante />}

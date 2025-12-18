@@ -10007,3 +10007,493 @@
   "titulo": "Matemáticas y pensamiento analítico (IA · 5 preguntas)",
   "cantidadPreguntas": 5
 }
+[2025-12-16T17:02:26.141Z] [INFO] [Quiz.jsx] Creando quiz con IA
+{
+  "titulo": "Español y redacción indirecta (IA · 5 preguntas)",
+  "cantidadPreguntas": 5,
+  "preguntas": [
+    {
+      "type": "multiple",
+      "text": "¿Cuál de las siguientes palabras está escrita corr...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Elige el sinónimo más adecuado para la palabra 'rá...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "En la oración 'El perro corre rápido por el parque...",
+      "optionsCount": 4
+    },
+    {
+      "type": "tf",
+      "text": "Lee el siguiente texto: 'María compró manzanas roj...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "¿Cuál es la función principal de un sustantivo en ...",
+      "optionsCount": 0
+    }
+  ]
+}
+[2025-12-16T17:02:26.836Z] [INFO] [Quiz.jsx] Quiz creado
+{
+  "id": 4,
+  "titulo": "Español y redacción indirecta (IA · 5 preguntas)",
+  "respuesta": {
+    "data": {
+      "id": 4,
+      "titulo": "Español y redacción indirecta (IA · 5 preguntas)",
+      "descripcion": "Lee cada pregunta y selecciona la respuesta correcta. Este quiz cubre contenido general del área.",
+      "id_area": 1,
+      "materia": "Español y redacción indirecta",
+      "puntos_max": 100,
+      "peso_calificacion": "0.00",
+      "fecha_limite": null,
+      "grupos": "[\"V1\"]",
+      "max_intentos": null,
+      "requiere_revision": 0,
+      "activo": 1,
+      "publicado": 0,
+      "creado_por": 21,
+      "time_limit_min": 60,
+      "passing_score": null,
+      "shuffle_questions": 1,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "imagen_portada": null,
+      "recursos_json": null,
+      "created_at": "2025-12-16T17:02:26.000Z",
+      "updated_at": null
+    }
+  }
+}
+[2025-12-16T17:02:26.868Z] [INFO] [Quiz.jsx] Verificación de preguntas guardadas
+{
+  "quizId": 4,
+  "cantidadEsperada": 5,
+  "cantidadGuardada": 5,
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "¿Cuál de las siguientes palabras está escrita corr..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Elige el sinónimo más adecuado para la palabra 'rá..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "En la oración 'El perro corre rápido por el parque..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "Lee el siguiente texto: 'María compró manzanas roj..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "¿Cuál es la función principal de un sustantivo en ..."
+    }
+  ]
+}
+[2025-12-16T17:02:26.869Z] [INFO] [Quiz.jsx] Quiz creado con IA exitosamente
+{
+  "quizId": 4,
+  "titulo": "Español y redacción indirecta (IA · 5 preguntas)",
+  "cantidadPreguntas": 5
+}
+[2025-12-16T17:13:25.542Z] [INFO] [Quiz.jsx] Creando quiz con IA
+{
+  "titulo": "Matemáticas y pensamiento analítico (IA · 5 preguntas)",
+  "cantidadPreguntas": 5,
+  "preguntas": [
+    {
+      "type": "multiple",
+      "text": "Un terreno rectangular tiene un área de 120 m². Si...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Una escalera de 10 metros de longitud está apoyada...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Un artículo tiene un precio original de $800. Prim...",
+      "optionsCount": 4
+    },
+    {
+      "type": "tf",
+      "text": "La gráfica de una función cuadrática de la forma y...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "Desarrolla la expresión algebraica (2x + 3)² utili...",
+      "optionsCount": 0
+    }
+  ]
+}
+[2025-12-16T17:13:26.027Z] [INFO] [Quiz.jsx] Quiz creado
+{
+  "id": 5,
+  "titulo": "Matemáticas y pensamiento analítico (IA · 5 preguntas)",
+  "respuesta": {
+    "data": {
+      "id": 5,
+      "titulo": "Matemáticas y pensamiento analítico (IA · 5 preguntas)",
+      "descripcion": "Lee cada pregunta y selecciona la respuesta correcta. Este quiz cubre contenido general del área.",
+      "id_area": 2,
+      "materia": "Matemáticas y pensamiento analítico",
+      "puntos_max": 100,
+      "peso_calificacion": "0.00",
+      "fecha_limite": null,
+      "grupos": "[\"V1\"]",
+      "max_intentos": null,
+      "requiere_revision": 0,
+      "activo": 1,
+      "publicado": 0,
+      "creado_por": 21,
+      "time_limit_min": 60,
+      "passing_score": null,
+      "shuffle_questions": 1,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "imagen_portada": null,
+      "recursos_json": null,
+      "created_at": "2025-12-16T17:13:25.000Z",
+      "updated_at": null
+    }
+  }
+}
+[2025-12-16T17:13:26.074Z] [INFO] [Quiz.jsx] Verificación de preguntas guardadas
+{
+  "quizId": 5,
+  "cantidadEsperada": 5,
+  "cantidadGuardada": 5,
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Un terreno rectangular tiene un área de 120 m². Si..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Una escalera de 10 metros de longitud está apoyada..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Un artículo tiene un precio original de $800. Prim..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "La gráfica de una función cuadrática de la forma y..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "Desarrolla la expresión algebraica (2x + 3)² utili..."
+    }
+  ]
+}
+[2025-12-16T17:13:26.077Z] [INFO] [Quiz.jsx] Quiz creado con IA exitosamente
+{
+  "quizId": 5,
+  "titulo": "Matemáticas y pensamiento analítico (IA · 5 preguntas)",
+  "cantidadPreguntas": 5
+}
+[2025-12-16T19:09:46.610Z] [INFO] [Quiz.jsx] Creando quiz con IA
+{
+  "titulo": "Habilidades transversales (IA · 5 preguntas)",
+  "cantidadPreguntas": 5,
+  "preguntas": [
+    {
+      "type": "multiple",
+      "text": "Un estudiante universitario tiene tres exámenes fi...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Durante un proyecto de equipo, uno de los miembros...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Sofía está a cargo de organizar un evento universi...",
+      "optionsCount": 4
+    },
+    {
+      "type": "tf",
+      "text": "Un equipo de desarrollo de software ha estado trab...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "En una reunión de equipo para un proyecto grupal, ...",
+      "optionsCount": 0
+    }
+  ]
+}
+[2025-12-16T19:09:47.018Z] [INFO] [Quiz.jsx] Quiz creado
+{
+  "id": 6,
+  "titulo": "Habilidades transversales (IA · 5 preguntas)",
+  "respuesta": {
+    "data": {
+      "id": 6,
+      "titulo": "Habilidades transversales (IA · 5 preguntas)",
+      "descripcion": "Lee cada pregunta y selecciona la respuesta correcta. Este quiz cubre contenido general del área.",
+      "id_area": 3,
+      "materia": "Habilidades transversales",
+      "puntos_max": 100,
+      "peso_calificacion": "0.00",
+      "fecha_limite": null,
+      "grupos": "[\"V1\"]",
+      "max_intentos": null,
+      "requiere_revision": 0,
+      "activo": 1,
+      "publicado": 0,
+      "creado_por": 21,
+      "time_limit_min": 60,
+      "passing_score": null,
+      "shuffle_questions": 1,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "imagen_portada": null,
+      "recursos_json": null,
+      "created_at": "2025-12-16T19:09:46.000Z",
+      "updated_at": null
+    }
+  }
+}
+[2025-12-16T19:09:47.066Z] [INFO] [Quiz.jsx] Verificación de preguntas guardadas
+{
+  "quizId": 6,
+  "cantidadEsperada": 5,
+  "cantidadGuardada": 5,
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Un estudiante universitario tiene tres exámenes fi..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Durante un proyecto de equipo, uno de los miembros..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Sofía está a cargo de organizar un evento universi..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "Un equipo de desarrollo de software ha estado trab..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "En una reunión de equipo para un proyecto grupal, ..."
+    }
+  ]
+}
+[2025-12-16T19:09:47.068Z] [INFO] [Quiz.jsx] Quiz creado con IA exitosamente
+{
+  "quizId": 6,
+  "titulo": "Habilidades transversales (IA · 5 preguntas)",
+  "cantidadPreguntas": 5
+}
+[2025-12-16T19:15:10.545Z] [INFO] [Quiz.jsx] Creando quiz con IA
+{
+  "titulo": "Lengua extranjera (IA · 5 preguntas)",
+  "cantidadPreguntas": 5,
+  "preguntas": [
+    {
+      "type": "multiple",
+      "text": "Lee el siguiente correo electrónico y responde la ...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Selecciona la opción que mejor complete la siguien...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Elige la preposición correcta para completar la si...",
+      "optionsCount": 4
+    },
+    {
+      "type": "tf",
+      "text": "En inglés, la forma correcta del pasado simple del...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "¿Cuál es el antónimo de la palabra \"optimistic\"?...",
+      "optionsCount": 0
+    }
+  ]
+}
+[2025-12-16T19:15:10.916Z] [INFO] [Quiz.jsx] Quiz creado
+{
+  "id": 7,
+  "titulo": "Lengua extranjera (IA · 5 preguntas)",
+  "respuesta": {
+    "data": {
+      "id": 7,
+      "titulo": "Lengua extranjera (IA · 5 preguntas)",
+      "descripcion": "Lee cada pregunta y selecciona la respuesta correcta. Este quiz cubre contenido general del área.",
+      "id_area": 4,
+      "materia": "Lengua extranjera",
+      "puntos_max": 100,
+      "peso_calificacion": "0.00",
+      "fecha_limite": null,
+      "grupos": "[\"V1\"]",
+      "max_intentos": null,
+      "requiere_revision": 0,
+      "activo": 1,
+      "publicado": 0,
+      "creado_por": 21,
+      "time_limit_min": 60,
+      "passing_score": null,
+      "shuffle_questions": 1,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "imagen_portada": null,
+      "recursos_json": null,
+      "created_at": "2025-12-16T19:15:10.000Z",
+      "updated_at": null
+    }
+  }
+}
+[2025-12-16T19:15:10.933Z] [INFO] [Quiz.jsx] Verificación de preguntas guardadas
+{
+  "quizId": 7,
+  "cantidadEsperada": 5,
+  "cantidadGuardada": 5,
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Lee el siguiente correo electrónico y responde la ..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Selecciona la opción que mejor complete la siguien..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Elige la preposición correcta para completar la si..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "En inglés, la forma correcta del pasado simple del..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "¿Cuál es el antónimo de la palabra \"optimistic\"?..."
+    }
+  ]
+}
+[2025-12-16T19:15:10.934Z] [INFO] [Quiz.jsx] Quiz creado con IA exitosamente
+{
+  "quizId": 7,
+  "titulo": "Lengua extranjera (IA · 5 preguntas)",
+  "cantidadPreguntas": 5
+}
+[2025-12-17T19:13:25.545Z] [INFO] [Quiz.jsx] Creando quiz con IA
+{
+  "titulo": "Lengua extranjera (IA · 5 p)",
+  "cantidadPreguntas": 5,
+  "preguntas": [
+    {
+      "type": "multiple",
+      "text": "Read the following email and answer the question:S...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Choose the correct phrase to complete the sentence...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Select the most appropriate phrasal verb to comple...",
+      "optionsCount": 4
+    },
+    {
+      "type": "tf",
+      "text": "The sentence 'She is good at playing the piano' co...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "Rewrite the following sentence in the passive voic...",
+      "optionsCount": 0
+    }
+  ]
+}
+[2025-12-17T19:13:25.604Z] [INFO] [Quiz.jsx] Quiz creado
+{
+  "id": 8,
+  "titulo": "Lengua extranjera (IA · 5 p)",
+  "respuesta": {
+    "data": {
+      "id": 8,
+      "titulo": "Lengua extranjera (IA · 5 p)",
+      "descripcion": "Quiz generado con IA sobre: Lengua extranjera. Nivel: intermedio.",
+      "id_area": 4,
+      "materia": "Lengua extranjera",
+      "puntos_max": 100,
+      "peso_calificacion": "0.00",
+      "fecha_limite": null,
+      "grupos": "[\"V1\"]",
+      "max_intentos": null,
+      "requiere_revision": 0,
+      "activo": 1,
+      "publicado": 0,
+      "creado_por": 21,
+      "time_limit_min": 60,
+      "passing_score": null,
+      "shuffle_questions": 1,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "imagen_portada": null,
+      "recursos_json": null,
+      "created_at": "2025-12-17T19:13:25.000Z",
+      "updated_at": null
+    }
+  }
+}
+[2025-12-17T19:13:25.626Z] [INFO] [Quiz.jsx] Verificación de preguntas guardadas
+{
+  "quizId": 8,
+  "cantidadEsperada": 5,
+  "cantidadGuardada": 5,
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Read the following email and answer the question:S..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Choose the correct phrase to complete the sentence..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Select the most appropriate phrasal verb to comple..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "The sentence 'She is good at playing the piano' co..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "Rewrite the following sentence in the passive voic..."
+    }
+  ]
+}
+[2025-12-17T19:13:25.627Z] [INFO] [Quiz.jsx] Quiz creado con IA exitosamente
+{
+  "quizId": 8,
+  "titulo": "Lengua extranjera (IA · 5 p)",
+  "cantidadPreguntas": 5
+}

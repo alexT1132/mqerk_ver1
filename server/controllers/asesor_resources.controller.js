@@ -35,7 +35,7 @@ export const list = async (req, res) => {
     const formatted = resources.map(r => {
       // Extraer solo el nombre del archivo de la ruta completa
       let fileUrl = null;
-      if (r.file_path) {
+      if (r.resource_type === 'file' && r.file_path) {
         const normalized = r.file_path.replace(/\\/g, '/');
         const match = normalized.match(/uploads\/recursos-educativos\/([^\/]+)$/);
         if (match) {
@@ -44,14 +44,16 @@ export const list = async (req, res) => {
           // Si no contiene la ruta esperada, usar buildStaticUrl como fallback
           fileUrl = buildStaticUrl(r.file_path);
         }
+      } else if (r.resource_type === 'link' && r.link_url) {
+        fileUrl = r.link_url;
       }
       
       return {
         ...r,
         tags: r.tags ? (typeof r.tags === 'string' ? JSON.parse(r.tags) : r.tags) : [],
         file_url: fileUrl,
-        file_size_mb: (r.file_size / (1024 * 1024)).toFixed(2),
-        file_type_display: getFileTypeDisplay(r.file_type, r.file_name)
+        file_size_mb: r.file_size ? (r.file_size / (1024 * 1024)).toFixed(2) : null,
+        file_type_display: getFileTypeDisplay(r.resource_type, r.file_type, r.file_name, r.link_url)
       };
     });
     
@@ -74,26 +76,26 @@ export const getById = async (req, res) => {
     const resource = await AsesorResources.getById(Number(id), asesorUserId);
     if (!resource) return res.status(404).json({ message: 'Recurso no encontrado' });
     
-    // Extraer solo el nombre del archivo de la ruta completa
+    // Extraer URL para respuesta
     let fileUrl = null;
-    if (resource.file_path) {
+    if (resource.resource_type === 'file' && resource.file_path) {
       const normalized = resource.file_path.replace(/\\/g, '/');
       const match = normalized.match(/uploads\/recursos-educativos\/([^\/]+)$/);
       if (match) {
         fileUrl = `/uploads/recursos-educativos/${match[1]}`;
       } else {
-        // Si no contiene la ruta esperada, usar buildStaticUrl como fallback
         fileUrl = buildStaticUrl(resource.file_path);
       }
+    } else if (resource.resource_type === 'link' && resource.link_url) {
+      fileUrl = resource.link_url;
     }
     
-    // Formatear respuesta
     const formatted = {
       ...resource,
       tags: resource.tags ? (typeof resource.tags === 'string' ? JSON.parse(resource.tags) : resource.tags) : [],
       file_url: fileUrl,
-      file_size_mb: (resource.file_size / (1024 * 1024)).toFixed(2),
-      file_type_display: getFileTypeDisplay(resource.file_type, resource.file_name)
+      file_size_mb: resource.file_size ? (resource.file_size / (1024 * 1024)).toFixed(2) : null,
+      file_type_display: getFileTypeDisplay(resource.resource_type, resource.file_type, resource.file_name, resource.link_url)
     };
     
     res.json({ data: formatted });
@@ -104,17 +106,14 @@ export const getById = async (req, res) => {
 };
 
 /**
- * Crear nuevo recurso educativo
+ * Crear nuevo recurso educativo (archivo o enlace)
  */
 export const create = async (req, res) => {
   try {
     const asesorUserId = await resolveAsesorUserId(req.user.id);
     if (!asesorUserId) return res.status(403).json({ message: 'Solo asesores' });
     
-    const file = req.file;
-    if (!file) return res.status(400).json({ message: 'Archivo requerido' });
-    
-    const { title, description, tags } = req.body || {};
+    const { title, description, tags, resource_type, link_url } = req.body || {};
     if (!title || !title.trim()) return res.status(400).json({ message: 'Título es obligatorio' });
     
     // Parsear tags si viene como string
@@ -128,27 +127,66 @@ export const create = async (req, res) => {
       }
     }
     
-    const filePath = file.path.replace(/\\/g, '/');
-    const resource = await AsesorResources.create(asesorUserId, {
-      title: title.trim(),
-      description: description?.trim() || null,
-      file_path: filePath,
-      file_name: file.originalname,
-      file_size: file.size,
-      file_type: file.mimetype,
-      tags: tagsArray
-    });
+    const isLink = resource_type === 'link' || link_url;
     
-    // Extraer solo el nombre del archivo de la ruta completa
+    // Validar enlace
+    if (isLink) {
+      if (!link_url || !link_url.trim()) {
+        return res.status(400).json({ message: 'URL del enlace es requerida' });
+      }
+      // Validar formato de URL
+      try {
+        const url = new URL(link_url);
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          return res.status(400).json({ message: 'La URL debe comenzar con http:// o https://' });
+        }
+      } catch {
+        return res.status(400).json({ message: 'URL inválida' });
+      }
+    }
+    
+    // Validar archivo
+    const file = req.file;
+    if (!isLink && !file) {
+      return res.status(400).json({ message: 'Archivo requerido' });
+    }
+    
+    let resource;
+    if (isLink) {
+      // Crear recurso de tipo enlace
+      resource = await AsesorResources.create(asesorUserId, {
+        title: title.trim(),
+        description: description?.trim() || null,
+        resource_type: 'link',
+        link_url: link_url.trim(),
+        tags: tagsArray
+      });
+    } else {
+      // Crear recurso de tipo archivo
+      const filePath = file.path.replace(/\\/g, '/');
+      resource = await AsesorResources.create(asesorUserId, {
+        title: title.trim(),
+        description: description?.trim() || null,
+        resource_type: 'file',
+        file_path: filePath,
+        file_name: file.originalname,
+        file_size: file.size,
+        file_type: file.mimetype,
+        tags: tagsArray
+      });
+    }
+    
+    // Extraer URL para respuesta
     let fileUrl = null;
-    if (filePath) {
-      const normalized = filePath.replace(/\\/g, '/');
+    if (isLink) {
+      fileUrl = resource.link_url;
+    } else if (resource.file_path) {
+      const normalized = resource.file_path.replace(/\\/g, '/');
       const match = normalized.match(/uploads\/recursos-educativos\/([^\/]+)$/);
       if (match) {
         fileUrl = `/uploads/recursos-educativos/${match[1]}`;
       } else {
-        // Si no contiene la ruta esperada, usar buildStaticUrl como fallback
-        fileUrl = buildStaticUrl(filePath);
+        fileUrl = buildStaticUrl(resource.file_path);
       }
     }
     
@@ -157,8 +195,13 @@ export const create = async (req, res) => {
       ...resource,
       tags: tagsArray,
       file_url: fileUrl,
-      file_size_mb: (file.size / (1024 * 1024)).toFixed(2),
-      file_type_display: getFileTypeDisplay(file.mimetype, file.originalname)
+      file_size_mb: resource.file_size ? (resource.file_size / (1024 * 1024)).toFixed(2) : null,
+      file_type_display: getFileTypeDisplay(
+        resource.resource_type, 
+        resource.file_type, 
+        resource.file_name, 
+        resource.link_url
+      )
     };
     
     res.status(201).json({ data: formatted });
@@ -225,8 +268,8 @@ export const remove = async (req, res) => {
     const ok = await AsesorResources.remove(Number(id), asesorUserId);
     if (!ok) return res.status(404).json({ message: 'Recurso no encontrado' });
     
-    // Eliminar archivo físico
-    if (resource.file_path) {
+    // Eliminar archivo físico (solo si es un archivo, no un enlace)
+    if (resource.resource_type === 'file' && resource.file_path) {
       try {
         const fullPath = path.resolve(resource.file_path);
         if (fs.existsSync(fullPath)) {
@@ -257,19 +300,29 @@ export const download = async (req, res) => {
     const resource = await AsesorResources.getById(Number(id), asesorUserId);
     if (!resource) return res.status(404).json({ message: 'Recurso no encontrado' });
     
-    const filePath = path.resolve(resource.file_path);
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'Archivo no encontrado' });
+    // Si es un enlace, redirigir a la URL
+    if (resource.resource_type === 'link' && resource.link_url) {
+      return res.redirect(resource.link_url);
     }
     
-    res.download(filePath, resource.file_name, (err) => {
-      if (err) {
-        console.error('Error descargando archivo:', err);
-        if (!res.headersSent) {
-          res.status(500).json({ message: 'Error al descargar archivo' });
-        }
+    // Si es un archivo, descargarlo
+    if (resource.resource_type === 'file' && resource.file_path) {
+      const filePath = path.resolve(resource.file_path);
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: 'Archivo no encontrado' });
       }
-    });
+      
+      res.download(filePath, resource.file_name, (err) => {
+        if (err) {
+          console.error('Error descargando archivo:', err);
+          if (!res.headersSent) {
+            res.status(500).json({ message: 'Error al descargar archivo' });
+          }
+        }
+      });
+    } else {
+      return res.status(400).json({ message: 'Recurso no es descargable' });
+    }
   } catch (e) {
     console.error('asesor_resources download error:', e);
     res.status(500).json({ message: 'Error interno' });
@@ -309,7 +362,7 @@ export const listByEstudianteAsesor = async (req, res) => {
     // Formatear respuesta con tags parseados y URLs
     const formatted = resources.map(r => {
       let fileUrl = null;
-      if (r.file_path) {
+      if (r.resource_type === 'file' && r.file_path) {
         const normalized = r.file_path.replace(/\\/g, '/');
         const match = normalized.match(/uploads\/recursos-educativos\/([^\/]+)$/);
         if (match) {
@@ -317,14 +370,16 @@ export const listByEstudianteAsesor = async (req, res) => {
         } else {
           fileUrl = buildStaticUrl(r.file_path);
         }
+      } else if (r.resource_type === 'link' && r.link_url) {
+        fileUrl = r.link_url;
       }
       
       return {
         ...r,
         tags: r.tags ? (typeof r.tags === 'string' ? JSON.parse(r.tags) : r.tags) : [],
         file_url: fileUrl,
-        file_size_mb: (r.file_size / (1024 * 1024)).toFixed(2),
-        file_type_display: getFileTypeDisplay(r.file_type, r.file_name)
+        file_size_mb: r.file_size ? (r.file_size / (1024 * 1024)).toFixed(2) : null,
+        file_type_display: getFileTypeDisplay(r.resource_type, r.file_type, r.file_name, r.link_url)
       };
     });
     
@@ -362,19 +417,29 @@ export const downloadByEstudiante = async (req, res) => {
     const resource = await AsesorResources.getById(Number(id), asesorUserId);
     if (!resource) return res.status(404).json({ message: 'Recurso no encontrado' });
     
-    const filePath = path.resolve(resource.file_path);
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'Archivo no encontrado' });
+    // Si es un enlace, redirigir a la URL
+    if (resource.resource_type === 'link' && resource.link_url) {
+      return res.redirect(resource.link_url);
     }
     
-    res.download(filePath, resource.file_name, (err) => {
-      if (err) {
-        console.error('Error descargando archivo:', err);
-        if (!res.headersSent) {
-          res.status(500).json({ message: 'Error al descargar archivo' });
-        }
+    // Si es un archivo, descargarlo
+    if (resource.resource_type === 'file' && resource.file_path) {
+      const filePath = path.resolve(resource.file_path);
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: 'Archivo no encontrado' });
       }
-    });
+      
+      res.download(filePath, resource.file_name, (err) => {
+        if (err) {
+          console.error('Error descargando archivo:', err);
+          if (!res.headersSent) {
+            res.status(500).json({ message: 'Error al descargar archivo' });
+          }
+        }
+      });
+    } else {
+      return res.status(400).json({ message: 'Recurso no es descargable' });
+    }
   } catch (e) {
     console.error('asesor_resources downloadByEstudiante error:', e);
     res.status(500).json({ message: 'Error interno' });
@@ -384,7 +449,13 @@ export const downloadByEstudiante = async (req, res) => {
 /**
  * Helper: Obtener tipo de archivo para display
  */
-function getFileTypeDisplay(mimeType, fileName) {
+function getFileTypeDisplay(resourceType, mimeType, fileName, linkUrl) {
+  // Si es un enlace
+  if (resourceType === 'link' || linkUrl) {
+    return 'LINK';
+  }
+  
+  // Si es un archivo
   const ext = path.extname(fileName || '').toLowerCase();
   
   if (mimeType?.includes('pdf') || ext === '.pdf') return 'PDF';

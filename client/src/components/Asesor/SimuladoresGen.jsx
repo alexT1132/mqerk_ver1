@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import SimuladorModalGen from "./SimulatorModal";
 import AnalizadorFallosRepetidos from "./AnalizadorFallosRepetidos";
+import ManualReviewShortAnswer from "./ManualReviewShortAnswer";
 import { generarPreguntasIA, getCooldownRemainingMs } from "../../service/simuladoresAI";
 import { listSimulaciones, deleteSimulacion, createSimulacion, updateSimulacion, getSimulacion, getSimulacionFull, estudiantesEstadoSimulacion, getSimulacionIntentoReview } from "../../api/simulaciones";
 import InlineMath from "./simGen/InlineMath.jsx";
@@ -31,23 +32,41 @@ import InlineMath from "./simGen/InlineMath.jsx";
 function MathText({ text = "" }) {
   if (!text) return null;
 
-  const re = /\$(.+?)\$/g;
+  // Regex mejorado para capturar fórmulas LaTeX: $...$ (no greedy para evitar capturar múltiples fórmulas)
+  // También maneja fórmulas con caracteres especiales como \frac, \le, etc.
+  const re = /\$([^$]+?)\$/g;
   const parts = [];
   let lastIndex = 0;
   let m;
+  let matchFound = false;
+
+  // Resetear el regex para evitar problemas con múltiples llamadas
+  re.lastIndex = 0;
 
   while ((m = re.exec(text)) !== null) {
+    matchFound = true;
     if (m.index > lastIndex) {
       parts.push({ type: 'text', content: text.slice(lastIndex, m.index) });
     }
-    parts.push({ type: 'math', content: m[1] });
+    // Limpiar espacios en blanco al inicio y final de la fórmula
+    const formula = m[1].trim();
+    if (formula) {
+      parts.push({ type: 'math', content: formula });
+      
+      // Log en desarrollo para debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[MathText] Fórmula detectada:', formula);
+      }
+    }
     lastIndex = m.index + m[0].length;
   }
+  
   if (lastIndex < text.length) {
     parts.push({ type: 'text', content: text.slice(lastIndex) });
   }
 
-  if (parts.length === 0) {
+  // Si no se encontraron fórmulas, devolver el texto tal cual
+  if (!matchFound || parts.length === 0) {
     return <span>{text}</span>;
   }
 
@@ -55,9 +74,9 @@ function MathText({ text = "" }) {
     <span>
       {parts.map((part, idx) =>
         part.type === 'math' ? (
-          <InlineMath key={idx} math={part.content} />
+          <InlineMath key={`math-${idx}`} math={part.content} />
         ) : (
-          <span key={idx}>{part.content}</span>
+          <span key={`text-${idx}`}>{part.content}</span>
         )
       )}
     </span>
@@ -293,6 +312,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewData, setReviewData] = useState(null);
   const [reviewHeader, setReviewHeader] = useState({ simulacion: null, estudiante: null });
+  const [selectedIntentoReview, setSelectedIntentoReview] = useState(1); // Intentar oficial por defecto
 
   const navigate = useNavigate();
   const headerTitle = useMemo(() => {
@@ -492,23 +512,32 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         updatedAt: r.updated_at ? new Date(r.updated_at).toLocaleDateString('es-MX') : ""
       }));
       
-      // ✅ Log para debugging después de mapear
-      if (process.env.NODE_ENV === 'development' && areaId) {
+      // ✅ Log para debugging después de mapear (tanto para áreas como generales)
+      if (process.env.NODE_ENV === 'development') {
         console.log('[SimuladoresGen] load - items mapeados para la lista:', {
-          areaId,
-          areaTitle,
+          areaId: areaId || null,
+          areaTitle: areaTitle || null,
           totalItems: mapped.length,
           items: mapped.map(item => ({
             id: item.id,
             name: item.name,
             type: item.type,
             status: item.status,
+            questions: item.questions,
             id_area: filtered.find(r => r.id === item.id)?.id_area
           }))
         });
       }
       
       setItems(mapped);
+      
+      // ✅ Log adicional para verificar que el estado se actualizó
+      if (process.env.NODE_ENV === 'development' && mapped.length > 0) {
+        console.log('[SimuladoresGen] ✅ Estado actualizado con items:', {
+          cantidad: mapped.length,
+          primerItem: mapped[0]
+        });
+      }
     } catch (e) { console.error(e); setError(e?.response?.data?.message || "No se pudieron cargar simulaciones"); }
     finally { setLoading(false); }
   }, [areaId, areaTitle]);
@@ -588,8 +617,18 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       const remaining = getCooldownRemainingMs();
       setCooldownMs(remaining);
       // Limpiar el error cuando el cooldown termine
-      if (remaining === 0 && iaError && (iaError.includes('429') || iaError.includes('Límite de solicitudes') || iaError.includes('Espera requerida'))) {
-        setIaError('');
+      if (remaining === 0 && iaError) {
+        const errorMsg = iaError.toLowerCase();
+        if (errorMsg.includes('límite de solicitudes') || 
+            errorMsg.includes('espera') || 
+            errorMsg.includes('cooldown') || 
+            errorMsg.includes('demasiadas peticiones') ||
+            errorMsg.includes('rate limit') ||
+            errorMsg.includes('429') ||
+            errorMsg.includes('503') ||
+            errorMsg.includes('espera requerida')) {
+          setIaError('');
+        }
       }
     };
     updateCd();
@@ -600,11 +639,30 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   // Lista derivada para la vista (búsqueda + filtro)
   const viewItems = useMemo(() => {
     const s = (search || '').toLowerCase().trim();
-    return items.filter((it) => {
+    const filtered = items.filter((it) => {
       const okStatus = statusFilter === 'all' ? true : it.status === statusFilter;
       const okSearch = s ? (String(it.name || '').toLowerCase().includes(s)) : true;
       return okStatus && okSearch;
     });
+    
+    // ✅ Log para debugging de viewItems
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[SimuladoresGen] viewItems - filtrado:', {
+        totalItems: items.length,
+        search: s || '(vacío)',
+        statusFilter,
+        filteredCount: filtered.length,
+        itemsOriginales: items.map(it => ({ id: it.id, name: it.name, status: it.status })),
+        itemsFiltrados: filtered.map(it => ({ id: it.id, name: it.name, status: it.status })),
+        razonFiltrado: items.length > 0 && filtered.length === 0 ? {
+          primerItem: items[0],
+          pasaStatus: statusFilter === 'all' ? true : items[0].status === statusFilter,
+          pasaSearch: s ? String(items[0].name || '').toLowerCase().includes(s) : true
+        } : null
+      });
+    }
+    
+    return filtered;
   }, [items, statusFilter, search]);
 
   // Persistir tema de la vista general y precargar
@@ -1038,18 +1096,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         simuladorId: s.id
       });
       
-      if (coincideConVista) {
-        setItems(prev => [newItem, ...prev]);
-        console.log('[SimuladoresGen] ✅ Simulador agregado a la lista (coincide con vista)');
-      } else {
-        console.log('[SimuladoresGen] ⚠️ Simulador guardado en área diferente, no agregando a lista actual:', {
-          id_areaGuardado: idAreaGuardado,
-          areaIdVista: areaId,
-          isGeneralView,
-          isGeneralSaved,
-          simuladorId: s.id
-        });
-      }
       setOpen(false);
       // Limpiar estado IA temporal
       setIaPreguntas(null);
@@ -1058,7 +1104,11 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       // ✅ IMPORTANTE: Si tiene preguntas IA, NO navegar al builder, quedarse en la lista (igual que Quiz.jsx)
       // Esto permite que el simulador aparezca en la lista del asesor y pueda ser editado/publicado desde allí
       if (hasIaQuestions) {
-        // Mostrar modal de éxito y quedarse en la lista
+        // Recargar la lista inmediatamente para que el simulador aparezca desde el backend
+        // Esto asegura que los datos estén sincronizados y no haya problemas de duplicación
+        await load();
+        
+        // Mostrar modal de éxito después de recargar
         setSuccessModal({
           open: true,
           message: `Simulador creado exitosamente con ${iaPreguntas.length} pregunta(s)${currentAreaId ? ` en el área ${currentAreaTitle || ''}` : ''}`,
@@ -1068,8 +1118,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         setTimeout(() => {
           setSuccessModal(prev => ({ ...prev, open: false }));
         }, 4000);
-        // Recargar la lista para asegurar que el simulador aparezca correctamente
-        setTimeout(() => load(), 500);
         // NO navegar, quedarse en la lista para que pueda verlo y editarlo/publicarlo
         return;
       } else {
@@ -1187,6 +1235,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     setReviewOpen(true);
     setReviewLoading(true);
     setReviewData(null);
+    setSelectedIntentoReview(1); // Resetear al intento oficial
     setReviewHeader({ 
       simulacion: resultsSimMeta, 
       estudiante: { 
@@ -1196,12 +1245,27 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       } 
     });
     try {
-      // Forzar intento=1 (oficial)
+      // Cargar intento oficial por defecto
       const { data } = await getSimulacionIntentoReview(resultsSimMeta.id, row.id_estudiante, 1);
       setReviewData(data?.data || null);
     } catch (e) {
       alert(e?.response?.data?.message || 'No se pudo cargar el detalle del intento');
       setReviewOpen(false);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+  
+  // Función para cambiar el intento en el modal de review
+  const handleChangeIntentoReview = async (intentoNum) => {
+    if (!resultsSimMeta?.id || !reviewHeader.estudiante?.id) return;
+    setSelectedIntentoReview(intentoNum);
+    setReviewLoading(true);
+    try {
+      const { data } = await getSimulacionIntentoReview(resultsSimMeta.id, reviewHeader.estudiante.id, intentoNum);
+      setReviewData(data?.data || null);
+    } catch (e) {
+      alert(e?.response?.data?.message || 'No se pudo cargar el detalle del intento');
     } finally {
       setReviewLoading(false);
     }
@@ -1214,18 +1278,26 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       type: 'success',
       confirmText: 'Publicar',
       onConfirm: async () => {
-        // ✅ CRÍTICO: Obtener el id_area actual del simulador antes de publicar
-        // para preservarlo y evitar que se mueva a "Generales"
+        // ✅ CRÍTICO: Obtener los datos actuales del simulador antes de publicar
+        // para preservar título, descripción e id_area
+        let currentSimData = null;
         let currentIdArea = null;
         try {
           const currentSim = await getSimulacion(item.id);
-          const simData = currentSim?.data?.data || currentSim?.data || null;
-          if (simData && (simData.id_area !== null && simData.id_area !== undefined)) {
-            currentIdArea = Number(simData.id_area);
-            console.log('[SimuladoresGen] handlePublish - id_area actual del simulador:', currentIdArea);
+          currentSimData = currentSim?.data?.data || currentSim?.data || null;
+          if (currentSimData) {
+            if (currentSimData.id_area !== null && currentSimData.id_area !== undefined) {
+              currentIdArea = Number(currentSimData.id_area);
+            }
+            console.log('[SimuladoresGen] handlePublish - datos actuales del simulador:', {
+              id: currentSimData.id,
+              titulo: currentSimData.titulo,
+              descripcion: currentSimData.descripcion ? 'presente' : 'ausente',
+              id_area: currentIdArea
+            });
           }
         } catch (err) {
-          console.warn('[SimuladoresGen] No se pudo obtener id_area actual del simulador:', err);
+          console.warn('[SimuladoresGen] No se pudo obtener datos actuales del simulador:', err);
         }
         
         // Optimista
@@ -1233,14 +1305,26 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         setItems(prev => prev.map(x => x.id === item.id ? { ...x, status: 'Publicado' } : x));
 
         try {
-          // ✅ CRÍTICO: Al publicar, preservar el id_area actual del simulador
-          // Esto evita que se mueva a "Generales" cuando se publica
+          // ✅ CRÍTICO: Al publicar, preservar TODOS los datos importantes del simulador
+          // Incluir título, descripción e id_area para evitar que se borren
           const publishPayload = {
             publico: true,
             activo: true
           };
           
-          // ✅ Solo incluir id_area si existe (para preservarlo)
+          // ✅ Preservar título si existe
+          if (currentSimData && currentSimData.titulo) {
+            publishPayload.titulo = currentSimData.titulo;
+            console.log('[SimuladoresGen] handlePublish - preservando título:', publishPayload.titulo);
+          }
+          
+          // ✅ Preservar descripción si existe
+          if (currentSimData && currentSimData.descripcion) {
+            publishPayload.descripcion = currentSimData.descripcion;
+            console.log('[SimuladoresGen] handlePublish - preservando descripción');
+          }
+          
+          // ✅ Preservar id_area
           if (currentIdArea !== null && currentIdArea !== undefined && Number(currentIdArea) > 0) {
             publishPayload.id_area = Number(currentIdArea);
             console.log('[SimuladoresGen] handlePublish - preservando id_area:', publishPayload.id_area);
@@ -1410,17 +1494,38 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         if (e?.helpUrl) {
           console.error('🔗 Obtén una nueva API key en:', e.helpUrl);
         }
-      } else if (e?.code === 'RATE_LIMIT' || e?.status === 429 || msg.includes('429') || msg.includes('quota') || msg.includes('rate limit') || msg.includes('límite de solicitudes') || msg.includes('error de cuota')) {
-        const cooldownTime = e?.remainingMs || rem || 45000; // 45 segundos por defecto
+      } else if (e?.code === 'TOO_MANY_REQUESTS' || msg.includes('demasiadas peticiones') || msg.includes('saturar')) {
+        const cooldownTime = e?.remainingMs || rem || 60000; // 1 minuto por defecto
         const secs = Math.ceil(cooldownTime / 1000);
-        setError(`⚠️ Límite de solicitudes alcanzado (Error 429)\n\nSe alcanzó el límite de solicitudes a la API de Google. Por favor, espera ${secs} segundo${secs > 1 ? 's' : ''} antes de intentar nuevamente.\n\nEl botón de generar quedará deshabilitado durante el tiempo de espera.`);
+        const mins = Math.floor(secs / 60);
+        const remainingSecs = secs % 60;
+        const timeDisplay = mins > 0 
+          ? `${mins} minuto${mins > 1 ? 's' : ''}${remainingSecs > 0 ? ` y ${remainingSecs} segundo${remainingSecs > 1 ? 's' : ''}` : ''}`
+          : `${secs} segundo${secs > 1 ? 's' : ''}`;
+        setError(`⚠️ Demasiadas peticiones en poco tiempo\n\nHas realizado múltiples peticiones seguidas. Por favor, espera ${timeDisplay} antes de intentar nuevamente para evitar saturar el servicio de IA.\n\nEl botón de generar quedará deshabilitado durante el tiempo de espera.`);
+        setCooldownMs(cooldownTime);
+        setTimeout(() => setCooldownMs(getCooldownRemainingMs()), 100);
+      } else if (e?.code === 'RATE_LIMIT' || e?.status === 429 || msg.includes('429') || msg.includes('quota') || msg.includes('rate limit') || msg.includes('límite de solicitudes') || msg.includes('error de cuota') || msg.includes('503')) {
+        const cooldownTime = e?.remainingMs || rem || 120000; // 2 minutos por defecto
+        const secs = Math.ceil(cooldownTime / 1000);
+        const mins = Math.floor(secs / 60);
+        const remainingSecs = secs % 60;
+        const timeDisplay = mins > 0 
+          ? `${mins} minuto${mins > 1 ? 's' : ''}${remainingSecs > 0 ? ` y ${remainingSecs} segundo${remainingSecs > 1 ? 's' : ''}` : ''}`
+          : `${secs} segundo${secs > 1 ? 's' : ''}`;
+        setError(`⚠️ Límite de solicitudes alcanzado (Error ${e?.status || 429})\n\nSe alcanzó el límite de solicitudes a la API de Google. Por favor, espera ${timeDisplay} antes de intentar nuevamente.\n\nEl botón de generar quedará deshabilitado durante el tiempo de espera.`);
         setCooldownMs(cooldownTime);
         // Asegurar que el cooldown se actualice inmediatamente
         setTimeout(() => setCooldownMs(getCooldownRemainingMs()), 100);
       } else if (e?.code === 'COOLDOWN' || msg.includes('enfriamiento') || msg.includes('cooldown')) {
-        const cooldownTime = e?.remainingMs || rem || 45000; // 45 segundos por defecto
+        const cooldownTime = e?.remainingMs || rem || 120000; // 2 minutos por defecto
         const secs = Math.ceil(cooldownTime / 1000);
-        setError(`⏳ Espera requerida\n\nDebes esperar ${secs} segundo${secs > 1 ? 's' : ''} antes de volver a generar con IA. El botón quedará deshabilitado durante este tiempo.`);
+        const mins = Math.floor(secs / 60);
+        const remainingSecs = secs % 60;
+        const timeDisplay = mins > 0 
+          ? `${mins} minuto${mins > 1 ? 's' : ''}${remainingSecs > 0 ? ` y ${remainingSecs} segundo${remainingSecs > 1 ? 's' : ''}` : ''}`
+          : `${secs} segundo${secs > 1 ? 's' : ''}`;
+        setError(`⏳ Espera requerida\n\nDebes esperar ${timeDisplay} antes de volver a generar con IA. El botón quedará deshabilitado durante este tiempo.`);
         setCooldownMs(cooldownTime);
         // Asegurar que el cooldown se actualice inmediatamente
         setTimeout(() => setCooldownMs(getCooldownRemainingMs()), 100);
@@ -1806,10 +1911,11 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       {error && (
         <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 whitespace-pre-line">{error}</div>
       )}
-      {loading && items.length === 0 && (
+      {loading && viewItems.length === 0 && (
         <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-500">Cargando…</div>
       )}
       <div className="grid gap-3 md:hidden">
+        {process.env.NODE_ENV === 'development' && console.log('[SimuladoresGen] Renderizando móvil - viewItems.length:', viewItems.length, 'items:', viewItems.map(i => ({ id: i.id, name: i.name })))}
         {viewItems.map((item) => (
           <MobileRow
             key={item.id}
@@ -1878,6 +1984,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               </thead>
 
               <tbody className="divide-y divide-slate-200 bg-white">
+                {process.env.NODE_ENV === 'development' && console.log('[SimuladoresGen] Renderizando tabla - viewItems.length:', viewItems.length, 'items:', viewItems.map(i => ({ id: i.id, name: i.name })))}
                 {viewItems.map((item, idx) => (
                   <tr
                     key={item.id}
@@ -1955,7 +2062,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                   </tr>
                 ))}
 
-                {items.length === 0 && !loading && (
+                {viewItems.length === 0 && !loading && (
                   <tr>
                     <td
                       colSpan={7}
@@ -2787,14 +2894,34 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 px-0.5 mt-16">
           <div className="w-full max-w-4xl rounded-lg bg-white shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between border-b px-2 py-1.5">
-              <h3 className="text-base font-semibold text-slate-900">Detalle intento 1 • {reviewHeader.simulacion?.titulo || 'Simulación'} • {reviewHeader.estudiante?.nombre || 'Alumno'}</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-base font-semibold text-slate-900">
+                  {reviewHeader.simulacion?.titulo || 'Simulación'} • {reviewHeader.estudiante?.nombre || 'Alumno'}
+                </h3>
+                {reviewHeader.estudiante?.totalIntentos > 1 && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-slate-600 font-medium">Intento:</label>
+                    <select
+                      value={selectedIntentoReview}
+                      onChange={(e) => handleChangeIntentoReview(Number(e.target.value))}
+                      className="text-xs border border-slate-300 rounded-md px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      {Array.from({ length: reviewHeader.estudiante.totalIntentos }, (_, i) => i + 1).map(num => (
+                        <option key={num} value={num}>
+                          {num === 1 ? `Intento ${num} (Oficial)` : `Intento ${num} (Práctica)`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
               <button onClick={() => setReviewOpen(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
             </div>
             <div className="max-h-[70vh] overflow-y-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {reviewLoading ? (
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Cargando…</div>
               ) : reviewData && Array.isArray(reviewData.preguntas) ? (
-                <div className="space-y-2.5">
+                <div className="space-y-4">
                   {/* Analizador de fallos repetidos */}
                   {reviewHeader.estudiante?.totalIntentos >= 2 && (
                     <AnalizadorFallosRepetidos
@@ -2804,33 +2931,139 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                       totalIntentos={reviewHeader.estudiante?.totalIntentos}
                     />
                   )}
-                  {reviewData.preguntas.map((p, idx) => {
-                    const sel = new Set(p.seleccionadas || []);
-                    const corr = !!p.correcta;
+                  
+                  {/* Separar preguntas por tipo */}
+                  {(() => {
+                    const preguntasOpcionMultiple = reviewData.preguntas.filter(p => p.tipo === 'opcion_multiple' || p.tipo === 'verdadero_falso' || p.tipo === 'multi_respuesta');
+                    const respuestasCortas = reviewData.preguntas.filter(p => p.tipo === 'respuesta_corta');
+                    
                     return (
-                      <div key={p.id || idx} className="rounded border border-slate-200 p-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="text-sm font-medium text-slate-900">{p.orden || (idx + 1)}. <MathText text={p.enunciado || ''} /></div>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${corr ? 'bg-green-50 text-green-700 border-green-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{corr ? 'Correcta' : 'Incorrecta'}</span>
-                        </div>
-                        <ul className="mt-1.5 space-y-1">
-                          {(p.opciones || []).map((o) => {
-                            const isSel = sel.has(o.id);
-                            const isOk = o.es_correcta === 1;
-                            const base = 'text-xs rounded-lg border px-3 py-1.5 flex items-center justify-between';
-                            const cl = isSel && isOk ? 'bg-emerald-50 border-emerald-300' : isSel && !isOk ? 'bg-rose-50 border-rose-300' : !isSel && isOk ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200';
-                            return (
-                              <li key={o.id} className={`${base} ${cl}`}>
-                                <span><MathText text={o.texto || ''} /></span>
-                                {isSel && <span className="text-[10px] font-bold">✓ Seleccionada</span>}
-                                {!isSel && isOk && <span className="text-[10px] font-bold text-green-700">Correcta</span>}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
+                      <>
+                        {/* Preguntas de opción múltiple */}
+                        {preguntasOpcionMultiple.length > 0 && (
+                          <div className="space-y-2.5">
+                            {preguntasOpcionMultiple.map((p, idx) => {
+                              const sel = new Set(p.seleccionadas || []);
+                              const corr = !!p.correcta;
+                              return (
+                                <div key={p.id || idx} className="rounded border border-slate-200 p-2">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="text-sm font-medium text-slate-900">{p.orden || (idx + 1)}. <MathText text={p.enunciado || ''} /></div>
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${corr ? 'bg-green-50 text-green-700 border-green-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{corr ? 'Correcta' : 'Incorrecta'}</span>
+                                  </div>
+                                  <ul className="mt-1.5 space-y-1">
+                                    {(p.opciones || []).map((o) => {
+                                      const isSel = sel.has(o.id);
+                                      const isOk = o.es_correcta === 1;
+                                      const base = 'text-xs rounded-lg border px-3 py-1.5 flex items-center justify-between';
+                                      // Colores según el estado: seleccionada y correcta (verde), seleccionada e incorrecta (rojo), solo correcta (verde claro), ninguna (gris)
+                                      const cl = isSel && isOk ? 'bg-emerald-50 border-emerald-300' : isSel && !isOk ? 'bg-rose-50 border-rose-300' : !isSel && isOk ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200';
+                                      return (
+                                        <li key={o.id} className={`${base} ${cl}`}>
+                                          <span><MathText text={o.texto || ''} /></span>
+                                          <div className="flex items-center gap-2">
+                                            {isSel && <span className="text-[10px] font-bold text-slate-700">✓ Seleccionada</span>}
+                                            {isOk && <span className="text-[10px] font-bold text-green-700">Correcta</span>}
+                                          </div>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Sección de Respuestas Cortas para Revisión Manual */}
+                        {respuestasCortas.length > 0 && (
+                          <div className="mt-6 pt-6 border-t border-gray-200">
+                            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                              <span>📝</span>
+                              <span>Respuestas Cortas para Revisión</span>
+                              {respuestasCortas.filter(p => {
+                                // Verificar si requiere revisión (baja confianza o estado manual_review)
+                                const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
+                                return requiereRevision;
+                              }).length > 0 && (
+                                <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full">
+                                  {respuestasCortas.filter(p => {
+                                    const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
+                                    return requiereRevision;
+                                  }).length} requieren revisión
+                                </span>
+                              )}
+                            </h4>
+                            
+                            <div className="space-y-4">
+                              {respuestasCortas.map((pregunta) => {
+                                // Obtener respuesta esperada (opción correcta)
+                                const respuestaEsperada = pregunta.opciones?.find(o => o.es_correcta === 1)?.texto;
+                                
+                                if (!respuestaEsperada) return null;
+                                
+                                // Construir objeto respuesta para el componente
+                                // Usar los datos disponibles en la pregunta y mapear a la estructura esperada
+                                // Para simulaciones: correcta se determina desde calificacion_confianza cuando es manual (100 = correcta, 0 = incorrecta)
+                                const correctaValue = pregunta.calificacion_metodo === 'manual' && pregunta.calificacion_confianza != null
+                                  ? (pregunta.calificacion_confianza === 100 ? 1 : 0)
+                                  : (pregunta.correcta ? 1 : 0);
+                                
+                                // Validar que tenemos id_respuesta antes de crear el componente
+                                // Si no hay id_respuesta, no podemos hacer revisión manual
+                                if (!pregunta.id_respuesta) {
+                                  console.warn('[SimuladoresGen] Respuesta corta sin id_respuesta:', {
+                                    pregunta_id: pregunta.id,
+                                    valor_texto: pregunta.valor_texto,
+                                    calificacion_status: pregunta.calificacion_status
+                                  });
+                                  // Mostrar mensaje de que la respuesta aún no está disponible para revisión
+                                  return (
+                                    <div key={pregunta.id} className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                      <p className="text-sm text-yellow-800">
+                                        ⚠️ Esta respuesta aún no está disponible para revisión manual. 
+                                        La respuesta se está procesando automáticamente.
+                                      </p>
+                                    </div>
+                                  );
+                                }
+                                
+                                const respuestaObj = {
+                                  id: pregunta.id_respuesta, // DEBE ser el ID de la respuesta, no de la pregunta
+                                  valor_texto: pregunta.valor_texto || null,
+                                  texto_libre: pregunta.valor_texto || null,
+                                  correcta: correctaValue,
+                                  calificacion_status: pregunta.calificacion_status || 'pending',
+                                  calificacion_metodo: pregunta.calificacion_metodo || null,
+                                  calificacion_confianza: pregunta.calificacion_confianza != null ? Number(pregunta.calificacion_confianza) : null,
+                                  revisada_por: pregunta.revisada_por || null,
+                                  notas_revision: pregunta.notas_revision || null
+                                };
+                                
+                                return (
+                                  <ManualReviewShortAnswer
+                                    key={pregunta.id}
+                                    respuesta={respuestaObj}
+                                    pregunta={pregunta.enunciado}
+                                    respuestaEsperada={respuestaEsperada}
+                                    tipo="simulacion"
+                                    onReviewComplete={(updatedData) => {
+                                      // Recargar datos del intento actualmente seleccionado
+                                      if (resultsSimMeta?.id && reviewHeader.estudiante?.id) {
+                                        getSimulacionIntentoReview(resultsSimMeta.id, reviewHeader.estudiante.id, selectedIntentoReview)
+                                          .then(({ data }) => setReviewData(data?.data || null))
+                                          .catch(err => console.error('Error al recargar datos:', err));
+                                      }
+                                    }}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     );
-                  })}
+                  })()}
                 </div>
               ) : (
                 <div className="text-slate-600 text-sm">No se pudo cargar el detalle del intento.</div>

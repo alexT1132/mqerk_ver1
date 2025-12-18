@@ -6,6 +6,7 @@ import { getSimulacionFull, updateSimulacion } from '../../../api/simulaciones.j
 import InlineMath from './InlineMath.jsx';
 import MathExamplesHint from './MathExamplesHint.jsx';
 import MathPalette, { SECTIONS, Modal, FormulaEditModal } from './MathPalette.jsx';
+import RichTextEditor from './RichTextEditor.jsx';
 import { AIFormulaModal } from './AIFormulaModal.jsx';
 import { useAlert } from '../../../components/shared/AlertModal.jsx';
 
@@ -731,90 +732,21 @@ function QuestionCard({ q, onChange, onRemove }) {
         </div>
       </div>
 
-      {/* Enunciado - Textarea siempre visible + preview cuando hay fórmulas */}
+      {/* Enunciado - RichTextEditor con fórmulas protegidas */}
       <div>
-        <label className="block text-sm font-bold text-slate-700 mb-2">
-          Enunciado de la pregunta <span className="text-rose-500 font-bold">*</span>
-        </label>
+        <RichTextEditor
+          value={q.text}
+          onChange={(newText) => onChange({ ...q, text: newText })}
+          placeholder="Escribe la consigna de la pregunta… Puedes usar fórmulas matemáticas con los botones.
 
-        {/* Textarea siempre visible para poder seguir editando */}
-        <div className="relative">
-          <textarea
-            ref={textareaRef}
-            rows={5}
-            value={q.text}
-            onChange={(e) => onChange({ ...q, text: e.target.value })}
-            placeholder="Escribe la consigna de la pregunta… Puedes usar fórmulas matemáticas con los botones.&#10;&#10;Tips:&#10;• Puedes usar Enter para saltos de línea&#10;• Usa viñetas: - texto o * texto o 1. texto&#10;• Inserta fórmulas: $x^2$, $\sqrt{2}$, etc."
-            onKeyDown={(e) => {
-              if (e.key === 'Tab') {
-                const ok = jumpToPlaceholder(textareaRef.current, e.shiftKey);
-                if (ok) e.preventDefault();
-              }
-            }}
-            className="w-full rounded-xl border-2 border-slate-300 px-4 py-3 pr-28 text-sm focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 resize-y hover:border-violet-400 bg-white font-mono leading-relaxed"
-            style={{ whiteSpace: 'pre-wrap' }}
-          />
-          <div className="absolute right-3 top-3 flex gap-2">
-            {/* Botón IA (generar fórmula con IA) */}
-            <button
-              type="button"
-              onClick={() => setAiModalOpen(true)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border-2 border-indigo-300 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-700 hover:border-indigo-500 hover:bg-gradient-to-br hover:from-indigo-100 hover:to-purple-100 hover:text-indigo-800 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-110 active:scale-95"
-              title="Generar fórmula con IA"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            {/* Botón calculadora (abre paleta) */}
-            <button
-              type="button"
-              onClick={() => setPaletteOpen(true)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border-2 border-violet-300 bg-gradient-to-br from-violet-50 to-indigo-50 text-violet-700 hover:border-violet-500 hover:bg-gradient-to-br hover:from-violet-100 hover:to-indigo-100 hover:text-violet-800 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-110 active:scale-95"
-              title="Insertar fórmula matemática"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <rect x="4" y="3" width="16" height="18" rx="2" />
-                <path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Vista previa renderizada cuando hay fórmulas - debajo del textarea */}
-        {hasMath && q.text && (
-          <div className="mt-3 rounded-xl border-2 border-violet-300 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 p-4 shadow-md">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></div>
-                <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Vista previa renderizada</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowRawText(!showRawText)}
-                className="text-xs text-violet-600 hover:text-violet-700 font-bold transition-colors px-2 py-1 rounded-lg hover:bg-white/60"
-              >
-                {showRawText ? '👁️ Ocultar código' : '📝 Ver código LaTeX'}
-              </button>
-            </div>
-            <div className="text-sm font-medium text-slate-900 bg-white/60 rounded-lg p-3 border border-slate-200/50 min-h-[40px] leading-relaxed">
-              <MathText text={q.text} onFormulaClick={handleFormulaClick} />
-            </div>
-            {showRawText && (
-              <div className="mt-3 pt-3 border-t border-slate-200">
-                <p className="text-xs text-slate-600 font-mono bg-white/80 px-3 py-2 rounded-lg border border-slate-200 break-all">
-                  {q.text}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {!q.text && (
-          <div className="mt-2">
-            <MathExamplesHint />
-          </div>
-        )}
+Tips:
+• Puedes usar Enter para saltos de línea
+• Usa viñetas: - texto o * texto o 1. texto
+• Inserta fórmulas con los botones de abajo"
+          label="Enunciado de la pregunta"
+          required
+          className="mb-4"
+        />
       </div>
 
       {/* Imagen de la pregunta */}
@@ -1389,7 +1321,7 @@ export default function EspanolFormBuilder() {
   return (
     <>
       <AlertComponent />
-      <div className="min-h-screen bg-transparent w-full overflow-x-visible">
+      <div className="min-h-screen bg-transparent w-full overflow-x-hidden">
 
         {/* Header mejorado */}
         <header className="relative w-full px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8">
@@ -1452,6 +1384,31 @@ export default function EspanolFormBuilder() {
                 <span className="font-bold">Guarda tu progreso antes de publicar</span>
               </div>
               <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => {
+                    if (window.confirm('¿Estás seguro de que deseas cancelar? Se perderán los cambios no guardados. NO se guardará como borrador.')) {
+                      // IMPORTANTE: Solo navegar, NO guardar nada
+                      if (isSim) {
+                        // Para simuladores: navegar según si hay área o no
+                        if (areaId) {
+                          const areaParam = encodeURIComponent(areaTitle || areaId);
+                          navigate(`/asesor/simuladores/modulo?area=${areaParam}`, { replace: true });
+                        } else {
+                          navigate('/asesor/simuladores/generales', { replace: true });
+                        }
+                      } else {
+                        // Para quizzes: navegar a la lista de quizzes
+                        navigate('/asesor/quizt', { replace: true });
+                      }
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-rose-300 bg-white px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-50 hover:border-rose-400 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Cancelar
+                </button>
                 <button
                   onClick={() => setPreviewOpen(true)}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm hover:shadow-md hover:scale-105 active:scale-95"

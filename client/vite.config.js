@@ -14,6 +14,9 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
+  define: {
+    global: 'globalThis',
+  },
   server:{
     host: true,
     port: 5173,

@@ -792,11 +792,14 @@ export const listarPagosAsesor = async (req, res) => {
     // Obtener perfil del asesor para obtener preregistro_id
     const perfil = await AsesorPerfiles.getByUserId(userId).catch(() => null);
     if (!perfil || !perfil.preregistro_id) {
+      console.log('[listarPagosAsesor] Perfil no encontrado para userId:', userId);
       return res.status(404).json({ message: 'Perfil de asesor no encontrado' });
     }
     
     const preregistroId = perfil.preregistro_id;
     const { year, month, week } = req.query || {};
+    
+    console.log('[listarPagosAsesor] Buscando pagos para preregistroId:', preregistroId, 'filtros:', { year, month, week });
     
     // Construir rango de fechas para el mes
     let from = null;
@@ -853,12 +856,27 @@ export const listarPagosAsesor = async (req, res) => {
       }
     }
     
+    console.log('[listarPagosAsesor] Rango de fechas:', { from, to });
+    
     // Obtener pagos del asesor (sin filtro de fecha si no se especifica año/mes)
     const pagos = await PagosAsesores.list({
       asesor_id: preregistroId,
       from: from || undefined,
       to: to || undefined
     });
+    
+    console.log('[listarPagosAsesor] Pagos encontrados:', pagos.length);
+    
+    // Si no hay pagos con filtro de fecha, intentar sin filtro para verificar si hay pagos en general
+    if (pagos.length === 0 && (from || to)) {
+      const pagosSinFiltro = await PagosAsesores.list({
+        asesor_id: preregistroId
+      });
+      console.log('[listarPagosAsesor] Total de pagos sin filtro de fecha:', pagosSinFiltro.length);
+      if (pagosSinFiltro.length > 0) {
+        console.log('[listarPagosAsesor] Fechas de pagos disponibles:', pagosSinFiltro.map(p => p.fecha_pago));
+      }
+    }
     
     // Formatear respuesta
     const formatted = pagos.map(p => {

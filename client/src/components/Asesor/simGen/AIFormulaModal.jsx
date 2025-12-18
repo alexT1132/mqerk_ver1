@@ -5,6 +5,8 @@ import InlineMath from './InlineMath.jsx';
 
 // Configuración de cooldown para evitar errores 429
 const COOLDOWN_MS = Number(import.meta?.env?.VITE_IA_COOLDOWN_MS || 45000); // 45 segundos por defecto
+// Cooldown más largo para errores 503 (Service Unavailable) - 2 minutos
+const COOLDOWN_503_MS = Number(import.meta?.env?.VITE_IA_COOLDOWN_503_MS || 120000); // 120 segundos (2 minutos) por defecto
 const COOLDOWN_KEY = 'ia_formula_cooldown_until';
 
 // Helpers para cooldown
@@ -18,9 +20,10 @@ const getCooldownRemainingMs = () => {
   }
 };
 
-const startCooldown = () => {
+const startCooldown = (is503 = false) => {
   try {
-    localStorage.setItem(COOLDOWN_KEY, String(Date.now() + COOLDOWN_MS));
+    const cooldownTime = is503 ? COOLDOWN_503_MS : COOLDOWN_MS;
+    localStorage.setItem(COOLDOWN_KEY, String(Date.now() + cooldownTime));
   } catch { }
 };
 
@@ -153,6 +156,7 @@ IMPORTANTE:
 - Si pides una fórmula con valores específicos, usa esos valores.
 - NO agregues delimitadores $ al inicio o final.
 - NO agregues texto adicional como "La fórmula es:" o similares.
+- Para fórmulas más complejas (ejemplo: Transformada de Fourier en 3D, ecuación de Schrödinger, Navier-Stokes), genera la versión más detallada y formal posible, evitando expresiones demasiado generales.
 
 Fórmula solicitada: ${query.trim()}`;
 
@@ -164,21 +168,33 @@ Fórmula solicitada: ${query.trim()}`;
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.3, // Baja temperatura para respuestas más determinísticas
-            maxOutputTokens: 500,
+            maxOutputTokens: 2000, // Aumentado para fórmulas complejas como Transformada de Fourier
           },
-          model: 'gemini-2.5-flash'
+          model: 'gemini-2.5-flash',
+          purpose: 'formulas' // Usar API keys específicas para generación de fórmulas
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
 
-        // Manejo especial para error 429 (Too Many Requests)
-        if (response.status === 429) {
-          startCooldown();
-          setCooldownMs(COOLDOWN_MS);
-          const secs = Math.ceil(COOLDOWN_MS / 1000);
-          throw new Error(`Se alcanzó el límite de solicitudes a la API. Por favor, espera ${secs} segundo${secs > 1 ? 's' : ''} antes de intentar nuevamente.`);
+        // Manejo especial para errores de rate limit (429 y 503)
+        if (response.status === 429 || response.status === 503) {
+          const is503 = response.status === 503;
+          const cooldownTime = is503 ? COOLDOWN_503_MS : COOLDOWN_MS;
+          startCooldown(is503);
+          setCooldownMs(cooldownTime);
+          const secs = Math.ceil(cooldownTime / 1000);
+          const mins = Math.floor(secs / 60);
+          const remainingSecs = secs % 60;
+          const timeDisplay = mins > 0
+            ? `${mins} minuto${mins > 1 ? 's' : ''}${remainingSecs > 0 ? ` y ${remainingSecs} segundo${remainingSecs > 1 ? 's' : ''}` : ''}`
+            : `${secs} segundo${secs > 1 ? 's' : ''}`;
+
+          const errorMsg = is503
+            ? `El servicio de IA está temporalmente no disponible (saturado). Por favor, espera ${timeDisplay} antes de intentar nuevamente para evitar saturar el servicio.`
+            : `Se alcanzó el límite de solicitudes a la API. Por favor, espera ${timeDisplay} antes de intentar nuevamente.`;
+          throw new Error(errorMsg);
         }
 
         throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
@@ -204,6 +220,14 @@ Fórmula solicitada: ${query.trim()}`;
       formula = formula.replace(/^La fórmula es[:]?\s*/i, '').trim();
       formula = formula.replace(/^Fórmula[:]?\s*/i, '').trim();
 
+      // Remover texto adicional común que puede aparecer al final
+      formula = formula.replace(/\s*\.\s*$/, '').trim(); // Remover punto final si existe
+
+      // Log en desarrollo para ver la fórmula completa generada
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AIFormulaModal] Fórmula generada (longitud:', formula.length, '):', formula.substring(0, 200) + (formula.length > 200 ? '...' : ''));
+      }
+
       setGeneratedFormula(formula);
 
       // Incrementar contador de uso exitoso
@@ -218,8 +242,8 @@ Fórmula solicitada: ${query.trim()}`;
       const errorMsg = err.message || 'Error al generar la fórmula. Por favor intenta de nuevo.';
       setError(errorMsg);
 
-      // Si el error menciona cooldown, actualizar el estado
-      if (errorMsg.includes('espera') || errorMsg.includes('límite')) {
+      // Si el error menciona cooldown, límite o no disponible, actualizar el estado
+      if (errorMsg.includes('espera') || errorMsg.includes('límite') || errorMsg.includes('no disponible') || errorMsg.includes('503')) {
         setCooldownMs(getCooldownRemainingMs());
       }
     } finally {
@@ -397,24 +421,23 @@ Fórmula solicitada: ${query.trim()}`;
 
               {/* Mensaje de error */}
               {error && (
-                <div className={`rounded-2xl border-2 p-4 shadow-md ring-2 ${error.includes('espera') || error.includes('límite')
+                <div className={`rounded-2xl border-2 p-4 shadow-md ring-2 ${error.includes('espera') || error.includes('límite') || error.includes('no disponible') || error.includes('503')
                   ? 'border-amber-300 bg-gradient-to-r from-amber-50 via-amber-100/50 to-amber-50 ring-amber-200/50'
                   : 'border-rose-300 bg-gradient-to-r from-rose-50 via-rose-100/50 to-rose-50 ring-rose-200/50'
                   }`}>
                   <div className="flex items-start gap-3">
-                    <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${error.includes('espera') || error.includes('límite')
+                    <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${error.includes('espera') || error.includes('límite') || error.includes('no disponible') || error.includes('503')
                       ? 'bg-gradient-to-br from-amber-500 to-amber-600'
                       : 'bg-gradient-to-br from-rose-500 to-rose-600'
                       } shadow-lg ring-2 ring-white/50`}>
                       <span className="text-base text-white">
-                        {(error.includes('espera') || error.includes('límite')) ? '⏱️' : '⚠️'}
+                        {(error.includes('espera') || error.includes('límite') || error.includes('no disponible') || error.includes('503')) ? '⏱️' : '⚠️'}
                       </span>
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-bold leading-relaxed ${
-                        error.includes('espera') || error.includes('límite') ? 'text-amber-800' : 'text-rose-700'
-                      }">{error}</p>
-                      {(error.includes('espera') || error.includes('límite')) && cooldownMs > 0 && (
+                      <p className={`text-sm font-bold leading-relaxed ${error.includes('espera') || error.includes('límite') || error.includes('no disponible') || error.includes('503') ? 'text-amber-800' : 'text-rose-700'
+                        }`}>{error}</p>
+                      {(error.includes('espera') || error.includes('límite') || error.includes('no disponible') || error.includes('503')) && cooldownMs > 0 && (
                         <p className="text-xs text-amber-700 mt-2 font-medium">
                           Esto ayuda a evitar límites de la API de Google. El temporizador se actualiza automáticamente.
                         </p>
@@ -444,9 +467,23 @@ Fórmula solicitada: ${query.trim()}`;
                       Regenerar
                     </button>
                   </div>
-                  <div className="text-2xl font-medium text-slate-900 bg-white/80 rounded-xl p-5 border-2 border-violet-200/50 min-h-[70px] flex items-center justify-center leading-relaxed shadow-sm">
-                    <InlineMath math={generatedFormula} />
+                  <div className="bg-white/80 rounded-xl p-5 border-2 border-violet-200/50 min-h-[70px] flex items-center justify-center leading-relaxed shadow-sm max-w-full">
+                    <div className={`w-full ${generatedFormula.length > 200 ? 'text-sm' : generatedFormula.length > 150 ? 'text-base' : generatedFormula.length > 80 ? 'text-lg' : 'text-2xl'} font-medium text-slate-900`}>
+                      <div className="overflow-x-auto overflow-y-hidden w-full" style={{ maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
+                        <div className="inline-block min-w-full">
+                          <InlineMath math={generatedFormula} display={generatedFormula.length > 50 || generatedFormula.includes('\\frac') || generatedFormula.includes('\\int')} />
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                  {/* Mostrar fórmula en texto plano si es muy larga o compleja para debugging */}
+                  {process.env.NODE_ENV === 'development' && generatedFormula.length > 100 && (
+                    <div className="mt-3 pt-3 border-t border-violet-200/50">
+                      <p className="text-xs text-slate-500 font-mono break-all bg-slate-50 p-2 rounded overflow-x-auto">
+                        {generatedFormula}
+                      </p>
+                    </div>
+                  )}
                   {generatedFormula.includes('\\square') && (
                     <div className="mt-4 flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-100 to-amber-50 border-2 border-amber-300/50 px-4 py-2.5 shadow-sm">
                       <span className="text-base">⚙</span>

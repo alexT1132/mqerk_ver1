@@ -223,7 +223,13 @@ export const StudentProvider = ({ children }) => {
       ...override
     });
     try {
-      const res = await fetchWithRetry('/api/eeau', { credentials: 'include' }, 2, 450);
+      // Obtener ID del estudiante si está disponible (de studentData o alumno del AuthContext)
+      const estudianteId = studentData?.id || studentData?.id_estudiante || alumno?.id;
+      const url = estudianteId 
+        ? `/api/eeau?id_estudiante=${estudianteId}`
+        : '/api/eeau';
+      
+      const res = await fetchWithRetry(url, { credentials: 'include' }, 2, 450);
       if (!res.ok) {
         console.warn('No se pudo obtener EEAU (status no OK, usando fallback):', res.status);
         const fallback = buildCourse();
@@ -247,24 +253,38 @@ export const StudentProvider = ({ children }) => {
         return;
       }
       const c = json?.data;
-      // Validar imagen de la API: solo usar si es una URL válida o ruta absoluta
+      // Validar imagen de la API: solo usar si es una URL válida (http/https) o data URI
+      // NO usar rutas relativas como /public/ porque no funcionan en el frontend
       let validImage = eeauImg; // Por defecto usar la imagen importada
-      if (c?.image || c?.imagen || c?.foto_url || c?.fotoUrl) {
-        const apiImage = c.image || c.imagen || c.foto_url || c.fotoUrl;
+      if (c?.image || c?.imagen || c?.foto_url || c?.fotoUrl || c?.imagen_portada) {
+        const apiImage = c.image || c.imagen || c.foto_url || c.fotoUrl || c.imagen_portada;
+        // Solo usar si es una URL completa (http/https) o data URI
+        // Ignorar rutas relativas como /public/ porque no existen en el frontend
         if (apiImage && (
           apiImage.startsWith('http://') || 
           apiImage.startsWith('https://') || 
-          apiImage.startsWith('/') ||
           apiImage.startsWith('data:')
         )) {
           validImage = apiImage;
         }
+        // Si es una ruta relativa que empieza con /, ignorarla y usar la imagen importada
+        // porque las rutas del backend no coinciden con las del frontend
       }
+      
+      // Obtener progreso del backend (0-100) o usar 0 si no está disponible
+      const progresoReal = c?.progreso != null ? Math.round(c.progreso) : 0;
+      
       const courseObj = c ? buildCourse({
         id: c.codigo || 'EEAU',
-  title: c.titulo || 'Curso EEAU',
+        title: c.titulo || 'Curso EEAU',
         instructor: c.asesor || 'Kelvin Valentin Ramirez',
-        image: validImage // Usar solo imagen válida
+        image: validImage, // Usar solo imagen válida
+        progress: progresoReal, // Progreso real del backend
+        metadata: [
+          { icon: 'reloj', text: `Duración: ${c.duracion_meses || 8} meses` },
+          { icon: 'libro', text: 'Lecciones interactivas' },
+          { icon: 'estudiante', text: `Progreso: ${progresoReal}%` }
+        ]
       }) : buildCourse();
       setEnrolledCourses([courseObj]); // el usuario debe hacer click para seleccionar
     } catch (error) {

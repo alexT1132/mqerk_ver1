@@ -121,6 +121,8 @@ export function Simulaciones_Alumno_comp() {
   // Estado de carga/errores del backend de simulaciones
   const [loadingSims, setLoadingSims] = useState(false);
   const [simError, setSimError] = useState('');
+  // Estado para respuestas pendientes de calificación
+  const [pendingAnswers, setPendingAnswers] = useState({}); // simulacionId -> { pending: number, total: number }
 
   // Estados para modal de gráficas
   const [showGraficasModal, setShowGraficasModal] = useState(false);
@@ -579,6 +581,7 @@ export function Simulaciones_Alumno_comp() {
         const total_intentos = Number(r.total_intentos || 0);
         const ultimo_puntaje = r.ultimo_puntaje ?? null;
         const mejor_puntaje = r.mejor_puntaje ?? null;
+        const oficial_puntaje = r.oficial_puntaje ?? null; // Puntaje del intento oficial (primer intento)
         const fecha_limite = q.fecha_limite || q.fechaEntrega || null;
         const now = new Date();
         const due = normalizeDeadlineEndOfDay(fecha_limite);
@@ -695,12 +698,35 @@ export function Simulaciones_Alumno_comp() {
           completado: total_intentos > 0,
           score: ultimo_puntaje,
           bestScore: mejor_puntaje,
+          oficialScore: oficial_puntaje, // Puntaje oficial (primer intento)
           estado: estadoSim,
           totalIntentos: total_intentos,
           totalPreguntas: Number(q.total_preguntas || 0)
         };
       });
       setSimulaciones(mapped);
+      
+      // Cargar respuestas pendientes para simulaciones completadas
+      if (estudianteId) {
+        mapped.forEach(async (sim) => {
+          if (sim.completado && sim.id) {
+            try {
+              const resp = await fetch(`/api/grading/pending/simulacion/${sim.id}/${estudianteId}`, {
+                credentials: 'include'
+              });
+              if (resp.ok) {
+                const data = await resp.json();
+                setPendingAnswers(prev => ({
+                  ...prev,
+                  [sim.id]: data.data || { pending: 0, total: 0 }
+                }));
+              }
+            } catch (e) {
+              console.warn('No se pudo obtener respuestas pendientes para simulación', sim.id, e);
+            }
+          }
+        });
+      }
     } catch(e){
       console.error(e); setSimError('Error cargando simulaciones');
     } finally { setLoadingSims(false); }
@@ -721,6 +747,7 @@ export function Simulaciones_Alumno_comp() {
     return {
       intentos: intentos.map((it, idx)=> ({
         id: it.id,
+        intent_number: it.intent_number || (intentos.length - idx), // Usar intent_number del backend o calcular
         fecha: it.created_at,
         puntaje: it.puntaje,
         // Mostrar minutos usando múltiples fuentes posibles desde backend
@@ -1056,13 +1083,26 @@ export function Simulaciones_Alumno_comp() {
     }));
   };
 
+  // Handler para respuestas de texto libre (respuesta corta)
+  const handleTextAnswer = (id_pregunta, texto_libre) => {
+    setRespuestasSesion(prev => ({
+      ...prev,
+      [id_pregunta]: { texto_libre, tiempo_ms: 0 }
+    }));
+  };
+
   // Enviar respuestas al backend (batch) y finalizar
   const handleFinalizarSesion = async () => {
     if(!activeSesion) return;
     setSesionLoading(true); setSesionError('');
     try {
-      // Preparar batch
-      const batch = Object.entries(respuestasSesion).map(([id_pregunta, r])=> ({ id_pregunta: Number(id_pregunta), id_opcion: r.id_opcion, tiempo_ms: r.tiempo_ms||0 }));
+      // Preparar batch - incluir id_opcion o texto_libre según corresponda
+      const batch = Object.entries(respuestasSesion).map(([id_pregunta, r]) => ({
+        id_pregunta: Number(id_pregunta),
+        id_opcion: r.id_opcion || null,
+        texto_libre: r.texto_libre || null,
+        tiempo_ms: r.tiempo_ms || 0
+      }));
       if(batch.length){
         await enviarRespuestasSesionSimulacion(activeSesion.id, batch);
       }
@@ -1305,26 +1345,50 @@ export function Simulaciones_Alumno_comp() {
             {preguntasSesion.map((p, idx)=>(
               <div key={p.id} className="border rounded-lg p-4">
                 <div className="font-medium mb-2">{idx+1}. {p.enunciado}</div>
-                <div className="space-y-2 flex flex-col items-center">
-                  {p.opciones && p.opciones.map(op => {
-                    const selected = respuestasSesion[p.id]?.id_opcion === op.id;
-                    return (
-                      <button
-                        key={op.id}
-                        type="button"
-                        onClick={()=>handleSelectOpcion(p.id, op.id)}
-                        className={`w-full text-left px-3 py-2 rounded border transition-colors ${selected ? 'bg-indigo-600 text-white border-indigo-600' : 'hover:bg-indigo-50 border-gray-200'}`}
-                      >
-                        {op.texto}
-                      </button>
-                    );
-                  })}
-                </div>
+                
+                {/* Pregunta de respuesta corta */}
+                {p.tipo === 'respuesta_corta' && (
+                  <div>
+                    <textarea
+                      value={respuestasSesion[p.id]?.texto_libre || ''}
+                      onChange={(e) => handleTextAnswer(p.id, e.target.value)}
+                      placeholder="Escribe tu respuesta aquí..."
+                      rows={4}
+                      className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-sm sm:text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-colors resize-y"
+                    />
+                    <p className="mt-2 text-xs text-gray-500">Escribe tu respuesta en el cuadro de texto arriba.</p>
+                  </div>
+                )}
+
+                {/* Preguntas de opción múltiple o verdadero/falso - NO mostrar opciones para respuesta_corta */}
+                {p.tipo !== 'respuesta_corta' && (p.tipo === 'opcion_multiple' || p.tipo === 'verdadero_falso' || p.tipo === 'multi_respuesta' || !p.tipo) && p.opciones && p.opciones.length > 0 && (
+                  <div className="space-y-2 flex flex-col items-center">
+                    {p.opciones.map(op => {
+                      const selected = respuestasSesion[p.id]?.id_opcion === op.id;
+                      return (
+                        <button
+                          key={op.id}
+                          type="button"
+                          onClick={()=>handleSelectOpcion(p.id, op.id)}
+                          className={`w-full text-left px-3 py-2 rounded border transition-colors ${selected ? 'bg-indigo-600 text-white border-indigo-600' : 'hover:bg-indigo-50 border-gray-200'}`}
+                        >
+                          {op.texto}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             ))}
           </div>
           <div className="px-6 py-4 border-t flex items-center justify-between">
-            <div className="text-sm text-gray-500">Preguntas respondidas: {Object.keys(respuestasSesion).length}/{preguntasSesion.length}</div>
+            <div className="text-sm text-gray-500">
+              Preguntas respondidas: {
+                Object.entries(respuestasSesion).filter(([_, r]) => 
+                  r.id_opcion != null || (r.texto_libre != null && r.texto_libre.trim() !== '')
+                ).length
+              }/{preguntasSesion.length}
+            </div>
             <div className="flex gap-3">
               <button onClick={handleCancelarSesion} className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-50">Cancelar</button>
               <button disabled={sesionLoading} onClick={handleFinalizarSesion} className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">{sesionLoading ? 'Guardando...' : 'Finalizar'}</button>
@@ -1749,11 +1813,27 @@ export function Simulaciones_Alumno_comp() {
                               <div className="font-extrabold text-emerald-600 bg-gradient-to-r from-emerald-100 to-green-100 px-2 py-0.5 rounded-lg border border-emerald-200">
                                 {getBestScore(simulacion.id)} %
                               </div>
-                              {getTotalAttempts(simulacion.id) > 1 && (
-                                <div className="text-[9px] sm:text-[10px] text-gray-500 font-medium">
-                                  Mejor de {getTotalAttempts(simulacion.id)} intentos
-                                </div>
-                              )}
+                              {(() => {
+                                const pending = pendingAnswers[simulacion.id];
+                                // Mostrar "Parcial" solo si hay pendientes en el intento oficial
+                                if (pending && pending.pending > 0) {
+                                  return (
+                                    <div className="text-[9px] sm:text-[10px] text-amber-600 font-medium flex items-center gap-1">
+                                      <span>⏳</span>
+                                      <span>Parcial ({pending.pending} pendiente{pending.pending !== 1 ? 's' : ''})</span>
+                                    </div>
+                                  );
+                                }
+                                // Mostrar "Mejor de X intentos" solo si no hay pendientes
+                                if (getTotalAttempts(simulacion.id) > 1) {
+                                  return (
+                                    <div className="text-[9px] sm:text-[10px] text-gray-500 font-medium">
+                                      Mejor de {getTotalAttempts(simulacion.id)} intentos
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                           ) : (
                             <span className="text-gray-400">0 %</span>
@@ -1830,11 +1910,25 @@ export function Simulaciones_Alumno_comp() {
                             <span className="font-extrabold text-emerald-600 bg-gradient-to-r from-emerald-100 to-green-100 px-2 py-0.5 rounded-lg border border-emerald-200">
                               {getBestScore(simulacion.id)} %
                             </span>
-                            {getTotalAttempts(simulacion.id) > 1 && (
-                              <span className="text-xs text-gray-500 font-medium mt-0.5">
-                                Mejor de {getTotalAttempts(simulacion.id)} intentos
-                              </span>
-                            )}
+                            {(() => {
+                              const pending = pendingAnswers[simulacion.id];
+                              if (pending && pending.pending > 0) {
+                                return (
+                                  <span className="text-xs text-amber-600 font-medium mt-0.5 flex items-center gap-1">
+                                    <span>⏳</span>
+                                    <span>Parcial ({pending.pending} pendiente{pending.pending !== 1 ? 's' : ''})</span>
+                                  </span>
+                                );
+                              }
+                              if (getTotalAttempts(simulacion.id) > 1) {
+                                return (
+                                  <span className="text-xs text-gray-500 font-medium mt-0.5">
+                                    Mejor de {getTotalAttempts(simulacion.id)} intentos
+                                  </span>
+                                );
+                              }
+                              return null;
+                            })()}
                           </div>
                         ) : (
                           <span className="text-gray-400">0 %</span>
@@ -1972,8 +2066,8 @@ export function Simulaciones_Alumno_comp() {
               <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
                 <div className="text-orange-600 text-xs font-medium">Último Intento</div>
                 <div className="text-xs font-bold text-orange-800">
-                  {historial.intentos.length > 0 
-                    ? new Date(historial.intentos[historial.intentos.length - 1].fecha).toLocaleDateString('es-ES')
+                  {historial.intentos.length > 0
+                    ? new Date(historial.intentos[0].fecha).toLocaleDateString('es-ES')
                     : 'N/A'
                   }
                 </div>
@@ -1989,18 +2083,18 @@ export function Simulaciones_Alumno_comp() {
               {historial.intentos.length > 0 ? (
                 <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
                   <div className="space-y-2.5">
-                    {[...historial.intentos].reverse().map((intento, index) => (
+                    {historial.intentos.map((intento, index) => (
                       <div
                         key={intento.id}
                         className="bg-white p-3 rounded-md border border-gray-200 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow"
                       >
                         <div className="flex items-center space-x-3 min-w-0 flex-1">
                           <div className="w-7 h-7 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-semibold text-[11px] flex-shrink-0">
-                            {historial.intentos.length - index}
+                            {intento.intent_number || (historial.totalIntentos - index)}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="font-medium text-gray-900 text-sm">
-                              Intento {historial.intentos.length - index}
+                              Intento {intento.intent_number || (historial.totalIntentos - index)}
                             </div>
                             <div className="text-xs text-gray-500 truncate">
                               {new Date(intento.fecha).toLocaleDateString('es-ES')} a las{' '}
@@ -2034,8 +2128,8 @@ export function Simulaciones_Alumno_comp() {
                           }`}></div>
                           <button
                             onClick={() => {
-                              // número de intento mostrado es historial.intentos.length - index
-                              const intentoNumero = historial.intentos.length - index;
+                              // Usar intent_number del backend o calcular basado en posición
+                              const intentoNumero = intento.intent_number || (historial.totalIntentos - index);
                               const returnTo = buildReturnTo({ historial: '1', simId: selectedSimulacionHistorial.id });
                               navigate(`/alumno/simulaciones/tomar/${selectedSimulacionHistorial.id}/resultados?intento=${intentoNumero}`, {
                                 state: { simulacion: selectedSimulacionHistorial, returnTo }

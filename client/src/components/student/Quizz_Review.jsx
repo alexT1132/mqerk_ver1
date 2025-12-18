@@ -6,6 +6,7 @@ import { crearSesionQuiz, listPreguntasQuiz, enviarRespuestasSesion, finalizarSe
 import { CheckCircle2, AlertTriangle, Timer, Send, Loader2, Maximize2 } from 'lucide-react';
 import { createAreaRequest } from '../../api/areaAccess';
 import { getQuiz } from '../../api/quizzes';
+import MathEquationEditor, { isMathSubject, isMathQuestion } from '../shared/MathEquationEditor.jsx';
 
 // --- Ícono de Check para opciones seleccionadas ---
 const CheckIcon = () => (
@@ -152,6 +153,7 @@ export default function Quizz_Review() {
   const [quizTitle, setQuizTitle] = useState('Quiz');
   const [startedAt, setStartedAt] = useState(null);
   const [quizMeta, setQuizMeta] = useState(null);
+  const [isMathQuiz, setIsMathQuiz] = useState(false);
   // Timing por pregunta (ms) para análisis: distribuimos el tiempo entre preguntas según interacción
   const timingRef = useRef({ lastTs: null, lastQid: null, buckets: new Map() });
   
@@ -268,12 +270,27 @@ export default function Quizz_Review() {
           return;
         }
         const [preg, meta] = await Promise.all([ listPreguntasQuiz(quizId), getQuiz(quizId) ]);
+        
         if (!mounted) return;
         setPreguntas(preg?.data?.data || preg?.data || []);
         // Inicializar reloj base al cargar preguntas
         timingRef.current.lastTs = Date.now();
         timingRef.current.lastQid = null;
-  const q = meta?.data?.data || meta?.data || {};
+        const q = meta?.data?.data || meta?.data || {};
+        
+        // Determinar si es un quiz de matemáticas - buscar materia en múltiples lugares
+        // También verificar el título del quiz como fallback
+        const materia = q?.materia || meta?.data?.materia || meta?.data?.data?.materia || meta?.materia || '';
+        const titulo = q?.titulo || q?.title || q?.nombre || q?.name || q?.tema || '';
+        console.log('[Quizz_Review] Materia del quiz encontrada:', materia);
+        console.log('[Quizz_Review] Título del quiz:', titulo);
+        console.log('[Quizz_Review] Objeto completo meta:', meta);
+        console.log('[Quizz_Review] Objeto q:', q);
+        
+        // Verificar si es matemáticas por materia o por título
+        const esMatematicas = isMathSubject(materia) || isMathSubject(titulo);
+        console.log('[Quizz_Review] ¿Es quiz de matemáticas?', esMatematicas);
+        setIsMathQuiz(esMatematicas);
   setQuizMeta(q || null);
         const tlm = Number(q.time_limit_min || q.timeLimitMin || q.tiempo_limite_min || q.time_limit || 0);
         if (!Number.isNaN(tlm) && tlm > 0) setTimeLimitSec(tlm * 60);
@@ -738,16 +755,39 @@ export default function Quizz_Review() {
                       {/* Respuesta corta */}
                       {p.tipo === 'respuesta_corta' && (
                         <div>
-                          <textarea
-                            value={typeof respuestas[p.id] === 'object' && respuestas[p.id]?.valor_texto !== undefined 
-                              ? respuestas[p.id].valor_texto 
-                              : (respuestas[p.id] || '')}
-                            onChange={(e) => handleTextAnswer(p.id, e.target.value)}
-                            placeholder="Escribe tu respuesta aquí..."
-                            rows={4}
-                            className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-sm sm:text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-colors resize-y"
-                          />
-                          <p className="mt-2 text-xs text-gray-500">Escribe tu respuesta en el cuadro de texto arriba.</p>
+                          {(() => {
+                            // Verificar materia del quiz O contenido de la pregunta individual
+                            const esMatematicas = isMathQuiz || isMathQuestion(p);
+                            console.log('[Quizz_Review] Renderizando respuesta_corta', {
+                              isMathQuiz,
+                              isMathQuestion: isMathQuestion(p),
+                              esMatematicas,
+                              preguntaTexto: (p.enunciado || p.pregunta || '').substring(0, 50)
+                            });
+                            return esMatematicas ? (
+                              <MathEquationEditor
+                                value={typeof respuestas[p.id] === 'object' && respuestas[p.id]?.valor_texto !== undefined 
+                                  ? respuestas[p.id].valor_texto 
+                                  : (respuestas[p.id] || '')}
+                                onChange={(value) => handleTextAnswer(p.id, value)}
+                                placeholder="Escribe tu respuesta aquí..."
+                                rows={4}
+                              />
+                            ) : (
+                              <>
+                                <textarea
+                                  value={typeof respuestas[p.id] === 'object' && respuestas[p.id]?.valor_texto !== undefined 
+                                    ? respuestas[p.id].valor_texto 
+                                    : (respuestas[p.id] || '')}
+                                  onChange={(e) => handleTextAnswer(p.id, e.target.value)}
+                                  placeholder="Escribe tu respuesta aquí..."
+                                  rows={4}
+                                  className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-sm sm:text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-colors resize-y"
+                                />
+                                <p className="mt-2 text-xs text-gray-500">Escribe tu respuesta en el cuadro de texto arriba.</p>
+                              </>
+                            );
+                          })()}
                         </div>
                       )}
 

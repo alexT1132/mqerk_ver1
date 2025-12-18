@@ -6,7 +6,7 @@ import db from '../db.js';
  */
 export async function listByAsesor(asesorUserId) {
   const [rows] = await db.query(
-    `SELECT id, asesor_user_id, title, description, DATE_FORMAT(date, "%Y-%m-%d") as date, time, category, priority, created_at, updated_at 
+    `SELECT id, asesor_user_id, title, description, DATE_FORMAT(date, "%Y-%m-%d") as date, time, category, priority, completed, created_at, updated_at 
      FROM asesor_reminders 
      WHERE asesor_user_id = ? 
      ORDER BY date ASC, time ASC, id ASC`,
@@ -33,6 +33,7 @@ export async function update(reminderId, asesorUserId, payload) {
   if (payload.time !== undefined) { fields.push('time = ?'); params.push(payload.time); }
   if (payload.category !== undefined) { fields.push('category = ?'); params.push(payload.category); }
   if (payload.priority !== undefined) { fields.push('priority = ?'); params.push(payload.priority); }
+  if (payload.completed !== undefined) { fields.push('completed = ?'); params.push(payload.completed ? 1 : 0); }
   if (fields.length === 0) return null;
   params.push(reminderId, asesorUserId);
   const [res] = await db.query(
@@ -63,6 +64,7 @@ export async function ensureTable() {
     time TIME NULL,
     category VARCHAR(50) NOT NULL DEFAULT 'recordatorio',
     priority VARCHAR(50) NOT NULL DEFAULT 'blue',
+    completed TINYINT(1) NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_asesor_date (asesor_user_id, date),
@@ -70,5 +72,12 @@ export async function ensureTable() {
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`;
   
   await db.query(sql);
+  
+  // Agregar columna completed si no existe (para tablas existentes)
+  try {
+    await db.query(`ALTER TABLE asesor_reminders ADD COLUMN completed TINYINT(1) NOT NULL DEFAULT 0`);
+  } catch (e) {
+    // La columna ya existe, ignorar error
+  }
 }
 

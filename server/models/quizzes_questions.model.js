@@ -34,7 +34,7 @@ export const crearSesion = async ({ id_quiz, id_estudiante, intento_num, tiempo_
   const idEstudiante = Number(id_estudiante);
   const intentoNum = Number(intento_num);
   const tiempoLimite = tiempo_limite_seg ? Number(tiempo_limite_seg) : null;
-  
+
   // Validaciones básicas
   if (!idQuiz || isNaN(idQuiz)) {
     throw new Error('id_quiz debe ser un número válido');
@@ -45,7 +45,7 @@ export const crearSesion = async ({ id_quiz, id_estudiante, intento_num, tiempo_
   if (!intentoNum || isNaN(intentoNum)) {
     throw new Error('intento_num debe ser un número válido');
   }
-  
+
   try {
     await db.query(
       'INSERT INTO quizzes_sesiones (id, id_quiz, id_estudiante, intento_num, tiempo_limite_seg) VALUES (?,?,?,?,?)',
@@ -95,7 +95,47 @@ export const getSesion = async (id_sesion) => {
 };
 
 export const agregarRespuesta = async ({ id_sesion, id_pregunta, id_opcion, valor_texto, tiempo_ms }) => {
-  await db.query('INSERT INTO quizzes_sesiones_respuestas (id_sesion, id_pregunta, id_opcion, valor_texto, tiempo_ms) VALUES (?,?,?,?,?)', [id_sesion, id_pregunta, id_opcion || null, valor_texto || null, tiempo_ms || null]);
+  // Obtener información de la pregunta para saber si es respuesta corta
+  const [[pregunta]] = await db.query(
+    'SELECT tipo, enunciado FROM quizzes_preguntas WHERE id = ? LIMIT 1',
+    [id_pregunta]
+  );
+
+  const esRespuestaCorta = pregunta?.tipo === 'respuesta_corta';
+  const calificacion_status = esRespuestaCorta ? 'pending' : 'graded';
+
+  // Insertar respuesta con estado de calificación
+  const [res] = await db.query(
+    `INSERT INTO quizzes_sesiones_respuestas 
+    (id_sesion, id_pregunta, id_opcion, valor_texto, tiempo_ms, calificacion_status, calificacion_metodo, calificacion_confianza, calificada_at) 
+    VALUES (?,?,?,?,?,?,?,?,?)`,
+    [id_sesion, id_pregunta, id_opcion || null, valor_texto || null, tiempo_ms || null, calificacion_status, null, null, null]
+  );
+
+  // Si es respuesta corta, agregar a cola de calificación
+  if (esRespuestaCorta && valor_texto) {
+    // Obtener la respuesta esperada (opción correcta)
+    const [[opcionCorrecta]] = await db.query(
+      'SELECT texto FROM quizzes_preguntas_opciones WHERE id_pregunta = ? AND es_correcta = 1 LIMIT 1',
+      [id_pregunta]
+    );
+
+    if (opcionCorrecta) {
+      // Importar cola de calificación
+      const gradingQueue = (await import('../services/gradingQueue.js')).default;
+
+      // Agregar a cola
+      gradingQueue.add({
+        id_respuesta: res.insertId,
+        tipo: 'quiz',
+        pregunta: pregunta.enunciado,
+        respuesta_esperada: opcionCorrecta.texto,
+        respuesta_estudiante: valor_texto
+      });
+
+      console.log(`[agregarRespuesta] ✅ Respuesta corta agregada a cola: quiz #${res.insertId}`);
+    }
+  }
 };
 
 export const listRespuestasSesion = async (id_sesion) => {
@@ -112,26 +152,72 @@ export const finalizarSesion = async ({ sesion, preguntas }) => {
   const [opciones] = await db.query('SELECT o.*, p.tipo FROM quizzes_preguntas_opciones o JOIN quizzes_preguntas p ON p.id = o.id_pregunta WHERE p.id_quiz = ?', [sesion.id_quiz]);
   const opcionesByPregunta = opciones.reduce((acc, o) => { (acc[o.id_pregunta] = acc[o.id_pregunta] || []).push(o); return acc; }, {});
 
-  let correctas = 0; let total = 0; let puntosAcumulados = 0; let puntosTotales = 0;
+  let correctas = 0; 
+  let total = 0; 
+  let puntosAcumulados = 0; 
+  let puntosTotales = 0;
+  let puntosCalificados = 0; // Puntos de preguntas que ya fueron calificadas
+  
   for (const p of preguntas) {
-    total += 1; puntosTotales += p.puntos || 1;
+    total += 1; 
+    puntosTotales += p.puntos || 1;
     const resps = respuestas.filter(r => r.id_pregunta === p.id);
     const opts = opcionesByPregunta[p.id] || [];
     const correctOpts = opts.filter(o => o.es_correcta === 1).map(o => o.id);
     const marked = resps.map(r => r.id_opcion).filter(Boolean);
     let esCorrecta = false;
+    let fueCalificada = false;
+    
     if (p.tipo === 'multi_respuesta') {
       // Deben coincidir conjuntos exactamente
       esCorrecta = marked.length === correctOpts.length && marked.every(id => correctOpts.includes(id));
+      fueCalificada = true; // Siempre se puede calificar
     } else if (p.tipo === 'opcion_multiple' || p.tipo === 'verdadero_falso') {
       esCorrecta = marked.length === 1 && correctOpts.includes(marked[0]);
+      fueCalificada = true; // Siempre se puede calificar
+    } else if (p.tipo === 'respuesta_corta') {
+      // Para respuesta corta, verificar si ya fue calificada
+      const respuestaCorta = resps.find(r => r.valor_texto);
+      if (respuestaCorta) {
+        const status = respuestaCorta.calificacion_status || 'pending';
+        const confianza = respuestaCorta.calificacion_confianza != null ? Number(respuestaCorta.calificacion_confianza) : null;
+        
+        if (status === 'graded' || (status === 'manual_review' && confianza != null) || respuestaCorta.correcta === 1) {
+          // Ya fue calificada
+          fueCalificada = true;
+          // Verificar si es correcta
+          if (respuestaCorta.correcta === 1) {
+            esCorrecta = true;
+          } else if (respuestaCorta.calificacion_metodo === 'manual') {
+            esCorrecta = confianza === 100;
+          } else if (confianza != null) {
+            esCorrecta = confianza >= 70;
+          }
+        }
+        // Si está en "pending", no se cuenta (aún no calificada)
+      }
+      // Si no fue calificada, no contar en el puntaje
+      if (!fueCalificada) continue;
     }
-    if (esCorrecta) { correctas += 1; puntosAcumulados += (p.puntos || 1); }
-    // Actualizar flag correcta en cada respuesta de la pregunta
-    const flag = esCorrecta ? 1 : 0;
-    await db.query('UPDATE quizzes_sesiones_respuestas SET correcta = ? WHERE id_sesion = ? AND id_pregunta = ?', [flag, sesion.id, p.id]);
+    
+    // Solo contar puntos si la pregunta fue calificada
+    if (fueCalificada) {
+      puntosCalificados += p.puntos || 1;
+      if (esCorrecta) { 
+        correctas += 1; 
+        puntosAcumulados += p.puntos || 1; 
+      }
+      // Actualizar flag correcta en cada respuesta de la pregunta (solo para opción múltiple)
+      if (p.tipo !== 'respuesta_corta') {
+        const flag = esCorrecta ? 1 : 0;
+        await db.query('UPDATE quizzes_sesiones_respuestas SET correcta = ? WHERE id_sesion = ? AND id_pregunta = ?', [flag, sesion.id, p.id]);
+      }
+    }
   }
-  const puntaje = puntosTotales > 0 ? Math.round((puntosAcumulados / puntosTotales) * 100) : 0;
+  
+  // Calcular puntaje: usar solo preguntas calificadas como denominador
+  // Si hay preguntas pendientes, el puntaje es parcial
+  const puntaje = puntosCalificados > 0 ? Math.round((puntosAcumulados / puntosCalificados) * 100) : 0;
   await db.query('UPDATE quizzes_sesiones SET estado = "finalizado", finished_at = NOW() WHERE id = ?', [sesion.id]);
   return { correctas, total_preguntas: total, puntaje };
 };

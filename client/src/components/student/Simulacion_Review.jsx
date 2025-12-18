@@ -10,6 +10,7 @@ import {
   getSimulacion
 } from '../../api/simulaciones';
 import { CheckCircle2, AlertTriangle, Timer, Send, Loader2, Maximize2 } from 'lucide-react';
+import MathEquationEditor, { isMathSubject, isMathQuestion } from '../shared/MathEquationEditor.jsx';
 
 // --- Ícono de Check para opciones seleccionadas ---
 const CheckIcon = () => (
@@ -153,6 +154,7 @@ export default function Simulacion_Review() {
   const [enviando, setEnviando] = useState(false);
   const [finalizado, setFinalizado] = useState(false);
   const [title, setTitle] = useState('Simulación');
+  const [isMathSim, setIsMathSim] = useState(false);
   const [startedAt, setStartedAt] = useState(null);
   // Métricas de tiempo por pregunta
   const timingRef = useRef({ lastTs: null, byQuestion: {} });
@@ -242,15 +244,26 @@ export default function Simulacion_Review() {
         const entries = Object.entries(respuestas);
         if (!entries.length) return;
         const delta = [];
-        for (const [id_pregunta, id_opcion] of entries) {
+        for (const [id_pregunta, respuesta] of entries) {
           const sent = lastSentRef.current.answers[id_pregunta] || {};
           const rec = timingRef.current.byQuestion[id_pregunta] || { totalMs: 0 };
           const advanced = (rec.totalMs || 0) - (sent.totalMs || 0);
-          const changed = Number(id_opcion) !== Number(sent.id_opcion);
+          
+          // Determinar si es respuesta de texto o opción
+          const esTexto = typeof respuesta === 'object' && respuesta !== null && respuesta.texto_libre !== undefined;
+          const id_opcion = esTexto ? null : Number(respuesta);
+          const texto_libre = esTexto ? respuesta.texto_libre : null;
+          
+          // Verificar si cambió (opción o texto)
+          const changed = esTexto 
+            ? (texto_libre !== sent.texto_libre)
+            : (Number(id_opcion) !== Number(sent.id_opcion));
+          
           if (changed || advanced >= thresholdMs) {
             delta.push({
               id_pregunta: Number(id_pregunta),
-              id_opcion: Number(id_opcion),
+              id_opcion: id_opcion,
+              texto_libre: texto_libre,
               tiempo_ms: Number.isFinite(rec.totalMs) ? Math.round(rec.totalMs) : undefined,
             });
           }
@@ -258,9 +271,10 @@ export default function Simulacion_Review() {
         if (!delta.length) return;
         await enviarRespuestasSesionSimulacion(sesionId, delta);
         // Actualizar snapshot
-        delta.forEach(({ id_pregunta, id_opcion, tiempo_ms }) => {
+        delta.forEach(({ id_pregunta, id_opcion, texto_libre, tiempo_ms }) => {
           lastSentRef.current.answers[id_pregunta] = {
-            id_opcion,
+            id_opcion: id_opcion,
+            texto_libre: texto_libre,
             totalMs: tiempo_ms != null ? tiempo_ms : (timingRef.current.byQuestion[id_pregunta]?.totalMs || 0),
           };
         });
@@ -408,6 +422,30 @@ export default function Simulacion_Review() {
     setRespuestas(prev => ({ ...prev, [idPregunta]: idOpcion }));
   };
 
+  // Handler para respuestas de texto libre (respuesta corta)
+  const handleTextAnswer = (idPregunta, texto_libre) => {
+    if (showFinalWarning || showWarningModal || isWindowTooSmall) return;
+    // Asegurar inicio si por alguna razón no se inicializó
+    if (!startedAt) {
+      const now0 = Date.now();
+      setStartedAt(now0);
+      timingRef.current.lastTs = now0;
+    }
+    // Calcular delta de tiempo desde la última interacción y asignarlo a esta pregunta
+    try {
+      const now = Date.now();
+      const last = timingRef.current.lastTs || now;
+      let delta = now - last;
+      // Sanitizar delta: descartar negativos y limitar a 3 minutos por evento para evitar outliers
+      if (!Number.isFinite(delta) || delta < 0) delta = 0;
+      if (delta > 180000) delta = 180000;
+      const prev = timingRef.current.byQuestion[idPregunta] || { totalMs: 0, count: 0 };
+      timingRef.current.byQuestion[idPregunta] = { totalMs: prev.totalMs + delta, count: prev.count + 1 };
+      timingRef.current.lastTs = now;
+    } catch (e) { console.warn('Error en timing:', e); }
+    setRespuestas(prev => ({ ...prev, [idPregunta]: { texto_libre } }));
+  };
+
   const handleEnviar = async () => {
     if (enviando) return;
     setEnviando(true); 
@@ -415,27 +453,35 @@ export default function Simulacion_Review() {
     try {
       // Intento de autosave final antes de enviar
       try {
-        const entries = Object.entries(respuestas).map(([id_pregunta, id_opcion]) => ({
-          id_pregunta: Number(id_pregunta),
-          id_opcion: Number(id_opcion),
-          tiempo_ms: (() => {
-            const rec = timingRef.current.byQuestion[id_pregunta];
-            return (rec && Number.isFinite(rec.totalMs)) ? Math.round(rec.totalMs) : undefined;
-          })()
-        }));
+        const entries = Object.entries(respuestas).map(([id_pregunta, respuesta]) => {
+          const esTexto = typeof respuesta === 'object' && respuesta !== null && respuesta.texto_libre !== undefined;
+          return {
+            id_pregunta: Number(id_pregunta),
+            id_opcion: esTexto ? null : Number(respuesta),
+            texto_libre: esTexto ? respuesta.texto_libre : null,
+            tiempo_ms: (() => {
+              const rec = timingRef.current.byQuestion[id_pregunta];
+              return (rec && Number.isFinite(rec.totalMs)) ? Math.round(rec.totalMs) : undefined;
+            })()
+          };
+        });
         if (sesionId && entries.length) {
           await enviarRespuestasSesionSimulacion(sesionId, entries);
         }
       } catch {}
-      const payload = Object.entries(respuestas).map(([id_pregunta, id_opcion]) => ({ 
-        id_pregunta: Number(id_pregunta), 
-        id_opcion: Number(id_opcion),
-        // tiempo por pregunta en milisegundos si se registró
-        tiempo_ms: (() => {
-          const rec = timingRef.current.byQuestion[id_pregunta];
-          return (rec && Number.isFinite(rec.totalMs)) ? Math.round(rec.totalMs) : undefined;
-        })()
-      }));
+      const payload = Object.entries(respuestas).map(([id_pregunta, respuesta]) => {
+        const esTexto = typeof respuesta === 'object' && respuesta !== null && respuesta.texto_libre !== undefined;
+        return {
+          id_pregunta: Number(id_pregunta),
+          id_opcion: esTexto ? null : Number(respuesta),
+          texto_libre: esTexto ? respuesta.texto_libre : null,
+          // tiempo por pregunta en milisegundos si se registró
+          tiempo_ms: (() => {
+            const rec = timingRef.current.byQuestion[id_pregunta];
+            return (rec && Number.isFinite(rec.totalMs)) ? Math.round(rec.totalMs) : undefined;
+          })()
+        };
+      });
       if (sesionId) {
         if (payload.length) await enviarRespuestasSesionSimulacion(sesionId, payload);
         const finishedAt = Date.now();
@@ -562,23 +608,65 @@ export default function Simulacion_Review() {
                     <div className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[12px] sm:text-sm font-bold ring-3 sm:ring-4 ring-indigo-100">{idx + 1}</div>
                     <div className="w-full">
                       <p className="font-semibold text-gray-900 mb-3 sm:mb-4 text-[15px] sm:text-lg">{p.enunciado || p.pregunta || `Pregunta ${idx+1}`}</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
-                        {(p.opciones || []).map(op => {
-                          const checked = respuestas[p.id] === op.id;
-                          return (
-                            <button key={op.id} onClick={() => handleSelect(p.id, op.id)} aria-pressed={checked}
-                              className={`group text-left border rounded-lg p-3 sm:p-3.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 ${checked ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-200' : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'}`}
-                            >
-                              <div className="flex items-start gap-3">
-                                <span aria-hidden="true" className={`inline-flex flex-none shrink-0 grow-0 h-5 w-5 min-w-[20px] min-h-[20px] items-center justify-center rounded-full border-2 transition-colors duration-200 ${checked ? 'border-indigo-600 bg-indigo-600' : 'border-gray-400 bg-white group-hover:border-indigo-500'}`}>
-                                  {checked && <CheckIcon />}
-                                </span>
-                                <span className="text-[14px] sm:text-sm text-gray-800 leading-[1.35] break-words">{op.texto || op.opcion || `Opción ${op.id}`}</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
+                      
+                      {/* Pregunta de respuesta corta */}
+                      {p.tipo === 'respuesta_corta' && (
+                        <div>
+                          {/* Detectar si esta pregunta específica es de matemáticas */}
+                          {(() => {
+                            // Verificar materia de la simulación O contenido de la pregunta individual
+                            const esMatematicas = isMathSim || isMathQuestion(p);
+                            console.log('[Simulacion_Review] Pregunta', idx + 1, 'es matemáticas?', esMatematicas, {
+                              isMathSim,
+                              preguntaTexto: (p.enunciado || p.pregunta || '').substring(0, 50)
+                            });
+                            return esMatematicas ? (
+                              <MathEquationEditor
+                                value={typeof respuestas[p.id] === 'object' && respuestas[p.id]?.texto_libre !== undefined
+                                  ? respuestas[p.id].texto_libre
+                                  : (respuestas[p.id] || '')}
+                                onChange={(value) => handleTextAnswer(p.id, value)}
+                                placeholder="Escribe tu respuesta aquí..."
+                                rows={4}
+                              />
+                            ) : (
+                            <>
+                              <textarea
+                                value={typeof respuestas[p.id] === 'object' && respuestas[p.id]?.texto_libre !== undefined
+                                  ? respuestas[p.id].texto_libre
+                                  : (respuestas[p.id] || '')}
+                                onChange={(e) => handleTextAnswer(p.id, e.target.value)}
+                                placeholder="Escribe tu respuesta aquí..."
+                                rows={4}
+                                className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-sm sm:text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-colors resize-y"
+                              />
+                              <p className="mt-2 text-xs text-gray-500">Escribe tu respuesta en el cuadro de texto arriba.</p>
+                            </>
+                            );
+                          })()}
+                        </div>
+                      )}
+
+                      {/* Preguntas de opción múltiple o verdadero/falso - NO mostrar opciones para respuesta_corta */}
+                      {p.tipo !== 'respuesta_corta' && (p.tipo === 'opcion_multiple' || p.tipo === 'verdadero_falso' || p.tipo === 'multi_respuesta' || !p.tipo) && (p.opciones || []).length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
+                          {p.opciones.map(op => {
+                            const checked = respuestas[p.id] === op.id;
+                            return (
+                              <button key={op.id} onClick={() => handleSelect(p.id, op.id)} aria-pressed={checked}
+                                className={`group text-left border rounded-lg p-3 sm:p-3.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 ${checked ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-200' : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'}`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <span aria-hidden="true" className={`inline-flex flex-none shrink-0 grow-0 h-5 w-5 min-w-[20px] min-h-[20px] items-center justify-center rounded-full border-2 transition-colors duration-200 ${checked ? 'border-indigo-600 bg-indigo-600' : 'border-gray-400 bg-white group-hover:border-indigo-500'}`}>
+                                    {checked && <CheckIcon />}
+                                  </span>
+                                  <span className="text-[14px] sm:text-sm text-gray-800 leading-[1.35] break-words">{op.texto || op.opcion || `Opción ${op.id}`}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

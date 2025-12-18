@@ -347,7 +347,7 @@ export default function HistorialModal({ open, item, historial, onClose }) {
               <div className="bg-orange-50 p-2 sm:p-3 rounded-lg border border-orange-200">
                 <div className="text-orange-600 text-[11px] sm:text-xs font-medium" data-metric="title">Último Intento</div>
                 <div className="text-[11px] sm:text-sm font-bold text-orange-800" data-metric="value">
-                  {safeHist.intentos.length > 0 ? new Date(safeHist.intentos[safeHist.intentos.length - 1].fecha).toLocaleDateString('es-ES') : 'N/A'}
+                  {safeHist.intentos.length > 0 ? new Date(safeHist.intentos[0].fecha).toLocaleDateString('es-ES') : 'N/A'}
                 </div>
               </div>
             </div>
@@ -357,8 +357,8 @@ export default function HistorialModal({ open, item, historial, onClose }) {
               {safeHist.intentos.length > 0 ? (
                 <div className="attempts-box bg-gray-50 rounded-lg border border-gray-200 p-2 sm:p-3">
                   <div className="attempts-stack space-y-3">
-                    {[...safeHist.intentos].reverse().map((intento, index) => {
-                      const intentoNumero = safeHist.intentos.length - index;
+                    {safeHist.intentos.map((intento, index) => {
+                      const intentoNumero = intento.intent_number || (safeHist.totalIntentos - index);
                       const formatDur = (s) => {
                         if (s == null || Number.isNaN(Number(s))) return null;
                         const total = Math.max(0, Number(s));
@@ -397,7 +397,7 @@ export default function HistorialModal({ open, item, historial, onClose }) {
                                 if (item?.id != null) params.set('quizId', String(item.id));
                                 const qs = params.toString();
                                 const returnTo = `${location.pathname}${qs ? `?${qs}` : ''}`;
-                                navigate(`/alumno/actividades/quiz/${item?.id}/resultados?intento=${intentoNumero}`, {
+                                navigate(`/alumno/actividades/quiz/${item?.id}/resultados?intento=${intento.intent_number || intentoNumero}`, {
                                   state: { quiz: item, returnTo }
                                 });
                                 onClose();

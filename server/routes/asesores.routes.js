@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { crearPreRegistro, obtenerPreRegistro, listarPreRegistros, finalizarProcesoAsesor, guardarPerfilAsesor, obtenerPerfilAsesor, subirDocumentosPerfil, actualizarPreRegistroBasico, actualizarGrupoAsesor, listarAsesoresAdmin, listarGruposDisponibles, asignarAlumnosGrupoAsesor, actualizarStatusAsesor, listarEstudiantesAsesor, actualizarGruposAsesor, guardarResultadosTest, obtenerResultadosTest, generarFormularioTest, calificarFormularioTest, listarHistorialResultadosTest, listarPagosAsesor, obtenerMiPerfil, actualizarMiPerfil, actualizarMiFoto, listarMisGrupos } from '../controllers/asesores.controller.js';
+import { getEstadisticas } from '../controllers/reportes.controller.js';
 import { authREquired } from '../middlewares/validateToken.js';
 import { uploadPerfilDocs } from '../middlewares/asesorPerfilMulter.js';
 
@@ -49,5 +50,8 @@ router.get('/asesores/mis-pagos', authREquired, listarPagosAsesor);
 router.get('/asesores/mi-perfil', authREquired, obtenerMiPerfil);
 router.put('/asesores/mi-perfil', authREquired, actualizarMiPerfil);
 router.put('/asesores/mi-perfil/foto', authREquired, uploadPerfilDocs.single('foto'), actualizarMiFoto);
+
+// Reportes y estadísticas
+router.get('/asesores/reportes/estadisticas', authREquired, getEstadisticas);
 
 export default router;

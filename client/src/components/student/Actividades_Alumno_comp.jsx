@@ -260,6 +260,8 @@ export function Actividades_Alumno_comp() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiScore, setConfettiScore] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
+  // Estado para respuestas pendientes de calificación (solo para quizzes)
+  const [pendingAnswers, setPendingAnswers] = useState({}); // quizId -> { pending: number, total: number }
 
   // Estados para modales de notificación
   const [showNotificationModal, setShowNotificationModal] = useState(false);
@@ -1298,6 +1300,28 @@ export function Actividades_Alumno_comp() {
           plantilla: null
         }));
         setActividades(mapped);
+        
+        // Cargar respuestas pendientes para quizzes completados
+        if (estudianteId) {
+          mapped.forEach(async (quiz) => {
+            if (quiz.tipo === 'quiz' && quiz.totalIntentos > 0 && quiz.id) {
+              try {
+                const resp = await fetch(`/api/grading/pending/quiz/${quiz.id}/${estudianteId}`, {
+                  credentials: 'include'
+                });
+                if (resp.ok) {
+                  const data = await resp.json();
+                  setPendingAnswers(prev => ({
+                    ...prev,
+                    [quiz.id]: data.data || { pending: 0, total: 0 }
+                  }));
+                }
+              } catch (e) {
+                console.warn('No se pudo obtener respuestas pendientes para quiz', quiz.id, e);
+              }
+            }
+          });
+        }
       }
       setShowUploadModal(false); setSelectedActividad(null);
       setConfettiScore(esTipoActividad ? 0 : actividades.find(a => a.id === actividadId)?.score || 0);
@@ -1843,7 +1867,8 @@ export function Actividades_Alumno_comp() {
             const sec = Number(it.tiempo_segundos ?? it.tiempo_empleado ?? it.duration_sec ?? 0);
             return {
               id: it.id || idx + 1,
-              numero: it.numero || it.version || idx + 1,
+              intent_number: it.intent_number || it.numero || it.version || (lista.length - idx), // Usar intent_number del backend
+              numero: it.intent_number || it.numero || it.version || (lista.length - idx),
               fecha: it.created_at || it.fecha || it.updated_at || new Date().toISOString(),
               puntaje: Number(it.puntaje ?? it.score ?? it.calificacion ?? 0),
               // Normalizamos a segundos y preservamos ambos nombres para compatibilidad
@@ -3401,11 +3426,25 @@ export function Actividades_Alumno_comp() {
                     <div className="text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-900">
                       {getBestScore(quiz.id) !== 'En revisión' ? `${getBestScore(quiz.id)}%` : getBestScore(quiz.id)}
                     </div>
-                    {quiz.score && (
-                      <div className="text-[8px] sm:text-[9px] md:text-xs text-gray-500 font-medium">
-                        de {quiz.maxScore}%
-                      </div>
-                    )}
+                    {(() => {
+                      const pending = pendingAnswers[quiz.id];
+                      if (pending && pending.pending > 0) {
+                        return (
+                          <div className="text-[8px] sm:text-[9px] text-amber-600 font-medium flex items-center gap-1">
+                            <span>⏳</span>
+                            <span>Parcial ({pending.pending} pendiente{pending.pending !== 1 ? 's' : ''})</span>
+                          </div>
+                        );
+                      }
+                      if (quiz.score) {
+                        return (
+                          <div className="text-[8px] sm:text-[9px] md:text-xs text-gray-500 font-medium">
+                            de {quiz.maxScore}%
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </td>
                   <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 whitespace-nowrap">
                     <div className="text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-900">

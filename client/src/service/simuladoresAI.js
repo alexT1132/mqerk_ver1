@@ -2,10 +2,47 @@
 // No modifica ni depende del geminiService existente
 
 const PROXY_ENDPOINT = '/api/ai/gemini/generate';
+// Usar gemini-1.5-flash para Free Tier (15 RPM vs 2 RPM de Pro)
 const MODEL = (import.meta?.env?.VITE_GEMINI_MODEL) || 'gemini-2.5-flash';
-const TIMEOUT = 30000;
-const COOLDOWN_MS = Number(import.meta?.env?.VITE_IA_COOLDOWN_MS || 45000);
+const TIMEOUT = 60000; // Aumentado a 60s para dar tiempo cuando hay rate limits
+const COOLDOWN_MS = Number(import.meta?.env?.VITE_IA_COOLDOWN_MS || 120000); // 2 minutos por defecto para evitar rate limits de Google
+const COOLDOWN_429_MS = Number(import.meta?.env?.VITE_IA_COOLDOWN_429_MS || 600000); // 10 minutos cuando el servidor devuelve 429
 const COOLDOWN_KEY = 'ia_cooldown_until';
+const COOLDOWN_429_COUNT_KEY = 'ia_cooldown_429_count'; // Contador de 429 consecutivos para backoff exponencial
+
+// Esquema JSON estricto para Structured Outputs (garantiza JSON válido y ahorra tokens)
+const RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    preguntas: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          type: { type: "STRING", enum: ["multi", "tf", "short"] },
+          text: { type: "STRING" },
+          points: { type: "NUMBER" },
+          // Opciones opcionales (solo para tipo 'multi')
+          options: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                text: { type: "STRING" },
+                correct: { type: "BOOLEAN" }
+              },
+              required: ["text", "correct"]
+            }
+          },
+          // Answer opcional (para tipo 'tf' y 'short')
+          answer: { type: "STRING" }
+        },
+        required: ["type", "text", "points"]
+      }
+    }
+  },
+  required: ["preguntas"]
+};
 
 // Utilidad interna de timeout
 const withTimeout = (ms) => {
@@ -18,19 +55,99 @@ const withTimeout = (ms) => {
 export const getCooldownRemainingMs = () => {
   try {
     const v = Number(localStorage.getItem(COOLDOWN_KEY) || 0);
+    // Validar que el valor sea razonable (no corrupto)
+    if (v <= 0 || v > Date.now() + (24 * 60 * 60 * 1000)) {
+      // Si el valor es inválido o muy grande (más de 24 horas), limpiarlo
+      localStorage.removeItem(COOLDOWN_KEY);
+      // Si el cooldown expiró o es inválido, también resetear el contador de 429 si ha pasado mucho tiempo
+      const last429Time = Number(localStorage.getItem('ia_last_429_time') || 0);
+      if (last429Time > 0 && (Date.now() - last429Time) > (60 * 60 * 1000)) {
+        // Si pasó más de 1 hora desde el último 429, resetear el contador
+        localStorage.removeItem(COOLDOWN_429_COUNT_KEY);
+        localStorage.removeItem('ia_last_429_time');
+      }
+      return 0;
+    }
     const rem = v - Date.now();
-    return rem > 0 ? rem : 0;
+    if (rem <= 0) {
+      // Limpiar el cooldown del localStorage si ya expiró
+      localStorage.removeItem(COOLDOWN_KEY);
+      // Si el cooldown expiró, verificar si debemos resetear el contador de 429
+      const last429Time = Number(localStorage.getItem('ia_last_429_time') || 0);
+      if (last429Time > 0 && (Date.now() - last429Time) > (60 * 60 * 1000)) {
+        // Si pasó más de 1 hora desde el último 429, resetear el contador
+        localStorage.removeItem(COOLDOWN_429_COUNT_KEY);
+        localStorage.removeItem('ia_last_429_time');
+      }
+      return 0;
+    }
+    return rem;
   } catch {
+    // Si hay error al leer, limpiar y retornar 0
+    try {
+      localStorage.removeItem(COOLDOWN_KEY);
+    } catch { }
     return 0;
   }
 };
-const startCooldown = () => {
-  try { localStorage.setItem(COOLDOWN_KEY, String(Date.now() + COOLDOWN_MS)); } catch { }
+
+// Función para limpiar manualmente el cooldown (útil para debugging o reset)
+export const clearCooldown = () => {
+  try {
+    localStorage.removeItem(COOLDOWN_KEY);
+    localStorage.removeItem(RECENT_REQUESTS_KEY);
+    localStorage.removeItem(COOLDOWN_429_COUNT_KEY);
+    localStorage.removeItem('ia_last_429_time');
+    return true;
+  } catch {
+    return false;
+  }
+};
+const startCooldown = (customMs = null, is429 = false) => {
+  try {
+    let cooldownTime = customMs;
+
+    if (is429) {
+      // Verificar si ha pasado suficiente tiempo desde el último 429 para resetear el contador
+      const last429Time = Number(localStorage.getItem('ia_last_429_time') || 0);
+      const timeSinceLast429 = Date.now() - last429Time;
+
+      // Si pasó más de 1 hora desde el último 429, resetear el contador
+      let count429 = Number(localStorage.getItem(COOLDOWN_429_COUNT_KEY) || 0);
+      if (timeSinceLast429 > (60 * 60 * 1000)) {
+        count429 = 0;
+        console.warn('[SimuladoresAI] Reseteando contador de 429 (pasó más de 1 hora desde el último)');
+      }
+
+      // Incrementar el contador
+      count429 = count429 + 1;
+      localStorage.setItem(COOLDOWN_429_COUNT_KEY, String(count429));
+      localStorage.setItem('ia_last_429_time', String(Date.now()));
+
+      // Cooldown base de 10 minutos, incrementa 5 minutos por cada 429 consecutivo
+      // Máximo 30 minutos
+      cooldownTime = Math.min(COOLDOWN_429_MS + (count429 - 1) * 300000, 1800000);
+
+      console.warn(`[SimuladoresAI] 429 recibido (${count429} consecutivo). Cooldown: ${Math.ceil(cooldownTime / 60000)} minutos. El límite es del servidor de Google, no solo local.`);
+    } else {
+      // Si no es 429, resetear el contador
+      localStorage.removeItem(COOLDOWN_429_COUNT_KEY);
+      localStorage.removeItem('ia_last_429_time');
+      cooldownTime = customMs || COOLDOWN_MS;
+    }
+
+    localStorage.setItem(COOLDOWN_KEY, String(Date.now() + cooldownTime));
+  } catch { }
 };
 
 // Sistema de tracking de uso diario (separado del análisis)
 const USAGE_KEY = 'ai_questions_usage';
 const DAILY_LIMIT_ASESOR = 20; // Asesores pueden generar más preguntas
+
+// Sistema de tracking de peticiones recientes para prevenir saturación
+const RECENT_REQUESTS_KEY = 'ai_recent_requests';
+const MAX_REQUESTS_PER_WINDOW = 3; // Máximo 3 peticiones
+const REQUEST_WINDOW_MS = 60000; // En una ventana de 1 minuto
 
 export const getQuestionUsageToday = () => {
   try {
@@ -46,6 +163,44 @@ export const getQuestionUsageToday = () => {
     };
   } catch {
     return { count: 0, limit: DAILY_LIMIT_ASESOR, remaining: DAILY_LIMIT_ASESOR };
+  }
+};
+
+// Verificar si se han hecho demasiadas peticiones recientes
+const checkRecentRequests = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem(RECENT_REQUESTS_KEY) || '[]');
+    const now = Date.now();
+    // Filtrar peticiones dentro de la ventana de tiempo
+    const recentRequests = data.filter(timestamp => (now - timestamp) < REQUEST_WINDOW_MS);
+
+    if (recentRequests.length >= MAX_REQUESTS_PER_WINDOW) {
+      const oldestRequest = Math.min(...recentRequests);
+      const waitTime = REQUEST_WINDOW_MS - (now - oldestRequest);
+      return {
+        tooMany: true,
+        waitTime: Math.ceil(waitTime / 1000) // en segundos
+      };
+    }
+
+    return { tooMany: false, waitTime: 0 };
+  } catch {
+    return { tooMany: false, waitTime: 0 };
+  }
+};
+
+// Registrar una petición reciente
+const recordRecentRequest = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem(RECENT_REQUESTS_KEY) || '[]');
+    const now = Date.now();
+    // Agregar timestamp actual
+    data.push(now);
+    // Mantener solo las últimas 10 peticiones para no llenar el storage
+    const recent = data.filter(timestamp => (now - timestamp) < REQUEST_WINDOW_MS * 2).slice(-10);
+    localStorage.setItem(RECENT_REQUESTS_KEY, JSON.stringify(recent));
+  } catch {
+    // Ignorar errores de storage
   }
 };
 
@@ -114,8 +269,47 @@ const extractJson = (src) => {
     return JSON.parse(t);
   } catch (e) {
     console.error('[SimuladoresAI] ❌ Error parseando JSON:', e.message);
-    console.log('[SimuladoresAI] 📄 JSON que falló:', t);
+    console.log('[SimuladoresAI] 📄 JSON que falló (primeros 500 chars):', t.slice(0, 500));
 
+    // REPARACIÓN INICIAL AGRESIVA: aplicar todas las correcciones comunes primero
+    let fixed = t;
+
+    // 1. Reemplazar smart quotes / comillas curvas (muy común en respuestas de IA)
+    fixed = fixed.replace(/[""]/g, '"').replace(/['']/g, "'");
+
+    // 2. Eliminar caracteres de control invisibles que rompen JSON
+    fixed = fixed.replace(/[\x00-\x1F\x7F]/g, (char) => {
+      if (char === '\n' || char === '\r' || char === '\t') return char;
+      return '';
+    });
+
+    // 3. Reparar comillas sin escapar dentro de strings (patrón común: "texto "con" comillas")
+    // Intentar detectar y arreglar comillas internas no escapadas
+    fixed = fixed.replace(/"([^"]*)"([^",:\[\]{}]+)"([^"]*)"/g, '"$1\\"$2\\"$3"');
+
+    // 4. Reparar booleanos y null truncados
+    fixed = fixed.replace(/:\s*fals([,\}\]\n\s])/gi, ': false$1');
+    fixed = fixed.replace(/:\s*tru([,\}\]\n\s])/gi, ': true$1');
+    fixed = fixed.replace(/:\s*nul([,\}\]\n\s])/gi, ': null$1');
+
+    // 5. Agregar comas faltantes entre propiedades
+    fixed = fixed.replace(/("\s*)\s+("[^"]+"\s*:)/g, '$1, $2');
+    fixed = fixed.replace(/(true|false)\s+("[^"]+"\s*:)/g, '$1, $2');
+    fixed = fixed.replace(/(\d)\s+("[^"]+"\s*:)/g, '$1, $2');
+    fixed = fixed.replace(/}\s*{/g, '}, {');
+    fixed = fixed.replace(/]\s*\[/g, '], [');
+
+    // 6. Reparar comas antes de cierre de llaves/corchetes
+    fixed = fixed.replace(/,\s*([\}\]])/g, '$1');
+
+    // Intentar parsear después de reparación inicial
+    try {
+      const result = JSON.parse(fixed);
+      console.log('[SimuladoresAI] ✅ JSON reparado exitosamente con correcciones iniciales');
+      return result;
+    } catch (e2) {
+      console.warn('[SimuladoresAI] 🔧 Reparación inicial falló, intentando reparaciones específicas...');
+    }
 
     // REPARACIÓN PRIORITARIA: Falta coma entre propiedades
     if (e.message && e.message.includes("Expected ',' or '}'")) {
@@ -145,6 +339,7 @@ const extractJson = (src) => {
     }
     // Reparar errores de array (elementos faltantes o valores truncados)
     if (e.message && (e.message.includes("Expected ','") || e.message.includes("Expected ']'") || e.message.includes("after array element"))) {
+      console.warn('[SimuladoresAI] 🔧 Reparando: error en array o valor truncado');
       // Buscar y reparar valores booleanos truncados que causan el error
       // Ejemplo: "correct": fals] -> "correct": false]
       let fixed = t;
@@ -162,17 +357,25 @@ const extractJson = (src) => {
       fixed = fixed.replace(/:\s*nul\s*([,\}\]\n])/gi, ': null$1');
       fixed = fixed.replace(/:\s*nu\s*([,\}\]\n])/gi, ': null$1');
 
+      // Reparar strings truncados que pueden causar este error
+      // Buscar strings que terminan abruptamente antes de una coma o corchete
+      fixed = fixed.replace(/"\s*([,\}\]])/g, (match, delimiter) => {
+        // Si hay un string que termina justo antes de un delimitador sin comilla de cierre
+        // Esto puede indicar un string truncado
+        return match; // Por ahora mantener, pero podríamos necesitar más lógica
+      });
+
       try {
         return JSON.parse(fixed);
       } catch (e2) {
         // Si aún falla, intentar una reparación más agresiva
         // Buscar el patrón específico del error y repararlo
-        const errorMatch = e.message.match(/position (\d+)/);
+        const errorMatch = e2.message.match(/position (\d+)/);
         if (errorMatch) {
           const errorPos = parseInt(errorMatch[1]);
           // Buscar alrededor de la posición del error
-          const start = Math.max(0, errorPos - 50);
-          const end = Math.min(fixed.length, errorPos + 50);
+          const start = Math.max(0, errorPos - 100);
+          const end = Math.min(fixed.length, errorPos + 100);
           const context = fixed.slice(start, end);
 
           // Intentar reparar valores truncados en el contexto del error
@@ -181,6 +384,49 @@ const extractJson = (src) => {
           contextFixed = contextFixed.replace(/tru([,\}\]\n\s])/gi, 'true$1');
           contextFixed = contextFixed.replace(/fal([,\}\]\n\s])/gi, 'false$1');
           contextFixed = contextFixed.replace(/tr([,\}\]\n\s])/gi, 'true$1');
+
+          // Reparar strings no terminados en el contexto
+          // Buscar si hay un string abierto cerca del error
+          let inStr = false;
+          let esc = false;
+          let strStart = -1;
+          for (let i = Math.max(0, errorPos - 200); i < Math.min(fixed.length, errorPos + 50); i++) {
+            if (esc) {
+              esc = false;
+              continue;
+            }
+            if (fixed[i] === '\\') {
+              esc = true;
+              continue;
+            }
+            if (fixed[i] === '"') {
+              if (inStr) {
+                inStr = false;
+                strStart = -1;
+              } else {
+                inStr = true;
+                strStart = i;
+              }
+            }
+          }
+
+          // Si hay un string abierto, cerrarlo antes del delimitador problemático
+          if (inStr && strStart >= 0 && strStart < errorPos) {
+            // Buscar el siguiente delimitador después del error
+            let closePos = errorPos;
+            for (let i = errorPos; i < Math.min(fixed.length, errorPos + 50); i++) {
+              if (fixed[i] === ',' || fixed[i] === '}' || fixed[i] === ']') {
+                closePos = i;
+                break;
+              }
+            }
+            fixed = fixed.slice(0, closePos) + '"' + fixed.slice(closePos);
+            try {
+              return JSON.parse(fixed);
+            } catch (e3) {
+              // Continuar con otros intentos
+            }
+          }
 
           if (contextFixed !== context) {
             fixed = fixed.slice(0, start) + contextFixed + fixed.slice(end);
@@ -191,87 +437,204 @@ const extractJson = (src) => {
             }
           }
         }
-        // Continuar con otros intentos de reparación
+        // Continuar con otros intentos de reparación (pasar al siguiente bloque)
       }
     }
 
-    if (e.message && (e.message.includes('Unterminated string') || e.message.includes('Unexpected end'))) {
-      // Intentar reparar strings sin cerrar
+    // Reparación adicional: strings truncados que causan errores de sintaxis
+    // Esto puede ocurrir cuando el JSON se corta a mitad de un string
+    if (e.message && (e.message.includes('Unterminated string') || e.message.includes('Unexpected end') || e.message.includes('position'))) {
+      console.warn('[SimuladoresAI] 🔧 Reparando: string no terminado o truncado');
       let fixed = t;
+
+      // PRIMER PASO: Reparar saltos de línea sin escapar dentro de strings
+      // Esto es crítico porque la IA puede generar \n literales que rompen el JSON
+      let result = '';
       let inString = false;
       let escapeNext = false;
-      const openStrings = []; // Array de posiciones donde se abren strings
+      let stringStart = -1;
 
-      // Encontrar todos los strings y detectar cuáles están sin cerrar
       for (let i = 0; i < fixed.length; i++) {
         const ch = fixed[i];
+        const nextCh = i + 1 < fixed.length ? fixed[i + 1] : null;
+
         if (escapeNext) {
+          // Si estamos escapando, agregar el carácter normalmente
+          result += ch;
           escapeNext = false;
           continue;
         }
+
         if (ch === '\\') {
+          // Verificar si es un escape válido o un salto de línea literal
+          if (inString && nextCh === 'n' && fixed[i + 2] !== '"') {
+            // Es un \n literal dentro de un string, mantenerlo como está
+            result += ch;
+            escapeNext = true;
+            continue;
+          }
+          result += ch;
           escapeNext = true;
           continue;
         }
+
         if (ch === '"') {
           if (inString) {
             // Cerrar string
             inString = false;
-            if (openStrings.length > 0) {
-              openStrings.pop();
-            }
+            stringStart = -1;
+            result += ch;
           } else {
             // Abrir string
             inString = true;
-            openStrings.push(i);
+            stringStart = i;
+            result += ch;
           }
+          continue;
+        }
+
+        if (inString) {
+          // Dentro de un string, escapar caracteres problemáticos
+          if (ch === '\n' || ch === '\r') {
+            // Salto de línea literal sin escapar - escapar
+            result += '\\n';
+          } else if (ch === '\t') {
+            result += '\\t';
+          } else if (ch.charCodeAt(0) < 32 && ch !== '\n' && ch !== '\r' && ch !== '\t') {
+            // Carácter de control - escapar como unicode
+            result += `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`;
+          } else {
+            result += ch;
+          }
+        } else {
+          result += ch;
         }
       }
 
-      // Si hay strings sin cerrar, cerrarlos
-      if (inString && openStrings.length > 0) {
-        const lastOpenPos = openStrings[openStrings.length - 1];
-        const lastBrace = fixed.lastIndexOf('}');
-
-        if (lastBrace > lastOpenPos) {
-          // Cerrar el string antes del último }
-          // Buscar el último carácter antes del } que no sea espacio
+      // Si quedó un string abierto, cerrarlo
+      if (inString) {
+        // Buscar el último } válido para cerrar el string antes
+        const lastBrace = result.lastIndexOf('}');
+        if (lastBrace > stringStart) {
+          // Insertar comilla de cierre antes del último }
           let insertPos = lastBrace;
-          for (let i = lastBrace - 1; i > lastOpenPos; i--) {
-            if (fixed[i] !== ' ' && fixed[i] !== '\n' && fixed[i] !== '\t') {
+          // Retroceder hasta encontrar un carácter no-espacio
+          for (let i = lastBrace - 1; i > stringStart; i--) {
+            if (result[i] !== ' ' && result[i] !== '\n' && result[i] !== '\t' && result[i] !== '\\') {
               insertPos = i + 1;
               break;
             }
           }
-          fixed = fixed.slice(0, insertPos) + '"' + fixed.slice(insertPos);
+          fixed = result.slice(0, insertPos) + '"' + result.slice(insertPos);
         } else {
-          // Si no hay }, agregar " al final (después de quitar espacios finales)
-          fixed = fixed.trim() + '"';
+          // No hay }, cerrar al final
+          fixed = result + '"';
         }
+      } else {
+        fixed = result;
       }
 
       try {
         return JSON.parse(fixed);
       } catch (e2) {
-        // Si aún falla, intentar una reparación más agresiva: truncar en el último } válido
+        console.warn('[SimuladoresAI] 🔧 Intento 1 falló, intentando reparación más agresiva...');
+
+        // SEGUNDO PASO: Reparación más agresiva - reconstruir strings problemáticos
+        try {
+          // Buscar la posición del error para contexto
+          const errorMatch = e2.message.match(/position (\d+)/);
+          if (errorMatch) {
+            const errorPos = parseInt(errorMatch[1]);
+            const contextStart = Math.max(0, errorPos - 200);
+            const contextEnd = Math.min(fixed.length, errorPos + 200);
+            const context = fixed.slice(contextStart, contextEnd);
+
+            // Intentar encontrar y reparar el string problemático
+            // Buscar el string más cercano al error que esté abierto
+            let inStr = false;
+            let esc = false;
+            let strStart = -1;
+            let fixed2 = fixed;
+
+            for (let i = Math.max(0, errorPos - 500); i < Math.min(fixed.length, errorPos + 100); i++) {
+              const ch = fixed2[i];
+              if (esc) {
+                esc = false;
+                continue;
+              }
+              if (ch === '\\') {
+                esc = true;
+                continue;
+              }
+              if (ch === '"') {
+                if (inStr) {
+                  inStr = false;
+                  strStart = -1;
+                } else {
+                  inStr = true;
+                  strStart = i;
+                }
+              }
+            }
+
+            // Si hay un string abierto cerca del error, cerrarlo
+            if (inStr && strStart >= 0) {
+              // Cerrar el string antes del siguiente delimitador importante
+              let closePos = errorPos;
+              for (let i = errorPos; i < Math.min(fixed.length, errorPos + 100); i++) {
+                if (fixed2[i] === '}' || fixed2[i] === ']' || fixed2[i] === ',') {
+                  closePos = i;
+                  break;
+                }
+              }
+              fixed2 = fixed2.slice(0, closePos) + '"' + fixed2.slice(closePos);
+              return JSON.parse(fixed2);
+            }
+          }
+        } catch (e3) {
+          // Continuar con el siguiente intento
+        }
+
+        // TERCER PASO: Truncar en el último } válido y cerrar strings abiertos
         try {
           const lastValidBrace = fixed.lastIndexOf('}');
           if (lastValidBrace > 0) {
-            const truncated = fixed.slice(0, lastValidBrace + 1);
-            // Asegurar que todos los strings estén cerrados
-            let quoteCount = (truncated.match(/"/g) || []).length;
-            if (quoteCount % 2 !== 0) {
-              // Hay comillas sin cerrar, cerrar antes del último }
-              const beforeLastBrace = truncated.slice(0, lastValidBrace);
-              return JSON.parse(beforeLastBrace + '"' + truncated.slice(lastValidBrace));
+            let truncated = fixed.slice(0, lastValidBrace + 1);
+
+            // Contar comillas y cerrar si es necesario
+            let quoteCount = 0;
+            let inStr = false;
+            let esc = false;
+            for (let i = 0; i < truncated.length; i++) {
+              if (esc) {
+                esc = false;
+                continue;
+              }
+              if (truncated[i] === '\\') {
+                esc = true;
+                continue;
+              }
+              if (truncated[i] === '"') {
+                quoteCount++;
+                inStr = !inStr;
+              }
             }
+
+            // Si hay comillas sin cerrar, cerrar antes del último }
+            if (inStr) {
+              const beforeLastBrace = truncated.slice(0, lastValidBrace);
+              truncated = beforeLastBrace + '"' + truncated.slice(lastValidBrace);
+            }
+
             return JSON.parse(truncated);
           }
-        } catch (e3) {
-          console.error('Error parseando JSON de IA después de múltiples intentos de reparación:', e3);
-          console.error('Texto original (primeros 1000 chars):', t.slice(0, 1000));
+        } catch (e4) {
+          console.error('[SimuladoresAI] ❌ Error parseando JSON de IA después de múltiples intentos de reparación:', e4);
+          console.error('[SimuladoresAI] 📄 Texto original (primeros 1000 chars):', t.slice(0, 1000));
+          console.error('[SimuladoresAI] 📄 Texto reparado (primeros 1000 chars):', fixed.slice(0, 1000));
           throw new Error('La respuesta de la IA contiene JSON mal formado. Por favor, intenta generar las preguntas nuevamente.');
         }
+
         throw e2;
       }
     }
@@ -294,8 +657,23 @@ const areaHints = (area) => {
         '- Aritmética: fracciones, porcentajes, regla de tres, proporciones, interés simple y compuesto.\n' +
         '- Álgebra: factorización, productos notables, ecuaciones con raíces, logaritmos básicos.\n' +
         '- Los problemas deben incluir datos numéricos realistas y requerir aplicación de fórmulas. Muestra la fórmula cuando sea relevante.\n' +
-        '- Nivel básico: operaciones simples, problemas de la vida diaria. Nivel intermedio: aplicaciones más complejas. Nivel avanzado: problemas multi-paso con análisis.\n' +
+        '- Nivel básico: ENFÓCATE EXCLUSIVAMENTE EN CONCEPTOS FUNDAMENTALES. Para álgebra: preguntas MUY SIMPLES sobre definiciones básicas (¿qué es una variable?, ¿qué es una constante?, ¿qué es una ecuación?), identificación básica en expresiones SIMPLES (máximo 2 términos, sin potencias, números pequeños 1-10). Ejemplos permitidos: 3x, 5y, 2a + 3, x - 5. PROHIBIDO usar expresiones con potencias (x², m²), múltiples términos complejos (más de 2), o operaciones avanzadas. Para otras áreas: operaciones simples, problemas de la vida diaria, conceptos básicos y definiciones fundamentales. Nivel intermedio: aplicaciones más complejas, resolución de problemas prácticos. Nivel avanzado: problemas multi-paso con análisis, síntesis de conceptos.\n' +
         '- Opciones de respuesta deben incluir el resultado numérico correcto y distractoras cercanas por errores comunes.'
+      )
+    };
+  }
+  if (/inglés|english|lengua.*extranjera|foreign.*language/i.test(a)) {
+    return {
+      tag: 'ingles', directrices: (
+        'ENGLISH LANGUAGE REQUIREMENTS (ALL CONTENT MUST BE IN ENGLISH):\n' +
+        '- Reading comprehension: short texts, emails, articles, dialogues in English.\n' +
+        '- Grammar: verb tenses, conditionals, passive voice, phrasal verbs, prepositions.\n' +
+        '- Vocabulary: synonyms, antonyms, word formation, collocations, idioms.\n' +
+        '- Writing: sentence structure, paragraph organization, formal/informal register.\n' +
+        '- Listening comprehension: understanding spoken English in various contexts.\n' +
+        '- All questions, options, instructions, and examples MUST be in English.\n' +
+        '- Use authentic English texts and contexts (emails, articles, conversations).\n' +
+        '- Focus on practical English skills for academic and professional contexts.'
       )
     };
   }
@@ -470,13 +848,13 @@ const normalizarPreguntas = (arr, cantidad, dist = null) => {
  * @param {('general'|'temas')} [opts.modo] - 'general' para cubrir el área/tema global; 'temas' para enfocarse en una lista.
  * @param {string[]|string} [opts.temas] - Lista de temas/ramas específicos (o string separado por comas).
  * @param {Object} [opts.distribucion] - Distribución personalizada: { multi: número, tf: número, short: número }
- * @param {number} [opts.temperature] - Temperatura para la generación (0.0-1.0, default: 0.6). Valores más altos = más creativo.
+ * @param {number} [opts.temperature] - Temperatura para la generación (0.0-1.0, default: 0.2). Valores más bajos = más precisión en JSON.
  * @param {number} [opts.topP] - Nucleus sampling (0.0-1.0, default: undefined). Controla diversidad de tokens.
  * @param {number} [opts.topK] - Top-K sampling (integer, default: undefined). Limita tokens candidatos.
  * @param {number} [opts.maxOutputTokens] - Tokens máximos de salida (default: calculado automáticamente)
  * @returns {Promise<Array>} preguntas normalizadas
  */
-export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined, nivel = 'intermedio', modo = 'general', temas = undefined, distribucion = undefined, temperature = 0.6, topP = undefined, topK = undefined, maxOutputTokens = undefined }) {
+export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined, nivel = 'intermedio', modo = 'general', temas = undefined, distribucion = undefined, temperature = 0.2, topP = undefined, topK = undefined, maxOutputTokens = undefined, purpose = 'simuladores' }) {
   // Normalizar temas a array si se provee como string
   let temasList = Array.isArray(temas) ? temas : (typeof temas === 'string' ? temas.split(',').map(s => s.trim()).filter(Boolean) : []);
   // Validación flexible: requiere al menos uno de tema | area | temas
@@ -486,12 +864,33 @@ export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined,
   // Bloqueo si está en cooldown
   const rem = getCooldownRemainingMs();
   if (rem > 0) {
-    const err = new Error(`En enfriamiento ${Math.ceil(rem / 1000)}s por límite de cuota.`);
+    const secs = Math.ceil(rem / 1000);
+    const mins = Math.floor(secs / 60);
+    const remainingSecs = secs % 60;
+    const timeDisplay = mins > 0
+      ? `${mins} minuto${mins > 1 ? 's' : ''}${remainingSecs > 0 ? ` y ${remainingSecs} segundo${remainingSecs > 1 ? 's' : ''}` : ''}`
+      : `${secs} segundo${secs > 1 ? 's' : ''}`;
+    const err = new Error(`Debes esperar ${timeDisplay} antes de volver a generar con IA. Esto ayuda a evitar límites de la API.`);
     // adjuntar metadatos para que la UI pueda decidir
     err.code = 'COOLDOWN';
     err.remainingMs = rem;
     throw err;
   }
+
+  // ⚠️ PREVENCIÓN: Verificar si se han hecho demasiadas peticiones recientes
+  const recentCheck = checkRecentRequests();
+  if (recentCheck.tooMany) {
+    const mins = Math.floor(recentCheck.waitTime / 60);
+    const secs = recentCheck.waitTime % 60;
+    const timeDisplay = mins > 0
+      ? `${mins} minuto${mins > 1 ? 's' : ''}${secs > 0 ? ` y ${secs} segundo${secs > 1 ? 's' : ''}` : ''}`
+      : `${recentCheck.waitTime} segundo${recentCheck.waitTime > 1 ? 's' : ''}`;
+    const err = new Error(`Has realizado ${MAX_REQUESTS_PER_WINDOW} peticiones en poco tiempo. Por favor, espera ${timeDisplay} antes de intentar nuevamente para evitar saturar el servicio de IA.`);
+    err.code = 'TOO_MANY_REQUESTS';
+    err.remainingMs = recentCheck.waitTime * 1000;
+    throw err;
+  }
+
   // Preparar guía según área
   const { tag, directrices } = areaHints(area);
   // Usar distribución personalizada si se proporciona, sino calcular automáticamente
@@ -517,15 +916,64 @@ export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined,
 IMPORTANTE PARA ÁREAS DE MATEMÁTICAS, FÍSICA O QUÍMICA (ESTILO EXAMEN IPN):
 - Genera problemas PRÁCTICOS similares a exámenes de ingreso universitario como el IPN.
 - Incluye FÓRMULAS cuando sean necesarias para resolver el problema (muestra fórmulas como v=d/t, F=ma, x²+5x+6=0, etc.).
+- FORMATO MATEMÁTICO: Usa LaTeX para todas las fórmulas matemáticas, encerrándolas en signos de dólar simples para inline ($...$) o dobles para bloque ($$...$$). Ejemplo: "Calcula la integral $\\int x^2 dx$." o "La fórmula es $$F = ma$$". Escapa las barras invertidas correctamente (\\int, \\frac, \\sqrt, \\sum, etc.).
 - Presenta situaciones REALES: problemas de la vida diaria, aplicaciones prácticas, análisis de gráficas/tablas.
 - Los enunciados deben proporcionar TODOS los datos numéricos necesarios para resolver el problema.
 - Las opciones de respuesta múltiple deben incluir el RESULTADO NUMÉRICO correcto con unidades si aplica (ej: "25 m/s", "3.5 moles", "42%", "15 N").
 - Para respuesta corta en problemas numéricos, acepta respuestas que incluyan el número con unidades (ej: "25 m/s", "3.5 moles").
-- Nivel básico: aplicación directa de una fórmula simple. Nivel intermedio: combinar fórmulas o despejar variables. Nivel avanzado: problemas multi-paso con análisis complejo.` : '';
+- Nivel básico: ENFÓCATE EXCLUSIVAMENTE EN CONCEPTOS FUNDAMENTALES. Para álgebra: preguntas MUY SIMPLES sobre definiciones básicas (¿qué es una variable?, ¿qué es una constante?, ¿qué es una ecuación?), identificación básica en expresiones SIMPLES (máximo 2 términos, sin potencias, números pequeños 1-10). Ejemplos permitidos: 3x, 5y, 2a + 3, x - 5. PROHIBIDO usar expresiones con potencias (x², m²), múltiples términos complejos (más de 2), o operaciones avanzadas. Para física/química: conceptos básicos, definiciones, identificación simple de magnitudes y unidades. Nivel intermedio: combinar fórmulas o despejar variables, resolución de problemas prácticos con expresiones más complejas. Nivel avanzado: problemas multi-paso con análisis complejo, síntesis de conceptos, expresiones algebraicas avanzadas.` : '';
 
-  const prompt = `Genera preguntas tipo examen en español (es-MX), estilo examen de ingreso universitario (como IPN).${areaLine}
+  // Instrucciones específicas según el nivel para el prompt principal
+  const nivelInstrucciones = nivel === 'básico'
+    ? `\n\nINSTRUCCIONES CRÍTICAS PARA NIVEL BÁSICO (CONCEPTOS FUNDAMENTALES):
+- ENFÓCATE EXCLUSIVAMENTE EN CONCEPTOS FUNDAMENTALES Y DEFINICIONES BÁSICAS.
+- Para álgebra: genera preguntas MUY SIMPLES sobre:
+  * ¿Qué es una variable? (ejemplos: x, y, a - sin operaciones complejas)
+  * ¿Qué es una constante? (ejemplos: 5, 3, 7 - números simples)
+  * ¿Qué es una ecuación? (definición básica, sin resolver)
+  * Identificación básica: "En 3x, ¿qué es el 3?" (coeficiente simple)
+  * Identificación básica: "En 3x, ¿qué es la x?" (variable simple)
+  * NO uses expresiones con potencias (x², m²), NO uses múltiples términos complejos, NO uses operaciones avanzadas.
+  * Usa expresiones SIMPLES como: 3x, 5y, 2a + 3, x - 5 (máximo 2 términos, sin potencias).
+  * Las preguntas deben ser de RECONOCIMIENTO y DEFINICIÓN, no de cálculo o identificación en expresiones complejas.
+- Para otras áreas: conceptos básicos, definiciones fundamentales, identificación simple de elementos.
+- Las preguntas deben evaluar COMPRENSIÓN CONCEPTUAL BÁSICA, sin requerir análisis de expresiones complejas.
+- Evita expresiones algebraicas con más de 2 términos, potencias, fracciones complejas, o múltiples variables en una misma pregunta.
+- Usa ejemplos MUY SIMPLES: números pequeños (1-10), variables simples (x, y, a), operaciones básicas (+, -).`
+    : nivel === 'intermedio'
+      ? `\n\nINSTRUCCIONES ESPECÍFICAS PARA NIVEL INTERMEDIO (APLICACIÓN):
+- ENFÓCATE EN LA APLICACIÓN PRÁCTICA DE CONCEPTOS.
+- Genera preguntas que requieran aplicar conceptos en situaciones prácticas, resolver problemas con pasos intermedios, combinar conceptos básicos.
+- Puedes usar expresiones con múltiples términos, potencias simples, y operaciones más complejas.
+- Incluye problemas de la vida diaria y aplicaciones prácticas.`
+      : `\n\nINSTRUCCIONES ESPECÍFICAS PARA NIVEL AVANZADO (ANÁLISIS):
+- ENFÓCATE EN ANÁLISIS COMPLEJO Y SÍNTESIS DE CONCEPTOS.
+- Genera preguntas que requieran análisis profundo, problemas multi-paso, síntesis de múltiples conceptos, razonamiento avanzado.
+- Puedes usar expresiones complejas con potencias, múltiples términos, fracciones algebraicas, y operaciones avanzadas.
+- Incluye problemas que desafíen el pensamiento crítico y la aplicación de conocimientos en contextos complejos.`;
+
+  // Detectar si el área es inglés o lengua extranjera para usar el idioma correcto
+  const esIngles = /inglés|english|lengua.*extranjera|foreign.*language/i.test(area || temaEfectivo);
+  const idiomaPrompt = esIngles
+    ? 'inglés (en-US)'
+    : 'español (es-MX)';
+  const instruccionesIdioma = esIngles
+    ? `\n\n⚠️ CRITICAL LANGUAGE REQUIREMENT - ALL CONTENT MUST BE IN ENGLISH ONLY ⚠️
+This is an English language exam. EVERYTHING must be in English:
+- ALL question texts (enunciados) - must be in English
+- ALL answer options - must be in English  
+- ALL instructions within questions - must be in English
+- ALL examples and sample texts - must be in English
+- ALL reading comprehension texts (emails, articles, dialogues) - must be in English
+- DO NOT mix Spanish and English. DO NOT use Spanish translations.
+- If the question asks about English grammar or vocabulary, the question itself must still be in English
+- Even instructions like "Read the following email" must be in English
+- The JSON structure can use Spanish keys, but ALL user-facing text content must be 100% in English`
+    : '';
+
+  const prompt = `Genera preguntas tipo examen en ${idiomaPrompt}, estilo examen de ingreso universitario (como IPN).${areaLine}
 Tema principal: "${temaEfectivo}".
-Nivel: ${nivel}. Tipos permitidos: ${tiposDesc}.${distLine}${modoLine}${dirLine}${instruccionesFormulas}
+Nivel: ${nivel}. Tipos permitidos: ${tiposDesc}.${distLine}${modoLine}${dirLine}${instruccionesFormulas}${nivelInstrucciones}${instruccionesIdioma}
 
 Requisitos estrictos:
 - EXACTAMENTE ${cantidadFinal} preguntas.
@@ -547,11 +995,16 @@ Devuelve SOLO JSON con este esquema:
 
   const { controller, clear } = withTimeout(TIMEOUT);
   try {
-    // Construir generationConfig con parámetros configurables
+    // Construir generationConfig optimizado para Free Tier
+    // Temperatura baja (0.2) para mayor precisión en JSON y menos "alucinaciones"
+    // 8192 es el máximo de Flash. No te cobran por lo que no usas, solo por lo generado.
+    // Esto previene cortes a mitad de respuesta (evita "fals", "tru" truncados)
     const generationConfig = {
-      temperature: Math.max(0.0, Math.min(1.0, temperature || 0.3)),
-      maxOutputTokens: maxOutputTokens || Math.max(2000, cantidadFinal * 200),
-      response_mime_type: 'application/json'
+      temperature: Math.max(0.0, Math.min(1.0, temperature || 0.2)),
+      maxOutputTokens: maxOutputTokens || 8192,
+      response_mime_type: 'application/json',
+      // Structured Outputs: garantiza JSON válido y ahorra tokens (la IA no "habla", solo data)
+      response_schema: RESPONSE_SCHEMA
     };
 
     // Agregar parámetros opcionales solo si se especifican
@@ -565,7 +1018,8 @@ Devuelve SOLO JSON con este esquema:
     const body = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig,
-      model: MODEL
+      model: MODEL,
+      purpose: purpose || 'simuladores' // Indica al servidor qué pool de API keys usar
     };
     console.log('[SimuladoresAI] Sending request with model:', MODEL);
     const resp = await fetch(PROXY_ENDPOINT, {
@@ -590,24 +1044,57 @@ Devuelve SOLO JSON con este esquema:
         throw e;
       }
 
-      if (status === 429) {
-        // iniciar cooldown y propagar error con mensaje claro
-        startCooldown();
-        const secs = Math.ceil(COOLDOWN_MS / 1000);
-        const e = new Error(`Error 429: Se alcanzó el límite de solicitudes a la API de Google. Por favor, espera ${secs} segundo${secs > 1 ? 's' : ''} antes de intentar nuevamente. Esto ayuda a evitar límites de la API.`);
+      // Manejar errores de rate limit (429 y 503)
+      if (status === 429 || status === 503) {
+        // Para 429, usar cooldown más largo con backoff exponencial
+        const is429 = status === 429;
+        startCooldown(null, is429);
+
+        // Obtener el cooldown real que se estableció
+        const actualCooldown = is429
+          ? (() => {
+            const count429 = Number(localStorage.getItem(COOLDOWN_429_COUNT_KEY) || 0);
+            return Math.min(COOLDOWN_429_MS + (count429 - 1) * 300000, 1800000);
+          })()
+          : COOLDOWN_MS;
+
+        const secs = Math.ceil(actualCooldown / 1000);
+        const mins = Math.floor(secs / 60);
+        const remainingSecs = secs % 60;
+        const timeDisplay = mins > 0
+          ? `${mins} minuto${mins > 1 ? 's' : ''}${remainingSecs > 0 ? ` y ${remainingSecs} segundo${remainingSecs > 1 ? 's' : ''}` : ''}`
+          : `${secs} segundo${secs > 1 ? 's' : ''}`;
+        const count429 = Number(localStorage.getItem(COOLDOWN_429_COUNT_KEY) || 0);
+        const errorMsg = status === 503
+          ? `El servicio de IA está temporalmente no disponible (saturado). Por favor, espera ${timeDisplay} antes de intentar nuevamente.`
+          : `Se alcanzó el límite de solicitudes a la API de Google (límite del servidor, no solo local). Por favor, espera ${timeDisplay} antes de intentar nuevamente. ${is429 && count429 > 1 ? `(Intento ${count429} - el tiempo de espera aumenta con cada error. El límite es compartido y puede afectar a otros usuarios también.)` : 'El límite es del servidor de Google y puede tardar más tiempo en resetearse.'}`;
+        const e = new Error(errorMsg);
         e.code = 'RATE_LIMIT';
-        e.remainingMs = COOLDOWN_MS;
-        e.status = 429;
+        e.remainingMs = actualCooldown;
+        e.status = status;
         throw e;
       }
       // Otros errores pueden también ser relacionados con límites de cuota
       const errMsg = String(err?.error || err?.message || '').toLowerCase();
-      if (errMsg.includes('quota') || errMsg.includes('rate limit') || errMsg.includes('429')) {
-        startCooldown();
-        const secs = Math.ceil(COOLDOWN_MS / 1000);
-        const e = new Error(`Error de cuota: ${err?.error || 'Se alcanzó el límite de solicitudes'}. Por favor, espera ${secs} segundo${secs > 1 ? 's' : ''} antes de intentar nuevamente.`);
+      if (errMsg.includes('quota') || errMsg.includes('rate limit') || errMsg.includes('429') || errMsg.includes('503')) {
+        // Si el mensaje menciona 429, usar backoff exponencial
+        const is429 = errMsg.includes('429');
+        startCooldown(null, is429);
+        const actualCooldown = is429
+          ? (() => {
+            const count429 = Number(localStorage.getItem(COOLDOWN_429_COUNT_KEY) || 0);
+            return Math.min(COOLDOWN_429_MS + (count429 - 1) * 300000, 1800000);
+          })()
+          : COOLDOWN_MS;
+        const secs = Math.ceil(actualCooldown / 1000);
+        const mins = Math.floor(secs / 60);
+        const remainingSecs = secs % 60;
+        const timeDisplay = mins > 0
+          ? `${mins} minuto${mins > 1 ? 's' : ''}${remainingSecs > 0 ? ` y ${remainingSecs} segundo${remainingSecs > 1 ? 's' : ''}` : ''}`
+          : `${secs} segundo${secs > 1 ? 's' : ''}`;
+        const e = new Error(`Error de cuota: ${err?.error || 'Se alcanzó el límite de solicitudes'}. Por favor, espera ${timeDisplay} antes de intentar nuevamente.`);
         e.code = 'RATE_LIMIT';
-        e.remainingMs = COOLDOWN_MS;
+        e.remainingMs = actualCooldown;
         e.status = status;
         throw e;
       }
@@ -615,16 +1102,46 @@ Devuelve SOLO JSON con este esquema:
     }
     const data = await resp.json();
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const parsed = extractJson(text);
+
+    // Con response_schema, el JSON debería ser válido directamente
+    // Pero mantenemos extractJson como fallback por si el servidor está saturado o hay errores
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (parseError) {
+      // Fallback a extractJson si el parseo directo falla (red de seguridad)
+      console.warn('[SimuladoresAI] JSON directo falló, usando extractJson como fallback:', parseError);
+      parsed = extractJson(text);
+    }
+
     const arr = Array.isArray(parsed?.preguntas) ? parsed.preguntas : [];
     const result = normalizarPreguntas(arr, cantidadFinal, dist);
 
     // Incrementar contador de uso exitoso
     incrementQuestionUsage();
 
+    // ⚠️ PREVENCIÓN: Registrar petición exitosa y activar cooldown preventivo
+    recordRecentRequest();
+    // Si la petición fue exitosa, resetear el contador de 429 y usar cooldown corto
+    localStorage.removeItem(COOLDOWN_429_COUNT_KEY);
+    // Cooldown corto después de éxito (30 segundos) para prevenir saturación
+    startCooldown(30000, false); // 30 segundos después de éxito
+
     return result;
   } catch (e) {
     clear();
+    // Manejar específicamente el AbortError del timeout
+    if (e.name === 'AbortError' || e.message?.includes('aborted')) {
+      const timeoutError = new Error('La petición tardó demasiado tiempo. Esto puede deberse a que el servicio de IA está saturado. Por favor, intenta nuevamente en unos momentos.');
+      timeoutError.code = 'TIMEOUT';
+      timeoutError.originalError = e;
+      throw timeoutError;
+    }
+    // Si el error ya tiene un código (como RATE_LIMIT), propagarlo tal cual
+    if (e.code) {
+      throw e;
+    }
+    // Para otros errores, propagar con el mensaje original
     throw e;
   }
 }

@@ -365,6 +365,7 @@ export const getReviewSimulacionIntento = async (req, res) => {
       // Normalizar múltiples filas por misma pregunta: para opción única tomar SOLO la última marca.
       let seleccionadas = [];
       let valor_texto = null;
+      let respuestaCortaObj = null;
       if (p.tipo === 'opcion_multiple' || p.tipo === 'verdadero_falso') {
         const withOpt = respuestas.filter(r => r.id_opcion != null);
         if (withOpt.length) {
@@ -378,10 +379,28 @@ export const getReviewSimulacionIntento = async (req, res) => {
         for (const r of respuestas) { if (r.id_opcion != null) ids.add(r.id_opcion); }
         seleccionadas = Array.from(ids);
       } else if (p.tipo === 'respuesta_corta') {
-        const withText = respuestas.filter(r => r.texto_libre != null && String(r.texto_libre).trim() !== '');
-        if (withText.length) {
-          const last = withText.reduce((a, b) => (a.id > b.id ? a : b));
-          valor_texto = last.texto_libre;
+        // Para respuestas cortas, buscar cualquier respuesta (incluso si texto_libre es null)
+        // Esto es importante porque la respuesta puede estar en estado "pending" sin texto aún
+        if (respuestas.length > 0) {
+          // Tomar la última respuesta (por ID) para esta pregunta
+          const last = respuestas.reduce((a, b) => (a.id > b.id ? a : b));
+          // Si tiene texto_libre, usarlo; si no, dejar null
+          valor_texto = last.texto_libre != null && String(last.texto_libre).trim() !== '' 
+            ? last.texto_libre 
+            : null;
+          respuestaCortaObj = last; // Guardar el objeto completo de la respuesta para campos de calificación
+          // Asegurar que tenemos el ID de la respuesta (debe ser el id de la fila en simulaciones_respuestas)
+          if (!respuestaCortaObj.id) {
+            console.error('[getReviewSimulacionIntento] Respuesta corta sin ID:', respuestaCortaObj);
+          } else {
+            console.log(`[getReviewSimulacionIntento] ✅ Respuesta corta encontrada para pregunta ${p.id}:`, {
+              id_respuesta: respuestaCortaObj.id,
+              texto_libre: respuestaCortaObj.texto_libre,
+              calificacion_status: respuestaCortaObj.calificacion_status
+            });
+          }
+        } else {
+          console.warn(`[getReviewSimulacionIntento] ⚠️ No hay respuestas en BD para pregunta ${p.id} (tipo: respuesta_corta)`);
         }
       } else {
         // Default (tratar como opción única)
@@ -402,11 +421,23 @@ export const getReviewSimulacionIntento = async (req, res) => {
       } else if (p.tipo === 'opcion_multiple' || p.tipo === 'verdadero_falso') {
         correcta = seleccionadas.length === 1 && correctasIds.includes(seleccionadas[0]);
       } else if (p.tipo === 'respuesta_corta') {
-        const correctOpt = (p.opciones || []).find(o => o.es_correcta === 1);
-        if (correctOpt && valor_texto) correcta = correctOpt.texto.trim().toLowerCase() === String(valor_texto).trim().toLowerCase();
+        // Para respuesta corta: si fue revisada manualmente, usar calificacion_confianza
+        // 100 = correcta, 0 = incorrecta (cuando es revisión manual)
+        if (respuestaCortaObj && respuestaCortaObj.calificacion_metodo === 'manual') {
+          correcta = respuestaCortaObj.calificacion_confianza === 100;
+        } else {
+          // Si no fue revisada manualmente, usar comparación de texto o calificación automática
+          const correctOpt = (p.opciones || []).find(o => o.es_correcta === 1);
+          if (correctOpt && valor_texto) {
+            correcta = correctOpt.texto.trim().toLowerCase() === String(valor_texto).trim().toLowerCase();
+          } else if (respuestaCortaObj && respuestaCortaObj.calificacion_confianza != null) {
+            // Usar calificación automática: confianza >= 70 generalmente significa correcta
+            correcta = respuestaCortaObj.calificacion_confianza >= 70;
+          }
+        }
       }
 
-      return {
+      const preguntaObj = {
         id: p.id,
         orden: p.orden,
         enunciado: p.enunciado,
@@ -418,6 +449,26 @@ export const getReviewSimulacionIntento = async (req, res) => {
         correcta,
         tiempo_ms
       };
+      
+      // Si es respuesta corta y tenemos la respuesta con calificación, incluir campos adicionales
+      if (p.tipo === 'respuesta_corta') {
+        if (respuestaCortaObj && respuestaCortaObj.id) {
+          // Tenemos una respuesta en la BD, incluir todos los campos
+          preguntaObj.id_respuesta = respuestaCortaObj.id; // ID de la respuesta en la BD (CRÍTICO: debe ser el ID de simulaciones_respuestas, no de la pregunta)
+          preguntaObj.calificacion_status = respuestaCortaObj.calificacion_status || 'pending';
+          preguntaObj.calificacion_metodo = respuestaCortaObj.calificacion_metodo || null;
+          preguntaObj.calificacion_confianza = respuestaCortaObj.calificacion_confianza != null ? Number(respuestaCortaObj.calificacion_confianza) : null;
+          preguntaObj.revisada_por = respuestaCortaObj.revisada_por || null;
+          preguntaObj.notas_revision = respuestaCortaObj.notas_revision || null;
+        } else {
+          // No hay respuesta en la BD aún (puede estar pendiente de guardar)
+          // NO incluir id_respuesta para evitar errores
+          console.warn(`[getReviewSimulacionIntento] Respuesta corta sin objeto respuesta para pregunta ${p.id}`);
+          preguntaObj.calificacion_status = 'pending';
+        }
+      }
+      
+      return preguntaObj;
     });
 
     // Respuestas de la sesión

@@ -26,7 +26,34 @@ const monthNames = "enero_febrero_marzo_abril_mayo_junio_julio_agosto_septiembre
 function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
 function endOfMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
 function addMonths(d, n) { return new Date(d.getFullYear(), d.getMonth() + n, 1); }
-function toISO(d) { return d.toISOString().slice(0, 10); }
+// Función para convertir Date a YYYY-MM-DD usando fecha local (no UTC) para evitar problemas de zona horaria
+function toISO(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+// Función helper para parsear fechas YYYY-MM-DD sin problemas de zona horaria
+function parseLocalDate(dateStr) {
+  const parts = dateStr.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  return new Date(year, month, day);
+}
+// Función helper para parsear fecha y hora sin problemas de zona horaria
+function parseLocalDateTime(dateStr, timeStr = null) {
+  const parts = dateStr.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  
+  if (timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return new Date(year, month, day, hours, minutes || 0, 0);
+  }
+  return new Date(year, month, day, 0, 0, 0);
+}
 
 /* =========================================================
    MODAL: Crear/Editar Recordatorio
@@ -129,10 +156,14 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
     setError("");
     
     try {
+      // Normalizar fecha para evitar problemas de zona horaria
+      // El input type="date" devuelve YYYY-MM-DD, lo usamos directamente
+      const normalizedDate = date; // Ya viene en formato YYYY-MM-DD
+      
       const reminderData = {
         title: name.trim(),
         description: desc.trim() || null,
-        date,
+        date: normalizedDate,
         time: time || null,
         category: category || "recordatorio",
         priority,
@@ -495,10 +526,12 @@ function Chip({ children, className = "" }) {
 }
 
 function DatePill({ date }) {
-  const d = new Date(date);
+  // Usar función helper para parsear fecha local sin problemas de zona horaria
+  const d = parseLocalDate(date);
   const m = d.toLocaleString("es-MX", { month: "short" }).toUpperCase();
   const day = d.getDate();
   const y = d.getFullYear();
+  
   return (
     <div className="w-20 shrink-0 grid place-items-center rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-600 to-purple-600 text-white text-center py-4 shadow-lg ring-2 ring-violet-200">
       <div className="text-xs font-extrabold opacity-95 tracking-wide">{m}</div>
@@ -508,21 +541,35 @@ function DatePill({ date }) {
   );
 }
 
-function EventItem({ ev, onEdit, onDelete }) {
+function EventItem({ ev, onEdit, onDelete, onToggleCompleted, onViewDetails }) {
   const category = CATEGORIES[ev.category || ev.cat] || CATEGORIES.recordatorio;
-  const isPast = new Date(ev.date) < new Date(new Date().setHours(0, 0, 0, 0));
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const eventDate = parseLocalDate(ev.date);
+  eventDate.setHours(0, 0, 0, 0);
+  const isPast = eventDate < today;
+  const isCompleted = ev.completed === true || ev.completed === 1;
 
   return (
-    <div className={`group flex items-start gap-4 p-5 sm:p-6 border-b-2 last:border-0 border-slate-200 hover:bg-gradient-to-r hover:from-violet-50/50 hover:to-indigo-50/50 transition-all duration-200 ${isPast ? "opacity-75" : ""}`}>
+    <div 
+      className={`group flex items-start gap-4 p-5 sm:p-6 border-b-2 last:border-0 border-slate-200 hover:bg-gradient-to-r hover:from-violet-50/50 hover:to-indigo-50/50 transition-all duration-200 cursor-pointer ${isPast && !isCompleted ? "opacity-75" : ""} ${isCompleted ? "bg-gradient-to-r from-emerald-50/30 to-teal-50/30" : ""}`}
+      onClick={() => onViewDetails && onViewDetails(ev)}
+    >
       <DatePill date={ev.date} />
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-2">
-              <h4 className="font-extrabold text-slate-900 text-lg">{ev.title}</h4>
-              {isPast && (
+              <h4 className={`font-extrabold text-lg ${isCompleted ? "line-through text-slate-500" : "text-slate-900"}`}>{ev.title}</h4>
+              {isPast && !isCompleted && (
                 <Chip className="bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 border-2 border-slate-300 font-bold">
                   <Clock className="size-3.5" /> Pasado
+                </Chip>
+              )}
+              {isCompleted && (
+                <Chip className="bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border-2 border-emerald-300 font-bold">
+                  <CheckCircle2 className="size-3.5" /> Realizado
                 </Chip>
               )}
             </div>
@@ -537,18 +584,41 @@ function EventItem({ ev, onEdit, onDelete }) {
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {onToggleCompleted && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleCompleted(ev.id, !isCompleted);
+                }}
+                className={`p-2.5 rounded-xl transition-all duration-200 opacity-0 group-hover:opacity-100 transform hover:scale-110 shadow-md hover:shadow-lg ring-2 ${
+                  isCompleted
+                    ? "bg-gradient-to-br from-emerald-100 to-teal-100 text-emerald-700 hover:from-emerald-500 hover:to-teal-600 hover:text-white ring-emerald-200 hover:ring-emerald-300"
+                    : "bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 hover:from-emerald-500 hover:to-teal-600 hover:text-white ring-transparent hover:ring-emerald-300"
+                }`}
+                title={isCompleted ? "Marcar como pendiente" : "Marcar como realizado"}
+              >
+                <CheckCircle2 className="size-4" />
+              </button>
+            )}
             {onEdit && (
               <button
-                onClick={() => onEdit(ev)}
-                className="p-2.5 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 hover:from-violet-500 hover:to-indigo-600 hover:text-white transition-all duration-200 opacity-0 group-hover:opacity-100 transform hover:scale-110 shadow-md hover:shadow-lg ring-2 ring-transparent hover:ring-violet-300"
-                title="Editar"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(ev);
+                }}
+                disabled={isCompleted}
+                className="p-2.5 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 hover:from-violet-500 hover:to-indigo-600 hover:text-white transition-all duration-200 opacity-0 group-hover:opacity-100 transform hover:scale-110 shadow-md hover:shadow-lg ring-2 ring-transparent hover:ring-violet-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={isCompleted ? "No se puede editar un recordatorio realizado" : "Editar"}
               >
                 <Edit2 className="size-4" />
               </button>
             )}
             {onDelete && (
               <button
-                onClick={() => onDelete(ev.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(ev.id);
+                }}
                 className="p-2.5 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 hover:from-rose-500 hover:to-red-600 hover:text-white transition-all duration-200 opacity-0 group-hover:opacity-100 transform hover:scale-110 shadow-md hover:shadow-lg ring-2 ring-transparent hover:ring-rose-300"
                 title="Eliminar"
               >
@@ -783,6 +853,194 @@ function NotificationModal({ open, onClose, type, title, message }) {
   );
 }
 
+/* Modal de Detalles del Recordatorio */
+function ReminderDetailsModal({ open, onClose, reminder, onEdit, onDelete, onToggleCompleted }) {
+  if (!open || !reminder) return null;
+  
+  const category = CATEGORIES[reminder.category || reminder.cat] || CATEGORIES.recordatorio;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const eventDate = parseLocalDate(reminder.date);
+  eventDate.setHours(0, 0, 0, 0);
+  const isPast = eventDate < today;
+  const isCompleted = reminder.completed === true || reminder.completed === 1;
+  
+  // Formatear fecha para mostrar
+  const d = parseLocalDate(reminder.date);
+  const fechaFormateada = d.toLocaleDateString("es-MX", { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  
+  const PRIORITIES = {
+    red: { name: "Alta", color: "bg-red-100 text-red-800 border-red-200" },
+    orange: { name: "Media-Alta", color: "bg-orange-100 text-orange-800 border-orange-200" },
+    amber: { name: "Media", color: "bg-amber-100 text-amber-800 border-amber-200" },
+    green: { name: "Baja", color: "bg-green-100 text-green-800 border-green-200" },
+    blue: { name: "Normal", color: "bg-blue-100 text-blue-800 border-blue-200" },
+    violet: { name: "Personal", color: "bg-violet-100 text-violet-800 border-violet-200" },
+  };
+  
+  const priority = PRIORITIES[reminder.priority] || PRIORITIES.blue;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-3xl shadow-2xl border-2 border-slate-200 max-w-2xl w-full z-[201] ring-4 ring-violet-100 max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="px-5 sm:px-6 py-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-white/20 ring-2 ring-white/30">
+                <CalendarIcon className="size-6" />
+              </div>
+              <h3 className="text-xl font-extrabold">Detalles del Recordatorio</h3>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl hover:bg-white/20 transition-all duration-200 hover:scale-110 active:scale-95 ring-2 ring-white/20 hover:ring-white/40"
+              aria-label="Cerrar"
+            >
+              <X className="size-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Body con scroll */}
+        <div className="px-5 sm:px-6 py-5 overflow-y-auto flex-1 min-h-0">
+          <div className="space-y-5">
+            {/* Fecha destacada */}
+            <div className="flex items-center gap-4">
+              <DatePill date={reminder.date} />
+              <div className="flex-1">
+                <div className="text-sm text-slate-500 font-medium mb-1">Fecha</div>
+                <div className="text-lg font-extrabold text-slate-900 capitalize">{fechaFormateada}</div>
+                {reminder.time && (
+                  <div className="flex items-center gap-2 mt-2 text-base text-slate-700 font-semibold">
+                    <Clock className="size-5 text-violet-600" />
+                    <span>{reminder.time}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Título */}
+            <div>
+              <div className="text-sm text-slate-500 font-medium mb-2">Título</div>
+              <h2 className={`text-2xl font-extrabold ${isCompleted ? "line-through text-slate-500" : "text-slate-900"}`}>
+                {reminder.title}
+              </h2>
+            </div>
+
+            {/* Descripción */}
+            {reminder.description && (
+              <div>
+                <div className="text-sm text-slate-500 font-medium mb-2">Descripción</div>
+                <p className="text-base text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
+                  {reminder.description}
+                </p>
+              </div>
+            )}
+
+            {/* Estado y categoría */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-sm text-slate-500 font-medium mb-2">Estado</div>
+                <div className="flex items-center gap-2">
+                  {isCompleted ? (
+                    <Chip className="bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border-2 border-emerald-300 font-bold">
+                      <CheckCircle2 className="size-4" /> Realizado
+                    </Chip>
+                  ) : isPast ? (
+                    <Chip className="bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 border-2 border-slate-300 font-bold">
+                      <Clock className="size-4" /> Pasado
+                    </Chip>
+                  ) : (
+                    <Chip className="bg-gradient-to-r from-violet-100 to-indigo-100 text-violet-700 border-2 border-violet-300 font-bold">
+                      <Clock className="size-4" /> Pendiente
+                    </Chip>
+                  )}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-500 font-medium mb-2">Categoría</div>
+                <Chip className={`${category.color} border-2 font-bold`}>
+                  <span className={`w-2.5 h-2.5 rounded-full ${category.dot} ring-2 ring-white`}></span>
+                  {category.name}
+                </Chip>
+              </div>
+            </div>
+
+            {/* Prioridad */}
+            <div>
+              <div className="text-sm text-slate-500 font-medium mb-2">Prioridad</div>
+              <Chip className={`${priority.color} border-2 font-bold`}>
+                {priority.name}
+              </Chip>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer con acciones */}
+        <div className="px-5 sm:px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-t-2 border-slate-200 shrink-0 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            {onToggleCompleted && (
+              <button
+                onClick={() => {
+                  onToggleCompleted(reminder.id, !isCompleted);
+                  onClose();
+                }}
+                className={`px-4 py-2.5 rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-100 ring-2 ${
+                  isCompleted
+                    ? "bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white ring-amber-200 hover:ring-amber-300"
+                    : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white ring-emerald-200 hover:ring-emerald-300"
+                }`}
+              >
+                <CheckCircle2 className="size-4 inline mr-2" />
+                {isCompleted ? "Marcar como Pendiente" : "Marcar como Realizado"}
+              </button>
+            )}
+            {onEdit && !isCompleted && (
+              <button
+                onClick={() => {
+                  onEdit(reminder);
+                  onClose();
+                }}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white font-bold shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-100 ring-2 ring-violet-200 hover:ring-violet-300"
+              >
+                <Edit2 className="size-4 inline mr-2" />
+                Editar
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {onDelete && (
+              <button
+                onClick={() => {
+                  onDelete(reminder.id);
+                  onClose();
+                }}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-bold shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-100 ring-2 ring-rose-200 hover:ring-rose-300"
+              >
+                <Trash2 className="size-4 inline mr-2" />
+                Eliminar
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="px-4 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 hover:bg-slate-50 font-bold transition-all duration-200 transform hover:scale-105 active:scale-100"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* =========================================================
    PÁGINA PRINCIPAL
 ========================================================= */
@@ -801,6 +1059,7 @@ export default function AgendaDashboard() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [confirmModal, setConfirmModal] = useState({ open: false, eventId: null });
   const [notificationModal, setNotificationModal] = useState({ open: false, type: "success", title: "", message: "" });
+  const [detailsModal, setDetailsModal] = useState({ open: false, reminder: null });
 
   // Cargar recordatorios personales
   useEffect(() => {
@@ -816,10 +1075,20 @@ export default function AgendaDashboard() {
         
         if (!alive) return;
         
-        const personalEvents = (personalRes.data?.data || []).map(e => ({
-          ...e,
-          type: "personal",
-        }));
+        const personalEvents = (personalRes.data?.data || []).map(e => {
+          // Normalizar fecha para evitar problemas de zona horaria
+          let normalizedDate = e.date;
+          if (normalizedDate && normalizedDate.includes('T')) {
+            normalizedDate = normalizedDate.split('T')[0];
+          }
+          
+          return {
+            ...e,
+            date: normalizedDate,
+            type: "personal",
+            completed: e.completed === 1 || e.completed === true,
+          };
+        });
         
         const gruposList = estudiantesRes.data?.grupos_asesor || [];
         setGrupos(Array.isArray(gruposList) ? gruposList : []);
@@ -839,8 +1108,8 @@ export default function AgendaDashboard() {
   // Ordenar por fecha (asc)
   const ordered = useMemo(
     () => [...events].sort((a, b) => {
-      const dateA = new Date(a.date + (a.time ? `T${a.time}` : "T00:00"));
-      const dateB = new Date(b.date + (b.time ? `T${b.time}` : "T00:00"));
+      const dateA = parseLocalDateTime(a.date, a.time);
+      const dateB = parseLocalDateTime(b.date, b.time);
       return dateA - dateB;
     }),
     [events]
@@ -875,33 +1144,77 @@ export default function AgendaDashboard() {
     setOpenModal(true);
   };
 
+  const handleViewDetails = (reminder) => {
+    setDetailsModal({ open: true, reminder });
+  };
+
   const handleSave = async (data, type, eventId) => {
     try {
       if (type === "personal") {
+        // Normalizar fecha para evitar problemas de zona horaria
+        const normalizedData = {
+          ...data,
+          date: data.date, // Ya viene en formato YYYY-MM-DD del input
+        };
+        
         if (eventId) {
           // Actualizar
-          await updateReminderPersonal(eventId, data);
-          setEvents(prev => prev.map(e => e.id === eventId ? { ...data, id: eventId, type: "personal" } : e));
+          await updateReminderPersonal(eventId, normalizedData);
+          setEvents(prev => prev.map(e => e.id === eventId ? { ...normalizedData, id: eventId, type: "personal", completed: e.completed || false } : e));
         } else {
           // Crear
-          const response = await createReminderPersonal(data);
-          setEvents(prev => [...prev, { ...response.data.data, type: "personal" }]);
+          const response = await createReminderPersonal(normalizedData);
+          const newEvent = response.data.data;
+          // Normalizar fecha del response
+          let normalizedDate = newEvent.date;
+          if (normalizedDate && normalizedDate.includes('T')) {
+            normalizedDate = normalizedDate.split('T')[0];
+          }
+          setEvents(prev => [...prev, { ...newEvent, date: normalizedDate, type: "personal", completed: false }]);
         }
       } else {
         // Para estudiantes
         await createReminderForStudents(data);
         // Recargar eventos personales (los de estudiantes no se muestran aquí)
         const response = await listRemindersPersonal();
-        const personalEvents = (response.data?.data || []).map(e => ({
-          ...e,
-          type: "personal",
-        }));
+        const personalEvents = (response.data?.data || []).map(e => {
+          let normalizedDate = e.date;
+          if (normalizedDate && normalizedDate.includes('T')) {
+            normalizedDate = normalizedDate.split('T')[0];
+          }
+          return {
+            ...e,
+            date: normalizedDate,
+            type: "personal",
+            completed: e.completed === 1 || e.completed === true,
+          };
+        });
         setEvents(personalEvents);
       }
       setOpenModal(false);
       setEventToEdit(null);
     } catch (err) {
       throw err;
+    }
+  };
+  
+  const handleToggleCompleted = async (id, completed) => {
+    try {
+      await updateReminderPersonal(id, { completed });
+      setEvents(prev => prev.map(e => e.id === id ? { ...e, completed } : e));
+      setNotificationModal({
+        open: true,
+        type: "success",
+        title: completed ? "Recordatorio marcado como realizado" : "Recordatorio marcado como pendiente",
+        message: completed ? "El recordatorio ha sido marcado como realizado" : "El recordatorio ha sido marcado como pendiente"
+      });
+    } catch (err) {
+      setNotificationModal({
+        open: true,
+        type: "error",
+        title: "Error",
+        message: err?.response?.data?.message || "Error al actualizar el recordatorio"
+      });
     }
   };
 
@@ -931,7 +1244,61 @@ export default function AgendaDashboard() {
     }
   };
 
-  const upcomingEvents = filteredEvents.filter((e) => new Date(e.date) >= new Date(new Date().setHours(0, 0, 0, 0)));
+  // Marcar automáticamente como realizado los recordatorios pasados
+  useEffect(() => {
+    if (events.length === 0) return;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    
+    const toMarkAsCompleted = events.filter(e => {
+      if (e.completed) return false; // Ya está marcado como realizado
+      
+      const eventDate = parseLocalDate(e.date);
+      eventDate.setHours(0, 0, 0, 0);
+      
+      if (eventDate < today) {
+        // Fecha pasada, marcar como realizado
+        return true;
+      } else if (eventDate.getTime() === today.getTime() && e.time) {
+        // Misma fecha, verificar si la hora ya pasó
+        const eventDateTime = parseLocalDateTime(e.date, e.time);
+        return eventDateTime < now;
+      }
+      
+      return false;
+    });
+    
+    // Marcar como realizado en lote (solo si hay recordatorios para marcar)
+    if (toMarkAsCompleted.length > 0) {
+      const idsToMark = toMarkAsCompleted.map(e => e.id);
+      Promise.all(
+        toMarkAsCompleted.map(e => 
+          updateReminderPersonal(e.id, { completed: true }).catch(err => {
+            console.error('Error marcando recordatorio como realizado:', err);
+            return null;
+          })
+        )
+      ).then(() => {
+        // Actualizar estado local solo una vez
+        setEvents(prev => prev.map(e => {
+          if (idsToMark.includes(e.id) && !e.completed) {
+            return { ...e, completed: true };
+          }
+          return e;
+        }));
+      });
+    }
+  }, [loading]); // Solo ejecutar cuando termina la carga inicial
+
+  const upcomingEvents = filteredEvents.filter((e) => {
+    const eventDate = parseLocalDate(e.date);
+    eventDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return eventDate >= today && !e.completed;
+  });
 
   if (loading) {
     return (
@@ -1060,6 +1427,8 @@ export default function AgendaDashboard() {
                     ev={ev}
                     onEdit={openEdit}
                     onDelete={handleDelete}
+                    onToggleCompleted={handleToggleCompleted}
+                    onViewDetails={handleViewDetails}
                   />
                 ))
               )}
@@ -1112,6 +1481,16 @@ export default function AgendaDashboard() {
         type={notificationModal.type}
         title={notificationModal.title}
         message={notificationModal.message}
+      />
+
+      {/* MODAL DE DETALLES */}
+      <ReminderDetailsModal
+        open={detailsModal.open}
+        onClose={() => setDetailsModal({ open: false, reminder: null })}
+        reminder={detailsModal.reminder}
+        onEdit={openEdit}
+        onDelete={handleDelete}
+        onToggleCompleted={handleToggleCompleted}
       />
     </div>
   );

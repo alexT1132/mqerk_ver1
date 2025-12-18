@@ -59,7 +59,7 @@ export default function FeedbackDetail({ embedded = false }) {
   };
 
   const content = (
-    <div className="w-full min-h-screen bg-transparent overflow-x-visible">
+    <div className="w-full min-h-screen bg-transparent overflow-x-hidden">
       {/* Header band - Ocupa todo el ancho correctamente sin márgenes negativos */}
       <header className="relative isolate overflow-hidden bg-white border-b border-slate-200 shadow-sm w-full">
         {/* Contenedor interno con padding para el contenido */}

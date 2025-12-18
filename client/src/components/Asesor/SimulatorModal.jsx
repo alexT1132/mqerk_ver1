@@ -307,80 +307,95 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
 
         {/* Footer */}
         <div className="flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/50 px-4 py-3 flex-shrink-0">
-          <button
-            onClick={() => (step === 1 ? onClose?.() : setStep(1))}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
-          >
-            {step === 1 ? (
-              <>
-                <X className="h-4 w-4" />
-                Cancelar
-              </>
-            ) : (
-              <>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all"
+            >
+              <X className="h-4 w-4" />
+              Cancelar
+            </button>
+            {step > 1 && (
+              <button
+                onClick={() => setStep(1)}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 <ArrowLeft className="h-4 w-4" />
                 Atrás
-              </>
+              </button>
             )}
-          </button>
+          </div>
 
-          {step === 1 ? (
+          <div className="flex items-center gap-2">
             <button
-              disabled={!canNext}
-              onClick={() => setStep(2)}
-              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+              onClick={onClose}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all"
             >
-              Siguiente
-              <ArrowRight className="h-4 w-4" />
+              <X className="h-4 w-4" />
+              Cancelar
             </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              {mode === 'edit' && onEditQuestions && (
+            
+            {step === 1 ? (
+              <button
+                disabled={!canNext}
+                onClick={() => setStep(2)}
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+              >
+                Siguiente
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            ) : (
+              <>
+                {mode === 'edit' && onEditQuestions && (
+                  <button
+                    disabled={!canCreate || loading}
+                    onClick={async () => {
+                      await handleSubmit(true); // No cerrar el modal todavía
+                      onClose?.(); // Cerrar después de guardar
+                      // Pequeño delay para asegurar que el guardado se complete
+                      setTimeout(() => {
+                        onEditQuestions?.();
+                      }, 100);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    title="Guardar cambios y editar preguntas"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        Guardar y editar preguntas
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
+                  </button>
+                )}
                 <button
                   disabled={!canCreate || loading}
-                  onClick={async () => {
-                    await handleSubmit(true); // No cerrar el modal todavía
-                    onClose?.(); // Cerrar después de guardar
-                    // Pequeño delay para asegurar que el guardado se complete
-                    setTimeout(() => {
-                      onEditQuestions?.();
-                    }, 100);
-                  }}
-                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                  title="Guardar cambios y editar preguntas"
+                  onClick={handleSubmit}
+                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                 >
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Guardando...
+                      {mode === 'edit' ? 'Guardando...' : 'Creando...'}
                     </>
                   ) : (
                     <>
-                      Guardar y editar preguntas
-                      <ArrowRight className="h-4 w-4" />
+                      {mode === 'edit' ? 'Guardar cambios' : 'Crear simulador'}
+                      <Check className="h-4 w-4" />
                     </>
                   )}
                 </button>
-              )}
-              <button
-                disabled={!canCreate || loading}
-                onClick={handleSubmit}
-                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {mode === 'edit' ? 'Guardando...' : 'Creando...'}
-                  </>
-                ) : (
-                  <>
-                    {mode === 'edit' ? 'Guardar cambios' : 'Crear simulador'}
-                    <Check className="h-4 w-4" />
-                  </>
-                )}
-              </button>
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

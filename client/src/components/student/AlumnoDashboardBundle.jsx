@@ -7,6 +7,7 @@ import { AlumnoLayout } from '../layouts/AlumnoLayout.jsx';
 import { Header_Alumno_comp } from '../layouts/Header_Alumno_comp.jsx';
 import { useStudent } from '../../context/StudentContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { StudentNotificationProvider } from '../../context/StudentNotificationContext.jsx';
 
 // Componentes de páginas
 import Profile_Alumno_comp from './Profile_Alumno_Comp.jsx';
@@ -40,7 +41,9 @@ import { CourseProvider } from '../../context/CourseContext.jsx';
 export function AlumnoDashboardBundle() {
   return (
     <CourseProvider>
-      <StudentAwareLayout />
+      <StudentNotificationProvider>
+        <StudentAwareLayout />
+      </StudentNotificationProvider>
     </CourseProvider>
   );
 }

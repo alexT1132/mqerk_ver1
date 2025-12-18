@@ -57,7 +57,7 @@ export default function CursoBienvenida() {
   }, [nombreCurso]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 w-full overflow-x-visible">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 w-full overflow-x-hidden">
       {/* Header mejorado */}
       <header className="relative w-full bg-gradient-to-r from-violet-100/50 via-indigo-100/50 to-purple-100/50 border-b-2 border-violet-200 shadow-lg backdrop-blur-sm">
         <div className="w-full pl-4 sm:pl-6 md:pl-8 lg:pl-12 pr-4 sm:pr-6 md:pr-8 lg:pr-12 py-8 sm:py-10 lg:py-12">

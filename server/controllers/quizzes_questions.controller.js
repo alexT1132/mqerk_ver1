@@ -247,7 +247,8 @@ export const getReviewQuizIntento = async (req, res) => {
     const detalle = preguntasOut.map((p) => {
       const resps = respuestas.filter((r) => r.id_pregunta === p.id);
       const seleccionadas = resps.map((r) => r.id_opcion).filter(Boolean);
-      const valor_texto = resps.find((r) => r.valor_texto)?.valor_texto || null;
+      const respuestaCorta = resps.find((r) => r.valor_texto) || null;
+      const valor_texto = respuestaCorta?.valor_texto || null;
       const tiempo_ms = resps.reduce((s, r) => s + (Number(r.tiempo_ms || 0)), 0) || null;
       const correctasIds = (p.opciones || []).filter((o) => o.es_correcta === 1).map((o) => o.id);
       // Flag correcta: usar columna correcta en respuestas si existe, de lo contrario comparar conjuntos
@@ -261,7 +262,9 @@ export const getReviewQuizIntento = async (req, res) => {
           correcta = seleccionadas.length === 1 && correctasIds.includes(seleccionadas[0]);
         }
       }
-      return {
+      
+      // Para respuestas cortas, incluir campos de calificación desde la respuesta
+      const respuestaObj = {
         id: p.id,
         orden: p.orden,
         enunciado: p.enunciado,
@@ -273,6 +276,18 @@ export const getReviewQuizIntento = async (req, res) => {
         correcta,
         tiempo_ms,
       };
+      
+      // Si es respuesta corta y tenemos la respuesta con calificación, incluir campos adicionales
+      if (p.tipo === 'respuesta_corta' && respuestaCorta) {
+        respuestaObj.id_respuesta = respuestaCorta.id; // ID de la respuesta en la BD
+        respuestaObj.calificacion_status = respuestaCorta.calificacion_status || 'pending';
+        respuestaObj.calificacion_metodo = respuestaCorta.calificacion_metodo || null;
+        respuestaObj.calificacion_confianza = respuestaCorta.calificacion_confianza != null ? Number(respuestaCorta.calificacion_confianza) : null;
+        respuestaObj.revisada_por = respuestaCorta.revisada_por || null;
+        respuestaObj.notas_revision = respuestaCorta.notas_revision || null;
+      }
+      
+      return respuestaObj;
     });
 
     // Resumen del intento (de quizzes_intentos) para ese intento_num

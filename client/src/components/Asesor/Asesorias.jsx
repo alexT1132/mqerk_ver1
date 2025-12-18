@@ -800,7 +800,13 @@ function DetalleSesion({ s, onReprogramar, onMarcarRealizada }) {
         >
           {s._confirmacionEstado === 'pendiente' ? 'Solicitud Pendiente' : s._confirmacionEstado === 'confirmada' ? 'Ya Confirmada' : 'Marcar como realizada'}
         </button>
-        <button className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 transition-colors">Cancelar</button>
+        <button 
+          disabled={s._confirmacionEstado === 'confirmada'}
+          className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title={s._confirmacionEstado === 'confirmada' ? 'No se puede cancelar: la asesoría ya fue confirmada como realizada' : ''}
+        >
+          Cancelar
+        </button>
       </div>
     </div>
   );

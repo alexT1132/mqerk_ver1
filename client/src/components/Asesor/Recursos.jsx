@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Download, Eye, Trash2, UploadCloud, Search, FileText, File, Video, Image, Archive, FileEdit, X, Save, Loader2, Tag, Plus, CheckCircle, GraduationCap, Shield } from 'lucide-react';
+import { Download, Eye, Trash2, UploadCloud, Search, FileText, File, Video, Image, Archive, FileEdit, X, Save, Loader2, Tag, Plus, CheckCircle, GraduationCap, Shield, Link as LinkIcon, Presentation, FileType } from 'lucide-react';
 import { 
   listRecursos, createRecurso, updateRecurso, deleteRecurso, downloadRecurso,
   listRecursosAdmin, downloadRecursoAdmin
@@ -13,6 +13,10 @@ const getFileIcon = (type) => {
   if (type === 'VIDEO') return <Video className="size-8 text-purple-500" />;
   if (type === 'IMAGE') return <Image className="size-8 text-green-500" />;
   if (type === 'ZIP') return <Archive className="size-8 text-amber-500" />;
+  if (type === 'DOC') return <FileType className="size-8 text-blue-500" />;
+  if (type === 'PPT') return <Presentation className="size-8 text-orange-500" />;
+  if (type === 'XLS') return <FileText className="size-8 text-green-600" />;
+  if (type === 'LINK') return <LinkIcon className="size-8 text-indigo-500" />;
   return <File className="size-8 text-slate-500" />;
 };
 
@@ -22,6 +26,10 @@ const getFileBorderColor = (type) => {
   if (type === 'VIDEO') return 'border-purple-300';
   if (type === 'IMAGE') return 'border-green-300';
   if (type === 'ZIP') return 'border-amber-300';
+  if (type === 'DOC') return 'border-blue-300';
+  if (type === 'PPT') return 'border-orange-300';
+  if (type === 'XLS') return 'border-green-400';
+  if (type === 'LINK') return 'border-indigo-300';
   return 'border-slate-300';
 };
 
@@ -62,6 +70,32 @@ const buildFileUrl = (resource) => {
   return normalized.startsWith('/') ? normalized : `/${normalized}`;
 };
 
+// Helper para extraer ID de video de YouTube
+const getYouTubeVideoId = (url) => {
+  if (!url) return null;
+  
+  // Diferentes formatos de URLs de YouTube
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)/,
+    /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  
+  return null;
+};
+
+// Helper para verificar si es un enlace de YouTube
+const isYouTubeUrl = (url) => {
+  if (!url) return false;
+  return /youtube\.com|youtu\.be/.test(url);
+};
+
 export default function Recursos() {
   const [activeTab, setActiveTab] = useState('asesor'); // 'asesor' | 'admin'
   const [resources, setResources] = useState([]);
@@ -77,6 +111,8 @@ export default function Recursos() {
   const [newTag, setNewTag] = useState('');
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' });
   const [successMessage, setSuccessMessage] = useState('');
+  const [linkModal, setLinkModal] = useState({ isOpen: false, title: '', description: '', linkUrl: '', tags: [] });
+  const [newLinkTag, setNewLinkTag] = useState('');
 
   // Cargar recursos según el tab activo
   useEffect(() => {
@@ -167,6 +203,7 @@ export default function Recursos() {
       formData.append('title', file.name.replace(/\.[^/.]+$/, ''));
       formData.append('description', '');
       formData.append('tags', JSON.stringify([]));
+      formData.append('resource_type', 'file');
 
       // Solo se puede subir en "Mis Recursos" (asesor)
       if (activeTab !== 'asesor') {
@@ -188,6 +225,89 @@ export default function Recursos() {
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
       setError(err?.response?.data?.message || 'Error subiendo archivo');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Abrir modal de enlace
+  const openLinkModal = () => {
+    setLinkModal({ isOpen: true, title: '', description: '', linkUrl: '', tags: [] });
+    setNewLinkTag('');
+  };
+
+  // Cerrar modal de enlace
+  const closeLinkModal = () => {
+    setLinkModal({ isOpen: false, title: '', description: '', linkUrl: '', tags: [] });
+    setNewLinkTag('');
+  };
+
+  // Agregar tag al modal de enlace
+  const addLinkTag = () => {
+    if (!newLinkTag.trim()) return;
+    const tag = newLinkTag.trim();
+    if (linkModal.tags.includes(tag)) return;
+    setLinkModal(prev => ({ ...prev, tags: [...prev.tags, tag] }));
+    setNewLinkTag('');
+  };
+
+  // Eliminar tag del modal de enlace
+  const removeLinkTag = (tag) => {
+    setLinkModal(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
+  };
+
+  // Subir enlace
+  const handleLinkSubmit = async () => {
+    if (!linkModal.title.trim()) {
+      setError('El título es obligatorio');
+      return;
+    }
+    if (!linkModal.linkUrl.trim()) {
+      setError('La URL es obligatoria');
+      return;
+    }
+
+    // Validar URL
+    try {
+      const url = new URL(linkModal.linkUrl);
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        setError('La URL debe comenzar con http:// o https://');
+        return;
+      }
+    } catch {
+      setError('URL inválida');
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+    setSuccessMessage('');
+
+    try {
+      const formData = new FormData();
+      formData.append('title', linkModal.title.trim());
+      formData.append('description', linkModal.description.trim() || '');
+      formData.append('link_url', linkModal.linkUrl.trim());
+      formData.append('resource_type', 'link');
+      formData.append('tags', JSON.stringify(linkModal.tags));
+
+      // Solo se puede subir en "Mis Recursos" (asesor)
+      if (activeTab !== 'asesor') {
+        setError('Solo puedes subir enlaces en "Mis Recursos"');
+        setUploading(false);
+        return;
+      }
+
+      const response = await createRecurso(formData);
+
+      setResources(prev => [response.data.data, ...prev]);
+      setSuccessMessage(`Enlace "${linkModal.title}" agregado correctamente`);
+      closeLinkModal();
+      
+      // Ocultar mensaje de éxito después de 3 segundos
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Error agregando enlace');
     } finally {
       setUploading(false);
     }
@@ -263,9 +383,16 @@ export default function Recursos() {
     });
   };
 
-  // Descargar recurso
-  const handleDownload = async (id, fileName) => {
+  // Descargar recurso o abrir enlace
+  const handleDownload = async (id, fileName, resourceType, linkUrl) => {
     try {
+      // Si es un enlace, abrirlo en nueva pestaña
+      if (resourceType === 'link' && linkUrl) {
+        window.open(linkUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      // Si es un archivo, descargarlo
       let response;
       if (activeTab === 'asesor') {
         response = await downloadRecurso(id);
@@ -407,22 +534,32 @@ export default function Recursos() {
         {/* Acciones principales */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Solo mostrar botón de subir en "Mis Recursos" */}
+            {/* Solo mostrar botones de subir en "Mis Recursos" */}
             {activeTab === 'asesor' && (
-              <label className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer">
-                {uploading ? (
-                  <>
-                    <Loader2 className="size-5 animate-spin" />
-                    <span>Subiendo...</span>
-                  </>
-                ) : (
-                  <>
-                    <UploadCloud className="size-5" />
-                    <span>Subir archivo</span>
-                  </>
-                )}
-                <input type="file" onChange={handleUpload} className="hidden" disabled={uploading} />
-              </label>
+              <>
+                <label className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer">
+                  {uploading ? (
+                    <>
+                      <Loader2 className="size-5 animate-spin" />
+                      <span>Subiendo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className="size-5" />
+                      <span>Subir archivo</span>
+                    </>
+                  )}
+                  <input type="file" onChange={handleUpload} className="hidden" disabled={uploading} />
+                </label>
+                <button
+                  onClick={openLinkModal}
+                  disabled={uploading}
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <LinkIcon className="size-5" />
+                  <span>Agregar enlace</span>
+                </button>
+              </>
             )}
 
             {selected.size > 0 && activeTab !== 'admin' && (
@@ -500,9 +637,13 @@ export default function Recursos() {
             >
               <option value="ALL">Todos</option>
               <option value="PDF">PDF</option>
+              <option value="DOC">Word</option>
+              <option value="PPT">PowerPoint</option>
+              <option value="XLS">Excel</option>
               <option value="VIDEO">Video</option>
               <option value="IMAGE">Imagen</option>
               <option value="ZIP">Archivo comprimido</option>
+              <option value="LINK">Enlace</option>
               <option value="FILE">Otros</option>
             </select>
 
@@ -559,7 +700,7 @@ export default function Recursos() {
                         </h3>
                       )}
                       <p className="text-xs text-slate-500 mt-1">
-                        {r.file_type_display} • {r.file_size_mb} MB
+                        {r.file_type_display} {r.file_size_mb ? `• ${r.file_size_mb} MB` : r.resource_type === 'link' ? '• Enlace externo' : ''}
                       </p>
                     </div>
                   </div>
@@ -580,11 +721,11 @@ export default function Recursos() {
                         <Eye className="size-4" />
                       </button>
                       <button
-                        onClick={() => handleDownload(r.id, r.file_name)}
+                        onClick={() => handleDownload(r.id, r.file_name, r.resource_type, r.link_url)}
                         className="p-2 rounded-xl bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-600 transition-all duration-200 shadow-sm hover:shadow-md"
-                        title="Descargar"
+                        title={r.resource_type === 'link' ? 'Abrir enlace' : 'Descargar'}
                       >
-                        <Download className="size-4" />
+                        {r.resource_type === 'link' ? <LinkIcon className="size-4" /> : <Download className="size-4" />}
                       </button>
                       {editing === r.id ? (
                         <>
@@ -723,15 +864,26 @@ export default function Recursos() {
               <div className="px-5 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between shrink-0 shadow-lg">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-bold truncate">{preview.title}</h3>
-                  <p className="text-xs text-white/90 font-medium mt-1">{preview.file_type_display} • {preview.file_size_mb} MB</p>
+                  <p className="text-xs text-white/90 font-medium mt-1">
+                    {preview.file_type_display} {preview.file_size_mb ? `• ${preview.file_size_mb} MB` : preview.resource_type === 'link' ? '• Enlace externo' : ''}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
                   <button
-                    onClick={() => handleDownload(preview.id, preview.file_name)}
+                    onClick={() => handleDownload(preview.id, preview.file_name, preview.resource_type, preview.link_url)}
                     className="px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 shadow-md hover:shadow-lg"
                   >
-                    <Download className="size-4" />
-                    Descargar
+                    {preview.resource_type === 'link' ? (
+                      <>
+                        <LinkIcon className="size-4" />
+                        Abrir enlace
+                      </>
+                    ) : (
+                      <>
+                        <Download className="size-4" />
+                        Descargar
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={() => setPreview(null)}
@@ -744,7 +896,50 @@ export default function Recursos() {
 
               {/* Contenido del preview */}
               <div className="flex-1 overflow-auto p-4 bg-white">
-                {preview.file_type_display === 'PDF' ? (
+                {preview.resource_type === 'link' ? (
+                  isYouTubeUrl(preview.link_url) ? (
+                    <div className="w-full">
+                      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                        <iframe
+                          src={`https://www.youtube.com/embed/${getYouTubeVideoId(preview.link_url)}`}
+                          title={preview.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="absolute top-0 left-0 w-full h-full rounded-lg border-2 border-slate-200"
+                        />
+                      </div>
+                      <div className="mt-4 flex items-center justify-center gap-3">
+                        <a
+                          href={preview.link_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-800 underline text-sm"
+                        >
+                          Ver en YouTube
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-48 text-slate-500">
+                      <LinkIcon className="size-12 mb-3 text-indigo-500" />
+                      <p className="text-base font-medium mb-2">Enlace externo</p>
+                      <a
+                        href={preview.link_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:text-indigo-800 underline break-all text-sm max-w-full px-4 text-center"
+                      >
+                        {preview.link_url}
+                      </a>
+                      <button
+                        onClick={() => window.open(preview.link_url, '_blank', 'noopener,noreferrer')}
+                        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                      >
+                        Abrir enlace
+                      </button>
+                    </div>
+                  )
+                ) : preview.file_type_display === 'PDF' ? (
                   <iframe
                     allowFullScreen
                     src={buildFileUrl(preview)}
@@ -815,6 +1010,134 @@ export default function Recursos() {
           onConfirm={confirmModal.onConfirm}
           onCancel={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' })}
         />
+
+        {/* Modal de agregar enlace */}
+        {linkModal.isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={closeLinkModal}>
+            <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col border-2 border-slate-200 ring-4 ring-violet-100" onClick={e => e.stopPropagation()}>
+              {/* Header del modal */}
+              <div className="px-5 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between shrink-0 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <LinkIcon className="size-6" />
+                  <h3 className="text-lg font-bold">Agregar enlace</h3>
+                </div>
+                <button
+                  onClick={closeLinkModal}
+                  className="p-2 rounded-xl hover:bg-white/20 transition-all duration-200 ring-2 ring-white/20 hover:ring-white/40"
+                >
+                  <X className="size-5 text-white" />
+                </button>
+              </div>
+
+              {/* Contenido del modal */}
+              <div className="flex-1 overflow-auto p-6 bg-white space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Título <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={linkModal.title}
+                    onChange={e => setLinkModal(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Ej: Tutorial de YouTube"
+                    className="w-full px-4 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    URL <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={linkModal.linkUrl}
+                    onChange={e => setLinkModal(prev => ({ ...prev, linkUrl: e.target.value }))}
+                    placeholder="https://ejemplo.com"
+                    className="w-full px-4 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Descripción (opcional)
+                  </label>
+                  <textarea
+                    value={linkModal.description}
+                    onChange={e => setLinkModal(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Descripción del enlace..."
+                    rows={3}
+                    className="w-full px-4 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Etiquetas
+                  </label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {linkModal.tags.map(tag => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-3 py-1 text-xs rounded-full bg-violet-100 text-violet-700 border border-violet-200"
+                      >
+                        {tag}
+                        <button
+                          onClick={() => removeLinkTag(tag)}
+                          className="hover:text-violet-900"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newLinkTag}
+                      onChange={e => setNewLinkTag(e.target.value)}
+                      onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addLinkTag())}
+                      placeholder="Agregar etiqueta"
+                      className="flex-1 px-4 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+                    />
+                    <button
+                      onClick={addLinkTag}
+                      className="px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors"
+                    >
+                      <Plus className="size-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer del modal */}
+              <div className="px-5 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0">
+                <button
+                  onClick={closeLinkModal}
+                  className="px-5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleLinkSubmit}
+                  disabled={uploading || !linkModal.title.trim() || !linkModal.linkUrl.trim()}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" />
+                      <span>Agregando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LinkIcon className="size-4" />
+                      <span>Agregar enlace</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

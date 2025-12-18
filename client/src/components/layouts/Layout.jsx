@@ -115,7 +115,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
   );
 
   return (
-  <div className={`min-h-screen ${backgroundClassName} relative ${isAdminBienvenidaRoute ? 'overflow-hidden' : ''}`}>
+  <div className={`min-h-screen ${backgroundClassName} relative overflow-x-hidden ${isAdminBienvenidaRoute ? 'overflow-y-hidden' : ''}`}>
       {/* Header principal */}
       {HeaderComponent && (
         <HeaderComponent />
@@ -168,7 +168,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       {/* Contenido principal de la página */}
       <main
         className={
-          `relative z-10 pt-14 overflow-x-hidden ` +
+          `relative z-10 pt-14 overflow-x-hidden overflow-y-auto ` +
           (contentClassName && contentClassName.includes('px-0') 
             ? '' 
             : 'px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8') +

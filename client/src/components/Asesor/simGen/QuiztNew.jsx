@@ -6,6 +6,7 @@ import { areaIdFromName } from "../../../api/actividades";
 import InlineMath from './InlineMath.jsx';
 import MathExamplesHint from './MathExamplesHint.jsx';
 import MathPalette, { Modal, FormulaEditModal } from './MathPalette.jsx';
+import RichTextEditor from './RichTextEditor.jsx';
 import { AIFormulaModal } from './AIFormulaModal.jsx';
 import { useLocation } from "react-router-dom";
 import { useAlert } from '../../../components/shared/AlertModal.jsx';
@@ -107,9 +108,9 @@ function MathText({ text = "", onFormulaClick }) {
       }
 
       return (
-        <div key={lineIndex} className="flex items-start gap-2 py-1">
+        <div key={lineIndex} className="flex items-start gap-2 py-0.5 leading-relaxed">
           <span className="text-slate-600 font-bold mt-0.5 flex-shrink-0">{bullet.replace(/\d+\./, (m) => m + ' ')}</span>
-          <span className="flex-1">
+          <span className="flex-1" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
             {contentParts.map((p, i) =>
               p.m ? (
                 <span
@@ -123,13 +124,13 @@ function MathText({ text = "", onFormulaClick }) {
                       handleFormulaClick(p.m, p.full, 0, 0);
                     }
                   }}
-                  className={onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors inline-block" : ""}
+                  className={onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors inline-block" : "inline-block"}
                   title={onFormulaClick ? "Clic para editar esta fórmula" : ""}
                 >
                   <InlineMath math={p.m} />
                 </span>
               ) : (
-                <span key={i}>{p.t}</span>
+                <span key={i} className="whitespace-pre-wrap inline">{p.t || ' '}</span>
               )
             )}
           </span>
@@ -139,19 +140,19 @@ function MathText({ text = "", onFormulaClick }) {
 
     // Línea normal con fórmulas
     return (
-      <div key={lineIndex} className="py-1">
+      <div key={lineIndex} className="py-0.5 leading-relaxed">
         {lineParts.map((p, i) =>
           p.m ? (
             <span
               key={i}
               onClick={() => onFormulaClick && handleFormulaClick(p.m, p.full, p.start, p.end)}
-              className={onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors inline-block" : ""}
+              className={onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors inline-block" : "inline-block"}
               title={onFormulaClick ? "Clic para editar esta fórmula" : ""}
             >
               <InlineMath math={p.m} />
             </span>
           ) : (
-            <span key={i} className="whitespace-pre-wrap">{p.t}</span>
+            <span key={i} className="whitespace-pre-wrap inline">{p.t || ' '}</span>
           )
         )}
       </div>
@@ -216,7 +217,11 @@ function MathText({ text = "", onFormulaClick }) {
     return renderLine(lineParts, lineIndex);
   });
 
-  return <div className="whitespace-pre-wrap">{processedLines}</div>;
+  return (
+    <div className="whitespace-pre-wrap leading-relaxed" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+      {processedLines}
+    </div>
+  );
 }
 
 /* ----------------------------- Image Picker ------------------------------ */
@@ -386,15 +391,15 @@ function OptionRow({ option, optionIndex = 0, optionLabel = 'a', onChange, onRem
 
   return (
     <div className={`flex flex-col gap-4 rounded-xl border-2 p-5 transition-all duration-200 ${option.correct
-        ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 shadow-lg ring-2 ring-emerald-200/50'
-        : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+      ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 shadow-lg ring-2 ring-emerald-200/50'
+      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
       }`}>
       <div className="flex items-start gap-3">
         {/* Etiqueta de opción (a, b, c, ...) */}
         <div className="flex-shrink-0 mt-1">
           <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg font-bold text-sm border-2 ${option.correct
-              ? 'border-emerald-500 bg-emerald-100 text-emerald-700'
-              : 'border-slate-300 bg-slate-100 text-slate-600'
+            ? 'border-emerald-500 bg-emerald-100 text-emerald-700'
+            : 'border-slate-300 bg-slate-100 text-slate-600'
             }`}>
             {optionLabel})
           </span>
@@ -434,8 +439,8 @@ function OptionRow({ option, optionIndex = 0, optionLabel = 'a', onChange, onRem
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setAiModalOpen(true); }}
                 className={`grid h-9 w-9 place-items-center rounded-xl border-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-110 active:scale-95 ${option.correct
-                    ? 'border-indigo-300 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-500'
-                    : 'border-indigo-300 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-500'
+                  ? 'border-indigo-300 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-500'
+                  : 'border-indigo-300 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-500'
                   }`}
                 title="Generar fórmula con IA"
                 aria-label="Generar fórmula con IA"
@@ -449,8 +454,8 @@ function OptionRow({ option, optionIndex = 0, optionLabel = 'a', onChange, onRem
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setPaletteOpen(true); }}
                 className={`grid h-9 w-9 place-items-center rounded-xl border-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-110 active:scale-95 ${option.correct
-                    ? 'border-emerald-300 bg-gradient-to-br from-emerald-50 to-green-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-500'
-                    : 'border-violet-300 bg-gradient-to-br from-violet-50 to-indigo-50 text-violet-700 hover:bg-violet-100 hover:border-violet-500'
+                  ? 'border-emerald-300 bg-gradient-to-br from-emerald-50 to-green-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-500'
+                  : 'border-violet-300 bg-gradient-to-br from-violet-50 to-indigo-50 text-violet-700 hover:bg-violet-100 hover:border-violet-500'
                   }`}
                 title="Insertar fórmula matemática"
                 aria-label="Insertar fórmula"
@@ -466,8 +471,8 @@ function OptionRow({ option, optionIndex = 0, optionLabel = 'a', onChange, onRem
           {/* Vista previa renderizada siempre visible y destacada */}
           {hasMath && option.text && (
             <div className={`mt-3 rounded-xl border-2 p-4 shadow-sm ${option.correct
-                ? 'border-emerald-300 bg-gradient-to-br from-emerald-50 to-green-50'
-                : 'border-violet-300 bg-gradient-to-br from-violet-50 to-indigo-50'
+              ? 'border-emerald-300 bg-gradient-to-br from-emerald-50 to-green-50'
+              : 'border-violet-300 bg-gradient-to-br from-violet-50 to-indigo-50'
               }`}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -708,93 +713,21 @@ function QuestionCard({ q, onChange, onRemove }) {
         </div>
       </div>
 
-      {/* Enunciado - Textarea siempre visible + preview cuando hay fórmulas */}
+      {/* Enunciado - RichTextEditor con fórmulas protegidas */}
       <div>
-        <label className="block text-sm font-bold text-slate-700 mb-2">
-          Enunciado de la pregunta <span className="text-rose-500 font-bold">*</span>
-        </label>
+        <RichTextEditor
+          value={q.text}
+          onChange={(newText) => onChange({ ...q, text: newText })}
+          placeholder="Escribe la consigna de la pregunta… Puedes usar fórmulas matemáticas con los botones.
 
-        {/* Textarea siempre visible para poder seguir editando */}
-        <div className="relative">
-          <textarea
-            ref={textareaRef}
-            rows={5}
-            value={q.text}
-            onChange={(e) => onChange({ ...q, text: e.target.value })}
-            placeholder="Escribe la consigna de la pregunta… Puedes usar fórmulas matemáticas con los botones.&#10;&#10;Tips:&#10;• Puedes usar Enter para saltos de línea&#10;• Usa viñetas: - texto o * texto o 1. texto&#10;• Inserta fórmulas: $x^2$, $\sqrt{2}$, etc."
-            className="w-full rounded-xl border-2 border-slate-300 px-4 py-3 pr-28 text-sm focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 resize-y hover:border-violet-400 bg-white font-mono leading-relaxed"
-            style={{ whiteSpace: 'pre-wrap' }}
-          />
-          {/* Botones de herramientas */}
-          <div className="absolute right-3 top-3 flex gap-2">
-            {/* Botón IA (generar fórmula con IA) */}
-            <button
-              type="button"
-              onClick={() => setAiModalOpen(true)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border-2 border-indigo-300 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-700 hover:border-indigo-500 hover:bg-gradient-to-br hover:from-indigo-100 hover:to-purple-100 hover:text-indigo-800 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-110 active:scale-95"
-              title="Generar fórmula con IA"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            {/* Botón calculadora (abre paleta) */}
-            <button
-              type="button"
-              onClick={() => setPaletteOpen(true)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border-2 border-violet-300 bg-gradient-to-br from-violet-50 to-indigo-50 text-violet-700 hover:border-violet-500 hover:bg-gradient-to-br hover:from-violet-100 hover:to-indigo-100 hover:text-violet-800 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-110 active:scale-95"
-              title="Insertar fórmula matemática"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <rect x="4" y="3" width="16" height="18" rx="2" />
-                <path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Vista previa renderizada siempre visible y destacada */}
-        {hasMath && q.text && (
-          <div className="mt-4 rounded-xl border-2 border-violet-300 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 p-4 shadow-md">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></div>
-                <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Vista previa renderizada</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowRawText(!showRawText)}
-                className="text-xs text-violet-600 hover:text-violet-700 font-bold transition-colors px-2.5 py-1 rounded-lg hover:bg-white/60"
-              >
-                {showRawText ? '👁️ Ocultar código' : '📝 Ver código LaTeX'}
-              </button>
-            </div>
-            <div className="text-base font-medium text-slate-900 bg-white/70 rounded-xl p-4 border border-violet-200/50 min-h-[50px] leading-relaxed">
-              <MathText text={q.text} onFormulaClick={handleFormulaClick} />
-            </div>
-            {showRawText && (
-              <div className="mt-3 pt-3 border-t border-slate-200">
-                <p className="text-xs text-slate-600 font-mono bg-white/80 px-3 py-2 rounded-lg border border-slate-200 break-all">
-                  {q.text}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {!q.text && (
-          <div className="mt-3 space-y-2">
-            <MathExamplesHint />
-            <div className="rounded-lg border-2 border-slate-200 bg-slate-50/50 p-3">
-              <p className="text-xs font-bold text-slate-700 mb-2">💡 Formato de texto:</p>
-              <ul className="text-xs text-slate-600 space-y-1 ml-4 list-disc">
-                <li>Presiona <kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-xs font-mono">Enter</kbd> para saltos de línea</li>
-                <li>Usa viñetas: <code className="px-1 py-0.5 bg-white border border-slate-200 rounded text-xs">- texto</code>, <code className="px-1 py-0.5 bg-white border border-slate-200 rounded text-xs">* texto</code>, o <code className="px-1 py-0.5 bg-white border border-slate-200 rounded text-xs">1. texto</code></li>
-                <li>Inserta fórmulas con <code className="px-1 py-0.5 bg-white border border-slate-200 rounded text-xs">$formula$</code> o usa el botón de calculadora</li>
-              </ul>
-            </div>
-          </div>
-        )}
+Tips:
+• Puedes usar Enter para saltos de línea
+• Usa viñetas: - texto o * texto o 1. texto
+• Inserta fórmulas con los botones de abajo"
+          label="Enunciado de la pregunta"
+          required
+          className="mb-4"
+        />
       </div>
 
       {/* Imagen de la pregunta */}
@@ -855,8 +788,8 @@ function QuestionCard({ q, onChange, onRemove }) {
                 <label
                   key={v}
                   className={`flex-1 inline-flex items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-semibold cursor-pointer transition-all ${isSelected
-                      ? 'border-violet-500 bg-gradient-to-br from-violet-50 to-indigo-50 text-violet-700 shadow-md'
-                      : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'
+                    ? 'border-violet-500 bg-gradient-to-br from-violet-50 to-indigo-50 text-violet-700 shadow-md'
+                    : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'
                     }`}
                 >
                   <input
@@ -1172,7 +1105,7 @@ export default function EspanolFormBuilder() {
   return (
     <>
       <AlertComponent />
-      <div className="min-h-screen bg-transparent w-full overflow-x-visible">
+      <div className="min-h-screen bg-transparent w-full overflow-x-hidden">
         {/* Header mejorado */}
         <header className="relative w-full px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8">
           <div className="relative overflow-hidden rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 shadow-xl ring-2 ring-slate-100/50 px-5 sm:px-7 py-5 sm:py-6">
@@ -1211,6 +1144,19 @@ export default function EspanolFormBuilder() {
                 <span className="font-bold">Guarda tu progreso antes de publicar</span>
               </div>
               <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => {
+                    if (window.confirm('¿Estás seguro de que deseas cancelar? Se perderán los cambios no guardados.')) {
+                      navigate('/asesor/quizt', { replace: true });
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-rose-300 bg-white px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-50 hover:border-rose-400 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Cancelar
+                </button>
                 <button
                   onClick={() => setPreviewOpen(true)}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
@@ -1334,8 +1280,8 @@ export default function EspanolFormBuilder() {
                         >
                           {/* Etiqueta de opción */}
                           <span className={`flex-shrink-0 inline-flex items-center justify-center w-6 h-6 rounded font-bold text-xs border ${o.correct
-                              ? 'border-emerald-400 bg-emerald-200 text-emerald-700'
-                              : 'border-slate-300 bg-slate-100 text-slate-600'
+                            ? 'border-emerald-400 bg-emerald-200 text-emerald-700'
+                            : 'border-slate-300 bg-slate-100 text-slate-600'
                             }`}>
                             {getOptionLabel(optIdx)})
                           </span>

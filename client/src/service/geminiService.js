@@ -6,8 +6,10 @@
  * Nota: En Vite, las variables de entorno se acceden con import.meta.env
  */
 const GEMINI_CONFIG = {
-  // En el cliente ya no usamos la API key directamente: llamamos al proxy backend
-  apiKey: import.meta.env?.VITE_GEMINI_API_KEY || '',
+  // ⚠️ SEGURIDAD: El cliente NUNCA debe usar la API key directamente
+  // Todas las peticiones deben ir a través del proxy del servidor
+  // La API key solo existe en el servidor (server/.env)
+  apiKey: '', // ⚠️ NO USAR - Solo para referencia, el proxy maneja la autenticación
   proxyEndpoint: '/api/ai/gemini/generate',
   // Permite override del modelo vía variable de entorno
   model: (import.meta.env?.VITE_GEMINI_MODEL || 'gemini-2.5-flash'),
@@ -24,7 +26,7 @@ const buildCacheKey = (datos) => {
   // Construir clave más específica que incluya tipo de análisis y datos relevantes
   const simulacion = (datos.simulacion || 'simulacion').replace(/\s+/g, '_');
   const tipoAnalisis = datos.analisisTipo || datos.tipo || 'general';
-  
+
   // Para análisis de fallos repetidos, incluir hash de preguntas problemáticas para hacerlo único
   let hashExtra = '';
   if (tipoAnalisis === 'fallos_repetidos' && Array.isArray(datos.preguntasProblematicas)) {
@@ -33,11 +35,11 @@ const buildCacheKey = (datos) => {
     const hash = ids.length > 0 ? btoa(ids).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16) : '';
     hashExtra = `_${hash}`;
   }
-  
+
   // Incluir ID de estudiante si está disponible para hacer el caché específico por estudiante
   const estudianteId = datos.idEstudiante || datos.estudiante?.id || '';
   const estudianteHash = estudianteId ? `_est${estudianteId}` : '';
-  
+
   return `gemini_analisis_${simulacion}_${tipoAnalisis}${hashExtra}${estudianteHash}`;
 };
 // Rate limiter simple por ventana (evita golpear la API)
@@ -208,7 +210,7 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model }),
+      body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model, purpose: 'quizzes' }), // Usa GEMINI_API_KEY_QUIZZES
       signal: controller.signal
     }, { maxRetries: 4, baseDelay: 1000, maxDelay: 12000 });
 
@@ -382,7 +384,7 @@ export const generarAnalisisEspecializado = async (datosAnalisis, tipoEstudiante
         'Content-Type': 'application/json',
       },
       credentials: 'include',
-      body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model }),
+      body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model, purpose: 'quizzes' }),
       signal: controller.signal
     }, { maxRetries: 4, baseDelay: 1000, maxDelay: 12000 });
 
@@ -1116,25 +1118,25 @@ const procesarRespuestaGemini = (respuestaTexto) => {
     let escape = false;
     let i = 0;
     let ultimaComilla = -1;
-    
+
     while (i < t.length) {
       const char = t[i];
       const charCode = char.charCodeAt(0);
-      
+
       if (escape) {
         resultado += char;
         escape = false;
         i++;
         continue;
       }
-      
+
       if (char === '\\') {
         resultado += char;
         escape = true;
         i++;
         continue;
       }
-      
+
       if (char === '"') {
         resultado += char;
         ultimaComilla = resultado.length - 1;
@@ -1142,7 +1144,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
         i++;
         continue;
       }
-      
+
       // Si estamos dentro de un string
       if (dentroString) {
         // Caracteres de control que deben ser escapados
@@ -1164,7 +1166,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
           i++;
           continue;
         }
-        
+
         // Si encontramos una comilla simple dentro de un string, dejarla (es válida)
         if (char === "'") {
           resultado += char;
@@ -1172,18 +1174,18 @@ const procesarRespuestaGemini = (respuestaTexto) => {
           continue;
         }
       }
-      
+
       resultado += char;
       i++;
     }
-    
+
     // Si el string quedó abierto, cerrarlo
     if (dentroString) {
       // Buscar si hay una comilla de cierre más adelante que podríamos haber perdido
       // Si no, simplemente cerrar el string
       resultado += '"';
     }
-    
+
     return resultado;
   };
 
@@ -1191,47 +1193,47 @@ const procesarRespuestaGemini = (respuestaTexto) => {
   const limpiarStringsJSON = (t) => {
     // Primero, reparar strings no terminados
     let resultado = repararStringsNoTerminados(t);
-    
+
     // Segunda pasada: buscar y reparar problemas específicos
     // Buscar patrones de strings mal formados usando regex más inteligente
     let nuevoResultado = resultado;
-    
+
     // Patrón para encontrar strings JSON (desde " hasta " sin escapar)
     // Pero necesitamos ser más cuidadosos con el parsing
     let i = 0;
     let dentroString = false;
     let escape = false;
     let resultadoFinal = '';
-    
+
     while (i < nuevoResultado.length) {
       const char = nuevoResultado[i];
-      
+
       if (escape) {
         resultadoFinal += char;
         escape = false;
         i++;
         continue;
       }
-      
+
       if (char === '\\') {
         resultadoFinal += char;
         escape = true;
         i++;
         continue;
       }
-      
+
       if (char === '"') {
         resultadoFinal += char;
         dentroString = !dentroString;
         i++;
         continue;
       }
-      
+
       // Si estamos dentro de un string
       if (dentroString) {
         // Verificar si hay caracteres problemáticos
         const charCode = char.charCodeAt(0);
-        
+
         // Si es un salto de línea o retorno de carro sin escapar
         if (char === '\n' || char === '\r') {
           // Ya debería estar escapado de la primera pasada, pero por si acaso
@@ -1241,7 +1243,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
             continue;
           }
         }
-        
+
         // Si es un carácter de control
         if (charCode < 32 && char !== '\n' && char !== '\r' && char !== '\t') {
           resultadoFinal += `\\u${charCode.toString(16).padStart(4, '0')}`;
@@ -1249,16 +1251,16 @@ const procesarRespuestaGemini = (respuestaTexto) => {
           continue;
         }
       }
-      
+
       resultadoFinal += char;
       i++;
     }
-    
+
     // Si quedó un string abierto, cerrarlo
     if (dentroString) {
       resultadoFinal += '"';
     }
-    
+
     return resultadoFinal;
   };
 
@@ -1356,28 +1358,28 @@ const procesarRespuestaGemini = (respuestaTexto) => {
       let dentroString = false;
       let escape = false;
       let resultadoH = '';
-      
+
       for (let i = 0; i < h.length; i++) {
         const char = h[i];
-        
+
         if (escape) {
           resultadoH += char;
           escape = false;
           continue;
         }
-        
+
         if (char === '\\') {
           resultadoH += char;
           escape = true;
           continue;
         }
-        
+
         if (char === '"') {
           resultadoH += char;
           dentroString = !dentroString;
           continue;
         }
-        
+
         if (dentroString) {
           // Si encontramos caracteres problemáticos, escapar
           if (char === '\n') {
@@ -1395,12 +1397,12 @@ const procesarRespuestaGemini = (respuestaTexto) => {
           resultadoH += char;
         }
       }
-      
+
       // Cerrar string si quedó abierto
       if (dentroString) {
         resultadoH += '"';
       }
-      
+
       resultadoH = quitarComasColgantes(sanearBasico(resultadoH));
       resultadoH = autoBalance(resultadoH);
       return validarEstructuraAnalisis(JSON.parse(resultadoH));
@@ -1882,7 +1884,7 @@ const crearPromptFallosRepetidos = (datos) => {
   const preguntasProblematicas = datos?.preguntasProblematicas || [];
   const estadisticas = datos?.estadisticas || {};
   const intentos = datos?.intentos || [];
-  
+
   return `
 Actúa como un TUTOR EDUCATIVO EXPERTO especializado en identificar y resolver problemas de aprendizaje recurrentes. Tu objetivo es analizar por qué un estudiante falla REPETIDAMENTE en las mismas preguntas y proporcionar soluciones específicas y accionables.
 

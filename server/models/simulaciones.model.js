@@ -3,7 +3,7 @@ import db from '../db.js';
 export const listSimulaciones = async ({ id_area, visible = true, soloPublicas = false } = {}) => {
   const clauses = ['s.activo = 1'];
   const params = [];
-  
+
   // ✅ IMPORTANTE: Si id_area es null/undefined, NO filtrar por área (incluir todas las áreas)
   // Si id_area es 0, filtrar solo las que tienen id_area = NULL o 0 (generales)
   // Si id_area tiene valor, filtrar por esa área específica
@@ -16,7 +16,7 @@ export const listSimulaciones = async ({ id_area, visible = true, soloPublicas =
       params.push(id_area);
     }
   }
-  
+
   if (visible) {
     clauses.push('(s.fecha_limite IS NULL OR s.fecha_limite >= NOW())');
   }
@@ -29,7 +29,7 @@ export const listSimulaciones = async ({ id_area, visible = true, soloPublicas =
     (SELECT COUNT(*) FROM simulaciones_preguntas sp WHERE sp.id_simulacion = s.id) AS total_preguntas,
     (SELECT COUNT(*) FROM simulaciones_intentos si WHERE si.id_simulacion = s.id) AS total_intentos_global
   FROM simulaciones s ${where} ORDER BY s.fecha_limite ASC, s.id DESC`;
-  
+
   // ✅ DEBUG: Log temporal para depurar
   if (process.env.NODE_ENV !== 'production') {
     console.log('[listSimulaciones MODEL] DEBUG:', {
@@ -40,9 +40,9 @@ export const listSimulaciones = async ({ id_area, visible = true, soloPublicas =
       params
     });
   }
-  
+
   const [rows] = await db.query(sql, params);
-  
+
   // ✅ DEBUG: Log temporal para depurar
   if (process.env.NODE_ENV !== 'production') {
     console.log('[listSimulaciones MODEL] Resultados:', {
@@ -56,7 +56,7 @@ export const listSimulaciones = async ({ id_area, visible = true, soloPublicas =
       }))
     });
   }
-  
+
   return rows;
 };
 
@@ -84,11 +84,12 @@ export const listResumenEstudiante = async (id_estudiante) => {
     SELECT s.*,
       (SELECT si.puntaje FROM simulaciones_intentos si WHERE si.id_simulacion = s.id AND si.id_estudiante = ? ORDER BY si.id DESC LIMIT 1) AS ultimo_puntaje,
       (SELECT MAX(si.puntaje) FROM simulaciones_intentos si WHERE si.id_simulacion = s.id AND si.id_estudiante = ?) AS mejor_puntaje,
+      (SELECT si.puntaje FROM simulaciones_intentos si WHERE si.id_simulacion = s.id AND si.id_estudiante = ? AND si.intent_number = 1 LIMIT 1) AS oficial_puntaje,
       (SELECT COUNT(*) FROM simulaciones_intentos si WHERE si.id_simulacion = s.id AND si.id_estudiante = ?) AS total_intentos
     FROM simulaciones s
     WHERE s.activo = 1 AND s.publico = 1
     ORDER BY s.fecha_limite ASC, s.id DESC
-  `, [id_estudiante, id_estudiante, id_estudiante]);
+  `, [id_estudiante, id_estudiante, id_estudiante, id_estudiante]);
   return rows;
 };
 
@@ -109,7 +110,7 @@ export const createSimulacion = async ({ titulo, descripcion, id_area = null, fe
 };
 
 export const updateSimulacionMeta = async (id, fields = {}) => {
-  const allowed = ['titulo','descripcion','id_area','fecha_limite','time_limit_min','publico','activo','grupos'];
+  const allowed = ['titulo', 'descripcion', 'id_area', 'fecha_limite', 'time_limit_min', 'publico', 'activo', 'grupos'];
   const sets = []; const params = [];
   for (const k of allowed) {
     if (Object.prototype.hasOwnProperty.call(fields, k)) {
@@ -168,7 +169,7 @@ export const deleteSimulacion = async (id) => {
     await conn.commit();
     return del?.affectedRows > 0;
   } catch (e) {
-    try { await conn.rollback(); } catch {}
+    try { await conn.rollback(); } catch { }
     console.error('deleteSimulacion error:', e);
     throw e;
   } finally {
@@ -238,9 +239,77 @@ export const createSesion = async ({ id_simulacion, id_estudiante }) => {
 
 export const saveRespuestasBatch = async (id_sesion, respuestas = []) => {
   if (!Array.isArray(respuestas) || !respuestas.length) return { affectedRows: 0 };
-  const values = respuestas.map(r => [id_sesion, r.id_pregunta, r.id_opcion || null, r.texto_libre || null, r.tiempo_ms || 0]);
-  const sql = 'INSERT INTO simulaciones_respuestas (id_sesion, id_pregunta, id_opcion, texto_libre, tiempo_ms) VALUES ?';
+
+  // Importar cola de calificación
+  const gradingQueue = (await import('../services/gradingQueue.js')).default;
+
+  // Obtener información de la sesión para saber el id_simulacion
+  const [[sesion]] = await db.query('SELECT id_simulacion FROM simulaciones_sesiones WHERE id = ? LIMIT 1', [id_sesion]);
+
+  // Obtener preguntas para saber cuáles son de respuesta corta
+  let preguntasMap = new Map();
+  if (sesion) {
+    const [preguntas] = await db.query(
+      'SELECT id, tipo, enunciado FROM simulaciones_preguntas WHERE id_simulacion = ?',
+      [sesion.id_simulacion]
+    );
+    preguntas.forEach(p => preguntasMap.set(p.id, p));
+  }
+
+  // Preparar valores para inserción
+  const values = respuestas.map(r => {
+    const pregunta = preguntasMap.get(r.id_pregunta);
+    const esRespuestaCorta = pregunta?.tipo === 'respuesta_corta';
+
+    return [
+      id_sesion,
+      r.id_pregunta,
+      r.id_opcion || null,
+      r.texto_libre || null,
+      r.tiempo_ms || 0,
+      esRespuestaCorta ? 'pending' : 'graded', // calificacion_status
+      null, // calificacion_metodo
+      null, // calificacion_confianza
+      null  // calificada_at
+    ];
+  });
+
+  const sql = `INSERT INTO simulaciones_respuestas 
+    (id_sesion, id_pregunta, id_opcion, texto_libre, tiempo_ms, calificacion_status, calificacion_metodo, calificacion_confianza, calificada_at) 
+    VALUES ?`;
+
   const [res] = await db.query(sql, [values]);
+
+  // Agregar respuestas cortas a la cola de calificación
+  for (let i = 0; i < respuestas.length; i++) {
+    const r = respuestas[i];
+    const pregunta = preguntasMap.get(r.id_pregunta);
+
+    if (pregunta?.tipo === 'respuesta_corta' && r.texto_libre) {
+      // Obtener la respuesta esperada (opción correcta)
+      const [[opcionCorrecta]] = await db.query(
+        'SELECT texto FROM simulaciones_preguntas_opciones WHERE id_pregunta = ? AND es_correcta = 1 LIMIT 1',
+        [r.id_pregunta]
+      );
+
+      if (opcionCorrecta) {
+        // Calcular el ID de la respuesta insertada
+        const id_respuesta = res.insertId + i;
+
+        // Agregar a cola de calificación
+        gradingQueue.add({
+          id_respuesta,
+          tipo: 'simulacion',
+          pregunta: pregunta.enunciado,
+          respuesta_esperada: opcionCorrecta.texto,
+          respuesta_estudiante: r.texto_libre
+        });
+
+        console.log(`[saveRespuestasBatch] ✅ Respuesta corta agregada a cola: simulacion #${id_respuesta}`);
+      }
+    }
+  }
+
   return res;
 };
 
@@ -258,11 +327,39 @@ export const finalizarSesion = async ({ id_sesion, meta = {} }) => {
   const [resp] = await db.query('SELECT * FROM simulaciones_respuestas WHERE id_sesion = ?', [id_sesion]);
   const respByPregunta = new Map();
   for (const r of resp) { respByPregunta.set(r.id_pregunta, r); }
-  let correctas = 0; const total = pregs.length;
+  let correctas = 0; 
+  let calificadas = 0; // Contador de preguntas que ya fueron calificadas
+  const total = pregs.length;
+  
   for (const p of pregs) {
     const r = respByPregunta.get(p.id);
     const opciones = opcionesByPregunta.get(p.id) || [];
-    if (p.tipo === 'respuesta_corta') continue; // no se califica automáticamente
+    
+    if (p.tipo === 'respuesta_corta') {
+      // Para respuestas cortas, verificar si ya fueron calificadas
+      if (r) {
+        // Verificar estado de calificación
+        const status = r.calificacion_status || 'pending';
+        const confianza = r.calificacion_confianza != null ? Number(r.calificacion_confianza) : null;
+        
+        if (status === 'graded' || (status === 'manual_review' && confianza != null)) {
+          // Ya fue calificada (automática o manual)
+          calificadas += 1;
+          // Para simulaciones: calificacion_confianza = 100 significa correcta
+          if (r.calificacion_metodo === 'manual') {
+            if (confianza === 100) correctas += 1;
+          } else {
+            // Calificación automática: confianza >= 70 generalmente significa correcta
+            if (confianza != null && confianza >= 70) correctas += 1;
+          }
+        }
+        // Si está en "pending", no se cuenta (aún no calificada)
+      }
+      continue; // No procesar más aquí
+    }
+    
+    // Para preguntas de opción múltiple, siempre se pueden calificar
+    calificadas += 1;
     if (p.tipo === 'multi_respuesta') {
       // Simplificado: no implementado aún, cuenta como incorrecto
     } else {
@@ -270,7 +367,10 @@ export const finalizarSesion = async ({ id_sesion, meta = {} }) => {
       if (r && correct && r.id_opcion === correct.id) correctas += 1;
     }
   }
-  const puntaje = total > 0 ? Math.round((correctas / total) * 100) : 0;
+  
+  // Calcular puntaje: usar solo preguntas calificadas como denominador
+  // Si hay preguntas pendientes, el puntaje es parcial
+  const puntaje = calificadas > 0 ? Math.round((correctas / calificadas) * 100) : 0;
   // Calcular elapsed_ms robusto: preferir meta.elapsed_ms o meta.duration_ms; luego diferencia de timestamps; o suma de tiempos por pregunta.
   let elapsed_ms = null;
   try {
@@ -292,7 +392,7 @@ export const finalizarSesion = async ({ id_sesion, meta = {} }) => {
       const sum_ms = Number(respForTime?.[0]?.sum_ms || 0);
       if (sum_ms > 0) elapsed_ms = sum_ms;
     }
-  } catch {}
+  } catch { }
   const tiempo_segundos = Number.isFinite(Number(meta.tiempo_segundos)) && Number(meta.tiempo_segundos) > 0
     ? Math.round(Number(meta.tiempo_segundos))
     : (elapsed_ms != null ? Math.max(1, Math.round(elapsed_ms / 1000)) : (ses.elapsed_ms ? Math.round(ses.elapsed_ms / 1000) : null));
@@ -306,7 +406,7 @@ export const finalizarSesion = async ({ id_sesion, meta = {} }) => {
   const intent_number = intentos + 1;
   const [ins] = await db.query('INSERT INTO simulaciones_intentos (id_simulacion, id_estudiante, puntaje, intent_number, tiempo_segundos, total_preguntas, correctas) VALUES (?,?,?,?,?,?,?)', [ses.id_simulacion, ses.id_estudiante, puntaje, intent_number, tiempo_segundos, total, correctas]);
   const [row] = await db.query('SELECT * FROM simulaciones_intentos WHERE id = ?', [ins.insertId]);
-  
+
   // ✅ Notificar al asesor cuando se completa el primer intento (oficial)
   if (intent_number === 1) {
     try {
@@ -314,7 +414,7 @@ export const finalizarSesion = async ({ id_sesion, meta = {} }) => {
       const [simData] = await db.query('SELECT titulo, nombre FROM simulaciones WHERE id = ? LIMIT 1', [ses.id_simulacion]);
       const [estData] = await db.query('SELECT nombre, apellidos FROM estudiantes WHERE id = ? LIMIT 1', [ses.id_estudiante]);
       const asesorUserId = await AsesorNotifs.getAsesorUserIdByEstudianteId(ses.id_estudiante);
-      
+
       if (asesorUserId) {
         const simTitulo = simData[0]?.titulo || simData[0]?.nombre || 'Simulación';
         const estNombre = estData[0] ? `${estData[0].nombre || ''} ${estData[0].apellidos || ''}`.trim() : 'Un estudiante';
@@ -333,7 +433,7 @@ export const finalizarSesion = async ({ id_sesion, meta = {} }) => {
       // No fallar la operación si la notificación falla
     }
   }
-  
+
   return { intento: row, puntaje, total_preguntas: total, correctas };
 };
 
@@ -409,10 +509,11 @@ export const listEstudiantesEstadoSimulacion = async (id_simulacion) => {
       e.grupo,
       e.folio,
       COUNT(*) AS total_intentos,
-      -- Primer intento (puntaje oficial)
+      -- Primer intento (puntaje oficial) - siempre intent_number = 1
       (SELECT si2.puntaje FROM simulaciones_intentos si2 
          WHERE si2.id_simulacion = si.id_simulacion AND si2.id_estudiante = si.id_estudiante 
-         ORDER BY si2.id ASC LIMIT 1) AS oficial_puntaje
+         AND si2.intent_number = 1
+         LIMIT 1) AS oficial_puntaje
     FROM simulaciones_intentos si
     LEFT JOIN estudiantes e ON e.id = si.id_estudiante
     WHERE si.id_simulacion = ?

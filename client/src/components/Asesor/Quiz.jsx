@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 import QuiztModal from "./QuiztModal";
 import AnalizadorFallosRepetidos from "./AnalizadorFallosRepetidos";
-import { generarPreguntasIA, getCooldownRemainingMs } from "../../service/simuladoresAI";
+import QuizIAModal from "./simGen/QuizIAModal";
+import ManualReviewShortAnswer from "./ManualReviewShortAnswer";
+import { getCooldownRemainingMs } from "../../service/simuladoresAI";
 import { logInfo, logError, logDebug } from "../../utils/logger";
 import { listQuizzes, deleteQuiz as apiDeleteQuiz, getQuizFull, getQuizEstudiantesEstado, getQuizIntentoReview, updateQuiz } from "../../api/quizzes";
 import { getAreasCatalog } from "../../api/areas";
@@ -172,22 +174,8 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
   const [iaQuestions, setIaQuestions] = useState(null);
   // Modal de elección IA (general vs por temas)
   const [iaChoiceOpen, setIaChoiceOpen] = useState(false);
-  const [iaChoiceMode, setIaChoiceMode] = useState('general'); // 'general' | 'temas'
-  const [iaChoiceTopics, setIaChoiceTopics] = useState(''); // coma-separado
-  const [iaNivel, setIaNivel] = useState('intermedio'); // 'básico' | 'intermedio' | 'avanzado'
-  const [iaError, setIaError] = useState('');
-  const [showSummary, setShowSummary] = useState(false);
   const [successModal, setSuccessModal] = useState({ open: false, message: '', count: 0 });
-  // Distribución personalizada de tipos de preguntas
-  const [iaCountMultiple, setIaCountMultiple] = useState(3);
-  const [iaCountVerdaderoFalso, setIaCountVerdaderoFalso] = useState(1);
-  const [iaCountCorta, setIaCountCorta] = useState(1);
-  // Parámetros avanzados de configuración de IA
-  const [iaShowAdvanced, setIaShowAdvanced] = useState(false);
-  const [iaTemperature, setIaTemperature] = useState(0.6);
-  const [iaTopP, setIaTopP] = useState('');
-  const [iaTopK, setIaTopK] = useState('');
-  const [iaMaxTokens, setIaMaxTokens] = useState('');
+
   // En esta vista trabajamos por área; ocultar filtro por materia para simplificar UX
   const SHOW_AREA_FILTER = false;
 
@@ -216,6 +204,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewData, setReviewData] = useState(null);
   const [reviewHeader, setReviewHeader] = useState({ quiz: null, estudiante: null });
+  const [selectedIntentoReview, setSelectedIntentoReview] = useState(1); // Intentar oficial por defecto
 
   // Generic confirmation modal state
   const [confirmModal, setConfirmModal] = useState({
@@ -229,46 +218,27 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
   });
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Cooldown ticker
+  // Cooldown ticker - actualiza el estado y limpia el error cuando expira
   useEffect(() => {
-    const tick = () => setCooldownMs(getCooldownRemainingMs());
+    let mounted = true;
+    const tick = () => {
+      if (!mounted) return;
+      const remaining = getCooldownRemainingMs();
+      setCooldownMs(remaining);
+      // Si el cooldown expiró, limpiar el error relacionado con cooldown/rate limit
+      if (remaining === 0) {
+        // Reset cooldown related states if any
+      }
+    };
     tick();
     const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, []); // Sin dependencias para evitar el warning - usamos mounted flag y funciones de setState con callbacks
 
-  // Sincronizar distribución con iaQuickCount cuando se abre el modal
-  useEffect(() => {
-    if (iaChoiceOpen) {
-      const currentTotal = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-      const quickTotal = iaQuickCount || 5;
-      // Si el total actual no coincide con iaQuickCount y no es cero, ajustar proporcionalmente
-      if (currentTotal !== quickTotal && quickTotal > 0) {
-        if (currentTotal === 0) {
-          // Si no hay distribución, crear una por defecto basada en iaQuickCount
-          const multi = Math.ceil(quickTotal * 0.6);
-          const tf = Math.floor(quickTotal * 0.2);
-          const corta = Math.max(0, quickTotal - multi - tf);
-          setIaCountMultiple(multi);
-          setIaCountVerdaderoFalso(tf);
-          setIaCountCorta(corta);
-        } else {
-          // Ajustar proporcionalmente manteniendo las proporciones actuales
-          const ratio = quickTotal / currentTotal;
-          const newMulti = Math.max(0, Math.round(iaCountMultiple * ratio));
-          const newTf = Math.max(0, Math.round(iaCountVerdaderoFalso * ratio));
-          const newCorta = Math.max(0, Math.round(iaCountCorta * ratio));
-          const newTotal = newMulti + newTf + newCorta;
-          const diff = quickTotal - newTotal;
-          // Ajustar la diferencia en opción múltiple para mantener el total exacto
-          setIaCountMultiple(newMulti + diff);
-          setIaCountVerdaderoFalso(newTf);
-          setIaCountCorta(newCorta);
-        }
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [iaChoiceOpen]);
+
 
   // Función para cargar quizzes (extraída para reutilizar)
   const loadQuizzes = useCallback(async () => {
@@ -412,22 +382,39 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
     setReviewOpen(true);
     setReviewLoading(true);
     setReviewData(null);
-    setReviewHeader({ 
-      quiz: resultsQuizMeta, 
-      estudiante: { 
-        id: row.id_estudiante, 
+    setSelectedIntentoReview(1); // Resetear al intento oficial
+    setReviewHeader({
+      quiz: resultsQuizMeta,
+      estudiante: {
+        id: row.id_estudiante,
         nombre: `${row.apellidos || ''} ${row.nombre || ''}`.trim(),
         totalIntentos: row.total_intentos || 0
-      } 
+      }
     });
     try {
-      // Forzar intento=1 (oficial)
+      // Cargar intento oficial por defecto
       const { data } = await getQuizIntentoReview(resultsQuizMeta.id, row.id_estudiante, 1);
       setReviewData(data?.data || null);
     } catch (e) {
       // eslint-disable-next-line no-alert
       alert(e?.response?.data?.message || 'No se pudo cargar el detalle del intento');
       setReviewOpen(false);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+  
+  // Función para cambiar el intento en el modal de review
+  const handleChangeIntentoReview = async (intentoNum) => {
+    if (!resultsQuizMeta?.id || !reviewHeader.estudiante?.id) return;
+    setSelectedIntentoReview(intentoNum);
+    setReviewLoading(true);
+    try {
+      const { data } = await getQuizIntentoReview(resultsQuizMeta.id, reviewHeader.estudiante.id, intentoNum);
+      setReviewData(data?.data || null);
+    } catch (e) {
+      // eslint-disable-next-line no-alert
+      alert(e?.response?.data?.message || 'No se pudo cargar el detalle del intento');
     } finally {
       setReviewLoading(false);
     }
@@ -513,225 +500,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
     return ['conceptos básicos', 'aplicaciones', 'análisis', 'síntesis', 'evaluación'];
   }, [areaTitle]);
 
-  const crearQuizRapidoIA = async () => {
-    if (iaLoading) return;
-    // Si no hay área seleccionada, exigir tema manual; si hay área, el tema puede omitirse
-    if (!selectedAreaId && !iaTopic.trim()) { alert('Escribe un tema para generar con IA'); return; }
-    // Calcular cantidad total desde distribución personalizada
-    const cantidad = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-    if (cantidad > MAX_IA) {
-      alert(`Máximo ${MAX_IA} preguntas por generación con IA.`);
-      return;
-    }
-    if (cantidad < 1) {
-      alert('Se requiere al menos 1 pregunta (configura la distribución)');
-      return;
-    }
-    setIaLoading(true);
-    try {
-      const tema = iaTopic.trim() || areaTitle || 'Quiz';
-      // Distribución personalizada
-      const distribucion = {
-        multi: iaCountMultiple,
-        tf: iaCountVerdaderoFalso,
-        short: iaCountCorta
-      };
-      // Preparar parámetros avanzados de IA
-      const aiParams = {
-        tema,
-        cantidad,
-        area: areaTitle,
-        nivel: iaNivel || 'intermedio',
-        distribucion,
-        temperature: iaTemperature,
-        ...(iaTopP !== '' && { topP: Number(iaTopP) }),
-        ...(iaTopK !== '' && { topK: Number(iaTopK) }),
-        ...(iaMaxTokens !== '' && { maxOutputTokens: Number(iaMaxTokens) })
-      };
-      const preguntasIA = await generarPreguntasIA(aiParams);
-      // Mapear preguntas IA -> contrato de createQuiz
-      const preguntas = preguntasIA.map((q) => {
-        if (q.type === 'multi') {
-          // Asegurar 4 opciones y una correcta
-          let options = (q.options || []).map(o => ({ text: o.text || '', correct: !!o.correct }));
-          if (options.length > 4) options = options.slice(0, 4);
-          while (options.length < 4) options.push({ text: `Opción ${options.length + 1}`, correct: false });
-          const idxC = options.findIndex(o => o.correct);
-          if (idxC === -1) options[0].correct = true; else options = options.map((o, j) => ({ ...o, correct: j === idxC }));
-          return { type: 'multiple', text: q.text, points: Number(q.points || 1), options };
-        }
-        if (q.type === 'tf') {
-          return { type: 'tf', text: q.text, points: Number(q.points || 1), answer: (String(q.answer).toLowerCase() !== 'false') ? 'true' : 'false' };
-        }
-        return { type: 'short', text: q.text, points: Number(q.points || 1), answer: String(q.answer || '') };
-      });
-      // Guardar preguntas y abrir modal prellenado (no crear aún)
-      setIaQuestions(preguntas);
-      const tituloSugerido = `${tema} (IA · ${cantidad} preguntas)`;
-      const instrucciones = `Lee cada pregunta y selecciona la respuesta correcta. Responde con calma y confirma tu elección antes de avanzar.`;
-      // Preservar configuración previa si existe, sino usar valores por defecto
-      setIaDraft({
-        titulo: tituloSugerido,
-        instrucciones,
-        nombre: tituloSugerido,
-        fechaLimite: iaDraft?.fechaLimite || '',
-        publico: iaDraft?.publico ?? false,
-        horas: iaDraft?.horas ?? 0,
-        minutos: iaDraft?.minutos ?? 0,
-        intentosMode: iaDraft?.intentosMode || 'unlimited',
-        maxIntentos: iaDraft?.maxIntentos ?? 3,
-        grupos: iaDraft?.grupos || [], // Preservar grupos seleccionados
-        // Preservar también areaTitle y selectedAreaId
-        areaTitle: areaTitle,
-        selectedAreaId: selectedAreaId,
-      });
-      setOpen(true);
-    } catch (e) {
-      const msg = String(e?.message || '').toLowerCase();
-      // Detectar error de API key bloqueada (leaked)
-      if (e?.code === 'API_KEY_LEAKED' || msg.includes('leaked') || msg.includes('reported as leaked') || msg.includes('bloqueada porque fue expuesta')) {
-        alert(
-          '⚠️ La API key de Gemini fue bloqueada por Google porque fue expuesta públicamente.\n\n' +
-          'Por favor, contacta al administrador del sistema para obtener una nueva API key. ' +
-          'El administrador debe obtener una nueva clave desde Google AI Studio y actualizarla en el servidor.'
-        );
-        if (e?.helpUrl) {
-          console.error('🔗 Obtén una nueva API key en:', e.helpUrl);
-        }
-      } else if (msg.includes('429') || msg.includes('quota') || msg.includes('rate')) {
-        alert('La IA alcanzó el límite de cuota (429). Intenta de nuevo en unos minutos.');
-        setCooldownMs(getCooldownRemainingMs());
-      } else if (e?.code === 'COOLDOWN') {
-        const secs = Math.ceil((e?.remainingMs || getCooldownRemainingMs()) / 1000);
-        alert(`Debes esperar ${secs}s antes de volver a generar con IA.`);
-        setCooldownMs(getCooldownRemainingMs());
-      } else {
-        alert(e?.response?.data?.message || e?.message || 'No se pudo crear el quiz con IA');
-      }
-    } finally {
-      setIaLoading(false);
-    }
-  };
 
-  // Crear quiz con IA permitiendo elegir modo general o por temas
-  const crearQuizConIAOpciones = async ({ modo = 'general', temasText = '' } = {}) => {
-    if (iaLoading) return;
-    setIaError('');
-    // Validaciones mejoradas
-    if (modo === 'temas') {
-      const temasList = String(temasText || '').split(',').map(s => s.trim()).filter(Boolean);
-      if (temasList.length === 0) {
-        setIaError('Ingresa al menos un tema separado por comas (ej: sinónimos, ortografía, lectura)');
-        return;
-      }
-    }
-    // Calcular cantidad total desde distribución personalizada
-    const cantidad = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-    if (cantidad > MAX_IA) {
-      setIaError(`Máximo ${MAX_IA} preguntas por generación con IA`);
-      return;
-    }
-    if (cantidad < 1) {
-      setIaError('Se requiere al menos 1 pregunta (configura la distribución)');
-      return;
-    }
-    if (iaCountMultiple < 0 || iaCountVerdaderoFalso < 0 || iaCountCorta < 0) {
-      setIaError('Las cantidades no pueden ser negativas');
-      return;
-    }
-    setIaLoading(true);
-    setIaError('');
-    try {
-      const tema = iaTopic.trim() || areaTitle || 'Quiz';
-      // Distribución personalizada
-      const distribucion = {
-        multi: iaCountMultiple,
-        tf: iaCountVerdaderoFalso,
-        short: iaCountCorta
-      };
-      const opts = {
-        tema,
-        cantidad,
-        area: areaTitle || undefined,
-        nivel: iaNivel || 'intermedio',
-        distribucion,
-        temperature: iaTemperature,
-        ...(iaTopP !== '' && { topP: Number(iaTopP) }),
-        ...(iaTopK !== '' && { topK: Number(iaTopK) }),
-        ...(iaMaxTokens !== '' && { maxOutputTokens: Number(iaMaxTokens) })
-      };
-      const temasList = String(temasText || '').split(',').map(s => s.trim()).filter(Boolean);
-      if (modo === 'temas' && temasList.length) { opts.modo = 'temas'; opts.temas = temasList; } else { opts.modo = 'general'; }
-      const preguntasIA = await generarPreguntasIA(opts);
-      // Mapear preguntas IA -> contrato de createQuiz
-      const preguntas = preguntasIA.map((q) => {
-        if (q.type === 'multi') {
-          // Asegurar 4 opciones y una correcta
-          let options = (q.options || []).map(o => ({ text: o.text || '', correct: !!o.correct }));
-          if (options.length > 4) options = options.slice(0, 4);
-          while (options.length < 4) options.push({ text: `Opción ${options.length + 1}`, correct: false });
-          const idxC = options.findIndex(o => o.correct);
-          if (idxC === -1) options[0].correct = true; else options = options.map((o, j) => ({ ...o, correct: j === idxC }));
-          return { type: 'multiple', text: q.text, points: Number(q.points || 1), options };
-        }
-        if (q.type === 'tf') {
-          return { type: 'tf', text: q.text, points: Number(q.points || 1), answer: (String(q.answer).toLowerCase() !== 'false') ? 'true' : 'false' };
-        }
-        return { type: 'short', text: q.text, points: Number(q.points || 1), answer: String(q.answer || '') };
-      });
-      setIaQuestions(preguntas);
-      const tituloSugerido = `${tema} (IA · ${cantidad} preguntas${opts.modo === 'temas' ? ' · por temas' : ''})`;
-      const instrucciones = `Lee cada pregunta y selecciona la respuesta correcta. ${opts.modo === 'temas' ? 'Este quiz incluye preguntas por temas específicos.' : 'Este quiz cubre contenido general del área.'}`;
-      // Preservar configuración previa si existe, sino usar valores por defecto
-      setIaDraft({
-        titulo: tituloSugerido,
-        instrucciones,
-        nombre: tituloSugerido,
-        fechaLimite: iaDraft?.fechaLimite || '',
-        publico: iaDraft?.publico ?? false,
-        horas: iaDraft?.horas ?? 0,
-        minutos: iaDraft?.minutos ?? 0,
-        intentosMode: iaDraft?.intentosMode || 'unlimited',
-        maxIntentos: iaDraft?.maxIntentos ?? 3,
-        grupos: iaDraft?.grupos || [], // Preservar grupos seleccionados
-        // Preservar también areaTitle y selectedAreaId
-        areaTitle: areaTitle,
-        selectedAreaId: selectedAreaId,
-      });
-      // Cerrar modal de IA y abrir modal de creación
-      setIaChoiceOpen(false);
-      setIaError('');
-      setOpen(true);
-    } catch (e) {
-      console.error(e);
-      const msg = String(e?.message || '').toLowerCase();
-      const rem = getCooldownRemainingMs();
-
-      // Detectar error de API key bloqueada (leaked)
-      if (e?.code === 'API_KEY_LEAKED' || msg.includes('leaked') || msg.includes('reported as leaked') || msg.includes('bloqueada porque fue expuesta')) {
-        setIaError(
-          '⚠️ La API key de Gemini fue bloqueada por Google porque fue expuesta públicamente. ' +
-          'Por favor, contacta al administrador del sistema para obtener una nueva API key. ' +
-          'El administrador debe obtener una nueva clave desde Google AI Studio y actualizarla en el servidor.'
-        );
-        if (e?.helpUrl) {
-          console.error('🔗 Obtén una nueva API key en:', e.helpUrl);
-        }
-      } else if (e?.code === 'RATE_LIMIT' || msg.includes('429') || msg.includes('quota') || msg.includes('rate limit') || msg.includes('límite de solicitudes')) {
-        const secs = Math.ceil((e?.remainingMs || rem || 60000) / 1000);
-        setIaError(`Se alcanzó el límite de solicitudes a la API de Google. Por favor, espera ${secs} segundo${secs > 1 ? 's' : ''} antes de intentar nuevamente. Esto ayuda a evitar límites de la API.`);
-        setCooldownMs(e?.remainingMs || rem || 60000);
-      } else if (e?.code === 'COOLDOWN' || msg.includes('enfriamiento') || msg.includes('cooldown')) {
-        const secs = Math.ceil((e?.remainingMs || rem || 60000) / 1000);
-        setIaError(`Debes esperar ${secs} segundo${secs > 1 ? 's' : ''} antes de volver a generar con IA.`);
-        setCooldownMs(e?.remainingMs || rem || 60000);
-      } else {
-        setIaError(e?.response?.data?.message || e?.message || 'No se pudieron generar las preguntas con IA. Por favor, intenta de nuevo.');
-      }
-    } finally {
-      setIaLoading(false);
-    }
-  };
 
   return (
     <div className="mx-auto max-w-8xl px-4 pb-12 pt-4 sm:px-6 lg:px-8">
@@ -749,587 +518,27 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
         </button>
       </div>
 
-      {/* Modal: elección de IA (completo como en SimuladoresGen) */}
-      {iaChoiceOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={() => { setIaChoiceOpen(false); setIaError(''); }} />
-          <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-slate-200">
-            {/* Header */}
-            <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
-              <div className="flex items-center gap-2.5">
-                <div className="rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 p-1.5 shadow-md">
-                  <Sparkles className="h-4 w-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-slate-900">Generar con IA</h3>
-                  <p className="text-xs text-slate-600 mt-0.5">Configuración personalizada. Puedes editarlo después.</p>
-                </div>
-                <button
-                  onClick={() => { setIaChoiceOpen(false); setIaError(''); }}
-                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors flex-shrink-0"
-                  aria-label="Cerrar"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className="px-4 py-3 space-y-3 max-h-[60vh] overflow-y-auto">
-              {/* Opciones de modo */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-2">Tipo de generación</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => { setIaChoiceMode('general'); setIaError(''); }}
-                    className={["relative text-left rounded-lg border-2 p-2.5 transition-all",
-                      iaChoiceMode === 'general'
-                        ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    ].join(' ')}
-                  >
-                    {iaChoiceMode === 'general' && (
-                      <div className="absolute top-1.5 right-1.5">
-                        <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center">
-                          <CheckCircle2 className="h-2.5 w-2.5 text-white" />
-                        </div>
-                      </div>
-                    )}
-                    <div className="text-sm font-semibold text-slate-800 mb-0.5">General del área</div>
-                    <div className="text-xs text-slate-600 leading-snug">
-                      Preguntas variadas de "{areaTitle || 'esta área'}". Ideal para conocimientos generales.
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setIaChoiceMode('temas'); setIaError(''); }}
-                    className={["relative text-left rounded-lg border-2 p-2.5 transition-all",
-                      iaChoiceMode === 'temas'
-                        ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    ].join(' ')}
-                  >
-                    {iaChoiceMode === 'temas' && (
-                      <div className="absolute top-1.5 right-1.5">
-                        <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center">
-                          <CheckCircle2 className="h-2.5 w-2.5 text-white" />
-                        </div>
-                      </div>
-                    )}
-                    <div className="text-sm font-semibold text-slate-800 mb-0.5">Por temas específicos</div>
-                    <div className="text-xs text-slate-600 leading-snug">
-                      Enfocado en temas concretos. Ej: "sinónimos, ortografía". Distribución equitativa.
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Input de temas (solo si modo = temas) */}
-              {iaChoiceMode === 'temas' && (
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700">
-                      Temas específicos <span className="text-rose-500">*</span>
-                    </label>
-                    {iaChoiceTopics && (
-                      <span className="text-[10px] text-slate-500">
-                        {iaChoiceTopics.split(',').filter(t => t.trim()).length} tema{iaChoiceTopics.split(',').filter(t => t.trim()).length !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <input
-                      value={iaChoiceTopics}
-                      onChange={e => {
-                        const value = e.target.value;
-                        // Limpiar duplicados automáticamente
-                        const temas = value.split(',').map(s => s.trim()).filter(Boolean);
-                        const unique = [...new Set(temas)];
-                        setIaChoiceTopics(unique.join(', '));
-                        setIaError('');
-                      }}
-                      className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-xs focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-200 transition-colors"
-                      placeholder="Ej: sinónimos, ortografía, lectura"
-                    />
-                    {iaChoiceTopics && (
-                      <button
-                        type="button"
-                        onClick={() => setIaChoiceTopics('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                        title="Limpiar"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </div>
-                  <div className="mt-1.5 flex items-center justify-between">
-                    <div className="flex flex-wrap gap-1.5">
-                      {temasPlantillas.slice(0, 3).map((tema, idx) => {
-                        const current = iaChoiceTopics.split(',').map(s => s.trim()).filter(Boolean);
-                        const isAdded = current.includes(tema);
-                        return (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => {
-                              if (!isAdded) {
-                                setIaChoiceTopics([...current, tema].join(', '));
-                                setIaError('');
-                              } else {
-                                setIaChoiceTopics(current.filter(t => t !== tema).join(', '));
-                              }
-                            }}
-                            className={[
-                              "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
-                              isAdded
-                                ? "border-emerald-300 bg-emerald-100 text-emerald-700"
-                                : "border-slate-300 bg-white text-slate-600 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700"
-                            ].join(' ')}
-                          >
-                            {isAdded ? '✓' : '+'} {tema}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {iaChoiceTopics && (
-                      <button
-                        type="button"
-                        onClick={() => setIaChoiceTopics('')}
-                        className="text-[10px] text-slate-500 hover:text-rose-600 transition-colors"
-                      >
-                        Limpiar todo
-                      </button>
-                    )}
-                  </div>
-                  <p className="mt-1 text-[11px] text-slate-500">
-                    Separa con comas. Mínimo 1, máximo 5 recomendado.
-                  </p>
-                </div>
-              )}
-
-              {/* Selector de nivel */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nivel de dificultad</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { value: 'básico', label: 'Básico', desc: 'Conceptos fundamentales' },
-                    { value: 'intermedio', label: 'Intermedio', desc: 'Aplicación' },
-                    { value: 'avanzado', label: 'Avanzado', desc: 'Análisis' }
-                  ].map((nivel) => {
-                    const isSelected = iaNivel === nivel.value;
-                    return (
-                      <button
-                        key={nivel.value}
-                        type="button"
-                        onClick={() => setIaNivel(nivel.value)}
-                        className={[
-                          "text-left rounded-lg border-2 p-2 transition-all",
-                          isSelected
-                            ? nivel.value === 'básico'
-                              ? 'border-blue-400 bg-blue-50 ring-1 ring-blue-200'
-                              : nivel.value === 'intermedio'
-                                ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
-                                : 'border-purple-400 bg-purple-50 ring-1 ring-purple-200'
-                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                        ].join(' ')}
-                      >
-                        <div className="text-xs font-semibold text-slate-800">{nivel.label}</div>
-                        <div className="text-[11px] text-slate-600 mt-0.5">{nivel.desc}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Selector de cantidad total (opcional, para ajustar automáticamente) */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Cantidad total de preguntas (opcional)
-                </label>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={iaQuickCount}
-                    onChange={(e) => {
-                      const total = Number(e.target.value);
-                      // Distribuir automáticamente si el total es diferente
-                      const currentTotal = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-                      if (total !== currentTotal && total > 0) {
-                        // Distribuir proporcionalmente
-                        const ratio = total / (currentTotal || 5);
-                        setIaCountMultiple(Math.max(0, Math.round(iaCountMultiple * ratio)));
-                        setIaCountVerdaderoFalso(Math.max(0, Math.round(iaCountVerdaderoFalso * ratio)));
-                        setIaCountCorta(Math.max(0, Math.round(iaCountCorta * ratio)));
-                        // Ajustar si hay diferencia por redondeo
-                        const newTotal = Math.round(iaCountMultiple * ratio) + Math.round(iaCountVerdaderoFalso * ratio) + Math.round(iaCountCorta * ratio);
-                        if (newTotal !== total) {
-                          const diff = total - newTotal;
-                          if (diff > 0) setIaCountMultiple(prev => prev + diff);
-                          else if (diff < 0) setIaCountMultiple(prev => Math.max(0, prev + diff));
-                        }
-                      }
-                      setIaQuickCount(total);
-                      setIaError('');
-                    }}
-                    className="rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-xs font-semibold focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-200"
-                  >
-                    {COUNT_OPTIONS.map(n => (
-                      <option key={n} value={n}>{n} preguntas</option>
-                    ))}
-                  </select>
-                  <span className="text-[11px] text-slate-500">
-                    (Se ajustará automáticamente la distribución)
-                  </span>
-                </div>
-              </div>
-
-              {/* Distribución de tipos de preguntas */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Distribución de preguntas <span className="text-rose-500">*</span>
-                </label>
-                <div className="space-y-3">
-                  {/* Opción múltiple */}
-                  <div className="flex items-center gap-3">
-                    <label className="text-xs text-slate-600 w-32 flex-shrink-0">Opción múltiple:</label>
-                    <div className="flex items-center gap-2 flex-1">
-                      <button
-                        type="button"
-                        onClick={() => setIaCountMultiple(Math.max(0, iaCountMultiple - 1))}
-                        className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                        disabled={iaCountMultiple <= 0}
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min="0"
-                        max={MAX_IA}
-                        value={iaCountMultiple}
-                        onChange={(e) => {
-                          const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
-                          setIaCountMultiple(val);
-                          setIaError('');
-                        }}
-                        className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-                          if (total < MAX_IA) setIaCountMultiple(Math.min(MAX_IA, iaCountMultiple + 1));
-                        }}
-                        className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                        disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
-                      >
-                        +
-                      </button>
-                      <span className="text-[11px] text-slate-500">preguntas</span>
-                    </div>
-                  </div>
-
-                  {/* Verdadero/Falso */}
-                  <div className="flex items-center gap-3">
-                    <label className="text-xs text-slate-600 w-32 flex-shrink-0">Verdadero/Falso:</label>
-                    <div className="flex items-center gap-2 flex-1">
-                      <button
-                        type="button"
-                        onClick={() => setIaCountVerdaderoFalso(Math.max(0, iaCountVerdaderoFalso - 1))}
-                        className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                        disabled={iaCountVerdaderoFalso <= 0}
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min="0"
-                        max={MAX_IA}
-                        value={iaCountVerdaderoFalso}
-                        onChange={(e) => {
-                          const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
-                          setIaCountVerdaderoFalso(val);
-                          setIaError('');
-                        }}
-                        className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-                          if (total < MAX_IA) setIaCountVerdaderoFalso(Math.min(MAX_IA, iaCountVerdaderoFalso + 1));
-                        }}
-                        className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                        disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
-                      >
-                        +
-                      </button>
-                      <span className="text-[11px] text-slate-500">preguntas</span>
-                    </div>
-                  </div>
-
-                  {/* Respuesta corta */}
-                  <div className="flex items-center gap-3">
-                    <label className="text-xs text-slate-600 w-32 flex-shrink-0">Respuesta corta:</label>
-                    <div className="flex items-center gap-2 flex-1">
-                      <button
-                        type="button"
-                        onClick={() => setIaCountCorta(Math.max(0, iaCountCorta - 1))}
-                        className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                        disabled={iaCountCorta <= 0}
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min="0"
-                        max={MAX_IA}
-                        value={iaCountCorta}
-                        onChange={(e) => {
-                          const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
-                          setIaCountCorta(val);
-                          setIaError('');
-                        }}
-                        className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-                          if (total < MAX_IA) setIaCountCorta(Math.min(MAX_IA, iaCountCorta + 1));
-                        }}
-                        className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                        disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
-                      >
-                        +
-                      </button>
-                      <span className="text-[11px] text-slate-500">preguntas</span>
-                    </div>
-                  </div>
-
-                  {/* Resumen total */}
-                  <div className="pt-2 border-t border-slate-200">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-700">Total:</span>
-                      <span className="text-xs font-bold text-emerald-600">
-                        {iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Parámetros avanzados de configuración de IA */}
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setIaShowAdvanced(!iaShowAdvanced)}
-                  className="w-full flex items-center justify-between text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors"
-                >
-                  <span>⚙️ Parámetros avanzados de IA</span>
-                  <span className="text-slate-500">{iaShowAdvanced ? '▼' : '▶'}</span>
-                </button>
-
-                {iaShowAdvanced && (
-                  <div className="mt-3 p-3 rounded-lg border-2 border-slate-200 bg-slate-50 space-y-3">
-                    {/* Temperature */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Temperature <span className="text-slate-500 font-normal">(0.0 - 1.0)</span>
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          min="0"
-                          max="1"
-                          step="0.1"
-                          value={iaTemperature}
-                          onChange={(e) => {
-                            const val = Math.max(0, Math.min(1, Number(e.target.value) || 0.6));
-                            setIaTemperature(val);
-                          }}
-                          className="flex-1 rounded-lg border-2 border-slate-200 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                        />
-                        <span className="text-[10px] text-slate-500 w-32">
-                          {iaTemperature < 0.3 ? 'Muy determinista' : iaTemperature < 0.7 ? 'Balanceado' : 'Más creativo'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Top-P */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Top-P <span className="text-slate-500 font-normal">(0.0 - 1.0, opcional)</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value={iaTopP}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? '' : Math.max(0, Math.min(1, Number(e.target.value) || 0));
-                          setIaTopP(val === '' ? '' : String(val));
-                        }}
-                        placeholder="Auto (no configurado)"
-                        className="w-full rounded-lg border-2 border-slate-200 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <p className="text-[10px] text-slate-500 mt-1">Controla diversidad de tokens. Déjalo vacío para usar el valor por defecto.</p>
-                    </div>
-
-                    {/* Top-K */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Top-K <span className="text-slate-500 font-normal">(entero, opcional)</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={iaTopK}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? '' : Math.max(1, Number(e.target.value) || 1);
-                          setIaTopK(val === '' ? '' : String(val));
-                        }}
-                        placeholder="Auto (no configurado)"
-                        className="w-full rounded-lg border-2 border-slate-200 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <p className="text-[10px] text-slate-500 mt-1">Limita tokens candidatos. Déjalo vacío para usar el valor por defecto.</p>
-                    </div>
-
-                    {/* Max Output Tokens */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Max Output Tokens <span className="text-slate-500 font-normal">(opcional)</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="100"
-                        step="100"
-                        value={iaMaxTokens}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? '' : Math.max(100, Number(e.target.value) || 1200);
-                          setIaMaxTokens(val === '' ? '' : String(val));
-                        }}
-                        placeholder="Auto (calculado según cantidad)"
-                        className="w-full rounded-lg border-2 border-slate-200 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <p className="text-[10px] text-slate-500 mt-1">Máximo de tokens en la respuesta. Se calcula automáticamente si no se especifica.</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Mensaje de error */}
-              {iaError && (
-                <div className="rounded-lg border-2 border-rose-200 bg-rose-50 px-3 py-2 flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-rose-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-rose-700 flex-1 leading-relaxed">{iaError}</p>
-                </div>
-              )}
-
-              {/* Resumen de configuración */}
-              {showSummary && (
-                <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 px-3 py-2.5">
-                  <div className="flex items-start justify-between mb-1.5">
-                    <span className="text-xs font-semibold text-emerald-900">Resumen de configuración</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowSummary(false)}
-                      className="text-emerald-600 hover:text-emerald-800 text-[10px]"
-                    >
-                      Ocultar
-                    </button>
-                  </div>
-                  <div className="space-y-1 text-[11px] text-emerald-800">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Modo:</span>
-                      <span>{iaChoiceMode === 'general' ? 'General del área' : 'Por temas específicos'}</span>
-                    </div>
-                    {iaChoiceMode === 'temas' && iaChoiceTopics && (
-                      <div className="flex items-start gap-2">
-                        <span className="font-medium">Temas:</span>
-                        <span className="flex-1">{iaChoiceTopics}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Nivel:</span>
-                      <span className="capitalize">{iaNivel}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Cantidad:</span>
-                      <span>{iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''} ({iaCountMultiple} múltiple, {iaCountVerdaderoFalso} V/F, {iaCountCorta} corta)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Área:</span>
-                      <span>{areaTitle || 'No especificada'}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Info adicional */}
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-[11px] text-slate-600 leading-relaxed flex-1">
-                    <strong className="text-slate-700">Nota:</strong> Puedes editar las preguntas después. Proceso: 10-30 segundos.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setShowSummary(!showSummary)}
-                    className="text-[10px] text-emerald-600 hover:text-emerald-700 font-medium whitespace-nowrap"
-                  >
-                    {showSummary ? 'Ocultar' : 'Ver'} resumen
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer con botones */}
-            <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-t border-slate-200 bg-slate-50">
-              <div className="text-[11px] text-slate-500 flex items-center gap-2">
-                {cooldownMs > 0 && (
-                  <span className="inline-flex items-center gap-1 text-amber-600">
-                    <AlertTriangle className="h-3 w-3" />
-                    Espera {Math.ceil(cooldownMs / 1000)}s
-                  </span>
-                )}
-                {!iaLoading && !cooldownMs && (
-                  <span className="text-slate-400">
-                    Tiempo estimado: {(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) <= 10 ? '10-15s' : (iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) <= 30 ? '15-25s' : '25-35s'}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => { setIaChoiceOpen(false); setIaError(''); setShowSummary(false); }}
-                  disabled={iaLoading}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={async () => {
-                    await crearQuizConIAOpciones({ modo: iaChoiceMode, temasText: iaChoiceTopics });
-                  }}
-                  disabled={iaLoading || cooldownMs > 0 || (iaChoiceMode === 'temas' && !iaChoiceTopics.trim()) || (iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) < 1}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 px-4 py-1.5 text-xs font-semibold text-white hover:from-emerald-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
-                >
-                  {iaLoading ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      <span>Generando {iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''}...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-3.5 w-3.5" />
-                      {cooldownMs > 0 ? `Espera ${Math.ceil(cooldownMs / 1000)}s` : 'Generar'}
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal: nueva implementación con componente extraído */}
+      <QuizIAModal
+        open={iaChoiceOpen}
+        onClose={() => setIaChoiceOpen(false)}
+        areaTitle={areaTitle}
+        selectedAreaId={selectedAreaId}
+        initialTopic={iaTopic}
+        initialCount={iaQuickCount}
+        onSuccess={({ draft, questions }) => {
+          setIaQuestions(questions);
+          // Preserve current state + new draft
+          setIaDraft(prev => ({
+            ...prev,
+            ...draft,
+            // Ensure critical IDs are preserving
+            areaTitle: draft.areaTitle || areaTitle,
+            selectedAreaId: draft.selectedAreaId || selectedAreaId
+          }));
+          setOpen(true);
+        }}
+      />
       {/* Encabezado breve */}
       <div className="relative overflow-hidden rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 px-6 pt-4 pb-6 sm:px-8 sm:pt-5 sm:pb-8 shadow-xl ring-2 ring-slate-100/50 mb-8">
         {/* blobs suaves al fondo */}
@@ -1338,22 +547,22 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
 
         <div className="relative z-10 flex items-center gap-5">
           {/* ícono con badge */}
-          <div className="relative grid size-16 sm:size-20 place-items-center rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-600 to-purple-600 text-white shadow-2xl ring-4 ring-white/50">
-            <Icon className="size-8 sm:size-10" />
-            <span className="absolute -right-1 -top-1 grid size-6 place-items-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 ring-3 ring-white shadow-lg">
-              <Sparkles className="size-3.5 text-white" />
+          <div className="relative grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-sky-500 to-violet-600 text-white shadow-lg sm:size-14">
+            <Icon className="size-6 sm:size-7" />
+            <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-emerald-500 ring-2 ring-white">
+              <Sparkles className="size-3 text-white" />
             </span>
           </div>
 
-          <div className="flex flex-col">
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">
+          <div className="flex flex-col min-w-0">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-sky-700 to-violet-700">
               {headerTitle}
             </h2>
 
             {/* subrayado doble */}
-            <div className="mt-2 flex gap-2">
-              <span className="h-1.5 w-20 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 shadow-sm" />
-              <span className="h-1.5 w-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 shadow-sm" />
+            <div className="mt-1 flex gap-2">
+              <span className="h-1 w-14 sm:w-16 rounded-full bg-gradient-to-r from-sky-500 to-sky-300" />
+              <span className="h-1 w-8 sm:w-10 rounded-full bg-gradient-to-r from-violet-500 to-violet-300" />
             </div>
           </div>
         </div>
@@ -1407,14 +616,18 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
             >
               <Sparkles className="h-4 w-4" />
-              {cooldownMs > 0 ? `Espera ${Math.ceil(cooldownMs / 1000)}s` : 'Genera con IA'}
+              {cooldownMs > 0 ? (() => {
+                const mins = Math.floor(cooldownMs / 60000);
+                const secs = Math.ceil((cooldownMs % 60000) / 1000);
+                return mins > 0 ? `Espera ${mins}m ${secs}s` : `Espera ${secs}s`;
+              })() : 'Genera con IA'}
             </button>
           </div>
           <button
             onClick={() => setOpen(true)}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-violet-700 hover:to-indigo-700 sm:w-auto"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:from-violet-700 hover:to-indigo-700 hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
             Nuevo quizt
           </button>
         </div>
@@ -1528,14 +741,14 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                         <button
                           onClick={() => handleView(item)}
                           title="Vista previa"
-                          className="rounded-xl p-2.5 text-slate-600 bg-slate-100 hover:bg-gradient-to-br hover:from-slate-200 hover:to-slate-300 hover:text-slate-800 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm hover:shadow-md"
+                          className="rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleResultados(item)}
                           title="Resultados"
-                          className="rounded-xl p-2.5 text-white bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 hover:scale-110 active:scale-95 shadow-md hover:shadow-lg"
+                          className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:from-emerald-100 hover:to-green-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
                           <span className="font-bold text-sm">%</span>
                         </button>
@@ -1543,7 +756,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                           <button
                             onClick={() => handlePublish(item)}
                             title="Publicar"
-                            className="rounded-xl p-2.5 text-white bg-gradient-to-br from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 transition-all duration-200 hover:scale-110 active:scale-95 shadow-md hover:shadow-lg"
+                            className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:from-emerald-100 hover:to-green-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                           >
                             <UploadCloud className="h-4 w-4" />
                           </button>
@@ -1551,14 +764,16 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                         <button
                           onClick={() => handleEdit(item)}
                           title="Editar"
-                          className="rounded-xl p-2.5 text-white bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 hover:scale-110 active:scale-95 shadow-md hover:shadow-lg"
+                          aria-label="Editar"
+                          className="rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openDeleteConfirm(item)}
                           title="Eliminar"
-                          className="rounded-xl p-2.5 text-white bg-gradient-to-br from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 transition-all duration-200 hover:scale-110 active:scale-95 shadow-md hover:shadow-lg"
+                          aria-label="Eliminar"
+                          className="rounded-xl border-2 border-rose-300 bg-gradient-to-r from-rose-50 to-red-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:from-rose-100 hover:to-red-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -1661,67 +876,140 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
 
       {/* Resultados modal */}
       {resultsOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 px-0.5 mt-16">
-          <div className="w-full max-w-lg rounded-lg bg-white shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between border-b px-2 py-1.5">
-              <h3 className="text-base font-semibold text-slate-900">Resultados • {resultsQuizMeta?.titulo || 'Quiz'}</h3>
-              <button onClick={() => setResultsOpen(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col">
+            {/* Header mejorado */}
+            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg">
+                  <span className="text-white font-bold text-lg">%</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Resultados del Quiz</h3>
+                  <p className="text-sm text-slate-600 mt-0.5">{resultsQuizMeta?.titulo || 'Quiz'}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setResultsOpen(false)}
+                className="rounded-xl p-2 text-slate-500 hover:bg-white/80 hover:text-slate-700 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <div className="max-h-[60vh] overflow-y-auto px-2 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+
+            {/* Contenido con scroll */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 bg-slate-50/30">
               {resultsLoading ? (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Cargando…</div>
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+                    <p className="text-sm font-medium text-slate-600">Cargando resultados...</p>
+                  </div>
+                </div>
               ) : resultsRows.length ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50/60">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Estudiante</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Grupo</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Intentos</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Oficial (1er intento)</th>
-                        <th className="px-4 py-2"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {resultsRows.map((r) => (
-                        <tr key={r.id_estudiante}>
-                          <td className="px-4 py-2 text-slate-800">{`${r.apellidos || ''} ${r.nombre || ''}`.trim()}</td>
-                          <td className="px-4 py-2 text-slate-600">{r.grupo || '—'}</td>
-                          <td className="px-4 py-2 text-slate-700">{r.total_intentos || 0}</td>
-                          <td className="px-4 py-2">
-                            {r.total_intentos > 0 ? (
-                              <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold ring-1 ring-inset ${(Number(r.oficial_puntaje || 0) >= 70)
-                                ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-                                : (Number(r.oficial_puntaje || 0) >= 50)
-                                  ? 'bg-amber-50 text-amber-700 ring-amber-200'
-                                  : 'bg-rose-50 text-rose-700 ring-rose-200'
-                                }`}>
-                                {Number(r.oficial_puntaje || 0)}%
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 text-sm">Sin intento</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2 text-right">
-                            <button
-                              disabled={r.total_intentos === 0}
-                              onClick={() => openReview(r)}
-                              className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                            >
-                              Ver detalle
-                            </button>
-                          </td>
+                <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-slate-200/60">
+                      <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50">
+                        <tr>
+                          <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Estudiante
+                          </th>
+                          <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Grupo
+                          </th>
+                          <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Intentos
+                          </th>
+                          <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Puntaje Oficial
+                          </th>
+                          <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Acción
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {resultsRows.map((r, idx) => (
+                          <tr
+                            key={r.id_estudiante}
+                            className={`hover:bg-indigo-50/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                          >
+                            <td className="px-5 py-4">
+                              <div className="font-semibold text-slate-900 text-sm">
+                                {`${r.apellidos || ''} ${r.nombre || ''}`.trim() || 'Sin nombre'}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 text-center">
+                              <span className="inline-flex items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold text-sm">
+                                {r.grupo || '—'}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-center">
+                              <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
+                                {r.total_intentos || 0}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-center">
+                              {r.total_intentos > 0 ? (
+                                <span className={`inline-flex items-center justify-center min-w-[4rem] px-4 py-2 rounded-xl font-bold text-sm shadow-sm ${(Number(r.oficial_puntaje || 0) >= 70)
+                                    ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white ring-2 ring-emerald-200'
+                                    : (Number(r.oficial_puntaje || 0) >= 50)
+                                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white ring-2 ring-amber-200'
+                                      : 'bg-gradient-to-r from-rose-500 to-red-600 text-white ring-2 ring-rose-200'
+                                  }`}>
+                                  {Number(r.oficial_puntaje || 0)}%
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-sm font-medium">
+                                  Sin intento
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              <button
+                                disabled={r.total_intentos === 0}
+                                onClick={() => openReview(r)}
+                                className="inline-flex items-center gap-1.5 rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-4 py-2 text-xs font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 hover:border-indigo-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                Ver detalle
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               ) : (
-                <div className="text-slate-600 text-sm">Aún no hay estudiantes con intentos registrados.</div>
+                <div className="flex flex-col items-center justify-center py-16 px-4">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mb-4">
+                    <PlaySquare className="h-10 w-10 text-slate-400" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-slate-700 mb-2">Sin resultados aún</h4>
+                  <p className="text-sm text-slate-500 text-center max-w-sm">
+                    Aún no hay estudiantes que hayan completado este quiz.
+                  </p>
+                </div>
               )}
             </div>
-            <div className="flex justify-end gap-2 border-t px-2 py-1.5">
-              <button onClick={() => setResultsOpen(false)} className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Cerrar</button>
+
+            {/* Footer mejorado */}
+            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t border-slate-200/60">
+              <div className="text-sm text-slate-600">
+                {resultsRows.length > 0 && (
+                  <span className="font-medium">
+                    {resultsRows.length} {resultsRows.length === 1 ? 'estudiante' : 'estudiantes'}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setResultsOpen(false)}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-violet-700 transition-all hover:shadow-lg"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
@@ -1732,14 +1020,34 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 px-0.5 mt-16">
           <div className="w-full max-w-4xl rounded-lg bg-white shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between border-b px-2 py-1.5">
-              <h3 className="text-base font-semibold text-slate-900">Detalle intento 1 • {reviewHeader.quiz?.titulo || 'Quiz'} • {reviewHeader.estudiante?.nombre || 'Alumno'}</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-base font-semibold text-slate-900">
+                  {reviewHeader.quiz?.titulo || 'Quiz'} • {reviewHeader.estudiante?.nombre || 'Alumno'}
+                </h3>
+                {reviewHeader.estudiante?.totalIntentos > 1 && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-slate-600 font-medium">Intento:</label>
+                    <select
+                      value={selectedIntentoReview}
+                      onChange={(e) => handleChangeIntentoReview(Number(e.target.value))}
+                      className="text-xs border border-slate-300 rounded-md px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      {Array.from({ length: reviewHeader.estudiante.totalIntentos }, (_, i) => i + 1).map(num => (
+                        <option key={num} value={num}>
+                          {num === 1 ? `Intento ${num} (Oficial)` : `Intento ${num} (Práctica)`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
               <button onClick={() => setReviewOpen(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
             </div>
             <div className="max-h-[70vh] overflow-y-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {reviewLoading ? (
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Cargando…</div>
               ) : reviewData && Array.isArray(reviewData.preguntas) ? (
-                <div className="space-y-2.5">
+                <div className="space-y-4">
                   {/* Analizador de fallos repetidos */}
                   {reviewHeader.estudiante?.totalIntentos >= 2 && (
                     <AnalizadorFallosRepetidos
@@ -1749,32 +1057,134 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                       totalIntentos={reviewHeader.estudiante?.totalIntentos}
                     />
                   )}
-                  {reviewData.preguntas.map((p, idx) => {
-                    const sel = new Set(p.seleccionadas || []);
-                    const corr = !!p.correcta;
+                  
+                  {/* Separar preguntas por tipo */}
+                  {(() => {
+                    const preguntasOpcionMultiple = reviewData.preguntas.filter(p => p.tipo === 'opcion_multiple' || p.tipo === 'verdadero_falso' || p.tipo === 'multi_respuesta');
+                    const respuestasCortas = reviewData.preguntas.filter(p => p.tipo === 'respuesta_corta');
+                    
                     return (
-                      <div key={p.id || idx} className="rounded border border-slate-200 p-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="text-sm font-medium text-slate-900">{p.orden || (idx + 1)}. {p.enunciado}</div>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${corr ? 'bg-green-50 text-green-700 border-green-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{corr ? 'Correcta' : 'Incorrecta'}</span>
-                        </div>
-                        <ul className="mt-1.5 space-y-1">
-                          {(p.opciones || []).map((o) => {
-                            const isSel = sel.has(o.id);
-                            const isOk = o.es_correcta === 1;
-                            const base = 'text-xs rounded-lg border px-3 py-1.5 flex items-center justify-between';
-                            const cl = isSel && isOk ? 'bg-emerald-50 border-emerald-300' : isSel && !isOk ? 'bg-rose-50 border-rose-300' : !isSel && isOk ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200';
-                            return (
-                              <li key={o.id} className={`${base} ${cl}`}>
-                                <span>{o.texto}</span>
-                                <div className="text-[10px] text-slate-600">{isOk ? 'Correcta' : (isSel ? 'Marcada' : '')}</div>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
+                      <>
+                        {/* Preguntas de opción múltiple */}
+                        {preguntasOpcionMultiple.length > 0 && (
+                          <div className="space-y-2.5">
+                            {preguntasOpcionMultiple.map((p, idx) => {
+                              const sel = new Set(p.seleccionadas || []);
+                              const corr = !!p.correcta;
+                              return (
+                                <div key={p.id || idx} className="rounded border border-slate-200 p-2">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="text-sm font-medium text-slate-900">{p.orden || (idx + 1)}. {p.enunciado}</div>
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${corr ? 'bg-green-50 text-green-700 border-green-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{corr ? 'Correcta' : 'Incorrecta'}</span>
+                                  </div>
+                                  <ul className="mt-1.5 space-y-1">
+                                    {(p.opciones || []).map((o) => {
+                                      const isSel = sel.has(o.id);
+                                      const isOk = o.es_correcta === 1;
+                                      const base = 'text-xs rounded-lg border px-3 py-1.5 flex items-center justify-between';
+                                      // Colores según el estado: seleccionada y correcta (verde), seleccionada e incorrecta (rojo), solo correcta (verde claro), ninguna (gris)
+                                      const cl = isSel && isOk ? 'bg-emerald-50 border-emerald-300' : isSel && !isOk ? 'bg-rose-50 border-rose-300' : !isSel && isOk ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200';
+                                      return (
+                                        <li key={o.id} className={`${base} ${cl}`}>
+                                          <span>{o.texto}</span>
+                                          <div className="flex items-center gap-2">
+                                            {isSel && <span className="text-[10px] font-bold text-slate-700">✓ Seleccionada</span>}
+                                            {isOk && <span className="text-[10px] font-bold text-green-700">Correcta</span>}
+                                          </div>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Sección de Respuestas Cortas para Revisión Manual */}
+                        {respuestasCortas.length > 0 && (
+                          <div className="mt-6 pt-6 border-t border-gray-200">
+                            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                              <span>📝</span>
+                              <span>Respuestas Cortas para Revisión</span>
+                              {respuestasCortas.filter(p => {
+                                // Verificar si requiere revisión (baja confianza o estado manual_review)
+                                const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
+                                return requiereRevision;
+                              }).length > 0 && (
+                                <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full">
+                                  {respuestasCortas.filter(p => {
+                                    const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
+                                    return requiereRevision;
+                                  }).length} requieren revisión
+                                </span>
+                              )}
+                            </h4>
+                            
+                            <div className="space-y-4">
+                              {respuestasCortas.map((pregunta) => {
+                                // Obtener respuesta esperada (opción correcta)
+                                const respuestaEsperada = pregunta.opciones?.find(o => o.es_correcta === 1)?.texto;
+                                
+                                if (!respuestaEsperada) return null;
+                                
+                                // Construir objeto respuesta para el componente
+                                // Usar los datos disponibles en la pregunta y mapear a la estructura esperada
+                                // Validar que tenemos id_respuesta antes de crear el componente
+                                // Si no hay id_respuesta, no podemos hacer revisión manual
+                                if (!pregunta.id_respuesta) {
+                                  console.warn('[Quiz] Respuesta corta sin id_respuesta:', {
+                                    pregunta_id: pregunta.id,
+                                    valor_texto: pregunta.valor_texto,
+                                    calificacion_status: pregunta.calificacion_status
+                                  });
+                                  // Mostrar mensaje de que la respuesta aún no está disponible para revisión
+                                  return (
+                                    <div key={pregunta.id} className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                      <p className="text-sm text-yellow-800">
+                                        ⚠️ Esta respuesta aún no está disponible para revisión manual. 
+                                        La respuesta se está procesando automáticamente.
+                                      </p>
+                                    </div>
+                                  );
+                                }
+                                
+                                const respuestaObj = {
+                                  id: pregunta.id_respuesta, // DEBE ser el ID de la respuesta, no de la pregunta
+                                  valor_texto: pregunta.valor_texto || null,
+                                  texto_libre: pregunta.valor_texto || null,
+                                  correcta: pregunta.correcta ? 1 : 0,
+                                  calificacion_status: pregunta.calificacion_status || 'pending',
+                                  calificacion_metodo: pregunta.calificacion_metodo || null,
+                                  calificacion_confianza: pregunta.calificacion_confianza || null,
+                                  revisada_por: pregunta.revisada_por || null,
+                                  notas_revision: pregunta.notas_revision || null
+                                };
+                                
+                                return (
+                                  <ManualReviewShortAnswer
+                                    key={pregunta.id}
+                                    respuesta={respuestaObj}
+                                    pregunta={pregunta.enunciado}
+                                    respuestaEsperada={respuestaEsperada}
+                                    tipo="quiz"
+                                    onReviewComplete={(updatedData) => {
+                                      // Recargar datos del intento actualmente seleccionado
+                                      if (resultsQuizMeta?.id && reviewHeader.estudiante?.id) {
+                                        getQuizIntentoReview(resultsQuizMeta.id, reviewHeader.estudiante.id, selectedIntentoReview)
+                                          .then(({ data }) => setReviewData(data?.data || null))
+                                          .catch(err => console.error('Error al recargar datos:', err));
+                                      }
+                                    }}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     );
-                  })}
+                  })()}
                 </div>
               ) : (
                 <div className="text-slate-600 text-sm">No hay detalles disponibles para el intento 1.</div>

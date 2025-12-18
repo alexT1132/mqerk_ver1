@@ -29,6 +29,7 @@ import FeedbackReview from './FeedbackReview.jsx';
 import Recursos from './Recursos.jsx';
 import Pagos from './Pagos.jsx';
 import Configuraciones from './Configuraciones.jsx';
+import Reportes from './Reportes.jsx';
 import Quiz from './Quiz.jsx';
 import QuiztNew from './simGen/QuiztNew.jsx';
 import QuiztBuilder from './simGen/QuiztBuilder.jsx';
@@ -154,6 +155,7 @@ export function AsesorDashboardBundle() {
   <Route path="feedback/:studentId" element={<FeedbackDetailPage embedded />} />
         <Route path="recursos_educativos" element={<Recursos />} />
         <Route path="mis-pagos" element={<Pagos />} />
+        <Route path="reportes" element={<Reportes />} />
         <Route path="configuraciones" element={<Configuraciones />} />
 
         {/* Documentación */}

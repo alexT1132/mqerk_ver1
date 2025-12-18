@@ -305,7 +305,7 @@ export const resumenQuizzesEstudiante = async (id_estudiante) => {
         (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? ORDER BY qi.id DESC LIMIT 1) AS ultimo_puntaje,
         (SELECT MAX(qi.puntaje) FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ?) AS mejor_puntaje,
         (SELECT COUNT(*) FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ?) AS total_intentos,
-        (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? ORDER BY qi.id ASC LIMIT 1) AS oficial_puntaje
+        (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? AND qi.intent_number = 1 LIMIT 1) AS oficial_puntaje
       FROM quizzes q
       WHERE q.activo = 1
       ORDER BY q.fecha_limite ASC, q.id DESC
@@ -319,7 +319,7 @@ export const resumenQuizzesEstudiante = async (id_estudiante) => {
           (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? ORDER BY qi.id DESC LIMIT 1) AS ultimo_puntaje,
           (SELECT MAX(qi.puntaje) FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ?) AS mejor_puntaje,
           (SELECT COUNT(*) FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ?) AS total_intentos,
-          (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? ORDER BY qi.id ASC LIMIT 1) AS oficial_puntaje
+          (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? AND qi.intent_number = 1 LIMIT 1) AS oficial_puntaje
         FROM actividades q
         WHERE q.tipo = 'quiz' AND q.activo = 1
         ORDER BY q.fecha_limite ASC, q.id DESC
@@ -341,10 +341,11 @@ export const listEstudiantesEstadoQuiz = async (id_quiz) => {
       e.grupo,
       e.folio,
       COUNT(*) AS total_intentos,
-      -- Primer intento (puntaje oficial)
+      -- Primer intento (puntaje oficial) - siempre intent_number = 1
       (SELECT qi2.puntaje FROM quizzes_intentos qi2 
          WHERE qi2.id_quiz = qi.id_quiz AND qi2.id_estudiante = qi.id_estudiante 
-         ORDER BY qi2.id ASC LIMIT 1) AS oficial_puntaje
+         AND qi2.intent_number = 1
+         LIMIT 1) AS oficial_puntaje
     FROM quizzes_intentos qi
     LEFT JOIN estudiantes e ON e.id = qi.id_estudiante
     WHERE qi.id_quiz = ?

@@ -151,7 +151,29 @@ export default function Pagos() {
       if (!pago.fecha_pago) return;
       
       try {
-        const fecha = new Date(pago.fecha_pago + 'T00:00:00');
+        // Parsear fecha correctamente (puede venir como 'YYYY-MM-DD' o 'YYYY-MM-DDTHH:mm:ss')
+        let fechaStr = String(pago.fecha_pago).trim();
+        if (fechaStr.includes('T')) {
+          fechaStr = fechaStr.split('T')[0];
+        }
+        if (fechaStr.includes(' ')) {
+          fechaStr = fechaStr.split(' ')[0];
+        }
+        
+        const [yearStr, monthStr, dayStr] = fechaStr.split('-');
+        if (!yearStr || !monthStr || !dayStr) {
+          console.warn('Formato de fecha inválido:', pago.fecha_pago);
+          return;
+        }
+        
+        const fecha = new Date(parseInt(yearStr), parseInt(monthStr) - 1, parseInt(dayStr));
+        
+        // Verificar que la fecha es válida
+        if (isNaN(fecha.getTime())) {
+          console.warn('Fecha inválida después de parsear:', pago.fecha_pago);
+          return;
+        }
+        
         // Verificar que la fecha pertenece al mes actual
         if (fecha.getFullYear() !== year || fecha.getMonth() !== monthIndex) {
           return;
@@ -160,25 +182,33 @@ export default function Pagos() {
         const dia = fecha.getDate();
         
         // Determinar en qué semana cae el día
-        for (let w = 1; w <= weeksInMonth; w++) {
-          let weekStart = 1 + (w - 1) * 7 - offset;
-          if (weekStart < 1) weekStart = 1;
-          
-          let weekEnd = weekStart + 6;
-          if (weekEnd > daysInMonth) weekEnd = daysInMonth;
-          
-          // Asegurar que weekStart no sea mayor que weekEnd
-          if (weekStart > daysInMonth) {
-            weekStart = daysInMonth;
-            weekEnd = daysInMonth;
-          }
-          
-          if (dia >= weekStart && dia <= weekEnd) {
-            result[w].push(pago);
-            break;
-          }
+        // Calcular el día del año relativo al mes (día 1 = primer día del mes)
+        // Luego calcular qué semana es basándose en que cada semana tiene 7 días
+        const diaRelativo = dia - 1; // Día 1 = 0, Día 2 = 1, etc.
+        const diaConOffset = diaRelativo + offset; // Ajustar por el día de la semana del primer día
+        const semanaCalculada = Math.floor(diaConOffset / 7) + 1;
+        
+        // Asegurar que la semana esté en el rango válido
+        const semanaFinal = Math.max(1, Math.min(semanaCalculada, weeksInMonth));
+        
+        if (!result[semanaFinal]) {
+          result[semanaFinal] = [];
+        }
+        result[semanaFinal].push(pago);
+        
+        // Log para depuración (solo en desarrollo)
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Pago ${pago.id_pago} (${dia}/${monthIndex + 1}/${year}) asignado a semana ${semanaFinal}`, {
+            dia,
+            offset,
+            diaRelativo,
+            diaConOffset,
+            semanaCalculada,
+            semanaFinal
+          });
         }
       } catch (e) {
+        console.error('Error procesando fecha de pago:', pago.fecha_pago, e);
         // Error procesando fecha de pago - se omite este pago del agrupamiento
       }
     });
@@ -370,10 +400,13 @@ export default function Pagos() {
                   <DollarSign className="size-16" />
                 </div>
                 <p className="text-slate-600 font-bold text-lg mb-2">
-                  No hay pagos para esta semana
+                  No hay pagos para {week ? `la semana ${week} de` : ''} {month} {year}
                 </p>
-                <p className="text-sm text-slate-500 font-medium">
+                <p className="text-sm text-slate-500 font-medium mb-4">
                   Los pagos aparecerán aquí cuando estén registrados
+                </p>
+                <p className="text-xs text-slate-400 italic">
+                  💡 Intenta cambiar el mes o el año en los filtros superiores para buscar en otros períodos
                 </p>
               </div>
             ) : (

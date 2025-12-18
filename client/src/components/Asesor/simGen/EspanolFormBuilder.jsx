@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 // Nota: reemplazado react-katex por un componente local liviano para evitar dependencia
 import InlineMath from './InlineMath.jsx';
 import MathPalette, { Modal } from './MathPalette.jsx';
@@ -439,6 +440,7 @@ function QuestionCard({ q, onChange, onRemove }) {
 
 /* ----------------------------- Vista principal --------------------------- */
 export default function EspanolFormBuilder() {
+  const navigate = useNavigate();
   const [questions, setQuestions] = useState([newQuestion("multiple")]);
   const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -550,9 +552,26 @@ export default function EspanolFormBuilder() {
       <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-end gap-3">
           <button
-            onClick={() => setPreviewOpen(true)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            onClick={() => {
+              if (window.confirm('¿Estás seguro de que deseas cancelar? Se perderán los cambios no guardados.')) {
+                navigate('/asesor/simuladores', { replace: true });
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-xl border-2 border-rose-300 bg-white px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-50 hover:border-rose-400 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
           >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Cancelar
+          </button>
+          <button
+            onClick={() => setPreviewOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
             Vista previa
           </button>
           <button

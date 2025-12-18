@@ -700,7 +700,7 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ ...payload, purpose: 'analisis' }), // Usa GEMINI_API_KEY_ANALISIS
         });
 
         if (res.ok) {
