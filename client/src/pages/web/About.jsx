@@ -11,13 +11,7 @@ import Diez from "../../assets/mqerk/about/10.png";
 import Once from "../../assets/mqerk/about/11.png";
 import Doce from "../../assets/mqerk/about/12.png";
 import Trece from "../../assets/mqerk/about/13.png";
-import Logo from "../../assets/mqerk/mqerk.png";
 import { IoIosRocket } from "react-icons/io";
-import { FaFacebook } from "react-icons/fa";
-import { FaInstagram } from "react-icons/fa";
-import { FaYoutube } from "react-icons/fa";
-import { AiFillTikTok } from "react-icons/ai";
-import { Link } from "react-router-dom";
 import Footer from "../../components/footer";
 
 function About() {

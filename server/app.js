@@ -27,7 +27,7 @@ const app = express();
 
 const allowAllCors = process.env.ALLOW_ALL_CORS === 'true' || process.env.NODE_ENV !== 'production';
 const allowedOrigins = new Set([
-    'http://localhost:5173',
+    'http://localhost:5002',
     'http://127.0.0.1:5173',
     'http://192.168.0.14:5173',
     'http://192.168.0.16:5173',
