@@ -113,12 +113,12 @@ const rutasEstudiante = {
   return (
     <>
       <aside
-        className="hidden sm:flex flex-col fixed w-16 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.3)] z-1"
+        className="hidden sm:flex flex-col w-16 h-full bg-gray-50 overflow-hidden shadow-[4px_0_10px_-2px_rgba(0,0,0,0.3)] z-1"
         aria-label="Sidebar"
       >
-        <nav className="h-dvh bg-gray-50">
+        <nav className="h-full">
 
-          <ul className="relative p-4 pb-2 h-full">
+          <ul className="relative p-4 pb-20 h-full overflow-y-auto">
             
             <ElementoSideBar to={rutas.toInicio} Icono={LogoInicio} NombreElemento='Inicio'/>
 
@@ -147,10 +147,9 @@ const rutasEstudiante = {
             <ElementoSideBar to={rutas.toAutenticacion} Icono={LogoAutenticacion} NombreElemento='Autenticación'/>
 
             
-
-            <div className={`fixed bottom-3 z-3`}>
-            <ElementoSideBar to={rutas.toConfiguracion} Icono={LogoConfig} NombreElemento='Configuración'/>
-            <ElementoSideBar to={rutas.toCerrarSesion} Icono={LogoLogOut} NombreElemento='Cerrar Sesión'/>
+            <div className="absolute bottom-0 left-0 w-full px-4 pb-3">
+              <ElementoSideBar to={rutas.toConfiguracion} Icono={LogoConfig} NombreElemento='Configuración'/>
+              <ElementoSideBar to={rutas.toCerrarSesion} Icono={LogoLogOut} NombreElemento='Cerrar Sesión'/>
             </div>
           </ul>
         </nav>

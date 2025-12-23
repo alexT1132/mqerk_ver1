@@ -1,7 +1,7 @@
 // src/components/Header_Alumno_comp.jsx
 import React, { useRef, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import MQerkLogo from "../../assets/MQerK_logo.png";
+import MQerkLogo from "../../assets/MQerK_logo.webp";
 import { Logos } from "../IndexComp"; // Asegúrate de que la ruta a IndexComp.jsx sea correcta
 import { useStudent } from "../../context/StudentContext";
 import { buildStaticUrl, getApiOrigin } from "../../utils/url";
@@ -37,7 +37,7 @@ export function Header_Alumno_comp({
   } = useStudentNotifications();
   const notificationRef = useRef(null);
 
-  const { alumno, logout } = useAuth();
+  const { alumno, logout, isAuthenticated } = useAuth();
 
   // Construir URL absoluto para archivos estticos del backend (evitar IPs fijas)
   const apiOrigin = getApiOrigin();
@@ -51,8 +51,15 @@ export function Header_Alumno_comp({
   // Determinar datos finales usando contexto con fallbacks
   const finalStudentData = studentData || { name: "Estudiante", matricula: "0000", email: "estudiante@mqerk.com" };
   const finalProfileImage = propProfileImage; // Imagen desde props tiene prioridad
-  // Mostrar en línea cuando el WS del estudiante está abierto; props pueden forzar apagado si es necesario
-  const finalIsOnline = propIsOnline && (wsStatus === 'open');
+  // Mostrar en línea basado en el estado REAL del WebSocket
+  // El WebSocket es una conexión real que se establece cuando el usuario está autenticado
+  // Estados: 'idle' | 'connecting' | 'open' | 'closed' | 'error'
+  // Solo mostrar verde cuando el WebSocket está realmente conectado ('open') o conectando ('connecting')
+  // Si propIsOnline es false explícitamente, respetarlo (para casos especiales)
+  const finalIsOnline = propIsOnline !== false && (
+    wsStatus === 'open' ||  // WebSocket conectado y funcionando
+    wsStatus === 'connecting'  // WebSocket intentando conectar (estado intermedio)
+  );
 
   // Función para alternar dropdown de notificaciones
   const toggleNotifications = () => {

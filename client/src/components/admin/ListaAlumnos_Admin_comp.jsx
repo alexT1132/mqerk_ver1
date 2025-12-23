@@ -182,7 +182,10 @@ function CategoryButton({ label, isActive, onClick }) {
                 w-full min-w-[70px] xs:min-w-[85px] sm:min-w-[100px] max-w-[120px] xs:max-w-[140px] sm:max-w-[160px]
                 h-10 xs:h-12 sm:h-14 md:h-16
                 flex items-center justify-center
-                border-2 transform hover:scale-105 hover:shadow-lg
+                border-2 transform 
+                active:scale-95 touch-manipulation
+                hover:scale-105 hover:shadow-md
+                ring-1 ring-transparent hover:ring-purple-200/20
                 ${isActive
                     ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white border-purple-500 shadow-md shadow-purple-500/30' 
                     : 'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-purple-400 shadow-sm hover:from-purple-600 hover:to-purple-700 hover:border-purple-500'
@@ -205,28 +208,28 @@ function CategoryButton({ label, isActive, onClick }) {
 function GrupoButton({ label, isActive, onClick, grupo }) {
     // Función para obtener estilos sobrios basados en el tipo de turno
     const getGrupoStyles = (tipo, isActive) => {
-        const baseStyles = "relative overflow-hidden px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-3 rounded-md xs:rounded-lg font-medium text-xs xs:text-sm transition-all duration-200 ease-out w-full min-w-[100px] max-w-[140px] h-10 xs:h-12 sm:h-14 flex flex-col items-center justify-center gap-0.5 border hover:shadow-md";
+        const baseStyles = "relative overflow-hidden px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-3 rounded-lg xs:rounded-xl sm:rounded-2xl font-extrabold text-xs xs:text-sm sm:text-base transition-all duration-300 ease-out w-full min-w-[100px] max-w-[140px] h-10 xs:h-12 sm:h-14 flex flex-col items-center justify-center gap-0.5 border-2 hover:shadow-lg active:scale-95 touch-manipulation ring-2 ring-transparent hover:ring-opacity-50";
         
         switch (tipo) {
             case 'vespertino':
                 return isActive 
-                    ? `${baseStyles} bg-purple-500 text-white border-purple-500`
+                    ? `${baseStyles} bg-purple-500 text-white border-purple-500 shadow-md`
                     : `${baseStyles} bg-white text-purple-600 border-purple-300 hover:bg-purple-50`;
             
             case 'matutino':
                 return isActive 
-                    ? `${baseStyles} bg-blue-500 text-white border-blue-500`
-                    : `${baseStyles} bg-white text-blue-600 border-blue-300 hover:bg-blue-50`;
+                    ? `${baseStyles} bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500 shadow-md ring-blue-300/30`
+                    : `${baseStyles} bg-gradient-to-r from-blue-400/60 to-indigo-400/60 text-white border-blue-300/50 shadow-sm hover:from-blue-500/70 hover:to-indigo-500/70 hover:border-blue-400/60 hover:ring-blue-200/20`;
             
             case 'sabatino':
                 return isActive 
-                    ? `${baseStyles} bg-green-500 text-white border-green-500`
-                    : `${baseStyles} bg-white text-green-600 border-green-300 hover:bg-green-50`;
+                    ? `${baseStyles} bg-gradient-to-r from-green-600 to-teal-600 text-white border-green-500 shadow-md ring-green-300/30`
+                    : `${baseStyles} bg-gradient-to-r from-green-400/60 to-teal-400/60 text-white border-green-300/50 shadow-sm hover:from-green-500/70 hover:to-teal-500/70 hover:border-green-400/60 hover:ring-green-200/20`;
             
             default:
                 return isActive 
-                    ? `${baseStyles} bg-gray-500 text-white border-gray-500`
-                    : `${baseStyles} bg-white text-gray-600 border-gray-300 hover:bg-gray-50`;
+                    ? `${baseStyles} bg-gradient-to-r from-gray-600 to-slate-600 text-white border-gray-500 shadow-md ring-gray-300/30`
+                    : `${baseStyles} bg-gradient-to-r from-gray-400/60 to-slate-400/60 text-white border-gray-300/50 shadow-sm hover:from-gray-500/70 hover:to-slate-500/70 hover:border-gray-400/60 hover:ring-gray-200/20`;
         }
     };
 
@@ -388,7 +391,7 @@ function ListaAlumnos_Admin_comp() {
       });
       return list;
     } catch (err) {
-      console.error('Error al cargar estudiantes:', err);
+      // Error manejado por el contexto
       setAlumnos([]);
       return [];
     }
@@ -418,7 +421,7 @@ function ListaAlumnos_Admin_comp() {
         setAlumnos(prev => prev.map(a => updates[a.folio] ? { ...a, ...updates[a.folio] } : a));
       }
     } catch (e) {
-      console.warn('No se pudo enriquecer datos de tutor:', e);
+      // Error manejado silenciosamente
     }
   };
 
@@ -446,7 +449,7 @@ function ListaAlumnos_Admin_comp() {
         }));
       setGruposPorCurso(prev => ({ ...prev, [curso]: grupos }));
     } catch (err) {
-      console.error('Error al cargar grupos con cantidad:', err);
+      // Error manejado por el contexto
       setGruposPorCurso(prev => ({ ...prev, [curso]: [] }));
     }
   };
@@ -464,7 +467,7 @@ function ListaAlumnos_Admin_comp() {
       }
       throw new Error('Función de eliminación no disponible en AdminContext');
     } catch (error) {
-      console.error('Error al eliminar estudiante:', error);
+      // Error manejado por el contexto
       return { success: false, message: error.message || 'Error al eliminar estudiante' };
     }
   };
@@ -479,7 +482,7 @@ function ListaAlumnos_Admin_comp() {
       }
       throw new Error('Función de actualización no disponible en AdminContext');
     } catch (error) {
-      console.error('Error al actualizar estudiante:', error);
+      // Error manejado por el contexto
       return { success: false, message: error.message || 'Error al actualizar estudiante' };
     }
   };
@@ -678,6 +681,23 @@ function ListaAlumnos_Admin_comp() {
     }
   };
 
+  // Función para obtener los colores del badge del turno según el tipo
+  const getTurnoBadgeStyles = (turno) => {
+    const turnoUpper = String(turno || '').toUpperCase();
+    if (turnoUpper.startsWith('V')) {
+      // Vespertino = morado
+      return 'bg-purple-100 text-purple-800';
+    } else if (turnoUpper.startsWith('M')) {
+      // Matutino = azul
+      return 'bg-blue-100 text-blue-800';
+    } else if (turnoUpper.startsWith('S')) {
+      // Sabatino = verde
+      return 'bg-green-100 text-green-800';
+    }
+    // Por defecto, morado (vespertino es el más común)
+    return 'bg-purple-100 text-purple-800';
+  };
+
   // Carga inicial: ahora se muestra como overlay en capa, no reemplaza la vista
 
   // Manejo de errores
@@ -733,15 +753,18 @@ function ListaAlumnos_Admin_comp() {
 
       <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
   
-      <div className="pt-2 xs:pt-4 sm:pt-6 pb-2 xs:pb-3 sm:pb-4 px-2 xs:px-4 sm:px-6">
+      <div className="pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-2 xs:pb-3 sm:pb-4 px-2 xs:px-4 sm:px-6">
         <div className="w-full max-w-7xl mx-auto">
           
           <div className="text-center mb-4 xs:mb-6 sm:mb-8">
-            <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-1 xs:mb-2 px-2">
+            <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold 
+              bg-gradient-to-r from-purple-600 to-purple-700
+              bg-clip-text text-transparent
+              mb-2 xs:mb-3 sm:mb-4 px-2">
               Lista de Alumnos por Curso
             </h1>
-            <div className="w-8 xs:w-12 sm:w-16 lg:w-20 h-0.5 xs:h-1 bg-gradient-to-r from-blue-500/80 to-indigo-500/80 mx-auto mb-2 rounded-full"></div>
-            <p className="text-xs xs:text-sm sm:text-base text-gray-600 px-4">
+            <div className="w-12 xs:w-16 sm:w-20 md:w-24 lg:w-28 h-0.5 xs:h-1 sm:h-1.5 bg-gradient-to-r from-purple-500/80 to-purple-600/80 mx-auto mb-2 xs:mb-3 sm:mb-4 rounded-full"></div>
+            <p className="text-xs xs:text-sm sm:text-base text-gray-700 font-semibold px-4">
               Gestiona y supervisa a todos los estudiantes registrados por curso
             </p>
             
@@ -760,22 +783,24 @@ function ListaAlumnos_Admin_comp() {
                 <button
                   onClick={handleRefreshData}
                   disabled={isLoading}
-                  className="ml-2 text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50"
+                  className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-95 touch-manipulation font-semibold text-xs"
                   title="Actualizar datos"
                 >
-                  <svg className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <svg className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
+                  <span>{isLoading ? 'Actualizando...' : 'Actualizar'}</span>
                 </button>
                 {(activeCategory || activeTurno || searchTerm) && (
                   <button
                     onClick={handleClearFilters}
-                    className="ml-2 text-red-600 hover:text-red-700 transition-colors"
+                    className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-lg hover:from-red-600 hover:to-rose-600 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 touch-manipulation font-semibold text-xs"
                     title="Limpiar todos los filtros"
                   >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
+                    <span>Limpiar</span>
                   </button>
                 )}
               </div>
@@ -784,8 +809,8 @@ function ListaAlumnos_Admin_comp() {
 
           {/* Botones de categoría (filtros por curso) */}
           <div className="mb-4 xs:mb-6 sm:mb-8">
-            <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-6 shadow-lg border border-gray-200">
-              <h2 className="text-base xs:text-lg sm:text-xl font-bold text-gray-800 mb-3 xs:mb-4 sm:mb-6 text-center px-2">
+            <div className="bg-gradient-to-br from-white via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border border-gray-200">
+              <h2 className="text-base xs:text-lg sm:text-xl font-extrabold text-gray-800 mb-3 xs:mb-4 sm:mb-5 text-center px-2">
                 Filtrar por Curso
               </h2>
               <div className="grid grid-cols-3 xs:grid-cols-3 sm:grid-cols-6 md:grid-cols-6 gap-1 xs:gap-1.5 sm:gap-2 md:gap-3 place-items-center">
@@ -804,8 +829,8 @@ function ListaAlumnos_Admin_comp() {
           {/* Selector de grupos/turnos dinámico */}
           {activeCategory && getGruposDisponibles().length > 0 && (
             <div className="mb-3 xs:mb-4 sm:mb-6">
-              <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-6 shadow-lg border border-gray-200">
-                <h2 className="text-base xs:text-lg sm:text-xl font-bold text-gray-800 mb-3 xs:mb-4 sm:mb-6 text-center px-2">
+              <div className="bg-gradient-to-br from-white via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border border-gray-200">
+                <h2 className="text-base xs:text-lg sm:text-xl font-extrabold text-gray-800 mb-3 xs:mb-4 sm:mb-5 text-center px-2">
                   Grupos Disponibles para {activeCategory}
                 </h2>
                 <div className="flex flex-wrap gap-1.5 xs:gap-2 sm:gap-3 justify-center items-center max-w-4xl mx-auto">
@@ -821,18 +846,18 @@ function ListaAlumnos_Admin_comp() {
                 </div>
                 
                 {/* Leyenda de colores por tipo de turno */}
-                <div className="mt-4 flex flex-wrap gap-2 justify-center text-xs">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                    <span>Matutino</span>
+                <div className="mt-4 xs:mt-5 sm:mt-6 flex flex-wrap gap-3 xs:gap-4 justify-center text-xs xs:text-sm">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="w-4 h-4 xs:w-5 xs:h-5 bg-blue-500 rounded-full ring-1 ring-blue-300/30"></div>
+                    <span className="font-semibold text-blue-600">Matutino</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-purple-500 rounded"></div>
-                    <span>Vespertino</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="w-4 h-4 xs:w-5 xs:h-5 bg-purple-500 rounded-full ring-1 ring-purple-300/30"></div>
+                    <span className="font-semibold text-purple-600">Vespertino</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-green-500 rounded"></div>
-                    <span>Sabatino</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg border border-green-200">
+                    <div className="w-4 h-4 xs:w-5 xs:h-5 bg-green-500 rounded-full ring-1 ring-green-300/30"></div>
+                    <span className="font-semibold text-green-600">Sabatino</span>
                   </div>
                 </div>
               </div>
@@ -846,13 +871,13 @@ function ListaAlumnos_Admin_comp() {
       {activeCategory && activeTurno && (
         <div className="px-2 xs:px-4 sm:px-6 mb-4 xs:mb-6">
           <div className="w-full max-w-7xl mx-auto">
-            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 xs:px-6 sm:px-8 py-4 xs:py-5 sm:py-6 rounded-lg xs:rounded-xl sm:rounded-2xl shadow-lg">
+            <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 xs:px-6 sm:px-8 py-4 xs:py-5 sm:py-6 rounded-xl sm:rounded-2xl shadow-lg border-2 border-purple-400/40 ring-2 ring-purple-200/20">
               <div className="text-center">
-                <p className="text-sm xs:text-base sm:text-lg md:text-xl font-semibold mb-1 xs:mb-2">
+                <p className="text-base xs:text-lg sm:text-xl md:text-2xl font-extrabold mb-2 xs:mb-3">
                   Grupo Activo: {activeCategory} - {activeTurno}
                 </p>
-                <p className="text-xs xs:text-sm sm:text-base text-blue-100">
-                  Capacidad: <span className="font-bold text-white">{alumnos?.length || 0}/{getGrupoInfo()?.capacidad || 0}</span> estudiantes
+                <p className="text-xs xs:text-sm sm:text-base md:text-lg text-purple-50 font-semibold">
+                  Capacidad: <span className="font-extrabold text-white">{alumnos?.length || 0}/{getGrupoInfo()?.capacidad || 0}</span> estudiantes
                 </p>
               </div>
             </div>
@@ -940,7 +965,7 @@ function ListaAlumnos_Admin_comp() {
                       {/* Columna Folio */}
                       <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 border-r border-gray-200">
                         <div className="text-center">
-                          <div className="text-xs font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-md inline-block">
+                          <div className="text-xs font-mono font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded-md inline-block">
                             {/* Mostrar folio formateado provisto por backend (folio ya se mapeó al formateado en AdminContext). */}
                             {alumno.folio || alumno.folio_formateado || ''}
                           </div>
@@ -974,7 +999,7 @@ function ListaAlumnos_Admin_comp() {
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                                 {alumno.curso}
                               </span>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTurnoBadgeStyles(alumno.turno)}`}>
                                 {alumno.turno}
                               </span>
                             </div>
@@ -1002,7 +1027,7 @@ function ListaAlumnos_Admin_comp() {
                                 setOpenStatusMenu(prev => prev === alumno.folio ? null : alumno.folio);
                               }}
                               onKeyDown={(e) => { if (e.key === 'Escape') setOpenStatusMenu(null); }}
-                              className="text-xs text-gray-600 hover:text-blue-600 transition-colors px-2 py-1 rounded-md hover:bg-gray-100"
+                              className="text-xs text-gray-600 hover:text-purple-600 transition-colors px-2 py-1 rounded-md hover:bg-gray-100"
                             >
                               Cambiar
                             </button>
@@ -1049,7 +1074,7 @@ function ListaAlumnos_Admin_comp() {
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap">
                           <button
                             onClick={() => handleVerPerfil(alumno)}
-                            className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                            className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
                             title="Ver perfil completo del estudiante"
                           >
                             <svg className="w-4 h-4 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

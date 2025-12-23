@@ -3,7 +3,14 @@ import { TOKEN_SECRET } from "../config.js";
 import { findAccessToken } from '../libs/authTokens.js';
 
 export const authREquired = (req, res, next) => {
-  const { value: candidate } = findAccessToken(req.cookies);
+  // 1) Preferir Authorization: Bearer <token> cuando esté presente (permite elegir rol correcto desde el cliente)
+  const headerAuth = req.headers?.authorization || req.headers?.Authorization;
+  const headerToken = (typeof headerAuth === 'string' && headerAuth.toLowerCase().startsWith('bearer '))
+    ? headerAuth.slice(7).trim()
+    : null;
+  // 2) Si no hay header válido, usar cookies (método que intenta resolver mejor múltiples roles)
+  const { value: cookieToken } = findAccessToken(req.cookies);
+  const candidate = headerToken || cookieToken;
   if (!candidate) {
     return res.status(401).json({ message: "No token, Authorization denied", reason: 'no-token' });
   }

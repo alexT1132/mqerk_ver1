@@ -6,10 +6,13 @@
  * Nota: En Vite, las variables de entorno se acceden con import.meta.env
  */
 const GEMINI_CONFIG = {
-  // En el cliente ya no usamos la API key directamente: llamamos al proxy backend
-  apiKey: import.meta.env?.VITE_GEMINI_API_KEY || '',
+  // ⚠️ SEGURIDAD: El cliente NUNCA debe usar la API key directamente
+  // Todas las peticiones deben ir a través del proxy del servidor
+  // La API key solo existe en el servidor (server/.env)
+  apiKey: '', // ⚠️ NO USAR - Solo para referencia, el proxy maneja la autenticación
   proxyEndpoint: '/api/ai/gemini/generate',
-  model: 'gemini-2.0-flash',
+  // Permite override del modelo vía variable de entorno
+  model: (import.meta.env?.VITE_GEMINI_MODEL || 'gemini-2.5-flash'),
   temperature: 0.7,
   maxTokens: 1500, // permitir respuestas más ricas
   timeout: 30000
@@ -19,7 +22,26 @@ const GEMINI_CONFIG = {
 const ESPERA = (ms) => new Promise(res => setTimeout(res, ms));
 
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6 horas
-const buildCacheKey = (datos) => `gemini_analisis_${(datos.simulacion || 'simulacion').replace(/\s+/g,'_')}_${datos.tipo || 'general'}`;
+const buildCacheKey = (datos) => {
+  // Construir clave más específica que incluya tipo de análisis y datos relevantes
+  const simulacion = (datos.simulacion || 'simulacion').replace(/\s+/g, '_');
+  const tipoAnalisis = datos.analisisTipo || datos.tipo || 'general';
+
+  // Para análisis de fallos repetidos, incluir hash de preguntas problemáticas para hacerlo único
+  let hashExtra = '';
+  if (tipoAnalisis === 'fallos_repetidos' && Array.isArray(datos.preguntasProblematicas)) {
+    // Crear hash simple basado en IDs de preguntas problemáticas
+    const ids = datos.preguntasProblematicas.map(p => p.id || p.orden || '').sort().join('_');
+    const hash = ids.length > 0 ? btoa(ids).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16) : '';
+    hashExtra = `_${hash}`;
+  }
+
+  // Incluir ID de estudiante si está disponible para hacer el caché específico por estudiante
+  const estudianteId = datos.idEstudiante || datos.estudiante?.id || '';
+  const estudianteHash = estudianteId ? `_est${estudianteId}` : '';
+
+  return `gemini_analisis_${simulacion}_${tipoAnalisis}${hashExtra}${estudianteHash}`;
+};
 // Rate limiter simple por ventana (evita golpear la API)
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 min
 const RATE_LIMIT_MAX_CALLS = 3; // máx 3 llamadas/min por pestaña
@@ -29,7 +51,7 @@ const asegurarRateLimit = async () => {
   const ahora = Date.now();
   callTimestamps = callTimestamps.filter(ts => ahora - ts < RATE_LIMIT_WINDOW_MS);
   if (callTimestamps.length >= RATE_LIMIT_MAX_CALLS) {
-    const espera = RATE_LIMIT_WINDOW_MS - (ahora - callTimestamps[0]) + Math.random()*300;
+    const espera = RATE_LIMIT_WINDOW_MS - (ahora - callTimestamps[0]) + Math.random() * 300;
     console.warn(`⏳ Rate limit local: esperando ${Math.round(espera)}ms para no saturar la API`);
     await ESPERA(espera);
   }
@@ -70,7 +92,7 @@ const guardarEnCache = (key, payload) => {
   try {
     const envoltura = { ts: Date.now(), payload };
     localStorage.setItem(key, JSON.stringify(envoltura));
-  } catch(e) { /* ignore */ }
+  } catch (e) { /* ignore */ }
 };
 
 const leerCacheValido = (key) => {
@@ -80,7 +102,7 @@ const leerCacheValido = (key) => {
     const envoltura = JSON.parse(raw);
     if (Date.now() - envoltura.ts > CACHE_TTL_MS) return null;
     return envoltura.payload;
-  } catch(e) { return null; }
+  } catch (e) { return null; }
 };
 
 const crearAnalisisHeuristico = (datos) => {
@@ -102,7 +124,7 @@ const crearAnalisisHeuristico = (datos) => {
     resumen: `Análisis heurístico local generado sin IA. Promedio general: ${datos.promedio?.toFixed ? datos.promedio.toFixed(1) : datos.promedio || 0}%.`,
     fortalezas,
     debilidades,
-    planEstudio: { prioridad: debilidades.slice(0,3).map(d => ({ materia: d.materia, tiempo: '30-40 min diarios', enfoque: 'Fundamentos y práctica guiada' })) },
+    planEstudio: { prioridad: debilidades.slice(0, 3).map(d => ({ materia: d.materia, tiempo: '30-40 min diarios', enfoque: 'Fundamentos y práctica guiada' })) },
     esFallbackLocal: true,
     timestamp: new Date().toISOString(),
     nota: 'Mostrando análisis heurístico por límite de cuota (429) o error en IA.'
@@ -110,7 +132,7 @@ const crearAnalisisHeuristico = (datos) => {
 };
 
 export const limpiarCacheAnalisisGemini = (datos) => {
-  try { localStorage.removeItem(buildCacheKey(datos)); } catch(e) { /* ignore */ }
+  try { localStorage.removeItem(buildCacheKey(datos)); } catch (e) { /* ignore */ }
 };
 
 /**
@@ -129,7 +151,6 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
       console.warn('📦 Usando análisis desde cache');
       return { ...cache, desdeCache: true };
     }
-    
     // Validar datos de entrada
     if (!datosAnalisis || !datosAnalisis.simulacion) {
       throw new Error('Datos de análisis inválidos - falta simulación');
@@ -143,11 +164,11 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
     // Crear prompt estructurado para Gemini
     const prompt = crearPromptAnalisis(datosAnalisis);
     console.log('📝 Prompt creado:', prompt.substring(0, 200) + '...');
-    
+
     // Configurar timeout para la petición
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), GEMINI_CONFIG.timeout);
-    
+
     const requestBody = {
       contents: [{
         parts: [{
@@ -179,17 +200,18 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
       ]
     };
 
-  console.log('🌐 Realizando petición a Gemini (proxy backend)...');
-    
+    console.log('🌐 Realizando petición a Gemini (proxy backend)...');
+
     // Llamada a la API de Gemini
     // Respetar rate limit local antes de llamar
     await asegurarRateLimit();
-  const response = await fetchConReintentos(GEMINI_CONFIG.proxyEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model }),
-        signal: controller.signal
-      }, { maxRetries: 4, baseDelay: 1000, maxDelay: 12000 });
+    const response = await fetchConReintentos(GEMINI_CONFIG.proxyEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model, purpose: 'quizzes' }), // Usa GEMINI_API_KEY_QUIZZES
+      signal: controller.signal
+    }, { maxRetries: 4, baseDelay: 1000, maxDelay: 12000 });
 
     clearTimeout(timeoutId);
 
@@ -208,11 +230,21 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
           return { ...cache, desdeCache: true, aviso: 'Mostrando resultado previo (cache) por límite de cuota 429.' };
         }
         const heuristico = crearAnalisisHeuristico(datosAnalisis);
-        try { guardarEnCache(cacheKey, heuristico); } catch(e) { /* ignore */ }
+        try { guardarEnCache(cacheKey, heuristico); } catch (e) { /* ignore */ }
         return heuristico;
       }
       if (response.status === 404) {
-        throw new Error(`Modelo no encontrado. Verifica que el modelo '${GEMINI_CONFIG.model}' esté disponible. Error: ${errorData.error?.message || errorData.error || 'Modelo no disponible'}`);
+        console.warn(`📭 Modelo no disponible (${GEMINI_CONFIG.model}). Usando análisis heurístico local.`);
+        const heuristico = crearAnalisisHeuristico(datosAnalisis);
+        try { guardarEnCache(cacheKey, heuristico); } catch (e) { /* ignore */ }
+        return heuristico;
+      }
+      // Fallback amigable si el servidor no tiene configurada la API Key
+      if (response.status === 500 && typeof (errorData?.error) === 'string' && errorData.error.includes('GEMINI_API_KEY')) {
+        console.warn('🔐 GEMINI_API_KEY no configurada en el servidor. Generando análisis heurístico local.');
+        const heuristico = crearAnalisisHeuristico(datosAnalisis);
+        try { guardarEnCache(cacheKey, heuristico); } catch (e) { /* ignore */ }
+        return heuristico;
       }
       if (response.status === 403) {
         throw new Error('Acceso denegado. Verifica que la API key tenga los permisos necesarios.');
@@ -224,20 +256,20 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
     }
 
     const data = await response.json();
-  console.log('📄 Datos de respuesta:', data);
-    
+    console.log('📄 Datos de respuesta:', data);
+
     // Verificar que la respuesta tenga el formato esperado
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
       console.error('❌ Respuesta inválida de Gemini:', data);
       throw new Error('Respuesta inválida de la API de Gemini');
     }
-    
+
     // Procesar respuesta de Gemini
-  const analisisTexto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const analisisTexto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     console.log('📝 Texto de análisis recibido:', analisisTexto.substring(0, 200) + '...');
-    
+
     let resultado = procesarRespuestaGemini(analisisTexto);
-    console.log('✅ Análisis procesado exitosamente (original):', resultado);
+    console.log(`✅ Análisis procesado exitosamente (${resultado?.esFallback ? 'fallback' : 'IA'})`, resultado);
 
     // Transformar a formato simplificado esperado por el componente
     const simplificado = {
@@ -254,10 +286,13 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
       planEstudio: {
         prioridad: (resultado.planEstudioPersonalizado?.faseInicial?.actividades || []).map(act => ({
           materia: act.materia || act.actividad || 'General',
-            tiempo: act.tiempo || '30 min',
-            enfoque: act.actividad || 'Práctica guiada'
+          tiempo: act.tiempo || '30 min',
+          enfoque: act.actividad || 'Práctica guiada'
         }))
       },
+      // ✅ Nuevos campos: preguntas problemáticas y patrones de errores
+      preguntasProblematicas: resultado.preguntasProblematicas || [],
+      patronesErrores: resultado.patronesErrores || {},
       metadata: resultado.metadata || {},
       puntuacionConfianza: resultado.puntuacionConfianza || 80,
       recomendaciones: resultado.recomendacionesPersonalizadas || [],
@@ -265,31 +300,31 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
     };
 
     // Guardar en cache
-  guardarEnCache(cacheKey, simplificado);
+    guardarEnCache(cacheKey, simplificado);
 
     return simplificado;
-    
+
   } catch (error) {
     console.error('❌ Error completo en generarAnalisisConGemini:', error);
-    
+
     // Manejar diferentes tipos de errores
     if (error.name === 'AbortError') {
       throw new Error('La petición tardó demasiado tiempo. Intenta nuevamente.');
     }
-    
+
     if (error.message.includes('401')) {
       throw new Error('API Key inválida. Verifica la configuración.');
     }
-    
+
     if (error.message.includes('429')) {
       // Fallback heurístico final si algo falló antes de generar
       return crearAnalisisHeuristico(datosAnalisis);
     }
-    
+
     if (error.message.includes('403')) {
       throw new Error('Acceso denegado. Verifica que la API key tenga los permisos necesarios.');
     }
-    
+
     throw error;
   }
 };
@@ -303,13 +338,13 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
 export const generarAnalisisEspecializado = async (datosAnalisis, tipoEstudiante = 'intermedio') => {
   try {
     console.log('🎯 Generando análisis especializado para:', tipoEstudiante);
-    
+
     // Crear prompt especializado según el tipo de estudiante
     const promptEspecializado = crearPromptEspecializado(datosAnalisis, tipoEstudiante);
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), GEMINI_CONFIG.timeout);
-    
+
     const requestBody = {
       contents: [{
         parts: [{
@@ -347,7 +382,8 @@ export const generarAnalisisEspecializado = async (datosAnalisis, tipoEstudiante
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model }),
+      credentials: 'include',
+      body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model, purpose: 'quizzes' }),
       signal: controller.signal
     }, { maxRetries: 4, baseDelay: 1000, maxDelay: 12000 });
 
@@ -358,23 +394,23 @@ export const generarAnalisisEspecializado = async (datosAnalisis, tipoEstudiante
       if (response.status === 429) {
         // fallback heurístico y cache
         const heuristico = crearAnalisisHeuristico(datosAnalisis);
-        try { guardarEnCache(buildCacheKey(datosAnalisis), heuristico); } catch(e) { /* ignore */ }
+        try { guardarEnCache(buildCacheKey(datosAnalisis), heuristico); } catch (e) { /* ignore */ }
         return heuristico;
       }
       throw new Error(`Error ${response.status}: ${errorData.error?.message || 'Error desconocido'}`);
     }
 
-  const data = await response.json();
-  const analisisTexto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
+    const data = await response.json();
+    const analisisTexto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
     const resultado = procesarRespuestaGemini(analisisTexto);
-    
+
     // Agregar información del tipo de estudiante
     resultado.tipoEstudiante = tipoEstudiante;
     resultado.analisisEspecializado = true;
-    
+
     return resultado;
-    
+
   } catch (error) {
     console.error('❌ Error en análisis especializado:', error);
     throw error;
@@ -389,9 +425,9 @@ export const generarAnalisisEspecializado = async (datosAnalisis, tipoEstudiante
  */
 const crearPromptEspecializado = (datos, tipo) => {
   const basePrompt = crearPromptAnalisis(datos);
-  
+
   let especializacion = '';
-  
+
   switch (tipo) {
     case 'principiante':
       especializacion = `
@@ -406,7 +442,6 @@ ENFOQUE ESPECIALIZADO PARA ESTUDIANTE PRINCIPIANTE:
 • Proporcionar ejemplos concretos y simples
       `;
       break;
-      
     case 'intermedio':
       especializacion = `
 ENFOQUE ESPECIALIZADO PARA ESTUDIANTE INTERMEDIO:
@@ -420,7 +455,6 @@ ENFOQUE ESPECIALIZADO PARA ESTUDIANTE INTERMEDIO:
 • Incluir técnicas de mejora continua
       `;
       break;
-      
     case 'avanzado':
       especializacion = `
 ENFOQUE ESPECIALIZADO PARA ESTUDIANTE AVANZADO:
@@ -435,7 +469,6 @@ ENFOQUE ESPECIALIZADO PARA ESTUDIANTE AVANZADO:
       `;
       break;
   }
-  
   return basePrompt + especializacion;
 };
 
@@ -449,17 +482,14 @@ export const detectarTipoEstudiante = (datos) => {
   const intentos = Number(datos?.intentos) || 0;
   const tp = Number(datos?.tiempoPromedio) || 0;
   const eficiencia = tp > 0 ? promedio / tp : 0;
-  
   // Criterios para estudiante avanzado
   if (promedio >= 85 && eficiencia >= 2 && intentos <= 2) {
     return 'avanzado';
   }
-  
   // Criterios para estudiante principiante
   if (promedio < 60 || intentos > 5 || eficiencia < 1) {
     return 'principiante';
   }
-  
   // Por defecto, intermedio
   return 'intermedio';
 }
@@ -470,23 +500,44 @@ export const detectarTipoEstudiante = (datos) => {
  * @returns {string} - Prompt avanzado para Gemini
  */
 const crearPromptAnalisis = (datos) => {
+  // Si es análisis de fallos repetidos, usar prompt específico
+  if (datos?.analisisTipo === 'fallos_repetidos') {
+    return crearPromptFallosRepetidos(datos);
+  }
+
   const tendenciaGeneral = calcularTendenciaGeneral(datos);
   const patronesAprendizaje = identificarPatronesAprendizaje(datos);
   const nivelDificultad = evaluarNivelDificultad(datos);
-  
+  const nombreEstudiante = datos?.alumnoNombre || null;
+  const primerNombre = nombreEstudiante ? nombreEstudiante.split(/\s+/)[0] : null;
+
   return `
-Actúa como un TUTOR EDUCATIVO EXPERTO con especialización en psicología educativa, análisis de datos académicos y pedagogía personalizada.
+Actúa como un TUTOR EDUCATIVO EXPERTO con especialización en psicología educativa, análisis de datos académicos y pedagogía personalizada. Sé claro, directo y pedagógico. Explica como un tutor paciente que quiere que el estudiante entienda completamente.
 
 CONTEXTO EDUCATIVO:
+Estudiante: ${nombreEstudiante || 'Estudiante'}
 Simulación: "${datos?.simulacion || 'Simulación'}"
 Tipo de evaluación: ${datos?.tipoEvaluacion || 'Simulacro académico'}
 Nivel educativo: ${datos?.nivelEducativo || 'Preparatoria/Universidad'}
+
+IMPORTANTE: Al generar el mensaje motivacional y el resumen general, debes dirigirte al estudiante usando su nombre. Si el nombre está disponible, comienza con "Hola, ${primerNombre || 'estudiante'}. Analicemos tu rendimiento..." Si no hay nombre disponible, usa "Hola. Analicemos tu rendimiento..."
+
+ESTILO Y TONO:
+- Sé claro, directo y pedagógico. Explica como un tutor paciente que quiere que el estudiante entienda.
+- Usa ejemplos concretos y números específicos cuando sea posible (no digas "algunas preguntas", di "2 preguntas" o "3 de las 5 preguntas").
+- Reconoce el esfuerzo del estudiante pero sé honesto sobre las áreas de mejora.
+- Haz que el análisis sea accionable: el estudiante debe saber QUÉ hacer después de leerlo.
+- Evita jerga técnica innecesaria, pero no simplifiques demasiado conceptos importantes.
+- En las explicaciones paso a paso, usa un lenguaje claro: "Primero...", "Luego...", "Finalmente...".
+- Conecta las recomendaciones con las preguntas específicas donde falló. Menciona los temas por nombre cuando sea relevante.
 
 DATOS DE RENDIMIENTO DETALLADOS:
 ═══════════════════════════════════════
 
 📊 MÉTRICAS GENERALES:
 - Intentos realizados: ${Number(datos?.intentos) || 0}
+- Puntaje oficial (primer intento): ${datos?.intentoOficial ? `${Number(datos?.intentoOficial?.puntaje || 0).toFixed(1)}%` : 'N/A'}
+- Intentos de práctica: ${(Array.isArray(datos?.intentosPractica) ? datos.intentosPractica.length : 0)} ${Array.isArray(datos?.intentosPractica) && datos.intentosPractica.length ? `→ ${datos.intentosPractica.map(i => Number(i.puntaje) || 0).join(' | ')}` : ''}
 - Promedio general: ${(Number(datos?.promedio) || 0).toFixed(1)}%
 - Tiempo promedio por intento: ${(Number(datos?.tiempoPromedio) || 0).toFixed(1)} minutos
 - Mejor tiempo registrado: ${Number(datos?.mejorTiempo) || 0} minutos
@@ -520,6 +571,10 @@ ${(datos.areasDebiles || []).map(a => `
 INSTRUCCIONES PARA ANÁLISIS AVANZADO:
 ═══════════════════════════════════════
 
+0. RESPETO DE POLÍTICA DE INTENTOS:
+- Considera el primer intento como "puntaje oficial" del estudiante. No lo reemplaces por intentos posteriores.
+- Usa el resto de intentos solamente como evidencia de retroalimentación, tendencias y mejora; nunca para modificar el puntaje oficial.
+
 1. **ANÁLISIS PSICOPEDAGÓGICO**: Evalúa el estilo de aprendizaje, motivación y confianza académica
 2. **DIAGNÓSTICO COGNITIVO**: Identifica fortalezas y debilidades en diferentes tipos de pensamiento
 3. **ESTRATEGIAS METACOGNITIVAS**: Proporciona técnicas de autorregulación y monitoreo
@@ -530,7 +585,7 @@ INSTRUCCIONES PARA ANÁLISIS AVANZADO:
 FORMATO DE RESPUESTA (JSON AVANZADO):
 {
   "analisisGeneral": {
-    "resumen": "Análisis integral del rendimiento académico...",
+    "resumen": "${nombreEstudiante ? `Hola, ${primerNombre}. ` : 'Hola. '}Analicemos tu rendimiento en esta evaluación. El análisis se centrará en tu progreso a lo largo de los intentos y te proporcionará recomendaciones específicas para mejorar. [Continúa con el análisis integral del rendimiento académico...]",
     "nivelActual": "Básico/Intermedio/Avanzado",
     "potencialEstimado": "Descripción del potencial académico",
     "perfilAprendizaje": "Visual/Auditivo/Kinestésico/Mixto",
@@ -557,37 +612,73 @@ FORMATO DE RESPUESTA (JSON AVANZADO):
       "indicadoresProgreso": ["Indicador 1", "Indicador 2"]
     }
   ],
+  "preguntasProblematicas": [
+    {
+      "idPregunta": "ID o número de pregunta",
+      "enunciado": "Enunciado completo de la pregunta (copia el texto exacto)",
+      "vecesFallada": "Número de veces que falló esta pregunta",
+      "seleccion": ["Respuesta exacta que el estudiante seleccionó (del campo 'seleccion' de incorrectasDetalle)"],
+      "respuestasIncorrectas": ["Respuesta que dio en intento 1", "Respuesta que dio en intento 2"],
+      "correctas": ["La respuesta correcta exacta (del campo 'correctas' de incorrectasDetalle)"],
+      "tipoError": "Conceptual/Procedimental/Atención",
+      "analisis": "Análisis detallado y pedagógico de por qué falla en esta pregunta. Explica el razonamiento incorrecto que tuvo el estudiante. Sé específico y claro, como un tutor.",
+      "recomendacion": "Recomendación específica y accionable para mejorar en este tipo de pregunta. Incluye pasos concretos que el estudiante puede seguir."
+    }
+  ],
+  "patronesErrores": {
+    "tipoPreguntaMasFallada": "Tipo de pregunta donde más falla (múltiple, verdadero/falso, etc.)",
+    "materiaMasProblematica": "Materia donde más errores comete",
+    "longitudPregunta": "¿Falla más en preguntas largas o cortas?",
+    "patronTemporal": "¿Mejora en ciertas preguntas entre intentos?",
+    "erroresRecurrentes": ["Error 1 que se repite", "Error 2 que se repite"]
+  },
   "planEstudioPersonalizado": {
     "faseInicial": {
       "duracion": "2-3 semanas",
-      "objetivos": ["Objetivo 1", "Objetivo 2"],
+      "objetivos": ["Objetivo 1 específico y accionable", "Objetivo 2 específico y accionable"],
       "actividades": [
         {
-          "materia": "Nombre",
+          "materia": "Nombre de la materia (basado en las preguntas donde más falla)",
           "tiempo": "30-45 min diarios",
-          "actividad": "Descripción detallada",
-          "recursos": ["Recurso 1", "Recurso 2"],
-          "evaluacion": "Cómo evaluar el progreso"
+          "actividad": "Descripción detallada y específica. Basada en las preguntas problemáticas identificadas. Incluye qué temas repasar primero, qué ejercicios hacer, y en qué orden estudiar.",
+          "recursos": ["Recurso 1 específico", "Recurso 2 específico"],
+          "evaluacion": "Cómo evaluar el progreso (métricas específicas)"
         }
       ]
     },
     "faseIntermedia": {
       "duracion": "4-6 semanas",
-      "objetivos": ["Objetivo 1", "Objetivo 2"],
-      "actividades": [...]
+      "objetivos": ["Objetivo 1 específico y accionable", "Objetivo 2 específico y accionable"],
+      "actividades": [
+        {
+          "materia": "Nombre",
+          "tiempo": "Tiempo específico",
+          "actividad": "Descripción detallada basada en las áreas de mejora identificadas",
+          "recursos": ["Recursos específicos"],
+          "evaluacion": "Cómo evaluar el progreso"
+        }
+      ]
     },
     "faseAvanzada": {
       "duracion": "6-8 semanas",
-      "objetivos": ["Objetivo 1", "Objetivo 2"],
-      "actividades": [...]
+      "objetivos": ["Objetivo 1 específico y accionable", "Objetivo 2 específico y accionable"],
+      "actividades": [
+        {
+          "materia": "Nombre",
+          "tiempo": "Tiempo específico",
+          "actividad": "Descripción detallada para consolidar el aprendizaje",
+          "recursos": ["Recursos específicos"],
+          "evaluacion": "Cómo evaluar el progreso"
+        }
+      ]
     }
   },
   "tecnicasEstudio": {
-    "metodosRecomendados": ["Método 1", "Método 2", "Método 3"],
-    "organizacionTiempo": "Sugerencias específicas de horarios",
+    "metodosRecomendados": ["Método 1 vinculado a preguntas específicas donde falla", "Método 2 vinculado a preguntas específicas donde falla", "Método 3 vinculado a preguntas específicas donde falla"],
+    "organizacionTiempo": "Sugerencias específicas de horarios. Basadas en las materias y temas donde más necesita mejorar.",
     "ambienteEstudio": "Recomendaciones para el espacio de estudio",
-    "tecnicasMemorizacion": ["Técnica 1", "Técnica 2"],
-    "controlAnsiedad": "Estrategias para manejar el estrés académico"
+    "tecnicasMemorizacion": ["Técnica 1 específica para los temas problemáticos", "Técnica 2 específica para los temas problemáticos"],
+    "controlAnsiedad": "Estrategias para manejar el estrés académico, especialmente en los tipos de preguntas donde más falla"
   },
   "seguimientoEvaluacion": {
     "metasCortoplazo": ["Meta 1", "Meta 2"],
@@ -604,10 +695,91 @@ FORMATO DE RESPUESTA (JSON AVANZADO):
     "paginasWeb": ["Sitio 1", "Sitio 2"],
     "ejerciciosPracticos": ["Ejercicio 1", "Ejercicio 2"]
   },
-  "mensajeMotivacional": "Mensaje personalizado inspirador y realista que reconozca los logros y motive a continuar mejorando"
+  "mensajeMotivacional": "Mensaje personalizado inspirador y realista que reconozca los logros y motive a continuar mejorando${nombreEstudiante ? `. Dirígete al estudiante usando su nombre: "${primerNombre}"` : ''}"
 }
 
-IMPORTANTE: Proporciona un análisis profundo, específico y personalizado. Usa datos concretos y evita generalidades. El análisis debe ser constructivo, motivador y orientado a la acción.
+${Array.isArray(datos?.incorrectasDetalle) && datos.incorrectasDetalle.length ? `
+🚨🚨🚨 DATOS DETALLADOS DE PREGUNTAS INCORRECTAS (USA ESTOS DATOS OBLIGATORIAMENTE): 🚨🚨🚨
+══════════════════════════════════════
+Tienes acceso a las preguntas ESPECÍFICAS donde el estudiante falló. DEBES usar estos datos para dar ejemplos concretos y personalizados en la sección "preguntasProblematicas" y en el análisis general.
+
+Para cada pregunta en incorrectasDetalle, tienes:
+- enunciado: El texto completo de la pregunta
+- seleccion: Las opciones que el estudiante seleccionó (puede estar vacío)
+- correctas: Las opciones correctas
+- tipo: Tipo de pregunta (multiple, tf, short, etc.)
+- materia: Materia o categoría de la pregunta
+- esOficial: Si viene del intento oficial (primer intento)
+
+**INSTRUCCIONES CRÍTICAS:**
+1. DEBES mencionar al menos 5 de estas preguntas específicas (o todas si hay menos de 5) en el campo "preguntasProblematicas".
+2. Para cada pregunta mencionada, incluye:
+   - El enunciado completo (copia el texto exacto del campo "enunciado")
+   - Qué respondió el estudiante (del campo "seleccion" - menciona la opción exacta que eligió)
+   - Cuál es la respuesta correcta (del campo "correctas" - menciona la opción exacta correcta)
+   - Por qué falló específicamente (error conceptual/procedimental/atención con explicación detallada del razonamiento incorrecto que tuvo el estudiante)
+   - Cómo resolverla correctamente paso a paso (explica cada paso del proceso de solución como si fueras un tutor, incluyendo fórmulas, conceptos clave, y el razonamiento correcto. Sé PEDAGÓGICO: explica como si estuvieras enseñando a alguien que no entiende el tema)
+   - Tipo de pregunta y materia (si está disponible)
+3. NO uses frases genéricas. Da EJEMPLOS CONCRETOS con los enunciados reales de las preguntas.
+4. Sé PEDAGÓGICO: explica como si estuvieras enseñando a alguien que no entiende el tema.
+
+Datos disponibles (usa estos para dar ejemplos concretos):
+${JSON.stringify(datos.incorrectasDetalle.slice(0, 10), null, 2)}
+
+**IMPORTANTE:** Si hay datos de incorrectasDetalle, DEBES incluirlos en tu análisis. No los ignores. El estudiante necesita saber QUÉ preguntas específicas le cuestan trabajo.
+` : ''}
+
+📋 ANÁLISIS DETALLADO DE PREGUNTAS Y RESPUESTAS:
+═══════════════════════════════════════
+${datos?.detalle ? `
+Tienes acceso a TODAS las preguntas del examen y TODAS las respuestas de TODOS los intentos.
+
+PREGUNTAS DEL EXAMEN (${datos.detalle.preguntas?.length || 0} preguntas):
+${(datos.detalle.preguntas || []).map((p, idx) => `
+Pregunta ${idx + 1} (ID: ${p.id}, Tipo: ${p.tipo}, Puntos: ${p.puntos}):
+- Enunciado: "${p.enunciado || 'Sin enunciado'}"
+- Opciones:
+${(p.opciones || []).map((o, oIdx) => `  ${String.fromCharCode(65 + oIdx)}. "${o.texto || ''}" ${o.es_correcta ? '✓ CORRECTA' : ''}`).join('\n')}
+`).join('\n')}
+
+INTENTOS Y RESPUESTAS DEL ESTUDIANTE:
+${(datos.detalle.intentos || []).map((it, itIdx) => `
+Intento ${itIdx + 1} (ID: ${it.intentoId}):
+- Puntaje: ${it.puntaje}%
+- Correctas: ${it.correctas || 'N/D'} / Total: ${it.total_preguntas || 'N/D'}
+- Tiempo: ${it.tiempoSegundos ? Math.round(it.tiempoSegundos) + 's' : 'N/D'}
+- Respuestas:
+${(it.respuestas || []).map(r => {
+    const pregunta = datos.detalle.preguntas?.find(p => p.id === r.id_pregunta);
+    const opcionSeleccionada = pregunta?.opciones?.find(o => o.id === r.id_opcion);
+    const esCorrecta = opcionSeleccionada?.es_correcta || false;
+    return `  • Pregunta ${pregunta ? datos.detalle.preguntas.indexOf(pregunta) + 1 : r.id_pregunta}: ${opcionSeleccionada ? `"${opcionSeleccionada.texto}"` : (r.texto_libre || 'Sin respuesta')} ${esCorrecta ? '✓' : '✗'}`;
+  }).join('\n')}
+`).join('\n')}
+
+**TAREA CRÍTICA DE ANÁLISIS:**
+1. **Identifica las preguntas donde el estudiante falla MÁS VECES** (analiza todos los intentos)
+2. **Identifica patrones**: ¿Falla más en cierto tipo de pregunta? ¿En cierta materia? ¿En preguntas largas o cortas?
+3. **Analiza la evolución**: ¿Mejoró en preguntas específicas entre intentos? ¿Qué preguntas sigue fallando?
+4. **Proporciona ejemplos concretos**: Menciona específicamente 3-5 preguntas donde falla más, incluyendo:
+   - El enunciado completo o un resumen claro
+   - Qué respondió incorrectamente
+   - Por qué falló (error conceptual, procedimental, o de atención)
+   - Cómo corregirlo paso a paso (explica como un tutor)
+5. **Recomendaciones específicas**: Basadas en las preguntas reales donde falla, no solo en porcentajes generales
+
+**IMPORTANTE:** El análisis debe ser PRÁCTICO y ACCIONABLE. El estudiante necesita saber QUÉ preguntas específicas le cuestan trabajo y CÓMO mejorar en ellas. No te limites a porcentajes y tendencias generales. Si tienes acceso a incorrectasDetalle (arriba), PRIORIZA usar esos datos porque son más específicos.
+` : 'No hay datos detallados de preguntas y respuestas disponibles. Analiza basándote en las métricas generales.'}
+
+IMPORTANTE: 
+- Proporciona un análisis profundo, específico, pedagógico y personalizado. Usa datos concretos y evita generalidades. El análisis debe ser constructivo, motivador y orientado a la acción.
+- ${nombreEstudiante ? `El estudiante se llama "${nombreEstudiante}". En el campo "resumen" del "analisisGeneral", DEBES comenzar con "Hola, ${primerNombre}. Analicemos tu rendimiento en esta evaluación..." usando el primer nombre del estudiante.` : 'En el campo "resumen" del "analisisGeneral", comienza con "Hola. Analicemos tu rendimiento en esta evaluación..."'}
+- En el campo "mensajeMotivacional", ${nombreEstudiante ? `también debes dirigirte al estudiante usando su nombre: "Hola, ${primerNombre}. Analicemos tu rendimiento..."` : 'usa un saludo general: "Hola. Analicemos tu rendimiento..."'}
+- **ENFÓCATE EN PREGUNTAS ESPECÍFICAS**: Si tienes acceso a las preguntas y respuestas (ya sea a través de "detalle" o "incorrectasDetalle"), dedica una sección importante del análisis a identificar las preguntas donde más falla y dar ejemplos concretos. Esto es más útil que solo hablar de porcentajes.
+- **PRIORIZA incorrectasDetalle**: Si hay datos de "incorrectasDetalle" al inicio del prompt, DEBES usarlos obligatoriamente para generar ejemplos concretos en "preguntasProblematicas". No los ignores.
+- **SÉ PEDAGÓGICO**: Explica los conceptos como si estuvieras enseñando a alguien que no los entiende completamente. Usa lenguaje claro, ejemplos concretos, y pasos detallados.
+- **ANÁLISIS ACCIONABLE**: El estudiante debe saber QUÉ hacer después de leer el análisis. Cada recomendación debe ser específica y vinculada a las preguntas o temas donde falla.
+- **LONGITUD**: Genera un análisis completo y detallado. Prioriza la calidad y utilidad sobre la brevedad. El análisis debe tener entre 400 y 600 palabras equivalentes en el JSON.
 
 Responde SOLO con el JSON, sin texto adicional.
 `;
@@ -622,12 +794,12 @@ Responde SOLO con el JSON, sin texto adicional.
 export const generarAnalisisPorArea = async (datosAnalisis, area) => {
   try {
     console.log('🎯 Generando análisis específico para área:', area);
-    
+
     const promptArea = crearPromptPorArea(datosAnalisis, area);
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), GEMINI_CONFIG.timeout);
-    
+
     const requestBody = {
       contents: [{
         parts: [{
@@ -665,6 +837,7 @@ export const generarAnalisisPorArea = async (datosAnalisis, area) => {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({ ...requestBody, model: GEMINI_CONFIG.model }),
       signal: controller.signal
     }, { maxRetries: 4, baseDelay: 1000, maxDelay: 12000 });
@@ -676,17 +849,17 @@ export const generarAnalisisPorArea = async (datosAnalisis, area) => {
       throw new Error(`Error ${response.status}: ${errorData.error?.message || 'Error desconocido'}`);
     }
 
-  const data = await response.json();
-  const analisisTexto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
+    const data = await response.json();
+    const analisisTexto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
     const resultado = procesarRespuestaGemini(analisisTexto);
-    
+
     // Agregar información del área específica
     resultado.areaEspecifica = area;
     resultado.analisisPorArea = true;
-    
+
     return resultado;
-    
+
   } catch (error) {
     console.error('❌ Error en análisis por área:', error);
     throw error;
@@ -701,13 +874,13 @@ export const generarAnalisisPorArea = async (datosAnalisis, area) => {
  */
 const crearPromptPorArea = (datos, area) => {
   const a = (area || '').toLowerCase();
-  const materiasDelArea = (datos.materias || []).filter(m => 
+  const materiasDelArea = (datos.materias || []).filter(m =>
     (m?.nombre || '').toLowerCase().includes(a) ||
     obtenerMateriasDeArea(a).some(ma => (m?.nombre || '').toLowerCase().includes(ma.toLowerCase()))
   );
-  
+
   const basePrompt = crearPromptAnalisis(datos);
-  
+
   const especializacionArea = `
 ANÁLISIS ESPECIALIZADO PARA ÁREA: ${(area || '').toUpperCase()}
 ═══════════════════════════════════════
@@ -737,7 +910,6 @@ INSTRUCCIONES ADICIONALES:
 • Sugiere proyectos prácticos del área
 • Recomienda herramientas especializadas
 `;
-  
   return basePrompt + especializacionArea;
 };
 
@@ -754,7 +926,6 @@ const obtenerMateriasDeArea = (area) => {
     'sociales': ['historia', 'geografía', 'civismo', 'sociología', 'antropología'],
     'ingles': ['inglés', 'english', 'idiomas', 'lengua extranjera']
   };
-  
   return areasMap[area.toLowerCase()] || [];
 };
 
@@ -801,7 +972,6 @@ const obtenerCompetenciasDeArea = (area) => {
       'Competencia intercultural'
     ]
   };
-  
   return competenciasMap[area.toLowerCase()] || ['Competencias generales del área'];
 };
 
@@ -848,7 +1018,6 @@ const obtenerRecursosEspecializados = (area) => {
       'Libros graduados'
     ]
   };
-  
   return recursosMap[area.toLowerCase()] || ['Recursos generales del área'];
 };
 
@@ -865,7 +1034,6 @@ const obtenerEnfoqueEspecializadoArea = (area) => {
     'sociales': 'Desarrolla pensamiento crítico, conecta eventos históricos con actualidad, analiza diferentes perspectivas y practica la argumentación.',
     'ingles': 'Practica las 4 habilidades (hablar, escuchar, leer, escribir), sumérgete en el idioma y no temas cometer errores.'
   };
-  
   return enfoquesMap[area.toLowerCase()] || 'Desarrolla competencias específicas del área con práctica constante y recursos especializados.';
 };
 
@@ -882,7 +1050,7 @@ const obtenerEnfoqueEspecializadoArea = (area) => {
 const procesarRespuestaGemini = (respuestaTexto) => {
   const original = String(respuestaTexto || '');
   const logFail = (err, intento, muestra) => {
-    try { console.warn(`Gemini JSON parse intento ${intento} falló:`, err?.message); if (muestra) console.debug('⮑ muestra:', (muestra.length > 4000 ? muestra.slice(0,4000)+'…' : muestra)); } catch {}
+    try { console.warn(`Gemini JSON parse intento ${intento} falló:`, err?.message); if (muestra) console.debug('⮑ muestra:', (muestra.length > 4000 ? muestra.slice(0, 4000) + '…' : muestra)); } catch { }
   };
 
   // 1) Extraer JSON probable (desde fences o por llaves/corchetes)
@@ -923,18 +1091,184 @@ const procesarRespuestaGemini = (respuestaTexto) => {
   const sanearBasico = (t) => t
     .replace(/^\uFEFF/, '')
     .replace(/[\u0000-\u001F]+/g, ' ') // controla caracteres de control invisibles
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'")
+    .replace(/[""]/g, '"')
+    .replace(/['']/g, "'")
     .trim();
 
   const quitarComasColgantes = (t) => t
     // comas antes de cierre de objeto/array
     .replace(/,\s*(\}|\])/g, '$1');
 
+  // 3) Reparar strings no terminados en JSON de forma más robusta
+  const repararStringsNoTerminados = (t) => {
+    let resultado = '';
+    let dentroString = false;
+    let escape = false;
+    let i = 0;
+    let ultimaComilla = -1;
+
+    while (i < t.length) {
+      const char = t[i];
+      const charCode = char.charCodeAt(0);
+
+      if (escape) {
+        resultado += char;
+        escape = false;
+        i++;
+        continue;
+      }
+
+      if (char === '\\') {
+        resultado += char;
+        escape = true;
+        i++;
+        continue;
+      }
+
+      if (char === '"') {
+        resultado += char;
+        ultimaComilla = resultado.length - 1;
+        dentroString = !dentroString;
+        i++;
+        continue;
+      }
+
+      // Si estamos dentro de un string
+      if (dentroString) {
+        // Caracteres de control que deben ser escapados
+        if (charCode < 32) {
+          if (char === '\n') {
+            resultado += '\\n';
+          } else if (char === '\r') {
+            resultado += '\\r';
+          } else if (char === '\t') {
+            resultado += '\\t';
+          } else if (char === '\b') {
+            resultado += '\\b';
+          } else if (char === '\f') {
+            resultado += '\\f';
+          } else {
+            // Otros caracteres de control: escapar como \uXXXX
+            resultado += `\\u${charCode.toString(16).padStart(4, '0')}`;
+          }
+          i++;
+          continue;
+        }
+
+        // Si encontramos una comilla simple dentro de un string, dejarla (es válida)
+        if (char === "'") {
+          resultado += char;
+          i++;
+          continue;
+        }
+      }
+
+      resultado += char;
+      i++;
+    }
+
+    // Si el string quedó abierto, cerrarlo
+    if (dentroString) {
+      // Buscar si hay una comilla de cierre más adelante que podríamos haber perdido
+      // Si no, simplemente cerrar el string
+      resultado += '"';
+    }
+
+    return resultado;
+  };
+
+  // 4) Limpiar y escapar caracteres problemáticos en strings JSON (versión mejorada)
+  const limpiarStringsJSON = (t) => {
+    // Primero, reparar strings no terminados
+    let resultado = repararStringsNoTerminados(t);
+
+    // Segunda pasada: buscar y reparar problemas específicos
+    // Buscar patrones de strings mal formados usando regex más inteligente
+    let nuevoResultado = resultado;
+
+    // Patrón para encontrar strings JSON (desde " hasta " sin escapar)
+    // Pero necesitamos ser más cuidadosos con el parsing
+    let i = 0;
+    let dentroString = false;
+    let escape = false;
+    let resultadoFinal = '';
+
+    while (i < nuevoResultado.length) {
+      const char = nuevoResultado[i];
+
+      if (escape) {
+        resultadoFinal += char;
+        escape = false;
+        i++;
+        continue;
+      }
+
+      if (char === '\\') {
+        resultadoFinal += char;
+        escape = true;
+        i++;
+        continue;
+      }
+
+      if (char === '"') {
+        resultadoFinal += char;
+        dentroString = !dentroString;
+        i++;
+        continue;
+      }
+
+      // Si estamos dentro de un string
+      if (dentroString) {
+        // Verificar si hay caracteres problemáticos
+        const charCode = char.charCodeAt(0);
+
+        // Si es un salto de línea o retorno de carro sin escapar
+        if (char === '\n' || char === '\r') {
+          // Ya debería estar escapado de la primera pasada, pero por si acaso
+          if (i === 0 || nuevoResultado[i - 1] !== '\\') {
+            resultadoFinal += char === '\n' ? '\\n' : '\\r';
+            i++;
+            continue;
+          }
+        }
+
+        // Si es un carácter de control
+        if (charCode < 32 && char !== '\n' && char !== '\r' && char !== '\t') {
+          resultadoFinal += `\\u${charCode.toString(16).padStart(4, '0')}`;
+          i++;
+          continue;
+        }
+      }
+
+      resultadoFinal += char;
+      i++;
+    }
+
+    // Si quedó un string abierto, cerrarlo
+    if (dentroString) {
+      resultadoFinal += '"';
+    }
+
+    return resultadoFinal;
+  };
+
+  // Intento de autocompletar llaves/corchetes desbalanceados
+  const autoBalance = (t) => {
+    const s = sanearBasico(t);
+    const opens = (s.match(/\{/g) || []).length;
+    const closes = (s.match(/\}/g) || []).length;
+    const openB = (s.match(/\[/g) || []).length;
+    const closeB = (s.match(/\]/g) || []).length;
+    let out = s;
+    if (opens > closes) out += '}'.repeat(opens - closes);
+    if (openB > closeB) out += ']'.repeat(openB - closeB);
+    return out;
+  };
+
   const candidates = [];
   candidates.push(extraerJsonCrudo(original));
   // Variante sin fences ni adornos adicionales
-  candidates.push(extraerJsonCrudo(original.replace(/```[\s\S]*?```/g, (m)=> m.replace(/```/g,''))));
+  candidates.push(extraerJsonCrudo(original.replace(/```[\s\S]*?```/g, (m) => m.replace(/```/g, ''))));
 
   for (let intento = 0; intento < candidates.length; intento++) {
     let s = candidates[intento];
@@ -951,18 +1285,120 @@ const procesarRespuestaGemini = (respuestaTexto) => {
     } catch (e2) { logFail(e2, `${intento}-B`, s); }
 
     try {
-      // Intento C: si empieza con [, quedarse con primer objeto
+      // Intento C: reparar strings no terminados
+      let c = limpiarStringsJSON(sanearBasico(s));
+      c = quitarComasColgantes(c);
+      return validarEstructuraAnalisis(JSON.parse(c));
+    } catch (e3) { logFail(e3, `${intento}-C`, s); }
+
+    try {
+      // Intento D: si empieza con [, quedarse con primer objeto
       const cleaned = quitarComasColgantes(sanearBasico(s));
       if (cleaned.startsWith('[')) {
         const arr = JSON.parse(cleaned);
         const obj = Array.isArray(arr) ? (arr.find(x => x && typeof x === 'object') || {}) : {};
         return validarEstructuraAnalisis(obj);
       }
-    } catch (e3) { logFail(e3, `${intento}-C`, s); }
+    } catch (e4) { logFail(e4, `${intento}-D`, s); }
+
+    try {
+      // Intento E: reparar strings + autobalanceo
+      let e = limpiarStringsJSON(s);
+      e = autoBalance(e);
+      e = quitarComasColgantes(sanearBasico(e));
+      return validarEstructuraAnalisis(JSON.parse(e));
+    } catch (e5) { logFail(e5, `${intento}-E`, s); }
+
+    try {
+      // Intento F: autobalanceo de llaves/corchetes y parseo (original D)
+      const f = autoBalance(s);
+      const obj = JSON.parse(quitarComasColgantes(f));
+      return validarEstructuraAnalisis(obj);
+    } catch (e6) { logFail(e6, `${intento}-F`, s); }
+
+    try {
+      // Intento G: estrategia agresiva - reparar strings problemáticos usando regex
+      let g = s;
+      // Buscar strings que empiezan con " pero no terminan correctamente
+      // Patrón: " seguido de contenido hasta encontrar " o fin de línea problemático
+      g = g.replace(/"([^"\\]*(\\.[^"\\]*)*)"?/g, (match, contenido, grupo) => {
+        // Si el match no termina con ", está mal formado
+        if (!match.endsWith('"')) {
+          // Escapar caracteres problemáticos y cerrar el string
+          const contenidoLimpio = contenido
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r')
+            .replace(/\t/g, '\\t')
+            .replace(/"/g, '\\"');
+          return `"${contenidoLimpio}"`;
+        }
+        return match;
+      });
+      g = quitarComasColgantes(sanearBasico(g));
+      g = autoBalance(g);
+      return validarEstructuraAnalisis(JSON.parse(g));
+    } catch (e7) { logFail(e7, `${intento}-G`, s); }
+
+    try {
+      // Intento H: última estrategia - extraer solo el objeto principal y reparar manualmente
+      let h = extraerJsonCrudo(s);
+      // Buscar y reparar strings no terminados de forma más agresiva
+      let dentroString = false;
+      let escape = false;
+      let resultadoH = '';
+
+      for (let i = 0; i < h.length; i++) {
+        const char = h[i];
+
+        if (escape) {
+          resultadoH += char;
+          escape = false;
+          continue;
+        }
+
+        if (char === '\\') {
+          resultadoH += char;
+          escape = true;
+          continue;
+        }
+
+        if (char === '"') {
+          resultadoH += char;
+          dentroString = !dentroString;
+          continue;
+        }
+
+        if (dentroString) {
+          // Si encontramos caracteres problemáticos, escapar
+          if (char === '\n') {
+            resultadoH += '\\n';
+          } else if (char === '\r') {
+            resultadoH += '\\r';
+          } else if (char === '\t') {
+            resultadoH += '\\t';
+          } else if (char.charCodeAt(0) < 32) {
+            resultadoH += `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`;
+          } else {
+            resultadoH += char;
+          }
+        } else {
+          resultadoH += char;
+        }
+      }
+
+      // Cerrar string si quedó abierto
+      if (dentroString) {
+        resultadoH += '"';
+      }
+
+      resultadoH = quitarComasColgantes(sanearBasico(resultadoH));
+      resultadoH = autoBalance(resultadoH);
+      return validarEstructuraAnalisis(JSON.parse(resultadoH));
+    } catch (e8) { logFail(e8, `${intento}-H`, s); }
   }
 
   // Todo falló: fallback
-  console.error('❌ Error procesando respuesta de Gemini (todos los intentos fallaron)');
+  console.warn('⚠️ No se pudo parsear JSON de Gemini; usando análisis fallback');
   return crearAnalisisFallback(original);
 };
 
@@ -1025,7 +1461,6 @@ const validarEstructuraAnalisis = (analisis) => {
     puntuacionConfianza: calcularPuntuacionConfianza(analisis),
     recomendacionesPersonalizadas: generarRecomendacionesPersonalizadas(analisis)
   };
-  
   return analisisCompleto;
 };
 
@@ -1073,11 +1508,11 @@ const crearAnalisisFallback = (textoRespuesta) => {
  */
 const calcularPuntuacionConfianza = (analisis) => {
   let puntuacion = 70; // Base
-  
+
   if (analisis.fortalezasDetalladas && analisis.fortalezasDetalladas.length > 0) puntuacion += 10;
   if (analisis.areasDeDesarrollo && analisis.areasDeDesarrollo.length > 0) puntuacion += 10;
   if (analisis.planEstudioPersonalizado) puntuacion += 10;
-  
+
   return Math.min(puntuacion, 100);
 };
 
@@ -1088,7 +1523,6 @@ const calcularPuntuacionConfianza = (analisis) => {
  */
 const generarRecomendacionesPersonalizadas = (analisis) => {
   const recomendaciones = [];
-  
   // Recomendaciones basadas en áreas de desarrollo
   if (analisis.areasDeDesarrollo && analisis.areasDeDesarrollo.length > 0) {
     recomendaciones.push({
@@ -1097,7 +1531,6 @@ const generarRecomendacionesPersonalizadas = (analisis) => {
       prioridad: 'Alta'
     });
   }
-  
   // Recomendaciones basadas en fortalezas
   if (analisis.fortalezasDetalladas && analisis.fortalezasDetalladas.length > 0) {
     recomendaciones.push({
@@ -1106,7 +1539,6 @@ const generarRecomendacionesPersonalizadas = (analisis) => {
       prioridad: 'Media'
     });
   }
-  
   return recomendaciones;
 };
 
@@ -1245,16 +1677,28 @@ export const verificarModelosDisponibles = async () => {
   try {
     const response = await fetch('/api/ai/gemini/models');
     const data = await response.json();
-    
     if (data.models) {
       console.log('🔍 Modelos disponibles:', data.models.map(m => m.name));
       return data.models;
     }
-    
     return [];
   } catch (error) {
     console.error('❌ Error verificando modelos:', error);
     return [];
+  }
+};
+
+// Compatibilidad: export para generación de preguntas de simulación por IA
+// Redirige al wrapper aislado para NO duplicar lógica aquí
+export const generarPreguntasSimulacionIA = async (opts) => {
+  try {
+    const mod = await import('./simuladoresAI.js');
+    if (mod && typeof mod.generarPreguntasIA === 'function') {
+      return await mod.generarPreguntasIA(opts || {});
+    }
+    throw new Error('Wrapper IA no disponible');
+  } catch (e) {
+    throw e;
   }
 };
 
@@ -1265,7 +1709,6 @@ export const verificarModelosDisponibles = async () => {
 export const probarConexionGemini = async () => {
   try {
     console.log('🧪 Probando conexión con Gemini API...');
-    
     const requestBody = {
       contents: [{
         parts: [{
@@ -1294,7 +1737,6 @@ export const probarConexionGemini = async () => {
     const data = await response.json();
     console.log('✅ Conexión exitosa con Gemini API');
     return { success: true, data };
-    
   } catch (error) {
     console.error('❌ Error en prueba de conexión:', error);
     return { success: false, error: error.message };
@@ -1315,7 +1757,6 @@ const calcularTendenciaGeneral = (datos) => {
   const avg = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
   const promedioInicial = avg(primerosMitad);
   const promedioFinal = avg(segundaMitad.length ? segundaMitad : primerosMitad);
-  
   if (promedioFinal > promedioInicial + 5) return 'Mejora significativa';
   if (promedioFinal > promedioInicial) return 'Mejora gradual';
   if (promedioFinal < promedioInicial - 5) return 'Declive preocupante';
@@ -1332,7 +1773,6 @@ const identificarPatronesAprendizaje = (datos) => {
   const materias = datos.materias || [];
   const materiasConsistentes = materias.filter(m => calcularConsistencia(m.puntajes || []) > 0.8);
   const materiasInconsistentes = materias.filter(m => calcularConsistencia(m.puntajes || []) < 0.6);
-  
   if (materiasConsistentes.length > materiasInconsistentes.length) {
     return 'Aprendizaje consistente y estructurado';
   } else if (materiasInconsistentes.length > materiasConsistentes.length) {
@@ -1349,7 +1789,6 @@ const identificarPatronesAprendizaje = (datos) => {
 const evaluarNivelDificultad = (datos) => {
   const promedioGeneral = Number(datos?.promedio) || 0;
   const tiempoPromedio = Number(datos?.tiempoPromedio) || 0;
-  
   if (promedioGeneral >= 85 && tiempoPromedio <= 30) return 'Nivel apropiado - Alta eficiencia';
   if (promedioGeneral >= 70 && tiempoPromedio <= 45) return 'Nivel adecuado - Eficiencia normal';
   if (promedioGeneral >= 60 && tiempoPromedio <= 60) return 'Nivel desafiante - Requiere más tiempo';
@@ -1414,6 +1853,128 @@ const evaluarGestionTiempo = (datos) => {
 };
 
 /**
+ * Crear prompt específico para análisis de fallos repetidos
+ * @param {Object} datos - Datos del análisis de fallos repetidos
+ * @returns {string} - Prompt específico para Gemini
+ */
+const crearPromptFallosRepetidos = (datos) => {
+  const preguntasProblematicas = datos?.preguntasProblematicas || [];
+  const estadisticas = datos?.estadisticas || {};
+  const intentos = datos?.intentos || [];
+
+  return `
+Actúa como un TUTOR EDUCATIVO EXPERTO especializado en identificar y resolver problemas de aprendizaje recurrentes. Tu objetivo es analizar por qué un estudiante falla REPETIDAMENTE en las mismas preguntas y proporcionar soluciones específicas y accionables.
+
+CONTEXTO:
+Tipo de evaluación: ${datos?.tipoEvaluacion || 'Simulación de examen'}
+Nivel educativo: ${datos?.nivelEducativo || 'Preparatoria/Universidad'}
+Total de intentos analizados: ${estadisticas.totalIntentosAnalizados || 0}
+Total de preguntas problemáticas: ${estadisticas.preguntasConProblemas || 0}
+Preguntas que SIEMPRE falló: ${estadisticas.preguntasSiempreFalladas || 0}
+Porcentaje de problemas: ${estadisticas.porcentajeProblemas || 0}%
+
+${datos?.instruccionesEspeciales || ''}
+
+DATOS DE INTENTOS:
+${intentos.map((int, idx) => `
+Intento ${int.numero || idx + 1}:
+- Puntaje: ${int.puntaje?.toFixed(1) || 0}%
+- Preguntas totales: ${int.totalPreguntas || 0}
+- Correctas: ${int.correctas || 0}
+- Incorrectas: ${int.incorrectas || 0}
+`).join('')}
+
+PREGUNTAS PROBLEMÁTICAS (FALLOS REPETIDOS):
+═══════════════════════════════════════
+${preguntasProblematicas.map((p, idx) => `
+${idx + 1}. PREGUNTA ${p.orden || 'N/A'}:
+   - Enunciado: "${p.enunciado || 'N/A'}"
+   - Tipo: ${p.tipo || 'N/A'}
+   - Fallos: ${p.fallos || 0} de ${p.totalIntentos || 0} intentos (${p.porcentajeFallo || 0}%)
+   - Siempre falló: ${p.siempreFallo ? 'SÍ' : 'NO'}
+`).join('')}
+
+INSTRUCCIONES ESPECÍFICAS PARA EL ANÁLISIS:
+═══════════════════════════════════════
+
+1. **ANÁLISIS DE PATRONES**: Identifica qué tienen en común las preguntas que siempre falla:
+   - ¿Son del mismo tipo? (opción múltiple, verdadero/falso, respuesta corta)
+   - ¿Tratan sobre los mismos temas/conceptos?
+   - ¿Tienen alguna característica común? (longitud, complejidad, formato)
+
+2. **DIAGNÓSTICO DE ERRORES**: Para cada pregunta problemática, identifica:
+   - Tipo de error: Conceptual (no entiende el concepto), Procedimental (sabe el concepto pero no el proceso), o de Comprensión (no entiende qué pregunta la pregunta)
+   - Razón específica del fallo repetido
+   - Qué confusión o malentendido tiene el estudiante
+
+3. **RECOMENDACIONES ACCIONABLES**: Proporciona recomendaciones específicas:
+   - Qué temas/conceptos necesita reforzar (menciona los temas específicos basados en los enunciados)
+   - Qué tipo de ejercicios debe practicar
+   - Qué estrategias de estudio son más efectivas para estos problemas específicos
+   - Cómo puede evitar cometer los mismos errores
+
+4. **ESTRATEGIAS DE ESTUDIO**: Sugiere técnicas específicas:
+   - Para errores conceptuales: explicaciones paso a paso, ejemplos, analogías
+   - Para errores procedimentales: práctica guiada, ejercicios similares
+   - Para errores de comprensión: ejercicios de lectura comprensiva, desglose de preguntas
+
+FORMATO DE RESPUESTA (JSON):
+═══════════════════════════════════════
+{
+  "analisisGeneral": {
+    "resumen": "Resumen breve (2-3 frases) del problema principal: qué tipo de errores comete repetidamente y por qué",
+    "patronPrincipal": "Descripción del patrón común encontrado en las preguntas que siempre falla",
+    "nivelUrgencia": "Alta/Media/Baja - basado en el porcentaje de problemas y si siempre falla"
+  },
+  "patronesErrores": {
+    "tipoPreguntaMasFallada": "Tipo de pregunta donde más falla (basado en los datos)",
+    "temasComunes": ["Tema 1 identificado de los enunciados", "Tema 2 identificado de los enunciados"],
+    "tipoError": "Conceptual/Procedimental/Comprensión",
+    "patronComun": "Descripción del patrón común en las preguntas problemáticas"
+  },
+  "preguntasProblematicas": [
+    {
+      "idPregunta": "${preguntasProblematicas[0]?.id || 'N/A'}",
+      "enunciado": "${preguntasProblematicas[0]?.enunciado || 'N/A'}",
+      "vecesFallada": ${preguntasProblematicas[0]?.fallos || 0},
+      "tipoError": "Conceptual/Procedimental/Comprensión",
+      "analisis": "Análisis detallado de POR QUÉ falla repetidamente en esta pregunta específica. Explica el razonamiento incorrecto que tiene el estudiante.",
+      "recomendacion": "Recomendación específica y accionable para esta pregunta. Incluye pasos concretos."
+    }
+  ],
+  "recomendacionesPersonalizadas": [
+    "Recomendación 1 específica basada en los patrones identificados",
+    "Recomendación 2 específica para los temas problemáticos",
+    "Recomendación 3 con estrategias de estudio concretas"
+  ],
+  "planEstudioPersonalizado": {
+    "faseInicial": {
+      "duracion": "1-2 semanas",
+      "objetivos": ["Objetivo 1 específico para las preguntas problemáticas", "Objetivo 2"],
+      "actividades": [
+        {
+          "materia": "Tema identificado de las preguntas",
+          "tiempo": "30-45 min diarios",
+          "actividad": "Descripción detallada de qué estudiar y cómo, basado en las preguntas que siempre falla",
+          "recursos": ["Recurso específico para el tema problemático"]
+        }
+      ]
+    }
+  }
+}
+
+IMPORTANTE:
+- Sé ESPECÍFICO: menciona los temas/conceptos exactos de las preguntas problemáticas
+- Sé ACCIONABLE: cada recomendación debe ser algo que el estudiante pueda hacer inmediatamente
+- Sé PEDAGÓGICO: explica como si fueras un tutor enseñando a alguien que no entiende
+- NO uses frases genéricas: conecta cada recomendación con las preguntas específicas que falló
+- Analiza el CONTENIDO de los enunciados para identificar temas/conceptos específicos
+
+Responde SOLO con el JSON, sin texto adicional.
+`;
+};
+
+/**
  * Generar análisis completo avanzado (función principal mejorada)
  * @param {Object} datosAnalisis - Datos del rendimiento del estudiante
  * @param {Object} opciones - Opciones de análisis
@@ -1422,7 +1983,6 @@ const evaluarGestionTiempo = (datos) => {
 export const generarAnalisisCompletoAvanzado = async (datosAnalisis, opciones = {}) => {
   try {
     console.log('🚀 Iniciando análisis completo avanzado');
-    
     // Opciones por defecto
     const opcionesCompletas = {
       incluirAnalisisEspecializado: true,
@@ -1431,17 +1991,17 @@ export const generarAnalisisCompletoAvanzado = async (datosAnalisis, opciones = 
       generarRecomendacionesPersonalizadas: true,
       ...opciones
     };
-    
+
     // Detectar tipo de estudiante automáticamente
-    const tipoEstudiante = opcionesCompletas.detectarTipoAutomatico ? 
-      detectarTipoEstudiante(datosAnalisis) : 
+    const tipoEstudiante = opcionesCompletas.detectarTipoAutomatico ?
+      detectarTipoEstudiante(datosAnalisis) :
       (opciones.tipoEstudiante || 'intermedio');
-    
+
     console.log('🎯 Tipo de estudiante detectado:', tipoEstudiante);
-    
+
     // Generar análisis principal
     const analisisPrincipal = await generarAnalisisConGemini(datosAnalisis);
-    
+
     // Generar análisis especializado si se solicita
     let analisisEspecializado = null;
     if (opcionesCompletas.incluirAnalisisEspecializado) {
@@ -1451,10 +2011,10 @@ export const generarAnalisisCompletoAvanzado = async (datosAnalisis, opciones = 
         console.warn('⚠️ Error en análisis especializado:', error.message);
       }
     }
-    
+
     // Identificar área principal de dificultad
     const areaPrincipal = identificarAreaPrincipal(datosAnalisis);
-    
+
     // Generar análisis por área si se solicita
     let analisisPorArea = null;
     if (opcionesCompletas.incluirAnalisisPorArea && areaPrincipal) {
@@ -1464,7 +2024,6 @@ export const generarAnalisisCompletoAvanzado = async (datosAnalisis, opciones = 
         console.warn('⚠️ Error en análisis por área:', error.message);
       }
     }
-    
     // Combinar todos los análisis
     const analisisCompleto = combinarAnalisis(
       analisisPrincipal,
@@ -1473,10 +2032,10 @@ export const generarAnalisisCompletoAvanzado = async (datosAnalisis, opciones = 
       tipoEstudiante,
       datosAnalisis
     );
-    
+
     console.log('✅ Análisis completo generado exitosamente');
     return analisisCompleto;
-    
+
   } catch (error) {
     console.error('❌ Error en análisis completo avanzado:', error);
     throw error;
@@ -1490,37 +2049,37 @@ export const generarAnalisisCompletoAvanzado = async (datosAnalisis, opciones = 
  */
 const identificarAreaPrincipal = (datos) => {
   // Encontrar materia con menor promedio
-  const materiaDebil = (datos.materias || []).reduce((min, actual) => 
+  const materiaDebil = (datos.materias || []).reduce((min, actual) =>
     (actual?.promedio ?? Infinity) < (min?.promedio ?? Infinity) ? actual : min
-  , (datos.materias || [null])[0]);
-  
+    , (datos.materias || [null])[0]);
+
   // Mapear materia a área
   const materia = (materiaDebil?.nombre || '').toLowerCase();
-  
-  if (materia.includes('matemática') || materia.includes('álgebra') || 
-      materia.includes('geometría') || materia.includes('cálculo')) {
+
+  if (materia.includes('matemática') || materia.includes('álgebra') ||
+    materia.includes('geometría') || materia.includes('cálculo')) {
     return 'matematicas';
   }
-  
-  if (materia.includes('física') || materia.includes('química') || 
-      materia.includes('biología') || materia.includes('ciencias')) {
+
+  if (materia.includes('física') || materia.includes('química') ||
+    materia.includes('biología') || materia.includes('ciencias')) {
     return 'ciencias';
   }
-  
-  if (materia.includes('español') || materia.includes('literatura') || 
-      materia.includes('redacción') || materia.includes('comunicación')) {
+
+  if (materia.includes('español') || materia.includes('literatura') ||
+    materia.includes('redacción') || materia.includes('comunicación')) {
     return 'lenguaje';
   }
-  
-  if (materia.includes('historia') || materia.includes('geografía') || 
-      materia.includes('civismo') || materia.includes('sociales')) {
+
+  if (materia.includes('historia') || materia.includes('geografía') ||
+    materia.includes('civismo') || materia.includes('sociales')) {
     return 'sociales';
   }
-  
+
   if (materia.includes('inglés') || materia.includes('english')) {
     return 'ingles';
   }
-  
+
   return null;
 };
 
@@ -1583,74 +2142,73 @@ const combinarAnalisis = (principal, especializado, porArea, tipoEstudiante, dat
       numeroMaterias: Array.isArray(datos?.materias) ? datos.materias.length : 0,
       puntuacionConfianza: Number(principal?.puntuacionConfianza) || 85
     },
-    
+
     // Análisis general (del análisis principal)
     analisisGeneral: principalRich.analisisGeneral || principal.analisisGeneral || {},
-    
+
     // Combinar fortalezas de todos los análisis
     fortalezasDetalladas: [
       ...(principalRich.fortalezasDetalladas || principal.fortalezasDetalladas || []),
       ...(especializado?.fortalezasDetalladas || []),
       ...(porArea?.fortalezasDetalladas || [])
-    ].filter((fortaleza, index, self) => 
+    ].filter((fortaleza, index, self) =>
       index === self.findIndex(f => f.materia === fortaleza.materia)
     ),
-    
+
     // Combinar áreas de desarrollo
     areasDeDesarrollo: [
       ...(principalRich.areasDeDesarrollo || principal.areasDeDesarrollo || []),
       ...(especializado?.areasDeDesarrollo || []),
       ...(porArea?.areasDeDesarrollo || [])
-    ].filter((area, index, self) => 
+    ].filter((area, index, self) =>
       index === self.findIndex(a => a.materia === area.materia)
     ),
-    
+
     // Plan de estudio personalizado (tomar el más completo)
-  planEstudioPersonalizado: especializado?.planEstudioPersonalizado || 
-               principalRich.planEstudioPersonalizado || principal.planEstudioPersonalizado || {},
-    
+    planEstudioPersonalizado: especializado?.planEstudioPersonalizado ||
+      principalRich.planEstudioPersonalizado || principal.planEstudioPersonalizado || {},
+
     // Técnicas de estudio especializadas
     tecnicasEstudio: {
       ...(principal.tecnicasEstudio || {}),
       ...(especializado?.tecnicasEstudio || {}),
       metodosEspecializados: porArea?.tecnicasEstudio?.metodosRecomendados || []
     },
-    
+
     // Seguimiento y evaluación
-    seguimientoEvaluacion: especializado?.seguimientoEvaluacion || 
-                          principal.seguimientoEvaluacion || {},
-    
+    seguimientoEvaluacion: especializado?.seguimientoEvaluacion ||
+      principal.seguimientoEvaluacion || {},
+
     // Recursos combinados
     recursosAdicionales: {
       ...(principal.recursosAdicionales || {}),
       recursosEspecializados: porArea?.recursosAdicionales || {}
     },
-    
     // Recomendaciones personalizadas mejoradas
     recomendacionesPersonalizadas: [
       ...(principal.recomendacionesPersonalizadas || []),
       ...(especializado?.recomendacionesPersonalizadas || []),
       ...(porArea?.recomendacionesPersonalizadas || [])
     ],
-    
+
     // Mensaje motivacional personalizado
-    mensajeMotivacional: especializado?.mensajeMotivacional || 
-                        principal.mensajeMotivacional || 
-                        'Continúa trabajando con dedicación, cada paso te acerca a tus objetivos.',
-    
+    mensajeMotivacional: especializado?.mensajeMotivacional ||
+      principal.mensajeMotivacional ||
+      'Continúa trabajando con dedicación, cada paso te acerca a tus objetivos.',
+
     // Análisis específicos adicionales
     analisisEspecificos: {
       ...(especializado ? { porTipoEstudiante: especializado } : {}),
       ...(porArea ? { porArea: porArea } : {})
     },
-    
+
     // Indicadores de rendimiento calculados
     indicadoresRendimiento: calcularIndicadoresRendimiento(datos),
-    
+
     // Próximos pasos recomendados
     proximosPasos: generarProximosPasos(datos, tipoEstudiante)
   };
-  
+
   return analisisCombinado;
 };
 
@@ -1662,7 +2220,6 @@ const combinarAnalisis = (principal, especializado, porArea, tipoEstudiante, dat
 const calcularIndicadoresRendimiento = (datos) => {
   const promedios = datos.materias.map(m => m.promedio);
   const tiempos = datos.materias.map(m => m.tiempoPromedio || datos.tiempoPromedio);
-  
   return {
     promedioGeneral: datos.promedio,
     desviacionEstandar: calcularDesviacionEstandar(promedios),
@@ -1682,7 +2239,6 @@ const calcularIndicadoresRendimiento = (datos) => {
  */
 const generarProximosPasos = (datos, tipoEstudiante) => {
   const pasos = [];
-  
   // Paso 1: Enfoque en área más débil
   const lista = Array.isArray(datos?.materias) ? datos.materias : [];
   if (lista.length === 0) {
@@ -1696,10 +2252,10 @@ const generarProximosPasos = (datos, tipoEstudiante) => {
       }
     ];
   }
-  const areaDebil = lista.reduce((min, actual) => 
+  const areaDebil = lista.reduce((min, actual) =>
     (Number(actual?.promedio) || Infinity) < (Number(min?.promedio) || Infinity) ? actual : min
   );
-  
+
   pasos.push({
     orden: 1,
     titulo: `Reforzar ${areaDebil.nombre}`,
@@ -1707,7 +2263,6 @@ const generarProximosPasos = (datos, tipoEstudiante) => {
     plazo: '2 semanas',
     prioridad: 'Alta'
   });
-  
   // Paso 2: Optimizar tiempo de estudio
   if ((Number(datos?.tiempoPromedio) || 0) > 60) {
     pasos.push({
@@ -1718,12 +2273,12 @@ const generarProximosPasos = (datos, tipoEstudiante) => {
       prioridad: 'Media'
     });
   }
-  
+
   // Paso 3: Mantener fortalezas
-  const areaFuerte = lista.reduce((max, actual) => 
+  const areaFuerte = lista.reduce((max, actual) =>
     (Number(actual?.promedio) || -Infinity) > (Number(max?.promedio) || -Infinity) ? actual : max
   );
-  
+
   pasos.push({
     orden: 3,
     titulo: `Mantener nivel en ${areaFuerte.nombre}`,
@@ -1731,7 +2286,6 @@ const generarProximosPasos = (datos, tipoEstudiante) => {
     plazo: 'Continuo',
     prioridad: 'Baja'
   });
-  
   return pasos;
 };
 
@@ -1768,7 +2322,6 @@ const calcularTendenciaAprendizaje = (materias) => {
     return Number(mejora) || 0;
   });
   const promedioTendencia = tendencias.reduce((a, b) => a + b, 0) / (tendencias.length || 1);
-  
   if (promedioTendencia > 10) return 'Mejora significativa';
   if (promedioTendencia > 5) return 'Mejora gradual';
   if (promedioTendencia > -5) return 'Estable';

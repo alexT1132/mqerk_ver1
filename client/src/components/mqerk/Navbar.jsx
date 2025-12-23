@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Logo from "../../assets/MQerk_logo.png";
+import Logo from "../../assets/MQerK_logo.webp";
 import { Link } from "react-router-dom";
 
 export default function Navbar() {
@@ -25,7 +25,7 @@ export default function Navbar() {
       <nav className="mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo a la izquierda */}
-          <a href="#" className="flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-xl">
+          <a href="/" className="flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-xl">
             <img src={Logo} alt="Logo" className="h-15 w-20 rounded-full" />
           </a>
 
@@ -66,7 +66,12 @@ export default function Navbar() {
                       <DropdownItem href="/bootcamps" label="Bootcamps" />
                       <DropdownItem href="/exporientas" label="Exporientas" />
                       <DropdownItem href="/online" label="Online" />
-                      <DropdownItem href="https://open.spotify.com/user/mvn8ly2def6rlqnbgrck8p85h?si=rBP1ehWvQRqjLVivpqN4jA" label="Podcast" />
+                      <DropdownItem 
+                        href="https://open.spotify.com/user/mvn8ly2def6rlqnbgrck8p85h?si=rBP1ehWvQRqjLVivpqN4jA" 
+                        label="Podcast" 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      />
                     </ul>
                   </div>
                 )}
@@ -77,7 +82,7 @@ export default function Navbar() {
             </ul>
 
             <Link
-              // to='/login'
+              to='/login'
               className="inline-flex items-center gap-2 rounded-2xl border border-white/70 px-4 py-2 text-sm font-semibold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             >
               <UserIcon />
@@ -102,9 +107,9 @@ export default function Navbar() {
         className={`md:hidden overflow-hidden transition-[max-height] duration-300 ease-in-out ${open ? "max-h-96" : "max-h-0"}`}
       >
         <div className="px-4 pb-4">
-          <MobileLink href="#inicio">Inicio</MobileLink>
-          <MobileLink href="#acerca">Acerca de</MobileLink>
-          <MobileLink href="#cursos">Cursos</MobileLink>
+          <MobileLink href="/">Inicio</MobileLink>
+          <MobileLink href="/acerca_de">Acerca de</MobileLink>
+          <MobileLink href="/">Cursos</MobileLink>
 
           {/* Dropdown móvil */}
           <div className="border-t border-white/15 my-2" />
@@ -120,9 +125,15 @@ export default function Navbar() {
           </button>
           <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${eventsOpenMobile ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
             <div className="overflow-hidden">
-              <MobileSubLink href="#eventos/calendario">Calendario</MobileSubLink>
-              <MobileSubLink href="#eventos/proximos">Próximos eventos</MobileSubLink>
-              <MobileSubLink href="#eventos/pasados">Eventos pasados</MobileSubLink>
+              <MobileSubLink href="/talleres">Talleres</MobileSubLink>
+              <MobileSubLink href="/bootcamps">Bootcamps</MobileSubLink>
+              <MobileSubLink href="/exporientas">Exporientas</MobileSubLink>
+              <MobileSubLink href="/online">Online</MobileSubLink>
+              <MobileSubLink 
+                href="https://open.spotify.com/user/mvn8ly2def6rlqnbgrck8p85h?si=rBP1ehWvQRqjLVivpqN4jA"
+              >
+                Podcast
+              </MobileSubLink>
             </div>
           </div>
 
@@ -145,12 +156,14 @@ export default function Navbar() {
   );
 }
 
-function DropdownItem({ href, label }) {
+function DropdownItem({ href, label, target, rel }) {
   return (
     <li>
       <a
         href={href}
         role="menuitem"
+        target={target}
+        rel={rel}
         className="block px-4 py-2.5 hover:bg-gray-50 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
       >
         {label}

@@ -1,18 +1,15 @@
-import Logo from "../assets/MQerK_logo.png";
+import Logo from "../assets/MQerK_logo.webp";
 import Guardianes from "../assets/guardianes.png";
-import { Link } from "react-router-dom";
 
 const DesktopTopbar = () => {
     return (
       <div className="hidden md:flex w-full border-b-2 border-white p-4 items-center justify-between shadow-md md:px-8" style={{ backgroundColor: "#3818c3" }}>
         {/* Imagen a la izquierda */}
-        <Link to='/'>
-          <img
+        <img
             src={Logo}
             alt="Logo"
             className="w-20 h-16"
-          />
-        </Link>
+        />
   
         {/* Título en el centro */}
         <h1 className="text-white text-3xl font-semibold text-center flex-1">
@@ -31,16 +28,16 @@ const DesktopTopbar = () => {
   
   const MobileTopbar = () => {
     return (
-      <div className="flex md:hidden w-full border-b border-white/60 px-3 py-2 items-center justify-between shadow-sm" style={{ backgroundColor: "#3818c3" }}>
+      <div className="flex md:hidden w-full border-b border-white/60 px-4 py-3 items-center justify-between shadow-sm" style={{ backgroundColor: "#3818c3" }}>
         {/* Imagen a la izquierda */}
         <img
             src={Logo}
             alt="Logo"
-            className="w-12 h-10"
+            className="w-14 h-12"
         />
   
         {/* Título en el centro */}
-  <h1 className="text-white text-xs leading-4 text-center flex-1 px-2">
+        <h1 className="text-white text-sm leading-5 text-center flex-1 px-2">
             Asesores Especializados en la Enseñanza de las Ciencias y Tecnología 
         </h1>
   

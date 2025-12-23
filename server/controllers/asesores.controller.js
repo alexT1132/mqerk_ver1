@@ -7,6 +7,7 @@ import db from '../db.js';
 import * as AsesorPerfiles from '../models/asesor_perfiles.model.js';
 import * as Tests from '../models/asesor_tests.model.js';
 import * as Bank from '../models/test_bank.model.js';
+import * as PagosAsesores from '../models/pagos_asesores.model.js';
 
 export const crearPreRegistro = async (req, res) => {
   try {
@@ -498,10 +499,10 @@ export const listarEstudiantesAsesor = async (req, res) => {
       return res.status(200).json({ data: [], grupo: null, grupos_asesor: allGroups });
     }
 
-    // Alinear con Admin: solo aprobados (verificacion=2), sin soft-deletes, y con pago aprobado (comprobante con importe)
+    // Alinear con Admin: solo aprobados (verificacion=2), sin soft-deletes, activos, y con pago aprobado (comprobante con importe)
     const sql = `
-      SELECT e.id, e.folio, e.folio_formateado, e.nombre, e.apellidos, e.email, e.grupo, e.curso, e.plan, e.anio,
-             e.estatus,
+      SELECT e.id, e.folio, e.folio_formateado, e.nombre, e.apellidos, e.email, e.foto, e.grupo, e.curso, e.plan, e.anio,
+             e.estatus, e.fecha_nacimiento,
              e.created_at AS registrado_en,
              c.importe AS pago_importe, c.metodo AS pago_metodo, c.created_at AS pago_fecha
       FROM estudiantes e
@@ -515,6 +516,7 @@ export const listarEstudiantesAsesor = async (req, res) => {
       LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
       WHERE e.verificacion = 2
         AND sd.id IS NULL
+        AND (e.estatus = 'Activo' OR e.estatus IS NULL)
         AND TRIM(e.grupo) = TRIM(?)
       ORDER BY c.created_at DESC`;
 
@@ -526,6 +528,8 @@ export const listarEstudiantesAsesor = async (req, res) => {
       nombres: r.nombre,
       apellidos: r.apellidos,
       correoElectronico: r.email,
+      foto: r.foto || null,
+      fecha_nacimiento: r.fecha_nacimiento ? new Date(r.fecha_nacimiento).toISOString().split('T')[0] : null,
       grupo: r.grupo,
       curso: r.curso,
       plan: r.plan,
@@ -545,6 +549,366 @@ export const listarEstudiantesAsesor = async (req, res) => {
   }
 };
 
+// Listar grupos del asesor con cantidad de estudiantes por grupo
+export const listarMisGrupos = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'No autenticado' });
+    
+    // Recuperar perfil por user id para conocer grupos asignados
+    let perfil = await AsesorPerfiles.getByUserId(userId).catch(() => null);
+    if (!perfil) {
+      // fallback: si existe solo un perfil con grupo y sin usuario, usarlo (migración)
+      try {
+        const [pRows] = await db.query(
+          'SELECT * FROM asesor_perfiles WHERE usuario_id IS NULL AND grupo_asesor IS NOT NULL AND grupo_asesor<>"" LIMIT 2'
+        );
+        if (pRows.length === 1) {
+          perfil = pRows[0];
+        }
+      } catch (_e) {}
+    }
+    
+    const gruposArr = perfil?.grupos_asesor || (perfil?.grupo_asesor ? [perfil.grupo_asesor] : []);
+    const allGroups = Array.isArray(gruposArr) ? gruposArr : [];
+    
+    if (!allGroups.length) {
+      return res.json({ data: [] });
+    }
+    
+    // Obtener cantidad de estudiantes aprobados y activos por grupo
+    const placeholders = allGroups.map(() => '?').join(',');
+    const sql = `
+      SELECT e.grupo, COUNT(DISTINCT e.id) AS cantidad_estudiantes
+      FROM estudiantes e
+      INNER JOIN (
+        SELECT id_estudiante, MAX(created_at) AS latest
+        FROM comprobantes
+        WHERE importe IS NOT NULL
+        GROUP BY id_estudiante
+      ) lp ON lp.id_estudiante = e.id
+      INNER JOIN comprobantes c ON c.id_estudiante = lp.id_estudiante AND c.created_at = lp.latest
+      LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+      WHERE e.verificacion = 2
+        AND sd.id IS NULL
+        AND (e.estatus = 'Activo' OR e.estatus IS NULL)
+        AND TRIM(e.grupo) IN (${placeholders})
+      GROUP BY e.grupo
+    `;
+    
+    const [rows] = await db.query(sql, allGroups);
+    
+    // Crear un mapa de grupo -> cantidad
+    const countMap = {};
+    rows.forEach(r => {
+      countMap[r.grupo] = Number(r.cantidad_estudiantes || 0);
+    });
+    
+    // Construir respuesta con todos los grupos y sus cantidades
+    const data = allGroups.map(grupo => ({
+      id: grupo,
+      nombre: grupo,
+      cantidad_estudiantes: countMap[grupo] || 0
+    }));
+    
+    return res.json({ data });
+  } catch (err) {
+    console.error('Error listarMisGrupos', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+};
+
+// Obtener perfil completo del asesor autenticado (perfil + preregistro)
+export const obtenerMiPerfil = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'No autenticado' });
+    
+    // Obtener perfil del asesor
+    const perfil = await AsesorPerfiles.getByUserId(userId).catch(() => null);
+    if (!perfil || !perfil.preregistro_id) {
+      return res.status(404).json({ message: 'Perfil de asesor no encontrado' });
+    }
+    
+    // Obtener datos del preregistro
+    const preregistro = await PreReg.getById(perfil.preregistro_id).catch(() => null);
+    if (!preregistro) {
+      return res.status(404).json({ message: 'Preregistro no encontrado' });
+    }
+    
+    // Obtener usuario
+    const usuario = await Usuarios.getUsuarioPorid(userId).catch(() => null);
+    
+    // Importar buildStaticUrl para construir URLs de archivos
+    const { buildStaticUrl } = await import('../utils/url.js');
+    
+    // Construir URL de foto si existe
+    const fotoUrl = perfil?.doc_fotografia ? buildStaticUrl(perfil.doc_fotografia) : null;
+    
+    res.json({
+      data: {
+        perfil: {
+          ...perfil,
+          foto_url: fotoUrl
+        },
+        preregistro,
+        usuario: usuario ? {
+          id: usuario.id,
+          usuario: usuario.usuario,
+          correo: preregistro.correo // Usar correo del preregistro
+        } : null
+      }
+    });
+  } catch (err) {
+    console.error('Error obtenerMiPerfil', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+};
+
+// Actualizar datos básicos del asesor autenticado (preregistro + perfil)
+export const actualizarMiPerfil = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'No autenticado' });
+    
+    // Obtener perfil del asesor
+    const perfil = await AsesorPerfiles.getByUserId(userId).catch(() => null);
+    if (!perfil || !perfil.preregistro_id) {
+      return res.status(404).json({ message: 'Perfil de asesor no encontrado' });
+    }
+    
+    const preregistroId = perfil.preregistro_id;
+    const body = req.body || {};
+    
+    // Campos que se actualizan en preregistro
+    const { nombres, apellidos, correo, telefono } = body;
+    const updatesPreReg = {};
+    if (nombres !== undefined) updatesPreReg.nombres = nombres;
+    if (apellidos !== undefined) updatesPreReg.apellidos = apellidos;
+    if (correo !== undefined) updatesPreReg.correo = correo;
+    if (telefono !== undefined) updatesPreReg.telefono = telefono;
+    
+    if (Object.keys(updatesPreReg).length > 0) {
+      await PreReg.updateBasicData(preregistroId, updatesPreReg);
+    }
+    
+    // Campos que se actualizan en perfil (todos los campos permitidos)
+    const updatesPerfil = {};
+    const allowedPerfilFields = [
+      'direccion', 'municipio', 'nacimiento', 'nacionalidad', 'genero', 'rfc',
+      'nivel_estudios', 'institucion', 'titulo_academico', 'anio_graduacion',
+      'experiencia_rango', 'areas_especializacion', 'empresa', 'ultimo_puesto',
+      'funciones', 'plataformas', 'curp', 'entidad_curp'
+    ];
+    
+    for (const field of allowedPerfilFields) {
+      if (body[field] !== undefined) {
+        updatesPerfil[field] = body[field];
+      }
+    }
+    
+    if (Object.keys(updatesPerfil).length > 0) {
+      await Perfil.updatePerfilFields(preregistroId, updatesPerfil);
+    }
+    
+    // Obtener datos actualizados
+    const preregistroActualizado = await PreReg.getById(preregistroId);
+    const perfilActualizado = await Perfil.getByPreRegistro(preregistroId);
+    
+    // Importar buildStaticUrl para construir URLs de archivos
+    const { buildStaticUrl } = await import('../utils/url.js');
+    
+    // Construir URL de foto si existe
+    const fotoUrl = perfilActualizado?.doc_fotografia ? buildStaticUrl(perfilActualizado.doc_fotografia) : null;
+    
+    res.json({
+      data: {
+        perfil: {
+          ...perfilActualizado,
+          foto_url: fotoUrl
+        },
+        preregistro: preregistroActualizado
+      }
+    });
+  } catch (err) {
+    console.error('Error actualizarMiPerfil', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+};
+
+// Actualizar foto de perfil del asesor autenticado
+export const actualizarMiFoto = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'No autenticado' });
+    
+    // Obtener perfil del asesor
+    const perfil = await AsesorPerfiles.getByUserId(userId).catch(() => null);
+    if (!perfil || !perfil.preregistro_id) {
+      return res.status(404).json({ message: 'Perfil de asesor no encontrado' });
+    }
+    
+    const preregistroId = perfil.preregistro_id;
+    const file = req.file;
+    
+    if (!file) return res.status(400).json({ message: 'Archivo de imagen requerido' });
+    
+    // ✅ Guardar ruta relativa en lugar de absoluta para que funcione con buildStaticUrl
+    // file.path es absoluta, necesitamos construir la relativa desde uploads/asesores
+    const relativePath = `/uploads/asesores/${file.filename}`;
+    
+    // Actualizar solo el campo doc_fotografia con la ruta relativa
+    await Perfil.updatePerfilFields(preregistroId, { doc_fotografia: relativePath });
+    
+    // Obtener perfil actualizado
+    const perfilActualizado = await Perfil.getByPreRegistro(preregistroId);
+    
+    // Importar buildStaticUrl para construir URLs de archivos
+    const { buildStaticUrl } = await import('../utils/url.js');
+    
+    // Construir URL de foto usando la ruta relativa
+    const fotoUrl = perfilActualizado?.doc_fotografia ? buildStaticUrl(perfilActualizado.doc_fotografia) : null;
+    
+    res.json({
+      data: {
+        perfil: {
+          ...perfilActualizado,
+          foto_url: fotoUrl
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Error actualizarMiFoto', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+};
+
+// Listar pagos del asesor autenticado
+export const listarPagosAsesor = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'No autenticado' });
+    
+    // Obtener perfil del asesor para obtener preregistro_id
+    const perfil = await AsesorPerfiles.getByUserId(userId).catch(() => null);
+    if (!perfil || !perfil.preregistro_id) {
+      console.log('[listarPagosAsesor] Perfil no encontrado para userId:', userId);
+      return res.status(404).json({ message: 'Perfil de asesor no encontrado' });
+    }
+    
+    const preregistroId = perfil.preregistro_id;
+    const { year, month, week } = req.query || {};
+    
+    console.log('[listarPagosAsesor] Buscando pagos para preregistroId:', preregistroId, 'filtros:', { year, month, week });
+    
+    // Construir rango de fechas para el mes
+    let from = null;
+    let to = null;
+    
+    if (year && month) {
+      const monthNames = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      ];
+      const monthIndex = monthNames.indexOf(month);
+      
+      if (monthIndex !== -1) {
+        const monthNum = monthIndex + 1;
+        const firstDayOfMonth = new Date(year, monthIndex, 1);
+        const lastDayOfMonth = new Date(year, monthIndex + 1, 0);
+        const daysInMonth = lastDayOfMonth.getDate();
+        
+        // Calcular inicio del mes (primer lunes o primer día si el mes empieza en lunes)
+        const dayOfWeek = firstDayOfMonth.getDay(); // 0 = domingo, 1 = lunes, etc.
+        // Ajustar para que la semana empiece en lunes (0 = lunes, 6 = domingo)
+        const offset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        
+        if (week) {
+          // Si se especifica semana, calcular rango de esa semana
+          const weekNum = parseInt(week, 10);
+          if (weekNum >= 1 && weekNum <= 5) {
+            // Calcular día de inicio de la semana (considerando que la semana puede empezar antes del mes)
+            let weekStart = 1 + (weekNum - 1) * 7 - offset;
+            if (weekStart < 1) weekStart = 1;
+            
+            // Calcular día de fin de la semana
+            let weekEnd = weekStart + 6;
+            if (weekEnd > daysInMonth) weekEnd = daysInMonth;
+            
+            // Asegurar que weekStart no sea mayor que weekEnd
+            if (weekStart > daysInMonth) {
+              weekStart = daysInMonth;
+              weekEnd = daysInMonth;
+            }
+            
+            from = `${year}-${String(monthNum).padStart(2, '0')}-${String(weekStart).padStart(2, '0')}`;
+            to = `${year}-${String(monthNum).padStart(2, '0')}-${String(weekEnd).padStart(2, '0')}`;
+          } else {
+            // Si la semana es inválida, devolver todo el mes
+            from = `${year}-${String(monthNum).padStart(2, '0')}-01`;
+            to = `${year}-${String(monthNum).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+          }
+        } else {
+          // Si no se especifica semana, devolver todo el mes
+          from = `${year}-${String(monthNum).padStart(2, '0')}-01`;
+          to = `${year}-${String(monthNum).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+        }
+      }
+    }
+    
+    console.log('[listarPagosAsesor] Rango de fechas:', { from, to });
+    
+    // Obtener pagos del asesor (sin filtro de fecha si no se especifica año/mes)
+    const pagos = await PagosAsesores.list({
+      asesor_id: preregistroId,
+      from: from || undefined,
+      to: to || undefined
+    });
+    
+    console.log('[listarPagosAsesor] Pagos encontrados:', pagos.length);
+    
+    // Si no hay pagos con filtro de fecha, intentar sin filtro para verificar si hay pagos en general
+    if (pagos.length === 0 && (from || to)) {
+      const pagosSinFiltro = await PagosAsesores.list({
+        asesor_id: preregistroId
+      });
+      console.log('[listarPagosAsesor] Total de pagos sin filtro de fecha:', pagosSinFiltro.length);
+      if (pagosSinFiltro.length > 0) {
+        console.log('[listarPagosAsesor] Fechas de pagos disponibles:', pagosSinFiltro.map(p => p.fecha_pago));
+      }
+    }
+    
+    // Formatear respuesta
+    const formatted = pagos.map(p => {
+      // Parsear fecha si viene como string
+      let fechaPago = p.fecha_pago;
+      if (fechaPago && typeof fechaPago === 'string') {
+        fechaPago = fechaPago.split('T')[0];
+      }
+      
+      return {
+        id: p.id,
+        id_pago: `P${String(p.id).padStart(3, '0')}`,
+        tipo_servicio: p.tipo_servicio || 'otro',
+        servicio_detalle: p.servicio_detalle || null,
+        monto_base: p.monto_base ? Number(p.monto_base) : null,
+        horas_trabajadas: p.horas_trabajadas ? Number(p.horas_trabajadas) : null,
+        honorarios_comision: p.honorarios_comision ? Number(p.honorarios_comision) : 0,
+        ingreso_final: p.ingreso_final ? Number(p.ingreso_final) : 0,
+        fecha_pago: fechaPago || null,
+        metodo_pago: p.metodo_pago || null,
+        nota: p.nota || null,
+        status: p.status || 'Pendiente'
+      };
+    });
+    
+    res.json({ data: formatted });
+  } catch (err) {
+    console.error('Error listarPagosAsesor', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+};
+
 // Listar preregistros con información de perfil (incluyendo grupo_asesor) para panel admin
 export const listarAsesoresAdmin = async (_req, res) => {
   try {
@@ -552,7 +916,7 @@ export const listarAsesoresAdmin = async (_req, res) => {
   const targetCollation = 'utf8mb4_unicode_ci';
     const [rows] = await db.query(`
       SELECT pr.id, pr.nombres, pr.apellidos, pr.correo, pr.telefono, pr.area, pr.estudios, pr.status,
-             ap.grupo_asesor, ap.id AS perfil_id,
+             ap.grupo_asesor, ap.grupos_asesor, ap.id AS perfil_id, ap.usuario_id,
              COALESCE((
                SELECT COUNT(DISTINCT e.id) FROM estudiantes e 
                WHERE TRIM(e.grupo) COLLATE ${targetCollation} = TRIM(ap.grupo_asesor) COLLATE ${targetCollation}
@@ -568,7 +932,24 @@ export const listarAsesoresAdmin = async (_req, res) => {
       LEFT JOIN asesor_perfiles ap ON ap.preregistro_id = pr.id
       ORDER BY pr.created_at DESC
     `);
-    res.json({ data: rows });
+    // Parsear grupos_asesor (JSON) para cada fila
+    const parsed = rows.map(row => {
+      if (row.grupos_asesor) {
+        try {
+          row.grupos_asesor = typeof row.grupos_asesor === 'string' ? JSON.parse(row.grupos_asesor) : row.grupos_asesor;
+        } catch (e) {
+          // Si falla el parse, mantener como está o usar grupo_asesor como fallback
+          row.grupos_asesor = row.grupo_asesor ? [row.grupo_asesor] : [];
+        }
+      } else if (row.grupo_asesor) {
+        // Si no hay grupos_asesor pero sí grupo_asesor, usar ese como array
+        row.grupos_asesor = [row.grupo_asesor];
+      } else {
+        row.grupos_asesor = [];
+      }
+      return row;
+    });
+    res.json({ data: parsed });
   } catch(err){
     console.error('Error listarAsesoresAdmin', err);
     res.status(500).json({ message:'Error interno' });

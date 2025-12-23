@@ -158,24 +158,24 @@ function Modal({ isOpen, onClose, children, title }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-x-0 top-20 bottom-4 z-[9999] flex items-center justify-center px-4 overflow-y-auto">
+    <div className="fixed inset-x-0 top-14 sm:top-20 bottom-0 sm:bottom-4 z-[9999] flex items-center justify-center px-2 sm:px-4 overflow-y-auto">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-auto my-auto max-h-[calc(100vh-10rem)] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white rounded-t-2xl">
-          <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+      <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-4xl w-full mx-auto my-auto max-h-[calc(100vh-3.5rem)] sm:max-h-[calc(100vh-10rem)] overflow-y-auto border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+        <div className="flex items-center justify-between p-4 sm:p-5 md:p-6 border-b-2 border-violet-200/50 sticky top-0 bg-white rounded-t-xl sm:rounded-t-2xl z-10">
+          <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">{title}</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+            className="p-2 hover:bg-violet-50 rounded-xl transition-all duration-200 active:scale-95 touch-manipulation border-2 border-violet-200/50"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5 text-violet-600" />
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-5 md:p-6">
           {children}
         </div>
       </div>
@@ -205,15 +205,15 @@ function PaymentMethodCard({ method, onClick }) {
     <div
       onClick={handleClick}
       className={`relative cursor-pointer bg-gradient-to-br ${methodColors[method.id]} 
-      rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out
-      p-3.5 md:p-5 flex flex-col items-center justify-center text-center min-h-[130px] md:min-h-[160px] group border border-gray-100`}
+      rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 ease-in-out touch-manipulation
+      p-4 sm:p-5 md:p-6 flex flex-col items-center justify-center text-center min-h-[120px] sm:min-h-[140px] md:min-h-[160px] group border-2 border-white/20 ring-2 ring-white/10`}
     >
-      <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-2xl"></div>
+      <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-xl sm:rounded-2xl"></div>
   {method.icon}
-  <h3 className="text-white text-[11px] sm:text-sm md:text-base font-bold mt-1 leading-tight relative z-10 px-1">
+  <h3 className="text-white text-[10px] xs:text-xs sm:text-sm md:text-base font-extrabold mt-1 sm:mt-2 leading-tight relative z-10 px-1 sm:px-2">
         {method.title}
       </h3>
-  <p className="hidden sm:block text-white/80 text-xs mt-2 relative z-10">
+  <p className="hidden sm:block text-white/90 text-[10px] sm:text-xs mt-1 sm:mt-2 relative z-10 font-semibold">
         Haz clic para ver detalles
       </p>
       {method.id === 'card' && showComingSoon && (
@@ -1982,10 +1982,10 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
-        <div className="bg-white rounded-2xl shadow-xl p-6 text-center border border-gray-100">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
-          <p className="text-gray-600">Cargando métodos de pago...</p>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8 text-center border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
+          <p className="text-sm sm:text-base md:text-lg font-extrabold text-violet-700">Cargando métodos de pago...</p>
         </div>
       </div>
     );
@@ -1993,45 +1993,49 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
-        <div className="bg-white rounded-2xl shadow-xl p-6 text-center border border-gray-100">
-          <div className="text-4xl mb-4">💳</div>
-          <p className="text-red-600">Error al cargar los métodos de pago: {error}</p>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-red-50 via-rose-50 to-red-50">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8 text-center border-2 border-red-200 ring-2 ring-red-100/50">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-gradient-to-br from-red-100 to-rose-100 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 sm:w-10 sm:h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <p className="text-sm sm:text-base md:text-lg font-extrabold text-red-600">Error al cargar los métodos de pago: {error}</p>
         </div>
       </div>
     );
   }
 
   return (
-  <div className="min-h-screen bg-white p-2.5 sm:p-3 md:p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+  <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 lg:py-8">
+    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-5 md:space-y-6">
         {/* Título principal y navegación por tabs */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <h1 className="text-2xl xs:text-3xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 md:mb-0">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
+          <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight">
             MIS PAGOS
           </h1>
           
           {/* Tabs de navegación mejorados */}
-      <div className="flex bg-white rounded-xl p-1 shadow-lg border border-gray-200">
+      <div className="flex bg-white rounded-xl sm:rounded-2xl p-1 shadow-xl border-2 border-violet-200/50 ring-2 ring-violet-100/50">
             <button
               onClick={() => setActiveTab('current')}
-        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
+        className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-extrabold transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation ${
                 activeTab === 'current'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-violet-200/50'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-violet-50'
               }`}
             >
               📋 Plan Actual
             </button>
             <button
               onClick={() => setActiveTab('history')}
-        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
+        className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-extrabold transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation ${
                 activeTab === 'history'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-violet-200/50'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-violet-50'
               }`}
             >
-              📚 Historial de pagos
+              📚 Historial
             </button>
           </div>
         </div>
@@ -2040,21 +2044,21 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
         {activeTab === 'current' ? (
           <div className="space-y-6">
             {/* Información del próximo pago (dinámica) */}
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-3 sm:p-4 md:p-6 text-white shadow-xl border border-gray-100">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+            <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 text-white shadow-xl border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold mb-0.5">Próximo Pago</h3>
-                  <p className="text-blue-100 text-xs sm:text-sm mb-1 sm:mb-2">
+                  <h3 className="text-base sm:text-lg md:text-xl font-extrabold mb-1 sm:mb-2">Próximo Pago</h3>
+                  <p className="text-violet-100 text-xs sm:text-sm mb-2 sm:mb-3 font-semibold">
                     {nextPayment ? `Mes de ${nextPayment.month}` : 'Sin pagos próximos'}
                   </p>
-                  <p className="text-xl sm:text-2xl font-bold">
+                  <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold">
                     {nextPayment ? formatCurrencyMXN(nextPayment.amount) : formatCurrencyMXN(0, { minDecimals: 2, maxDecimals: 2 })}
                   </p>
                 </div>
                 <div className="mt-4 md:mt-0">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2.5 sm:p-3">
-                    <p className="text-[11px] sm:text-xs text-blue-200 mb-0.5 sm:mb-1">Fecha límite de pago</p>
-                    <p className="font-semibold">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 border-2 border-white/30 shadow-lg">
+                    <p className="text-[10px] sm:text-xs text-violet-100 mb-1 sm:mb-2 font-extrabold uppercase tracking-wide">Fecha límite de pago</p>
+                    <p className="font-extrabold text-base sm:text-lg md:text-xl">
                       {nextPayment ? nextPayment.dueDate.toLocaleDateString('es-ES') : '--/--/----'}
                     </p>
                   </div>
@@ -2064,8 +2068,17 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
 
             {/* Opciones de métodos de pago */}
             <div>
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Métodos de pago</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              <h3 className="text-base sm:text-lg md:text-xl font-extrabold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
+                <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200/50">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </div>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">
+                  Métodos de pago
+                </span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
                 {paymentMethods.map(method => (
                   <PaymentMethodCard
                     key={method.id}
@@ -2102,24 +2115,54 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
 
         {/* Footer con información adicional */}
         {/* TODO BACKEND: Datos de contacto desde configuración del sistema */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 border border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-5 md:p-6 border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
             <div>
-              <h4 className="font-bold text-gray-800 mb-2">¿Necesitas ayuda?</h4>
-              <div className="space-y-1 text-sm text-gray-600">
+              <h4 className="font-extrabold text-gray-800 mb-2 sm:mb-3 text-sm sm:text-base flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                ¿Necesitas ayuda?
+              </h4>
+              <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600">
                 {/* TODO BACKEND: Obtener desde /api/config/support */}
-                <p>📧 Email: mqerkacademycienytec@gmail.com{/* config.supportEmail */}</p>
-                <p>📞 Teléfono: 287-151-5760 {/* config.supportPhone */}</p>
-                <p>💬 Chat en vivo: Lunes a Viernes 9:00 AM - 6:00 PM {/* config.chatHours */}</p>
+                <p className="font-semibold">📧 Email: <span className="text-violet-600">mqerkacademycienytec@gmail.com</span></p>
+                <p className="font-semibold">📞 Teléfono: <span className="text-violet-600">287-151-5760</span></p>
+                <p className="font-semibold">💬 Chat en vivo: <span className="text-violet-600">Lunes a Viernes 9:00 AM - 6:00 PM</span></p>
               </div>
             </div>
             <div>
-              <h4 className="font-bold text-gray-800 mb-2">Información importante</h4>
-              <div className="space-y-1 text-sm text-gray-600">
+              <h4 className="font-extrabold text-gray-800 mb-2 sm:mb-3 text-sm sm:text-base flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                Información importante
+              </h4>
+              <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600">
                 {/* TODO BACKEND: Políticas de pago desde /api/config/payment-policies */}
-                <p>• Las transferencias SPEI pueden tardar hasta 24 horas en validarse</p>
-                <p>• Los pagos en efectivo deben validarse presencial</p>
-                <p>• Conserva siempre tu comprobante de pago</p>
+                <p className="font-semibold">• Las transferencias SPEI pueden tardar hasta 24 horas en validarse</p>
+                <p className="font-semibold">• Los pagos en efectivo deben validarse presencial</p>
+                <p className="font-semibold">• Conserva siempre tu comprobante de pago</p>
+              </div>
+            </div>
+            <div className="hidden xl:block">
+              <h4 className="font-extrabold text-gray-800 mb-2 sm:mb-3 text-sm sm:text-base flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                Contacto rápido
+              </h4>
+              <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600">
+                <p className="font-semibold">📍 Tuxtepec, Oaxaca</p>
+                <p className="font-semibold">🕘 Atención: 9:00–17:00 h</p>
+                <p className="font-semibold">🌐 www.mqerkacademy.com</p>
               </div>
             </div>
           </div>

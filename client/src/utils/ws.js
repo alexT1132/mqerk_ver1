@@ -34,8 +34,22 @@ export async function waitForBackendHealth(timeoutMs = 4000) {
       const tid = setTimeout(() => ctrl.abort(), 1500);
       const res = await fetch(url, { credentials: 'include', signal: ctrl.signal });
       clearTimeout(tid);
-      if (res.ok) return true;
-    } catch (_) { /* ignore */ }
+      // Verificar que la respuesta sea OK (200) y que el backend responda correctamente
+      if (res.ok) {
+        try {
+          const data = await res.json();
+          // Si el backend responde con ok: true, considerarlo saludable
+          // Si ok: false pero responde, aún considerar saludable para el WS (puede ser problema temporal de DB)
+          return data && typeof data.ok !== 'undefined';
+        } catch (parseErr) {
+          // Si no puede parsear JSON, considerar saludable si responde 200
+          return true;
+        }
+      }
+    } catch (err) {
+      // Ignorar errores de red durante el health check
+      // console.debug('[waitForBackendHealth] Error:', err?.message || err);
+    }
     await new Promise(r => setTimeout(r, 500));
   }
   return false;

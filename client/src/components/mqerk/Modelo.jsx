@@ -1,5 +1,5 @@
-import ModeloDesktop from "../../assets/mqerk/modelo.png";
-import ModeloMovile from "../../assets/mqerk/modeloPhone.png";
+import ModeloDesktop from "../../assets/mqerk/modelo.webp";
+import ModeloMovile from "../../assets/mqerk/modeloPhone.webp";
 
 export default function HeroDeviceImage({
   title = "Modelo Educativo Disruptivo y Sostenible",

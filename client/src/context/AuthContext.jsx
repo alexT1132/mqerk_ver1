@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { registerRequest, loginRequest, verifyTokenRequest, logoutRequest } from "../api/usuarios.js";
+import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 
 export const AuthContext = createContext();
@@ -51,17 +52,24 @@ export const AuthProvider = ({children}) => {
 
     const signup = async (user) => {
         try {
+            setErrors([]); // Limpiar errores previos
             const res = await registerRequest(user);
             setVerde(true);
         } catch (error) {
             console.log(error);
+            // Capturar y mostrar errores del servidor
+            const errorMessage = error.response?.data?.message || 
+                               (error.response?.status === 409 ? 'Este nombre de usuario ya está en uso. Por favor, elige otro.' : 
+                                error.response?.status === 400 ? 'Todos los campos son obligatorios' :
+                                'Error al crear la cuenta. Por favor, intenta de nuevo.');
+            setErrors([errorMessage]);
+            setVerde(false);
         }
     }
 
     const signin = async (formData) => {
         try {
             const res = await loginRequest(formData);
-            console.log(formData);
             const usuarioResp = res.data.usuario;
             // Adjuntar perfil asesor si viene
             if (res.data.asesor_profile) {
@@ -99,8 +107,19 @@ export const AuthProvider = ({children}) => {
                         try {
                                 localStorage.removeItem('mq_user');
                                 localStorage.removeItem('rememberMe');
+                                // Limpiar curso seleccionado del asesor al cerrar sesión
+                                localStorage.removeItem('cursoSeleccionado');
                         } catch {}
                 }
+
+    // const getUsuarios = async () => {
+    //     try {
+    //         const res = await ObtenerUsuarios();
+    //         setUsers(res.data.data);
+    //     } catch (error) {
+    //         console.log(error);
+    //     }
+    // }
 
     useEffect(() => {
         if (errors.length > 0) {
@@ -190,9 +209,10 @@ export const AuthProvider = ({children}) => {
                         applyUser(res.data);
                         debug('/verify success user id=%s role=%s', res.data.usuario?.id, res.data.usuario?.role);
                     } else {
-                        // 304 o 200 vacío => no usuario => estado invitado
+                        // 200 sin usuario o con reason => no autenticado => estado invitado
+                        const reason = res.data?.reason;
                         setIsAuthenticated(false); setUser(null); setAlumno(null);
-                        debug('/verify no user payload (status=%s) -> guest', res.status);
+                        debug('/verify no user payload (status=%s, reason=%s) -> guest', res.status, reason || 'none');
                     }
                     setLoading(false); initRef.completed = true; debug('loading=false after verify response');
                 }

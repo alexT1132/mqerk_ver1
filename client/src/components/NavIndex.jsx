@@ -1,4 +1,4 @@
-import Logo from "../assets/MQerK_logo.png";
+import Logo from "../assets/MQerK_logo.webp";
 import { GrLogin } from "react-icons/gr";
 import { Link } from "react-router-dom";
 

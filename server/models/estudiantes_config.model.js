@@ -1,6 +1,6 @@
 import db from '../db.js';
 
-// Ensure table exists (optional, safe to call at runtime)
+// Ensure table exists and required columns are present (idempotent)
 export const ensureConfigTable = async () => {
   const sql = `
     CREATE TABLE IF NOT EXISTS estudiantes_config (
@@ -14,6 +14,8 @@ export const ensureConfigTable = async () => {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `;
   await db.query(sql);
+
+  // theme_preference removed
 };
 
 export const getConfigByEstudianteId = async (id_estudiante) => {
@@ -28,10 +30,9 @@ export const upsertConfig = async (id_estudiante, data) => {
   const nivel = data.nivel_experiencia ?? 'intermedio';
   // Store intereses as JSON string; db driver handles JSON if stringified
   const intereses = JSON.stringify(Array.isArray(data.intereses) ? data.intereses : []);
-
   const sql = `
     INSERT INTO estudiantes_config (id_estudiante, nivel_experiencia, intereses)
-  VALUES (?, ?, ?)
+    VALUES (?, ?, ?)
     ON DUPLICATE KEY UPDATE
       nivel_experiencia = VALUES(nivel_experiencia),
       intereses = VALUES(intereses);

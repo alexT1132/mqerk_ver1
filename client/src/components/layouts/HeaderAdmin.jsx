@@ -1,7 +1,7 @@
 // HeaderAdmin.jsx
 import React, { useRef, useEffect, useState } from "react"; 
 import { Link, useLocation, useNavigate } from "react-router-dom"; 
-import MQerkLogo from "../../assets/MQerK_logo.png";
+import MQerkLogo from "../../assets/MQerK_logo.webp";
 import { Logos } from "../../pages/public/IndexComp.jsx"; 
 import { useAdminContext } from "../../context/AdminContext.jsx";
 import { useAdminNotificationContext } from "../../context/AdminNotificationContext.jsx";

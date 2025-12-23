@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import eeauImg from '../assets/mqerk/1.png';
+import eeauImg from '../assets/mqerk/1.webp';
 import { useAuth } from './AuthContext.jsx';
 import { computeOverdueState } from '../utils/payments.js';
+import * as AreaAccess from '../api/areaAccess.js';
 
 /**
  * CONTEXTO PARA DATOS ESPECÍFICOS DEL ESTUDIANTE
@@ -82,11 +83,32 @@ export const useStudent = () => {
 };
 
 export const StudentProvider = ({ children }) => {
-  const { isAuthenticated, alumno } = useAuth();
+  const { isAuthenticated, alumno, user } = useAuth();
   // Estados principales del estudiante
   const [isVerified, setIsVerified] = useState(false);
   const [hasPaid, setHasPaid] = useState(false);
-  const [currentCourse, setCurrentCourse] = useState(null);
+  const [currentCourse, setCurrentCourse] = useState(() => {
+    // Hidratar inmediatamente desde localStorage para evitar redirecciones tempranas en refresh
+    try {
+      const raw = localStorage.getItem('currentCourse');
+      if (!raw || raw === 'null' || raw === 'undefined') {
+        console.log('[Curso] No hay curso en localStorage al inicializar');
+        return null;
+      }
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && (parsed.id || parsed.title)) {
+        console.log('[Curso] ✅ Curso cargado desde localStorage en inicialización:', parsed.title || parsed.id);
+        return parsed;
+      }
+      console.warn('[Curso] Curso inválido en localStorage al inicializar, limpiando...');
+      localStorage.removeItem('currentCourse');
+      return null;
+    } catch (error) {
+      console.error('[Curso] Error al parsear curso desde localStorage en inicialización:', error);
+      localStorage.removeItem('currentCourse');
+      return null;
+    }
+  });
   const [isFirstAccess, setIsFirstAccess] = useState(true);
   const [activeSection, setActiveSection] = useState(null);
   // Estados separados para Simulaciones y Actividades
@@ -201,7 +223,13 @@ export const StudentProvider = ({ children }) => {
       ...override
     });
     try {
-      const res = await fetchWithRetry('/api/eeau', { credentials: 'include' }, 2, 450);
+      // Obtener ID del estudiante si está disponible (de studentData o alumno del AuthContext)
+      const estudianteId = studentData?.id || studentData?.id_estudiante || alumno?.id;
+      const url = estudianteId 
+        ? `/api/eeau?id_estudiante=${estudianteId}`
+        : '/api/eeau';
+      
+      const res = await fetchWithRetry(url, { credentials: 'include' }, 2, 450);
       if (!res.ok) {
         console.warn('No se pudo obtener EEAU (status no OK, usando fallback):', res.status);
         const fallback = buildCourse();
@@ -225,10 +253,38 @@ export const StudentProvider = ({ children }) => {
         return;
       }
       const c = json?.data;
+      // Validar imagen de la API: solo usar si es una URL válida (http/https) o data URI
+      // NO usar rutas relativas como /public/ porque no funcionan en el frontend
+      let validImage = eeauImg; // Por defecto usar la imagen importada
+      if (c?.image || c?.imagen || c?.foto_url || c?.fotoUrl || c?.imagen_portada) {
+        const apiImage = c.image || c.imagen || c.foto_url || c.fotoUrl || c.imagen_portada;
+        // Solo usar si es una URL completa (http/https) o data URI
+        // Ignorar rutas relativas como /public/ porque no existen en el frontend
+        if (apiImage && (
+          apiImage.startsWith('http://') || 
+          apiImage.startsWith('https://') || 
+          apiImage.startsWith('data:')
+        )) {
+          validImage = apiImage;
+        }
+        // Si es una ruta relativa que empieza con /, ignorarla y usar la imagen importada
+        // porque las rutas del backend no coinciden con las del frontend
+      }
+      
+      // Obtener progreso del backend (0-100) o usar 0 si no está disponible
+      const progresoReal = c?.progreso != null ? Math.round(c.progreso) : 0;
+      
       const courseObj = c ? buildCourse({
         id: c.codigo || 'EEAU',
-  title: c.titulo || 'Curso EEAU',
-        instructor: c.asesor || 'Kelvin Valentin Ramirez'
+        title: c.titulo || 'Curso EEAU',
+        instructor: c.asesor || 'Kelvin Valentin Ramirez',
+        image: validImage, // Usar solo imagen válida
+        progress: progresoReal, // Progreso real del backend
+        metadata: [
+          { icon: 'reloj', text: `Duración: ${c.duracion_meses || 8} meses` },
+          { icon: 'libro', text: 'Lecciones interactivas' },
+          { icon: 'estudiante', text: `Progreso: ${progresoReal}%` }
+        ]
       }) : buildCourse();
       setEnrolledCourses([courseObj]); // el usuario debe hacer click para seleccionar
     } catch (error) {
@@ -268,6 +324,8 @@ export const StudentProvider = ({ children }) => {
       
       // TODO: BACKEND - Actualizar el curso actual en el backend
       // updateCurrentCourseOnBackend(courseId);
+    } else {
+      console.warn('⚠️ Curso no encontrado en enrolledCourses:', courseId);
     }
   };
 
@@ -381,17 +439,22 @@ export const StudentProvider = ({ children }) => {
     }
   };
 
-  const requestNewSimulationAreaAccess = (areaId) => {
-    // Evitar solicitudes duplicadas
-    if (simulationRequests.some(req => req.areaId === areaId)) return;
-
-    // TODO: Enviar solicitud al backend
-    console.log(`Enviando solicitud para el área de simulación: ${areaId}`);
-    
-    const newRequest = { areaId, status: 'pending', date: new Date() };
-    const newRequests = [...simulationRequests, newRequest];
-    setSimulationRequests(newRequests);
-    localStorage.setItem('simulationRequests', JSON.stringify(newRequests));
+  const requestNewSimulationAreaAccess = async (areaId, options = {}) => {
+    try {
+      // Evitar solicitudes duplicadas locales (UI)
+      if (simulationRequests.some(req => req.areaId === areaId && req.status === 'pending')) return;
+      const payload = { area_id: areaId, area_type: 'simulacion', notes: options?.notes || null };
+      await AreaAccess.createAreaRequest(payload);
+      // Refrescar desde backend
+      await hydrateAreaAccess();
+    } catch (e) {
+      console.error('No se pudo crear solicitud de simulación', e);
+      // fallback local para no bloquear UX
+      const newRequest = { areaId, status: 'pending', date: new Date().toISOString() };
+      const newRequests = [...simulationRequests, newRequest];
+      setSimulationRequests(newRequests);
+      localStorage.setItem('simulationRequests', JSON.stringify(newRequests));
+    }
   };
 
   // Funciones específicas para ACTIVIDADES
@@ -403,17 +466,50 @@ export const StudentProvider = ({ children }) => {
     }
   };
 
-  const requestNewActivityAreaAccess = (areaId) => {
-    // Evitar solicitudes duplicadas
-    if (activityRequests.some(req => req.areaId === areaId)) return;
+  const requestNewActivityAreaAccess = async (areaId, options = {}) => {
+    try {
+      if (activityRequests.some(req => req.areaId === areaId && req.status === 'pending')) return;
+      const payload = { area_id: areaId, area_type: 'actividad', notes: options?.notes || null };
+      await AreaAccess.createAreaRequest(payload);
+      await hydrateAreaAccess();
+    } catch (e) {
+      console.error('No se pudo crear solicitud de actividad', e);
+      const newRequest = { areaId, status: 'pending', date: new Date().toISOString() };
+      const newRequests = [...activityRequests, newRequest];
+      setActivityRequests(newRequests);
+      localStorage.setItem('activityRequests', JSON.stringify(newRequests));
+    }
+  };
 
-    // TODO: Enviar solicitud al backend
-    console.log(`Enviando solicitud para el área de actividad: ${areaId}`);
-    
-    const newRequest = { areaId, status: 'pending', date: new Date() };
-    const newRequests = [...activityRequests, newRequest];
-    setActivityRequests(newRequests);
-    localStorage.setItem('activityRequests', JSON.stringify(newRequests));
+  // Hidratar permisos y solicitudes desde backend
+  const isStudent = !!user && (String(user.role || '').toLowerCase() === 'estudiante') && !!alumno?.id;
+
+  const hydrateAreaAccess = async () => {
+    try {
+      if (!isStudent) return; // Solo estudiantes pueden consultar estos endpoints
+      const [permAct, permSim, reqsAct, reqsSim] = await Promise.all([
+        AreaAccess.listMyAreaPermissions({ area_type: 'actividad' }).then(r=> r?.data?.data || []).catch(()=>[]),
+        AreaAccess.listMyAreaPermissions({ area_type: 'simulacion' }).then(r=> r?.data?.data || []).catch(()=>[]),
+        AreaAccess.listMyAreaRequests({ area_type: 'actividad' }).then(r=> r?.data?.data || []).catch(()=>[]),
+        AreaAccess.listMyAreaRequests({ area_type: 'simulacion' }).then(r=> r?.data?.data || []).catch(()=>[]),
+      ]);
+      const actIds = Array.from(new Set(permAct.map(p => p.area_id))).filter(Boolean);
+      const simIds = Array.from(new Set(permSim.map(p => p.area_id))).filter(Boolean);
+      setAllowedActivityAreas(actIds);
+      setAllowedSimulationAreas(simIds);
+      localStorage.setItem('allowedActivityAreas', JSON.stringify(actIds));
+      localStorage.setItem('allowedSimulationAreas', JSON.stringify(simIds));
+      // Normalizar estructura de requests para el estado local esperado
+      const mapReq = (r) => ({ id: r.id, areaId: r.area_id, status: r.status, date: r.created_at, notes: r.notes || null });
+      const reqAct = reqsAct.map(mapReq);
+      const reqSim = reqsSim.map(mapReq);
+      setActivityRequests(reqAct);
+      setSimulationRequests(reqSim);
+      localStorage.setItem('activityRequests', JSON.stringify(reqAct));
+      localStorage.setItem('simulationRequests', JSON.stringify(reqSim));
+    } catch (e) {
+      console.warn('hydrateAreaAccess fallo; se mantienen estados locales', e?.message || e);
+    }
   };
 
   // --- Funciones Legacy para compatibilidad ---
@@ -462,6 +558,8 @@ export const StudentProvider = ({ children }) => {
   };
 
   // Cargar estado persistente al inicializar
+  // Este useEffect se ejecuta DESPUÉS del estado inicial, pero necesitamos asegurarnos
+  // de que el curso se cargue lo antes posible para evitar redirecciones innecesarias
   useEffect(() => {
     const storedVerified = localStorage.getItem('studentVerified') === 'true';
     const storedPaid = localStorage.getItem('studentPaid') === 'true';
@@ -474,13 +572,28 @@ export const StudentProvider = ({ children }) => {
     setIsFirstAccess(storedFirstAccess);
     setActiveSection(storedActiveSection);
     
+    // Siempre restaurar currentCourse desde localStorage si existe y es válido
+    // Esto asegura que el curso persista después de refrescar
     if (storedCourse) {
       try {
         const parsedCourse = JSON.parse(storedCourse);
-        setCurrentCourse(parsedCourse);
+        // Verificar que el curso almacenado sea válido
+        if (parsedCourse && typeof parsedCourse === 'object' && (parsedCourse.id || parsedCourse.title)) {
+          // Siempre actualizar para asegurar que el curso se restaure correctamente
+          // incluso si ya está en el estado (por si cambió algo en localStorage)
+          setCurrentCourse(parsedCourse);
+          console.log('[Curso] ✅ Curso restaurado desde localStorage en useEffect:', parsedCourse.title || parsedCourse.id);
+        } else {
+          console.warn('[Curso] Curso inválido en localStorage, limpiando...');
+          localStorage.removeItem('currentCourse');
+        }
       } catch (error) {
-        console.error('Error parsing stored course:', error);
+        console.error('[Curso] Error parsing stored course:', error);
+        // Si hay error al parsear, limpiar el localStorage corrupto
+        localStorage.removeItem('currentCourse');
       }
+    } else {
+      console.log('[Curso] No hay curso guardado en localStorage en useEffect');
     }
 
     // Cargar áreas permitidas y solicitudes - NUEVOS ESTADOS SEPARADOS
@@ -520,8 +633,68 @@ export const StudentProvider = ({ children }) => {
   useEffect(() => {
     if (isAuthenticated) {
       loadEnrolledCourses();
+      // Refrescar permisos/solicitudes solo si es estudiante
+      if (isStudent) hydrateAreaAccess();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isStudent]);
+
+  // Sincronizar el curso guardado en localStorage con enrolledCourses cuando se cargan los cursos
+  // Esto asegura que el curso persista incluso después de refrescar
+  useEffect(() => {
+    // Solo sincronizar si hay enrolledCourses cargados
+    if (enrolledCourses.length === 0) return;
+    
+    // Si ya hay un currentCourse establecido, verificar que coincida con enrolledCourses
+    if (currentCourse) {
+      const courseExists = enrolledCourses.some(c => c.id === currentCourse.id);
+      if (courseExists) {
+        // Si existe, actualizar con los datos frescos de enrolledCourses (por si cambió algo)
+        const freshCourse = enrolledCourses.find(c => c.id === currentCourse.id);
+        if (freshCourse && JSON.stringify(freshCourse) !== JSON.stringify(currentCourse)) {
+          // Log solo en desarrollo para reducir ruido en consola
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔄 Actualizando curso con datos frescos de enrolledCourses:', freshCourse.title);
+          }
+          setCurrentCourse(freshCourse);
+          localStorage.setItem('currentCourse', JSON.stringify(freshCourse));
+        }
+        return; // Ya está sincronizado
+      }
+    }
+    
+    // Si no hay currentCourse pero hay uno guardado en localStorage, restaurarlo
+    if (!currentCourse) {
+      try {
+        const storedCourseRaw = localStorage.getItem('currentCourse');
+        if (!storedCourseRaw || storedCourseRaw === 'null' || storedCourseRaw === 'undefined') return;
+        
+        const storedCourse = JSON.parse(storedCourseRaw);
+        if (!storedCourse || typeof storedCourse !== 'object') return;
+        
+        // Buscar el curso en enrolledCourses por ID o título
+        const matchedCourse = enrolledCourses.find(c => 
+          c.id === storedCourse.id || 
+          c.title === storedCourse.title ||
+          (storedCourse.id && c.id && String(c.id).toLowerCase() === String(storedCourse.id).toLowerCase())
+        );
+        
+        if (matchedCourse) {
+          console.log('✅ Restaurando curso desde localStorage y sincronizando con enrolledCourses:', matchedCourse.title);
+          setCurrentCourse(matchedCourse);
+          localStorage.setItem('currentCourse', JSON.stringify(matchedCourse));
+          setIsFirstAccess(false);
+        } else {
+          // Si el curso guardado no existe en enrolledCourses, restaurarlo de todas formas
+          // Esto permite que el curso persista incluso si hay problemas temporales con enrolledCourses
+          console.warn('⚠️ El curso guardado no coincide con ningún curso matriculado, restaurándolo de todas formas:', storedCourse.id, storedCourse.title);
+          setCurrentCourse(storedCourse);
+          setIsFirstAccess(false);
+        }
+      } catch (error) {
+        console.error('Error al sincronizar curso desde localStorage:', error);
+      }
+    }
+  }, [enrolledCourses]); // Ejecutar cuando enrolledCourses cambie
 
   // WebSocket robusto (notificaciones + estado verificación) con reconexión exponencial
   const [wsStatus, setWsStatus] = useState('idle'); // idle|connecting|open|closed|error|unavailable
@@ -535,13 +708,36 @@ export const StudentProvider = ({ children }) => {
       setWsStatus('connecting');
       // Importar dinámicamente para evitar ciclos y facilitar tree-shaking
       const { getWsNotificationsUrl, waitForBackendHealth } = await import('../utils/ws.js');
-      const healthy = await waitForBackendHealth(2500);
-      if(!healthy){
-        console.warn('[WS] Backend no responde health; no se abrirá WS aún');
-        setWsStatus('unavailable');
-        scheduleReconnect(attempt);
-        return;
+      
+      // Intentar health check pero no bloquear si falla (puede ser problema temporal)
+      let healthy = false;
+      try {
+        healthy = await waitForBackendHealth(2000);
+        if (!healthy && attempt < 3) {
+          // En los primeros intentos, esperar un poco antes de abrir WS
+          // Solo mostrar warning en desarrollo y solo una vez por sesión
+          if (import.meta.env?.DEV && attempt === 1) {
+            console.debug('[WS] Backend no responde health check. Verifica que el servidor esté corriendo en http://localhost:1002');
+          }
+          scheduleReconnect(attempt);
+          return;
+        }
+      } catch (healthErr) {
+        // Solo mostrar error detallado en desarrollo y en el primer intento
+        if (import.meta.env?.DEV && attempt === 1) {
+          console.debug('[WS] Health check falló:', healthErr?.message || healthErr);
+        }
+        // Si ya hemos intentado varias veces, intentar abrir el WS de todas formas
+        if (attempt < 3) {
+          scheduleReconnect(attempt);
+          return;
+        }
+        // Después de 3 intentos, intentar abrir el WS incluso si el health check falla
+        if (import.meta.env?.DEV) {
+          console.debug('[WS] Health check falló pero intentando abrir WS de todas formas (intento', attempt, ')');
+        }
       }
+      
       const url = getWsNotificationsUrl();
       lastUrl = url;
       try {
@@ -556,6 +752,15 @@ export const StudentProvider = ({ children }) => {
         try {
           const data = JSON.parse(evt.data);
           window.dispatchEvent(new CustomEvent('student-ws-message', { detail: data }));
+          // Si llega una notificación de acceso a área aprobado, refrescar permisos
+          if (data && data.type === 'notification' && data.payload) {
+            const p = data.payload;
+            const ptype = (p.kind || p.type || '').toLowerCase();
+            const status = (p.metadata?.status || '').toLowerCase();
+            if (ptype === 'area_access' && status === 'approved') {
+              try { if (isStudent) hydrateAreaAccess(); } catch {}
+            }
+          }
           if (data.type === 'student_status' && data.payload && typeof data.payload.verificacion !== 'undefined') {
             const v = Number(data.payload.verificacion);
             if (v >= 2) {
@@ -604,14 +809,25 @@ export const StudentProvider = ({ children }) => {
   }, [alumno?.verificacion]);
 
   // Resetear selección de curso y sección activa cuando el usuario cierra sesión
+  // IMPORTANTE: Solo limpiar si realmente se perdió la autenticación (no durante verificación inicial)
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Verificar si hay un usuario autenticado en localStorage para saber si realmente se perdió la sesión
+    // Si no hay usuario en localStorage, entonces sí se cerró sesión realmente
+    const hasUserInStorage = localStorage.getItem('mq_user');
+    
+    if (!isAuthenticated && !hasUserInStorage) {
+      // Solo limpiar si realmente se cerró sesión (no hay usuario en localStorage)
+      console.log('[Curso] Sesión cerrada, limpiando curso...');
       setCurrentCourse(null);
       setActiveSection(null);
       setIsFirstAccess(true);
       localStorage.removeItem('currentCourse');
       localStorage.removeItem('activeSection');
       localStorage.setItem('isFirstAccess', 'true');
+    } else if (!isAuthenticated && hasUserInStorage) {
+      // Si no está autenticado pero hay usuario en localStorage, podría ser una verificación temporal
+      // No limpiar el curso, ya que la autenticación podría restaurarse pronto
+      console.log('[Curso] Verificación de autenticación en progreso, manteniendo curso...');
     }
   }, [isAuthenticated]);
 

@@ -1,3 +1,13 @@
+import { buildApiUrl } from '../utils/url.js';
+
+export async function listEstudiantes() {
+  const url = buildApiUrl('/estudiantes');
+  const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || 'Error listando estudiantes');
+  // Algunos controladores devuelven { data: [...] }
+  return Array.isArray(body) ? body : (body.data || []);
+}
 import axios from "./axios.js";
 
 export const CreateRequest = estudiante => axios.post('/estudiantes', estudiante);

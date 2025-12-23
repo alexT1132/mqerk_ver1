@@ -1,280 +1,252 @@
-import React, {useState, useEffect} from 'react'
+import React, { useState, useEffect } from 'react'
 import Navbar from '../../../components/mqerk/Navbar'
-import Uno from "../../../assets/mqerk/Fotos Estudiantes/25.png";
-import Dos from "../../../assets/mqerk/Fotos Estudiantes/26.png";
-// import Tres from "../../../assets/mqerk/Fotos Estudiantes/24.png";
-import Primero from "../../../assets/mqerk/veranotx/01.png";
-import Segundo from "../../../assets/mqerk/veranotx/02.png";
-import Tercero from "../../../assets/mqerk/veranotx/03.png";
-import Cuarto from "../../../assets/mqerk/veranotx/04.png";
-import Quinto from "../../../assets/mqerk/veranotx/05.png";
-import Sexto from "../../../assets/mqerk/veranotx/06.png";
-import Septimo from "../../../assets/mqerk/veranotx/07.png";
+import Uno from "../../../assets/mqerk/Fotos Estudiantes/25.webp";
+import Dos from "../../../assets/mqerk/Fotos Estudiantes/26.webp";
+import Primero from "../../../assets/mqerk/veranotx/01.webp";
+import Segundo from "../../../assets/mqerk/veranotx/02.webp";
+import Tercero from "../../../assets/mqerk/veranotx/03.webp";
+import Cuarto from "../../../assets/mqerk/veranotx/04.webp";
+import Quinto from "../../../assets/mqerk/veranotx/05.webp";
+import Sexto from "../../../assets/mqerk/veranotx/06.webp";
+import Septimo from "../../../assets/mqerk/veranotx/07.webp";
 import { Link } from "react-router-dom";
-import Cinco from "../../../assets/mqerk/talleres/5.png";
-import Seis from "../../../assets/mqerk/talleres/6.png";
-import Siete from "../../../assets/mqerk/talleres/7.png";
+import CincoImg from "../../../assets/mqerk/talleres/5.webp";
+import SeisImg from "../../../assets/mqerk/talleres/6.webp";
 import Footer from "../../footer";
 
 function Talleres() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [forward, setForward] = useState(true);
 
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [forward, setForward] = useState(true);
+  const images = [Uno, Dos];
 
-    const images = [
-        Uno,
-        Dos,
-    ];
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => {
+        if (forward) {
+          if (prev === images.length - 1) {
+            setForward(false);
+            return prev - 1;
+          }
+          return prev + 1;
+        } else {
+          if (prev === 0) {
+            setForward(true);
+            return prev + 1;
+          }
+          return prev - 1;
+        }
+      });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [forward]);
 
-        useEffect(() => {
-            const interval = setInterval(() => {
-                setCurrentIndex(prev => {
-                  if (forward) {
-                    if (prev === images.length - 1) {
-                      setForward(false);
-                      return prev - 1;
-                    }
-                    return prev + 1;
-                } else {
-                    if (prev === 0) {
-                      setForward(true);
-                      return prev + 1;
-                    }
-                    return prev - 1;
-                    }
-                    });
-                }, 4000);
-            return () => clearInterval(interval);
-        }, [forward]);
-        
-    const getLeftImage = () => images[(currentIndex - 1 + images.length) % images.length];
-    const getRightImage = () => images[(currentIndex + 1) % images.length];
-        
+  const getLeftImage = () => images[(currentIndex - 1 + images.length) % images.length];
+  const getRightImage = () => images[(currentIndex + 1) % images.length];
 
   return (
-    <div className='min-h-screen flex flex-col'>
+    <div className='min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white'>
       <Navbar />
-      {/* DESKTOP */}
-      <div className='hidden md:block'>
-        <h1 className='text-center mt-35 font-bold text-2xl text-[#401454]'>Apoyo a la Ciencia y Tecnológia</h1>
 
-        <div className="pasarela-3d-container mt-15 mb-10">
-          <div className="pasarela-3d">
-            <img src={getLeftImage()} alt="left" className="pasarela-img left" />
-            <img src={images[currentIndex]} alt="center" className="pasarela-img center" />
-            <img src={getRightImage()} alt="right" className="pasarela-img right" />
+      {/* Hero Section */}
+      <div className="bg-gradient-to-br from-purple-600 via-indigo-700 to-purple-800 text-white py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <Link 
+            to="/talleres" 
+            className="inline-flex items-center gap-2 text-purple-100 hover:text-white transition-colors mb-6 group"
+          >
+            <svg className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Volver a talleres
+          </Link>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold animate-fade-in">
+            Apoyo a la Ciencia y Tecnología
+          </h1>
+        </div>
+      </div>
+
+      {/* Carousel */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="contenedor-carrusel-talleres animate-fade-in">
+          <div className="galeria-carrusel-talleres">
+            <img src={getLeftImage()} alt="left" className="foto-carrusel-talleres foto-izquierda-talleres" />
+            <img src={images[currentIndex]} alt="center" className="foto-carrusel-talleres foto-central-talleres" />
+            <img src={getRightImage()} alt="right" className="foto-carrusel-talleres foto-derecha-talleres" />
+          </div>
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="grid lg:grid-cols-3 gap-8">
+          
+          {/* Left Column - Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Resumen */}
+            <section className="bg-white rounded-2xl shadow-md p-6 sm:p-8 animate-slide-up">
+              <h2 className="text-2xl sm:text-3xl font-bold text-purple-800 mb-4 flex items-center gap-3">
+                <div className="w-1 h-8 bg-gradient-to-b from-purple-600 to-indigo-600 rounded-full"></div>
+                Resumen
+              </h2>
+              <p className="text-gray-700 leading-relaxed text-justify">
+                Celebramos el talento que transforma el mundo. En MQerKAcademy recibimos con orgullo a los jóvenes 
+                ganadores del IFEST, celebrado en Túnez, África, quienes obtuvieron el 2.º lugar en programación. Su 
+                logro internacional reafirma nuestro compromiso con la ciencia, la tecnología y la educación como 
+                pilares del desarrollo económico, la sostenibilidad ambiental y el bienestar social. En este encuentro, 
+                impulsado por la visión del Lic. Kelvin Ramírez, fortalecimos el propósito de inspirar a nuevas 
+                generaciones a crear, innovar y liderar el futuro.
+              </p>
+            </section>
+
+            {/* Objetivos */}
+            <section className="bg-white rounded-2xl shadow-md p-6 sm:p-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
+              <h2 className="text-2xl sm:text-3xl font-bold text-purple-800 mb-6 flex items-center gap-3">
+                <div className="w-1 h-8 bg-gradient-to-b from-purple-600 to-indigo-600 rounded-full"></div>
+                Objetivos
+              </h2>
+              <ul className="space-y-4">
+                <ObjectiveItem 
+                  text="Concientizar sobre el impacto de la ciencia y la tecnología en el desarrollo social y económico." 
+                  delay="0"
+                />
+                <ObjectiveItem 
+                  text="Motivar a las nuevas generaciones a involucrarse en áreas científicas y tecnológicas, promoviendo el acceso equitativo para todos." 
+                  delay="100"
+                />
+              </ul>
+            </section>
+          </div>
+
+          {/* Right Column - Info Card */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8 sticky top-24 animate-slide-up" style={{ animationDelay: '200ms' }}>
+              {/* Bordes decorativos */}
+              <div className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-pink-500 rounded-tl-2xl"></div>
+              <div className="absolute bottom-0 right-0 w-16 h-16 border-b-4 border-r-4 border-pink-500 rounded-br-2xl"></div>
+
+              <div className="space-y-6 pt-6">
+                <InfoItem icon={Primero} text="22 de Enero del 2024" />
+                <InfoItem icon={Segundo} text="Dirigido a: Estudiantes del ITTUX" />
+                <InfoItem icon={Tercero} text="San Juan Bautista Tuxtepec, Oaxaca." />
+                <InfoItem icon={Cuarto} text="Instalaciones: MQerKAcademy" highlight />
+                <InfoItem icon={Quinto} text="2 asistentes" />
+                <InfoItem icon={Septimo} text="No aplica" />
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className='flex w-full px-8 mt-20 gap-8 mb-6'>
-            <div className='flex flex-col w-[60%] gap-10'>
-                <div>
-                    <h1 className='font-bold text-2xl'>Resumen</h1>
-                    <p className='text-justify text-lg'>
-                        Celebramos el talento que transforma el mundo. En MQerKAcademy recibimos con orgullo a los jóvenes ganadores del IFEST, celebrado en Túnez, África, quienes obtuvieron el 2.º lugar en programación. Su logro internacional reafirma nuestro compromiso con la ciencia, la tecnología y la educación como pilares del desarrollo económico, la sostenibilidad ambiental y el bienestar social. En este encuentro, impulsado por la visión del Lic. Kelvin Ramírez, fortalecimos el propósito de inspirar a nuevas generaciones a crear, innovar y liderar el futuro.
-                    </p>
-                </div>
-                <div>
-                    <h1 className='font-bold text-2xl'>Objetivos:</h1>
-                    <ul className="space-y-2 gap-1 flex flex-col py-5 text-lg">
-                        <li className="flex items-center">
-                            <span className="w-2 h-2 bg-black rounded-full mr-3"></span>
-                            Concientizar sobre el impacto de la ciencia y la tecnología en el desarrollo social y económico.
-                        </li>
-                        <li className="flex items-center">
-                            <span className="w-2 h-2 bg-black rounded-full mr-3"></span>
-                            Motivar a las nuevas generaciones a involucrarse en áreas científicas y tecnológicas, promoviendo el acceso equitativo para todos.
-                        </li>
-                    </ul>
-                </div>
+        {/* Related Workshops - SOLO 2 TARJETAS CENTRADAS */}
+        <section className="mt-20">
+          <h2 className="text-3xl sm:text-4xl font-bold text-center text-purple-700 mb-12 animate-slide-up">
+            También puedes ver
+          </h2>
+          
+          <div className="flex justify-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl w-full">
+              <RelatedWorkshopCard
+                to='/talleres/orientacion_vocacional_y_psicoeducativa'
+                image={CincoImg}
+                title="Orientación vocacional y psicoeducativa"
+                description="Un espacio formativo que permitió a los estudiantes reflexionar sobre su futuro académico y profesional."
+                date="21 de octubre"
+                delay="0"
+              />
+              <RelatedWorkshopCard
+                to='/talleres/orientacion_vocacional'
+                image={SeisImg}
+                title="Orientación vocacional"
+                description="Actividad orientada a apoyar la toma de decisiones, a partir del reconocimiento y análisis de las propias habilidades e intereses."
+                date="18 de octubre"
+                delay="100"
+              />
             </div>
-            <div className="relative w-[35%] h-79 bg-white m-4 p-6">
-                {/* Esquina superior izquierda */}
-                <div className="absolute top-0 left-0 w-[30%] h-[40%] border-t-4 border-l-4 border-[#f4138a]" />
+          </div>
+        </section>
+      </main>
 
-                {/* Esquina inferior derecha */}
-                <div className="absolute bottom-0 right-0 w-[30%] h-[40%] border-b-4 border-r-4 border-[#f4138a]" />
-
-                <div className='space-y-3'>
-                    <div className="flex items-center gap-3">
-                        <img src={Primero} className='w-8' />
-                        <p className="text-md">22 de Enero del 2024</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Segundo} className='w-8' />
-                        <p className="text-md">Dirigido a: Estudiantes del ITTUX</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Tercero} className='w-6' />
-                        <p className="text-md">San Juan Bautista Tuxtepec, Oaxaca.</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Cuarto} className='w-6' />
-                        <p className="text-md">Instalaciones: MQerKAcademy</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Quinto} className='w-6' />
-                        <p className="text-md">2 asistentes</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Septimo} className='w-6' />
-                        <p className="text-md">No aplica</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <h1 className='text-center mt-25 font-bold text-2xl text-[#401454]'>Tambien puedes ver:</h1>
-
-        <div className='grid grid-cols-3 px-10 gap-10 mt-8'>
-        
-                  <Link to='/talleres/orientacion_vocacional_y_psicoeducativa' className='flex flex-col rounded-2xl hover:shadow-2xl py-3'>
-                    <div className='flex justify-center mb-6'>
-                      <h1 className='font-bold text-xl text-[#401454]'>Orientación vocacional y psicoeducativa</h1>
-                    </div>
-                    <div className='px-5'>
-                      <img src={Cinco} />
-                    </div>
-                    <div>
-                      <p className='px-4 mt-2 text-justify text-lg'>
-                        Un espacio formativo que permitió a los estudiantes reflexionar sobre su futuro académico y profesional.
-                      </p>
-                    </div>
-                    <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-                      <p>21 de octubre</p>
-                    </div>
-                  </Link>
-        
-                  <Link to='/talleres/orientacion_vocacional' className='flex flex-col rounded-2xl hover:shadow-2xl py-3'>
-                    <div className="flex justify-center mb-6">
-                      <h1 className='font-bold text-xl text-[#401454] text-center'>Orientación vocacional</h1>
-                    </div>
-                    <img src={Seis} className='px-5' />
-                    <div>
-                      <p className='px-4 mt-2 text-justify text-lg'>
-                      Actividad orientada a apoyar la toma de decisiones, a partir del reconocimiento y análisis de las propias habilidades e intereses.
-                      </p>
-                    </div>
-                    <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-                      <p>18 de octubre</p>
-                    </div>
-                  </Link>
-        
-                </div>
-      </div>
-
-      {/* MOVILE */}
-      <div className='block md:hidden'>
-        <h1 className='text-center mt-25 font-bold text-2xl text-[#401454]'>Apoyo a la Ciencia y Tecnológia</h1>
-
-        <div className="pasarela-3d-container">
-            <div className="pasarela-3d">
-                <img src={getLeftImage()} alt="left" className="pasarela-img left" />
-                <img src={images[currentIndex]} alt="center" className="pasarela-img center" />
-                <img src={getRightImage()} alt="right" className="pasarela-img right" />
-            </div>
-        </div>
-
-            <div className='flex flex-col w-full gap-10 px-6'>
-                <div>
-                    <h1 className='font-bold text-2xl'>Resumen</h1>
-                    <p className='text-justify text-lg'>
-                        Celebramos el talento que transforma el mundo. En MQerKAcademy recibimos con orgullo a los jóvenes ganadores del IFEST, celebrado en Túnez, África, quienes obtuvieron el 2.º lugar en programación. Su logro internacional reafirma nuestro compromiso con la ciencia, la tecnología y la educación como pilares del desarrollo económico, la sostenibilidad ambiental y el bienestar social. En este encuentro, impulsado por la visión del Lic. Kelvin Ramírez, fortalecimos el propósito de inspirar a nuevas generaciones a crear, innovar y liderar el futuro.
-                    </p>
-                </div>
-                <div>
-                    <h1 className='font-bold text-2xl'>Objetivos:</h1>
-                    <ul className="space-y-2 gap-1 flex flex-col py-3 text-lg">
-                        <li className="flex items-center">
-                            <span className="w-2 h-2 bg-black rounded-full mr-3"></span>
-                            Concientizar sobre el impacto de la ciencia y la tecnología en el desarrollo social y económico.
-                        </li>
-                        <li className="flex items-center">
-                            <span className="w-2 h-2 bg-black rounded-full mr-3"></span>
-                            Motivar a las nuevas generaciones a involucrarse en áreas científicas y tecnológicas, promoviendo el acceso equitativo para todos.
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div className="relative w-89 h-90 bg-white m-4 p-6 mt-8">
-                {/* Esquina superior izquierda */}
-                <div className="absolute top-0 left-0 w-[45%] h-[40%] border-t-4 border-l-4 border-[#f4138a]" />
-
-                {/* Esquina inferior derecha */}
-                <div className="absolute bottom-0 right-0 w-[45%] h-[40%] border-b-4 border-r-4 border-[#f4138a]" />
-
-                <div className='space-y-3'>
-                    <div className="flex items-center gap-3">
-                        <img src={Primero} className='w-8' />
-                        <p className="text-md">22 de Enero del 2024</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Segundo} className='w-8' />
-                        <p className="text-md">Dirigido a: Estudiantes del ITTUX</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Tercero} className='w-6' />
-                        <p className="text-md">San Juan Bautista Tuxtepec, Oaxaca.</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Cuarto} className='w-6' />
-                        <p className="text-md">Instalaciones: MQerKAcademy</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Quinto} className='w-6' />
-                        <p className="text-md">2 asistentes</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Septimo} className='w-6' />
-                        <p className="text-md">No aplica</p>
-                    </div>
-                </div>
-            </div>
-
-             <h1 className='text-center mt-25 font-bold text-2xl text-[#401454]'>Tambien puedes ver:</h1>
-
-        <div className='grid grid-cols-1 px-10 gap-10 mt-8'>
-        
-                  <Link to='/talleres/orientacion_vocacional_y_psicoeducativa' className='flex flex-col rounded-2xl shadow-2xl py-3'>
-                    <div className='flex justify-center mb-6'>
-                      <h1 className='font-bold text-xl text-[#401454]'>Orientación vocacional y psicoeducativa</h1>
-                    </div>
-                    <div className='px-5'>
-                      <img src={Cinco} />
-                    </div>
-                    <div>
-                      <p className='px-4 mt-2 text-justify text-lg'>
-                        Un espacio formativo que permitió a los estudiantes reflexionar sobre su futuro académico y profesional.
-                      </p>
-                    </div>
-                    <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-                      <p>21 de octubre</p>
-                    </div>
-                  </Link>
-        
-                  <Link to='/talleres/orientacion_vocacional' className='flex flex-col rounded-2xl shadow-2xl py-3'>
-                    <div className="flex justify-center mb-6">
-                      <h1 className='font-bold text-xl text-[#401454] text-center'>Orientación vocacional</h1>
-                    </div>
-                    <img src={Seis} className='px-5' />
-                    <div>
-                      <p className='px-4 mt-2 text-justify text-lg'>
-                      Actividad orientada a apoyar la toma de decisiones, a partir del reconocimiento y análisis de las propias habilidades e intereses.
-                      </p>
-                    </div>
-                    <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-                      <p>18 de octubre</p>
-                    </div>
-                  </Link>
-        
-                </div>
-
-      </div>
-          <Footer />
-
+      <Footer />
     </div>
   )
 }
 
-export default Talleres
+// Componente de ítem de objetivo con animación
+function ObjectiveItem({ text, delay = "0" }) {
+  return (
+    <li 
+      className="flex items-start gap-3 group animate-fade-in-up"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <div className="flex-shrink-0 mt-1.5">
+        <div className="w-2 h-2 rounded-full bg-purple-600 group-hover:scale-125 transition-transform duration-300"></div>
+      </div>
+      <span className="text-gray-700 leading-relaxed">{text}</span>
+    </li>
+  );
+}
+
+// Componente de información con icono
+function InfoItem({ icon, text, highlight = false }) {
+  return (
+    <div className="flex items-start gap-3 group hover:translate-x-1 transition-transform duration-300">
+      <div className="flex-shrink-0">
+        <img src={icon} alt="" className="w-7 h-7 object-contain" />
+      </div>
+      <p className={`leading-relaxed text-sm ${highlight ? 'text-purple-600 font-semibold' : 'text-gray-700'}`}>
+        {text}
+      </p>
+    </div>
+  );
+}
+
+// Componente de tarjeta relacionada
+function RelatedWorkshopCard({ to, image, title, description, date, delay = "0" }) {
+  return (
+    <Link 
+      to={to} 
+      className="group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2 animate-fade-in-up"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      {/* Imagen */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+        <img 
+          src={image} 
+          alt={title}
+          className="w-full h-48 object-cover transform group-hover:scale-110 transition-transform duration-700"
+        />
+      </div>
+
+      {/* Contenido */}
+      <div className="flex flex-col flex-1 p-6">
+        <h3 className="text-xl font-bold text-purple-800 mb-3 group-hover:text-purple-600 transition-colors min-h-[3rem]">
+          {title}
+        </h3>
+
+        <p className="text-gray-600 text-sm leading-relaxed mb-4 flex-1">
+          {description}
+        </p>
+
+        {/* Fecha */}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="text-sm font-semibold text-gray-700">{date}</span>
+          </div>
+          
+          <svg className="w-5 h-5 text-purple-600 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Borde animado */}
+      <div className="h-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+    </Link>
+  );
+}
+
+export default Talleres;

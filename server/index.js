@@ -16,8 +16,19 @@ const server = http.createServer(app);
 
 // Ensure DB has required structures before accepting requests
 Promise.all([
-	ensureEstatusColumn().catch(() => {}),
-	ensureEEAUTable().catch(() => {})
+	ensureEstatusColumn().catch((err) => {
+		console.error('[DB] Error asegurando columna estatus:', err?.code || err?.message || err);
+		if (err?.code === 'ETIMEDOUT') {
+			console.error('[DB] ⚠️  No se puede conectar a MySQL. Verifica que el servidor MySQL esté corriendo.');
+			console.error('[DB]    Ejecuta: node server/scripts/test-db-connection.js para diagnosticar');
+		}
+	}),
+	ensureEEAUTable().catch((err) => {
+		console.error('[DB] Error asegurando tabla EEAU:', err?.code || err?.message || err);
+		if (err?.code === 'ETIMEDOUT') {
+			console.error('[DB] ⚠️  No se puede conectar a MySQL. Verifica que el servidor MySQL esté corriendo.');
+		}
+	})
 ]).catch(()=>{});
 setupWebSocket(server);
 server.listen(PORT, HOST, () => {

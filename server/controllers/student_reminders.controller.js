@@ -1,6 +1,14 @@
 import * as Usuarios from '../models/usuarios.model.js';
 import * as Reminders from '../models/student_reminders.model.js';
 
+// Asegurar que la tabla tenga el campo asesor_user_id
+Reminders.ensureTable().catch(err => {
+  console.error('Error asegurando tabla student_reminders:', err?.code || err?.message || err);
+  if (err?.code === 'ETIMEDOUT') {
+    console.error('[DB] ⚠️  No se puede conectar a MySQL. Verifica que el servidor MySQL esté corriendo.');
+  }
+});
+
 async function resolveStudentId(userId){
   const user = await Usuarios.getUsuarioPorid(userId).catch(()=>null);
   if(!user || user.role !== 'estudiante' || !user.id_estudiante) return null;

@@ -1,17 +1,16 @@
 import React, {useState, useEffect} from 'react'
 import Navbar from '../../../components/mqerk/Navbar'
-import Uno from "../../../assets/mqerk/Fotos Estudiantes/33.png";
-import Dos from "../../../assets/mqerk/Fotos Estudiantes/34.png";
-import Tres from "../../../assets/mqerk/Fotos Estudiantes/35.png";
-import Primero from "../../../assets/mqerk/veranotx/01.png";
-import Segundo from "../../../assets/mqerk/veranotx/02.png";
-import Tercero from "../../../assets/mqerk/veranotx/03.png";
-import Cuarto from "../../../assets/mqerk/veranotx/04.png";
-import Quinto from "../../../assets/mqerk/veranotx/05.png";
-import Sexto from "../../../assets/mqerk/veranotx/06.png";
-import Septimo from "../../../assets/mqerk/veranotx/07.png";
+import Uno from "../../../assets/mqerk/Fotos Estudiantes/33.webp";
+import Dos from "../../../assets/mqerk/Fotos Estudiantes/34.webp";
+import Tres from "../../../assets/mqerk/Fotos Estudiantes/35.webp";
+import Primero from "../../../assets/mqerk/veranotx/01.webp";
+import Segundo from "../../../assets/mqerk/veranotx/02.webp";
+import Tercero from "../../../assets/mqerk/veranotx/03.webp";
+import Cuarto from "../../../assets/mqerk/veranotx/04.webp";
+import Quinto from "../../../assets/mqerk/veranotx/05.webp";
+import Sexto from "../../../assets/mqerk/veranotx/06.webp";
+import Septimo from "../../../assets/mqerk/veranotx/07.webp";
 import ReactPlayer from 'react-player/youtube';
-import Footer from "../../footer";
 
 function Online() {
 
@@ -131,6 +130,7 @@ function Online() {
                 </div>
             </div>
         </div>
+
       </div>
 
       {/* MOVILE */}
@@ -207,7 +207,7 @@ function Online() {
             </div>
 
       </div>
-        <Footer />
+
     </div>
   )
 }

@@ -72,7 +72,6 @@ export function Calendario_Admin_comp() {
       if (!Array.isArray(data)) throw new Error('Formato inesperado');
       setReminders(data);
     } catch (error) {
-      console.error('Error obteniendo recordatorios:', error);
       loadSampleData();
     } finally {
       setIsLoading(false);
@@ -87,7 +86,6 @@ export function Calendario_Admin_comp() {
       setReminders(prev => [...prev, newReminder]);
       return newReminder;
     } catch (error) {
-      console.error('Error creando recordatorio:', error);
       const mockReminder = { id: Date.now(), ...reminderData, completado: false };
       setReminders(prev => [...prev, mockReminder]);
       return mockReminder;
@@ -106,7 +104,6 @@ export function Calendario_Admin_comp() {
       if (selectedReminder && selectedReminder.id === id) setSelectedReminder(updatedReminder);
       return updatedReminder;
     } catch (error) {
-      console.error('Error actualizando recordatorio:', error);
       const updatedReminders = reminders.map(r => r.id === id ? { ...r, ...updates } : r);
       setReminders(updatedReminders);
       if (selectedReminder && selectedReminder.id === id) setSelectedReminder({ ...selectedReminder, ...updates });
@@ -125,7 +122,6 @@ export function Calendario_Admin_comp() {
       setShowEditModal(false);
       setSelectedReminder(null);
     } catch (error) {
-      console.error('Error eliminando recordatorio:', error);
       // Si el backend bloquea el borrado por estar vinculado a Ingresos, mostrar mensaje claro
       const status = error?.response?.status;
       if (status === 409) {
@@ -312,7 +308,6 @@ export function Calendario_Admin_comp() {
       setShowNewModal(false);
     } catch (error) {
       // El error ya está manejado en la función createReminder
-      console.error('Error en el envío del formulario:', error);
     }
   };
 
@@ -325,7 +320,6 @@ export function Calendario_Admin_comp() {
       }
     } catch (error) {
       // El error ya está manejado en la función updateReminder
-      console.error('Error actualizando estado del recordatorio:', error);
     }
   };
 
@@ -335,7 +329,6 @@ export function Calendario_Admin_comp() {
       await deleteReminder(id);
     } catch (error) {
       // El error ya está manejado en la función deleteReminder
-      console.error('Error eliminando recordatorio:', error);
     }
   };
 
@@ -355,10 +348,10 @@ export function Calendario_Admin_comp() {
 
   const getTipoColor = (tipo) => {
     switch(tipo) {
-      case 'trabajo': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'personal': return 'bg-green-100 text-green-800 border-green-200';
-      case 'academico': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'trabajo': return 'bg-blue-50 text-blue-800 border-blue-300';
+      case 'personal': return 'bg-green-50 text-green-800 border-green-300';
+      case 'academico': return 'bg-slate-100 text-slate-800 border-slate-300';
+      default: return 'bg-gray-50 text-gray-800 border-gray-300';
     }
   };
 
@@ -371,14 +364,14 @@ export function Calendario_Admin_comp() {
     }
   };
   return (
-    <div className="min-h-screen bg-white p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-white px-4 sm:px-6 lg:px-8 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-4 sm:pb-6 lg:pb-8">
       <div className="max-w-7xl mx-auto">
        
-        <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Mi Agenda Personal</h1>
-              <p className="mt-1 text-sm text-gray-600">
+        <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 rounded-xl sm:rounded-2xl border-2 border-purple-200 shadow-xl p-5 sm:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-purple-900 mb-2">Mi Agenda Personal</h1>
+              <p className="text-sm sm:text-base font-semibold text-purple-700">
                 Gestiona tus recordatorios y tareas personales
               </p>
             </div>
@@ -386,7 +379,7 @@ export function Calendario_Admin_comp() {
               <button 
                 onClick={() => setShowNewModal(true)}
                 disabled={isLoading}
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-purple-800 shadow-md shadow-purple-500/30 border border-purple-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <svg className="animate-spin w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -405,18 +398,20 @@ export function Calendario_Admin_comp() {
 
         {/* Error notification */}
         {apiError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-red-800 text-sm font-medium">{apiError}</p>
+          <div className="bg-red-50 border-2 border-red-300 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-6 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center border-2 border-red-300">
+                <svg className="w-5 h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-red-800 text-sm sm:text-base font-extrabold flex-1">{apiError}</p>
               <button 
                 onClick={() => setApiError(null)}
-                className="ml-auto text-red-600 hover:text-red-800"
+                className="text-red-600 hover:text-red-800 p-1 hover:bg-red-100 rounded-lg transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
@@ -428,19 +423,21 @@ export function Calendario_Admin_comp() {
 
         {/* Estado vacío cuando no hay recordatorios y no está cargando */}
         {!isLoading && reminders.length === 0 && (
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
-            <div className="flex items-start">
-              <svg className="w-5 h-5 text-gray-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <div>
-                <p className="text-sm text-gray-700 font-medium">No hay recordatorios para este mes.</p>
+          <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 p-5 sm:p-6 mb-6 shadow-xl">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center border-2 border-slate-300">
+                <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm sm:text-base text-slate-700 font-semibold mb-3">No hay recordatorios para este mes.</p>
                 <button
                   onClick={() => setShowNewModal(true)}
-                  className="mt-2 inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-purple-800 shadow-md shadow-purple-500/30 border border-purple-500 transition-all duration-200"
                 >
-                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   Crear recordatorio
                 </button>
@@ -450,24 +447,24 @@ export function Calendario_Admin_comp() {
         )}
 
       
-        <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl shadow-lg border border-purple-200 p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center space-x-4">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-purple-200 p-5 sm:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
               <div className="flex items-center space-x-2">
                 <button 
                   onClick={() => cambiarMes(-1)}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 text-purple-600 hover:text-purple-900 hover:bg-purple-100 rounded-lg border border-purple-200 hover:border-purple-300 transition-all duration-200"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </button>
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-purple-900">
                   {meses[currentDate.getMonth()]} {currentDate.getFullYear()}
                 </h2>
                 <button 
                   onClick={() => cambiarMes(1)}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 text-purple-600 hover:text-purple-900 hover:bg-purple-100 rounded-lg border border-purple-200 hover:border-purple-300 transition-all duration-200"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
@@ -476,7 +473,7 @@ export function Calendario_Admin_comp() {
               </div>
               <button 
                 onClick={() => setCurrentDate(new Date())}
-                className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                className="px-4 py-2 text-sm font-semibold bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 border border-purple-300 transition-all duration-200"
               >
                 Hoy
               </button>
@@ -487,11 +484,11 @@ export function Calendario_Admin_comp() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
           <div className="lg:col-span-3">
-            <div className="bg-gradient-to-br from-white via-gray-50 to-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-purple-200 overflow-hidden">
              
-              <div className="grid grid-cols-7 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100">
+              <div className="grid grid-cols-7 bg-gradient-to-r from-purple-100 via-indigo-100 to-purple-100 border-b-2 border-purple-300">
                 {diasSemana.map((dia) => (
-                  <div key={dia} className="px-4 py-3 text-center text-sm font-semibold text-gray-600">
+                  <div key={dia} className="px-3 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-extrabold text-purple-900">
                     {dia}
                   </div>
                 ))}
@@ -506,12 +503,12 @@ export function Calendario_Admin_comp() {
                   return (
                     <div 
                       key={index} 
-                      className={`min-h-32 p-2 border-r border-b border-gray-200 ${
-                        !dia.esMesActual ? 'bg-gray-50 text-gray-400' : 'bg-white'
-                      } ${esHoy ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200' : ''} hover:bg-gray-50 transition-colors`}
+                      className={`min-h-28 sm:min-h-32 p-2 border-r border-b border-slate-200 ${
+                        !dia.esMesActual ? 'bg-slate-50 text-slate-400' : 'bg-white'
+                      } ${esHoy ? 'bg-gradient-to-br from-slate-100 to-slate-50 border-slate-300 ring-2 ring-slate-300' : ''} hover:bg-slate-50 transition-colors`}
                     >
-                      <div className={`text-sm font-semibold mb-2 ${
-                        esHoy ? 'text-blue-700' : ''
+                      <div className={`text-xs sm:text-sm font-extrabold mb-2 ${
+                        esHoy ? 'text-slate-900' : 'text-slate-700'
                       }`}>
                         {dia.fecha}
                       </div>
@@ -523,17 +520,17 @@ export function Calendario_Admin_comp() {
                               setSelectedReminder(recordatorio);
                               setShowEditModal(true);
                             }}
-                            className={`text-xs p-2 rounded-lg border cursor-pointer hover:shadow-sm transition-all duration-200 ${getTipoColor(recordatorio.tipo)} ${recordatorio.completado ? 'opacity-50 line-through' : ''}`}
+                            className={`text-[10px] sm:text-xs p-1.5 sm:p-2 rounded-lg border-2 cursor-pointer hover:shadow-md transition-all duration-200 ${getTipoColor(recordatorio.tipo)} ${recordatorio.completado ? 'opacity-50 line-through' : ''}`}
                           >
                             <div className="flex items-center space-x-1">
                               <div className={`w-2 h-2 rounded-full ${getPrioridadColor(recordatorio.prioridad)}`}></div>
-                              <span className="font-medium truncate">{recordatorio.hora}</span>
+                              <span className="font-semibold truncate">{recordatorio.hora}</span>
                             </div>
-                            <div className="truncate mt-1">{recordatorio.titulo}</div>
+                            <div className="truncate mt-0.5 font-medium">{recordatorio.titulo}</div>
                           </div>
                         ))}
                         {recordatoriosDelDia.length > 3 && (
-                          <div className="text-xs text-gray-500 font-medium">
+                          <div className="text-[10px] sm:text-xs text-slate-500 font-semibold">
                             +{recordatoriosDelDia.length - 3} más
                           </div>
                         )}
@@ -548,11 +545,13 @@ export function Calendario_Admin_comp() {
         
           <div className="space-y-6">
           
-            <div className="bg-gradient-to-br from-green-50 to-white rounded-xl shadow-lg border border-green-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-5 sm:p-6">
+              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-4 flex items-center">
+                <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 border-2 border-slate-300">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
                 Próximos Recordatorios
               </h3>
               <div className="space-y-3 max-h-80 overflow-y-auto">
@@ -567,7 +566,7 @@ export function Calendario_Admin_comp() {
                       setSelectedReminder(recordatorio);
                       setShowEditModal(true);
                     }}
-                    className="flex items-start space-x-3 p-3 rounded-lg hover:bg-white hover:shadow-sm cursor-pointer border border-transparent hover:border-gray-200 transition-all duration-200"
+                    className="flex items-start space-x-3 p-3 rounded-lg hover:bg-slate-50 hover:shadow-md cursor-pointer border border-transparent hover:border-slate-300 transition-all duration-200"
                   >
                     <div className={`w-3 h-3 rounded-full mt-1 ${getPrioridadColor(recordatorio.prioridad)}`}></div>
                     <div className="flex-1 min-w-0">
@@ -598,8 +597,8 @@ export function Calendario_Admin_comp() {
             </div>
 
         
-            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg border border-blue-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Tipos de Recordatorios</h3>
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-5 sm:p-6">
+              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-4">Tipos de Recordatorios</h3>
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -615,7 +614,7 @@ export function Calendario_Admin_comp() {
                 </div>
               </div>
               
-              <h4 className="text-md font-semibold text-gray-900 mt-4 mb-2">Prioridades</h4>
+              <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mt-4 mb-2">Prioridades</h4>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
@@ -633,24 +632,24 @@ export function Calendario_Admin_comp() {
             </div>
 
        
-            <div className="bg-gradient-to-br from-yellow-50 to-white rounded-xl shadow-lg border border-yellow-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Pendientes</span>
-                  <span className="text-sm font-semibold text-gray-900">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-5 sm:p-6">
+              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-4">Resumen</h3>
+              <div className="space-y-2.5">
+                <div className="flex justify-between items-center p-2 bg-slate-50 rounded-lg border border-slate-200">
+                  <span className="text-xs sm:text-sm text-slate-600 font-medium">Pendientes</span>
+                  <span className="text-sm sm:text-base font-extrabold text-slate-900">
                     {reminders.filter(r => !r.completado).length}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Completados</span>
-                  <span className="text-sm font-semibold text-gray-900">
+                <div className="flex justify-between items-center p-2 bg-slate-50 rounded-lg border border-slate-200">
+                  <span className="text-xs sm:text-sm text-slate-600 font-medium">Completados</span>
+                  <span className="text-sm sm:text-base font-extrabold text-slate-900">
                     {reminders.filter(r => r.completado).length}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Prioridad Alta</span>
-                  <span className="text-sm font-semibold text-red-600">
+                <div className="flex justify-between items-center p-2 bg-red-50 rounded-lg border border-red-200">
+                  <span className="text-xs sm:text-sm text-red-700 font-medium">Prioridad Alta</span>
+                  <span className="text-sm sm:text-base font-extrabold text-red-800">
                     {reminders.filter(r => r.prioridad === 'alta' && !r.completado).length}
                   </span>
                 </div>
@@ -662,25 +661,25 @@ export function Calendario_Admin_comp() {
         {/* Modal para nuevo recordatorio */}
         {showNewModal && (
           <div 
-            className="fixed inset-0 backdrop-blur-sm bg-white/30 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 backdrop-blur-sm bg-white/30 overflow-y-auto h-full w-full z-50 flex items-start justify-center pt-24 sm:pt-28 md:pt-32 p-4"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowNewModal(false);
               }
             }}
           >
-            <div className="relative mx-auto border w-full max-w-md shadow-2xl rounded-xl bg-white max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
+            <div className="relative mx-auto border-2 border-slate-300 w-full max-w-md shadow-2xl rounded-xl sm:rounded-2xl bg-white max-h-[90vh] overflow-y-auto">
+              <div className="p-5 sm:p-6">
+                <div className="flex items-center justify-between mb-4 sm:mb-5">
+                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
                     Nuevo Recordatorio
                   </h3>
                   <button 
                     onClick={() => setShowNewModal(false)}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                   </button>
                 </div>
@@ -695,7 +694,7 @@ export function Calendario_Admin_comp() {
                       required
                       value={newReminder.titulo}
                       onChange={(e) => setNewReminder({...newReminder, titulo: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       placeholder="Título del recordatorio"
                     />
                   </div>
@@ -707,7 +706,7 @@ export function Calendario_Admin_comp() {
                     <textarea
                       value={newReminder.descripcion}
                       onChange={(e) => setNewReminder({...newReminder, descripcion: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       rows="3"
                       placeholder="Descripción opcional"
                     />
@@ -723,7 +722,7 @@ export function Calendario_Admin_comp() {
                         required
                         value={newReminder.fecha}
                         onChange={(e) => setNewReminder({...newReminder, fecha: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       />
                     </div>
 
@@ -736,7 +735,7 @@ export function Calendario_Admin_comp() {
                         required
                         value={newReminder.hora}
                         onChange={(e) => setNewReminder({...newReminder, hora: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       />
                     </div>
                   </div>
@@ -749,7 +748,7 @@ export function Calendario_Admin_comp() {
                       <select
                         value={newReminder.tipo}
                         onChange={(e) => setNewReminder({...newReminder, tipo: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       >
                         <option value="personal">Personal</option>
                         <option value="trabajo">Trabajo</option>
@@ -764,7 +763,7 @@ export function Calendario_Admin_comp() {
                       <select
                         value={newReminder.prioridad}
                         onChange={(e) => setNewReminder({...newReminder, prioridad: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       >
                         <option value="baja">Baja</option>
                         <option value="media">Media</option>
@@ -780,7 +779,7 @@ export function Calendario_Admin_comp() {
                     <select
                       value={newReminder.recordarMinutos}
                       onChange={(e) => setNewReminder({...newReminder, recordarMinutos: parseInt(e.target.value)})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                     >
                       <option value="5">5 minutos</option>
                       <option value="15">15 minutos</option>
@@ -796,14 +795,14 @@ export function Calendario_Admin_comp() {
                       type="button"
                       onClick={() => setShowNewModal(false)}
                       disabled={isLoading}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
                     >
                       Cancelar
                     </button>
                     <button 
                       type="submit"
                       disabled={isLoading}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
+                      className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 shadow-sm border border-slate-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center font-semibold"
                     >
                       {isLoading && (
                         <svg className="animate-spin w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -830,10 +829,10 @@ export function Calendario_Admin_comp() {
               }
             }}
           >
-            <div className="relative mx-auto border w-full max-w-md shadow-2xl rounded-xl bg-white max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
+            <div className="relative mx-auto border-2 border-slate-300 w-full max-w-md shadow-2xl rounded-xl sm:rounded-2xl bg-white max-h-[90vh] overflow-y-auto">
+              <div className="p-5 sm:p-6">
+                <div className="flex items-center justify-between mb-4 sm:mb-5">
+                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
                     Detalles del Recordatorio
                   </h3>
                   <button 
@@ -841,10 +840,10 @@ export function Calendario_Admin_comp() {
                       setShowEditModal(false);
                       setSelectedReminder(null);
                     }}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                   </button>
                 </div>
@@ -893,17 +892,17 @@ export function Calendario_Admin_comp() {
                   <div className="flex justify-between space-x-2 pt-4">
                     <button 
                       onClick={() => eliminarRecordatorio(selectedReminder.id)}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-sm border border-red-700 transition-all duration-200 font-semibold"
                     >
                       Eliminar
                     </button>
                     <div className="flex space-x-2">
                       <button 
                         onClick={() => marcarCompletado(selectedReminder.id)}
-                        className={`px-4 py-2 rounded-lg transition-colors ${
+                        className={`px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-sm border ${
                           selectedReminder.completado 
-                            ? 'bg-yellow-600 text-white hover:bg-yellow-700' 
-                            : 'bg-green-600 text-white hover:bg-green-700'
+                            ? 'bg-yellow-600 text-white hover:bg-yellow-700 border-yellow-700' 
+                            : 'bg-green-600 text-white hover:bg-green-700 border-green-700'
                         }`}
                       >
                         {selectedReminder.completado ? 'Desmarcar' : 'Completar'}
@@ -913,7 +912,7 @@ export function Calendario_Admin_comp() {
                           setShowEditModal(false);
                           setSelectedReminder(null);
                         }}
-                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
                       >
                         Cerrar
                       </button>
@@ -935,32 +934,32 @@ export function Calendario_Admin_comp() {
               }
             }}
           >
-            <div className="relative mx-auto border w-full max-w-md shadow-2xl rounded-xl bg-white max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="p-2 bg-yellow-100 rounded-full">
-                      <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
+            <div className="relative mx-auto border-2 border-slate-300 w-full max-w-md shadow-2xl rounded-xl sm:rounded-2xl bg-white max-h-[90vh] overflow-y-auto">
+              <div className="p-5 sm:p-6">
+                <div className="flex items-center justify-between mb-4 sm:mb-5">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-yellow-100 rounded-lg border-2 border-yellow-300">
+                      <svg className="w-6 h-6 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
                       ¡Recordatorios Pendientes!
                     </h3>
                   </div>
                   <button 
                     onClick={() => setShowNotification(false)}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                   </button>
                 </div>
                 
                 <div className="space-y-3 max-h-60 overflow-y-auto">
                   {notifications.map((notificacion) => (
-                    <div key={notificacion.id} className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div key={notificacion.id} className="p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg shadow-sm">
                       <div className="flex items-start space-x-3">
                         <div className={`w-3 h-3 rounded-full mt-1 ${getPrioridadColor(notificacion.prioridad)}`}></div>
                         <div className="flex-1">
@@ -978,7 +977,7 @@ export function Calendario_Admin_comp() {
                 <div className="flex justify-end space-x-2 pt-4">
                   <button 
                     onClick={() => setShowNotification(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
                   >
                     Cerrar
                   </button>
@@ -988,7 +987,7 @@ export function Calendario_Admin_comp() {
                       setShowNotification(false);
                       setNotifications([]);
                     }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 shadow-sm border border-slate-700 transition-all duration-200 font-semibold"
                   >
                     Entendido
                   </button>

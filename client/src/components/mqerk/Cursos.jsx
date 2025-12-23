@@ -1,16 +1,16 @@
-import Curso1 from "../../assets/mqerk/cursos/CURSO 1.jpg";
-import Curso2 from "../../assets/mqerk/cursos/CURSO 2.jpg";
-import Curso3 from "../../assets/mqerk/cursos/CURSO 3.jpg";
-import Curso4 from "../../assets/mqerk/cursos/CURSO 4.png";
-import Curso5 from "../../assets/mqerk/cursos/CURSO 5.png";
-import Curso6 from "../../assets/mqerk/cursos/CURSO 6.png";
-import Curso7 from "../../assets/mqerk/cursos/CURSO 7.png";
-import Curso8 from "../../assets/mqerk/cursos/CURSO 8.png";
-import Curso9 from "../../assets/mqerk/cursos/CURSO 9.png";
-import Curso10 from "../../assets/mqerk/cursos/CURSO 10.png";
-import Curso11 from "../../assets/mqerk/cursos/CURSO 11.png";
-import Curso12 from "../../assets/mqerk/cursos/CURSO 12.jpg";
-import Curso13 from "../../assets/mqerk/cursos/CURSO 13.jpg";
+import Curso1 from "../../assets/mqerk/cursos/CURSO 1.webp";
+import Curso2 from "../../assets/mqerk/cursos/CURSO 2.webp";
+import Curso3 from "../../assets/mqerk/cursos/CURSO 3.webp";
+import Curso4 from "../../assets/mqerk/cursos/CURSO 4.webp";
+import Curso5 from "../../assets/mqerk/cursos/CURSO 5.webp";
+import Curso6 from "../../assets/mqerk/cursos/CURSO 6.webp";
+import Curso7 from "../../assets/mqerk/cursos/CURSO 7.webp";
+import Curso8 from "../../assets/mqerk/cursos/CURSO 8.webp";
+import Curso9 from "../../assets/mqerk/cursos/CURSO 9.webp";
+import Curso10 from "../../assets/mqerk/cursos/CURSO 10.webp";
+import Curso11 from "../../assets/mqerk/cursos/CURSO 11.webp";
+import Curso12 from "../../assets/mqerk/cursos/CURSO 12.webp";
+import Curso13 from "../../assets/mqerk/cursos/CURSO 13.webp";
 
 const WHATSAPP_PHONE = "522871515760";
 
@@ -23,18 +23,18 @@ const buildWaLink = (courseTitle) => {
 
 const courses = [
   { id: 1, title: 'Entrenamiento para el examen de admisión a la universidad', subtitle: 'Razonamiento y habilidades para aprobar el examen', level: 'Intermedio', duration: '8 semanas', modality: 'Presencial', students: 128, rating: 4.8, tags: ['Problemas', 'Razonamiento', 'Estrategias'], certificado: true, image: Curso1, to: '/entrenamiento_examen_admision_universidad' },
-  { id: 2, title: 'Entrenamiento para el examen de admisión a la preparatoria', subtitle: 'Preparación completa en matemáticas y lógica', level: 'Básico', duration: '6 semanas', modality: 'Presencial', students: 100, rating: 4.7, tags: ['Matemáticas', 'Lógica', 'Estrategias'], certificado: true, image: Curso2, to: '/entrenamiento_examen_admision_preparatoria' },
-  { id: 3, title: 'Digi-Start: desbloquea tu potencial tecnológico (computación)', subtitle: 'Fundamentos y creatividad tecnológica', level: 'Básico', duration: '4 semanas', modality: 'Híbrido', students: 75, rating: 4.9, tags: ['Computación', 'Tecnología', 'Creatividad'], certificado: true, image: Curso3, to: '/digi-start' },
-  { id: 4, title: 'CodeLab: crea, aprende y programa (programación)', subtitle: 'Programación práctica y proyectos reales', level: 'Intermedio', duration: '6 semanas', modality: 'Híbrido', students: 90, rating: 4.8, tags: ['Programación', 'Proyectos', 'Codificación'], certificado: true, image: Curso4, to: '/codelab' },
-  { id: 5, title: 'Level Up English: Aprende y Aplica en la Escuela', subtitle: 'Inglés práctico para el aula y la vida diaria', level: 'Todos los niveles', duration: '4 meses', modality: 'Híbrido', students: 210, rating: 4.9, tags: ['Inglés', 'Conversación', 'Práctica'], certificado: true, image: Curso5, to: '/level-up-english' },
-  { id: 6, title: 'Business English Pro: comunica y destaca', subtitle: 'Inglés profesional y habilidades de comunicación', level: 'Avanzado', duration: '3 meses', modality: 'Híbrido', students: 80, rating: 4.7, tags: ['Inglés', 'Negocios', 'Comunicación'], certificado: true, image: Curso6, to: '/business-english-pro' },
-  { id: 7, title: 'Cálculo Diferencial e Integral para universitarios', subtitle: 'Profundiza en matemáticas avanzadas', level: 'Avanzado', duration: '8 semanas', modality: 'Presencial', students: 60, rating: 4.6, tags: ['Cálculo', 'Integral', 'Diferencial'], certificado: true, image: Curso7, to: '/calculo-diferencial-e-integral' },
-  { id: 8, title: 'Piensa & Resuelve: Curso de Pensamiento Matemático', subtitle: 'Desarrolla lógica y resolución de problemas', level: 'Intermedio', duration: '6 semanas', modality: 'Presencial', students: 85, rating: 4.8, tags: ['Lógica', 'Problemas', 'Razonamiento'], certificado: true, image: Curso8, to: '/piensa-resuelve' },
-  { id: 9, title: 'Ciencias Experimentales: Interacciones y Transformaciones', subtitle: 'Experimenta y descubre los principios científicos', level: 'Básico', duration: '4 semanas', modality: 'Presencial', students: 70, rating: 4.7, tags: ['Experimentos', 'Ciencia', 'STEAM'], certificado: true, image: Curso9, to: '/ciencias-experimentales' },
-  { id: 10, title: 'Estrategias psicoeducativas para jóvenes', subtitle: 'Herramientas para desarrollo emocional y académico', level: 'Intermedio', duration: '1 mes', modality: 'Presencial', students: 50, rating: 4.6, tags: ['Psicoeducación', 'Habilidades', 'Autocuidado'], certificado: true, image: Curso10, to: '/estrategias-psicoeducativas' },
-  { id: 11, title: 'Estrategias educativas para maestros', subtitle: 'Optimiza la enseñanza con metodologías innovadoras', level: 'Avanzado', duration: '2 meses', modality: 'Híbrido', students: 40, rating: 4.7, tags: ['Docentes', 'Metodologías', 'Innovación'], certificado: true, image: Curso11, to: '/estrategias-educativas-para-maestros' },
-  { id: 12, title: 'Tecnología aplicada en la enseñanza', subtitle: 'Descubre herramientas digitales para educadores', level: 'Intermedio', duration: '4 semanas', modality: 'Híbrido', students: 30, rating: 4.6, tags: ['Tecnología','Educación','Innovación'], certificado: true, image: Curso12, to: '/tecnologia-aplicada-en-la-ensenanza' },
-  { id: 13, title: 'Aula Inteligente: tecnología aplicada a la enseñanza', subtitle: 'Aprende a crear aulas inteligentes y conectadas', level: 'Avanzado', duration: '6 semanas', modality: 'Híbrido', students: 25, rating: 4.7, tags: ['Aula','Inteligente','Tecnología'], certificado: true, image: Curso13, to: '/aula-inteligente' },
+  { id: 2, title: 'Entrenamiento para el examen de admisión a la preparatoria', subtitle: 'Preparación completa en matemáticas y lógica', level: 'Básico', duration: '6 semanas', modality: 'Presencial', students: 100, rating: 4.7, tags: ['Matemáticas', 'Lógica', 'Estrategias'], certificado: true, image: Curso2 },
+  { id: 3, title: 'Digi-Start: desbloquea tu potencial tecnológico (computación)', subtitle: 'Fundamentos y creatividad tecnológica', level: 'Básico', duration: '4 semanas', modality: 'Híbrido', students: 75, rating: 4.9, tags: ['Computación', 'Tecnología', 'Creatividad'], certificado: true, image: Curso3},
+  { id: 4, title: 'CodeLab: crea, aprende y programa (programación)', subtitle: 'Programación práctica y proyectos reales', level: 'Intermedio', duration: '6 semanas', modality: 'Híbrido', students: 90, rating: 4.8, tags: ['Programación', 'Proyectos', 'Codificación'], certificado: true, image: Curso4, },
+  { id: 5, title: 'Level Up English: Aprende y Aplica en la Escuela', subtitle: 'Inglés práctico para el aula y la vida diaria', level: 'Todos los niveles', duration: '4 meses', modality: 'Híbrido', students: 210, rating: 4.9, tags: ['Inglés', 'Conversación', 'Práctica'], certificado: true, image: Curso5 },
+  { id: 6, title: 'Business English Pro: comunica y destaca', subtitle: 'Inglés profesional y habilidades de comunicación', level: 'Avanzado', duration: '3 meses', modality: 'Híbrido', students: 80, rating: 4.7, tags: ['Inglés', 'Negocios', 'Comunicación'], certificado: true, image: Curso6 },
+  { id: 7, title: 'Cálculo Diferencial e Integral para universitarios', subtitle: 'Profundiza en matemáticas avanzadas', level: 'Avanzado', duration: '8 semanas', modality: 'Presencial', students: 60, rating: 4.6, tags: ['Cálculo', 'Integral', 'Diferencial'], certificado: true, image: Curso7 },
+  { id: 8, title: 'Piensa & Resuelve: Curso de Pensamiento Matemático', subtitle: 'Desarrolla lógica y resolución de problemas', level: 'Intermedio', duration: '6 semanas', modality: 'Presencial', students: 85, rating: 4.8, tags: ['Lógica', 'Problemas', 'Razonamiento'], certificado: true, image: Curso8 },
+  { id: 9, title: 'Ciencias Experimentales: Interacciones y Transformaciones', subtitle: 'Experimenta y descubre los principios científicos', level: 'Básico', duration: '4 semanas', modality: 'Presencial', students: 70, rating: 4.7, tags: ['Experimentos', 'Ciencia', 'STEAM'], certificado: true, image: Curso9 },
+  { id: 10, title: 'Estrategias psicoeducativas para jóvenes', subtitle: 'Herramientas para desarrollo emocional y académico', level: 'Intermedio', duration: '1 mes', modality: 'Presencial', students: 50, rating: 4.6, tags: ['Psicoeducación', 'Habilidades', 'Autocuidado'], certificado: true, image: Curso10 },
+  { id: 11, title: 'Estrategias educativas para maestros', subtitle: 'Optimiza la enseñanza con metodologías innovadoras', level: 'Avanzado', duration: '2 meses', modality: 'Híbrido', students: 40, rating: 4.7, tags: ['Docentes', 'Metodologías', 'Innovación'], certificado: true, image: Curso11, },
+  { id: 12, title: 'Tecnología aplicada en la enseñanza', subtitle: 'Descubre herramientas digitales para educadores', level: 'Intermedio', duration: '4 semanas', modality: 'Híbrido', students: 30, rating: 4.6, tags: ['Tecnología','Educación','Innovación'], certificado: true, image: Curso12 },
+  { id: 13, title: 'Aula Inteligente: tecnología aplicada a la enseñanza', subtitle: 'Aprende a crear aulas inteligentes y conectadas', level: 'Avanzado', duration: '6 semanas', modality: 'Híbrido', students: 25, rating: 4.7, tags: ['Aula','Inteligente','Tecnología'], certificado: true, image: Curso13 },
 ];
 
 export default function CursosGrid() {

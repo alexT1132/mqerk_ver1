@@ -1,158 +1,5 @@
 @import "tailwindcss";
 
-.fondo{
-    background-image: url('../src/assets/fondo_index1.jpg');
-}
-
-html, body, #root{
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-}
-
-@import "tailwindcss";
-
-.section {
-  background-image: url('./assets/bg.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.asesor1 {
-  background-image: url('./assets/asesores/1.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.asesor2 {
-  background-image: url('./assets/asesores/2.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.asesor3 {
-  background-image: url('./assets/asesores/5.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.asesor4 {
-  background-image: url('./assets/asesores/4.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.asesor5 {
-  background-image: url('./assets/asesores/3.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.class {
-  color: #401454;
-}
-
-.class:hover {
-  color: #cb1a84;
-  cursor: pointer;
-}
-
-.card:hover {
-  transform: scale(1.17);
-  transition: transform 0.3s ease;
-}
-
-.fade-in-image {
-  opacity: 0;
-  transform: scale(0.95);
-  transition: opacity 1.5s ease, transform 1.5s ease;
-  max-width: 100%;
-}
-
-.fade-in-image.show {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.gradient-background {
-  background: linear-gradient(to right, #45155b, #aa0eb1, #45155b); /* Degradado de gris oscuro a gris claro y de nuevo oscuro */
-  color: white;
-}
-
-@keyframes marquee {
-  0% {
-    transform: translateX(0%);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-marquee {
-  animation: marquee 1000s linear infinite;
-}
-
-.carousel-container {
-  width: 300px;
-  height: 490px;
-  overflow: hidden;
-  border-radius: 12px;
-  margin: auto;
-  position: relative;
-}
-
-.carousel-slide {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  animation: fade 25s infinite;
-  background-size: cover;
-  background-position: center;
-  transition: opacity 1s ease-in-out;
-}
-
-.carousel-slide:nth-child(1) {
-  animation-delay: 0s;
-}
-.carousel-slide:nth-child(2) {
-  animation-delay: 5s;
-}
-.carousel-slide:nth-child(3) {
-  animation-delay: 10s;
-}
-.carousel-slide:nth-child(4) {
-  animation-delay: 15s;
-}
-.carousel-slide:nth-child(5) {
-  animation-delay: 20s;
-}
-
-@keyframes fade {
-  0% { opacity: 0; }
-  4% { opacity: 1; }
-  20% { opacity: 1; }
-  24% { opacity: 0; }
-  100% { opacity: 0; }
-}
-
-.apartados:hover {
-  background-color: #74428b;
-  color: white;
-  cursor: pointer;
-  margin: 1;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* ------------------------------------------------ */
-
 .pasarela-3d-container {
   width: 100%;
   height: 400px;
@@ -191,8 +38,8 @@ html, body, #root{
 
 /* Center bigger and on top */
 .pasarela-img.center {
-  width: 340px;
-  height: 200px;
+  width: 360px;
+  height: 240px;
   z-index: 2;
   opacity: 1;
   transform: scale(1.1);
@@ -218,8 +65,6 @@ html, body, #root{
   }
   .pasarela-img.center {
     transform: translateX(0px) scale(1.5);
-    width: 460px;
-    height: 290px;
   }
 }
 
@@ -235,239 +80,6 @@ html, body, #root{
   }
 }
 
-/* --------------------------------------------------------------------------------- */
-
-.modelo {
-  background-image: url('./assets/mqerk/modelo.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.Masesor1 {
-  background-image: url('./assets/mqerk/Asesores/5.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.Masesor2 {
-  background-image: url('./assets/mqerk/Asesores/7.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.Masesor3 {
-  background-image: url('./assets/mqerk/Asesores/6.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.Masesor4 {
-  background-image: url('./assets/mqerk/Asesores/9.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.Masesor5 {
-  background-image: url('./assets/mqerk/Asesores/8.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-/* -------------------------------------------------------------------------- */
-
-.fancy-button {
-  position: relative;
-  color: white;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.button-text {
-  position: relative;
-  z-index: 2;
-}
-
-.border-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-}
-
-.border-rect {
-  fill: none;
-  stroke: white;
-  stroke-width: 2;
-  stroke-dasharray: 276;
-  stroke-dashoffset: 276;
-  animation: draw-reverse 4s ease-in-out infinite alternate;
-  rx: 15;
-  ry: 20;
-}
-
-.preview_fondo{
-  background-image: url('./assets/mqerk/preview_fondo1.png');
-  background-size: cover;         /* La imagen cubre todo el div */
-    background-position: center;    /* Centrada */
-    background-repeat: no-repeat;   /* No se repite */
-}
-
-.header-plan{
-  background-image: url('./assets/mqerk/preview/header.png');
-  background-size: cover;         /* La imagen cubre todo el div */
-  background-position: center;    /* Centrada */
-  background-repeat: no-repeat;   /* No se repite */
-}
-
-.about{
-  background-image: url('./assets/mqerk/about/6.jpg');
-  background-size: cover;         /* La imagen cubre todo el div */
-  background-position: center;    /* Centrada */
-  background-repeat: no-repeat;   /* No se repite */
-}
-
-@keyframes draw-reverse {
-  0% {
-    stroke-dashoffset: 276;
-  }
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-@media screen and (max-width: 1150px){
-  .ancho{
-    grid-template-columns: repeat(2, 1fr);
-    gap: 60px;
-  }
-}
-
-@media screen and (max-width: 1050px){
-  .sep{
-    gap: 50px;
-  }
-  .distancia{
-    gap: 5px;
-  }
-  .cursos{
-    right: 472px;
-  }
-  .experiencias{
-    right: 350px;
-  }
-  .recursos{
-    right: 212px;
-  }
-  .sep-mq{
-    font-size: 10px;
-  }
-}
-
-@media screen and (max-width: 980px){
-  .distancia{
-    gap: 20px;
-  }
-  .apartados{
-    font-size: 13px;
-  }
-  .btn-register{
-    font-size: 12px;
-    width: 100px;
-  }
-  .cursos{
-    right: 420px;
-  }
-  .experiencias{
-    right: 305px;
-  }
-  .recursos{
-    right: 175px;
-  }
-  .mqerk-dis{
-    gap: 1px;
-  }
-  .desaparecer{
-    display: none;
-  }
-  .login{
-    width: 80px;
-  }
-  .cursos-mqerk{
-    right: 375px;
-  }
-  .eventos-mqerk{
-    right: 270px;
-  }
-  .blog-mqerk{
-    right: 300px;
-  }
-  .blog-mqerk{
-    right: 150px;
-  }
-}
-
-@media screen and (max-width: 860px){
-  .cursos-mqerk{
-    right: 250px;
-  }
-  .eventos-mqerk{
-    right: 255px;
-  }
-}
-
-@media screen and (max-width: 850px){
-  .experiencias{
-    right: 280px;
-  }
-  .recursos{
-    right: 150px;
-  }
-}
-
-@media screen and (max-width: 835px){
-  .cursos{
-    right: 400px;
-  }
-  .experiencias{
-    right: 300px;
-  }
-  .experiencias{
-    right: 270px;
-  }
-  .recursos{
-    right: 130px;
-  }
-}
-
-@media screen and (max-width: 820px){
-  .distancia{
-    gap: 2px;
-  }
-  .apartados{
-    font-size: 12px;
-  }
-  .btn-register{
-    font-size: 12px;
-    width: 90px;
-  }
-  .cursos{
-    right: 330px;
-  }
-  .experiencias{
-    right: 235px;
-  }
-}
-
 @media screen and (max-width: 767px){
   .pasarela-img.left {
     display: none;
@@ -480,25 +92,125 @@ html, body, #root{
   }
 }
 
-/* ================= Animaciones utilitarias para modales de generación ================= */
-@keyframes fadeInSoft {
-  0% { opacity: 0; transform: translateY(4px) scale(.98); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-.animate-fade-in { animation: fadeInSoft .45s ease-out both; }
+/* CSS EXCLUSIVO PARA EL CARRUSEL DE TALLERES */
+/* Estas clases son únicas y no afectan otros componentes */
 
-@keyframes loadingBar {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(0%); }
-  100% { transform: translateX(100%); }
+.contenedor-carrusel-talleres {
+  width: 100%;
+  height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
-.animate-loading-bar { animation: loadingBar 1.6s ease-in-out infinite; }
 
-@keyframes spinSlow {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.galeria-carrusel-talleres {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 1000px;
+  height: 300px;
+  position: relative;
 }
-.animate-spin-slow { animation: spinSlow 3s linear infinite; }
 
-/* Estado disabled visual para botones mientras se genera contrato */
-.btn-generar[disabled] { opacity: .55; cursor: not-allowed; filter: grayscale(.3); }
+.foto-carrusel-talleres {
+  position: absolute;
+  object-fit: cover;
+  border-radius: 16px;
+  transition: all 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  opacity: 1;
+}
+
+/* Imágenes laterales más pequeñas */
+.foto-izquierda-talleres,
+.foto-derecha-talleres {
+  width: 280px;
+  height: 180px;
+  z-index: 1;
+  opacity: 0.7;
+  transform: scale(0.9);
+}
+
+/* Imagen central más grande y encima */
+.foto-central-talleres {
+  width: 360px;
+  height: 240px;
+  z-index: 2;
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Posiciones */
+.foto-izquierda-talleres {
+  transform: translateX(-350px) scale(0.9);
+}
+
+.foto-derecha-talleres {
+  transform: translateX(350px) scale(0.9);
+}
+
+.foto-central-talleres {
+  transform: translateX(0px) scale(1.8);
+}
+
+/* RESPONSIVE PARA TABLETS */
+@media screen and (max-width: 930px) {
+  .foto-izquierda-talleres {
+    transform: translateX(-300px) scale(0.9);
+  }
+  .foto-derecha-talleres {
+    transform: translateX(300px) scale(0.9);
+  }
+  .foto-central-talleres {
+    transform: translateX(0px) scale(1.5);
+  }
+}
+
+@media screen and (max-width: 855px) {
+  .foto-izquierda-talleres {
+    transform: translateX(-280px) scale(0.7);
+  }
+  .foto-derecha-talleres {
+    transform: translateX(280px) scale(0.7);
+  }
+  .foto-central-talleres {
+    transform: translateX(0px) scale(1.2);
+  }
+}
+
+/* RESPONSIVE PARA MÓVILES */
+@media screen and (max-width: 767px) {
+  .contenedor-carrusel-talleres {
+    height: auto;
+    padding: 20px 0;
+  }
+
+  .galeria-carrusel-talleres {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Ocultar imágenes laterales en móviles */
+  .foto-izquierda-talleres,
+  .foto-derecha-talleres {
+    display: none;
+  }
+
+  /* Imagen central ocupa el ancho disponible */
+  .foto-central-talleres {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    transform: translateX(0px) scale(1.0);
+    margin: 0 auto;
+  }
+}
+
+/* RESPONSIVE PARA MÓVILES PEQUEÑOS */
+@media screen and (max-width: 480px) {
+  .foto-central-talleres {
+    max-width: 320px;
+  }
+}

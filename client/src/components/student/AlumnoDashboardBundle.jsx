@@ -1,5 +1,5 @@
 // BACKEND: Dashboard Bundle - Contenedor principal de rutas del alumno
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 
 // Layout y contextos
@@ -7,6 +7,7 @@ import { AlumnoLayout } from '../layouts/AlumnoLayout.jsx';
 import { Header_Alumno_comp } from '../layouts/Header_Alumno_comp.jsx';
 import { useStudent } from '../../context/StudentContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { StudentNotificationProvider } from '../../context/StudentNotificationContext.jsx';
 
 // Componentes de páginas
 import Profile_Alumno_comp from './Profile_Alumno_Comp.jsx';
@@ -21,8 +22,13 @@ import { SideBarDesktop_Alumno_comp, SideBarSm_Alumno_comp } from '../layouts/Si
 import CourseDetailDashboard from '../shared/CourseDetailDashboard.jsx';
 import { Actividades_Alumno_comp } from './Actividades_Alumno_comp.jsx';
 import { Simulaciones_Alumno_comp } from './Simulaciones_Alumno_comp.jsx';
+import Recursos_Alumno_comp from './Recursos_Alumno_comp.jsx';
 import { CerrarSesion_Alumno_comp } from './CerrarSesion_Alumno_comp.jsx';
 import { AccessGuard } from './AccessGuard.jsx';
+import Quizz_Review from './Quizz_Review.jsx';
+import Simulacion_Review from './Simulacion_Review.jsx';
+import SimulacionResultadosPage from '../../pages/alumnos/SimulacionResultadosPage.jsx';
+import QuizResultadosPage from '../../pages/alumnos/QuizResultadosPage.jsx';
 
 import { CourseProvider } from '../../context/CourseContext.jsx';
 
@@ -35,7 +41,9 @@ import { CourseProvider } from '../../context/CourseContext.jsx';
 export function AlumnoDashboardBundle() {
   return (
     <CourseProvider>
-      <StudentAwareLayout />
+      <StudentNotificationProvider>
+        <StudentAwareLayout />
+      </StudentNotificationProvider>
     </CourseProvider>
   );
 }
@@ -44,33 +52,60 @@ export function AlumnoDashboardBundle() {
 
 function StudentAwareLayout() {
   const { isVerified, hasPaid, currentCourse, isLoading, hasContentAccess, refreshOverdueAccess } = useStudent();
-  const { alumno } = useAuth();
+  const { alumno, isAuthenticated, loading: authLoading } = useAuth();
   const location = useLocation();
   const isCoursesRoute = location.pathname.startsWith('/alumno/cursos');
+  // Fallback inmediato a localStorage para evitar parpadeo o estados transitorios en el primer render
+  const hasSelectedCourse = (() => {
+    if (currentCourse) return true;
+    try {
+      const raw = localStorage.getItem('currentCourse');
+      if (!raw) return false;
+      // Evitar contar la cadena "null" o datos corruptos
+      if (raw === 'null' || raw === 'undefined') return false;
+      const obj = JSON.parse(raw);
+      return obj && typeof obj === 'object' && (obj.id || obj.title);
+    } catch { return false; }
+  })();
   const isConfigRoute = location.pathname.startsWith('/alumno/configuracion');
+  const isQuizRoute = location.pathname.startsWith('/alumno/actividades/quiz');
+  const isFeedbackRoute = location.pathname.startsWith('/alumno/feedback');
+  // Permitir toda la sección de Actividades (selector/botones/lista) sin curso seleccionado.
+  // El bloqueo debe ocurrir al ejecutar un quiz o simulación, no al navegar dentro de la sección.
+  const isActividadesSection = location.pathname.startsWith('/alumno/actividades');
+  // Consideramos "runner" sólo la vista de toma (no resultados) para permitir layout normal en resultados
+  const isSimRoute = location.pathname.startsWith('/alumno/simulaciones/tomar/') && !location.pathname.endsWith('/resultados') && !location.pathname.includes('/resultados?');
+  // Sección de simulaciones (no runner): debe mostrar sidebar incluso sin curso seleccionado
+  const isSimulacionesSection = location.pathname.startsWith('/alumno/simulaciones') && !isSimRoute;
   const verificacion = Number(alumno?.verificacion ?? 0); // 0: no subido, 1: enviado, 2: aprobado
   const isApproved = verificacion >= 2;
+
+  // Hidratar una vez montado para habilitar lógica que depende de localStorage/context sin caer en la TDZ
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => { setHydrated(true); }, []);
 
   // BACKEND: Estado para manejar la transición de carga
   const [isReady, setIsReady] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
 
-  // Mostrar sidebar si:
-  // - Está en Configuración, o
-  // - Ya hay curso seleccionado y (verificado/pagado o aprobado por backend)
-  // Permitir en /alumno/cursos si ya existe currentCourse
-  const shouldShowSidebar = (
-    isConfigRoute || (
-      !!currentCourse && (
-    ((isVerified && hasPaid) || isApproved) && hasContentAccess
-      )
-    )
-  );
+  // Regla simplificada: mostrar sidebar en TODAS las rutas del alumno excepto en los "runners"
+  // (tomar quiz/simulación). Esto evita ocultamientos tras refresh en secciones como Asistencia/Calendario.
+  const isAlumnoSection = location.pathname.startsWith('/alumno/');
+  // Ocultar sidebar en Mis Cursos cuando aún no hay curso seleccionado
+  const shouldShowSidebar = isAlumnoSection && !isQuizRoute && !isSimRoute && !(isCoursesRoute && !hasSelectedCourse);
 
   // Redirección temprana para evitar parpadeo del dashboard sin curso seleccionado
-  const shouldRedirectToCourses = isApproved && !currentCourse && !isCoursesRoute;
-  // Redirección por bloqueo global de acceso
-  const shouldRedirectToWelcome = !hasContentAccess && location.pathname !== '/alumno' && location.pathname !== '/alumno/dashboard' && location.pathname !== '/alumno/';
+  // IMPORTANTE: Usar hasSelectedCourse (que verifica localStorage) en lugar de solo currentCourse
+  // para evitar redirigir antes de que el curso se haya hidratado desde localStorage
+  // No redirigir a cursos si el usuario está entrando directamente a un quiz (runner o resultados),
+  // porque el currentCourse puede hidratarse unos ms después y causar un salto molesto.
+  // Solo redirigir a /alumno/cursos desde las páginas de aterrizaje del dashboard.
+  // Evita que un refresh profundo (p.ej. en pagos, perfil, actividades) te saque de la vista actual.
+  const isAlumnoLanding = location.pathname === '/alumno' || location.pathname === '/alumno/' || location.pathname === '/alumno/dashboard';
+  // Usar hasSelectedCourse que verifica tanto currentCourse como localStorage
+  const shouldRedirectToCourses = hydrated && isApproved && !hasSelectedCourse && isAlumnoLanding;
+  // Redirección por bloqueo global de acceso (solo desde la portada, no desde secciones internas)
+  const shouldRedirectToWelcome = !hasContentAccess && isAlumnoLanding;
 
   // BACKEND: El botón de logout se muestra cuando NO hay sidebar
   const showLogoutButton = !shouldShowSidebar;
@@ -88,10 +123,11 @@ function StudentAwareLayout() {
 
   // BACKEND: Header personalizado con la lógica del botón de logout
   const CustomHeader = (props) => (
-    <Header_Alumno_comp
+      <Header_Alumno_comp
       {...props}
       showLogoutButton={showLogoutButton}
-  disableNavOptions={!shouldShowSidebar}
+      // En el quiz/simulación deshabilitamos navegación del header por seguridad
+      disableNavOptions={isQuizRoute || isSimRoute || !shouldShowSidebar}
       onLogout={handleLogout}
     />
   );
@@ -103,6 +139,27 @@ function StudentAwareLayout() {
     return () => clearTimeout(timer);
   }, [currentCourse, isVerified, hasPaid]);
 
+  // Redirigir si se pierde la autenticación mientras se está navegando
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      const path = location.pathname;
+      // No redirigir si ya estamos en login o rutas públicas
+      if (!path.startsWith('/login') && !path.startsWith('/pre_registro')) {
+        // Limpiar datos sensibles
+        try {
+          localStorage.removeItem('mq_user');
+          localStorage.removeItem('rememberMe');
+          localStorage.removeItem('currentCourse');
+          sessionStorage.clear();
+        } catch (e) {
+          console.warn('Error al limpiar datos locales:', e);
+        }
+        // Redirigir al login con la ruta actual como parámetro
+        window.location.href = `/login?redirect=${encodeURIComponent(path)}`;
+      }
+    }
+  }, [authLoading, isAuthenticated, location.pathname]);
+
   // Recalcular acceso global al montar y cuando cambie alumno
   useEffect(() => {
     refreshOverdueAccess();
@@ -112,10 +169,16 @@ function StudentAwareLayout() {
   // ✅ FORZAR RE-RENDER cuando cambie currentCourse
   useEffect(() => {
     if (currentCourse) {
-      console.log('🔄 currentCourse cambió, forzando re-render:', currentCourse.title);
+      // Log solo en desarrollo para reducir ruido en consola
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 currentCourse cambió, forzando re-render:', currentCourse.title);
+      }
       setForceUpdate(prev => prev + 1);
     }
   }, [currentCourse]);
+
+  // El curso NO se deselecciona automáticamente - debe persistir durante toda la sesión
+  // Solo se puede cambiar desde /alumno/cursos explícitamente
 
   // BACKEND: Loading state para evitar parpadeos
   if (isLoading) {
@@ -157,7 +220,12 @@ function StudentAwareLayout() {
           <Route path="/cursos" element={<MisCursos_Alumno_comp />} />
           <Route path="/mi-perfil" element={<Profile_Alumno_comp />} />
           <Route path="/actividades" element={<AccessGuard><Actividades_Alumno_comp /></AccessGuard>} />
+          <Route path="/actividades/quiz/:quizId" element={<AccessGuard><Quizz_Review /></AccessGuard>} />
+          <Route path="/actividades/quiz/:quizId/resultados" element={<AccessGuard><QuizResultadosPage /></AccessGuard>} />
           <Route path="/simulaciones" element={<AccessGuard><Simulaciones_Alumno_comp /></AccessGuard>} />
+          <Route path="/simulaciones/tomar/:simId" element={<AccessGuard><Simulacion_Review /></AccessGuard>} />
+          <Route path="/simulaciones/tomar/:simId/resultados" element={<AccessGuard><SimulacionResultadosPage /></AccessGuard>} />
+          <Route path="/recursos" element={<AccessGuard><Recursos_Alumno_comp /></AccessGuard>} />
           <Route path="/feedback" element={<AccessGuard><Feedback_Alumno_Comp /></AccessGuard>} />
           <Route path="/asistencia" element={<AccessGuard><Asistencia_Alumno_comp /></AccessGuard>} />
           <Route path="/calendario" element={<AccessGuard><Calendar_Alumno_comp /></AccessGuard>} />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import Logo from "../assets/MQerK_logo.png";
+import Logo from "../assets/MQerK_logo.webp";
 import { BtnSideBar } from './SideBarComp';
 import { Notificaciones, PerfilMenu } from './NavBarComp';
 

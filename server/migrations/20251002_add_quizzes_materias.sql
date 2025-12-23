@@ -8,14 +8,13 @@ CREATE TABLE IF NOT EXISTS quizzes_materias (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Nota: Evitamos FKs aquí por incompatibilidades de tipo/collation en algunas instalaciones (errno 150)
 CREATE TABLE IF NOT EXISTS quizzes_preguntas_materias (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  id_pregunta BIGINT NOT NULL,
+  id_pregunta INT NOT NULL,
   id_materia INT NOT NULL,
   peso TINYINT NULL DEFAULT 1,
-  UNIQUE KEY uq_pregunta_materia (id_pregunta, id_materia),
-  CONSTRAINT fk_qpm_pregunta FOREIGN KEY (id_pregunta) REFERENCES quizzes_preguntas(id) ON DELETE CASCADE,
-  CONSTRAINT fk_qpm_materia FOREIGN KEY (id_materia) REFERENCES quizzes_materias(id) ON DELETE CASCADE
+  UNIQUE KEY uq_pregunta_materia (id_pregunta, id_materia)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Índices auxiliares

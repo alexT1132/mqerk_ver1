@@ -1,397 +1,234 @@
 import React from 'react'
 import Navbar from '../../../components/mqerk/Navbar'
-import Uno from "../../../assets/mqerk/talleres/1.png";
-import Dos from "../../../assets/mqerk/talleres/2.png";
-import Tres from "../../../assets/mqerk/talleres/3.png";
-import Cuatro from "../../../assets/mqerk/talleres/4.png";
-import Cinco from "../../../assets/mqerk/talleres/5.png";
-import Seis from "../../../assets/mqerk/talleres/6.png";
-import Siete from "../../../assets/mqerk/talleres/7.png";
-import Ocho from "../../../assets/mqerk/talleres/8.png";
-import Nueve from "../../../assets/mqerk/talleres/9.png";
-import Diez from "../../../assets/mqerk/talleres/10.png";
+import Uno from "../../../assets/mqerk/talleres/1.webp";
+import Dos from "../../../assets/mqerk/talleres/2.webp";
+import Tres from "../../../assets/mqerk/talleres/3.webp";
+import Cuatro from "../../../assets/mqerk/talleres/4.webp";
+import Cinco from "../../../assets/mqerk/talleres/5.webp";
+import Seis from "../../../assets/mqerk/talleres/6.webp";
+import Siete from "../../../assets/mqerk/talleres/7.webp";
+import Ocho from "../../../assets/mqerk/talleres/8.webp";
+import Nueve from "../../../assets/mqerk/talleres/9.webp";
+import Diez from "../../../assets/mqerk/talleres/10.webp";
 import { Link } from "react-router-dom";
 import Footer from "../../footer";
 
 function Talleres() {
   return (
-    <div className='min-h-screen flex flex-col'>
+    <div className='min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white'>
       <Navbar />
-      {/* DESKTOP */}
-      <div className='hidden md:block'>
-        <h1 className='mt-10 text-center font-bold text-[#401454] text-4xl'>TALLERES</h1>
-        <h1 className='mt-6 text-center text-[#401454] text-4xl font-bold'>2025</h1>
-
-        <div className='grid grid-cols-4 px-10 gap-10 mt-8'>
-
-          <Link to='/talleres/ia_para_la_enseñanza' className='flex flex-col rounded-2xl hover:shadow-2xl py-3 cursor-pointer'>
-            <div className='flex justify-center mb-6'>
-              <h1 className='font-bold text-xl text-[#401454]'>IA para la enseñanza en el aula</h1>
-            </div>
-            <div>
-              <img src={Uno} className='px-5' />
-            </div>
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-              Sesión formativa para docentes sobre inteligencia artificial en la enseñanza, promoviendo la innovación tecnológica en el aula.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>25 de marzo</p>
-            </div>
-          </Link>
-
-          <Link to='/talleres/ia_en_la_salud' className='flex flex-col rounded-2xl hover:shadow-2xl py-3'>
-            <div className="flex justify-center mb-6">
-              <h1 className='font-bold text-xl text-[#401454] text-center'>IA en la salud</h1>
-            </div>
-            <img src={Dos} className='px-5' />
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-                Sesión informativa para el personal del sector salud sobre inteligencia artificial aplicada a la innovación médica y la prevención de fraudes digitales.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>18 de marzo</p>
-            </div>
-          </Link>
-
-          <Link to='/talleres/ia_en_la_gestion_emp' className='flex flex-col rounded-2xl hover:shadow-2xl py-3'>
-            <h1 className='font-bold text-xl text-[#401454] text-center mb-6'>IA en la gestión empresarial</h1>
-            <img src={Tres} className='px-5' />
-            <div>
-              <p className='px-4 text-justify text-lg'>
-                Ejecutivos conocieron cómo aplicar la inteligencia artificial para optimizar procesos y tomar decisiones en la Compañía Cervecera del Trópico.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>07 de marzo</p>
-            </div>
-          </Link>
-
-          <Link to='/talleres/tecnomate' className='flex flex-col rounded-2xl hover:shadow-2xl py-3'>
-            <div className="flex justify-center mb-6">
-              <h1 className='font-bold text-xl text-[#401454] text-center'>TecnoMate</h1>
-            </div>
-            <img src={Cuatro} className='px-5' />
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-                Los docentes fueron capacitados en el uso de herramientas tecnológicas con el objetivo de mejorar la enseñanza y el aprendizaje de las matemáticas.
-              </p>
-            </div>
-            <div className='flex justify-end items-end w-full mt-5 font-bold px-6'>
-              <p>07 de enero</p>
-            </div>
-          </Link>
-
-        </div>
-
-        <h1 className='mt-20 text-center text-[#401454] text-4xl font-bold'>2024</h1>
-
-        <div className='grid grid-cols-3 px-10 gap-10 mt-8'>
-
-          <Link to='/talleres/orientacion_vocacional_y_psicoeducativa' className='flex flex-col rounded-2xl hover:shadow-2xl py-3'>
-            <div className='flex justify-center mb-6'>
-              <h1 className='font-bold text-xl text-[#401454]'>Orientación vocacional y psicoeducativa</h1>
-            </div>
-            <div className='px-5'>
-              <img src={Cinco} />
-            </div>
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-                Un espacio formativo que permitió a los estudiantes reflexionar sobre su futuro académico y profesional.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>21 de octubre</p>
-            </div>
-          </Link>
-
-          <Link to='/talleres/orientacion_vocacional' className='flex flex-col rounded-2xl hover:shadow-2xl py-3'>
-            <div className="flex justify-center mb-6">
-              <h1 className='font-bold text-xl text-[#401454] text-center'>Orientación vocacional</h1>
-            </div>
-            <img src={Seis} className='px-5' />
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-              Actividad orientada a apoyar la toma de decisiones, a partir del reconocimiento y análisis de las propias habilidades e intereses.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>18 de octubre</p>
-            </div>
-          </Link>
-
-          <Link to='/talleres/apoyo_a_la_ciencia_y_la_tecnologia' className='flex flex-col rounded-2xl hover:shadow-2xl py-3'>
-            <h1 className='font-bold text-xl text-[#401454] text-center mb-6'>Apoyo a la ciencia y tecnologia</h1>
-            <img src={Siete} className='px-5' />
-            <div>
-              <p className='px-4 text-justify text-lg'>
-              Dimos la bienvenida a jóvenes destacados en programación, reafirmando nuestro compromiso con el impulso a la tecnología y la formación educativa.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>22 de enero</p>
-            </div>
-          </Link>
-
-        </div>
-
-        <h1 className='mt-20 text-center text-[#401454] text-4xl font-bold'>2023</h1>
-
-        <div className='grid grid-cols-4 px-10 gap-10 mt-8'>
-
-          <div className='flex flex-col rounded-2xl'>
-            
-          </div>
-
-          <Link to='/talleres/transformar_la_educacion' className='flex flex-col rounded-2xl hover:shadow-2xl py-3'>
-            <div className="flex justify-center mb-6 px-5">
-              <h1 className='font-bold text-xl text-[#401454] text-center'>Cambiar el mundo, transformar la educacion</h1>
-            </div>
-            <img src={Ocho} className='px-3' />
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-              Conferencia otorgada exclusivamente a los alumnos y alumnas de Sto semestre del Centro de Bachillerato Tecnológico Industrial y de Servicios 107
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>06 de diciembre</p>
-            </div>
-          </Link>
-
-          <Link to='/talleres/educacion_disruptiva' className='flex flex-col rounded-2xl hover:shadow-2xl py-3'>
-            <h1 className='font-bold text-xl text-[#401454] text-center mb-6'>Educacion disruptiva, transformando mentes</h1>
-            <img src={Nueve} className='px-3' />
-            <div>
-              <p className='px-4 text-justify text-lg'>
-              Semana de conferencias en el CBTis 107 de Tuxtepec, se contó con la presencia de alumnos de diferentes semestre
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>2 al 14 de junio</p>
-            </div>
-          </Link>
-
-          <div className='flex flex-col rounded-2xl'>
-            
-          </div>
-
-        </div>
-
-        <h1 className='mt-20 text-center text-[#401454] text-4xl font-bold'>2021</h1>
-
-        <div className='grid grid-cols-3 px-10 gap-10 mt-8 mb-10'>
-
-          <div className='flex flex-col rounded-2xl'>
-            
-          </div>
-
-          <Link to='/talleres/tecnologia_artificial' className='flex flex-col rounded-2xl hover:shadow-2xl py-3'>
-            <div className="flex justify-center mb-6">
-              <h1 className='font-bold text-xl text-[#401454] text-center'>Tecnología Artificial Aplicada en la Educación</h1>
-            </div>
-            <img src={Diez} className='px-5' />
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-              El M.M. Kelvin Valentín Gómez Ramírez, asesor de MQerkAcademy, ofreció su primera conferencia a los alumnos del CBTis 107.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>11 de noviembre</p>
-            </div>
-          </Link>
-
-          <div className='flex flex-col rounded-2xl'>
-            
-          </div>
-
+      
+      {/* Hero Section */}
+      <div className="bg-gradient-to-br from-purple-600 via-indigo-700 to-purple-800 text-white py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 animate-fade-in">
+            TALLERES
+          </h1>
+          <p className="text-purple-100 text-lg sm:text-xl max-w-2xl mx-auto animate-fade-in-delay">
+            Descubre nuestra trayectoria de talleres y conferencias que están transformando la educación
+          </p>
         </div>
       </div>
 
-      {/* MOVILE */}
-      <div className='block md:hidden'>
-      <h1 className='mt-25 text-center font-bold text-[#401454] text-4xl'>TALLERES</h1>
-        <h1 className='mt-6 text-center text-[#401454] text-4xl font-bold'>2025</h1>
-
-        <div className='grid grid-cols-1 px-10 gap-10 mt-8'>
-
-          <Link to='/talleres/ia_para_la_enseñanza' className='flex flex-col rounded-2xl shadow-2xl py-2'>
-            <div className='flex justify-center mb-6'>
-              <h1 className='font-bold text-xl text-[#401454]'>IA para la enseñanza en el aula</h1>
-            </div>
-            <div>
-              <img src={Uno} className='px-5' />
-            </div>
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-                Sesión formativa para docentes sobre inteligencia artificial en la enseñanza, promoviendo la innovación tecnológica en el aula.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>25 de marzo</p>
-            </div>
-          </Link>
-
-          <Link to='/talleres/ia_en_la_salud' className='flex flex-col rounded-2xl shadow-2xl py-2'>
-            <div className="flex justify-center mb-6">
-              <h1 className='font-bold text-xl text-[#401454] text-center'>IA en la salud</h1>
-            </div>
-            <img src={Dos} className='px-5' />
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-                Sesión informativa para el personal del sector salud sobre inteligencia artificial aplicada a la innovación médica y la prevención de fraudes digitales.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>18 de marzo</p>
-            </div>
-          </Link>
-
-          <Link to='/talleres/ia_en_la_gestion_emp' className='flex flex-col rounded-2xl shadow-2xl py-2'>
-            <h1 className='font-bold text-xl text-[#401454] text-center mb-6'>IA en la gestión  empresarial</h1>
-            <img src={Tres} className='px-5' />
-            <div>
-              <p className='px-4 text-justify text-lg'>
-                Ejecutivos conocieron cómo aplicar la inteligencia artificial para optimizar procesos y tomar decisiones en la Compañía Cervecera del Trópico.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>07 de marzo</p>
-            </div>
-          </Link>
-
-          <Link to='/talleres/tecnomate' className='flex flex-col rounded-2xl shadow-2xl py-2'>
-            <div className="flex justify-center mb-6">
-              <h1 className='font-bold text-xl text-[#401454] text-center'>TecnoMate</h1>
-            </div>
-            <img src={Cuatro} className='px-5' />
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-                Los docentes fueron capacitados en el uso de herramientas tecnológicas con el objetivo de mejorar la enseñanza y el aprendizaje de las matemáticas.
-              </p>
-            </div>
-            <div className='flex justify-end items-end w-full mt-5 font-bold px-6'>
-              <p>07 de enero</p>
-            </div>
-          </Link>
-
+      {/* Content */}
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
+        
+        {/* 2025 */}
+        <YearSection year="2025" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+          <WorkshopCard
+            to='/talleres/ia_para_la_enseñanza'
+            image={Uno}
+            title="IA para la enseñanza en el aula"
+            description="Sesión formativa para docentes sobre inteligencia artificial en la enseñanza, promoviendo la innovación tecnológica en el aula."
+            date="25 de marzo"
+            delay="0"
+          />
+          <WorkshopCard
+            to='/talleres/ia_en_la_salud'
+            image={Dos}
+            title="IA en la salud"
+            description="Sesión informativa para el personal del sector salud sobre inteligencia artificial aplicada a la innovación médica y la prevención de fraudes digitales."
+            date="18 de marzo"
+            delay="100"
+          />
+          <WorkshopCard
+            to='/talleres/ia_en_la_gestion_emp'
+            image={Tres}
+            title="IA en la gestión empresarial"
+            description="Ejecutivos conocieron cómo aplicar la inteligencia artificial para optimizar procesos y tomar decisiones en la Compañía Cervecera del Trópico."
+            date="07 de marzo"
+            delay="200"
+          />
+          <WorkshopCard
+            to='/talleres/tecnomate'
+            image={Cuatro}
+            title="TecnoMate"
+            description="Los docentes fueron capacitados en el uso de herramientas tecnológicas con el objetivo de mejorar la enseñanza y el aprendizaje de las matemáticas."
+            date="07 de enero"
+            delay="300"
+          />
         </div>
 
-        <h1 className='mt-20 text-center text-[#401454] text-4xl font-bold'>2024</h1>
-
-        <div className='grid grid-cols-1 px-10 gap-10 mt-8'>
-
-          <Link to='/talleres/orientacion_vocacional_y_psicoeducativa' className='flex flex-col rounded-2xl shadow-2xl py-2'>
-            <div className='flex justify-center mb-6'>
-              <h1 className='font-bold text-center text-xl text-[#401454]'>Orientación vocacional y psicoeducativa</h1>
-            </div>
-            <div className='px-5'>
-              <img src={Cinco} />
-            </div>
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-              Espacio formativo donde los estudiantes reflexionaron sobre su futuro académico y profesional,
-              impulsando su motivación y toma de decisiones con propósito.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>21 de octubre</p>
-            </div>
-          </Link>
-
-          <Link to='/talleres/orientacion_vocacional' className='flex flex-col rounded-2xl shadow-2xl py-2'>
-            <div className="flex justify-center mb-6">
-              <h1 className='font-bold text-xl text-[#401454] text-center'>Orientación vocacional</h1>
-            </div>
-            <img src={Seis} className='px-5' />
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-                Actividad centrada en fortalecer la toma de decisiones académicas y profesionales
-                 a través del reconocimiento de habilidades e intereses.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>18 de octubre</p>
-            </div>
-          </Link>
-
-          <Link to='/talleres/apoyo_a_la_ciencia_y_la_tecnologia' className='flex flex-col rounded-2xl shadow-2xl py-2'>
-            <h1 className='font-bold text-xl text-[#401454] text-center mb-6'>Apoyo a la ciencia y tecnologia</h1>
-            <img src={Siete} className='px-5' />
-            <div>
-              <p className='px-4 text-justify text-lg'>
-              Recibimos a jóvenes ganadores en programación, reafirmando nuestro compromiso con la tecnología y la educación.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>22 de enero</p>
-            </div>
-          </Link>
-
+        {/* 2024 */}
+        <YearSection year="2024" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-20">
+          <WorkshopCard
+            to='/talleres/orientacion_vocacional_y_psicoeducativa'
+            image={Cinco}
+            title="Orientación vocacional y psicoeducativa"
+            description="Un espacio formativo que permitió a los estudiantes reflexionar sobre su futuro académico y profesional."
+            date="21 de octubre"
+            delay="0"
+          />
+          <WorkshopCard
+            to='/talleres/orientacion_vocacional'
+            image={Seis}
+            title="Orientación vocacional"
+            description="Actividad orientada a apoyar la toma de decisiones, a partir del reconocimiento y análisis de las propias habilidades e intereses."
+            date="18 de octubre"
+            delay="100"
+          />
+          <WorkshopCard
+            to='/talleres/apoyo_a_la_ciencia_y_la_tecnologia'
+            image={Siete}
+            title="Apoyo a la ciencia y tecnología"
+            description="Dimos la bienvenida a jóvenes destacados en programación, reafirmando nuestro compromiso con el impulso a la tecnología y la formación educativa."
+            date="22 de enero"
+            delay="200"
+          />
         </div>
 
-        <h1 className='mt-20 text-center text-[#401454] text-4xl font-bold'>2023</h1>
-
-        <div className='grid grid-cols-1 px-10 gap-10 mt-8'>
-
-          <Link to='/talleres/transformar_la_educacion' className='flex flex-col rounded-2xl shadow-2xl py-2'>
-            <div className="flex justify-center mb-6">
-              <h1 className='font-bold text-xl text-[#401454] text-center'>Cambiar el mundo, transformar la educacion</h1>
-            </div>
-            <img src={Ocho} className='px-3' />
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-              Conferencia otorgada exclusivamente a los alumnos y alumnas de Sto semestre
-               del Centro de Bachillerato Tecnológico Industrial y de Servicios 107.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>06 de diciembre</p>
-            </div>
-          </Link>
-
-          <Link to='/talleres/educacion_disruptiva' className='flex flex-col rounded-2xl shadow-2xl py-2'>
-            <h1 className='font-bold text-xl text-[#401454] text-center mb-6'>Educacion disruptiva, transformando mentes</h1>
-            <img src={Nueve} className='px-3' />
-            <div>
-              <p className='px-4 text-justify text-lg'>
-                Semana de conferencias en el CBTis 107 de Tuxtepec, se contó con la presencia de alumnos de diferentes semestre
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>2 al 14 de junio</p>
-            </div>
-          </Link>
-
+        {/* 2023 - CENTRADO */}
+        <YearSection year="2023" />
+        <div className="flex justify-center mb-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl w-full">
+            <WorkshopCard
+              to='/talleres/transformar_la_educacion'
+              image={Ocho}
+              title="Cambiar el mundo, transformar la educación"
+              description="Conferencia otorgada exclusivamente a los alumnos y alumnas de 5to semestre del Centro de Bachillerato Tecnológico Industrial y de Servicios 107."
+              date="06 de diciembre"
+              delay="0"
+            />
+            <WorkshopCard
+              to='/talleres/educacion_disruptiva'
+              image={Nueve}
+              title="Educación disruptiva, transformando mentes"
+              description="Semana de conferencias en el CBTis 107 de Tuxtepec, se contó con la presencia de alumnos de diferentes semestres."
+              date="2 al 14 de junio"
+              delay="100"
+            />
+          </div>
         </div>
 
-        <h1 className='mt-20 text-center text-[#401454] text-4xl font-bold'>2021</h1>
-
-        <div className='grid grid-cols-1 px-10 gap-10 mt-8 mb-10'>
-
-          <Link to='/talleres/tecnologia_artificial' className='flex flex-col rounded-2xl shadow-2xl py-2'>
-            <div className="flex justify-center mb-6">
-              <h1 className='font-bold text-xl text-[#401454] text-center'>Tecnología Artificial Aplicada en la Educación</h1>
-            </div>
-            <img src={Diez} className='px-5' />
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-              El M.M. Kelvin Valentín Gómez Ramírez, asesor de MQerkAcademy, ofreció su primera conferencia a los alumnos del CBTis 107.
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>11 de noviembre</p>
-            </div>
-          </Link>
-
-
+        {/* 2021 - CENTRADO */}
+        <YearSection year="2021" />
+        <div className="flex justify-center mb-20">
+          <div className="w-full max-w-md">
+            <WorkshopCard
+              to='/talleres/tecnologia_artificial'
+              image={Diez}
+              title="Tecnología Artificial Aplicada en la Educación"
+              description="El M.M. Kelvin Valentín Gómez Ramírez, asesor de MQerkAcademy, ofreció su primera conferencia a los alumnos del CBTis 107."
+              date="11 de noviembre"
+              delay="0"
+            />
+          </div>
         </div>
 
-      </div>
+      </main>
+
       <Footer />
     </div>
   )
 }
 
-export default Talleres
+// Componente para títulos de año
+function YearSection({ year }) {
+  return (
+    <div className="mb-12 text-center">
+      <div className="inline-flex items-center gap-4">
+        <div className="h-px w-12 sm:w-24 bg-gradient-to-r from-transparent to-purple-300"></div>
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-purple-700 animate-slide-up">
+          {year}
+        </h2>
+        <div className="h-px w-12 sm:w-24 bg-gradient-to-l from-transparent to-purple-300"></div>
+      </div>
+    </div>
+  );
+}
+
+// Componente de tarjeta de taller con animaciones
+function WorkshopCard({ to, image, title, description, date, delay = "0" }) {
+  return (
+    <Link 
+      to={to} 
+      className="group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2 animate-fade-in-up"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      {/* Imagen con efecto zoom */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+        <img 
+          src={image} 
+          alt={title}
+          className="w-full h-56 object-cover transform group-hover:scale-110 transition-transform duration-700"
+        />
+      </div>
+
+      {/* Contenido */}
+      <div className="flex flex-col flex-1 p-6">
+        {/* Título */}
+        <h3 className="text-xl font-bold text-purple-800 mb-3 group-hover:text-purple-600 transition-colors duration-300 min-h-[3.5rem]">
+          {title}
+        </h3>
+
+        {/* Descripción */}
+        <p className="text-gray-600 text-sm sm:text-base leading-relaxed mb-4 flex-1">
+          {description}
+        </p>
+
+        {/* Fecha con icono */}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <svg 
+              className="w-5 h-5 text-purple-600" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" 
+              />
+            </svg>
+            <span className="text-sm font-semibold text-gray-700">{date}</span>
+          </div>
+          
+          {/* Flecha animada */}
+          <svg 
+            className="w-5 h-5 text-purple-600 transform group-hover:translate-x-1 transition-transform duration-300" 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M9 5l7 7-7 7" 
+            />
+          </svg>
+        </div>
+      </div>
+
+      {/* Borde animado en hover */}
+      <div className="h-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+    </Link>
+  );
+}
+
+export default Talleres;

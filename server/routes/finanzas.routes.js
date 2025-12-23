@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import db from '../db.js';
 import * as Ingresos from '../models/ingresos.model.js';
 import * as GastosFijos from '../models/gastos_fijos.model.js';
 import * as GastosVariables from '../models/gastos_variables.model.js';
@@ -9,6 +10,10 @@ import * as CalendarModel from '../models/calendar_events.model.js';
 import * as Usuarios from '../models/usuarios.model.js';
 import * as Presupuestos from '../models/presupuestos.model.js';
 import * as PagosAsesores from '../models/pagos_asesores.model.js';
+import * as AsesorPerfiles from '../models/asesor_perfiles.model.js';
+import * as AdminConfirmaciones from '../models/admin_asesoria_confirmaciones.model.js';
+import * as Asistencias from '../models/asistencias.model.js';
+import { authREquired } from '../middlewares/validateToken.js';
 
 const router = Router();
 
@@ -428,6 +433,34 @@ router.post('/finanzas/pagos-asesores', async (req, res) => {
       body.ingreso_final = base + hon;
     }
     const created = await PagosAsesores.create(body);
+    
+    // Crear notificación para el asesor si tiene usuario_id
+    if (created.asesor_preregistro_id) {
+      try {
+        const AsesorPerfiles = await import('../models/asesor_perfiles.model.js');
+        const AsesorNotifs = await import('../models/asesor_notifications.model.js');
+        const perfil = await AsesorPerfiles.getByPreRegistro(created.asesor_preregistro_id);
+        if (perfil?.usuario_id) {
+          await AsesorNotifs.createNotification({
+            asesor_user_id: perfil.usuario_id,
+            type: 'payment',
+            title: 'Nuevo pago registrado',
+            message: `Se registró un pago de $${created.ingreso_final?.toLocaleString('es-MX') || 0} por ${created.tipo_servicio || 'servicio'}`,
+            action_url: '/asesor/mis-pagos',
+            metadata: {
+              pago_id: created.id,
+              tipo_servicio: created.tipo_servicio,
+              ingreso_final: created.ingreso_final,
+              fecha_pago: created.fecha_pago,
+              status: created.status
+            }
+          }).catch(err => console.error('Error creando notificación de pago:', err));
+        }
+      } catch (err) {
+        console.error('Error al crear notificación de pago:', err);
+      }
+    }
+    
     res.status(201).json({ pago: created });
   } catch (err) {
     console.error('POST /finanzas/pagos-asesores', err);
@@ -455,6 +488,228 @@ router.delete('/finanzas/pagos-asesores/:id', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('DELETE /finanzas/pagos-asesores/:id', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+});
+
+// GET /api/asesores/mis-asesorias - Obtener asesorías asignadas al asesor autenticado
+router.get('/asesores/mis-asesorias', authREquired, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'No autenticado' });
+    
+    // Obtener perfil del asesor para conseguir el preregistro_id
+    const perfil = await AsesorPerfiles.getByUserId(userId).catch(() => null);
+    if (!perfil || !perfil.preregistro_id) {
+      // Si no hay perfil, devolver array vacío en lugar de error 404
+      // Esto permite que el componente muestre "No hay asesorías" en lugar de un error
+      return res.json({ data: [] });
+    }
+    
+    const { from, to } = req.query || {};
+    const ingresos = await Ingresos.getIngresosByAsesor(perfil.preregistro_id, { from, to });
+    
+    // Agregar información de confirmaciones pendientes/confirmadas
+    const ingresosConEstado = await Promise.all(
+      ingresos.map(async (ingreso) => {
+        const sql = `
+          SELECT estado FROM admin_asesoria_confirmaciones
+          WHERE ingreso_id = ?
+          ORDER BY created_at DESC
+          LIMIT 1
+        `;
+        const [confirmaciones] = await db.query(sql, [ingreso.id]);
+        const estadoConfirmacion = confirmaciones.length > 0 ? confirmaciones[0].estado : null;
+        
+        return {
+          ...ingreso,
+          confirmacion_estado: estadoConfirmacion, // 'pendiente', 'confirmada', 'rechazada', o null
+        };
+      })
+    );
+    
+    // Asegurar que siempre devolvamos un array
+    res.json({ data: Array.isArray(ingresosConEstado) ? ingresosConEstado : [] });
+  } catch (err) {
+    console.error('GET /asesores/mis-asesorias', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+});
+
+// POST /api/asesores/marcar-realizada - Marcar una asesoría como realizada (crea notificación pendiente)
+router.post('/asesores/marcar-realizada', authREquired, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'No autenticado' });
+    
+    const { ingreso_id, observaciones } = req.body || {};
+    if (!ingreso_id) {
+      return res.status(400).json({ message: 'ingreso_id es requerido' });
+    }
+    
+    // Obtener el ingreso
+    const ingreso = await Ingresos.getIngresoById(ingreso_id);
+    if (!ingreso) {
+      return res.status(404).json({ message: 'Asesoría no encontrada' });
+    }
+    
+    // Verificar que el ingreso pertenece al asesor autenticado
+    const perfil = await AsesorPerfiles.getByUserId(userId).catch(() => null);
+    if (!perfil || perfil.preregistro_id !== ingreso.asesor_preregistro_id) {
+      return res.status(403).json({ message: 'No tienes permiso para marcar esta asesoría' });
+    }
+    
+    // Verificar que no haya una confirmación pendiente ya
+    const sql = `
+      SELECT id FROM admin_asesoria_confirmaciones
+      WHERE ingreso_id = ? AND estado = 'pendiente'
+      LIMIT 1
+    `;
+    const [existing] = await db.query(sql, [ingreso_id]);
+    if (existing.length > 0) {
+      return res.status(400).json({ message: 'Ya existe una solicitud pendiente para esta asesoría' });
+    }
+    
+    // Obtener nombre del asesor
+    const usuario = await Usuarios.getUsuarioPorid(userId);
+    const asesorNombre = ingreso.asesor_nombre || usuario?.nombre || 'Asesor';
+    
+    // Crear la confirmación pendiente
+    const confirmacionId = await AdminConfirmaciones.createConfirmacion({
+      ingreso_id: ingreso.id,
+      asesor_user_id: userId,
+      asesor_nombre: asesorNombre,
+      estudiante_id: ingreso.estudiante_id,
+      alumno_nombre: ingreso.alumno_nombre,
+      curso: ingreso.curso,
+      fecha: ingreso.fecha,
+      hora: ingreso.hora,
+      observaciones,
+    });
+    
+    res.status(201).json({
+      message: 'Solicitud de confirmación creada. El administrador la revisará.',
+      data: { confirmacion_id: confirmacionId }
+    });
+  } catch (err) {
+    console.error('POST /asesores/marcar-realizada', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+});
+
+// GET /api/admin/asesorias-pendientes - Obtener asesorías pendientes de confirmación
+router.get('/admin/asesorias-pendientes', authREquired, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'No autenticado' });
+    
+    // Verificar que es admin
+    const usuario = await Usuarios.getUsuarioPorid(userId);
+    if (usuario?.role !== 'admin') {
+      return res.status(403).json({ message: 'Solo administradores pueden ver esto' });
+    }
+    
+    const confirmaciones = await AdminConfirmaciones.getConfirmacionesPendientes();
+    res.json({ data: confirmaciones });
+  } catch (err) {
+    console.error('GET /admin/asesorias-pendientes', err);
+    res.status(500).json({ message: 'Error interno' });
+  }
+});
+
+// POST /api/admin/confirmar-asesoria - Confirmar o rechazar una asesoría realizada
+router.post('/admin/confirmar-asesoria', authREquired, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'No autenticado' });
+    
+    // Verificar que es admin
+    const usuario = await Usuarios.getUsuarioPorid(userId);
+    if (usuario?.role !== 'admin') {
+      return res.status(403).json({ message: 'Solo administradores pueden confirmar' });
+    }
+    
+    const { confirmacion_id, accion, observaciones } = req.body || {};
+    // accion: 'confirmar' | 'rechazar'
+    
+    if (!confirmacion_id || !accion) {
+      return res.status(400).json({ message: 'confirmacion_id y accion son requeridos' });
+    }
+    
+    if (accion !== 'confirmar' && accion !== 'rechazar') {
+      return res.status(400).json({ message: 'accion debe ser "confirmar" o "rechazar"' });
+    }
+    
+    // Obtener la confirmación
+    const confirmacion = await AdminConfirmaciones.getConfirmacionById(confirmacion_id);
+    if (!confirmacion) {
+      return res.status(404).json({ message: 'Confirmación no encontrada' });
+    }
+    
+    if (confirmacion.estado !== 'pendiente') {
+      return res.status(400).json({ message: 'Esta confirmación ya fue procesada' });
+    }
+    
+    const nuevoEstado = accion === 'confirmar' ? 'confirmada' : 'rechazada';
+    
+    // Actualizar el estado de la confirmación
+    await AdminConfirmaciones.updateConfirmacionEstado(confirmacion_id, nuevoEstado, observaciones);
+    
+    // Si se confirma, registrar la asistencia en el ingreso
+    if (accion === 'confirmar') {
+      const ingreso = await Ingresos.getIngresoById(confirmacion.ingreso_id);
+      if (ingreso) {
+        // Actualizar el campo notas del ingreso con la asistencia
+        const asistenciaData = {
+          estado: 'realizada',
+          fecha_confirmacion: new Date().toISOString(),
+          confirmado_por: userId,
+          observaciones: observaciones || null,
+        };
+        
+        // Parsear notas existentes o crear nuevo objeto
+        let notas = {};
+        try {
+          if (ingreso.notas) {
+            notas = typeof ingreso.notas === 'string' ? JSON.parse(ingreso.notas) : ingreso.notas;
+          }
+        } catch (e) {
+          notas = {};
+        }
+        
+        notas.asistencia = asistenciaData;
+        
+        // Actualizar el ingreso
+        await Ingresos.updateIngreso(confirmacion.ingreso_id, {
+          notas: JSON.stringify(notas),
+        });
+        
+        // Si hay estudiante_id, también registrar en la tabla de asistencias
+        if (confirmacion.estudiante_id) {
+          // Obtener el id_asesor del perfil
+          const perfil = await AsesorPerfiles.getByUserId(confirmacion.asesor_user_id).catch(() => null);
+          if (perfil) {
+            await Asistencias.registrarAsistencia({
+              id_estudiante: confirmacion.estudiante_id,
+              id_asesor: confirmacion.asesor_user_id,
+              fecha: confirmacion.fecha,
+              tipo: 'asesoria',
+              asistio: true,
+              observaciones: observaciones || null,
+            });
+          }
+        }
+      }
+    }
+    
+    res.json({
+      message: accion === 'confirmar' 
+        ? 'Asesoría confirmada y asistencia registrada' 
+        : 'Asesoría rechazada',
+      data: { estado: nuevoEstado }
+    });
+  } catch (err) {
+    console.error('POST /admin/confirmar-asesoria', err);
     res.status(500).json({ message: 'Error interno' });
   }
 });

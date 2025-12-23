@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import Topbar from "../../components/Asesores/Topbar";
-import SidebarIconOnly from "../../components/Asesores/Sidebar";
-import MobileSidebar from "../../components/Asesores/MobileSidebar";
-import FeedbackReview from "../../components/Asesores/FeedbackReview.jsx";
+import Topbar from "../../components/Asesor/Topbar";
+import SidebarIconOnly from "../../components/Asesor/Sidebar";
+import MobileSidebar from "../../components/Asesor/MobileSidebar";
+import FeedbackReview from "../../components/Asesor/FeedbackReview.jsx";
 import { getEstudianteByIdRequest } from "../../api/estudiantes.js";
 import { ArrowLeft, Loader2, UserRound, X } from "lucide-react";
 import { buildStaticUrl } from "../../utils/url.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 
-export default function FeedbackDetail() {
+export default function FeedbackDetail({ embedded = false }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -17,6 +18,8 @@ export default function FeedbackDetail() {
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const navigate = useNavigate();
   const { studentId } = useParams();
+  const { logout } = useAuth();
+  const handleLogout = async () => { await logout(); navigate('/login', { replace: true }); };
 
   useEffect(() => {
     if (!studentId) return;
@@ -55,77 +58,105 @@ export default function FeedbackDetail() {
       .toUpperCase();
   };
 
+  const content = (
+    <div className="w-full min-h-screen bg-transparent overflow-x-hidden">
+      {/* Header band - Ocupa todo el ancho correctamente sin márgenes negativos */}
+      <header className="relative isolate overflow-hidden bg-white border-b border-slate-200 shadow-sm w-full">
+        {/* Contenedor interno con padding para el contenido */}
+        <div className="relative w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-10 sm:py-12">
+          <button
+            onClick={() => navigate('/asesor/feedback')}
+            className="mb-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-200"
+            aria-label="Regresar"
+          >
+            <ArrowLeft className="size-4" /> Volver
+          </button>
+          
+          {/* Avatar + title */}
+          <div className="flex items-center gap-4 sm:gap-6">
+            <div className="relative shrink-0">
+              {!avatarError && alumno?.foto ? (
+                <img
+                  src={buildStaticUrl(alumno.foto)}
+                  alt={nombreCompleto}
+                  onError={() => setAvatarError(true)}
+                  onClick={() => setShowPhotoModal(true)}
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-slate-200 shadow-xl cursor-zoom-in"
+                />
+              ) : (
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-2xl sm:text-3xl shadow-xl ring-4 ring-slate-200">
+                  {getInitials(nombreCompleto)}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-3 leading-tight">{nombreCompleto}</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-sm font-medium">Folio: {alumno?.folio_formateado || alumno?.folio || '—'}</span>
+                <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-sm font-medium">Grupo: {alumno?.grupo || '—'}</span>
+                {alumno?.curso && (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-sm font-medium">Curso: {alumno.curso}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Contenido principal - Ocupa todo el ancho con padding adecuado */}
+      <main className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-6 sm:py-8" aria-labelledby="feedback-title">
+        <div className="max-w-7xl mx-auto">
+          {loading && (
+            <div className="flex items-center gap-2 text-sm text-purple-600 bg-white rounded-xl p-4 shadow-sm">
+              <Loader2 className="size-4 animate-spin" /> Cargando alumno…
+            </div>
+          )}
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 rounded-xl p-4 border border-red-200">
+              {error}
+            </div>
+          )}
+          {!loading && !error && (
+            <FeedbackReview studentId={studentId} />
+          )}
+        </div>
+      </main>
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <>
+        {content}
+        {showPhotoModal && alumno?.foto && (
+          <PhotoModal
+            src={buildStaticUrl(alumno.foto)}
+            alt={nombreCompleto}
+            onClose={()=> setShowPhotoModal(false)}
+          />
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
-      <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
+      <Topbar />
 
       <MobileSidebar
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        active="inicio"
-        onLogout={() => console.log("logout")}
+        active="feedback"
+        onLogout={handleLogout}
       />
 
-      <div className="mx-auto">
+      {/* Contenido: compensado para topbar y sidebar fijos */}
+      <div className="w-full pt-14 md:pl-24">
         <div className="flex">
-          <SidebarIconOnly active="inicio" onLogout={() => console.log("logout")} />
+          <SidebarIconOnly active="feedback" onLogout={handleLogout} />
 
-          <main className="flex-1 p-3 sm:p-6 space-y-6">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <button
-                onClick={() => navigate('/asesor/feedback')}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-200 hover:bg-slate-300 text-slate-800 shrink-0"
-              >
-                <ArrowLeft className="size-4" /> Volver
-              </button>
-              <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1 bg-white rounded-2xl border border-slate-200 p-3">
-                {/* Avatar */}
-        <div className="relative shrink-0">
-                  {!avatarError && alumno?.foto ? (
-                    <img
-                      src={buildStaticUrl(alumno.foto)}
-                      alt={nombreCompleto}
-          onError={() => setAvatarError(true)}
-          onClick={() => setShowPhotoModal(true)}
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-white shadow-md cursor-zoom-in"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-semibold shadow-md">
-                      {getInitials(nombreCompleto)}
-                    </div>
-                  )}
-                </div>
-                {/* Name and meta */}
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-base sm:text-lg font-bold text-slate-800 truncate">{nombreCompleto}</h1>
-                  <div className="flex flex-wrap items-center gap-2 mt-1 text-xs">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                      Folio: {alumno?.folio_formateado || alumno?.folio || '—'}
-                    </span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                      Grupo: {alumno?.grupo || '—'}
-                    </span>
-                    {alumno?.curso && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                        Curso: {alumno.curso}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <section className="bg-white rounded-2xl shadow p-4 sm:p-5 border border-slate-100">
-              {loading && (
-                <div className="flex items-center gap-2 text-sm text-purple-600">
-                  <Loader2 className="size-4 animate-spin" /> Cargando alumno…
-                </div>
-              )}
-              {error && <div className="text-sm text-red-600">{error}</div>}
-              {!loading && !error && (
-                <FeedbackReview studentId={studentId} />
-              )}
-            </section>
+          <main className="flex-1 min-h-[calc(100vh-3.5rem)] px-0 pt-0 pb-0 overflow-x-hidden">
+            {content}
           </main>
         </div>
       </div>

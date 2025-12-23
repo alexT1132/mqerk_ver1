@@ -14,11 +14,22 @@ const storage = multer.diskStorage({
   }
 });
 
-const allowedExt = ['.pdf','.png','.jpg','.jpeg'];
+const allowedExt = ['.pdf','.png','.jpg','.jpeg','.gif','.webp'];
 
 function fileFilter(_req, file, cb){
   const ext = path.extname(file.originalname).toLowerCase();
-  if(!allowedExt.includes(ext)) return cb(new Error('Extensión no permitida'));
+  // Si el campo es 'foto', solo permitir imágenes
+  if (file.fieldname === 'foto') {
+    const imageExts = ['.png','.jpg','.jpeg','.gif','.webp'];
+    if (!imageExts.includes(ext)) {
+      return cb(new Error('Solo se permiten archivos de imagen para la foto de perfil'));
+    }
+  } else {
+    // Para otros campos, permitir PDF e imágenes
+    if (!allowedExt.includes(ext)) {
+      return cb(new Error('Extensión no permitida'));
+    }
+  }
   cb(null, true);
 }
 

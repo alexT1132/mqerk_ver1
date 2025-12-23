@@ -11,6 +11,160 @@ import { TOKEN_SECRET } from "../config.js";
 import * as SoftDeletes from "../models/soft_deletes.model.js";
 import * as AdminConfig from "../models/admin_config.model.js";
 import db from "../db.js";
+import { getGmailTokens } from "../models/admin_config.model.js";
+import { getGmailClient } from "../libs/gmail.js";
+
+// Helper: base64url encoding for Gmail raw messages
+function toBase64Url(str) {
+  return Buffer.from(str).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+// Helper: resolve user and destination email by username or email input
+async function resolveUserAndEmail(usuarioOrEmail) {
+  let user = null;
+  let email = null;
+  let role = null;
+
+  const input = String(usuarioOrEmail || '').trim();
+  if (!input) return { user, email, role };
+
+  // 1) Try by username first
+  try { user = await Usuarios.getUsuarioPorusername(input); } catch {}
+
+  // 2) If looks like email or user not found, try by admin email
+  const isEmail = /@/.test(input);
+  if ((!user || !user.id) && isEmail) {
+    try {
+      const prof = await AdminProfiles.getByEmail(input);
+      if (prof?.user_id) {
+        user = await Usuarios.getUsuarioPorid(prof.user_id);
+      }
+    } catch {}
+    // 3) Try by student email
+    if ((!user || !user.id)) {
+      try {
+        const [rows] = await db.query('SELECT * FROM estudiantes WHERE email = ? LIMIT 1', [input]);
+        const est = rows?.[0] || null;
+        if (est?.id) {
+          const u = await Usuarios.getUsuarioPorEstudianteId(est.id).catch(()=>null);
+          if (u) user = u;
+        }
+      } catch {}
+    }
+  }
+
+  if (user && user.id) {
+    role = (user.role || '').toLowerCase();
+    // Find a destination email depending on role
+    if (role === 'admin') {
+      try {
+        const prof = await AdminProfiles.getByUserId(user.id);
+        email = prof?.email || null;
+      } catch {}
+    } else if (role === 'estudiante') {
+      try {
+        const est = await Estudiantes.getEstudianteById(user.id_estudiante);
+        email = est?.email || null;
+      } catch {}
+    } else if (role === 'asesor') {
+      // Not all asesor profile schemas include email; attempt best effort
+      try {
+        const perfil = await AsesorPerfiles.getByUserId(user.id);
+        email = perfil?.correo || perfil?.email || null;
+      } catch {}
+    }
+  }
+  return { user, email, role };
+}
+
+// POST /api/password/forgot  { usuarioOrEmail: string }
+export const forgotPassword = async (req, res) => {
+  try {
+    const usuarioOrEmail = req.body?.usuarioOrEmail || req.body?.usuario || req.body?.email;
+    if (!usuarioOrEmail || String(usuarioOrEmail).trim().length === 0) {
+      return res.status(400).json({ ok: false, message: 'usuarioOrEmail es requerido' });
+    }
+
+    const { user, email, role } = await resolveUserAndEmail(usuarioOrEmail);
+
+    // Always respond generically to avoid user enumeration
+    const genericOk = () => res.status(200).json({ ok: true, message: 'Si existe una cuenta asociada, enviaremos un enlace para restablecer la contraseña.' });
+
+    if (!user || !user.id || !email) {
+      return genericOk();
+    }
+
+    // Build reset token (short-lived)
+    const payload = { id: user.id, role: (role||null), action: 'password-reset' };
+    const token = await new Promise((resolve, reject) => {
+      jwt.sign(payload, TOKEN_SECRET, { expiresIn: '30m' }, (err, t) => err ? reject(err) : resolve(t));
+    });
+
+    // Build reset URL pointing to client app
+    const clientBase = process.env.CLIENT_BASE_URL || (req.headers?.origin) || 'http://localhost:5173';
+    const resetUrl = `${clientBase.replace(/\/$/,'')}/resetear?token=${encodeURIComponent(token)}`;
+
+    // Send email via Gmail if configured; otherwise, just respond OK (no leak)
+    let sent = false;
+    try {
+      const tokens = await getGmailTokens();
+      if (tokens && (tokens.refresh_token || tokens.access_token)) {
+        const gmail = getGmailClient(tokens);
+        const fromEmail = tokens.email || 'me';
+        const subject = 'Restablecer tu contraseña – MQerk Academy';
+        const bodyText = `Hola,\n\nRecibimos una solicitud para restablecer tu contraseña.\n\nHaz clic en el siguiente enlace (válido por 30 minutos):\n${resetUrl}\n\nSi no solicitaste este cambio, puedes ignorar este mensaje.\n\n– MQerk Academy`;
+        const raw = [
+          `From: ${fromEmail}`,
+          `To: ${email}`,
+          `Subject: ${subject}`,
+          'MIME-Version: 1.0',
+          'Content-Type: text/plain; charset=utf-8',
+          '',
+          bodyText,
+        ].join('\r\n');
+        await gmail.users.messages.send({ userId: 'me', requestBody: { raw: toBase64Url(raw) } });
+        sent = true;
+      }
+    } catch (e) {
+      if (process.env.NODE_ENV !== 'production') console.warn('[forgotPassword] No se pudo enviar correo Gmail:', e?.message || e);
+    }
+
+    // Return generic OK regardless of email status
+    return genericOk();
+  } catch (e) {
+    console.error('forgotPassword error:', e);
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+};
+
+// POST /api/password/reset  { token, newPassword }
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body || {};
+    if (!token || !newPassword) return res.status(400).json({ ok: false, message: 'token y newPassword son obligatorios' });
+    if (String(newPassword).length < 6) return res.status(400).json({ ok: false, message: 'La nueva contraseña debe tener al menos 6 caracteres' });
+
+    let payload = null;
+    try {
+      payload = jwt.verify(token, TOKEN_SECRET);
+    } catch (e) {
+      return res.status(400).json({ ok: false, message: 'Token inválido o expirado' });
+    }
+    if (!payload || payload.action !== 'password-reset' || !payload.id) {
+      return res.status(400).json({ ok: false, message: 'Token inválido' });
+    }
+
+    const user = await Usuarios.getUsuarioPorid(payload.id).catch(()=>null);
+    if (!user) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
+
+    const hash = await bcrypt.hash(String(newPassword), 10);
+    await Usuarios.updatePassword(user.id, hash);
+    return res.status(200).json({ ok: true, message: 'Contraseña actualizada' });
+  } catch (e) {
+    console.error('resetPassword error:', e);
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+};
 
 // Obtener todos los usuarios
 export const obtener = async (req, res) => {
@@ -42,6 +196,12 @@ export const crear = async (req, res) => {
       return res.status(400).json({ message: "Todos los campos son obligatorios" });
     } 
 
+    // Validar que el usuario no exista (seguridad: evitar duplicados)
+    const usuarioExistente = await Usuarios.getUsuarioPorusername(usuario);
+    if (usuarioExistente) {
+      return res.status(409).json({ message: "Este nombre de usuario ya está en uso. Por favor, elige otro." });
+    }
+
     const hash = await bcrypt.hash(contraseña, 10);
 
     const usuarioGenerado = { usuario, contraseña: hash, role, id_estudiante };
@@ -57,6 +217,10 @@ export const crear = async (req, res) => {
 
   } catch (error) {
     console.error("Error en el controlador:", error);
+    // Si es un error de duplicado de MySQL, devolver mensaje más claro
+    if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+      return res.status(409).json({ message: "Este nombre de usuario ya está en uso. Por favor, elige otro." });
+    }
     res.status(500).json({ message: "Error interno del servidor", error });
   }
 };
@@ -212,25 +376,28 @@ export const verifyToken = async (req, res) => {
       }
     }
     if (process.env.NODE_ENV !== 'production') console.log('[VERIFY] no-token cookies=%o', Object.keys(req.cookies||{}));
-    return res.status(401).json({ message: 'Unauthorized', reason: 'no-token' });
+    // Devolver 200 con datos vacíos en lugar de 401 para evitar errores en consola cuando no hay sesión
+    // El frontend puede manejar esto como "usuario no autenticado" sin mostrar errores
+    return res.status(200).json({ message: 'No authenticated', reason: 'no-token' });
   }
   jwt.verify(candidate, TOKEN_SECRET, async (err, user) => {
     if (err) {
       if (process.env.NODE_ENV !== 'production') console.log('[VERIFY] jwt error %s', err.name);
+      // Para tokens expirados o inválidos, devolver 200 con razón para que el frontend pueda manejar el refresh
       if (err.name === 'TokenExpiredError') {
-        return res.status(401).json({ message: "Unauthorized", reason: 'expired' });
+        return res.status(200).json({ message: "Token expired", reason: 'expired' });
       }
-      return res.status(401).json({ message: "Unauthorized", reason: 'invalid-token' });
+      return res.status(200).json({ message: "Invalid token", reason: 'invalid-token' });
     }
     if (isRevoked(user.jti)) {
-      return res.status(401).json({ message: 'Unauthorized', reason: 'revoked' });
+      return res.status(200).json({ message: 'Token revoked', reason: 'revoked' });
     }
 
   const userFound = await Usuarios.getUsuarioPorid(user.id);
   const soft = await SoftDeletes.getByUsuarioId(userFound?.id);
-  if (soft) return res.status(401).json({ message: "Unauthorized", reason: 'soft-deleted' });
+  if (soft) return res.status(200).json({ message: "User soft deleted", reason: 'soft-deleted' });
 
-    if (!userFound) return res.status(401).json({ message: "Unauthorized", reason: 'user-not-found' });
+    if (!userFound) return res.status(200).json({ message: "User not found", reason: 'user-not-found' });
 
   console.log(userFound);
 
@@ -243,7 +410,7 @@ export const verifyToken = async (req, res) => {
       const estudiante = await Estudiantes.getEstudianteById(userFound.id_estudiante);
       // Bloquear acceso si el estudiante está suspendido
       if (estudiante && estudiante.estatus === 'Suspendido') {
-        return res.status(401).json({ message: 'Unauthorized', reason: 'suspended' });
+        return res.status(200).json({ message: 'User suspended', reason: 'suspended' });
       }
 
         return res.json({
@@ -590,8 +757,17 @@ export const getDashboardMetrics = async (req, res) => {
       ingresosMesActualRows,
       ultimoMesConIngresosRows
     ] = await Promise.all([
-      // Pagos pendientes: estudiantes con verificacion = 1 (enviado esperando validación)
-      db.query(`SELECT COUNT(*) AS total FROM estudiantes WHERE verificacion = 1`).then(r => r[0]),
+      // Pagos pendientes: estudiantes con verificacion = 1 Y que tengan un comprobante subido
+      db.query(`
+        SELECT COUNT(DISTINCT e.id) AS total 
+        FROM estudiantes e
+        INNER JOIN comprobantes c ON c.id_estudiante = e.id
+        LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+        WHERE e.verificacion = 1 
+          AND c.comprobante IS NOT NULL 
+          AND c.comprobante != ''
+          AND sd.id IS NULL
+      `).then(r => r[0]),
 
       // Nuevos alumnos del mes actual (por created_at)
       db.query(
@@ -971,5 +1147,43 @@ export const exportPaymentReportsPDF = async (req, res) => {
     return res.status(200).json({ data: null, filename: 'reportes_pagos.pdf' });
   } catch (e) {
     return res.status(500).json({ message: 'No se pudo exportar PDF' });
+  }
+};
+
+// Admin: resetear contraseña de un usuario asesor sin requerir la actual
+export const resetAsesorPasswordAdmin = async (req, res) => {
+  try {
+    const requesterId = req.user?.id;
+    if (!requesterId) return res.status(401).json({ message: 'Unauthorized' });
+    const requester = await Usuarios.getUsuarioPorid(requesterId);
+    if (!requester || requester.role !== 'admin') return res.status(403).json({ message: 'Solo admin' });
+
+    const { usuarioId, username, newPassword } = req.body || {};
+    if (!newPassword || String(newPassword).length < 6) {
+      return res.status(400).json({ message: 'newPassword es requerido (mínimo 6 caracteres)' });
+    }
+
+    let target = null;
+    if (usuarioId) {
+      target = await Usuarios.getUsuarioPorid(usuarioId);
+    } else if (username) {
+      target = await Usuarios.getUsuarioPorusername(username);
+    } else {
+      return res.status(400).json({ message: 'Provee usuarioId o username' });
+    }
+
+    if (!target) return res.status(404).json({ message: 'Usuario no encontrado' });
+    if ((target.role || '').toLowerCase() !== 'asesor') {
+      return res.status(400).json({ message: 'Solo se permite resetear contraseñas de usuarios con rol asesor' });
+    }
+
+    const hash = await bcrypt.hash(String(newPassword), 10);
+    await Usuarios.updatePassword(target.id, hash);
+    // Resetear contadores de seguridad por si estaba bloqueado
+    await Usuarios.resetLoginSecurity(target.id).catch(()=>{});
+    return res.status(200).json({ ok: true, message: 'Contraseña actualizada para asesor', usuario_id: target.id, username: target.usuario });
+  } catch (e) {
+    console.error('resetAsesorPasswordAdmin error:', e);
+    return res.status(500).json({ message: 'Error interno del servidor' });
   }
 };

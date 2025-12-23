@@ -84,19 +84,37 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
       mx-auto ${isCurrentCourse ? 'transform scale-[1.01]' : 'hover:scale-[1.01]'}`}>
       {/* BACKEND: Imagen del curso - debe venir como URL desde la API */}
     <div className="relative w-full h-16 sm:h-18 md:h-20 lg:h-32 xl:h-36 2xl:h-40 bg-gray-200 flex-shrink-0">
-        <img
-          src={image || "https://placehold.co/400x250/e0e0e0/555555?text=Curso"}
-          alt={title}
-      className="w-full h-full object-cover"
-      loading="eager" 
-      decoding="async"
-      // Provide intrinsic sizes to avoid Chrome auto-lazy placeholder warning
-      width={640}
-      height={360}
-      // Prioritize image a bit more if es el curso actual
-          fetchPriority={isCurrentCourse ? "high" : "auto"}
-          onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x250/e0e0e0/555555?text=Curso"; }}
-        />
+        {(() => {
+          // Validar que la imagen sea una URL válida antes de intentar cargarla
+          const isValidImage = image && (
+            image.startsWith('http://') || 
+            image.startsWith('https://') || 
+            image.startsWith('/') ||
+            image.startsWith('data:')
+          );
+          const defaultImage = "https://placehold.co/400x250/e0e0e0/555555?text=Curso";
+          const imageSrc = isValidImage ? image : defaultImage;
+          
+          return (
+            <img
+              src={imageSrc}
+              alt={title}
+              className="w-full h-full object-cover"
+              loading={isCurrentCourse ? "eager" : "lazy"}
+              decoding="async"
+              width={640}
+              height={360}
+              fetchPriority={isCurrentCourse ? "high" : "low"}
+              onError={(e) => {
+                // Evitar loops infinitos de errores
+                if (e.target.src !== defaultImage) {
+                  e.target.onerror = null;
+                  e.target.src = defaultImage;
+                }
+              }}
+            />
+          );
+        })()}
         {/* BACKEND: Badge con la categoría o tipo del curso */}
         <div className={`absolute top-1.5 left-1.5 sm:top-2 sm:left-2 lg:top-3 lg:left-3 px-1.5 py-0.5 sm:px-2 lg:px-2.5 sm:py-1 rounded-full text-xs font-semibold text-white ${badgeColor} shadow-md z-10 ${isCurrentCourse ? 'ring-1 ring-white/70' : ''}`}>
           {category || type}
@@ -123,7 +141,7 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
           <div className={`flex flex-col gap-0.5 sm:gap-1 md:gap-1 lg:gap-1 xl:gap-1.5 text-xs sm:text-xs md:text-xs lg:text-sm xl:text-base 2xl:text-lg mb-2 sm:mb-2 md:mb-2 lg:mb-3 xl:mb-3 ${isCurrentCourse ? 'text-blue-600' : 'text-gray-700'}`}>
             {metadata.slice(0, 3).map((item, index) => (
               <div key={index} className="flex items-center">
-                <div className="w-3 h-3 sm:w-4 sm:h-4 md:w-4 md:h-4 lg:w-5 lg:h-5 xl:w-5 xl:h-5 mr-1 sm:mr-1.5 md:mr-1.5 lg:mr-2 xl:mr-2 flex-shrink-0">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 md:w-4 md:h-4 lg:w-5 lg:h-5 xl:w-5 xl:h-5 mr-2 sm:mr-2 md:mr-2 lg:mr-2.5 xl:mr-3 flex-shrink-0">
                   {item.icon === 'reloj' && <IconoReloj />}
                   {item.icon === 'libro' && <IconoLibro />}
                   {item.icon === 'estudiante' && <IconoEstudiante />}
@@ -247,6 +265,17 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
     currentCourse = null, 
     selectCourse = () => {}
   } = useStudent() || {};
+
+  // Fallback inmediato para resaltar el curso seleccionado incluso tras un refresh
+  const currentCourseId = React.useMemo(() => {
+    if (currentCourse?.id) return currentCourse.id;
+    try {
+      const raw = localStorage.getItem('currentCourse');
+      if (!raw || raw === 'null' || raw === 'undefined') return null;
+      const obj = JSON.parse(raw);
+      return obj?.id || null;
+    } catch { return null; }
+  }, [currentCourse?.id]);
   
   const navigate = useNavigate();
 
@@ -254,30 +283,63 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
   const activeCourses = enrolledCourses.filter(course => course?.isActive && course?.status === 'active');
   
   // BACKEND: Ordenar cursos para mostrar el curso currentCourse primero
-  const sortedActiveCourses = activeCourses.sort((a, b) => {
-    const aIsCurrent = currentCourse?.id === a.id;
-    const bIsCurrent = currentCourse?.id === b.id;
-    
-    if (aIsCurrent && !bIsCurrent) return -1;
-    if (!aIsCurrent && bIsCurrent) return 1;
-    return 0;
-  });
+  const sortedActiveCourses = React.useMemo(() => {
+    return [...activeCourses].sort((a, b) => {
+      const aIsCurrent = currentCourseId === a.id;
+      const bIsCurrent = currentCourseId === b.id;
+      
+      if (aIsCurrent && !bIsCurrent) return -1;
+      if (!aIsCurrent && bIsCurrent) return 1;
+      return 0;
+    });
+  }, [activeCourses, currentCourseId]);
 
-  // BACKEND: Función para seleccionar un curso matriculado y navegar al dashboard
+  // Paginación simple para grandes cantidades (hasta 20+)
+  const PAGE_SIZE = 8; // 2x4 o 4x2 en md+
+  const [page, setPage] = React.useState(1);
+  const totalPages = Math.max(1, Math.ceil(sortedActiveCourses.length / PAGE_SIZE));
+  const start = (page - 1) * PAGE_SIZE;
+  const pageItems = sortedActiveCourses.slice(start, start + PAGE_SIZE);
+  React.useEffect(() => { if (page > totalPages) setPage(1); }, [totalPages]);
+
+  // Estado local para forzar re-render cuando cambia el curso
+  const [selectedCourseId, setSelectedCourseId] = React.useState(currentCourseId);
+  
+  // Sincronizar estado local con el contexto
+  React.useEffect(() => {
+    setSelectedCourseId(currentCourseId);
+  }, [currentCourseId]);
+
+  // BACKEND: Función para seleccionar/cambiar un curso matriculado
+  // Si ya hay un curso seleccionado, solo lo cambiamos sin navegar
+  // Si no hay curso, seleccionamos y navegamos al dashboard
   const handleCourseAction = (course) => {
     try {
-      // Actualizar el contexto local
+      // Actualizar el contexto local (cambiar curso si ya hay uno, o seleccionar si no hay)
       if (selectCourse && course?.id) {
         selectCourse(course.id);
+        // Actualizar estado local inmediatamente para feedback visual
+        setSelectedCourseId(course.id);
+        // Guardar en localStorage para persistencia
+        try {
+          localStorage.setItem('currentCourse', JSON.stringify({ id: course.id, title: course.title }));
+        } catch (e) {
+          console.warn('No se pudo guardar en localStorage:', e);
+        }
+        console.log('✅ Curso seleccionado/cambiado:', course.title);
       }
       
       // BACKEND: Aquí se debería hacer una llamada para actualizar el curso actual
       // Ejemplo: await updateCurrentCourse(course.id);
       
-      // Navegar al dashboard del estudiante
-      navigate('/alumno/');
+      // Solo navegar al dashboard si no hay curso seleccionado actualmente
+      // Si ya hay un curso, solo lo cambiamos sin redirigir
+      if (!currentCourse) {
+        navigate('/alumno/');
+      }
+      // Si ya había un curso seleccionado, solo lo cambiamos (permanecemos en /alumno/cursos)
     } catch (error) {
-      console.error('Error al seleccionar curso:', error);
+      console.error('Error al seleccionar/cambiar curso:', error);
     }
   };
 
@@ -307,12 +369,12 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
   }
 
   return (
-    <div className="min-h-screen bg-white p-3 sm:p-4 md:p-6 lg:p-8 font-inter text-gray-800">
+    <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-3 sm:py-4 md:py-6 lg:py-8 font-inter text-gray-800">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12">
         
         {/* Sección de Encabezado - Consistente con Dashboard */}
         <div className="flex flex-col items-center md:flex-row md:items-start md:justify-between mb-6 pb-4 border-b-2 border-gradient-to-r from-blue-200 to-purple-200">
-          <h2 className="text-3xl xs:text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 md:mb-0">
+          <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl leading-tight tracking-tight text-center md:text-left font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 md:mb-0">
             MIS CURSOS ACTIVOS
           </h2>
           <div className="bg-white rounded-full px-3 xs:px-4 sm:px-6 py-1.5 xs:py-2 sm:py-3 shadow-lg border border-gray-200">
@@ -326,57 +388,97 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
         <section>
           {/* BACKEND: Renderizar cursos matriculados si existen, sino mostrar estado vacío */}
           {/* Diseño responsivo: móvil intacto, mejorado para PC */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6 xl:gap-8 2xl:gap-10 max-w-none auto-rows-min">
-            {sortedActiveCourses && sortedActiveCourses.length > 0 ? (
-              // BACKEND: Mapear los cursos matriculados obtenidos de la API
-              sortedActiveCourses.map(course => {
-                const isCurrentCourse = currentCourse && currentCourse.id === course.id;
-                return (
-                  <div key={course.id} className="relative flex justify-center">
-                    <CourseCard
-                      course={course}
-                      onAction={handleCourseAction}
-                      isDashboardButton={true}
-                      isCurrentCourse={isCurrentCourse}
-                    />
-                  </div>
-                );
-              })
-            ) : (
-              // Estado vacío: se muestra cuando el estudiante no tiene cursos matriculados
-              // BACKEND: Esto se mostrará cuando enrolledCourses.length === 0
-              <div className="col-span-2 sm:col-span-3 md:col-span-3 lg:col-span-3 xl:col-span-4 2xl:col-span-4 flex flex-col items-center justify-center py-16 sm:py-20 md:py-24">
-                <div className="bg-gray-50 rounded-2xl p-8 md:p-12 text-center max-w-lg mx-auto border border-gray-200 shadow-lg">
-                  {/* Icono simple */}
-                  <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.523 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.523 18.246 18 16.5 18s-3.332.477-4.5 1.253"></path>
-                    </svg>
-                  </div>
-                  
-                  {/* Texto simple */}
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-700 mb-3">
-                    No tienes cursos matriculados
-                  </h3>
-                  
-                  <p className="text-gray-500 mb-6">
-                    Una vez que te matricules en un curso, aparecerá aquí para que puedas acceder fácilmente.
-                  </p>
+          {(() => {
+            const count = pageItems?.length || 0;
+            // Columnas dinámicas según la cantidad para evitar columnas vacías y centrar mejor
+            // Si hay muchos elementos (>=8) usamos más columnas en md para densidad
+            let gridCols = count >= 8
+              ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5'
+              : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4';
+            if (count <= 1) gridCols = 'grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 xl:grid-cols-1 2xl:grid-cols-1';
+            else if (count === 2) gridCols = 'grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-2';
+            else if (count === 3) gridCols = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3';
+            // Usar grid normal en móvil para mejor layout, inline-grid en desktop
+            const base = `grid ${gridCols} gap-2 sm:gap-3 md:gap-4 lg:gap-6 xl:gap-8 2xl:gap-10 auto-rows-min`;
+            return (
+              <div className={`${base} w-full justify-items-center sm:justify-items-start`}>
+                {pageItems && pageItems.length > 0 ? (
+                  // BACKEND: Mapear los cursos matriculados obtenidos de la API
+                  pageItems.map(course => {
+                    // Usar estado local para feedback visual inmediato
+                    const isCurrentCourse = selectedCourseId === course.id || currentCourseId === course.id;
+                    return (
+                      <div key={course.id} className="relative flex justify-center w-full">
+                        <CourseCard
+                          course={course}
+                          onAction={handleCourseAction}
+                          isDashboardButton={true}
+                          isCurrentCourse={isCurrentCourse}
+                        />
+                      </div>
+                    );
+                  })
+                ) : (
+                  // Estado vacío: se muestra cuando el estudiante no tiene cursos matriculados
+                  // BACKEND: Esto se mostrará cuando enrolledCourses.length === 0
+                  <div className="col-span-full flex flex-col items-center justify-center py-16 sm:py-20 md:py-24">
+                    <div className="bg-gray-50 rounded-2xl p-8 md:p-12 text-center max-w-lg mx-auto border border-gray-200 shadow-lg">
+                      {/* Icono simple */}
+                      <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.523 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.523 18.246 18 16.5 18s-3.332.477-4.5 1.253"></path>
+                        </svg>
+                      </div>
+                      
+                      {/* Texto simple */}
+                      <h3 className="text-xl md:text-2xl font-bold text-gray-700 mb-3">
+                        No tienes cursos matriculados
+                      </h3>
+                      
+                      <p className="text-gray-500 mb-6">
+                        Una vez que te matricules en un curso, aparecerá aquí para que puedas acceder fácilmente.
+                      </p>
 
-                  {/* Botón para ir al dashboard/inicio */}
-                  <button
-                    onClick={() => navigate('/alumno/')}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    Ir al Dashboard
-                  </button>
-                </div>
+                      {/* Botón para ir al dashboard/inicio */}
+                      <button
+                        onClick={() => navigate('/alumno/')}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        Ir al Dashboard
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
+
+          {/* Controles de paginación */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-center gap-2 sm:gap-3">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Anterior
+              </button>
+              <div className="text-sm font-medium text-gray-600">
+                Página <span className="text-gray-900">{page}</span> de <span className="text-gray-900">{totalPages}</span>
+              </div>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
+          
         </section>
       </div>
     </div>

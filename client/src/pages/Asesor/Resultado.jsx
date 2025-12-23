@@ -62,7 +62,7 @@ export function Resultado(){
       }
       setLoading(true); setError(null);
       try {
-        const base = import.meta.env.VITE_API_URL || 'http://localhost:1002';
+  const base = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:1002');
         const res = await fetch(`${base}/api/asesores/tests/${targetId}`, { credentials:'include' });
         if(res.status === 404){
           setResults(null);

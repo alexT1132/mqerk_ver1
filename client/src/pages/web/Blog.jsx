@@ -1,31 +1,29 @@
 import { useState } from "react";
 import Navbar from "../../components/mqerk/Navbar";
 import Footer from "../../components/footer";
-
 import { FaTag } from "react-icons/fa";
 import { IoMdEye } from "react-icons/io";
-
 // IMÁGENES (mantén tus rutas)
-import Uno from "../../assets/mqerk/blog/1.jpg";
-import Dos from "../../assets/mqerk/blog/2.jpg";
-import Tres from "../../assets/mqerk/blog/3.jpg";
-import Cuatro from "../../assets/mqerk/blog/4.jpg";
-import Cinco from "../../assets/mqerk/blog/5.jpg";
-import Seis from "../../assets/mqerk/blog/13.jpg";
-import Siete from "../../assets/mqerk/blog/6.jpg";
-import Ocho from "../../assets/mqerk/blog/7.jpg";
-import Nueve from "../../assets/mqerk/blog/8.jpg";
-import Diez from "../../assets/mqerk/blog/10.jpg";
-import Once from "../../assets/mqerk/blog/17.jpg";
-import Doce from "../../assets/mqerk/blog/16.jpg";
-import Trece from "../../assets/mqerk/blog/18.jpg";
-import Catorce from "../../assets/mqerk/blog/20.png";
-import Quince from "../../assets/mqerk/blog/19.jpg";
-import Dieciseis from "../../assets/mqerk/blog/14.png";
-import Diecisiete from "../../assets/mqerk/blog/11.jpg";
-import Dieciocho from "../../assets/mqerk/blog/13.jpg";
-import Diecinueve from "../../assets/mqerk/blog/9.jpg";
-import Veinte from "../../assets/mqerk/blog/12.jpg";
+import Uno from "../../assets/mqerk/blog/1.webp";
+import Dos from "../../assets/mqerk/blog/2.webp";
+import Tres from "../../assets/mqerk/blog/3.webp";
+import Cuatro from "../../assets/mqerk/blog/4.webp";
+import Cinco from "../../assets/mqerk/blog/5.webp";
+import Seis from "../../assets/mqerk/blog/13.webp";
+import Siete from "../../assets/mqerk/blog/6.webp";
+import Ocho from "../../assets/mqerk/blog/7.webp";
+import Nueve from "../../assets/mqerk/blog/8.webp";
+import Diez from "../../assets/mqerk/blog/10.webp";
+import Once from "../../assets/mqerk/blog/17.webp";
+import Doce from "../../assets/mqerk/blog/16.webp";
+import Trece from "../../assets/mqerk/blog/18.webp";
+import Catorce from "../../assets/mqerk/blog/20.webp";
+import Quince from "../../assets/mqerk/blog/19.webp";
+import Dieciseis from "../../assets/mqerk/blog/14.webp";
+import Diecisiete from "../../assets/mqerk/blog/11.webp";
+import Dieciocho from "../../assets/mqerk/blog/13.webp";
+import Diecinueve from "../../assets/mqerk/blog/9.webp";
+import Veinte from "../../assets/mqerk/blog/12.webp";
 
 const categorias = ["Todos", "Admisión", "Educación", "STEM", "Salud", "Ambiental"];
 

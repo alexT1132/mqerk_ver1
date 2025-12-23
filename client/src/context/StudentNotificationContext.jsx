@@ -65,6 +65,8 @@ export const StudentNotificationProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false); // Estado lógico de conexión (reflejado por StudentContext)
   const [lastUpdated, setLastUpdated] = useState(null);
+  const quickRetryRef = useRef(null);
+  const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
 
   // TODO: BACKEND - Mock data para testing (eliminar cuando se conecte al backend)
   const mockNotifications = [
@@ -156,11 +158,49 @@ export const StudentNotificationProvider = ({ children }) => {
     return notifications.filter(n => n.priority === priority);
   };
 
+  // Pequeño helper de reintentos con backoff para errores de red transitorios
+  const axiosGetWithRetry = async (url, maxAttempts = 3) => {
+    let attempt = 0;
+    let lastErr;
+    while (attempt < maxAttempts) {
+      try {
+        return await axios.get(url);
+      } catch (err) {
+        lastErr = err;
+        const code = err?.code;
+        const msg = String(err?.message || '');
+        // Detectar errores de red transitorios: ERR_NETWORK, ERR_NETWORK_CHANGED, ECONNABORTED (timeout), etc.
+        const isNetworky = (!err?.response) && (
+          code === 'ERR_NETWORK' || 
+          code === 'ERR_NETWORK_CHANGED' ||
+          code === 'ECONNABORTED' ||
+          /Network Error|ERR_NETWORK_CHANGED|network/i.test(msg)
+        );
+        if (!isNetworky) throw err; // no reintentar si es error HTTP o ajeno a red
+        // backoff exponencial suave: 250ms, 500ms, 1000ms
+        const delay = 250 * Math.pow(2, attempt);
+        if (attempt < maxAttempts - 1) { // No esperar en el último intento
+          await new Promise(r => setTimeout(r, delay));
+        }
+        attempt++;
+      }
+    }
+    // Si todos los reintentos fallaron, lanzar el error pero marcarlo como error de red
+    lastErr._isNetworkError = true;
+    throw lastErr;
+  };
+
   // TODO: BACKEND - Cargar notificaciones desde API
   const loadNotifications = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get('/student/notifications');
+      // Si estamos offline, evitamos golpear la red innecesariamente
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setIsOffline(true);
+        return; // se reintentará cuando vuelva el evento 'online'
+      }
+      setIsOffline(false);
+      const res = await axiosGetWithRetry('/student/notifications', 3);
       const rows = res.data?.data || [];
       // Normalizar y deduplicar (por id)
       const seen = new Set();
@@ -179,9 +219,41 @@ export const StudentNotificationProvider = ({ children }) => {
         return Array.from(map.values()).sort((a,b) => (b.id||0)-(a.id||0) || b.timestamp - a.timestamp);
       });
       setLastUpdated(new Date());
+      // Si había un reintento rápido pendiente, cancelarlo
+      if (quickRetryRef.current) { clearTimeout(quickRetryRef.current); quickRetryRef.current = null; }
     } catch (error) {
-      console.error('Error al cargar notificaciones:', error);
-    } finally { setIsLoading(false); }
+      const code = error?.code;
+      const msg = String(error?.message || '');
+      // Detectar errores de red transitorios (incluye los marcados por axiosGetWithRetry)
+      const isNetworky = error?._isNetworkError || (
+        (!error?.response) && (
+          code === 'ERR_NETWORK' || 
+          code === 'ERR_NETWORK_CHANGED' ||
+          code === 'ECONNABORTED' ||
+          /Network Error|ERR_NETWORK_CHANGED|network/i.test(msg)
+        )
+      );
+      
+      if (isNetworky) {
+        // Silenciar el error de red transitorio, solo loguear en desarrollo
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[Notificaciones] Red inestable o backend no disponible (se reintentará automáticamente):', { code, msg });
+        }
+        setIsOffline(true);
+        // Un reintento suave adicional en ~2s para no esperar al polling de 60s
+        if (!quickRetryRef.current) {
+          quickRetryRef.current = setTimeout(() => { 
+            quickRetryRef.current = null; 
+            loadNotifications(); 
+          }, 2000);
+        }
+      } else {
+        // Solo loguear errores no relacionados con red (401, 403, 500, etc.)
+        console.error('[Notificaciones] Error al cargar:', error?.response?.status || error?.code, error?.message);
+      }
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   // TODO: BACKEND - Marcar notificación como leída
@@ -280,19 +352,47 @@ export const StudentNotificationProvider = ({ children }) => {
   const { isAuthenticated, user, alumno } = useAuth();
   const pollRef = useRef(null);
   useEffect(() => {
+    // Pausar/retomar según estado de conectividad del navegador
+    const onOnline = () => { 
+      setIsOffline(false);
+      // Esperar un poco para asegurar que la red está estable antes de intentar cargar
+      // Esto ayuda a evitar ERR_NETWORK_CHANGED cuando la conexión acaba de restablecerse
+      setTimeout(() => {
+        loadNotifications();
+      }, 500);
+    };
+    const onOffline = () => { setIsOffline(true); };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', onOnline);
+      window.addEventListener('offline', onOffline);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('online', onOnline);
+        window.removeEventListener('offline', onOffline);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     // Si NO está autenticado como estudiante: asegurar limpieza (importante para evitar 401 tras logout)
     if(!(isAuthenticated && user?.role === 'estudiante')){
       if(pollRef.current){ clearInterval(pollRef.current); pollRef.current = null; }
-      if(wsRef.current && wsRef.current.readyState === 1){ try { wsRef.current.close(); } catch(_){} }
+      if (quickRetryRef.current) { clearTimeout(quickRetryRef.current); quickRetryRef.current = null; }
       return; // no configuramos nada
     }
 
     // Autenticado estudiante: cargar y comenzar polling
     loadNotifications();
-    pollRef.current = setInterval(() => loadNotifications(), 60000);
+    pollRef.current = setInterval(() => {
+      // Saltar si offline o pestaña en segundo plano (reduce errores y consumo)
+      if ((typeof document !== 'undefined' && document.hidden) || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
+      loadNotifications();
+    }, 60000);
 
     return () => {
       if(pollRef.current){ clearInterval(pollRef.current); pollRef.current = null; }
+      if (quickRetryRef.current) { clearTimeout(quickRetryRef.current); quickRetryRef.current = null; }
     };
   }, [isAuthenticated, user]);
 
@@ -433,6 +533,9 @@ export const StudentNotificationProvider = ({ children }) => {
     
     // Funciones de carga
   loadNotifications,
+
+    // Estado de red (opcional para UI)
+    isOffline,
     
     // Constantes
     NOTIFICATION_TYPES,

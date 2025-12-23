@@ -358,7 +358,7 @@ export function Configuracion_Admin_comp() {
   ];
 
   return (
-    <div className="min-h-screen bg-white p-2 sm:p-4 lg:p-6">
+    <div className="min-h-screen bg-white px-2 sm:px-4 lg:px-6 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-2 sm:pb-4 lg:pb-6">
       {(showInitialOverlay || isLoading || contextLoading) && (
         <LoadingOverlay message="Cargando configuración..." subMessage="Por favor espera..." />
       )}

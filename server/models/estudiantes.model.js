@@ -16,49 +16,145 @@ export const ensureEstatusColumn = async () => {
 
 // Crear datos del alumno
 export const createEstudiante = async (data) => {
-  const sql = 'INSERT INTO estudiantes (nombre, apellidos, email, foto, grupo, comunidad1, comunidad2, telefono, fecha_nacimiento, nombre_tutor, tel_tutor, academico1, academico2, semestre, alergia, alergia2, discapacidad1, discapacidad2, orientacion, universidades1, universidades2, postulacion, modalidad, comentario1, comentario2, curso, turno, plan, academia, anio, folio, asesor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-  const values = [
-    data.nombre, 
-    data.apellidos, 
-    data.email, 
-    data.foto, 
-    data.grupo,
-    data.comunidad1, 
-    data.comunidad2, 
-  data.telefono, 
-  data.fecha_nacimiento,
-    data.nombre_tutor, 
-    data.tel_tutor, 
-    data.academico1, 
-    data.academico2, 
-    data.semestre, 
-    data.alergia, 
-    data.alergia2, 
-    data.discapacidad1, 
-    data.discapacidad2, 
-    data.orientacion, 
-    data.universidades1, 
-  data.universidades2, 
-  data.postulacion, 
-  data.modalidad,
-    data.comentario1, 
-    data.comentario2, 
-  data.curso, 
-  data.turno,
-  data.plan, 
-  data.academia,
-    data.anio, 
-  data.folio,
-  data.asesor
-  ];
-  const [result] = await db.query(sql, values);
-  return result;
+  // Verificar si las columnas apellido_paterno y apellido_materno existen
+  // Si no existen, usar solo apellidos
+  let sql, values;
+  
+  try {
+    // Intentar con las nuevas columnas primero
+    sql = `INSERT INTO estudiantes (
+      nombre, apellido_paterno, apellido_materno, apellidos, email, foto, grupo,
+      comunidad1, comunidad2, telefono, fecha_nacimiento, nombre_tutor, tel_tutor,
+      academico1, academico2, semestre, alergia, alergia2, discapacidad1, discapacidad2,
+      orientacion, universidades1, universidades2, postulacion, modalidad,
+      comentario1, comentario2, curso, turno, plan, academia, anio, folio, asesor
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    
+    values = [
+      data.nombre,
+      data.apellido_paterno || '',
+      data.apellido_materno || '',
+      data.apellidos,
+      data.email,
+      data.foto,
+      data.grupo,
+      data.comunidad1,
+      data.comunidad2,
+      data.telefono,
+      data.fecha_nacimiento,
+      data.nombre_tutor,
+      data.tel_tutor,
+      data.academico1,
+      data.academico2,
+      data.semestre,
+      data.alergia,
+      data.alergia2,
+      data.discapacidad1,
+      data.discapacidad2,
+      data.orientacion,
+      data.universidades1,
+      data.universidades2,
+      data.postulacion,
+      data.modalidad,
+      data.comentario1,
+      data.comentario2,
+      data.curso,
+      data.turno,
+      data.plan,
+      data.academia,
+      data.anio,
+      data.folio,
+      data.asesor
+    ];
+    
+    // Validar que el número de placeholders coincida con el número de valores
+    const placeholderCount = (sql.match(/\?/g) || []).length;
+    const valueCount = values.length;
+    
+    if (placeholderCount !== valueCount) {
+      console.error('❌ Error: Número de placeholders no coincide con valores');
+      console.error('SQL:', sql);
+      console.error('Placeholders:', placeholderCount);
+      console.error('Valores:', valueCount);
+      console.error('Values array:', values);
+      throw new Error(`Error de sintaxis SQL: ${placeholderCount} placeholders pero ${valueCount} valores`);
+    }
+    
+    const [result] = await db.query(sql, values);
+    return result;
+  } catch (error) {
+    // Log del error completo para depuración
+    console.error('❌ Error al insertar estudiante:', {
+      code: error.code,
+      sqlMessage: error.sqlMessage,
+      message: error.message,
+      sqlState: error.sqlState
+    });
+    
+    // Si falla porque no existen las columnas, intentar sin ellas
+    if (error.code === 'ER_BAD_FIELD_ERROR' && (
+      error.sqlMessage?.includes('apellido_paterno') || 
+      error.sqlMessage?.includes('apellido_materno') ||
+      error.sqlMessage?.includes("Unknown column 'apellido_paterno'") ||
+      error.sqlMessage?.includes("Unknown column 'apellido_materno'")
+    )) {
+      console.warn('⚠️ Columnas apellido_paterno/apellido_materno no existen, usando solo apellidos');
+      try {
+        sql = 'INSERT INTO estudiantes (nombre, apellidos, email, foto, grupo, comunidad1, comunidad2, telefono, fecha_nacimiento, nombre_tutor, tel_tutor, academico1, academico2, semestre, alergia, alergia2, discapacidad1, discapacidad2, orientacion, universidades1, universidades2, postulacion, modalidad, comentario1, comentario2, curso, turno, plan, academia, anio, folio, asesor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        values = [
+          data.nombre, 
+          data.apellidos || `${data.apellido_paterno || ''} ${data.apellido_materno || ''}`.trim(),
+          data.email, 
+          data.foto, 
+          data.grupo,
+          data.comunidad1, 
+          data.comunidad2, 
+          data.telefono, 
+          data.fecha_nacimiento,
+          data.nombre_tutor, 
+          data.tel_tutor, 
+          data.academico1, 
+          data.academico2, 
+          data.semestre, 
+          data.alergia, 
+          data.alergia2, 
+          data.discapacidad1, 
+          data.discapacidad2, 
+          data.orientacion, 
+          data.universidades1, 
+          data.universidades2, 
+          data.postulacion, 
+          data.modalidad,
+          data.comentario1, 
+          data.comentario2, 
+          data.curso, 
+          data.turno,
+          data.plan, 
+          data.academia,
+          data.anio, 
+          data.folio,
+          data.asesor
+        ];
+        const [result] = await db.query(sql, values);
+        console.log('✅ Estudiante creado exitosamente (sin columnas separadas)');
+        return result;
+      } catch (fallbackError) {
+        console.error('❌ Error en fallback (sin columnas separadas):', fallbackError);
+        throw fallbackError;
+      }
+    }
+    // Si es otro tipo de error, lanzarlo
+    throw error;
+  }
 };
 
 // Obtener todos los usuarios
 export const ObtenerUsuarios = (callback) => {
   const sql = 'SELECT * FROM estudiantes';
-  db.query(sql, callback);
+  // Bridge promise-based pool to callback signature
+  db.query(sql)
+    .then(([rows]) => callback(null, rows))
+    .catch((err) => callback(err));
 };
 
 // Obtener un solo usuario por ID
@@ -101,7 +197,9 @@ export const updateComprobante = async (id, data) => {
 // Eliminar un usuario
 export const deleteUsuario = (id, callback) => {
   const sql = 'DELETE FROM estudiantes WHERE id = ?';
-  db.query(sql, [id], callback);
+  db.query(sql, [id])
+    .then(([result]) => callback(null, result))
+    .catch((err) => callback(err));
 };
 
 export const obtenerUltimoFolio = async () => {

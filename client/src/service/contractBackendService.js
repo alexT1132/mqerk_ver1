@@ -4,7 +4,7 @@
  */
 
 // Configuración base de la API
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = (import.meta?.env?.VITE_API_URL) || '/api';
 
 /**
  * Servicio para manejar contratos con el backend

@@ -741,10 +741,10 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
 
   if (effectiveLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-lg font-medium text-gray-700">Cargando calendario...</p>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8 border-2 border-violet-200/50 text-center ring-2 ring-violet-100/50">
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
+          <p className="text-sm sm:text-base md:text-lg font-extrabold text-violet-700">Cargando calendario...</p>
         </div>
       </div>
     );
@@ -752,45 +752,49 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
 
   if (effectiveError) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-red-50">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-red-200 text-center">
-          <div className="text-4xl mb-4">📅</div>
-          <p className="text-lg font-medium text-red-600">Error al cargar el calendario: {effectiveError}</p>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-red-50 via-rose-50 to-red-50">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8 border-2 border-red-200 text-center ring-2 ring-red-100/50">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-gradient-to-br from-red-100 to-rose-100 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 sm:w-10 sm:h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <p className="text-sm sm:text-base md:text-lg font-extrabold text-red-600">Error al cargar el calendario: {effectiveError}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white p-3 sm:p-6 font-inter text-gray-800">
+    <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 lg:py-8 font-inter text-gray-800">
   {/* Portal root se declara en client/index.html */}
       
       <div className="max-w-7xl mx-auto">
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-6 lg:gap-8">
           
-          <div className="space-y-4 sm:space-y-6">
-            <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <div className="space-y-3 sm:space-y-4 md:space-y-6">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight">
               AGENDA / CALENDARIO
             </h2>
             
-            <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-visible">
-              <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
-                <button onClick={goToPrevMonth} className="p-1.5 sm:p-2 rounded-full hover:bg-white/20 transition-colors duration-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <div className="w-full max-w-sm bg-white border-2 border-violet-200/50 rounded-xl sm:rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-visible ring-2 ring-violet-100/50">
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg">
+                <button onClick={goToPrevMonth} className="p-1.5 sm:p-2 rounded-xl hover:bg-white/20 transition-all duration-200 active:scale-95 touch-manipulation border border-white/20">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
                   </svg>
                 </button>
-                <h4 className="text-base sm:text-lg font-bold">{currentMonthName} {currentYear}</h4>
-                <button onClick={goToNextMonth} className="p-1.5 sm:p-2 rounded-full hover:bg-white/20 transition-colors duration-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <h4 className="text-sm sm:text-base md:text-lg font-extrabold">{currentMonthName} {currentYear}</h4>
+                <button onClick={goToNextMonth} className="p-1.5 sm:p-2 rounded-xl hover:bg-white/20 transition-all duration-200 active:scale-95 touch-manipulation border border-white/20">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
                   </svg>
                 </button>
               </div>
               
-              <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+              <div className="grid grid-cols-7 bg-gradient-to-r from-violet-50/50 via-indigo-50/50 to-purple-50/50 border-b-2 border-violet-200/50">
                 {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(day => (
-                  <div key={day} className="p-2 sm:p-3 text-center text-xs sm:text-sm font-bold text-gray-600">
+                  <div key={day} className="p-1.5 sm:p-2 md:p-3 text-center text-[10px] sm:text-xs md:text-sm font-extrabold text-violet-700">
                     {day}
                   </div>
                 ))}
@@ -812,7 +816,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                   const eventsOnDay = currentEvents.filter(event => event.date === cellDateString);
                   const isToday = cellDateString === todayString;
 
-                  let dayClasses = `p-2 sm:p-3 h-10 sm:h-12 flex items-center justify-center border border-gray-100 relative group cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md hover:z-10`;
+                  let dayClasses = `p-1 sm:p-2 md:p-3 h-8 sm:h-10 md:h-12 flex items-center justify-center border-2 border-gray-200 relative group cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md hover:z-10 touch-manipulation active:scale-95`;
                   let hasEventColor = false;
                   
                   const paymentEventOnDay = eventsOnDay.find(event => event.type === "Fecha de pago");
@@ -857,7 +861,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                       className={dayClasses}
                       onClick={() => isMobile() ? handleDayClick(eventsOnDay, cellDateString) : null}
                     >
-          <span className="font-medium text-sm sm:text-base relative">
+          <span className="font-extrabold text-[10px] sm:text-xs md:text-sm relative">
                         {day.date}
                         {/* Estrella para recordatorios de admin - Posicionada en esquina superior izquierda */}
                         {eventsOnDay.some(event => event.isReminder && event.createdBy === 'admin') && (
@@ -976,36 +980,44 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                 })}
               </div>
               
-              <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-center">
+              <div className="p-3 sm:p-4 border-t-2 border-violet-200/50 bg-gradient-to-r from-violet-50/50 via-indigo-50/50 to-purple-50/50 flex justify-center">
                 <button
                   onClick={() => setIsReminderCreationModalOpen(true)}
-                  className="px-3 py-2 sm:px-4 bg-gradient-to-r from-teal-400 to-cyan-500 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md hover:from-teal-500 hover:to-cyan-600 transition-all duration-200 flex items-center"
+                  className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white text-xs sm:text-sm font-extrabold rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 active:scale-95 touch-manipulation ring-2 ring-violet-200/50"
                 >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
                   </svg>
-                  Crear Recordatorio
+                  <span className="hidden xs:inline">Crear Recordatorio</span>
+                  <span className="xs:hidden">Crear</span>
                 </button>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 w-fit hover:shadow-xl transition-shadow duration-300">
-              <h4 className="text-sm font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Leyenda de Eventos
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-violet-200/50 p-4 sm:p-5 w-full hover:shadow-2xl transition-all duration-300 ring-2 ring-violet-100/50">
+              <h4 className="text-sm sm:text-base md:text-lg font-extrabold mb-3 sm:mb-4 flex items-center gap-2">
+                <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200/50">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                  </svg>
+                </div>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">
+                  Leyenda de Eventos
+                </span>
               </h4>
-              <ul className="space-y-2 text-xs text-gray-700">
+              <ul className="space-y-2 sm:space-y-2.5 text-xs sm:text-sm text-gray-700">
                 {Object.entries(legendDotColors).map(([type, colorClass]) => (
-                  <li key={type} className="flex items-center">
-                    <span className={`w-3 h-3 rounded-full ${colorClass} mr-3 flex-shrink-0`}></span>
-                    <span className="font-medium">{type}</span>
+                  <li key={type} className="flex items-center gap-2 sm:gap-3 group">
+                    <span className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full ${colorClass} ring-2 ring-white shadow-md group-hover:scale-110 transition-transform duration-200 flex-shrink-0`}></span>
+                    <span className="font-extrabold text-gray-800">{type}</span>
                   </li>
                 ))}
               </ul>
               
               {isMobile() && (
-                <div className="mt-4 pt-3 border-t border-gray-200">
-                  <p className="text-xs text-blue-600 flex items-center">
-                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="mt-4 pt-3 border-t-2 border-violet-200/50">
+                  <p className="text-[10px] sm:text-xs text-violet-600 font-semibold flex items-center gap-1.5 bg-violet-50 px-2 py-1.5 rounded-lg border border-violet-200">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     Toca los días con eventos para ver detalles
@@ -1015,19 +1027,19 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
             </div>
           </div>
 
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-3 sm:space-y-4 md:space-y-6">
             {/* Título completo y contador fijo a la derecha */}
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] items-end gap-2 sm:gap-3">
-              <h2 className="text-xl sm:text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight">
                 EVENTOS Y ACTIVIDADES IMPORTANTES
               </h2>
-              <span className="inline-flex items-center justify-self-start sm:justify-self-end px-2.5 py-1 bg-blue-100 text-blue-700 text-xs sm:text-sm font-medium rounded-full w-fit whitespace-nowrap">
+              <span className="inline-flex items-center justify-self-start sm:justify-self-end px-2.5 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-violet-100 to-indigo-100 text-violet-700 text-xs sm:text-sm font-extrabold rounded-full w-fit whitespace-nowrap border-2 border-violet-200 shadow-md ring-1 ring-violet-100/50">
                 {importantEvents.length} pendiente{importantEvents.length !== 1 ? 's' : ''}
               </span>
             </div>
             
             {/* Lista de eventos con scroll y más color */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-violet-200/50 overflow-hidden shadow-xl ring-2 ring-violet-100/50">
               {/* Estilos personalizados para el scroll */}
               <style dangerouslySetInnerHTML={{ __html: `
                 .events-scroll-container::-webkit-scrollbar {
@@ -1052,38 +1064,38 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
               `}} />
               
               {importantEvents.length > 0 ? (
-                <div className="max-h-[360px] sm:max-h-[450px] overflow-y-auto divide-y divide-gray-100 events-scroll-container">
+                <div className="max-h-[360px] sm:max-h-[450px] overflow-y-auto divide-y divide-violet-100/50 events-scroll-container">
                   {importantEvents.map((event, index) => (
-                    <div key={event.id} className="p-3 sm:p-4 hover:bg-gray-50 transition-colors duration-200">
-                      <div className="flex items-start gap-2.5 sm:gap-4">
+                    <div key={event.id} className="p-3 sm:p-4 hover:bg-gradient-to-r hover:from-violet-50/50 hover:to-indigo-50/50 transition-all duration-200">
+                      <div className="flex items-start gap-2.5 sm:gap-3 md:gap-4">
                         {/* Fecha con color - responsive */}
                         <div className="flex-shrink-0">
-                          <div className={`text-center min-w-[52px] sm:min-w-[70px] p-1.5 sm:p-3 rounded-lg ${
+                          <div className={`text-center min-w-[50px] sm:min-w-[60px] md:min-w-[70px] p-1.5 sm:p-2 md:p-3 rounded-xl sm:rounded-2xl border-2 shadow-md ${
                             event.isPayment && !event.paid 
-                              ? 'bg-red-50 border border-red-200' 
+                              ? 'bg-gradient-to-br from-red-50 to-rose-50 border-red-300' 
                               : event.isReminder 
-                                ? `${event.priorityColor.replace('bg-', 'bg-')}-50 border border-${event.priorityColor.replace('bg-', '')}-200`
-                                : 'bg-blue-50 border border-blue-200'
+                                ? `${event.priorityColor.replace('bg-', 'bg-gradient-to-br from-')}-50 border-${event.priorityColor.replace('bg-', '')}-300`
+                                : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300'
                           }`}>
-                            <div className={`text-[11px] sm:text-xs font-medium uppercase ${
-                              event.isPayment && !event.paid 
-                                ? 'text-red-600' 
-                                : event.isReminder 
-                                  ? `text-${event.priorityColor.replace('bg-', '')}-700`
-                                  : 'text-blue-600'
-                            }`}>
-                              {new Date(event.date + 'T00:00:00').toLocaleString('es-ES', { month: 'short' }).replace('.', '')}
-                            </div>
-                            <div className={`text-lg sm:text-2xl font-bold ${
+                            <div className={`text-[10px] sm:text-[11px] md:text-xs font-extrabold uppercase ${
                               event.isPayment && !event.paid 
                                 ? 'text-red-700' 
                                 : event.isReminder 
-                                  ? `text-${event.priorityColor.replace('bg-', '')}-800`
+                                  ? `text-${event.priorityColor.replace('bg-', '')}-700`
                                   : 'text-blue-700'
+                            }`}>
+                              {new Date(event.date + 'T00:00:00').toLocaleString('es-ES', { month: 'short' }).replace('.', '')}
+                            </div>
+                            <div className={`text-base sm:text-xl md:text-2xl font-extrabold ${
+                              event.isPayment && !event.paid 
+                                ? 'text-red-800' 
+                                : event.isReminder 
+                                  ? `text-${event.priorityColor.replace('bg-', '')}-800`
+                                  : 'text-blue-800'
                             }`}>
                               {new Date(event.date + 'T00:00:00').getDate()}
                             </div>
-                            <div className="text-[10px] sm:text-xs text-gray-500">
+                            <div className="text-[9px] sm:text-[10px] md:text-xs text-gray-600 font-semibold">
                               {new Date(event.date + 'T00:00:00').toLocaleString('es-ES', { year: 'numeric' })}
                             </div>
                           </div>
@@ -1203,7 +1215,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                               {event.isPayment && !event.paid && (
                                 <button
                                   onClick={() => handleOpenPaymentModal(event)}
-                                  className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105"
+                                  className="w-full sm:w-auto px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white text-xs sm:text-sm font-extrabold rounded-xl sm:rounded-2xl hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 touch-manipulation ring-2 ring-violet-200/50"
                                 >
                                   💳 Pagar
                                 </button>
@@ -1216,14 +1228,14 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                    <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                <div className="text-center py-8 sm:py-12">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 bg-gradient-to-br from-violet-100 via-indigo-100 to-purple-100 rounded-full flex items-center justify-center shadow-lg ring-2 ring-violet-200/50">
+                    <svg className="w-7 h-7 sm:w-8 sm:h-8 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
                   </div>
-                  <h3 className="text-sm font-medium text-gray-900 mb-1">No hay eventos pendientes</h3>
-                  <p className="text-xs text-gray-500">Todos los eventos están al día</p>
+                  <h3 className="text-sm sm:text-base font-extrabold text-gray-900 mb-1">No hay eventos pendientes</h3>
+                  <p className="text-xs sm:text-sm text-gray-500 font-medium">Todos los eventos están al día</p>
                 </div>
               )}
             </div>

@@ -1,5 +1,6 @@
 // src/components/SideBar_Alumno_comp.jsx
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Lock, Unlock } from 'lucide-react';
 import { useStudent } from '../../context/StudentContext.jsx';
@@ -14,10 +15,61 @@ import { useStudent } from '../../context/StudentContext.jsx';
  * @param {boolean} props.isSidebarOpen - Indica si el sidebar de escritorio está abierto (para mostrar/ocultar texto).
  * @param {function} [props.onClick] - Función opcional para manejar clics (principalmente para cerrar el menú móvil).
  */
+// Tooltip flotante usando Portal para evitar clipping por overflow
+function HoverTooltip({ anchorRef, text, show }) {
+  const [style, setStyle] = useState({ display: 'none' });
+  useEffect(() => {
+    let rafId = null;
+    const updateNow = () => {
+      if (!show || !anchorRef?.current) {
+        setStyle({ display: 'none' });
+        return;
+      }
+      const rect = anchorRef.current.getBoundingClientRect();
+      const top = rect.top + rect.height / 2;
+      const left = rect.right + 12; // 12px de separación
+      setStyle({
+        position: 'fixed',
+        top: `${top}px`,
+        left: `${left}px`,
+        transform: 'translateY(-50%)',
+        zIndex: 9999,
+        pointerEvents: 'none',
+      });
+    };
+    const scheduleUpdate = () => {
+      if (rafId != null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        updateNow();
+      });
+    };
+    scheduleUpdate();
+    if (!show) return;
+    window.addEventListener('scroll', scheduleUpdate, true);
+    window.addEventListener('resize', scheduleUpdate);
+    return () => {
+      if (rafId != null) cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', scheduleUpdate, true);
+      window.removeEventListener('resize', scheduleUpdate);
+    };
+  }, [show, anchorRef]);
+
+  if (!show) return null;
+  return createPortal(
+    <div style={style} role="tooltip" aria-hidden="true" className="bg-gray-900/90 text-white px-3 py-2 rounded-lg shadow-xl backdrop-blur-sm border border-gray-700/50 text-sm font-medium">
+      {text}
+    </div>,
+    document.body
+  );
+}
+
 function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onClick: mobileOnClick, activo, sectionKey }) {
   const { activeSection, setActiveSectionHandler } = useStudent();
   const location = useLocation();
   const navigate = useNavigate();
+  const linkRef = useRef(null);
+  const [hovered, setHovered] = useState(false);
   // Detectar logout tanto si llega como ruta absoluta como anidada
   const isLogout = to === "/logout" || to === "/alumno/logout";
   const isInicio = to === "/alumno/" || to === "/alumno";
@@ -60,6 +112,7 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onCli
   return (
     <li className="group flex justify-start items-center h-fit gap-1.5 relative">
       <Link
+        ref={linkRef}
         to={to}
         onClick={handleLinkClick}
         className={`
@@ -69,8 +122,13 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onCli
             : "text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 hover:text-purple-700 hover:shadow-md hover:transform hover:scale-[1.01]"}
           ${isLogout ? "hover:bg-red-50 hover:text-red-600" : ""}
         `}
-        tabIndex={0}
+        aria-label={NombreElemento}
+        aria-current={isActive ? 'page' : undefined}
         aria-disabled={false}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onFocus={() => setHovered(true)}
+        onBlur={() => setHovered(false)}
       >
         <div className="flex-shrink-0">
           {React.cloneElement(Icono, {
@@ -87,9 +145,7 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onCli
             {NombreElemento}
           </span>
         ) : (
-          <span className="hidden group-hover:block absolute left-full top-1/2 -translate-y-1/2 ml-3 bg-gray-900/90 text-white px-3 py-2 rounded-lg shadow-xl z-[3000] opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none backdrop-blur-sm border border-gray-700/50 text-sm font-medium">
-            {NombreElemento}
-          </span>
+          <HoverTooltip anchorRef={linkRef} text={NombreElemento} show={hovered} />
         )}
       </Link>
     </li>
@@ -134,6 +190,14 @@ const LogoActividades = (
 const LogoSimulaciones = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+  </svg>
+);
+
+const LogoRecursos = (
+  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+    <line x1="12" y1="11" x2="12" y2="17"/>
+    <line x1="9" y1="14" x2="15" y2="14"/>
   </svg>
 );
 
@@ -187,6 +251,7 @@ const alumnoMenuItems = [
   { label: "Mi Perfil", path: "/alumno/mi-perfil", icon: LogoMiPerfil },
   { label: "Actividades", path: "/alumno/actividades", icon: LogoActividades },
   { label: "Simulaciones", path: "/alumno/simulaciones", icon: LogoSimulaciones },
+  { label: "Recursos", path: "/alumno/recursos", icon: LogoRecursos },
   { label: "Feedback", path: "/alumno/feedback", icon: LogoFeedback },
   { label: "Asistencia", path: "/alumno/asistencia", icon: LogoAsistencia },
   { label: "Calendario", path: "/alumno/calendario", icon: LogoCalendario },
@@ -202,12 +267,20 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   // Pin colapsado: no se expande con hover
   const [isPinnedCollapsed, setIsPinnedCollapsed] = useState(false);
+  // Estado de viewport para decisiones responsivas (tablet/portrait)
+  const [viewport, setViewport] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1024,
+    height: typeof window !== 'undefined' ? window.innerHeight : 768,
+    portrait: typeof window !== 'undefined' ? window.matchMedia('(orientation: portrait)').matches : false,
+  });
   const timeoutRef = useRef(null);
   // Ventana de protección post-click para evitar colapsos por reflow/navegación
   const freezeUntilRef = useRef(0);
   const sidebarRef = useRef(null);
   // Ventana de gracia tras fijar colapsado para ignorar hovers residuales
   const pinnedGraceUntilRef = useRef(0);
+  // Apertura transitoria (especialmente útil en tablets): permite abrir unos segundos aunque esté fijado colapsado
+  const transientUntilRef = useRef(0);
   // Constantes de timing
   const HOVER_CLOSE_DELAY = 200;
   const CLICK_FREEZE_MS = 500;
@@ -220,7 +293,18 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
     });
   };
 
-  const sidebarWidth = isSidebarOpen ? 'w-64' : 'w-[80px]'; // Incrementado el ancho expandido para mejor visibilidad
+  const openTransient = (ms = 5000) => {
+    transientUntilRef.current = Date.now() + ms;
+    setIsSidebarOpen(true);
+  };
+
+  // Determinar si es tablet a partir del estado de viewport (evita usar window aún)
+  const isTablet = viewport.width >= 640 && viewport.width < 1024;
+
+  // Ancho responsivo: detener animación de width (transform-only)
+  const sidebarWidth = isSidebarOpen
+    ? (isTablet ? 'w-60' : 'w-56 md:w-60 lg:w-64')
+    : (isTablet ? 'w-20' : 'w-16 md:w-20');
 
   const handleMouseEnter = () => {
     // Bloquear apertura si está fijado o dentro de la ventana de gracia tras fijar
@@ -234,20 +318,26 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
 
   const handleMouseLeave = (e) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    const relatedTarget = e?.relatedTarget;
-    const isNode = (n) => !!(n && typeof n === 'object' && 'nodeType' in n);
-    timeoutRef.current = setTimeout(() => {
-      if (
-        relatedTarget &&
-        isNode(relatedTarget) &&
-        sidebarRef.current &&
-        sidebarRef.current.contains(relatedTarget)
-      ) return;
-      if (sidebarRef.current && sidebarRef.current.matches(':hover')) return;
-      if (Date.now() < freezeUntilRef.current) return;
-      setSidebarOpenSafe(false);
-      timeoutRef.current = null;
-    }, HOVER_CLOSE_DELAY);
+    const scheduleCloseCheck = (delay = HOVER_CLOSE_DELAY) => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        // Si aún está en hover, no cerramos
+        if (sidebarRef.current && sidebarRef.current.matches(':hover')) {
+          timeoutRef.current = null;
+          return;
+        }
+        const now = Date.now();
+        const remaining = freezeUntilRef.current - now;
+        if (remaining > 0) {
+          // Esperar a que termine la ventana de protección post-click y reintentar
+          scheduleCloseCheck(remaining + HOVER_CLOSE_DELAY);
+          return;
+        }
+        setSidebarOpenSafe(false);
+        timeoutRef.current = null;
+      }, delay);
+    };
+    scheduleCloseCheck();
   };
 
   const togglePinned = () => {
@@ -270,7 +360,10 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
   useEffect(() => {
     try {
       const pc = localStorage.getItem('sidebarPinnedCollapsed') === 'true';
-      if (pc) {
+      const prefersUnset = localStorage.getItem('sidebarPinnedCollapsed') === null;
+      const isTablet = viewport.width >= 640 && viewport.width < 1024;
+      const shouldAutoCollapse = prefersUnset && (isTablet || viewport.portrait);
+      if (pc || shouldAutoCollapse) {
         setIsPinnedCollapsed(true);
         setSidebarOpenSafe(false);
         pinnedGraceUntilRef.current = Date.now() + 800;
@@ -279,9 +372,45 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Escuchar cambios de tamaño/orientación
+  useEffect(() => {
+    const handleResize = () => {
+      setViewport({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        portrait: window.matchMedia('(orientation: portrait)').matches,
+      });
+    };
+    let resizeTimeout;
+    const debouncedHandleResize = () => {
+      if (resizeTimeout) clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(handleResize, 200);
+    };
+    window.addEventListener('resize', debouncedHandleResize);
+    window.addEventListener('orientationchange', debouncedHandleResize);
+    // Cerrar al hacer tap fuera en tablets
+    const handleOutsideTap = (e) => {
+      const isTabletNow = window.innerWidth >= 640 && window.innerWidth < 1024;
+      if (!isTabletNow) return;
+      if (!sidebarRef.current) return;
+      if (!isSidebarOpen) return;
+      if (sidebarRef.current.contains(e.target)) return;
+      setIsSidebarOpen(false);
+    };
+    document.addEventListener('click', handleOutsideTap, true);
+    return () => {
+      if (resizeTimeout) clearTimeout(resizeTimeout);
+      window.removeEventListener('resize', debouncedHandleResize);
+      window.removeEventListener('orientationchange', debouncedHandleResize);
+      document.removeEventListener('click', handleOutsideTap, true);
+    };
+  }, []);
+
   // Efecto de seguridad: si se fija colapsado y quedó abierto por alguna carrera, cerrarlo
   useEffect(() => {
     if (isPinnedCollapsed && isSidebarOpen) {
+      // Si está abierto de forma transitoria, mantenerlo hasta que expire
+      if (Date.now() < transientUntilRef.current) return;
       setSidebarOpenSafe(false);
     }
   }, [isPinnedCollapsed, isSidebarOpen]);
@@ -294,29 +423,44 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
     };
   }, []);
 
+  // En tablets: quitamos autocierre para evitar jank; se cierra con tap fuera o tap en el propio sidebar
+
   // Sincroniza el overlay de blur con el estado real del sidebar.
   // Si por cualquier motivo el sidebar se cierra, el overlay se limpia automáticamente.
   useEffect(() => {
   if (setDesktopSidebarOpen) setDesktopSidebarOpen(isSidebarOpen);
   }, [isSidebarOpen, setDesktopSidebarOpen]);
 
+  // En tablets respetamos el estado fijado; si está fijado, no debe abrirse
+  const effectivePinned = isPinnedCollapsed;
+
   return (
     <aside
       ref={sidebarRef}
-      className={`max-sm:hidden flex flex-col fixed ${sidebarWidth} shadow-lg z-[2000] top-[80px] h-[calc(100vh-80px)] bg-white/95 backdrop-blur-sm border-r border-gray-200/80 transition-all duration-150 ease-out overflow-visible`}
+  className={`hidden sm:flex flex-col fixed ${sidebarWidth} ${isTablet ? 'shadow-md' : 'shadow-lg'} z-[2000] top-[80px] h-[calc(100vh-80px)] bg-white/95 ${isTablet ? 'backdrop-blur-[2px]' : 'backdrop-blur-sm'} border-r border-gray-200/80 ${isTablet ? (isSidebarOpen ? 'translate-x-0' : '-translate-x-0') : ''} transition-transform duration-200 ease-out transform-gpu will-change-transform overflow-y-auto overflow-x-visible no-scrollbar`}
       style={{
-        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(0)',
+        transform: 'translateX(0)',
         opacity: 1,
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)'
+        backdropFilter: isTablet ? 'blur(2px)' : 'blur(10px)',
+        WebkitBackdropFilter: isTablet ? 'blur(2px)' : 'blur(10px)'
       }}
       aria-label="Sidebar de escritorio de alumno"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+  onMouseEnter={isTablet ? undefined : handleMouseEnter}
+  onMouseLeave={isTablet ? undefined : handleMouseLeave}
       onClickCapture={() => { freezeUntilRef.current = Date.now() + CLICK_FREEZE_MS; }}
-      onFocus={() => { /* Evitar expansión accidental al tabular */ if (!isPinnedCollapsed) setSidebarOpenSafe(true); }}
+      onClick={() => {
+        // En tablets/touch sin hover: toggle manual, pero si está fijado, no abrir
+        if (isTablet) {
+          if (effectivePinned) return; // bloqueado: no se abre
+          setIsSidebarOpen(prev => !prev); // alternar abrir/cerrar
+          return;
+        }
+        // Desktop: permitir abrir con foco/click si no está fijado
+        if (!effectivePinned && !isSidebarOpen) setSidebarOpenSafe(true);
+      }}
+  onFocus={() => { /* En tablets no abrir al enfocar; en desktop sí */ if (!isTablet && !effectivePinned) setSidebarOpenSafe(true); }}
       onBlur={(e) => {
-        if (isPinnedCollapsed) return; // si está fijado colapsado, ya está cerrado
+            if (isPinnedCollapsed) return; // si está fijado colapsado, ya está cerrado
         // Cerrar si el foco sale totalmente del sidebar
         if (sidebarRef.current && !sidebarRef.current.contains(e.relatedTarget)) {
           setSidebarOpenSafe(false);
@@ -335,8 +479,8 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
           {isPinnedCollapsed ? <Lock size={16} /> : <Unlock size={16} />}
         </button>
       </div>
-      <nav className="h-full">
-        <ul className="p-4 h-full flex flex-col list-none">
+      <nav className="h-full overflow-visible">
+        <ul className="p-4 h-full flex flex-col list-none overflow-visible relative">
           {/* Grupo superior de elementos de navegación principales */}
           <div className="space-y-2">
             {alumnoMenuItems.map((item) => (
@@ -398,8 +542,8 @@ export function SideBarSm_Alumno_comp({ isMenuOpen, closeMenu, activo }) {
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)'
         }}>
-        <nav className="h-full">
-          <ul className="p-4 space-y-2 h-full flex flex-col justify-between overflow-y-auto list-none">
+        <nav className="h-full overflow-visible">
+          <ul className="p-3 space-y-2 h-full flex flex-col justify-between overflow-y-auto overflow-x-visible no-scrollbar list-none relative">
             {/* Grupo superior de elementos de navegación móvil */}
             <div>
               {alumnoMenuItems.map((item) => (<ElementoSideBarAlumno

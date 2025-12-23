@@ -1,8 +1,8 @@
-import Logo from "../assets/MQerk_logo.png";
+import Logo from "../assets/MQerK_logo.webp";
 
 export default function FooterNeo({
-  brand = "MQerkAcademy",
-  tagline = "MQerk Academy",
+  brand = "MQerKAcademy",
+  tagline = "MQerKAcademy",
   logoSrc = Logo,
   year = new Date().getFullYear(),
   links = {
@@ -19,14 +19,8 @@ export default function FooterNeo({
     ],
   },
   legal = {
-    terms: { href: "/terminos", label: "Términos y condiciones" },
-    privacy: { href: "/privacidad", label: "Política de privacidad" },
-  },
-  socials = {
-    facebook: "https://facebook.com/",
-    instagram: "https://instagram.com/",
-    youtube: "https://youtube.com/",
-    tiktok: "https://tiktok.com/",
+    terms: { href: "/terminos_y_condiciones", label: "Términos y condiciones" },
+    privacy: { href: "/politicas_de_privacidad", label: "Política de privacidad" },
   },
 }) {
   return (
@@ -51,10 +45,37 @@ export default function FooterNeo({
               </div>
             </div>
             <div className="mt-6 flex items-center gap-3">
-              <Social  label="Facebook"><IconFacebook/></Social>
-              <Social  label="Instagram" variant="outline"><IconInstagram/></Social>
-              <Social  label="YouTube"><IconYoutube/></Social>
-              <Social  label="TikTok"><IconTiktok/></Social>
+              <Social 
+                href='https://www.facebook.com/MQerKAcademy' 
+                label="Facebook"
+              >
+                <IconFacebook/>
+              </Social>
+              <Social 
+                href='https://www.instagram.com/MQerKAcademy' 
+                label="Instagram" 
+                variant="outline"
+              >
+                <IconInstagram/>
+              </Social>
+              <Social 
+                href='https://www.youtube.com/@mqerkacademy' 
+                label="YouTube"
+              >
+                <IconYoutube/>
+              </Social>
+              <Social 
+                href='https://www.tiktok.com/@mqerkacademy_oficial?_r=1&_t=ZS-91NNGGqfLYC' 
+                label="TikTok"
+              >
+                <IconTiktok/>
+              </Social>
+              <Social 
+                href='https://open.spotify.com/user/mvn8ly2def6rlqnbgrck8p85h?si=rBP1ehWvQRqjLVivpqN4jA' 
+                label="Spotify"
+              >
+                <IconSpotify/>
+              </Social>
             </div>
           </div>
 
@@ -76,8 +97,8 @@ export default function FooterNeo({
           <div>
             <h4 className="footer-title">Contacto</h4>
             <ul className="space-y-2">
-              <li><a href="mailto:mqerkacademycienytec@gmail.com" className="footer-link">mqerkacademycienytec@gmail.com</a></li>
-              <li><a href="tel:+520000000000" className="footer-link">+(52) 287 151 5760</a></li>
+              <li><a className="footer-link">mqerkacademycienytec@gmail.com</a></li>
+              <li><a className="footer-link">+(52) 287 151 5760</a></li>
               <li><span className="text-sm text-neutral-500 dark:text-neutral-400">Tuxtepec, Oax.</span></li>
             </ul>
           </div>
@@ -87,9 +108,10 @@ export default function FooterNeo({
         <div className="mt-10 flex flex-col-reverse items-start gap-4 border-t border-neutral-200 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800">
           <p className="text-sm">© {year} {brand}. Todos los derechos reservados.</p>
           <ul className="flex items-center gap-5 text-sm">
-            <li><a href={legal.terms.href} className="footer-link">{legal.terms.label}</a></li>
+            <li><a target="_blank" rel="noopener noreferrer" href={legal.terms.href} className="footer-link">{legal.terms.label}</a></li>
             <li className="h-4 w-px bg-neutral-300 dark:bg-neutral-700" />
-            <li><a href={legal.privacy.href} className="footer-link">{legal.privacy.label}</a></li>
+            <li><a target="_blank" rel="noopener noreferrer" href={legal.privacy.href} className="footer-link">
+              {legal.privacy.label}</a></li>
           </ul>
         </div>
       </div>
@@ -116,7 +138,15 @@ function Social({ href, label, children, variant = "solid" }){
   const base = "inline-flex h-10 w-10 items-center justify-center rounded-xl transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3c26cc]/40";
   
   return (
-    <a href={href} aria-label={label} className={`${base}`}>{children}</a>
+    <a 
+      href={href} 
+      aria-label={label} 
+      className={`${base}`}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {children}
+    </a>
   );
 }
 
@@ -148,6 +178,13 @@ function IconTiktok(){
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
       <path d="M20 8.3a6.5 6.5 0 0 1-4-1.8v7.1a5.6 5.6 0 1 1-4.8-5.6v2.8a2.9 2.9 0 1 0 2.1 2.8V1.5H16a6.4 6.4 0 0 0 4 3.7V8.3Z" />
+    </svg>
+  );
+}
+function IconSpotify(){
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.73 14.52c-.15.23-.42.3-.66.15-1.82-1.11-4.11-1.36-6.81-.75-.26.06-.52-.1-.58-.36-.06-.26.1-.52.36-.58 2.96-.67 5.49-.38 7.52.87.24.14.31.42.17.67zm.94-2.09c-.19.29-.59.38-.88.19-2.08-1.28-5.25-1.65-7.72-.9-.31.09-.64-.09-.73-.4-.09-.31.09-.64.4-.73 2.83-.86 6.39-.44 8.74 1.02.29.18.38.58.19.87zm.08-2.18C14.04 11 8.78 10.76 5.68 11.58c-.37.1-.76-.12-.86-.49-.1-.37.12-.76.49-.86 3.56-1 9.38-.72 12.94.86.34.15.49.56.34.9-.15.35-.56.5-.9.35z" />
     </svg>
   );
 }

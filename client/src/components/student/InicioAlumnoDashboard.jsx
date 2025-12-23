@@ -595,7 +595,7 @@ const InicioAlumnoDashboard = ({
   {/* Mostrar métricas del curso solo si NO hay bloqueo, activeSection es "inicio" y hay curso válido */}
   {!mostrarBloqueo && activeSection === 'inicio' && tieneNumCursoValido && (
         <div className={`transition-all duration-1000 ${elementsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <AlumnoDashboardMetrics showMetrics={false} />
+          <AlumnoDashboardMetrics showMetrics={true} />
         </div>
       )}
 
@@ -650,44 +650,43 @@ const InicioAlumnoDashboard = ({
           </div>
 
           {/* Layout principal para bienvenida (centrado y sin sangría lateral excesiva) */}
-          <div className="relative z-10 min-h-screen p-4 sm:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-28 lg:pt-32">
-            {/* Header con saludo animado */}
-            <div className={`text-center mb-12 lg:mb-16 transition-all duration-1000 ${elementsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-normal tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 drop-shadow-2xl animate-pulse duration-1000 hover:scale-105 transition-transform cursor-pointer break-words px-3 sm:px-4 pb-1"
-                  style={{ textWrap: 'balance' }}>
+          <div className="relative z-10 min-h-screen p-3 sm:p-4 md:p-6 lg:p-8 pt-16 sm:pt-20 md:pt-24 lg:pt-28">
+            {/* Header con saludo animado - Mejorado para móviles */}
+            <div className={`text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16 transition-all duration-1000 ${elementsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-tight sm:leading-normal tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-indigo-300 drop-shadow-2xl hover:scale-105 transition-transform cursor-pointer break-words px-2 sm:px-3 md:px-4 pb-1"
+                  style={{ textWrap: 'balance', WebkitTextStroke: '1px rgba(255, 255, 255, 0.1)' }}>
                 {getWelcomeMessage()}
               </h1>
             </div>
 
-            {/* Grid principal - responsive mejorado */}
-            <div className={`max-w-7xl mx-auto ${mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido) ? 'grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 xl:gap-12' : 'flex justify-center'} items-start`}>
+            {/* Grid principal - responsive mejorado para móviles */}
+            <div className={`max-w-7xl mx-auto ${mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido) ? 'grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 xl:gap-12' : 'flex justify-center'} items-start`}>
           
               {/* Columna izquierda - Área de comprobante O nombre del curso */}
               {(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) && (
-                <div className={`space-y-6 md:order-1 transition-all duration-1000 delay-300 ${elementsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
-                  <div className="w-full max-w-md mx-auto px-4 md:px-0">
+                <div className={`space-y-4 sm:space-y-6 md:order-1 transition-all duration-1000 delay-300 ${elementsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
+                  <div className="w-full max-w-md mx-auto px-2 sm:px-4 md:px-0">
                     
-                    {/* Mensaje de estado con efectos mejorados O nombre del curso */}
+                    {/* Mensaje de estado con efectos mejorados O nombre del curso - Optimizado para móviles */}
                     <div className="relative group mx-auto">
-                      <div className={`absolute inset-0 ${mostrarBloqueo ? 'bg-gradient-to-r from-yellow-400/30 via-amber-300/30 to-orange-400/30' : 'bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-indigo-500/30'} blur-lg rounded-xl animate-pulse`}></div>
-                      <div className={`relative ${mostrarBloqueo ? 'bg-gradient-to-r from-yellow-400/20 via-amber-300/20 to-orange-400/20' : 'bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-indigo-500/20'} backdrop-blur-lg rounded-xl p-4 sm:p-6 md:p-4 lg:p-6 border ${mostrarBloqueo ? 'border-yellow-300/40' : 'border-purple-300/40'} text-center mb-6 shadow-xl ${mostrarBloqueo ? 'shadow-yellow-500/30 hover:shadow-yellow-500/50' : 'shadow-purple-500/30 hover:shadow-purple-500/50'} transition-all duration-500 group-hover:scale-102`}>
+                      <div className={`absolute inset-0 ${mostrarBloqueo ? 'bg-gradient-to-r from-yellow-400/30 via-amber-300/30 to-orange-400/30' : 'bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-indigo-500/30'} blur-xl rounded-2xl sm:rounded-3xl`}></div>
+                      <div className={`relative ${mostrarBloqueo ? 'bg-gradient-to-r from-yellow-400/20 via-amber-300/20 to-orange-400/20' : 'bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-indigo-500/20'} backdrop-blur-lg rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 border-2 ${mostrarBloqueo ? 'border-yellow-300/50' : 'border-purple-300/50'} text-center mb-4 sm:mb-6 shadow-2xl ${mostrarBloqueo ? 'shadow-yellow-500/40 hover:shadow-yellow-500/60' : 'shadow-purple-500/40 hover:shadow-purple-500/60'} transition-all duration-500 group-hover:scale-[1.02] ring-2 ${mostrarBloqueo ? 'ring-yellow-200/30' : 'ring-purple-200/30'}`}>
                         
-                        {/* Contenido cuando está en modo bloqueo (pago) */}
+                        {/* Contenido cuando está en modo bloqueo (pago) - Mejorado para móviles */}
                         {mostrarBloqueo && (
                           <>
                             {(estadoVerificacion === 0 && !bloqueoPorPago) ? (
-                              <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-3 lg:gap-4">
-                                <div className="bg-yellow-400 rounded-full p-2 sm:p-3 md:p-2 lg:p-3 animate-pulse group-hover:animate-bounce">
-                                  <AlertTriangle size={24} className="sm:w-8 sm:h-8 md:w-6 md:h-6 lg:w-8 lg:h-8 text-yellow-900 animate-pulse" style={{
-                                    animation: 'pulse 2s infinite, heartbeat 1.5s infinite'
-                                  }} />
+                              <div className="flex flex-col items-center gap-3 sm:gap-4">
+                                <div className="bg-gradient-to-br from-yellow-400 to-amber-500 rounded-full p-3 sm:p-4 shadow-lg ring-4 ring-yellow-300/50 group-hover:scale-110 transition-transform">
+                                  <AlertTriangle size={28} className="sm:w-8 sm:h-8 text-yellow-900" />
                                 </div>
-                                <p className="text-yellow-100 font-bold text-lg sm:text-xl md:text-lg lg:text-2xl xl:text-3xl leading-relaxed group-hover:text-yellow-50 transition-colors">
+                                <p className="text-yellow-50 font-bold text-base sm:text-lg md:text-xl lg:text-2xl leading-relaxed group-hover:text-white transition-colors px-2">
                                   Debes subir tu comprobante para acceder a la plataforma completa.
                                 </p>
-                                <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-lg px-3 py-2 sm:px-4 md:px-3 lg:px-4 mt-2">
-                                  <p className="text-yellow-200 font-semibold text-xs sm:text-sm md:text-xs lg:text-sm">
-                                    📋 Sube tu comprobante de pago para continuar
+                                <div className="bg-yellow-500/30 border-2 border-yellow-400/50 rounded-xl px-4 py-2.5 sm:px-5 sm:py-3 mt-2 shadow-md">
+                                  <p className="text-yellow-100 font-semibold text-xs sm:text-sm flex items-center gap-2 justify-center">
+                                    <span className="text-base">📋</span>
+                                    <span>Sube tu comprobante de pago para continuar</span>
                                   </p>
                                 </div>
                               </div>
@@ -728,25 +727,25 @@ const InicioAlumnoDashboard = ({
                           </>
                         )}
 
-                        {/* BACKEND: Contenido cuando está verificado y con curso seleccionado */}
+                        {/* BACKEND: Contenido cuando está verificado y con curso seleccionado - Mejorado para móviles */}
                         {!mostrarBloqueo && tieneNumCursoValido && (
-                          <div className="flex flex-col items-center gap-6 py-4">
-                            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full p-4 animate-pulse group-hover:animate-bounce">
-                              <GraduationCap size={48} className="text-white" />
+                          <div className="flex flex-col items-center gap-4 sm:gap-6 py-3 sm:py-4">
+                            <div className="bg-gradient-to-br from-purple-500 via-indigo-500 to-pink-500 rounded-full p-4 sm:p-5 shadow-xl ring-4 ring-purple-300/50 group-hover:scale-110 transition-transform">
+                              <GraduationCap size={40} className="sm:w-12 sm:h-12 text-white" />
                             </div>
                             <div className="text-center">
-                              <p className="text-purple-100 font-semibold text-2xl mb-4">
+                              <p className="text-purple-100 font-bold text-lg sm:text-xl md:text-2xl mb-3 sm:mb-4">
                                 Curso Actual
                               </p>
                               {/* BACKEND: Título del curso actual desde la API */}
-                              <h3 className="text-white font-bold text-2xl sm:text-3xl md:text-2xl lg:text-4xl xl:text-5xl leading-relaxed group-hover:text-purple-100 transition-colors mb-3">
+                              <h3 className="text-white font-extrabold text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight sm:leading-relaxed group-hover:text-purple-100 transition-colors mb-3 px-2">
                                 {currentCourse.title}
                               </h3>
                               {/* BACKEND: Instructor del curso actual */}
                               {currentCourse.instructor && currentCourse.instructor !== "XXXX" && (
-                                <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
-                                  <p className="text-purple-100 text-sm font-medium">
-                                    Instructor: <span className="text-white font-semibold">{currentCourse.instructor}</span>
+                                <div className="bg-white/25 backdrop-blur-md rounded-full px-4 py-2.5 sm:px-5 sm:py-3 border-2 border-white/40 shadow-md">
+                                  <p className="text-purple-50 text-xs sm:text-sm font-semibold">
+                                    Instructor: <span className="text-white font-bold">{currentCourse.instructor}</span>
                                   </p>
                                 </div>
                               )}
@@ -796,17 +795,17 @@ const InicioAlumnoDashboard = ({
                               </div>
                             ) : (
                               <button
-                                className="w-full py-4 px-8 bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 text-white font-extrabold rounded-2xl shadow-xl text-xl hover:scale-105 hover:shadow-2xl transition-all duration-300 animate-pulse focus:outline-none focus:ring-4 focus:ring-pink-300/50 border border-white/20 group-hover:from-purple-400 group-hover:via-pink-400 group-hover:to-indigo-400"
+                                className="w-full py-3.5 sm:py-4 px-6 sm:px-8 bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 text-white font-extrabold rounded-xl sm:rounded-2xl shadow-xl text-base sm:text-lg md:text-xl hover:scale-105 active:scale-95 hover:shadow-2xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-pink-300/50 border-2 border-white/30 group-hover:from-purple-400 group-hover:via-pink-400 group-hover:to-indigo-400 touch-manipulation"
                                 onClick={() => setShowModal(true)}
                               >
-                                <div className="flex items-center justify-center gap-3">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-2xl">💳</span>
-                                    <Upload className="animate-bounce group-hover:animate-pulse" size={24} />
+                                <div className="flex items-center justify-center gap-2 sm:gap-3">
+                                  <div className="flex items-center gap-1.5 sm:gap-2">
+                                    <span className="text-xl sm:text-2xl">💳</span>
+                                    <Upload className="w-5 h-5 sm:w-6 sm:h-6 animate-bounce group-hover:animate-pulse" />
                                   </div>
                                   <div className="text-left">
-                                    <div className="font-extrabold">Ver métodos de pago</div>
-                                    <div className="text-sm font-normal opacity-90">Transferencia • Efectivo • Subir comprobante</div>
+                                    <div className="font-extrabold text-sm sm:text-base md:text-lg">Ver métodos de pago</div>
+                                    <div className="text-xs sm:text-sm font-normal opacity-90 hidden sm:block">Transferencia • Efectivo • Subir comprobante</div>
                                   </div>
                                 </div>
                               </button>
@@ -822,28 +821,28 @@ const InicioAlumnoDashboard = ({
               {/* Columna derecha - Reloj y frase */}
               <div className={`space-y-6 ${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'md:order-2' : ''} ${(!mostrarBloqueo && !tieneNumCursoValido) ? 'w-full max-w-6xl' : ''} transition-all duration-1000 delay-500 ${elementsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}>
                 
-                {/* Reloj grande con efecto 3D grueso y sólido */}
-                <div className="text-center mb-8 group">
+                {/* Reloj grande con efecto 3D grueso y sólido - Optimizado para móviles */}
+                <div className="text-center mb-6 sm:mb-8 group">
                   <div 
-                    className={`${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-7xl sm:text-8xl lg:text-9xl xl:text-[11rem] 2xl:text-[13rem]' : 'text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] 2xl:text-[11rem]'} font-bold text-white mb-4 leading-none transition-all duration-300 ${clockPulse ? 'scale-105' : 'scale-100'} group-hover:scale-105 cursor-pointer select-none`} 
+                    className={`${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-5xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[11rem] 2xl:text-[13rem]' : 'text-4xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-[10rem] 2xl:text-[11rem]'} font-bold text-white mb-3 sm:mb-4 leading-none transition-all duration-300 ${clockPulse ? 'scale-105' : 'scale-100'} group-hover:scale-105 cursor-pointer select-none`} 
                     style={{ 
                       fontFamily: 'system-ui, -apple-system, sans-serif',
                       fontWeight: '900',
                       textShadow: `
                         ${(!mostrarBloqueo && !tieneNumCursoValido) ? 
-                          '3px 3px 0px rgba(139, 92, 246, 1), 6px 6px 0px rgba(139, 92, 246, 0.9), 9px 9px 0px rgba(139, 92, 246, 0.8), 12px 12px 0px rgba(139, 92, 246, 0.7), 15px 15px 0px rgba(139, 92, 246, 0.6), 18px 18px 0px rgba(139, 92, 246, 0.5), 21px 21px 0px rgba(139, 92, 246, 0.4), 24px 24px 40px rgba(0, 0, 0, 0.8)' : 
-                          '2px 2px 0px rgba(139, 92, 246, 1), 4px 4px 0px rgba(139, 92, 246, 0.9), 6px 6px 0px rgba(139, 92, 246, 0.8), 8px 8px 0px rgba(139, 92, 246, 0.7), 10px 10px 0px rgba(139, 92, 246, 0.6), 12px 12px 0px rgba(139, 92, 246, 0.5), 14px 14px 0px rgba(139, 92, 246, 0.4), 16px 16px 25px rgba(0, 0, 0, 0.8)'
+                          '2px 2px 0px rgba(139, 92, 246, 1), 4px 4px 0px rgba(139, 92, 246, 0.9), 6px 6px 0px rgba(139, 92, 246, 0.8), 8px 8px 0px rgba(139, 92, 246, 0.7), 10px 10px 0px rgba(139, 92, 246, 0.6), 12px 12px 0px rgba(139, 92, 246, 0.5), 14px 14px 0px rgba(139, 92, 246, 0.4), 16px 16px 30px rgba(0, 0, 0, 0.8)' : 
+                          '1px 1px 0px rgba(139, 92, 246, 1), 2px 2px 0px rgba(139, 92, 246, 0.9), 3px 3px 0px rgba(139, 92, 246, 0.8), 4px 4px 0px rgba(139, 92, 246, 0.7), 5px 5px 0px rgba(139, 92, 246, 0.6), 6px 6px 0px rgba(139, 92, 246, 0.5), 7px 7px 0px rgba(139, 92, 246, 0.4), 8px 8px 20px rgba(0, 0, 0, 0.8)'
                         }
                       `,
-                      WebkitTextStroke: `${(!mostrarBloqueo && !tieneNumCursoValido) ? '3px' : '2px'} rgba(139, 92, 246, 0.3)`,
+                      WebkitTextStroke: `${(!mostrarBloqueo && !tieneNumCursoValido) ? '2px' : '1px'} rgba(139, 92, 246, 0.3)`,
                       animation: 'breathe 4s ease-in-out infinite'
                     }}
                   >
                     {hora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                   
-                  {/* Fecha pequeña con hover */}
-                  <span className={`text-purple-200 font-semibold bg-white/10 px-4 py-2 rounded-lg ${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-sm sm:text-base' : 'text-base sm:text-lg'} inline-block mx-auto hover:bg-white/20 transition-all duration-300 cursor-pointer`}>
+                  {/* Fecha pequeña con hover - Mejorado para móviles */}
+                  <span className={`text-purple-200 font-semibold bg-white/15 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl ${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'} inline-block mx-auto hover:bg-white/25 transition-all duration-300 cursor-pointer border border-white/20 shadow-md`}>
                     {hora.toLocaleDateString('es-ES', { 
                       weekday: 'long', 
                       year: 'numeric', 
@@ -853,13 +852,13 @@ const InicioAlumnoDashboard = ({
                   </span>
                 </div>
 
-                {/* Frase motivacional con efectos */}
-                <div className="text-center group">
-                  <div className="flex items-center gap-3 mb-4 justify-center group-hover:scale-105 transition-transform duration-300">
-                    <Calendar className="text-yellow-300 animate-pulse group-hover:animate-bounce" size={24} />
-                    <span className="text-yellow-300 font-semibold text-lg group-hover:text-yellow-200 transition-colors">Frase del día</span>
+                {/* Frase motivacional con efectos - Mejorado para móviles */}
+                <div className="text-center group px-2 sm:px-0">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 justify-center group-hover:scale-105 transition-transform duration-300">
+                    <Calendar className="text-yellow-300 w-5 h-5 sm:w-6 sm:h-6 animate-pulse group-hover:animate-bounce" />
+                    <span className="text-yellow-300 font-bold text-sm sm:text-base md:text-lg group-hover:text-yellow-200 transition-colors">Frase del día</span>
                   </div>
-                  <p className={`${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'} font-bold text-white leading-relaxed group-hover:text-yellow-100 transition-all duration-500 cursor-pointer`}>
+                  <p className={`${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-base sm:text-lg md:text-xl lg:text-2xl' : 'text-lg sm:text-xl md:text-2xl lg:text-3xl'} font-bold text-white leading-relaxed group-hover:text-yellow-100 transition-all duration-500 cursor-pointer`}>
                     {frase}
                   </p>
                 </div>
@@ -882,151 +881,174 @@ const InicioAlumnoDashboard = ({
         </div>
       )}
 
-      {/* Modal para subir comprobante */}
+      {/* Modal para subir comprobante - Compacto y responsive */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-1 sm:p-3">
-          <div className="bg-white/95 backdrop-blur-lg rounded-lg sm:rounded-xl shadow-2xl w-full max-w-lg sm:max-w-3xl max-h-[90vh] sm:max-h-[70vh] flex flex-col">
-            
-            {/* Header del Modal - compacto */}
-            <div className="flex-shrink-0 bg-white/95 backdrop-blur-lg border-b border-purple-200 px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-t-lg sm:rounded-t-xl flex items-center justify-between">
-              <h2 className="text-sm sm:text-lg font-bold text-purple-700 flex items-center gap-1 sm:gap-2">
-                <span className="text-purple-600 text-xs sm:text-base">💳</span>
-                <span className="truncate">Información de Pago</span>
-              </h2>
-              <button
-                className="p-0.5 sm:p-1.5 hover:bg-gray-100 rounded transition-colors"
-                onClick={() => setShowModal(false)}
-              >
-                <X size={14} className="sm:w-5 sm:h-5 text-gray-500" />
-              </button>
-            </div>
+        <>
+          <style>{`
+            .payment-modal-scroll::-webkit-scrollbar {
+              width: 0;
+              height: 0;
+              background: transparent;
+            }
+            .payment-modal-scroll::-webkit-scrollbar-thumb {
+              background-color: transparent;
+            }
+            .payment-modal-scroll {
+              scrollbar-width: none;
+              -ms-overflow-style: none;
+            }
+          `}</style>
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-1 sm:p-1.5 md:p-2">
+            <div className="bg-white/95 backdrop-blur-lg rounded-lg sm:rounded-xl shadow-2xl w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[85vh] sm:max-h-[78vh] md:max-h-[70vh] flex flex-col border border-indigo-200/60">
+              
+              {/* Header del Modal - Paleta armoniosa */}
+              <div className="flex-shrink-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-t-lg sm:rounded-t-xl flex items-center justify-between shadow-md">
+                <h2 className="text-[10px] sm:text-xs md:text-sm font-extrabold text-white flex items-center gap-1">
+                  <span className="text-sm sm:text-base">💳</span>
+                  <span className="truncate">Información de Pago</span>
+                </h2>
+                <button
+                  className="p-0.5 hover:bg-white/20 active:bg-white/30 rounded transition-all duration-200 active:scale-95 touch-manipulation"
+                  onClick={() => setShowModal(false)}
+                >
+                  <X size={14} className="sm:w-4 sm:h-4 text-white" />
+                </button>
+              </div>
 
-            {/* Contenido del Modal con scroll interno */}
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-2 sm:p-4 space-y-1.5 sm:space-y-3">
+              {/* Contenido del Modal con scroll interno - Scrollbar oculto */}
+              <div className="flex-1 overflow-y-auto payment-modal-scroll">
+                <div className="p-1.5 sm:p-2 md:p-2.5 space-y-1 sm:space-y-1.5 md:space-y-2">
                 
-                {/* Métodos de Pago - Layout cuadrado compacto */}
-                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded p-1.5 sm:rounded-lg sm:p-3 border border-purple-200">
-                  <h3 className="text-xs sm:text-sm font-bold text-purple-800 mb-1.5 sm:mb-2 flex items-center gap-1 sm:gap-2">
-                    <span className="text-sm sm:text-base">🏦</span>
+                {/* Métodos de Pago - Paleta armoniosa */}
+                <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-50 rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 border border-indigo-200/60 shadow-sm">
+                  <h3 className="text-[9px] sm:text-[10px] md:text-xs font-extrabold text-indigo-800 mb-1 sm:mb-1.5 flex items-center gap-0.5 sm:gap-1">
+                    <span className="text-xs sm:text-sm">🏦</span>
                     <span>Métodos de Pago</span>
                   </h3>
                   
                   {/* Mobile: Stack vertical, Desktop: Grid 2 columnas balanceado */}
-                  <div className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-3">
+                  <div className="space-y-1 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-1 md:gap-1.5">
                     
-                    {/* Transferencia Bancaria */}
-                    <div className="bg-white rounded p-1.5 sm:rounded-lg sm:p-3 border border-blue-200">
-                      <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                        <span className="w-4 h-4 sm:w-6 sm:h-6 bg-blue-100 rounded-full text-xs sm:text-sm flex items-center justify-center">💳</span>
-                        <h4 className="font-bold text-blue-800 text-xs sm:text-sm">Transferencia</h4>
+                    {/* Transferencia Bancaria - Paleta armoniosa */}
+                    <div className="bg-white rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 border border-indigo-200/60 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
+                        <span className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-full text-[10px] sm:text-xs flex items-center justify-center shadow-sm flex-shrink-0">💳</span>
+                        <h4 className="font-extrabold text-indigo-800 text-[9px] sm:text-[10px] md:text-xs">Transferencia</h4>
                       </div>
                       
                       {/* Info bancaria compacta */}
-                      <div className="text-xs sm:text-sm mb-1 sm:mb-2 space-y-0.5">
-                        <div>
-                          <span className="text-blue-600">Banco:</span> <span className="font-semibold">BANCOPPEL</span>
+                      <div className="text-[9px] sm:text-[10px] md:text-xs mb-1.5 space-y-0.5 sm:space-y-1">
+                        <div className="flex flex-wrap items-center gap-0.5">
+                          <span className="text-indigo-600 font-semibold">Banco:</span> 
+                          <span className="font-bold text-indigo-800">BANCOPPEL</span>
                         </div>
-                        <div>
-                          <span className="text-blue-600">Beneficiario:</span> <span className="font-semibold">Kelvin Valentin Gómez Ramírez</span>
+                        <div className="flex flex-wrap items-center gap-0.5">
+                          <span className="text-indigo-600 font-semibold">Beneficiario:</span> 
+                          <span className="font-bold text-indigo-800 break-words text-[9px] sm:text-[10px]">Kelvin Valentin Gomez Ramírez</span>
                         </div>
                       </div>
                       
                       {/* Cuenta y CLABE compactos */}
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-blue-600 text-xs w-12 sm:w-14">Cuenta:</span>
-                          <span className="font-mono bg-gray-50 px-1 py-0.5 rounded text-xs flex-1">4169 1608 5392 8977</span>
-                          <button 
-                            onClick={() => handleCopy('4169 1608 5392 8977', 'account')} 
-                            className="px-1 py-0.5 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition relative"
-                          >
-                            📋
-                            {copiedMessage.visible && copiedMessage.target === 'account' && (
-                              <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-1 py-0.5 rounded shadow text-xs animate-bounce whitespace-nowrap z-10">
-                                ¡Copiado!
-                              </span>
-                            )}
-                          </button>
+                      <div className="space-y-1 sm:space-y-1.5">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-0.5 sm:gap-1">
+                          <span className="text-indigo-600 text-[9px] sm:text-[10px] font-semibold w-full sm:w-12 flex-shrink-0">Cuenta:</span>
+                          <div className="flex-1 flex items-center gap-0.5 sm:gap-1 min-w-0">
+                            <span className="font-mono bg-gray-50 px-1 sm:px-1.5 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] flex-1 border border-gray-200 truncate">4169 1608 5392 8977</span>
+                            <button 
+                              onClick={() => handleCopy('4169 1608 5392 8977', 'account')} 
+                              className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-[9px] sm:text-[10px] rounded hover:from-indigo-600 hover:to-indigo-700 active:scale-95 transition-all shadow-sm touch-manipulation relative flex-shrink-0"
+                            >
+                              📋
+                              {copiedMessage.visible && copiedMessage.target === 'account' && (
+                                <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-1 py-0.5 rounded shadow-lg text-[9px] animate-bounce whitespace-nowrap z-10">
+                                  ¡Copiado!
+                                </span>
+                              )}
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-blue-600 text-xs w-12 sm:w-14">CLABE:</span>
-                          <span className="font-mono bg-gray-50 px-1 py-0.5 rounded text-xs flex-1 break-all">137628103732170052</span>
-                          <button 
-                            onClick={() => handleCopy('137628103732170052', 'clabe')} 
-                            className="px-1 py-0.5 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition relative"
-                          >
-                            📋
-                            {copiedMessage.visible && copiedMessage.target === 'clabe' && (
-                              <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-1 py-0.5 rounded shadow text-xs animate-bounce whitespace-nowrap z-10">
-                                ¡Copiado!
-                              </span>
-                            )}
-                          </button>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-0.5 sm:gap-1">
+                          <span className="text-indigo-600 text-[9px] sm:text-[10px] font-semibold w-full sm:w-12 flex-shrink-0">CLABE:</span>
+                          <div className="flex-1 flex items-center gap-0.5 sm:gap-1 min-w-0">
+                            <span className="font-mono bg-gray-50 px-1 sm:px-1.5 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] flex-1 break-all border border-gray-200">137628103732170052</span>
+                            <button 
+                              onClick={() => handleCopy('137628103732170052', 'clabe')} 
+                              className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-[9px] sm:text-[10px] rounded hover:from-indigo-600 hover:to-indigo-700 active:scale-95 transition-all shadow-sm touch-manipulation relative flex-shrink-0"
+                            >
+                              📋
+                              {copiedMessage.visible && copiedMessage.target === 'clabe' && (
+                                <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-1 py-0.5 rounded shadow-lg text-[9px] animate-bounce whitespace-nowrap z-10">
+                                  ¡Copiado!
+                                </span>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                       
-                      <div className="mt-1 text-xs text-blue-700">💡 <span className="sm:hidden">24h</span><span className="hidden sm:inline">Procesamiento 24h</span></div>
+                      <div className="mt-1.5 text-[9px] sm:text-[10px] text-indigo-700 bg-indigo-50 px-1 sm:px-1.5 py-0.5 sm:py-1 rounded border border-indigo-200">
+                        💡 <span className="font-semibold">Procesamiento 24h</span>
+                      </div>
                     </div>
 
-                    {/* Pago en Efectivo */}
-                    <div className="bg-white rounded p-1.5 sm:rounded-lg sm:p-3 border border-green-200">
-                      <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                        <span className="w-4 h-4 sm:w-6 sm:h-6 bg-green-100 rounded-full text-xs sm:text-sm flex items-center justify-center">💵</span>
-                        <h4 className="font-bold text-green-800 text-xs sm:text-sm">Efectivo</h4>
+                    {/* Pago en Efectivo - Paleta armoniosa */}
+                    <div className="bg-white rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 border border-purple-200/60 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
+                        <span className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full text-[10px] sm:text-xs flex items-center justify-center shadow-sm flex-shrink-0">💵</span>
+                        <h4 className="font-extrabold text-purple-800 text-[9px] sm:text-[10px] md:text-xs">Efectivo</h4>
                       </div>
                       
-                      <div className="text-xs sm:text-sm space-y-0.5">
+                      <div className="text-[9px] sm:text-[10px] md:text-xs space-y-0.5 sm:space-y-1">
                         <div>
-                          <span className="text-green-600">Dir:</span> 
+                          <span className="text-purple-600 font-semibold">Dir:</span> 
                           <a
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('Calle Benito Juárez #25, Col. Centro, entre Av. Independencia y 20 de Noviembre, C.P. 68300. En altos de COMPUMAX, Tuxtepec, Oaxaca')}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-semibold text-blue-600 hover:underline break-words"
+                            className="font-bold text-indigo-600 hover:text-indigo-700 hover:underline break-words block mt-0.5 text-[9px] sm:text-[10px]"
                             title="Abrir en Google Maps"
                           >
                             Calle Benito Juárez #25, Col. Centro, entre Av. Independencia y 20 de Noviembre, C.P. 68300. En altos de COMPUMAX, Tuxtepec, Oaxaca
                           </a>
                         </div>
                         <div>
-                          <span className="text-green-600">Horario:</span> 
-                          <span className="font-semibold"> Lunes a Viernes, 9:00 a 17:00 h</span>
+                          <span className="text-purple-600 font-semibold">Horario:</span> 
+                          <span className="font-bold text-purple-800"> Lunes a Viernes, 9:00 a 17:00 h</span>
                         </div>
                         <div>
-                          <span className="text-green-600">Tel:</span> 
-                          <span className="font-semibold"> 287-181-1231</span>
+                          <span className="text-purple-600 font-semibold">Tel:</span> 
+                          <span className="font-bold text-purple-800"> 287-181-1231</span>
                         </div>
                       </div>
                       
-                      <div className="mt-1 text-xs text-green-700">💡 <span className="sm:hidden">Con ID</span><span className="hidden sm:inline">Lleva identificación</span></div>
+                      <div className="mt-1.5 text-[9px] sm:text-[10px] text-purple-700 bg-purple-50 px-1 sm:px-1.5 py-0.5 sm:py-1 rounded border border-purple-200">
+                        💡 <span className="font-semibold">Lleva identificación</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Sección de Upload compacta */}
-                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded p-1.5 sm:rounded-lg sm:p-3 border border-yellow-200">
-                  <h3 className="text-xs sm:text-sm font-bold text-orange-800 mb-1 sm:mb-2 flex items-center gap-1 sm:gap-2">
-                    <span className="text-sm sm:text-base">📤</span>
+                {/* Sección de Upload - Paleta armoniosa */}
+                <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-50 rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 border border-indigo-200/60 shadow-sm">
+                  <h3 className="text-[9px] sm:text-[10px] md:text-xs font-extrabold text-indigo-800 mb-1 sm:mb-1.5 flex items-center gap-0.5 sm:gap-1">
+                    <span className="text-xs sm:text-sm">📤</span>
                     <span>Subir Comprobante</span>
                   </h3>
                   
-                  <div className="bg-white rounded p-1.5 sm:rounded-lg sm:p-3 border-2 border-dashed border-orange-300 hover:border-orange-400 transition-colors">
+                  <div className="bg-white rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 border-2 border-dashed border-indigo-300 hover:border-indigo-400 active:border-indigo-500 transition-all shadow-inner">
                     <div className="text-center">
-                      <div className="w-5 h-5 sm:w-10 sm:h-10 mx-auto mb-1 sm:mb-2 text-orange-400">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 mx-auto mb-1.5 sm:mb-2 text-indigo-400">
                         <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-full h-full">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                         </svg>
                       </div>
-                      <p className="text-xs sm:text-sm text-gray-600 mb-1">
-                        <span className="font-semibold text-orange-600">
-                          <span className="sm:hidden">Toca</span>
-                          <span className="hidden sm:inline">Haz clic</span>
+                      <p className="text-[10px] sm:text-xs text-gray-700 mb-1 font-semibold">
+                        <span className="text-indigo-600 font-bold">
+                          Toca aquí
                         </span> 
-                        <span className="sm:hidden"> para subir</span>
-                        <span className="hidden sm:inline"> para subir o arrastra tu archivo aquí</span>
+                        <span className="hidden sm:inline"> o arrastra tu archivo</span>
                       </p>
-                      <p className="text-xs text-gray-400 mb-1 sm:mb-2 hidden sm:block">
+                      <p className="text-[9px] sm:text-[10px] text-gray-500 mb-1.5 sm:mb-2">
                         JPG, PNG, PDF (máx. 5MB)
                       </p>
                       
@@ -1034,23 +1056,23 @@ const InicioAlumnoDashboard = ({
                         type="file"
                         accept="image/*,application/pdf"
                         onChange={handleSubirComprobante}
-                        className="w-full text-xs sm:text-sm file:mr-1 file:py-0.5 sm:file:py-1 file:px-1 sm:file:px-2 file:rounded file:border-0 file:text-xs sm:file:text-sm file:bg-orange-100 file:text-orange-700 hover:file:bg-orange-200 file:transition-all text-gray-700"
+                        className="w-full text-[9px] sm:text-[10px] file:mr-1 file:py-0.5 sm:file:py-1 file:px-1.5 sm:file:px-2 file:rounded file:border-0 file:text-[9px] sm:file:text-[10px] file:font-semibold file:bg-gradient-to-r file:from-indigo-500 file:to-indigo-600 file:text-white hover:file:from-indigo-600 hover:file:to-indigo-700 file:transition-all file:shadow-sm file:cursor-pointer text-gray-700 touch-manipulation"
                       />
                     </div>
                   </div>
                   
                   {/* Instrucciones compactas */}
-                  <div className="mt-1 text-xs text-amber-700 flex items-center gap-1">
-                    <span>⚠️</span>
-                    <span className="sm:hidden">Legible, 24h validación</span>
-                    <span className="hidden sm:inline">Asegúrate de que el comprobante sea legible con fecha y monto. Validación en máximo 24 horas.</span>
+                  <div className="mt-1.5 text-[9px] sm:text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 sm:py-1 rounded border border-indigo-200 flex items-start gap-1">
+                    <span className="text-xs flex-shrink-0">⚠️</span>
+                    <span className="font-semibold">Asegúrate de que el comprobante sea legible con fecha y monto. Validación en máximo 24 horas.</span>
                   </div>
                 </div>
 
               </div>
             </div>
           </div>
-        </div>
+            </div>
+        </>
       )}
     </div>
   );

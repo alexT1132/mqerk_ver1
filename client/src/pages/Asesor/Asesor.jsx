@@ -1,6 +1,6 @@
 // src/components/Layout.jsx
-import Topbar from "../../components/Asesores/Topbar";
-import Maestro from "../../components/Asesores/AsesorMaestro";
+import Topbar from "../../components/Asesor/Topbar";
+import Maestro from "../../components/Asesor/AsesorMaestro";
 
 export default function Layout({ children }) {
   return (

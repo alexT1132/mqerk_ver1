@@ -75,6 +75,7 @@ const isValidEmail = (email) => {
 export function Configuracion_Alumno_comp() {
     const { user, alumno, logout, setAlumno } = useAuth();
     const { headerPrefs, updateHeaderPrefs } = useStudent();
+    // Dark mode removed: theme controls no longer used
     // Estados del componente
     // Helper para armar URL absoluta de fotos
     const apiOrigin = getApiOrigin();
@@ -143,6 +144,19 @@ export function Configuracion_Alumno_comp() {
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [saveProcessing, setSaveProcessing] = useState(false);
     const [photoError, setPhotoError] = useState(false);
+    // Modal de notificación personalizada
+    const [notificationModal, setNotificationModal] = useState({ open: false, message: '', type: 'success' }); // 'success' | 'error'
+    
+    // Cerrar automáticamente la modal de éxito después de 3 segundos
+    useEffect(() => {
+        if (notificationModal.open && notificationModal.type === 'success') {
+            const timer = setTimeout(() => {
+                setNotificationModal({ open: false, message: '', type: 'success' });
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [notificationModal.open, notificationModal.type]);
+    
     // Tabs
     const [activeTab, setActiveTab] = useState('perfil'); // 'perfil' | 'preferencias' | 'apariencia' | 'seguridad' | 'peligro'
 
@@ -162,6 +176,7 @@ export function Configuracion_Alumno_comp() {
 
     // If on mobile and currently in 'apariencia', redirect to 'perfil'
     useEffect(() => {
+        // Apariencia section removed; ensure activeTab remains valid
         if (!isMdUp && activeTab === 'apariencia') {
             setActiveTab('perfil');
         }
@@ -212,6 +227,8 @@ export function Configuracion_Alumno_comp() {
                 });
                 setSuggestions(parsedSuggestions);
                 setNewSuggestionLevel(cfg.nivel_experiencia || 'intermedio');
+                // Aplicar preferencia de tema persistida (system|light|dark)
+                // Dark mode removed: ignore cfg.theme_preference
             } catch (error) {
                 setErrors({ general: 'Error al cargar los datos del usuario' });
             } finally {
@@ -362,6 +379,7 @@ export function Configuracion_Alumno_comp() {
             const prefPayload = {
                 nivel_experiencia: learningPreferences.nivelExperiencia,
                 intereses: mergedInterests,
+                // Dark mode removed: do not send theme_preference
             };
             // 2) Actualizar datos del estudiante, incluyendo nombre completo separado
             const { nombre: nombreBase, apellidos: apellidosBase } = splitFullName(profile.nombre);
@@ -471,9 +489,9 @@ export function Configuracion_Alumno_comp() {
                     if (typeof setAlumno === 'function') {
                         setAlumno(prev => ({ ...(prev || {}), foto: nuevaRel }));
                     }
-                    alert('Foto de perfil actualizada');
+                    setNotificationModal({ open: true, message: 'Foto de perfil actualizada', type: 'success' });
                 } catch (error) {
-                    alert(error?.response?.data?.message || 'Error al cambiar la foto de perfil.');
+                    setNotificationModal({ open: true, message: error?.response?.data?.message || 'Error al cambiar la foto de perfil.', type: 'error' });
                 } finally {
                     setIsLoading(false);
                 }
@@ -490,16 +508,16 @@ export function Configuracion_Alumno_comp() {
     // Secciones estilo admin para navegación lateral
     const secciones = [
         { id: 'perfil', nombre: 'Mi Perfil', icono: '👤', descripcion: 'Tu información personal' },
-        { id: 'preferencias', nombre: 'Preferencias', icono: '📚', descripcion: 'Aprendizaje' },
-        { id: 'apariencia', nombre: 'Apariencia', icono: '🎛️', descripcion: 'Barra superior' },
-        { id: 'seguridad', nombre: 'Seguridad', icono: '🔒', descripcion: 'Protege tu cuenta' },
+    { id: 'preferencias', nombre: 'Preferencias', icono: '📚', descripcion: 'Aprendizaje' },
+    { id: 'apariencia', nombre: 'Apariencia', icono: '🎛️', descripcion: 'Barra superior' },
+    { id: 'seguridad', nombre: 'Seguridad', icono: '🔒', descripcion: 'Protege tu cuenta' },
         { id: 'peligro', nombre: 'Zona de Peligro', icono: '⚠️', descripcion: 'Acciones irreversibles' },
     ];
 
     // Render del componente
     return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 p-3 sm:p-6 lg:p-8">
-            <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 lg:py-8 text-gray-900">
+        <div className="max-w-[90rem] mx-auto">
                 <ConfirmModal
                     isOpen={showDeleteModal}
                     variant="danger"
@@ -527,29 +545,93 @@ export function Configuracion_Alumno_comp() {
                     onConfirm={executeSaveChanges}
                     onCancel={() => !saveProcessing && setShowSaveModal(false)}
                 />
+                {/* Modal de notificación personalizada */}
+                {notificationModal.open && (
+                    <div className="fixed inset-0 z-[6000] flex items-center justify-center p-3 sm:p-4" onClick={() => setNotificationModal({ open: false, message: '', type: 'success' })}>
+                        <div className="bg-black/50 backdrop-blur-sm absolute inset-0" onClick={() => setNotificationModal({ open: false, message: '', type: 'success' })}></div>
+                        <div 
+                            className={`relative bg-white rounded-xl sm:rounded-2xl shadow-2xl border-2 ${
+                                notificationModal.type === 'success' 
+                                    ? 'border-emerald-200 shadow-emerald-200/30' 
+                                    : 'border-rose-200 shadow-rose-200/30'
+                            } max-w-md w-full p-4 sm:p-5 md:p-6 animate-in zoom-in-95 duration-300 ring-2 ${
+                                notificationModal.type === 'success' 
+                                    ? 'ring-emerald-100/50' 
+                                    : 'ring-rose-100/50'
+                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-start gap-3 sm:gap-4">
+                                <div className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ring-2 ${
+                                    notificationModal.type === 'success' 
+                                        ? 'bg-emerald-100 ring-emerald-200/50' 
+                                        : 'bg-rose-100 ring-rose-200/50'
+                                }`}>
+                                    {notificationModal.type === 'success' ? (
+                                        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    ) : (
+                                        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className={`text-base sm:text-lg font-extrabold mb-1 ${
+                                        notificationModal.type === 'success' ? 'text-emerald-900' : 'text-rose-900'
+                                    }`}>
+                                        {notificationModal.type === 'success' ? 'Éxito' : 'Error'}
+                                    </h3>
+                                    <p className="text-gray-700 text-xs sm:text-sm font-semibold break-words">{notificationModal.message}</p>
+                                </div>
+                                <button
+                                    onClick={() => setNotificationModal({ open: false, message: '', type: 'success' })}
+                                    className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100 active:scale-95 touch-manipulation"
+                                >
+                                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div className="mt-4 sm:mt-6 flex justify-end">
+                                <button
+                                    onClick={() => setNotificationModal({ open: false, message: '', type: 'success' })}
+                                    className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-extrabold text-xs sm:text-sm transition-all duration-200 active:scale-95 touch-manipulation ${
+                                        notificationModal.type === 'success'
+                                            ? 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg ring-2 ring-emerald-200/50'
+                                            : 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white shadow-lg ring-2 ring-rose-200/50'
+                                    }`}
+                                >
+                                    Aceptar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {/* Header estilo admin */}
-                <div className="bg-gradient-to-br from-white via-blue-50 to-indigo-100 rounded-xl sm:rounded-3xl shadow-xl shadow-blue-200/30 border border-blue-200/50 p-4 sm:p-8 mb-4 sm:mb-8 backdrop-blur-sm relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-2xl sm:rounded-3xl"></div>
-                    <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div className="bg-gradient-to-br from-white via-violet-50 to-indigo-100 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-xl shadow-violet-200/30 border-2 border-violet-200/50 p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 backdrop-blur-sm relative overflow-hidden ring-2 ring-violet-100/50">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+                    <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                         <div className="flex items-center space-x-3 sm:space-x-4">
-                            <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                                <span className="text-lg sm:text-2xl">👤</span>
+                            <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30 ring-2 ring-violet-200/50">
+                                <span className="text-lg sm:text-xl md:text-2xl">👤</span>
                             </div>
                             <div>
-                                <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
+                                <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight">
                                     Configuración de Cuenta
                                 </h1>
-                                <p className="mt-0.5 sm:mt-2 text-xs sm:text-base text-gray-600 opacity-80">
+                                <p className="mt-1 sm:mt-2 text-xs sm:text-sm md:text-base text-gray-600 font-semibold">
                                     Personaliza tu perfil, preferencias y seguridad
                                 </p>
                             </div>
                         </div>
                         {activeTab !== 'peligro' && (
-                            <div className="mt-4 sm:mt-0">
+                            <div className="mt-2 sm:mt-0">
                                 <button
                                     onClick={handleOpenSaveConfirm}
                                     disabled={!emailValid || isLoading}
-                                    className="inline-flex items-center px-4 py-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-600/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="inline-flex items-center px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white text-xs sm:text-sm font-extrabold rounded-xl sm:rounded-2xl shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-600/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 touch-manipulation ring-2 ring-violet-200/50"
                                 >
                                     {isLoading ? (
                                         <>
@@ -572,46 +654,46 @@ export function Configuracion_Alumno_comp() {
                         )}
                     </div>
                     {errors.general && (
-                        <div className="relative z-10 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-sm">
+                        <div className="relative z-10 mt-3 sm:mt-4 p-3 sm:p-4 bg-gradient-to-r from-rose-50 to-red-50 border-2 border-rose-200 rounded-xl sm:rounded-2xl text-rose-600 text-xs sm:text-sm font-extrabold ring-2 ring-rose-100/50">
                             {errors.general}
                         </div>
                     )}
                 </div>
                 {/* Layout con Sidebar estilo admin */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5">
                     {/* Sidebar de navegación */}
                     <div className="lg:col-span-1">
-                        <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 rounded-xl sm:rounded-3xl shadow-xl shadow-gray-200/40 border border-gray-200/50 p-4 sm:p-8 backdrop-blur-sm relative overflow-visible">
-                            <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-2xl sm:rounded-3xl"></div>
+                        <div className="bg-gradient-to-br from-white via-violet-50 to-indigo-50 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-xl shadow-violet-200/40 border-2 border-violet-200/50 p-3 sm:p-4 md:p-5 lg:p-6 backdrop-blur-sm relative overflow-visible ring-2 ring-violet-100/50">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
                             <div className="relative z-10">
-                                <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-6 flex items-center">
-                                    <span className="w-2 h-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mr-3"></span>
+                                <h3 className="text-xs sm:text-sm font-extrabold text-gray-700 uppercase tracking-wider mb-4 sm:mb-6 flex items-center">
+                                    <span className="w-2 h-2 bg-gradient-to-r from-violet-500 to-indigo-600 rounded-full mr-2 sm:mr-3"></span>
                                     Secciones
                                 </h3>
-                                <nav className="space-y-3">
+                                <nav className="space-y-2 sm:space-y-3">
                                     {secciones.map((s) => (
                                         <button
                                             key={s.id}
                                             onClick={() => setActiveTab(s.id)}
-                                            className={`w-full text-left p-4 rounded-xl transition-all duration-300 flex items-center space-x-4 group relative overflow-hidden ${
+                                            className={`w-full text-left p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 flex items-center space-x-3 sm:space-x-4 group relative overflow-hidden active:scale-95 touch-manipulation ${
                                                 activeTab === s.id
-                                                    ? 'bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white shadow-xl shadow-blue-500/40 transform scale-105'
-                                                    : 'text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:shadow-lg hover:scale-[1.02] hover:shadow-blue-200/30'
+                                                    ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-xl shadow-violet-500/40 transform scale-105 ring-2 ring-violet-200/50'
+                                                    : 'text-gray-700 hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 hover:shadow-lg hover:scale-[1.02] hover:shadow-violet-200/30 border-2 border-transparent hover:border-violet-200/50'
                                             } ${s.id === 'apariencia' ? 'hidden md:flex' : ''}`}
                                         >
                                             {activeTab === s.id && (
-                                                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-xl"></div>
+                                                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-xl sm:rounded-2xl"></div>
                                             )}
-                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center relative z-10 ${
+                                            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center relative z-10 transition-all duration-300 ${
                                                 activeTab === s.id
-                                                    ? 'bg-white/20 shadow-lg'
-                                                    : 'bg-gradient-to-br from-blue-100 to-indigo-100 group-hover:from-blue-200 group-hover:to-indigo-200'
-                                            } transition-all duration-300`}>
-                                                <span className="text-lg">{s.icono}</span>
+                                                    ? 'bg-white/20 shadow-lg ring-2 ring-white/30'
+                                                    : 'bg-gradient-to-br from-violet-100 to-indigo-100 group-hover:from-violet-200 group-hover:to-indigo-200'
+                                            }`}>
+                                                <span className="text-base sm:text-lg">{s.icono}</span>
                                             </div>
-                                            <div className="relative z-10 flex-1">
-                                                <span className="font-semibold text-base block">{s.nombre}</span>
-                                                <span className={`${activeTab === s.id ? 'text-blue-100' : 'text-gray-500'} text-xs opacity-75`}>{s.descripcion}</span>
+                                            <div className="relative z-10 flex-1 min-w-0">
+                                                <span className="font-extrabold text-sm sm:text-base block truncate">{s.nombre}</span>
+                                                <span className={`${activeTab === s.id ? 'text-violet-100' : 'text-gray-500'} text-[10px] sm:text-xs opacity-75 truncate block`}>{s.descripcion}</span>
                                             </div>
                                         </button>
                                     ))}
@@ -621,23 +703,22 @@ export function Configuracion_Alumno_comp() {
                     </div>
 
                     {/* Contenido principal */}
-                    <div className="lg:col-span-3">
-                        <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 rounded-xl sm:rounded-3xl shadow-xl shadow-gray-200/40 border border-gray-200/50 p-4 sm:p-8 backdrop-blur-sm relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-2xl sm:rounded-3xl"></div>
-                            <div className="relative z-10 space-y-8">
+                    <div className="lg:col-span-3 xl:col-span-4">
+                        <div className="bg-gradient-to-br from-white via-violet-50 to-indigo-50 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-xl shadow-violet-200/40 border-2 border-violet-200/50 p-4 sm:p-5 md:p-6 lg:p-8 backdrop-blur-sm relative overflow-hidden ring-2 ring-violet-100/50">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+                            <div className="relative z-10 space-y-4 sm:space-y-5 md:space-y-6">
                                 {/* Contenido por pestaña */}
                     {activeTab === 'perfil' && (
                         <>
                         {/* Información Personal */}
-                        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-visible hover:shadow-md transition-all duration-200">
-                            <div className="p-4 sm:p-5">
-                                <div className="flex items-center gap-3 mb-5 sm:mb-6">
-                                    <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-md sm:rounded-lg">
+                        <div>
+                                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
+                                    <div className="p-2 sm:p-2.5 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-lg sm:rounded-xl ring-2 ring-violet-200/50">
                                         <IconoUsuario />
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-bold text-gray-900">Información Personal</h2>
-                                        <p className="text-gray-600 text-sm">Tu perfil público</p>
+                                        <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">Información Personal</h2>
+                                        <p className="text-gray-600 text-xs sm:text-sm font-semibold">Tu perfil público</p>
                                     </div>
                                 </div>
                                 
@@ -645,7 +726,7 @@ export function Configuracion_Alumno_comp() {
                                     {/* Foto de Perfil */}
                                     <div className="flex justify-center">
                                         <div className="relative group">
-                                            <div className="w-28 h-28 sm:w-36 sm:h-36 lg:w-40 lg:h-40 rounded-full overflow-hidden shadow-lg ring-2 sm:ring-4 ring-blue-100 ring-offset-2 ring-offset-white transition-all duration-300 group-hover:ring-blue-200 group-hover:shadow-xl bg-gradient-to-br from-gray-100 to-gray-200">
+                                            <div className="w-24 h-24 xs:w-28 xs:h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 rounded-full overflow-hidden shadow-lg ring-2 sm:ring-4 ring-violet-200 ring-offset-2 ring-offset-white transition-all duration-300 group-hover:ring-violet-300 group-hover:shadow-xl bg-gradient-to-br from-violet-100 to-indigo-100">
                                                 {profile.fotoUrl && !photoError ? (
                                                     <img
                                                         src={profile.fotoUrl}
@@ -666,7 +747,7 @@ export function Configuracion_Alumno_comp() {
                                                 type="button"
                                                 onClick={handleChangeProfilePicture}
                                                 disabled={isLoading}
-                                                className="absolute -bottom-2 -right-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white p-2.5 rounded-lg shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                                                className="absolute -bottom-1 sm:-bottom-2 -right-1 sm:-right-2 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white p-2 sm:p-2.5 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 disabled:opacity-50 active:scale-95 touch-manipulation ring-2 ring-violet-200/50"
                                                 title="Cambiar foto de perfil"
                                             >
                                                 {isLoading ? <IconoCargando /> : <IconoCamara />}
@@ -675,9 +756,9 @@ export function Configuracion_Alumno_comp() {
                                     </div>
                                     
                                     {/* Campos del formulario */}
-                                    <div className="space-y-3.5 sm:space-y-4">
+                                    <div className="space-y-3 sm:space-y-4">
                                         <div>
-                                            <label htmlFor="nombre" className="block text-sm font-semibold text-gray-700 mb-2">
+                                            <label htmlFor="nombre" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
                                                 Nombre Completo
                                             </label>
                                             <input
@@ -687,13 +768,13 @@ export function Configuracion_Alumno_comp() {
                                                 value={profile.nombre}
                                                 onChange={handleProfileChange}
                                                 disabled={isLoading}
-                                                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm"
+                                                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-violet-300 transition-all duration-150 hover:bg-gray-50 hover:border-violet-200 text-sm font-medium"
                                                 placeholder="Ingresa tu nombre completo"
                                             />
                                         </div>
                                         
                                         <div>
-                                            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                                            <label htmlFor="email" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
                                                 Correo Electrónico
                                             </label>
                                             <input
@@ -703,10 +784,10 @@ export function Configuracion_Alumno_comp() {
                                                 value={profile.email}
                                                 onChange={handleProfileChange}
                                                 disabled={isLoading}
-                                                className={`w-full px-3 py-2.5 bg-white border rounded-lg focus:ring-2 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm ${
+                                                className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 rounded-xl sm:rounded-2xl focus:ring-2 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm font-medium ${
                                                     !emailValid && profile.email.length > 0 
-                                                        ? 'border-rose-300 focus:ring-rose-500' 
-                                                        : 'border-gray-200 focus:ring-blue-500'
+                                                        ? 'border-rose-300 focus:ring-rose-500 hover:border-rose-400' 
+                                                        : 'border-gray-200 focus:ring-violet-500 hover:border-violet-200'
                                                 }`}
                                                 placeholder="ejemplo@correo.com"
                                             />
@@ -718,9 +799,9 @@ export function Configuracion_Alumno_comp() {
                                             )}
                                         </div>
                                         
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                                             <div>
-                                                <label htmlFor="telefono" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                <label htmlFor="telefono" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
                                                     Teléfono
                                                 </label>
                                                 <input
@@ -730,13 +811,13 @@ export function Configuracion_Alumno_comp() {
                                                     value={profile.telefono}
                                                     onChange={handleProfileChange}
                                                     disabled={isLoading}
-                                                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm"
+                                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-violet-300 transition-all duration-150 hover:bg-gray-50 hover:border-violet-200 text-sm font-medium"
                                                     placeholder="(123) 456-7890"
                                                 />
                                             </div>
                                             
                                             <div>
-                                                <label htmlFor="fechaNacimiento" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                <label htmlFor="fechaNacimiento" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
                                                     Fecha de Nacimiento
                                                 </label>
                                                 <input
@@ -746,13 +827,12 @@ export function Configuracion_Alumno_comp() {
                                                     value={profile.fechaNacimiento}
                                                     onChange={handleProfileChange}
                                                     disabled={isLoading}
-                                                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm"
+                                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-violet-300 transition-all duration-150 hover:bg-gray-50 hover:border-violet-200 text-sm font-medium"
                                                 />
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
                         </div>
                         </>
                     )}
@@ -760,25 +840,24 @@ export function Configuracion_Alumno_comp() {
                     {activeTab === 'preferencias' && (
                         <>
                         {/* Preferencias de Aprendizaje */}
-                        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-visible hover:shadow-md transition-all duration-200">
-                            <div className="p-4 sm:p-5">
-                                <div className="flex items-center gap-3 mb-5 sm:mb-6">
-                                    <div className="p-2 bg-gradient-to-br from-emerald-100 to-green-100 rounded-md sm:rounded-lg">
+                        <div>
+                                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
+                                    <div className="p-2 sm:p-2.5 bg-gradient-to-br from-emerald-100 to-green-100 rounded-lg sm:rounded-xl ring-2 ring-emerald-200/50">
                                         <IconoLibroAbierto />
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-bold text-gray-900">Preferencias de Aprendizaje</h2>
-                                        <p className="text-gray-600 text-sm">Personaliza tu experiencia</p>
+                                        <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600">Preferencias de Aprendizaje</h2>
+                                        <p className="text-gray-600 text-xs sm:text-sm font-semibold">Personaliza tu experiencia</p>
                                     </div>
                                 </div>
                                 
                                 <div className="space-y-6">
                                     {/* Nivel de Experiencia - Segmented Control */}
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                                        <label className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-2 sm:mb-3">
                                             Nivel de Experiencia
                                         </label>
-                                        <div role="radiogroup" aria-label="Nivel de experiencia" className="inline-flex rounded-lg border border-emerald-200 bg-white overflow-hidden">
+                                        <div role="radiogroup" aria-label="Nivel de experiencia" className="inline-flex rounded-xl sm:rounded-2xl border-2 border-emerald-200 bg-white overflow-hidden shadow-md">
                                             {[
                                                 { key: 'principiante', label: '🌱 Principiante' },
                                                 { key: 'intermedio', label: '📈 Intermedio' },
@@ -797,11 +876,11 @@ export function Configuracion_Alumno_comp() {
                                                             setLearningPreferences(prev => ({ ...prev, nivelExperiencia: opt.key }));
                                                             setNewSuggestionLevel(opt.key);
                                                         }}
-                                                        className={`px-3.5 py-2 text-xs sm:text-sm font-medium transition-colors border-emerald-200 ${
+                                                        className={`px-2.5 sm:px-3.5 py-2 sm:py-2.5 text-[10px] xs:text-xs sm:text-sm font-extrabold transition-all duration-200 border-emerald-200 active:scale-95 touch-manipulation ${
                                                             active
-                                                            ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-400'
+                                                            ? 'bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-800 ring-2 ring-emerald-400 shadow-md'
                                                             : 'bg-transparent text-emerald-700/80 hover:text-emerald-900 hover:bg-emerald-50'
-                                                        } ${isFirst ? 'rounded-l-lg' : ''} ${isLast ? 'rounded-r-lg' : 'border-l'}`}
+                                                        } ${isFirst ? 'rounded-l-xl sm:rounded-l-2xl' : ''} ${isLast ? 'rounded-r-xl sm:rounded-r-2xl' : 'border-l-2'}`}
                                                     >
                                                         {opt.label}
                                                     </button>
@@ -812,11 +891,11 @@ export function Configuracion_Alumno_comp() {
 
                                     {/* Áreas de Interés - Toggle grid */}
                                     <div>
-                                        <div className="flex items-center justify-between mb-3">
-                                            <h3 className="text-sm font-semibold text-gray-700">Áreas de Interés</h3>
-                                            <span className="text-xs text-gray-500">{learningPreferences.intereses.length} seleccionadas</span>
+                                        <div className="flex items-center justify-between mb-2 sm:mb-3">
+                                            <h3 className="text-xs sm:text-sm font-extrabold text-gray-700">Áreas de Interés</h3>
+                                            <span className="text-[10px] sm:text-xs text-gray-500 font-semibold bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">{learningPreferences.intereses.length} seleccionadas</span>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                                             {Object.entries(interestLabels).map(([key, label]) => {
                                                 const selected = learningPreferences.intereses.includes(key);
                                                 return (
@@ -832,12 +911,20 @@ export function Configuracion_Alumno_comp() {
                                                                     : [...prev.intereses, key]
                                                             }));
                                                         }}
-                                                        className={`w-full text-left px-3 py-2 rounded-lg border transition ${selected ? 'border-emerald-400 bg-emerald-50 text-emerald-800 shadow-sm' : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/40 text-gray-700'}`}
+                                                        className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl border-2 transition-all duration-200 active:scale-95 touch-manipulation ${
+                                                            selected 
+                                                                ? 'border-emerald-400 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-800 shadow-md ring-2 ring-emerald-200/50' 
+                                                                : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/40 text-gray-700'
+                                                        }`}
                                                         aria-pressed={selected}
                                                     >
                                                         <div className="flex items-center gap-2">
-                                                            <span className={`inline-flex h-4 w-4 items-center justify-center rounded ${selected ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-transparent'}`}>✓</span>
-                                                            <span className="text-sm font-medium">{label}</span>
+                                                            <span className={`inline-flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-lg border-2 transition-all ${
+                                                                selected 
+                                                                    ? 'bg-emerald-500 text-white border-emerald-600 ring-2 ring-emerald-200' 
+                                                                    : 'bg-gray-200 text-transparent border-gray-300'
+                                                            }`}>✓</span>
+                                                            <span className="text-xs sm:text-sm font-extrabold">{label}</span>
                                                         </div>
                                                     </button>
                                                 );
@@ -856,30 +943,30 @@ export function Configuracion_Alumno_comp() {
                                         <p className="text-gray-500 text-xs sm:text-sm mb-2.5">Cuéntanos qué temas te interesaría que impartamos y desde qué nivel te gustaría comenzar.</p>
 
                     {/* Input + selector: grid para mejor acomodo */}
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-2 items-stretch w-full">
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 items-stretch w-full">
                                             <input
                                                 type="text"
                                                 value={newSuggestionTitle}
                                                 onChange={(e) => setNewSuggestionTitle(e.target.value)}
                         placeholder="Ej. Robótica o Dibujo técnico"
                                                 disabled={isLoading}
-                        className="sm:col-span-7 lg:col-span-8 w-full px-3 h-10 sm:h-11 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-150 hover:bg-gray-50 placeholder:text-gray-400 text-sm appearance-none"
+                        className="sm:col-span-7 lg:col-span-8 w-full px-3 sm:px-4 h-10 sm:h-11 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-150 hover:bg-gray-50 hover:border-emerald-200 placeholder:text-gray-400 text-xs sm:text-sm font-medium appearance-none"
                                             />
                                             <select
                                                 value={newSuggestionLevel}
                                                 onChange={(e) => setNewSuggestionLevel(e.target.value)}
                                                 disabled={isLoading}
-                        className="sm:col-span-3 lg:col-span-2 w-full px-3 h-10 sm:h-11 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-150 hover:bg-gray-50 text-sm appearance-none"
+                        className="sm:col-span-3 lg:col-span-2 w-full px-3 sm:px-4 h-10 sm:h-11 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-150 hover:bg-gray-50 hover:border-emerald-200 text-xs sm:text-sm font-medium appearance-none"
                                             >
-                                                <option value="principiante">🌱 Empezar en Principiante</option>
-                                                <option value="intermedio">📈 Empezar en Intermedio</option>
-                                                <option value="avanzado">🚀 Empezar en Avanzado</option>
+                                                <option value="principiante">🌱 Principiante</option>
+                                                <option value="intermedio">📈 Intermedio</option>
+                                                <option value="avanzado">🚀 Avanzado</option>
                                             </select>
                                             <button
                                                 type="button"
                                                 onClick={addSuggestion}
                                                 disabled={isLoading || !newSuggestionTitle.trim()}
-                        className="sm:col-span-2 lg:col-span-2 w-full px-5 h-10 sm:h-11 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all duration-150 disabled:opacity-50 font-semibold shadow text-sm"
+                        className="sm:col-span-2 lg:col-span-2 w-full px-3 sm:px-5 h-10 sm:h-11 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl sm:rounded-2xl hover:from-emerald-700 hover:to-green-700 transition-all duration-150 disabled:opacity-50 font-extrabold shadow-lg text-xs sm:text-sm active:scale-95 touch-manipulation ring-2 ring-emerald-200/50"
                                             >
                                                 Agregar
                                             </button>
@@ -918,84 +1005,80 @@ export function Configuracion_Alumno_comp() {
                                         )}
                                     </div>
                                 </div>
-                            </div>
                         </div>
                         </>
                     )}
 
-                                        {activeTab === 'apariencia' && isMdUp && (
-                                                <>
-                                                <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-visible hover:shadow-md transition-all duration-200">
-                                                        <div className="p-4 sm:p-5">
-                                                                <div className="flex items-center gap-3 mb-5 sm:mb-6">
-                                                                        <div className="p-2 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-md sm:rounded-lg">
-                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-2-2h-3l-2-2h-4L8 6H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/></svg>
-                                                                        </div>
-                                                                        <div>
-                                                                                <h2 className="text-xl font-bold text-gray-900">Barra superior</h2>
-                                                                                <p className="text-gray-600 text-sm">Configura los accesos rápidos del header</p>
-                                                                        </div>
-                                                                </div>
+                    {activeTab === 'apariencia' && isMdUp && (
+                        <>
+                            <div>
+                                    <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
+                                        <div className="p-2 sm:p-2.5 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg sm:rounded-xl ring-2 ring-indigo-200/50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-2-2h-3l-2-2h-4L8 6H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/></svg>
+                                        </div>
+                                        <div>
+                                            <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600">Barra superior</h2>
+                                            <p className="text-gray-600 text-xs sm:text-sm font-semibold">Configura los accesos rápidos del header</p>
+                                        </div>
+                                    </div>
 
-                                                                <div className="space-y-6">
-                                                                        <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
-                                                                                <div>
-                                                                                        <p className="font-medium text-gray-800 text-sm">Mostrar accesos rápidos</p>
-                                                                                        <p className="text-xs text-gray-500">Si lo desactivas, se mostrará solo el nombre de la academia</p>
-                                                                                </div>
-                                                                                <label className="inline-flex items-center cursor-pointer">
-                                                                                        <input type="checkbox" className="sr-only peer" checked={!!headerPrefs?.showQuickLinks} onChange={(e)=> updateHeaderPrefs({ showQuickLinks: e.target.checked })} />
-                                                                                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-indigo-600 transition-colors relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:after:translate-x-5"></div>
-                                                                                </label>
-                                                                        </div>
+                                    <div className="space-y-6">
+                                        <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                            <div>
+                                                <p className="font-medium text-gray-800 text-sm">Mostrar accesos rápidos</p>
+                                                <p className="text-xs text-gray-500">Si lo desactivas, se mostrará solo el nombre de la academia</p>
+                                            </div>
+                                            <label className="inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" className="sr-only peer" checked={!!headerPrefs?.showQuickLinks} onChange={(e)=> updateHeaderPrefs({ showQuickLinks: e.target.checked })} />
+                                                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-indigo-600 transition-colors relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:after:translate-x-5"></div>
+                                            </label>
+                                        </div>
 
-                                                                        {headerPrefs?.showQuickLinks && (
-                                                                            <div>
-                                                                                <p className="text-sm font-semibold text-gray-700 mb-2">Orden de accesos</p>
-                                                                                <p className="text-xs text-gray-500 mb-3">Arrastra para reordenar o usa los botones</p>
-                                                                                <div className="space-y-2">
-                                                                                    {(headerPrefs?.links || ['cursos','calendario','pagos']).map((key, idx, arr)=>{
-                                                                                        const label = key==='cursos'?'Cursos': key==='calendario'?'Calendario':'Mis pagos';
-                                                                                        return (
-                                                                                            <div key={key} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2">
-                                                                                                <div className="flex items-center gap-2">
-                                                                                                    <span className="text-gray-400 cursor-grab">⋮⋮</span>
-                                                                                                    <span className="text-sm font-medium text-gray-800">{label}</span>
-                                                                                                </div>
-                                                                                                <div className="flex items-center gap-2">
-                                                                                                    <button type="button" disabled={idx===0} onClick={()=> updateHeaderPrefs(prev=>{ const links=[...prev.links]; [links[idx-1],links[idx]]=[links[idx],links[idx-1]]; return { ...prev, links }; })} className="px-2 py-1 text-xs border rounded disabled:opacity-40">↑</button>
-                                                                                                    <button type="button" disabled={idx===arr.length-1} onClick={()=> updateHeaderPrefs(prev=>{ const links=[...prev.links]; [links[idx+1],links[idx]]=[links[idx],links[idx+1]]; return { ...prev, links }; })} className="px-2 py-1 text-xs border rounded disabled:opacity-40">↓</button>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        );
-                                                                                    })}
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
+                                        {headerPrefs?.showQuickLinks && (
+                                            <div>
+                                                <p className="text-sm font-semibold text-gray-700 mb-2">Orden de accesos</p>
+                                                <p className="text-xs text-gray-500 mb-3">Arrastra para reordenar o usa los botones</p>
+                                                <div className="space-y-2">
+                                                    {(headerPrefs?.links || ['cursos','calendario','pagos']).map((key, idx, arr)=>{
+                                                        const label = key==='cursos'?'Cursos': key==='calendario'?'Calendario':'Mis pagos';
+                                                        return (
+                                                            <div key={key} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-gray-400 cursor-grab">⋮⋮</span>
+                                                                    <span className="text-sm font-medium text-gray-800">{label}</span>
                                                                 </div>
-                                                        </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <button type="button" disabled={idx===0} onClick={()=> updateHeaderPrefs(prev=>{ const links=[...(prev.links || ['cursos','calendario','pagos'])]; [links[idx-1],links[idx]]=[links[idx],links[idx-1]]; return { ...prev, links }; })} className="px-2 py-1 text-xs border rounded disabled:opacity-40">↑</button>
+                                                                    <button type="button" disabled={idx===arr.length-1} onClick={()=> updateHeaderPrefs(prev=>{ const links=[...(prev.links || ['cursos','calendario','pagos'])]; [links[idx+1],links[idx]]=[links[idx],links[idx+1]]; return { ...prev, links }; })} className="px-2 py-1 text-xs border rounded disabled:opacity-40">↓</button>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
-                                                </>
+                                            </div>
                                         )}
+                                    </div>
+                            </div>
+                        </>
+                    )}
 
                     {activeTab === 'seguridad' && (
                         <>
                         {/* Seguridad de la Cuenta */}
-                        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-visible hover:shadow-md transition-all duration-200">
-                            <div className="p-4 sm:p-5">
-                                <div className="flex items-center gap-3 mb-5 sm:mb-6">
-                                    <div className="p-2 bg-gradient-to-br from-rose-100 to-red-100 rounded-md sm:rounded-lg">
+                        <div>
+                                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
+                                    <div className="p-2 sm:p-2.5 bg-gradient-to-br from-rose-100 to-red-100 rounded-lg sm:rounded-xl ring-2 ring-rose-200/50">
                                         <IconoCandado />
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-bold text-gray-900">Seguridad</h2>
-                                        <p className="text-gray-600 text-sm">Protege tu cuenta</p>
+                                        <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-red-600 to-pink-600">Seguridad</h2>
+                                        <p className="text-gray-600 text-xs sm:text-sm font-semibold">Protege tu cuenta</p>
                                     </div>
                                 </div>
                                 
-                                <div className="space-y-4">
+                                <div className="space-y-3 sm:space-y-4">
                                     <div>
-                                        <label htmlFor="currentPassword" className="block text-sm font-semibold text-gray-700 mb-2">
+                                        <label htmlFor="currentPassword" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
                                             Contraseña Actual
                                         </label>
                                         <input
@@ -1005,13 +1088,13 @@ export function Configuracion_Alumno_comp() {
                                             value={security.currentPassword}
                                             onChange={handleSecurityChange}
                                             disabled={isLoading}
-                                            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm"
+                                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-300 transition-all duration-150 hover:bg-gray-50 hover:border-rose-200 text-sm font-medium"
                                             placeholder="Tu contraseña actual"
                                         />
                                     </div>
                                     
                                     <div>
-                                        <label htmlFor="newPassword" className="block text-sm font-semibold text-gray-700 mb-2">
+                                        <label htmlFor="newPassword" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
                                             Nueva Contraseña
                                         </label>
                                         <input
@@ -1021,13 +1104,13 @@ export function Configuracion_Alumno_comp() {
                                             value={security.newPassword}
                                             onChange={handleSecurityChange}
                                             disabled={isLoading}
-                                            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm"
+                                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-300 transition-all duration-150 hover:bg-gray-50 hover:border-rose-200 text-sm font-medium"
                                             placeholder="Nueva contraseña"
                                         />
                                     </div>
                                     
                                     <div>
-                                        <label htmlFor="confirmNewPassword" className="block text-sm font-semibold text-gray-700 mb-2">
+                                        <label htmlFor="confirmNewPassword" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
                                             Confirmar Contraseña
                                         </label>
                                         <input
@@ -1037,7 +1120,7 @@ export function Configuracion_Alumno_comp() {
                                             value={security.confirmNewPassword}
                                             onChange={handleSecurityChange}
                                             disabled={isLoading}
-                                            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm"
+                                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-300 transition-all duration-150 hover:bg-gray-50 hover:border-rose-200 text-sm font-medium"
                                             placeholder="Confirma tu nueva contraseña"
                                         />
                                         {security.newPassword.length > 0 && security.confirmNewPassword.length > 0 && (
@@ -1059,9 +1142,9 @@ export function Configuracion_Alumno_comp() {
                                     
                                     {/* Requisitos de Contraseña */}
                                     {security.newPassword.length > 0 && (
-                                        <div className="bg-gray-50 rounded-lg p-4">
-                                            <h4 className="font-semibold text-gray-700 mb-3 text-sm">Requisitos de Seguridad</h4>
-                                            <div className="space-y-1.5">
+                                        <div className="bg-gradient-to-br from-gray-50 to-violet-50/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 border-2 border-violet-200/50">
+                                            <h4 className="font-extrabold text-gray-700 mb-2 sm:mb-3 text-xs sm:text-sm">Requisitos de Seguridad</h4>
+                                            <div className="space-y-1.5 sm:space-y-2">
                                                 {[
                                                     { key: 'length', text: 'Al menos 8 caracteres' },
                                                     { key: 'uppercase', text: 'Una letra mayúscula' },
@@ -1071,7 +1154,7 @@ export function Configuracion_Alumno_comp() {
                                                 ].map(({ key, text }) => (
                                                     <div key={key} className="flex items-center gap-2 text-xs sm:text-sm">
                                                         {passwordValidation[key] ? <IconoCheckCirculo /> : <IconoAlertaCirculo />}
-                                                        <span className={passwordValidation[key] ? 'text-emerald-600 font-medium' : 'text-gray-600'}>
+                                                        <span className={passwordValidation[key] ? 'text-emerald-600 font-extrabold' : 'text-gray-600 font-semibold'}>
                                                             {text}
                                                         </span>
                                                     </div>
@@ -1084,7 +1167,7 @@ export function Configuracion_Alumno_comp() {
                                         type="button"
                                         onClick={handleChangePassword}
                                         disabled={!passwordValidation.isValid || !passwordValidation.match || security.newPassword === '' || isLoading}
-                                        className="w-full px-6 py-2.5 rounded-lg font-semibold text-white shadow-md transition-all duration-150 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                                        className="w-full px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-extrabold text-white shadow-lg transition-all duration-150 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-600 hover:from-rose-700 hover:via-pink-700 hover:to-rose-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-xs sm:text-sm active:scale-95 touch-manipulation ring-2 ring-rose-200/50"
                                     >
                                         <div className="flex items-center justify-center gap-2">
                                             {isLoading ? <IconoCargando /> : <IconoEscudo />}
@@ -1092,7 +1175,6 @@ export function Configuracion_Alumno_comp() {
                                         </div>
                                     </button>
                                 </div>
-                            </div>
                         </div>
                         </>
                     )}
@@ -1100,30 +1182,29 @@ export function Configuracion_Alumno_comp() {
                     {activeTab === 'peligro' && (
                         <>
                         {/* Zona de Peligro */}
-                        <div className="bg-gradient-to-br from-rose-50 to-red-50 rounded-xl shadow-md border border-rose-200 overflow-hidden transition-all duration-200">
-                            <div className="p-5">
-                                <div className="flex items-center gap-3.5 mb-5">
-                                    <div className="p-2.5 bg-rose-200 rounded-lg">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <div className="bg-gradient-to-br from-rose-50 to-red-50 rounded-xl sm:rounded-2xl shadow-lg border-2 border-rose-200 overflow-hidden transition-all duration-200 ring-2 ring-rose-100/50 p-4 sm:p-5 md:p-6">
+                                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5">
+                                    <div className="p-2 sm:p-2.5 bg-rose-200 rounded-lg sm:rounded-xl ring-2 ring-rose-300/50">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
                                         </svg>
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-bold text-rose-900">Zona de Peligro</h2>
-                                        <p className="text-rose-700 text-sm">Acciones irreversibles</p>
+                                        <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-red-600 to-pink-600">Zona de Peligro</h2>
+                                        <p className="text-rose-700 text-xs sm:text-sm font-semibold">Acciones irreversibles</p>
                                     </div>
                                 </div>
                                 
-                                <div className="bg-white/60 rounded-lg p-4 border border-rose-200">
-                                    <div className="flex items-start gap-3 mb-3.5">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-rose-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <div className="bg-white/60 rounded-xl sm:rounded-2xl p-4 sm:p-5 border-2 border-rose-200">
+                                    <div className="flex items-start gap-3 mb-3 sm:mb-4">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
                                         </svg>
                                         <div>
-                                            <h3 className="font-bold text-rose-900 text-base">Eliminar Acceso</h3>
-                                            <p className="text-rose-700 mt-1 text-sm">
+                                            <h3 className="font-extrabold text-rose-900 text-sm sm:text-base">Eliminar Acceso</h3>
+                                            <p className="text-rose-700 mt-1 text-xs sm:text-sm font-semibold">
                                                 Esta acción eliminará permanentemente tu acceso a la cuenta. 
-                                                <span className="font-semibold"> NO se puede deshacer.</span>
+                                                <span className="font-extrabold"> NO se puede deshacer.</span>
                                             </p>
                                         </div>
                                     </div>
@@ -1132,7 +1213,7 @@ export function Configuracion_Alumno_comp() {
                                         type="button"
                                         onClick={handleDeleteAccount}
                                         disabled={isLoading}
-                                        className="w-full px-6 py-2.5 rounded-lg font-bold text-white shadow-md transition-all duration-150 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 disabled:opacity-50 text-sm"
+                                        className="w-full px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-extrabold text-white shadow-lg transition-all duration-150 bg-gradient-to-r from-rose-600 via-red-600 to-rose-600 hover:from-rose-700 hover:via-red-700 hover:to-rose-700 disabled:opacity-50 text-xs sm:text-sm active:scale-95 touch-manipulation ring-2 ring-rose-200/50"
                                     >
                                         <div className="flex items-center justify-center gap-2">
                                             {isLoading ? <IconoCargando /> : <IconoTrash />}
@@ -1140,16 +1221,15 @@ export function Configuracion_Alumno_comp() {
                                         </div>
                                     </button>
                                 </div>
-                            </div>
                         </div>
                         </>
                     )}
-                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
     );
 }
 

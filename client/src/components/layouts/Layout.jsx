@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom';
  * Maneja la estructura base con header, sidebar y contenido principal
  * Incluye gestión de notificaciones y navegación responsive
  */
-export function Layout({ children, HeaderComponent, SideBarDesktopComponent, SideBarSmComponent }) {
+export function Layout({ children, HeaderComponent, SideBarDesktopComponent, SideBarSmComponent, backgroundClassName = 'bg-white', contentClassName = '' }) {
   // Control del menú móvil
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // Control del sidebar en desktop
@@ -66,15 +66,56 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
     };
   }, [isMenuOpen]);
 
-  // Cerrar menú móvil automáticamente al entrar en /alumno/cursos
+  // Cerrar menú móvil automáticamente al ENTRAR en /alumno/cursos SOLO si no hay curso seleccionado
+  // Si hay curso seleccionado, permitir que el menú se abra normalmente
+  const prevCoursesRoute = React.useRef(isCoursesRoute);
   useEffect(() => {
-    if (isCoursesRoute && isMenuOpen) {
-      setIsMenuOpen(false);
+    // Solo ejecutar cuando se ENTRÓ a la ruta (no cada vez que isMenuOpen cambia)
+    if (isCoursesRoute && !prevCoursesRoute.current && isMenuOpen) {
+      // Verificar si hay curso seleccionado
+      try {
+        const raw = localStorage.getItem('currentCourse');
+        if (!raw || raw === 'null' || raw === 'undefined') {
+          // No hay curso seleccionado, cerrar el menú solo al entrar
+          setIsMenuOpen(false);
+        }
+        // Si hay curso seleccionado, no cerrar el menú
+      } catch {
+        // Error al leer, cerrar por seguridad
+        setIsMenuOpen(false);
+      }
     }
-  }, [isCoursesRoute, isMenuOpen]);
+    prevCoursesRoute.current = isCoursesRoute;
+  }, [isCoursesRoute]);
+
+  // Determinar si realmente hay sidebar activo en esta pantalla
+  const hasSidebar = Boolean(SideBarDesktopComponent) || Boolean(SideBarSmComponent);
+  
+  // Verificar si hay un curso seleccionado (para mostrar el botón flotante en /alumno/cursos cuando hay curso)
+  const hasSelectedCourse = React.useMemo(() => {
+    if (!isCoursesRoute) return true; // Si no es ruta de cursos, siempre mostrar si hay sidebar
+    try {
+      const raw = localStorage.getItem('currentCourse');
+      if (!raw || raw === 'null' || raw === 'undefined') return false;
+      const obj = JSON.parse(raw);
+      return obj && typeof obj === 'object' && (obj.id || obj.title);
+    } catch { 
+      return false; 
+    }
+  }, [isCoursesRoute]);
+
+  // Detectar si es ruta de bienvenida admin para aplicar fondo completo
+  const isAdminBienvenidaRoute = (
+    location.pathname === '/administrativo/bienvenida' ||
+    location.pathname === '/administrativo/' ||
+    location.pathname === '/administrativo' ||
+    location.pathname === '/admin1/dashboard' ||
+    location.pathname === '/admin1/inicio-admin' ||
+    location.pathname === '/administrativo/inicio-admin'
+  );
 
   return (
-  <div className="min-h-screen bg-white relative">
+  <div className={`min-h-screen ${backgroundClassName} relative overflow-x-hidden ${isAdminBienvenidaRoute ? 'overflow-y-hidden' : ''}`}>
       {/* Header principal */}
       {HeaderComponent && (
         <HeaderComponent />
@@ -82,13 +123,13 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
 
       {/* Sidebar para pantallas grandes */}
       {SideBarDesktopComponent && (
-        <div className="fixed left-0 top-20 sm:top-24 h-[calc(100vh-5rem)] sm:h-[calc(100vh-6rem)] z-40 hidden sm:block">
+        <div className="fixed left-0 top-16 bottom-0 z-40 hidden sm:block">
           <SideBarDesktopComponent setDesktopSidebarOpen={setIsDesktopSidebarOpen} />
         </div>
       )}
 
       {/* Overlay con blur para móvil */}
-    {isMenuOpen && (
+    {hasSidebar && isMenuOpen && (
         <div
       className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 sm:hidden transition-all duration-150 ease-out"
           onClick={closeMenu}
@@ -98,7 +139,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       )}
 
       {/* Overlay con blur para escritorio */}
-  {isDesktopSidebarOpen && (
+  {hasSidebar && isDesktopSidebarOpen && (
         <div
         className="fixed inset-0 bg-black/10 backdrop-blur-[1px] z-30 hidden md:block transition-all duration-100 ease-out pointer-events-none"
           // El overlay de escritorio es solo visual; no captura clics para evitar interferir con el hover del sidebar
@@ -111,7 +152,8 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       {SideBarSmComponent && <SideBarSmComponent isMenuOpen={isMenuOpen} closeMenu={closeMenu} />}
 
   {/* Botón hamburguesa flotante (solo móvil) */}
-  {(!isCoursesRoute) && (
+  {/* Mostrar si hay sidebar Y (no es ruta de cursos O hay curso seleccionado) */}
+  {hasSidebar && (!isCoursesRoute || hasSelectedCourse) && (
         <button
           onClick={toggleMenu}
           className="sm:hidden fixed bottom-4 right-4 w-10 h-10 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 z-50 flex items-center justify-center"
@@ -126,11 +168,20 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       {/* Contenido principal de la página */}
       <main
         className={
-          `relative z-10 pt-20 sm:pt-24 pb-6 pl-5 pr-3 sm:px-6 lg:px-8 overflow-x-hidden ` +
-          (isDesktopSidebarOpen ? ' sm:ml-64' : ' sm:ml-20') +
-          ' transition-[margin] duration-200'
+          `relative z-10 pt-14 overflow-x-hidden overflow-y-auto ` +
+          (contentClassName && contentClassName.includes('px-0') 
+            ? '' 
+            : 'px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8') +
+          (contentClassName && contentClassName.includes('pb-0')
+            ? ''
+            : 'pb-6') +
+          (hasSidebar
+            ? (' sm:ml-20 ' + (isDesktopSidebarOpen ? ' lg:ml-64' : ' lg:ml-20') + ' transition-none lg:transition-[margin] lg:duration-200')
+            : '') +
+          (contentClassName ? ` ${contentClassName}` : '') +
+          (isAdminBienvenidaRoute ? ' p-0' : '')
         }
-        style={{ minHeight: '100vh' }}
+        style={{ minHeight: isAdminBienvenidaRoute ? 'calc(100vh - 56px)' : '100vh' }}
       >
         {children}
       </main>

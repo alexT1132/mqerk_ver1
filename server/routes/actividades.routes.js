@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authREquired } from '../middlewares/validateToken.js';
 import {
   createActividad,
   updateActividad,
@@ -8,6 +9,7 @@ import {
   getEntregaActual,
   calificarEntrega,
   listEntregasActividad,
+  getEstudiantesAsignadosActividad,
   listEntregasEstudiante,
   historialEntregasActividadEstudiante,
   agregarEntrega,
@@ -15,27 +17,42 @@ import {
   addArchivoEntrega,
   deleteArchivoEntrega,
   resumenActividadesEstudiante,
+  extenderFechaLimiteGrupo,
+  extenderFechaLimiteEstudiante,
+  listExtensionesActividad,
+  eliminarExtension,
+  permitirEditarDespuesCalificada,
   actividadUploadMiddleware,
   actividadAssetsUpload
 } from '../controllers/actividades.controller.js';
 
 const router = Router();
 
-router.post('/actividades', actividadAssetsUpload, createActividad);
-router.get('/actividades', listActividades);
-router.get('/actividades/:id', getActividad);
-router.put('/actividades/:id', actividadAssetsUpload, updateActividad);
-router.post('/actividades/:id/entregas', actividadUploadMiddleware, crearOReemplazarEntrega);
-router.post('/actividades/:id/entregas/agregar', actividadUploadMiddleware, agregarEntrega);
-router.get('/actividades/:id/entregas/:id_estudiante', getEntregaActual);
-router.get('/actividades/:id/entregas/:id_estudiante/historial', historialEntregasActividadEstudiante);
+router.post('/actividades', authREquired, actividadAssetsUpload, createActividad);
+router.get('/actividades', authREquired, listActividades);
+router.get('/actividades/:id', authREquired, getActividad);
+router.put('/actividades/:id', authREquired, actividadAssetsUpload, updateActividad);
+router.post('/actividades/:id/entregas', authREquired, actividadUploadMiddleware, crearOReemplazarEntrega);
+router.post('/actividades/:id/entregas/agregar', authREquired, actividadUploadMiddleware, agregarEntrega);
+router.get('/actividades/:id/entregas/:id_estudiante', authREquired, getEntregaActual);
+router.get('/actividades/:id/entregas/:id_estudiante/historial', authREquired, historialEntregasActividadEstudiante);
 // Archivos múltiples sobre una entrega existente
-router.get('/actividades/entregas/:entregaId/archivos', listArchivosEntrega);
-router.post('/actividades/entregas/:entregaId/archivos', actividadUploadMiddleware, addArchivoEntrega);
-router.delete('/actividades/entregas/:entregaId/archivos/:archivoId', deleteArchivoEntrega);
-router.put('/actividades/entregas/:id/calificar', calificarEntrega);
-router.get('/actividades/:id/entregas', listEntregasActividad);
-router.get('/actividades/entregas/estudiante/:id_estudiante', listEntregasEstudiante);
-router.get('/actividades/estudiante/:id_estudiante/resumen', resumenActividadesEstudiante);
+router.get('/actividades/entregas/:entregaId/archivos', authREquired, listArchivosEntrega);
+router.post('/actividades/entregas/:entregaId/archivos', authREquired, actividadUploadMiddleware, addArchivoEntrega);
+router.delete('/actividades/entregas/:entregaId/archivos/:archivoId', authREquired, deleteArchivoEntrega);
+router.put('/actividades/entregas/:id/calificar', authREquired, calificarEntrega);
+router.get('/actividades/:id/entregas', authREquired, listEntregasActividad);
+router.get('/actividades/:id/estudiantes-asignados', authREquired, getEstudiantesAsignadosActividad);
+router.get('/actividades/entregas/estudiante/:id_estudiante', authREquired, listEntregasEstudiante);
+router.get('/actividades/estudiante/:id_estudiante/resumen', authREquired, resumenActividadesEstudiante);
+
+// Extensiones de fecha límite
+router.post('/actividades/:id/extender-fecha/grupo', authREquired, extenderFechaLimiteGrupo);
+router.post('/actividades/:id/extender-fecha/estudiante', authREquired, extenderFechaLimiteEstudiante);
+router.get('/actividades/:id/extensiones', authREquired, listExtensionesActividad);
+router.delete('/actividades/extensiones/:extensionId', authREquired, eliminarExtension);
+
+// Permitir editar después de calificada
+router.put('/actividades/entregas/:entregaId/permite-editar', authREquired, permitirEditarDespuesCalificada);
 
 export default router;

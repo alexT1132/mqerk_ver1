@@ -18,7 +18,11 @@ const ConfirmModal = ({
   isProcessing = false,
   processingText = 'Procesando...'
 }) => {
-  if (!isOpen) return null;
+  // Hooks deben llamarse siempre, no antes de return condicional
+  const [text, setText] = useState('');
+  useEffect(() => {
+    if (isOpen) setText('');
+  }, [isOpen]);
 
   const handleConfirm = () => {
     if (onConfirm) {
@@ -31,11 +35,6 @@ const ConfirmModal = ({
       onCancel();
     }
   };
-
-  const [text, setText] = useState('');
-  useEffect(() => {
-    if (isOpen) setText('');
-  }, [isOpen]);
 
   const meetsTextRequirement = !requireText || (text.trim() === expectedText);
   const confirmIsDisabled = confirmDisabled || isProcessing || !meetsTextRequirement;
@@ -83,6 +82,8 @@ const ConfirmModal = ({
       </div>
     </div>
   );
+
+  if (!isOpen) return null;
 
   // Renderizar en portal (document.body) para aislar la capa modal
   const container = typeof document !== 'undefined' ? document.body : null;

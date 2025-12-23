@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import api from '../../api/axios';
+import { resetPasswordAsesorAdmin } from '../../api/asesores';
 
 
 
@@ -21,6 +22,13 @@ export default function SolicitudesAsesores(){
   const [gruposSeleccionados,setGruposSeleccionados] = useState([]);
   const [savingGrupos,setSavingGrupos] = useState(false);
   const [gruposLoading,setGruposLoading] = useState(false);
+  // Modal reset password
+  const [resetOpen, setResetOpen] = useState(false);
+  const [rowReseteando, setRowReseteando] = useState(null);
+  const [resetPass, setResetPass] = useState('');
+  const [resetUserName, setResetUserName] = useState('');
+  const [doingReset, setDoingReset] = useState(false);
+  const [resetMsg, setResetMsg] = useState('');
 
   useEffect(()=>{ const t = setTimeout(()=> setDebounced(busqueda.trim().toLowerCase()),300); return ()=> clearTimeout(t); },[busqueda]);
 
@@ -62,6 +70,32 @@ export default function SolicitudesAsesores(){
   };
 
   const cerrarModal = ()=>{ setModalOpen(false); setRowAsignando(null); };
+
+  // Abrir modal de reset password (solo si aprobado)
+  const abrirModalReset = (row)=>{
+    if(row?.status !== 'completed') return;
+    setRowReseteando(row);
+    setResetPass('');
+    setResetUserName('');
+    setResetMsg('');
+    setResetOpen(true);
+  };
+  const cerrarModalReset = ()=>{ setResetOpen(false); setRowReseteando(null); setResetPass(''); setResetUserName(''); setResetMsg(''); };
+  const confirmarReset = async ()=>{
+    if(!rowReseteando) return;
+    if(!resetPass || resetPass.length < 6){ setResetMsg('La nueva contraseña debe tener al menos 6 caracteres'); return; }
+    const hasUserId = !!rowReseteando.usuario_id;
+    if(!hasUserId && !resetUserName){ setResetMsg('Ingresa el username del asesor si no está vinculado'); return; }
+    setDoingReset(true); setResetMsg('');
+    try {
+      const payload = hasUserId ? { usuarioId: Number(rowReseteando.usuario_id), newPassword: resetPass } : { username: resetUserName, newPassword: resetPass };
+      const res = await resetPasswordAsesorAdmin(payload);
+      setResetMsg(res?.data?.message || 'Contraseña actualizada');
+      setTimeout(()=> cerrarModalReset(), 700);
+    } catch(e){
+      setResetMsg(e?.response?.data?.message || 'Error al actualizar contraseña');
+    } finally { setDoingReset(false); }
+  };
 
   // --- Cambiar estatus (modal) ---
   const abrirModalStatus = (row)=>{ setRowEditandoStatus(row); setStatusModalOpen(true); };
@@ -204,7 +238,11 @@ export default function SolicitudesAsesores(){
                 return (
                   <tr key={r.id} className={`transition-colors hover:bg-gray-50 ${rowBg}`}> 
                     <td className="px-4 py-2 font-mono text-blue-600 font-medium">{r.id}</td>
-                    <td className="px-4 py-2 text-gray-800 font-medium">{r.nombres} {r.apellidos}</td>
+                    <td
+                      className={`px-4 py-2 text-gray-800 font-medium ${r.status==='completed' ? 'cursor-pointer hover:underline decoration-indigo-400 underline-offset-4' : ''}`}
+                      onClick={()=> abrirModalReset(r)}
+                      title={r.status==='completed' ? 'Click para resetear contraseña' : ''}
+                    >{r.nombres} {r.apellidos}</td>
                     <td className="px-4 py-2 text-gray-600">{r.correo}</td>
                     <td className="px-4 py-2 text-gray-600">{r.area || '—'}</td>
                     <td
@@ -238,6 +276,20 @@ export default function SolicitudesAsesores(){
       </div>
 
       {error && <div className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{error}</div>}
+
+      {resetOpen && (
+        <ModalResetPassword
+          onClose={cerrarModalReset}
+          row={rowReseteando}
+          newPassword={resetPass}
+          setNewPassword={setResetPass}
+          username={resetUserName}
+          setUsername={setResetUserName}
+          doing={doingReset}
+          message={resetMsg}
+          onConfirm={confirmarReset}
+        />
+      )}
 
       {modalOpen && (
         <ModalAsignarGrupos
@@ -396,6 +448,42 @@ function ModalCambiarStatus({ onClose, row, statuses, current, onSelect, saving 
         </div>
         <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end bg-gray-50 rounded-b-2xl">
           <button onClick={onClose} type="button" className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-600">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Modal para resetear contraseña del asesor
+function ModalResetPassword({ onClose, row, newPassword, setNewPassword, username, setUsername, doing, message, onConfirm }){
+  if(!row) return null;
+  const needsUsername = !row.usuario_id;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}></div>
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 flex flex-col">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-800">Resetear contraseña</h2>
+          <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100" aria-label="Cerrar">✕</button>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <p className="text-sm text-gray-700">Asesor: <span className="font-medium text-indigo-700">{row.nombres} {row.apellidos}</span></p>
+          {needsUsername && (
+            <div>
+              <label className="block text-[11px] text-gray-600 mb-1">Username del asesor</label>
+              <input value={username} onChange={e=> setUsername(e.target.value)} placeholder="p.ej. asesor.juan" className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500" />
+              <p className="text-[11px] text-gray-500 mt-1">Este preregistro aún no está vinculado a un usuario; ingresa el username existente.</p>
+            </div>
+          )}
+          <div>
+            <label className="block text-[11px] text-gray-600 mb-1">Nueva contraseña</label>
+            <input type="password" value={newPassword} onChange={e=> setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          {message && <div className="text-[12px] text-gray-700">{message}</div>}
+        </div>
+        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end bg-gray-50 rounded-b-2xl gap-3">
+          <button onClick={onClose} type="button" className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-600">Cancelar</button>
+          <button onClick={onConfirm} disabled={doing} type="button" className="px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white shadow hover:bg-indigo-500 disabled:opacity-50">{doing? 'Guardando...' : 'Confirmar'}</button>
         </div>
       </div>
     </div>

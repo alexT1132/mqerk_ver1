@@ -9,22 +9,22 @@ import Modelo from "./components/mqerk/Modelo";
 import Video from "./assets/mqerk/video.mp4";
 import NuestrosAsesores from "./components/mqerk/AsesoresWeb";
 import FloatingWhatsapp from "./components/FloatingWhatsapp";
-import Uno1 from "./assets/1.png";
-import Dos2 from "./assets/2.png";
-import Tres3 from "./assets/3.png";
-import Cuatro4 from "./assets/4.png";
-import Cinco5 from "./assets/5.png";
-import Seis6 from "./assets/6.png";
-import Siete7 from "./assets/7.png";
-import Ocho8 from "./assets/8.png";
-import Foto1 from "./assets/mqerk/carrusel/1.png";
-import Foto2 from "./assets/mqerk/carrusel/2.png";
-import Foto3 from "./assets/mqerk/carrusel/3.png";
-import Foto4 from "./assets/mqerk/carrusel/4.png";
-import Foto5 from "./assets/mqerk/carrusel/5.png";
-import Foto6 from "./assets/mqerk/carrusel/6.png";
-import Foto7 from "./assets/mqerk/carrusel/7.png";
-import Foto8 from "./assets/mqerk/carrusel/8.png";
+import Uno1 from "./assets/1.webp";
+import Dos2 from "./assets/2.webp";
+import Tres3 from "./assets/3.webp";
+import Cuatro4 from "./assets/4.webp";
+import Cinco5 from "./assets/5.webp";
+import Seis6 from "./assets/6.webp";
+import Siete7 from "./assets/7.webp";
+import Ocho8 from "./assets/8.webp";
+import Foto1 from "./assets/mqerk/carrusel/1.webp";
+import Foto2 from "./assets/mqerk/carrusel/2.webp";
+import Foto3 from "./assets/mqerk/carrusel/3.webp";
+import Foto4 from "./assets/mqerk/carrusel/4.webp";
+import Foto5 from "./assets/mqerk/carrusel/5.webp";
+import Foto6 from "./assets/mqerk/carrusel/6.webp";
+import Foto7 from "./assets/mqerk/carrusel/7.webp";
+import Foto8 from "./assets/mqerk/carrusel/8.webp";
 
 function Web() {
 

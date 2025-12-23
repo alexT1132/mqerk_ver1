@@ -1,268 +1,285 @@
-import {useState, useEffect} from 'react'
+import { useState, useEffect } from 'react'
 import Navbar from '../../../components/mqerk/Navbar'
-import Uno from "../../../assets/mqerk/ecat/01.png";
-import Dos from "../../../assets/mqerk/ecat/02.png";
-import Tres from "../../../assets/mqerk/ecat/03.png";
-import Cuatro from "../../../assets/mqerk/Fotos Estudiantes/1.png";
-import Primero from "../../../assets/mqerk/veranotx/01.png";
-import Segundo from "../../../assets/mqerk/veranotx/02.png";
-import Tercero from "../../../assets/mqerk/veranotx/03.png";
-import Cuarto from "../../../assets/mqerk/veranotx/04.png";
-import Quinto from "../../../assets/mqerk/veranotx/05.png";
-import Sexto from "../../../assets/mqerk/veranotx/06.png";
-import Septimo from "../../../assets/mqerk/veranotx/07.png";
+import Uno from "../../../assets/mqerk/ecat/01.webp";
+import Dos from "../../../assets/mqerk/ecat/02.webp";
+import Tres from "../../../assets/mqerk/ecat/03.webp";
+import CuatroImg from "../../../assets/mqerk/Fotos Estudiantes/1.webp";
+import Primero from "../../../assets/mqerk/veranotx/01.webp";
+import Segundo from "../../../assets/mqerk/veranotx/02.webp";
+import Tercero from "../../../assets/mqerk/veranotx/03.webp";
+import Cuarto from "../../../assets/mqerk/veranotx/04.webp";
+import Quinto from "../../../assets/mqerk/veranotx/05.webp";
+import Sexto from "../../../assets/mqerk/veranotx/06.webp";
+import Septimo from "../../../assets/mqerk/veranotx/07.webp";
 import { Link } from "react-router-dom";
 import Footer from "../../footer";
 
 function Talleres() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [forward, setForward] = useState(true);
 
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [forward, setForward] = useState(true);
+  const images = [Uno, Dos, Tres];
 
-    const images = [
-        Uno,
-        Dos,
-        Tres
-    ];
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => {
+        if (forward) {
+          if (prev === images.length - 1) {
+            setForward(false);
+            return prev - 1;
+          }
+          return prev + 1;
+        } else {
+          if (prev === 0) {
+            setForward(true);
+            return prev + 1;
+          }
+          return prev - 1;
+        }
+      });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [forward]);
 
-        useEffect(() => {
-            const interval = setInterval(() => {
-                setCurrentIndex(prev => {
-                  if (forward) {
-                    if (prev === images.length - 1) {
-                      setForward(false);
-                      return prev - 1;
-                    }
-                    return prev + 1;
-                } else {
-                    if (prev === 0) {
-                      setForward(true);
-                      return prev + 1;
-                    }
-                    return prev - 1;
-                    }
-                    });
-                }, 4000);
-            return () => clearInterval(interval);
-        }, [forward]);
-        
-    const getLeftImage = () => images[(currentIndex - 1 + images.length) % images.length];
-    const getRightImage = () => images[(currentIndex + 1) % images.length];
-        
+  const getLeftImage = () => images[(currentIndex - 1 + images.length) % images.length];
+  const getRightImage = () => images[(currentIndex + 1) % images.length];
 
   return (
-    <div className='min-h-screen flex flex-col'>
+    <div className='min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white'>
       <Navbar />
-      {/* DESKTOP */}
-      <div className='hidden md:block'>
-        <h1 className='text-center mt-35 font-bold text-2xl text-[#401454]'>ECAT: Evento de ciencia, arte y tecnología 2024</h1>
 
-        <div className="pasarela-3d-container mt-15 mb-10">
-          <div className="pasarela-3d">
-            <img src={getLeftImage()} alt="left" className="pasarela-img left" />
-            <img src={images[currentIndex]} alt="center" className="pasarela-img center" />
-            <img src={getRightImage()} alt="right" className="pasarela-img right" />
+      {/* Hero Section */}
+      <div className="bg-gradient-to-br from-purple-600 via-indigo-700 to-purple-800 text-white py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <Link 
+            to="/bootcamps" 
+            className="inline-flex items-center gap-2 text-purple-100 hover:text-white transition-colors mb-6 group"
+          >
+            <svg className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Volver a bootcamp
+          </Link>
+          <div className="flex items-center gap-3 mb-3">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-pink-400 text-pink-900">
+              5TA EDICIÓN
+            </span>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-cyan-400 text-cyan-900">
+              🎨 STEAM
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold animate-fade-in">
+            ECAT: Evento de Ciencia, Arte y Tecnología 2024
+          </h1>
+        </div>
+      </div>
+
+      {/* Carousel */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="contenedor-carrusel-talleres animate-fade-in">
+          <div className="galeria-carrusel-talleres">
+            <img src={getLeftImage()} alt="left" className="foto-carrusel-talleres foto-izquierda-talleres" />
+            <img src={images[currentIndex]} alt="center" className="foto-carrusel-talleres foto-central-talleres" />
+            <img src={getRightImage()} alt="right" className="foto-carrusel-talleres foto-derecha-talleres" />
+          </div>
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="grid lg:grid-cols-3 gap-8">
+          
+          {/* Left Column - Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Resumen */}
+            <section className="bg-white rounded-2xl shadow-md p-6 sm:p-8 animate-slide-up">
+              <h2 className="text-2xl sm:text-3xl font-bold text-purple-800 mb-4 flex items-center gap-3">
+                <div className="w-1 h-8 bg-gradient-to-b from-purple-600 to-indigo-600 rounded-full"></div>
+                Resumen
+              </h2>
+              <p className="text-gray-700 leading-relaxed text-justify">
+                El director de MQerKAcademy, Kelvin Ramírez, formó parte de ECAT 2024, un evento que fusiona ciencia, 
+                arte y tecnología en un espacio colaborativo e inspirador. La visión del evento se presentó como un punto 
+                de encuentro entre la creatividad, la innovación y el pensamiento crítico, donde estudiantes, docentes, 
+                artistas, científicos y emprendedores compartieron proyectos, talleres y experiencias transformadoras. 
+                Durante el evento se abordaron temas como inteligencia artificial, arte digital, sostenibilidad, robótica 
+                educativa y la expresión artística como herramientas para el aprendizaje y la transformación social.
+              </p>
+            </section>
+
+            {/* Objetivos */}
+            <section className="bg-white rounded-2xl shadow-md p-6 sm:p-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
+              <h2 className="text-2xl sm:text-3xl font-bold text-purple-800 mb-6 flex items-center gap-3">
+                <div className="w-1 h-8 bg-gradient-to-b from-purple-600 to-indigo-600 rounded-full"></div>
+                Objetivos Alcanzados
+              </h2>
+              <ul className="space-y-4">
+                <ObjectiveItem 
+                  text="Inspirar a las comunidades educativas a integrar el arte, la ciencia y la tecnología en sus prácticas pedagógicas." 
+                  delay="0"
+                />
+                <ObjectiveItem 
+                  text="Visibilizar proyectos innovadores desarrollados por estudiantes y docentes durante el evento." 
+                  delay="100"
+                />
+                <ObjectiveItem 
+                  text="Fomentar el pensamiento creativo, el trabajo colaborativo y la resolución de problemas desde un enfoque STEAM." 
+                  delay="200"
+                />
+              </ul>
+            </section>
+
+            {/* Special Note - Evento Masivo STEAM */}
+            <section className="bg-gradient-to-r from-pink-100 via-purple-100 to-cyan-100 rounded-2xl shadow-md p-6 sm:p-8 animate-slide-up border-l-4 border-pink-600" style={{ animationDelay: '200ms' }}>
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <svg className="w-8 h-8 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-pink-900 mb-2">Evento Multidisciplinario STEAM 🎨</h3>
+                  <p className="text-pink-800 leading-relaxed mb-3">
+                    Con <span className="font-bold text-pink-900">900 asistentes</span>, ECAT 2024 reunió a la comunidad 
+                    educativa en torno a la fusión de Ciencia, Tecnología, Ingeniería, Arte y Matemáticas. Un espacio donde 
+                    la creatividad se encuentra con la innovación.
+                  </p>
+                  <div className="bg-white/50 rounded-lg p-3 mt-3">
+                    <p className="text-sm text-pink-900 font-semibold">
+                      📍 Casa de la Cultura Dr. Víctor Bravo Ahuja
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* Right Column - Info Card */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8 sticky top-24 animate-slide-up" style={{ animationDelay: '300ms' }}>
+              {/* Bordes decorativos */}
+              <div className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-pink-500 rounded-tl-2xl"></div>
+              <div className="absolute bottom-0 right-0 w-16 h-16 border-b-4 border-r-4 border-pink-500 rounded-br-2xl"></div>
+
+              <div className="space-y-6 pt-6">
+                <InfoItem icon={Primero} text="29 de Febrero del 2024" />
+                <InfoItem icon={Segundo} text="Dirigido a: público en general y estudiantes" />
+                <InfoItem icon={Tercero} text="San Juan Bautista Tuxtepec, Oaxaca." />
+                <InfoItem icon={Cuarto} text="Instalaciones: Casa de la Cultura Dr. Víctor Bravo Ahuja" special />
+                <InfoItem icon={Quinto} text="900 asistentes" mega />
+                <InfoItem icon={Sexto} text="6 horas" />
+                <InfoItem icon={Septimo} text="No aplica" />
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className='flex w-full px-8 mt-20 gap-8 mb-6'>
-            <div className='flex flex-col w-[60%] gap-10'>
-                <div>
-                    <h1 className='font-bold text-2xl'>Resumen</h1>
-                    <p className='text-justify text-lg'>
-                        El director de MQerKAcademy, Kelvin Ramírez, formó parte de ECAT 2024, un evento que fusiona ciencia, arte y tecnología en un espacio colaborativo e inspirador. La visión del evento se presentó como un punto de encuentro entre la creatividad, la innovación y el pensamiento crítico, donde estudiantes, docentes, artistas, científicos y emprendedores compartieron proyectos, talleres y experiencias transformadoras. Durante el evento se abordaron temas como inteligencia artificial, arte digital, sostenibilidad, robótica educativa y la expresión artística como herramientas para el aprendizaje y la transformación social.
-                    </p>
-                </div>
-                <div>
-                    <h1 className='font-bold text-2xl'>Objetivos alcanzados:</h1>
-                    <ul className="space-y-2 gap-1 flex flex-col py-5 text-lg">
-                        <li className="flex items-center">
-                            <span className="w-2 h-2 bg-black rounded-full mr-3"></span>
-                            Inspirar a las comunidades educativas a integrar el arte, la ciencia y la tecnología en sus prácticas pedagógicas.
-                        </li>
-                        <li className="flex items-center">
-                            <span className="w-2 h-2 bg-black rounded-full mr-3"></span>
-                            Visibilizar proyectos innovadores desarrollados por estudiantes y docentes durante el evento.
-                        </li>
-                        <li className="flex items-center">
-                            <span className="w-2 h-2 bg-black rounded-full mr-3"></span>
-                            Fomentar el pensamiento creativo, el trabajo colaborativo y la resolución de problemas desde un enfoque STEAM (Ciencia, Tecnología, Ingeniería, Arte y Matemáticas).
-                        </li>
-                    </ul>
-                </div>
+        {/* Related Bootcamps - SOLO 1 TARJETA CENTRADA */}
+        <section className="mt-20">
+          <h2 className="text-3xl sm:text-4xl font-bold text-center text-purple-700 mb-12 animate-slide-up">
+            También puedes ver
+          </h2>
+          
+          <div className="flex justify-center">
+            <div className="w-full max-w-md">
+              <RelatedBootcampCard
+                to='/bootcamps/veranoTX'
+                image={CuatroImg}
+                title="Verano Misión TX 2024"
+                description="Se llevó a cabo la participación de nuestros asesores en CIENYTEC, bajo el tema Científicos del futuro: Ciencia y tecnología en acción en el espacio."
+                date="19 de agosto"
+                delay="0"
+              />
             </div>
-            <div className="relative w-[35%] h-79 bg-white m-4 p-6">
-                {/* Esquina superior izquierda */}
-                <div className="absolute top-0 left-0 w-[30%] h-[40%] border-t-4 border-l-4 border-[#f4138a]" />
+          </div>
+        </section>
+      </main>
 
-                {/* Esquina inferior derecha */}
-                <div className="absolute bottom-0 right-0 w-[30%] h-[40%] border-b-4 border-r-4 border-[#f4138a]" />
-
-                <div className='space-y-3'>
-                    <div className="flex items-center gap-3">
-                        <img src={Primero} className='w-8' />
-                        <p className="text-lg">29 de Febrero del 2024</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Segundo} className='w-8' />
-                        <p className="text-lg">Dirigido a: publico en general y estudiantes</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Tercero} className='w-6' />
-                        <p className="text-md">San Juan Bautista Tuxtepec, Oaxaca.</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Cuarto} className='w-6' />
-                        <p className="text-md">Instalaciones: Casa de la cultura Dr. Víctor Bravo Ahuja</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Quinto} className='w-6' />
-                        <p className="text-md">900 asistentes</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Sexto} className='w-6' />
-                        <p className="text-md">6 horas</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Septimo} className='w-6' />
-                        <p className="text-md">No aplica</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <h1 className='text-center mt-35 font-bold text-2xl text-[#401454]'>Tambien puedes ver:</h1>
-
-        <div className='grid grid-cols-4 px-10 gap-10 mt-8'>
-        
-                  <Link to='/bootcamps/veranoTX' className='flex flex-col rounded-2xl hover:shadow-2xl py-3 cursor-pointer'>
-                    <div className="flex justify-center mb-6 px-5">
-                      <h1 className='font-bold text-xl text-[#401454] text-center'>Verano misión TX 2024 </h1>
-                    </div>
-                    <img src={Cuatro} className='px-3 rounded-3xl' />
-                    <div>
-                      <p className='px-4 mt-2 text-justify text-lg'>
-                        Se llevó a cabo la participación de nuestros asesores en cienytec, Bajo el tema  Científicos del futuro: Ciencia y tecnología en acción en el espacio .
-                      </p>
-                    </div>
-                    <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-                      <p>19 de agosto</p>
-                    </div>
-                  </Link>
-        
-                  <div className='flex flex-col rounded-2xl'>
-                    
-                  </div>
-        
-        </div>
-      </div>
-
-      {/* MOVILE */}
-      <div className='block md:hidden'>
-        <h1 className='text-center mt-24 font-bold text-2xl text-[#401454]'>ECAT: Evento de ciencia, arte y tecnología 2024</h1>
-
-        <div className="pasarela-3d-container">
-            <div className="pasarela-3d">
-                <img src={getLeftImage()} alt="left" className="pasarela-img left" />
-                <img src={images[currentIndex]} alt="center" className="pasarela-img center" />
-                <img src={getRightImage()} alt="right" className="pasarela-img right" />
-            </div>
-        </div>
-
-            <div className='flex flex-col w-full gap-10 px-6'>
-                <div>
-                    <h1 className='font-bold text-2xl'>Resumen</h1>
-                    <p className='text-justify text-lg'>
-                        Los asesores de MQerKAcademy participaron en Cienytec, 
-                        dentro de la 2da edición del BootCamp de verano "Misión TX 2024: 
-                        Entrénate como un Astronauta", gracias a la invitación otorgada por la Lic. 
-                        Ilse Mariela Nolasco López. Esta colaboración se llevó a cabo bajo el tema "Científicos del Futuro: 
-                        Ciencia y Tecnología en Acción en el Espacio", promoviendo el aprendizaje STEAM en un entorno dinámico y motivador.
-                    </p>
-                </div>
-                <div>
-                    <h1 className='font-bold text-2xl'>Objetivos alcanzados:</h1>
-                    <ul className="space-y-2 gap-1 flex flex-col py-3 text-lg">
-                        <li className="flex items-center">
-                            <span className="w-2 h-2 bg-black rounded-full mr-3"></span>
-                            Diseña una base lunar
-                        </li>
-                        <li className="flex items-center">
-                            <span className="w-4 h-2 bg-black rounded-full mr-3"></span>
-                            Aprender a como se relaciona las STEAM para poder ser un astronauta.
-                        </li>
-                        <li className="flex items-center">
-                            <span className="w-4 h-2 bg-black rounded-full mr-3"></span>
-                            Dar a conocer la estructura, propósito y contenidos del BootCamp Misión TX 2024.
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div className="relative w-89 h-90 bg-white m-4 p-6 mt-8">
-                {/* Esquina superior izquierda */}
-                <div className="absolute top-0 left-0 w-[45%] h-[40%] border-t-4 border-l-4 border-[#f4138a]" />
-
-                {/* Esquina inferior derecha */}
-                <div className="absolute bottom-0 right-0 w-[45%] h-[40%] border-b-4 border-r-4 border-[#f4138a]" />
-
-                <div className='space-y-3'>
-                    <div className="flex items-center gap-3">
-                        <img src={Primero} className='w-8' />
-                        <p className="text-lg">29 de Febrero del 2024</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Segundo} className='w-8' />
-                        <p className="text-lg">Dirigido a: publico en general y estudiantes</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Tercero} className='w-6' />
-                        <p className="text-md">San Juan Bautista Tuxtepec, Oaxaca.</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Cuarto} className='w-6' />
-                        <p className="text-md">Instalaciones: Casa de la cultura Dr. Víctor Bravo Ahuja</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Quinto} className='w-6' />
-                        <p className="text-md">900 asistentes</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Sexto} className='w-6' />
-                        <p className="text-md">6 horas</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <img src={Septimo} className='w-6' />
-                        <p className="text-md">No aplica</p>
-                    </div>
-                </div>
-            </div>
-
-            <h1 className='text-center mt-35 font-bold text-2xl text-[#401454]'>Tambien puedes ver:</h1>
-
-<div className='grid grid-cols-1 px-10 gap-10 mt-8'>
-
-          <Link to='/bootcamps/veranoTX' className='flex flex-col rounded-2xl shadow-2xl py-3 cursor-pointer'>
-            <div className="flex justify-center mb-6 px-5">
-              <h1 className='font-bold text-xl text-[#401454] text-center'>Verano misión TX 2024 </h1>
-            </div>
-            <img src={Cuatro} className='px-3 rounded-3xl' />
-            <div>
-              <p className='px-4 mt-2 text-justify text-lg'>
-                Se llevó a cabo la participación de nuestros asesores en cienytec, Bajo el tema  Científicos del futuro: Ciencia y tecnología en acción en el espacio .
-              </p>
-            </div>
-            <div className='flex justify-end items-end h-full w-full mt-5 font-bold px-6'>
-              <p>19 de agosto</p>
-            </div>
-          </Link>
-
-</div>
-
-      </div>
-        <Footer />
+      <Footer />
     </div>
   )
 }
 
-export default Talleres
+// Componente de ítem de objetivo con animación
+function ObjectiveItem({ text, delay = "0" }) {
+  return (
+    <li 
+      className="flex items-start gap-3 group animate-fade-in-up"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <div className="flex-shrink-0 mt-1.5">
+        <div className="w-2 h-2 rounded-full bg-purple-600 group-hover:scale-125 transition-transform duration-300"></div>
+      </div>
+      <span className="text-gray-700 leading-relaxed">{text}</span>
+    </li>
+  );
+}
+
+// Componente de información con icono
+function InfoItem({ icon, text, special = false, mega = false }) {
+  let colorClass = 'text-gray-700';
+  if (special) colorClass = 'text-purple-600 font-semibold';
+  if (mega) colorClass = 'text-pink-600 font-bold text-base';
+
+  return (
+    <div className="flex items-start gap-3 group hover:translate-x-1 transition-transform duration-300">
+      <div className="flex-shrink-0">
+        <img src={icon} alt="" className="w-7 h-7 object-contain" />
+      </div>
+      <p className={`leading-relaxed text-sm ${colorClass}`}>
+        {text}
+      </p>
+    </div>
+  );
+}
+
+// Componente de tarjeta relacionada
+function RelatedBootcampCard({ to, image, title, description, date, delay = "0" }) {
+  return (
+    <Link 
+      to={to} 
+      className="group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2 animate-fade-in-up"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      {/* Imagen */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+        <img 
+          src={image} 
+          alt={title}
+          className="w-full h-48 object-cover transform group-hover:scale-110 transition-transform duration-700"
+        />
+      </div>
+
+      {/* Contenido */}
+      <div className="flex flex-col flex-1 p-6">
+        <h3 className="text-xl font-bold text-purple-800 mb-3 group-hover:text-purple-600 transition-colors min-h-[3rem]">
+          {title}
+        </h3>
+
+        <p className="text-gray-600 text-sm leading-relaxed mb-4 flex-1">
+          {description}
+        </p>
+
+        {/* Fecha */}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="text-sm font-semibold text-gray-700">{date}</span>
+          </div>
+          
+          <svg className="w-5 h-5 text-purple-600 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Borde animado */}
+      <div className="h-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+    </Link>
+  );
+}
+
+export default Talleres;

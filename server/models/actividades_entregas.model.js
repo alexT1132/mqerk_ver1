@@ -65,7 +65,15 @@ export const resetRevision = async (id) => {
 };
 
 export const listEntregasActividad = async (id_actividad, { limit = 100, offset = 0 } = {}) => {
-  const [rows] = await db.query('SELECT * FROM actividades_entregas WHERE id_actividad = ? ORDER BY id DESC LIMIT ? OFFSET ?', [id_actividad, Number(limit), Number(offset)]);
+  // ✅ IMPORTANTE: Solo mostrar entregas de estudiantes activos
+  const [rows] = await db.query(`
+    SELECT ae.* 
+    FROM actividades_entregas ae
+    INNER JOIN estudiantes e ON ae.id_estudiante = e.id
+    WHERE ae.id_actividad = ? AND e.estatus = 'Activo'
+    ORDER BY ae.id DESC 
+    LIMIT ? OFFSET ?`, 
+    [id_actividad, Number(limit), Number(offset)]);
   return rows;
 };
 
@@ -92,7 +100,8 @@ export const getResumenActividadesEstudiante = async (id_estudiante) => {
            e.revisada_at,
            e.version,
            e.entregada_at,
-           e.archivo
+           e.archivo,
+           COALESCE(e.permite_editar_despues_calificada, 0) AS permite_editar_despues_calificada
     FROM actividades a
     LEFT JOIN (
       SELECT t.*

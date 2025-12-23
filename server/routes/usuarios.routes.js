@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { obtener, crear, login, verifyToken, obtenerUno, logout, registrarAdmin, registrarAdminBootstrap, getAdminProfile, getBootstrapStatus, updateAdminProfile, updateAdminPhoto, changePassword, softDeleteSelf, getAdminConfig, updateAdminConfig, getDashboardMetrics, getPaymentReports, exportPaymentReportsExcel, exportPaymentReportsPDF } from "../controllers/usuarios.controller.js";
+import { obtener, crear, login, verifyToken, obtenerUno, logout, registrarAdmin, registrarAdminBootstrap, getAdminProfile, getBootstrapStatus, updateAdminProfile, updateAdminPhoto, changePassword, softDeleteSelf, getAdminConfig, updateAdminConfig, getDashboardMetrics, getPaymentReports, exportPaymentReportsExcel, exportPaymentReportsPDF, resetAsesorPasswordAdmin, forgotPassword, resetPassword } from "../controllers/usuarios.controller.js";
 import { refreshToken } from '../tokens/refresh.controller.js';
 import { upload } from "../middlewares/multer.js";
 import { authREquired } from "../middlewares/validateToken.js";
@@ -45,6 +45,12 @@ router.get('/admin/bootstrap-status', getBootstrapStatus);
 
 // Seguridad
 router.put('/admin/change-password', authREquired, changePassword);
+// Admin: reset password de asesor (sin contraseña actual)
+router.post('/admin/asesores/reset-password', authREquired, resetAsesorPasswordAdmin);
+
+// Password recovery (public endpoints)
+router.post('/password/forgot', forgotPassword);
+router.post('/password/reset', resetPassword);
 router.post('/admin/soft-delete', authREquired, softDeleteSelf);
 // Configuración del sistema (seguridad)
 router.get('/admin/config', authREquired, getAdminConfig);
