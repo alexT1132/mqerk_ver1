@@ -33,6 +33,7 @@ import AsistenciasRoutes from "./routes/asistencias.routes.js";
 import DocumentosRoutes from "./routes/documentos.routes.js";
 import LoggerRoutes from "./routes/logger.routes.js";
 import GradingRoutes from "./routes/grading.routes.js";
+import ChatRoutes from "./routes/chat.routes.js";
 
 const app = express();
 
@@ -47,12 +48,28 @@ const allowedOrigins = new Set([
 ]);
 
 // CORS primero para que también afecte a archivos estáticos (PDFs, etc.) y evite fallos intermitentes en iframes
+// CORS primero para que también afecte a archivos estáticos (PDFs, etc.) y evite fallos intermitentes en iframes
 app.use(cors({
   origin: allowAllCors
     ? true
     : (origin, callback) => {
-      const devLanMatch = origin && /^http:\/\/192\.168\.(?:\d{1,3})\.(?:\d{1,3}):5173$/.test(origin);
-      if (!origin || allowedOrigins.has(origin) || devLanMatch) return callback(null, true);
+      // Permitir solicitudes sin origen (como apps móviles o curl)
+      if (!origin) return callback(null, true);
+
+      // Permitir localhost y dominios locales
+      if (allowedOrigins.has(origin)) return callback(null, true);
+
+      // Regex robusto para redes privadas (LAN):
+      // 192.168.x.x
+      // 10.x.x.x
+      // 172.16.x.x - 172.31.x.x
+      const privateIpRegex = /^http:\/\/(?:192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(?::\d+)?$/;
+
+      if (privateIpRegex.test(origin)) {
+        return callback(null, true);
+      }
+
+      console.warn(`[CORS] Bloqueado origen no permitido: ${origin}`);
       return callback(new Error('CORS not allowed for this origin: ' + origin));
     },
   credentials: true,
@@ -112,6 +129,7 @@ app.use("/api", AsistenciasRoutes);
 app.use("/api/documentos", DocumentosRoutes);
 app.use("/api", LoggerRoutes);
 app.use("/api/grading", GradingRoutes);
+app.use("/api", ChatRoutes);
 
 // Middleware de manejo de errores global (debe ir al final, después de todas las rutas)
 app.use((err, req, res, next) => {

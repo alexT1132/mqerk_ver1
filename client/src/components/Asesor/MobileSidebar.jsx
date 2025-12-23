@@ -7,7 +7,8 @@ import { NavLink } from "react-router-dom";
 export default function MobileSidebar({
   open,
   onClose,
-  onLogout = () => {},
+  onLogout = () => { },
+  counts = {}
 }) {
   // Cerrar con Escape
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function MobileSidebar({
               to={href}
               aria-label={label}
               className={({ isActive }) => [
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
                 isActive
                   ? "bg-violet-50 text-violet-700 ring-1 ring-violet-200"
                   : "text-slate-600 hover:bg-slate-100"
@@ -71,9 +72,16 @@ export default function MobileSidebar({
                 <>
                   <Icon className={["h-5 w-5", isActive ? "text-violet-700" : "text-slate-500"].join(" ")} />
                   {/* Tooltip flotante */}
-                  <span className="truncate">
+                  <span className="truncate flex-1">
                     {label}
                   </span>
+
+                  {/* Badge */}
+                  {counts[key] > 0 && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow ring-2 ring-white">
+                      {counts[key] > 99 ? '99+' : counts[key]}
+                    </span>
+                  )}
                 </>
               )}
             </NavLink>

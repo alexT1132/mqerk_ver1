@@ -533,7 +533,7 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
         - El encabezado y el pie de página tienen `flex-shrink-0` para mantener su tamaño.
         - El div del contenido (`overflow-y-auto`) crecerá para llenar el espacio y mostrará una barra de scroll cuando sea necesario.
       */}
-      <div className="analisis-modal no-scrollbar bg-white/98 rounded-2xl sm:rounded-2xl rounded-t-3xl shadow-2xl ring-1 ring-black/5 w-full h-full sm:h-auto sm:max-w-lg overflow-hidden transform transition-all animate-scale-in flex flex-col">
+      <div className="analisis-modal no-scrollbar bg-white/98 rounded-2xl shadow-2xl ring-1 ring-black/5 w-full max-w-[92vw] md:max-w-[30rem] lg:max-w-[32rem] xl:max-w-[36rem] h-[72vh] sm:h-[68vh] md:h-[62vh] lg:h-[58vh] max-h-[720px] overflow-hidden flex flex-col transform translate-y-6 sm:translate-y-8 md:translate-x-8 lg:translate-x-0">
         {/* Encabezado del Modal */}
         <div className="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-3 sm:p-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center min-w-0">
@@ -665,56 +665,13 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
         .animate-fade-in {
           animation: fade-in 0.5s ease-out forwards;
         }
-        /* Safe areas + dvh para altura confiable y estable (base móvil) */
-        @media (min-width: 640px) {
-          .analisis-modal { max-height: calc(86svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-          @supports (height: 100dvh) {
-            .analisis-modal { max-height: calc(86dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-          }
-        }
-        /* Scroll suave en el contenido y control de barras */
-        .analisis-modal { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+        /* Smooth touch scroll on iOS */
+        .analisis-modal { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
+
+        /* Ocultar scrollbars del área de contenido */
         .am-content { -ms-overflow-style: none; scrollbar-width: none; }
         .am-content::-webkit-scrollbar { width: 0; height: 0; display: none; }
-        @media (min-width: 640px) {
-          .analisis-modal { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.25) transparent; }
-          .analisis-modal::-webkit-scrollbar { width: 8px; height: 8px; }
-          .analisis-modal::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,.25); border-radius: 9999px; }
-          .analisis-modal::-webkit-scrollbar-track { background: transparent; }
-        }
-        @media (max-width: 639.98px) {
-          .analisis-modal { -ms-overflow-style: none; scrollbar-width: none; }
-          .analisis-modal::-webkit-scrollbar { display: none; width: 0; height: 0; }
-        }
-        
-        /* iPad / tablets: desplaza el modal hacia la derecha como en HistorialModal */
-        @media (min-width: 640px) and (max-width: 900px) { /* iPad portrait */
-          .analisis-modal { margin-left: clamp(48px, 8vw, 120px); }
-        }
-        @media (min-width: 901px) and (max-width: 1180px) { /* iPad landscape */
-          .analisis-modal { margin-left: clamp(40px, 6vw, 100px); }
-        }
-        @media (max-width: 639.98px) { /* móviles: centrado y compacto */
-          .analisis-modal { margin-left: 0; width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; margin-top: 0; border-radius: 0; }
-          .analisis-modal .markdown-body h2 { font-size: 1.05rem; }
-          .analisis-modal .markdown-body h3 { font-size: 1rem; }
-          .analisis-modal .markdown-body p { font-size: 0.95rem; }
-        }
-  /* Bajar el modal en tablets/desktop para alinearlo con HistorialModal */
-  @media (min-width: 640px) { .analisis-modal { margin-top: clamp(20px, 5vh, 64px); } }
-  @media (min-width: 1024px) { .analisis-modal { margin-top: clamp(28px, 7vh, 84px); } }
-  @media (min-width: 1280px) { .analisis-modal { margin-top: clamp(36px, 8vh, 96px); } }
-  @media (min-width: 1536px) { .analisis-modal { margin-top: clamp(44px, 10vh, 112px); } }
 
-        /* Forzar que sea más corta en tablets y desktop: altura fija con scroll interno */
-        @media (min-width: 640px) and (max-width: 1023.98px) {
-          .analisis-modal { height: clamp(480px, 54svh, 660px); }
-          @supports (height: 100dvh) { .analisis-modal { height: clamp(480px, 54dvh, 660px); } }
-        }
-        @media (min-width: 1024px) {
-          .analisis-modal { height: clamp(460px, 52svh, 620px); }
-          @supports (height: 100dvh) { .analisis-modal { height: clamp(460px, 52dvh, 620px); } }
-        }
 
         /* AJUSTE 2: Estilos mejorados para Markdown.
          - Se han añadido estilos más detallados para los elementos comunes de Markdown.

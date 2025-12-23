@@ -8,14 +8,14 @@ import { Routes, Route } from 'react-router-dom';
 import { AdminLayout } from '../layouts/AdminLayout.jsx';
 
 // Componentes de páginas administrativas - SOLO IMPORTACIONES
-import Bienvenida_Admin1  from './BienvenidaAdmin.jsx';
+import Bienvenida_Admin1 from './BienvenidaAdmin.jsx';
 import DashboardMetrics from './inicio-admin.jsx';
 import { ComprobanteRecibo } from '../shared/ComprobanteRecibo.jsx';
 import ListaAlumnos_Admin_comp from './ListaAlumnos_Admin_comp.jsx';
 import ValidacionPagos_Admin_comp from './ValidacionPagos_Admin_comp.jsx';
 import { ReportesPagos_Admin_comp } from './ReportesPagos_Admin_comp.jsx';
 import { Calendario_Admin_comp } from './Calendario_Admin_comp.jsx';
-import  Email_Admin_comp  from './Email_Admin_comp.jsx';
+import Email_Admin_comp from './Email_Admin_comp.jsx';
 import { Configuracion_Admin_comp } from './Configuracion_Admin_comp.jsx';
 import AdministrarAsesores from './AdministrarAsesores.jsx';
 import StudentProfilePage from '../../pages/Admin/StudentProfilePage.jsx';
@@ -27,7 +27,7 @@ import FinanzasEgresosFijos from './FinanzasEgresosFijos.jsx';
 import FinanzasEgresosVariables from './FinanzasEgresosVariables.jsx';
 import FinanzasEgresosPresupuesto from './FinanzasEgresosPresupuesto.jsx';
 import FinanzasPagosAsesores from './FinanzasPagosAsesores.jsx';
-
+import ChatAdmin from './ChatAdmin.jsx';
 
 
 export function AdminDashboardBundle() {
@@ -48,11 +48,11 @@ export function AdminDashboardBundle() {
         <Route path="/comprobantes-recibo" element={<ComprobantesAdmin />} />
         {/* Gestión de estudiantes */}
         <Route path="/lista-alumnos" element={<ListaAlumnosAdmin />} />
-  {/* Perfil individual de estudiante (completo) */}
-  <Route path="/student/:folio" element={<StudentProfilePage />} />
-  {/* Perfil simplificado de diagnóstico */}
-  {/* Vista de pagos del estudiante para administradores */}
-  <Route path="/student/:folio/pagos" element={<StudentPaymentsPage />} />
+        {/* Perfil individual de estudiante (completo) */}
+        <Route path="/student/:folio" element={<StudentProfilePage />} />
+        {/* Perfil simplificado de diagnóstico */}
+        {/* Vista de pagos del estudiante para administradores */}
+        <Route path="/student/:folio/pagos" element={<StudentPaymentsPage />} />
 
         {/* Generar contrato */}
         <Route path="/generar-contrato" element={<GenerarContratoAdmin />} />
@@ -64,16 +64,18 @@ export function AdminDashboardBundle() {
         <Route path="/email" element={<EmailAdmin />} />
         {/* Configuración del sistema */}
         <Route path="/configuracion" element={<ConfiguracionAdmin />} />
-  {/* Administración de asesores */}
-  <Route path="/asesores" element={<AdministrarAsesores />} />
-  {/* Finanzas */}
-  <Route path="/finanzas" element={<FinanzasHome />} />
-  <Route path="/finanzas/ingresos" element={<FinanzasIngresos />} />
-  <Route path="/finanzas/egresos" element={<FinanzasEgresos />} />
-  <Route path="/finanzas/egresos/fijos" element={<FinanzasEgresosFijos />} />
-  <Route path="/finanzas/egresos/variables" element={<FinanzasEgresosVariables />} />
-  <Route path="/finanzas/egresos/presupuesto" element={<FinanzasEgresosPresupuesto />} />
-  <Route path="/finanzas/pagos-asesores" element={<FinanzasPagosAsesores />} />
+        {/* Administración de asesores */}
+        <Route path="/asesores" element={<AdministrarAsesores />} />
+        {/* Chat de soporte */}
+        <Route path="/chat" element={<ChatAdmin />} />
+        {/* Finanzas */}
+        <Route path="/finanzas" element={<FinanzasHome />} />
+        <Route path="/finanzas/ingresos" element={<FinanzasIngresos />} />
+        <Route path="/finanzas/egresos" element={<FinanzasEgresos />} />
+        <Route path="/finanzas/egresos/fijos" element={<FinanzasEgresosFijos />} />
+        <Route path="/finanzas/egresos/variables" element={<FinanzasEgresosVariables />} />
+        <Route path="/finanzas/egresos/presupuesto" element={<FinanzasEgresosPresupuesto />} />
+        <Route path="/finanzas/pagos-asesores" element={<FinanzasPagosAsesores />} />
       </Routes>
     </AdminLayout>
   );

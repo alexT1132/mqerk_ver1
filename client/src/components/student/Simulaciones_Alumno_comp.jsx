@@ -26,12 +26,12 @@ import { AREAS_CATALOG_CACHE } from '../../utils/catalogCache';
 import { styleForArea } from '../common/areaStyles.jsx';
 import SimulacionGraficaHistorial from '../simulaciones/SimulacionGraficaHistorial';
 
-import { 
-  ArrowLeft, 
-  BookOpen, 
-  FileText, 
-  Brain, 
-  ChevronDown, 
+import {
+  ArrowLeft,
+  BookOpen,
+  FileText,
+  Brain,
+  ChevronDown,
   Calendar,
   BarChart3,
   Users,
@@ -97,18 +97,18 @@ export function Simulaciones_Alumno_comp() {
   // (Debug removido) const [simsDebug, setSimsDebug] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
+
   // Estados para efectos visuales
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiScore, setConfettiScore] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
 
   // Contexto del estudiante para manejar áreas permitidas y solicitudes
-  const { 
-    allowedSimulationAreas, 
-    simulationRequests, 
-    addAllowedSimulationArea, 
-    requestNewSimulationAreaAccess 
+  const {
+    allowedSimulationAreas,
+    simulationRequests,
+    addAllowedSimulationArea,
+    requestNewSimulationAreaAccess
   } = useStudent();
   const { user, alumno } = useAuth() || {};
   const estudianteId = alumno?.id || user?.id_estudiante || user?.id || null;
@@ -142,51 +142,51 @@ export function Simulaciones_Alumno_comp() {
     type: 'success' // 'success', 'info', 'warning', 'error'
   });
   // Estado para modal de lanzamiento (countdown) y seguimiento de ventana
-  const [launchModal, setLaunchModal] = useState({ open:false, simulacion:null, seconds:4 });
+  const [launchModal, setLaunchModal] = useState({ open: false, simulacion: null, seconds: 4 });
   const [launchingSimId, setLaunchingSimId] = useState(null); // id simulacion que está lanzando
   const simWindowRef = React.useRef(null);
   const simMonitorRef = React.useRef(null);
   // Fallback / retry minimal (para futuras integraciones API)
   const [loadError, setLoadError] = useState('');
   const [retryToken, setRetryToken] = useState(0);
-  const manualRetrySims = () => setRetryToken(t=>t+1);
+  const manualRetrySims = () => setRetryToken(t => t + 1);
 
   // Catálogo dinámico de áreas/módulos (reuso de endpoint de Actividades)
   const [modulosEspecificos, setModulosEspecificos] = useState([]);
   const [areasGenerales, setAreasGenerales] = useState([]); // para filtrar simulaciones generales por id_area válido
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [catalogError, setCatalogError] = useState('');
-  useEffect(()=> {
-    let cancel=false;
+  useEffect(() => {
+    let cancel = false;
     const fromCache = AREAS_CATALOG_CACHE.get();
     if (fromCache?.data) {
       const payload = fromCache.data;
       const modulos = Array.isArray(payload.modulos) ? payload.modulos : [];
-      const mapped = modulos.map(m=> ({ id:m.id, titulo:m.nombre, descripcion:m.descripcion, ...styleForArea(m.id) }));
+      const mapped = modulos.map(m => ({ id: m.id, titulo: m.nombre, descripcion: m.descripcion, ...styleForArea(m.id) }));
       setModulosEspecificos(mapped);
       const generales = Array.isArray(payload.generales) ? payload.generales : [];
       setAreasGenerales(generales.map(g => ({ id: g.id, nombre: g.nombre })));
       if (!fromCache.stale) return; // mostrar cache y revalidar silenciosamente si stale
     }
-    const load = async (silent=false)=> {
-      if(!silent) { setLoadingCatalog(true); setCatalogError(''); }
+    const load = async (silent = false) => {
+      if (!silent) { setLoadingCatalog(true); setCatalogError(''); }
       try {
         const res = await getAreasCatalog();
         const payload = res.data?.data || res.data || {};
         AREAS_CATALOG_CACHE.set(payload);
         const modulos = Array.isArray(payload.modulos) ? payload.modulos : [];
-        const mapped = modulos.map(m=> ({ id:m.id, titulo:m.nombre, descripcion:m.descripcion, ...styleForArea(m.id) }));
+        const mapped = modulos.map(m => ({ id: m.id, titulo: m.nombre, descripcion: m.descripcion, ...styleForArea(m.id) }));
         const generales = Array.isArray(payload.generales) ? payload.generales : [];
-        if(!cancel) {
+        if (!cancel) {
           setModulosEspecificos(mapped);
           setAreasGenerales(generales.map(g => ({ id: g.id, nombre: g.nombre })));
         }
-      } catch(e){ if(!cancel) setCatalogError('No se pudo cargar catálogo de módulos'); }
-      finally { if(!cancel) setLoadingCatalog(false); }
+      } catch (e) { if (!cancel) setCatalogError('No se pudo cargar catálogo de módulos'); }
+      finally { if (!cancel) setLoadingCatalog(false); }
     };
     load(fromCache?.data ? true : false);
-    return ()=> { cancel=true; };
-  },[]);
+    return () => { cancel = true; };
+  }, []);
   // (mocks eliminados)
 
   // Si el usuario abrió "Generales" antes de que el catálogo cargue,
@@ -227,7 +227,7 @@ export function Simulaciones_Alumno_comp() {
               const qs = now.toString();
               navigate(`${location.pathname}${qs ? `?${qs}` : ''}`, { replace: true });
             }
-          } catch {}
+          } catch { }
         }
         // En selector "modulos" somos autoritativos: no continuar forzando tabla
         setPendingOpenHistorialSimId(null);
@@ -264,8 +264,8 @@ export function Simulaciones_Alumno_comp() {
               now.delete('simId');
               const qs = now.toString();
               navigate(`${location.pathname}${qs ? `?${qs}` : ''}`, { replace: true });
-            } catch {}
-            try { showNotification('Acceso restringido','Debes solicitar acceso y esperar aprobación del asesor para entrar a este módulo.','warning'); } catch {}
+            } catch { }
+            try { showNotification('Acceso restringido', 'Debes solicitar acceso y esperar aprobación del asesor para entrar a este módulo.', 'warning'); } catch { }
           }
         }
       } else if (level === 'simulaciones' && !type) {
@@ -286,7 +286,7 @@ export function Simulaciones_Alumno_comp() {
       } else {
         setPendingOpenHistorialSimId(null);
       }
-    } catch {}
+    } catch { }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
@@ -383,7 +383,7 @@ export function Simulaciones_Alumno_comp() {
         }
         return d;
       }
-    } catch {}
+    } catch { }
     return null;
   }
 
@@ -430,7 +430,7 @@ export function Simulaciones_Alumno_comp() {
 
   // Reemplazo: eliminamos mocks y cargamos desde backend
   const loadSimulaciones = async (scope) => {
-    if(!estudianteId) { setSimulaciones([]); return; }
+    if (!estudianteId) { setSimulaciones([]); return; }
     setLoadingSims(true); setSimError('');
     try {
       // ✅ IMPORTANTE: Si estamos en "Simulaciones Generales", enviar id_area=0 al backend
@@ -441,15 +441,15 @@ export function Simulaciones_Alumno_comp() {
       } else if (scope.type === 'modulo' && scope.moduloId != null) {
         apiParams.id_area = scope.moduloId; // Filtrar por área específica
       }
-      
+
       // Intento 1: visible=false para no ocultar por fecha en el backend
       const [resResumen, resCatalog] = await Promise.allSettled([
         resumenSimulacionesEstudiante(estudianteId),
         listSimulaciones(apiParams)
       ]);
-  const resumenRows = resResumen.status === 'fulfilled' ? (resResumen.value?.data?.data || resResumen.value?.data || []) : [];
+      const resumenRows = resResumen.status === 'fulfilled' ? (resResumen.value?.data?.data || resResumen.value?.data || []) : [];
       let catalogRows = resCatalog.status === 'fulfilled' ? (resCatalog.value?.data?.data || resCatalog.value?.data || []) : [];
-  // Nota: si se requiere, se puede leer status desde resResumen.reason?.response?.status o resCatalog.reason?.response?.status
+      // Nota: si se requiere, se puede leer status desde resResumen.reason?.response?.status o resCatalog.reason?.response?.status
       // Fallback 2: si viene vacío, intenta sin el flag visible (manteniendo id_area si está definido)
       if (!Array.isArray(catalogRows) || catalogRows.length === 0) {
         try {
@@ -460,49 +460,49 @@ export function Simulaciones_Alumno_comp() {
           const res2 = await listSimulaciones(fallbackParams);
           const rows2 = res2?.data?.data || res2?.data || [];
           if (Array.isArray(rows2) && rows2.length) catalogRows = rows2;
-        } catch {}
+        } catch { }
       }
-      const resumenById = resumenRows.reduce((acc,q)=>{ acc[q.id]=q; return acc; },{});
+      const resumenById = resumenRows.reduce((acc, q) => { acc[q.id] = q; return acc; }, {});
       const baseRows = catalogRows.length ? catalogRows : resumenRows;
       const generalIds = areasGenerales.map(a => Number(a.id)).filter(n => Number.isFinite(n));
       const generalIdSet = new Set(generalIds);
-      
-        // ✅ DEBUG: Log temporal para depurar
-        if (process.env.NODE_ENV !== 'production') {
-          console.log('[loadSimulaciones] DEBUG:', {
-            scope,
-            estudianteId,
-            catalogRowsCount: catalogRows.length,
-            resumenRowsCount: resumenRows.length,
-            baseRowsCount: baseRows.length,
-            generalIds,
-            areasGeneralesCount: areasGenerales.length,
-            sampleCatalogRows: catalogRows.slice(0, 3).map(q => ({
-              id: q.id,
-              titulo: q.titulo,
-              descripcion: q.descripcion ? (q.descripcion.length > 50 ? q.descripcion.substring(0, 50) + '...' : q.descripcion) : null,
-              nombre: q.nombre,
-              publico: q.publico,
-              id_area: q.id_area,
-              grupos: q.grupos
-            })),
-            sampleBaseRows: baseRows.slice(0, 3).map(q => ({
-              id: q.id,
-              titulo: q.titulo,
-              descripcion: q.descripcion ? (q.descripcion.length > 50 ? q.descripcion.substring(0, 50) + '...' : q.descripcion) : null,
-              nombre: q.nombre,
-              publico: q.publico,
-              id_area: q.id_area,
-              status: q.status
-            })),
-            sampleResumenRows: resumenRows.slice(0, 3).map(r => ({
-              id: r.id,
-              titulo: r.titulo,
-              descripcion: r.descripcion ? (r.descripcion.length > 50 ? r.descripcion.substring(0, 50) + '...' : r.descripcion) : null,
-              nombre: r.nombre
-            }))
-          });
-        
+
+      // ✅ DEBUG: Log temporal para depurar
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[loadSimulaciones] DEBUG:', {
+          scope,
+          estudianteId,
+          catalogRowsCount: catalogRows.length,
+          resumenRowsCount: resumenRows.length,
+          baseRowsCount: baseRows.length,
+          generalIds,
+          areasGeneralesCount: areasGenerales.length,
+          sampleCatalogRows: catalogRows.slice(0, 3).map(q => ({
+            id: q.id,
+            titulo: q.titulo,
+            descripcion: q.descripcion ? (q.descripcion.length > 50 ? q.descripcion.substring(0, 50) + '...' : q.descripcion) : null,
+            nombre: q.nombre,
+            publico: q.publico,
+            id_area: q.id_area,
+            grupos: q.grupos
+          })),
+          sampleBaseRows: baseRows.slice(0, 3).map(q => ({
+            id: q.id,
+            titulo: q.titulo,
+            descripcion: q.descripcion ? (q.descripcion.length > 50 ? q.descripcion.substring(0, 50) + '...' : q.descripcion) : null,
+            nombre: q.nombre,
+            publico: q.publico,
+            id_area: q.id_area,
+            status: q.status
+          })),
+          sampleResumenRows: resumenRows.slice(0, 3).map(r => ({
+            id: r.id,
+            titulo: r.titulo,
+            descripcion: r.descripcion ? (r.descripcion.length > 50 ? r.descripcion.substring(0, 50) + '...' : r.descripcion) : null,
+            nombre: r.nombre
+          }))
+        });
+
         // ✅ Verificar errores en las peticiones
         if (resCatalog.status === 'rejected') {
           console.error('[loadSimulaciones] Error en listSimulaciones:', resCatalog.reason);
@@ -520,7 +520,7 @@ export function Simulaciones_Alumno_comp() {
             status: resResumen.reason?.response?.status
           });
         }
-        
+
         // ✅ Si ambas peticiones fueron exitosas pero vienen vacías, verificar directamente
         if (resCatalog.status === 'fulfilled' && catalogRows.length === 0) {
           console.warn('[loadSimulaciones] listSimulaciones devolvió 0 resultados:', {
@@ -529,7 +529,7 @@ export function Simulaciones_Alumno_comp() {
           });
         }
       }
-      
+
       const filtered = baseRows.filter(q => {
         // ✅ FILTRAR: Solo mostrar simulaciones publicadas (no borradores)
         const isPublic = q.publico === true || q.publico === 1 || q.publico === '1' || q.status === 'Publicado';
@@ -539,7 +539,7 @@ export function Simulaciones_Alumno_comp() {
           }
           return false; // Excluir borradores
         }
-        
+
         if (scope.type === 'generales') {
           // Generales: incluir simulaciones sin id_area (verdaderamente generales)
           // o aquellas mapeadas a un área general del catálogo
@@ -552,7 +552,7 @@ export function Simulaciones_Alumno_comp() {
           // Si no hay áreas generales definidas, solo mostrar las que no tienen id_area
           // Si hay áreas generales definidas, mostrar las generales Y las que coinciden con áreas generales
           const result = generalIdSet.size === 0 ? isGeneral : (isGeneral || matchesGeneralArea);
-          
+
           if (process.env.NODE_ENV !== 'production') {
             console.log('[loadSimulaciones] Filtro generales:', {
               id: q.id,
@@ -567,7 +567,7 @@ export function Simulaciones_Alumno_comp() {
               result
             });
           }
-          
+
           return result;
         } else if (scope.type === 'modulo' && scope.moduloId != null) {
           // Específicos por módulo
@@ -575,7 +575,7 @@ export function Simulaciones_Alumno_comp() {
         }
         return false;
       });
-  // Debug info removida: antes se guardaban métricas internas en simsDebug
+      // Debug info removida: antes se guardaban métricas internas en simsDebug
       const mapped = filtered.map(q => {
         const r = resumenById[q.id] || q;
         const total_intentos = Number(r.total_intentos || 0);
@@ -587,25 +587,25 @@ export function Simulaciones_Alumno_comp() {
         const due = normalizeDeadlineEndOfDay(fecha_limite);
         const within = due ? now <= due : true;
         const estadoSim = total_intentos > 0 ? 'completado' : (within ? 'disponible' : 'vencido');
-        
+
         // ✅ Helper para validar si un string tiene contenido real (no vacío, no solo espacios)
         const tieneContenido = (val) => {
           if (val == null || val === undefined) return false;
           const str = String(val).trim();
           return str.length > 0;
         };
-        
+
         // ✅ IMPORTANTE: Priorizar título sobre nombre, y usar múltiples fuentes
         // El backend devuelve 'titulo' como campo principal, pero también puede tener 'nombre'
         // Combinar datos de 'q' (catálogo) y 'r' (resumen) para obtener el título
         // IMPORTANTE: Tratar strings vacíos como si fueran null/undefined
         // ✅ MEJORADO: También buscar en instrucciones si tiene un título descriptivo
         const tituloFinal = tieneContenido(q.titulo)
-          ? String(q.titulo).trim() 
+          ? String(q.titulo).trim()
           : (tieneContenido(r.titulo)
             ? String(r.titulo).trim()
             : (tieneContenido(q.nombre)
-              ? String(q.nombre).trim() 
+              ? String(q.nombre).trim()
               : (tieneContenido(r.nombre)
                 ? String(r.nombre).trim()
                 : (tieneContenido(q.instrucciones)
@@ -613,21 +613,21 @@ export function Simulaciones_Alumno_comp() {
                   : (tieneContenido(r.instrucciones)
                     ? String(r.instrucciones).trim().substring(0, 100)
                     : `Simulador ${q.id}`)))));
-        
+
         // ✅ IMPORTANTE: Priorizar descripción, puede venir de múltiples campos
         // Combinar datos de 'q' (catálogo) y 'r' (resumen) para obtener la descripción
         // IMPORTANTE: Tratar strings vacíos como si fueran null/undefined
         // ✅ MEJORADO: También buscar en instrucciones si no hay descripción
         const descripcionFinal = tieneContenido(q.descripcion)
-          ? String(q.descripcion).trim() 
+          ? String(q.descripcion).trim()
           : (tieneContenido(r.descripcion)
             ? String(r.descripcion).trim()
             : (tieneContenido(q.instrucciones)
-              ? String(q.instrucciones).trim() 
+              ? String(q.instrucciones).trim()
               : (tieneContenido(r.instrucciones)
                 ? String(r.instrucciones).trim()
                 : null)));
-        
+
         // ✅ MEJORADO: Si el título es solo "Simulador X" y hay descripción, usar parte de la descripción como título
         let tituloMejorado = tituloFinal;
         if (tituloFinal === `Simulador ${q.id}` && descripcionFinal) {
@@ -637,7 +637,7 @@ export function Simulaciones_Alumno_comp() {
             tituloMejorado = descPrimeras + (descripcionFinal.length > 60 ? '...' : '');
           }
         }
-        
+
         // ✅ DEBUG: Log para verificar datos de título y descripción (siempre en desarrollo)
         // ✅ MEJORADO: Log más detallado para depurar problemas de título
         if (process.env.NODE_ENV !== 'production' || tituloFinal === `Simulador ${q.id}`) {
@@ -667,7 +667,7 @@ export function Simulaciones_Alumno_comp() {
             todosLosCampos_r: Object.keys(r)
           };
           console.log('[loadSimulaciones] Mapeo de datos para simulación:', logData);
-          
+
           // ✅ Advertencia si no se encontró título o descripción
           if (!tituloFinal || tituloFinal === `Simulador ${q.id}`) {
             console.warn('[loadSimulaciones] ⚠️ TÍTULO NO ENCONTRADO para simulación:', q.id, {
@@ -689,7 +689,7 @@ export function Simulaciones_Alumno_comp() {
             });
           }
         }
-        
+
         return {
           id: q.id,
           nombre: tituloMejorado, // Usar el título mejorado
@@ -705,7 +705,7 @@ export function Simulaciones_Alumno_comp() {
         };
       });
       setSimulaciones(mapped);
-      
+
       // Cargar respuestas pendientes para simulaciones completadas
       if (estudianteId) {
         mapped.forEach(async (sim) => {
@@ -727,25 +727,25 @@ export function Simulaciones_Alumno_comp() {
           }
         });
       }
-    } catch(e){
+    } catch (e) {
       console.error(e); setSimError('Error cargando simulaciones');
     } finally { setLoadingSims(false); }
   };
 
   // Historial real: fetch solo al abrir modal
   const fetchHistorial = async (simulacion) => {
-    if(!estudianteId) return;
+    if (!estudianteId) return;
     try {
-  const resp = await listIntentosSimulacionEstudiante(simulacion.id, estudianteId);
+      const resp = await listIntentosSimulacionEstudiante(simulacion.id, estudianteId);
       const rows = resp.data?.data || resp.data || [];
-      setHistorialCache(prev=> ({...prev, [simulacion.id]: rows}));
-    } catch(e){ console.warn('No se pudo cargar historial', e); }
+      setHistorialCache(prev => ({ ...prev, [simulacion.id]: rows }));
+    } catch (e) { console.warn('No se pudo cargar historial', e); }
   };
 
   const getSimulacionHistorial = (simulacionId) => {
     const intentos = historialCache[simulacionId] || [];
     return {
-      intentos: intentos.map((it, idx)=> ({
+      intentos: intentos.map((it, idx) => ({
         id: it.id,
         intent_number: it.intent_number || (intentos.length - idx), // Usar intent_number del backend o calcular
         fecha: it.created_at,
@@ -767,7 +767,7 @@ export function Simulaciones_Alumno_comp() {
         })()
       })),
       totalIntentos: intentos.length,
-      mejorPuntaje: intentos.reduce((m,i)=> i.puntaje>m?i.puntaje:m,0),
+      mejorPuntaje: intentos.reduce((m, i) => i.puntaje > m ? i.puntaje : m, 0),
       promedioTiempo: (() => {
         if (!intentos.length) return 0;
         const sumSec = intentos.reduce((s, it) => {
@@ -799,27 +799,27 @@ export function Simulaciones_Alumno_comp() {
     if (item && item.bestScore != null) return item.bestScore;
     const intentos = historialCache[simulacionId] || [];
     if (!Array.isArray(intentos) || intentos.length === 0) return 0;
-    return intentos.reduce((m,i)=> (typeof i.puntaje === 'number' && i.puntaje > m) ? i.puntaje : m, 0);
+    return intentos.reduce((m, i) => (typeof i.puntaje === 'number' && i.puntaje > m) ? i.puntaje : m, 0);
   };
 
   // Escuchar eventos de WebSocket para actualizar lista en tiempo real cuando se crea/publica/borra una simulación
   useEffect(() => {
     let reloadTimeout = null;
-    
+
     const handler = (e) => {
       const data = e.detail;
       if (!data || data.type !== 'notification' || !data.payload) return;
       const payload = data.payload;
-      
+
       // ✅ Detectar cualquier notificación relacionada con simulaciones
       const simulacionId = payload.simulacion_id || payload.metadata?.simulacion_id || null;
-      const isSimulacion = payload.metadata?.kind === 'simulacion' || 
-                          payload.kind === 'simulacion' ||
-                          payload.message?.toLowerCase().includes('simulación') || 
-                          payload.message?.toLowerCase().includes('simulacion') ||
-                          payload.title?.toLowerCase().includes('simulación') ||
-                          payload.title?.toLowerCase().includes('simulacion');
-      
+      const isSimulacion = payload.metadata?.kind === 'simulacion' ||
+        payload.kind === 'simulacion' ||
+        payload.message?.toLowerCase().includes('simulación') ||
+        payload.message?.toLowerCase().includes('simulacion') ||
+        payload.title?.toLowerCase().includes('simulación') ||
+        payload.title?.toLowerCase().includes('simulacion');
+
       // ✅ Actualizar lista si:
       // 1. Es una notificación de asignación de simulación (nueva o publicada)
       // 2. El payload tiene simulacion_id
@@ -832,39 +832,39 @@ export function Simulaciones_Alumno_comp() {
           title: payload.title,
           message: payload.message
         });
-        
+
         // ✅ Cancelar cualquier recarga pendiente para evitar múltiples recargas
         if (reloadTimeout) clearTimeout(reloadTimeout);
-        
+
         // ✅ Disparar recarga según el scope actual (con pequeño delay para asegurar que el backend actualizó)
         // Actualizar siempre, incluso si no estamos en el nivel correcto (para que se actualice cuando el usuario navegue)
         reloadTimeout = setTimeout(() => {
           if (currentLevel === 'simulaciones') {
-            const scope = selectedTipo === 'generales' 
-              ? { type: 'generales' } 
-              : (selectedModulo 
-                ? { type: 'modulo', moduloId: selectedModulo.id } 
+            const scope = selectedTipo === 'generales'
+              ? { type: 'generales' }
+              : (selectedModulo
+                ? { type: 'modulo', moduloId: selectedModulo.id }
                 : { type: 'generales' });
             loadSimulaciones(scope);
           }
           reloadTimeout = null;
         }, 800); // Delay de 800ms para dar tiempo al backend a actualizar
       }
-      
+
       // ✅ También actualizar si el mensaje menciona "borrador" o "eliminado" (simulador borrado/despublicado)
-      if (payload.message?.toLowerCase().includes('eliminad') || 
-          payload.message?.toLowerCase().includes('borrador')) {
+      if (payload.message?.toLowerCase().includes('eliminad') ||
+        payload.message?.toLowerCase().includes('borrador')) {
         console.log('[Simulaciones] Simulación modificada/eliminada, recargando lista...');
-        
+
         // ✅ Cancelar cualquier recarga pendiente
         if (reloadTimeout) clearTimeout(reloadTimeout);
-        
+
         if (currentLevel === 'simulaciones') {
           reloadTimeout = setTimeout(() => {
-            const scope = selectedTipo === 'generales' 
-              ? { type: 'generales' } 
-              : (selectedModulo 
-                ? { type: 'modulo', moduloId: selectedModulo.id } 
+            const scope = selectedTipo === 'generales'
+              ? { type: 'generales' }
+              : (selectedModulo
+                ? { type: 'modulo', moduloId: selectedModulo.id }
                 : { type: 'generales' });
             loadSimulaciones(scope);
             reloadTimeout = null;
@@ -872,7 +872,7 @@ export function Simulaciones_Alumno_comp() {
         }
       }
     };
-    
+
     window.addEventListener('student-ws-message', handler);
     return () => {
       window.removeEventListener('student-ws-message', handler);
@@ -907,7 +907,7 @@ export function Simulaciones_Alumno_comp() {
       } catch { /* ignore */ }
     } else {
       setCurrentLevel('simulaciones');
-      loadSimulaciones({ type:'generales' });
+      loadSimulaciones({ type: 'generales' });
       // Sincronizar URL: vista de tabla generales sin 'level' para evitar rebotes
       try {
         const params = new URLSearchParams(location.search || '');
@@ -927,7 +927,7 @@ export function Simulaciones_Alumno_comp() {
     if (allowedSimulationAreas.includes(modulo.id)) {
       setSelectedModulo(modulo);
       setCurrentLevel('simulaciones');
-      loadSimulaciones({ type:'modulo', moduloId:modulo.id });
+      loadSimulaciones({ type: 'modulo', moduloId: modulo.id });
       // Sincronizar URL: vista de tabla del módulo (sin 'level')
       try {
         const params = new URLSearchParams(location.search || '');
@@ -1002,14 +1002,14 @@ export function Simulaciones_Alumno_comp() {
         setSelectedTipo(null);
         setSimulaciones([]);
         // URL: volver a portada (limpiar query)
-        try { navigate('/alumno/simulaciones', { replace: true }); } catch {}
+        try { navigate('/alumno/simulaciones', { replace: true }); } catch { }
       }
     } else if (currentLevel === 'modulos') {
       setCurrentLevel('tipos');
       setSelectedTipo(null);
       setSelectedModulo(null);
       // URL: volver a portada (limpiar query)
-      try { navigate('/alumno/simulaciones', { replace: true }); } catch {}
+      try { navigate('/alumno/simulaciones', { replace: true }); } catch { }
     }
   };
 
@@ -1047,7 +1047,7 @@ export function Simulaciones_Alumno_comp() {
     setShowHistorialModal(true);
     try {
       await fetchHistorial(simulacion);
-    } catch {}
+    } catch { }
   };
 
   // Funciones para manejar modal de gráficas
@@ -1055,7 +1055,7 @@ export function Simulaciones_Alumno_comp() {
     if (!simulacion) return;
     setSelectedSimulacionGraficas(simulacion);
     // Cargar historial antes de abrir el modal para evitar estado "sin datos"
-    try { await fetchHistorial(simulacion); } catch {}
+    try { await fetchHistorial(simulacion); } catch { }
     setShowGraficasModal(true);
   };
 
@@ -1093,7 +1093,7 @@ export function Simulaciones_Alumno_comp() {
 
   // Enviar respuestas al backend (batch) y finalizar
   const handleFinalizarSesion = async () => {
-    if(!activeSesion) return;
+    if (!activeSesion) return;
     setSesionLoading(true); setSesionError('');
     try {
       // Preparar batch - incluir id_opcion o texto_libre según corresponda
@@ -1103,7 +1103,7 @@ export function Simulaciones_Alumno_comp() {
         texto_libre: r.texto_libre || null,
         tiempo_ms: r.tiempo_ms || 0
       }));
-      if(batch.length){
+      if (batch.length) {
         await enviarRespuestasSesionSimulacion(activeSesion.id, batch);
       }
       const fin = await finalizarSesionSimulacion(activeSesion.id);
@@ -1111,9 +1111,9 @@ export function Simulaciones_Alumno_comp() {
       showNotification('Simulación finalizada', `Puntaje: ${resultado.puntaje ?? 'N/A'}`, 'success');
       setShowSesionModal(false);
       setActiveSesion(null);
-      await loadSimulaciones(selectedTipo==='generales' ? {type:'generales'} : {type:'modulo', moduloId:selectedModulo?.id});
-    } catch(e){
-      console.error(e); setSesionError('Error al finalizar'); showNotification('Error','No se pudo finalizar la sesión','error');
+      await loadSimulaciones(selectedTipo === 'generales' ? { type: 'generales' } : { type: 'modulo', moduloId: selectedModulo?.id });
+    } catch (e) {
+      console.error(e); setSesionError('Error al finalizar'); showNotification('Error', 'No se pudo finalizar la sesión', 'error');
     } finally { setSesionLoading(false); }
   };
 
@@ -1124,7 +1124,7 @@ export function Simulaciones_Alumno_comp() {
     setRespuestasSesion({});
   };
 
-  // Limpieza: se removieron simulacionesGenerales/especificas y lógica mock.
+
   // Estados para sesión activa (toma de simulación real)
   const [activeSesion, setActiveSesion] = useState(null); // { id, simulacionId }
   const [preguntasSesion, setPreguntasSesion] = useState([]); // preguntas cargadas
@@ -1135,21 +1135,21 @@ export function Simulaciones_Alumno_comp() {
 
   // Handler para iniciar sesión real (crea sesión y carga preguntas)
   const handleIniciarSimulacion = async (simulacionId) => {
-    const sim = simulaciones.find(s=>s.id===simulacionId);
-    if(!sim || !estudianteId) return;
+    const sim = simulaciones.find(s => s.id === simulacionId);
+    if (!sim || !estudianteId) return;
     setSesionLoading(true); setSesionError('');
     try {
-  const pregResp = await listPreguntasSimulacion(sim.id);
+      const pregResp = await listPreguntasSimulacion(sim.id);
       const preguntas = pregResp.data?.data || [];
-  const sesionResp = await crearSesionSimulacion(sim.id, { id_estudiante: estudianteId });
+      const sesionResp = await crearSesionSimulacion(sim.id, { id_estudiante: estudianteId });
       const sesionId = sesionResp.data?.data?.id;
       setActiveSesion({ id: sesionId, simulacionId: sim.id, nombre: sim.nombre });
-      setPreguntasSesion(preguntas.sort((a,b)=> (a.orden||0)-(b.orden||0)));
+      setPreguntasSesion(preguntas.sort((a, b) => (a.orden || 0) - (b.orden || 0)));
       setRespuestasSesion({});
       setShowSesionModal(true);
-    } catch(e){
+    } catch (e) {
       console.error(e); setSesionError('No se pudo iniciar la simulación');
-      showNotification('Error','No se pudo iniciar la simulación','error');
+      showNotification('Error', 'No se pudo iniciar la simulación', 'error');
     } finally { setSesionLoading(false); }
   };
 
@@ -1162,12 +1162,12 @@ export function Simulaciones_Alumno_comp() {
       // Pre-abrir pestaña en blanco para evitar bloqueos y redirecciones tempranas
       const w = window.open('', '_blank');
       if (!w) {
-        navigate(url, { replace:true });
+        navigate(url, { replace: true });
       } else {
         try {
           w.document.write('<!doctype html><title>MQERK Academy</title><meta charset="utf-8"/><p style="font-family:system-ui,Segoe UI,Arial;margin:2rem;color:#4b5563;">Cargando simulación…</p>');
           w.document.close();
-        } catch {}
+        } catch { }
         w.location.href = url;
         simWindowRef.current = w;
         if (simMonitorRef.current) clearInterval(simMonitorRef.current);
@@ -1178,36 +1178,36 @@ export function Simulaciones_Alumno_comp() {
             simWindowRef.current = null;
             setLaunchingSimId(null);
             try {
-              await loadSimulaciones(selectedTipo==='generales' ? {type:'generales'} : {type:'modulo', moduloId:selectedModulo?.id});
-            } catch {}
+              await loadSimulaciones(selectedTipo === 'generales' ? { type: 'generales' } : { type: 'modulo', moduloId: selectedModulo?.id });
+            } catch { }
             showNotification('Simulación finalizada', 'Tu intento ha concluido correctamente.', 'success');
           }
         }, 1200);
       }
     } catch {
-      navigate(url, { replace:true });
+      navigate(url, { replace: true });
     }
   };
 
   const handleOpenLaunchModal = (simulacion) => {
     if (launchingSimId) return;
-    setLaunchModal({ open:true, simulacion, seconds:4 });
+    setLaunchModal({ open: true, simulacion, seconds: 4 });
   };
-  const cancelLaunch = () => setLaunchModal({ open:false, simulacion:null, seconds:4 });
+  const cancelLaunch = () => setLaunchModal({ open: false, simulacion: null, seconds: 4 });
   const doLaunchNow = () => {
-    if(!launchModal.simulacion) return;
+    if (!launchModal.simulacion) return;
     const id = launchModal.simulacion.id;
     setLaunchingSimId(id);
-    setLaunchModal({ open:false, simulacion:null, seconds:4 });
+    setLaunchModal({ open: false, simulacion: null, seconds: 4 });
     openSimRunner(id);
   };
-  useEffect(()=> {
-    if(!launchModal.open) return;
-    if(launchModal.seconds <= 0) { doLaunchNow(); return; }
-    const t = setTimeout(()=> setLaunchModal(prev=> ({...prev, seconds: prev.seconds - 1 })), 1000);
-    return ()=> clearTimeout(t);
+  useEffect(() => {
+    if (!launchModal.open) return;
+    if (launchModal.seconds <= 0) { doLaunchNow(); return; }
+    const t = setTimeout(() => setLaunchModal(prev => ({ ...prev, seconds: prev.seconds - 1 })), 1000);
+    return () => clearTimeout(t);
   }, [launchModal.open, launchModal.seconds]);
-  useEffect(()=> () => { if(simMonitorRef.current) clearInterval(simMonitorRef.current); }, []);
+  useEffect(() => () => { if (simMonitorRef.current) clearInterval(simMonitorRef.current); }, []);
 
   // Función para obtener el color de la dificultad
   const getDifficultyColor = (dificultad) => {
@@ -1225,7 +1225,7 @@ export function Simulaciones_Alumno_comp() {
 
   // NIVEL 1: Tipos de simuladores - Mejorado para móviles
   const renderTipos = () => (
-  <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
+    <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-8 sm:py-10 lg:py-12">
       <div className="max-w-7xl mx-auto">
         {/* Header - Mejorado para móviles */}
         <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
@@ -1251,7 +1251,7 @@ export function Simulaciones_Alumno_comp() {
         <div className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 rounded-xl sm:rounded-2xl border-2 border-violet-200/50 shadow-lg p-6 sm:p-8 mb-6 sm:mb-8 relative overflow-hidden ring-2 ring-violet-100/50">
           <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-violet-100/40 to-indigo-100/40 rounded-full blur-2xl"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-tr from-indigo-100/40 to-purple-100/40 rounded-full blur-xl"></div>
-          
+
           <div className="flex items-center justify-center relative z-10">
             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
               <div className="relative">
@@ -1262,7 +1262,7 @@ export function Simulaciones_Alumno_comp() {
                   <Trophy className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
                 </div>
               </div>
-              
+
               <div className="flex flex-col items-center">
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-700 to-purple-700 bg-clip-text text-transparent tracking-wide">
                   SIMULADORES
@@ -1277,7 +1277,7 @@ export function Simulaciones_Alumno_comp() {
         </div>
 
         {/* Tarjetas de tipos de simulador - Mejoradas para móviles */}
-  <div className="grid grid-cols-2 auto-rows-fr gap-4 sm:gap-5 md:gap-6 max-w-3xl mx-auto">
+        <div className="grid grid-cols-2 auto-rows-fr gap-4 sm:gap-5 md:gap-6 max-w-3xl mx-auto">
           {/* Simulador por áreas generales */}
           <div
             onClick={() => handleSelectTipo('generales')}
@@ -1329,7 +1329,7 @@ export function Simulaciones_Alumno_comp() {
   );
 
   const renderSesionModal = () => {
-    if(!showSesionModal || !activeSesion) return null;
+    if (!showSesionModal || !activeSesion) return null;
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
         <div className="bg-white w-full max-w-3xl rounded-xl shadow-xl flex flex-col max-h-[90vh]">
@@ -1342,10 +1342,10 @@ export function Simulaciones_Alumno_comp() {
             {preguntasSesion.length === 0 && !sesionLoading && (
               <div className="text-sm text-gray-500">No hay preguntas configuradas.</div>
             )}
-            {preguntasSesion.map((p, idx)=>(
+            {preguntasSesion.map((p, idx) => (
               <div key={p.id} className="border rounded-lg p-4">
-                <div className="font-medium mb-2">{idx+1}. {p.enunciado}</div>
-                
+                <div className="font-medium mb-2">{idx + 1}. {p.enunciado}</div>
+
                 {/* Pregunta de respuesta corta */}
                 {p.tipo === 'respuesta_corta' && (
                   <div>
@@ -1369,7 +1369,7 @@ export function Simulaciones_Alumno_comp() {
                         <button
                           key={op.id}
                           type="button"
-                          onClick={()=>handleSelectOpcion(p.id, op.id)}
+                          onClick={() => handleSelectOpcion(p.id, op.id)}
                           className={`w-full text-left px-3 py-2 rounded border transition-colors ${selected ? 'bg-indigo-600 text-white border-indigo-600' : 'hover:bg-indigo-50 border-gray-200'}`}
                         >
                           {op.texto}
@@ -1384,7 +1384,7 @@ export function Simulaciones_Alumno_comp() {
           <div className="px-6 py-4 border-t flex items-center justify-between">
             <div className="text-sm text-gray-500">
               Preguntas respondidas: {
-                Object.entries(respuestasSesion).filter(([_, r]) => 
+                Object.entries(respuestasSesion).filter(([_, r]) =>
                   r.id_opcion != null || (r.texto_libre != null && r.texto_libre.trim() !== '')
                 ).length
               }/{preguntasSesion.length}
@@ -1404,7 +1404,7 @@ export function Simulaciones_Alumno_comp() {
     const hasInitialArea = allowedSimulationAreas.length > 0;
 
     return (
-  <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
+      <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header con navegación - Mejorado para móviles */}
           <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
@@ -1422,7 +1422,7 @@ export function Simulaciones_Alumno_comp() {
                       {hasInitialArea ? 'Módulos Específicos' : 'Elige tu Área de Interés'}
                     </h1>
                     <p className="text-sm sm:text-base text-gray-600 font-medium">
-                      {hasInitialArea 
+                      {hasInitialArea
                         ? 'Accede a tus áreas permitidas o solicita acceso a nuevas.'
                         : 'Selecciona tu primera área de conocimiento para empezar.'}
                     </p>
@@ -1436,7 +1436,7 @@ export function Simulaciones_Alumno_comp() {
             </div>
           </div>
 
-      {/* Grid de módulos específicos - Mejorado para móviles */}
+          {/* Grid de módulos específicos - Mejorado para móviles */}
           {(loadError || catalogError) && (
             <div className="mb-4 p-4 rounded-xl border-2 border-red-200 bg-red-50 flex flex-col sm:flex-row sm:items-center gap-3 shadow-lg">
               <div className="flex-1 text-sm text-red-700 font-semibold">{loadError || catalogError}</div>
@@ -1446,7 +1446,7 @@ export function Simulaciones_Alumno_comp() {
             </div>
           )}
           <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-            {(loadingCatalog && modulosEspecificos.length===0) && (
+            {(loadingCatalog && modulosEspecificos.length === 0) && (
               <div className="col-span-full py-6 text-center text-sm sm:text-base text-gray-500 font-medium">Cargando módulos...</div>
             )}
             {modulosEspecificos.map((modulo) => {
@@ -1454,7 +1454,7 @@ export function Simulaciones_Alumno_comp() {
               const request = simulationRequests.find(req => req.areaId === modulo.id);
               const isPending = request && request.status === 'pending';
 
-              let actionHandler = () => {};
+              let actionHandler = () => { };
               let footerContent;
               let isClickable = false;
 
@@ -1525,7 +1525,7 @@ export function Simulaciones_Alumno_comp() {
                 </div>
               );
             })}
-            {!loadingCatalog && !catalogError && modulosEspecificos.length===0 && (
+            {!loadingCatalog && !catalogError && modulosEspecificos.length === 0 && (
               <div className="col-span-full text-center text-xs sm:text-sm text-gray-500 py-6 font-medium">No hay módulos específicos disponibles.</div>
             )}
           </div>
@@ -1536,7 +1536,7 @@ export function Simulaciones_Alumno_comp() {
 
   // NIVEL 3: Tabla de simulaciones
   const renderSimulaciones = () => (
-  <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
+    <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
       <div className="max-w-7xl mx-auto">
         {/* Header con navegación - Mejorado para móviles */}
         <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
@@ -1551,12 +1551,12 @@ export function Simulaciones_Alumno_comp() {
                 </button>
                 <div>
                   <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 mb-2">
-                    {selectedTipo === 'generales' ? 'Simulaciones Generales' : 
-                     selectedModulo ? `Simulaciones - ${selectedModulo.titulo}` : 'Simulaciones'}
+                    {selectedTipo === 'generales' ? 'Simulaciones Generales' :
+                      selectedModulo ? `Simulaciones - ${selectedModulo.titulo}` : 'Simulaciones'}
                   </h1>
                   <p className="text-sm sm:text-base text-gray-600 font-medium">
                     {selectedTipo === 'generales' ? 'Exámenes generales de ingreso universitario' :
-                     selectedModulo ? selectedModulo.descripcion : 'Simulaciones especializadas'}
+                      selectedModulo ? selectedModulo.descripcion : 'Simulaciones especializadas'}
                   </p>
                 </div>
               </div>
@@ -1572,7 +1572,7 @@ export function Simulaciones_Alumno_comp() {
         <div className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl border-2 border-cyan-200/50 shadow-lg p-6 sm:p-8 mb-6 sm:mb-8 relative overflow-hidden ring-2 ring-cyan-100/50">
           <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-cyan-100/40 to-indigo-100/40 rounded-full blur-2xl"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-tr from-blue-100/40 to-cyan-100/40 rounded-full blur-xl"></div>
-          
+
           <div className="flex items-center justify-center relative z-10">
             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
               <div className="relative">
@@ -1583,7 +1583,7 @@ export function Simulaciones_Alumno_comp() {
                   <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
                 </div>
               </div>
-              
+
               <div className="flex flex-col items-center">
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent tracking-wide">
                   SIMULACIONES DISPONIBLES
@@ -1604,11 +1604,11 @@ export function Simulaciones_Alumno_comp() {
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-violet-600" />
               <span>Filtrar simulaciones</span>
             </div>
-            
+
             {/* Acciones */}
             {/* Debug removido */}
             <div className="flex items-center gap-2 order-3 md:order-2" />
-            
+
             {/* Selector de mes */}
             <div className="relative w-full md:w-auto">
               <button
@@ -1692,7 +1692,7 @@ export function Simulaciones_Alumno_comp() {
                             {simulacion.nombre}
                           </div>
                           {simulacion.descripcion && (
-                            <div 
+                            <div
                               onClick={() => openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id })}
                               className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 cursor-pointer group"
                             >
@@ -1736,11 +1736,11 @@ export function Simulaciones_Alumno_comp() {
                           <button
                             onClick={() => handleOpenLaunchModal(simulacion)}
                             disabled={launchingSimId === simulacion.id}
-                            className={`relative px-2 sm:px-3 py-1.5 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide shadow-md transition-all duration-200 border border-red-600 hover:border-red-700 active:scale-95 touch-manipulation ${launchingSimId===simulacion.id ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg transform hover:scale-105'}`}
+                            className={`relative px-2 sm:px-3 py-1.5 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide shadow-md transition-all duration-200 border border-red-600 hover:border-red-700 active:scale-95 touch-manipulation ${launchingSimId === simulacion.id ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg transform hover:scale-105'}`}
                           >
                             <span className="relative z-10 flex items-center justify-center">
                               <span className="mr-1 text-xs">🚀</span>
-                              {launchingSimId===simulacion.id ? 'LANZANDO…' : 'START'}
+                              {launchingSimId === simulacion.id ? 'LANZANDO…' : 'START'}
                             </span>
                             <div className="absolute inset-0 bg-gradient-to-t from-red-700/20 to-transparent rounded-lg"></div>
                           </button>
@@ -1749,7 +1749,7 @@ export function Simulaciones_Alumno_comp() {
                             disabled
                             className="px-2 py-1 bg-gray-300 cursor-not-allowed text-gray-500 rounded-lg text-[10px] sm:text-[11px] font-bold"
                           >
-                            {computeSimEstado(simulacion) === 'vencido' ? 'VENCIDO' : (Number(simulacion.totalPreguntas||0) === 0 ? 'SIN PREGUNTAS' : 'NO DISPONIBLE')}
+                            {computeSimEstado(simulacion) === 'vencido' ? 'VENCIDO' : (Number(simulacion.totalPreguntas || 0) === 0 ? 'SIN PREGUNTAS' : 'NO DISPONIBLE')}
                           </button>
                         )}
                       </td>
@@ -1765,11 +1765,11 @@ export function Simulaciones_Alumno_comp() {
                           <button
                             onClick={() => handleOpenLaunchModal(simulacion)}
                             disabled={launchingSimId === simulacion.id}
-                            className={`relative px-2 sm:px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide shadow-md transition-all duration-200 border border-red-600 hover:border-red-700 active:scale-95 touch-manipulation ${launchingSimId===simulacion.id ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg transform hover:scale-105'}`}
+                            className={`relative px-2 sm:px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide shadow-md transition-all duration-200 border border-red-600 hover:border-red-700 active:scale-95 touch-manipulation ${launchingSimId === simulacion.id ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg transform hover:scale-105'}`}
                           >
                             <span className="relative z-10 flex items-center justify-center">
                               <span className="mr-0.5 text-xs">🔄</span>
-                              {launchingSimId===simulacion.id ? 'LANZANDO…' : 'REINTENTAR'}
+                              {launchingSimId === simulacion.id ? 'LANZANDO…' : 'REINTENTAR'}
                             </span>
                             <div className="absolute inset-0 bg-gradient-to-t from-red-600/20 to-transparent rounded-lg"></div>
                           </button>
@@ -1867,7 +1867,7 @@ export function Simulaciones_Alumno_comp() {
                   <div className="flex-1">
                     <h3 className="font-extrabold text-gray-900 text-base sm:text-lg leading-snug tracking-tight mb-1.5">{simulacion.nombre}</h3>
                     {simulacion.descripcion && (
-                      <div 
+                      <div
                         onClick={() => openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id })}
                         className="text-xs sm:text-sm text-gray-600 mb-2.5 leading-relaxed cursor-pointer group"
                       >
@@ -1936,23 +1936,22 @@ export function Simulaciones_Alumno_comp() {
                       </span>
                     </div>
                   </div>
-                  <span className={`text-xs sm:text-sm font-extrabold px-2.5 py-1.5 rounded-xl border-2 ${
-                    simulacion.completado ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-red-100 text-red-600 border-red-200'
-                  }`}>
+                  <span className={`text-xs sm:text-sm font-extrabold px-2.5 py-1.5 rounded-xl border-2 ${simulacion.completado ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-red-100 text-red-600 border-red-200'
+                    }`}>
                     {simulacion.completado ? 'Completado' : 'Pendiente'}
                   </span>
                 </div>
-                
+
                 {/* Acciones */}
                 <div className="mt-4 space-y-2">
                   {isSimulacionAvailable(simulacion) && !simulacion.completado && (
                     <button
                       onClick={() => handleOpenLaunchModal(simulacion)}
                       disabled={launchingSimId === simulacion.id}
-                      className={`w-full rounded-xl py-3 px-4 text-sm font-extrabold text-white bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 shadow-lg transition-all flex items-center justify-center gap-2 border-2 border-red-600 active:scale-95 touch-manipulation ${launchingSimId===simulacion.id ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-xl'}`}
+                      className={`w-full rounded-xl py-3 px-4 text-sm font-extrabold text-white bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 shadow-lg transition-all flex items-center justify-center gap-2 border-2 border-red-600 active:scale-95 touch-manipulation ${launchingSimId === simulacion.id ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-xl'}`}
                     >
                       <span className="text-lg">🚀</span>
-                      {launchingSimId===simulacion.id ? 'Lanzando...' : 'Ejecutar'}
+                      {launchingSimId === simulacion.id ? 'Lanzando...' : 'Ejecutar'}
                     </button>
                   )}
                   {simulacion.completado && (
@@ -1960,10 +1959,10 @@ export function Simulaciones_Alumno_comp() {
                       <button
                         onClick={() => handleOpenLaunchModal(simulacion)}
                         disabled={launchingSimId === simulacion.id}
-                        className={`w-full rounded-xl py-3 px-4 text-sm font-extrabold text-white bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg transition-all flex items-center justify-center gap-2 border-2 border-red-600 active:scale-95 touch-manipulation ${launchingSimId===simulacion.id ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-xl'}`}
+                        className={`w-full rounded-xl py-3 px-4 text-sm font-extrabold text-white bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg transition-all flex items-center justify-center gap-2 border-2 border-red-600 active:scale-95 touch-manipulation ${launchingSimId === simulacion.id ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-xl'}`}
                       >
                         <span className="text-lg">🔄</span>
-                        {launchingSimId===simulacion.id ? 'Lanzando...' : 'Reintentar'}
+                        {launchingSimId === simulacion.id ? 'Lanzando...' : 'Reintentar'}
                       </button>
                       {getTotalAttempts(simulacion.id) > 0 && (
                         <div className="grid grid-cols-2 gap-2.5 mt-2.5">
@@ -1987,7 +1986,7 @@ export function Simulaciones_Alumno_comp() {
                   )}
                   {!isSimulacionAvailable(simulacion) && !simulacion.completado && (
                     <div className="mt-2 w-full px-4 py-3 bg-gray-100 text-gray-600 rounded-xl text-center text-sm font-bold border-2 border-gray-200">
-                      {computeSimEstado(simulacion) === 'vencido' ? 'Simulación Vencida' : (Number(simulacion.totalPreguntas||0) === 0 ? 'Sin preguntas configuradas' : 'No Disponible')}
+                      {computeSimEstado(simulacion) === 'vencido' ? 'Simulación Vencida' : (Number(simulacion.totalPreguntas || 0) === 0 ? 'Sin preguntas configuradas' : 'No Disponible')}
                     </div>
                   )}
                 </div>
@@ -2000,7 +1999,7 @@ export function Simulaciones_Alumno_comp() {
                 No hay simulaciones disponibles
               </h3>
               <p className="text-sm sm:text-base text-gray-600 font-medium">
-                {selectedMonth !== 'all' 
+                {selectedMonth !== 'all'
                   ? `No se encontraron simulaciones para ${getSelectedMonthName()}.`
                   : 'No hay simulaciones disponibles en este momento.'
                 }
@@ -2019,7 +2018,7 @@ export function Simulaciones_Alumno_comp() {
     const historial = getSimulacionHistorial(selectedSimulacionHistorial.id);
 
     return (
-  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-3 md:p-4">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-3 md:p-4">
         <div
           className="bg-white rounded-lg shadow-xl w-full max-w-[92vw] md:max-w-[30rem] lg:max-w-[32rem] xl:max-w-[36rem] h-[72vh] sm:h-[68vh] md:h-[62vh] lg:h-[58vh] max-h-[720px] overflow-hidden flex flex-col transform translate-y-6 sm:translate-y-8 md:translate-x-8 lg:translate-x-0"
           role="dialog"
@@ -2079,7 +2078,7 @@ export function Simulaciones_Alumno_comp() {
               <h3 className="text-base font-semibold text-gray-900 mb-3">
                 Historial Detallado ({historial.intentos.length} intentos)
               </h3>
-              
+
               {historial.intentos.length > 0 ? (
                 <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
                   <div className="space-y-2.5">
@@ -2098,20 +2097,19 @@ export function Simulaciones_Alumno_comp() {
                             </div>
                             <div className="text-xs text-gray-500 truncate">
                               {new Date(intento.fecha).toLocaleDateString('es-ES')} a las{' '}
-                              {new Date(intento.fecha).toLocaleTimeString('es-ES', { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
+                              {new Date(intento.fecha).toLocaleTimeString('es-ES', {
+                                hour: '2-digit',
+                                minute: '2-digit'
                               })}
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2 flex-shrink-0">
                           <div className="text-right">
-                            <div className={`font-bold text-base ${
-                              intento.puntaje === historial.mejorPuntaje 
-                                ? 'text-green-600' 
-                                : 'text-gray-700'
-                            }`}>
+                            <div className={`font-bold text-base ${intento.puntaje === historial.mejorPuntaje
+                              ? 'text-green-600'
+                              : 'text-gray-700'
+                              }`}>
                               {intento.puntaje}%
                               {intento.puntaje === historial.mejorPuntaje && (
                                 <span className="ml-1 text-yellow-500">👑</span>
@@ -2121,11 +2119,10 @@ export function Simulaciones_Alumno_comp() {
                               {intento.tiempoEmpleado} min
                             </div>
                           </div>
-                          <div className={`w-1.5 h-7 rounded-full ${
-                            intento.puntaje >= 90 ? 'bg-green-500' :
+                          <div className={`w-1.5 h-7 rounded-full ${intento.puntaje >= 90 ? 'bg-green-500' :
                             intento.puntaje >= 70 ? 'bg-yellow-500' :
-                            intento.puntaje >= 50 ? 'bg-orange-500' : 'bg-red-500'
-                          }`}></div>
+                              intento.puntaje >= 50 ? 'bg-orange-500' : 'bg-red-500'
+                            }`}></div>
                           <button
                             onClick={() => {
                               // Usar intent_number del backend o calcular basado en posición
@@ -2213,7 +2210,7 @@ export function Simulaciones_Alumno_comp() {
             <p className="text-gray-700 text-lg leading-relaxed mb-6">
               {notificationContent.message}
             </p>
-            
+
             <button
               onClick={closeNotificationModal}
               className={`w-full px-6 py-3 bg-gradient-to-r ${getColorByType(notificationContent.type)} hover:opacity-90 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105`}
@@ -2246,15 +2243,15 @@ export function Simulaciones_Alumno_comp() {
           {currentLevel === 'tipos' && renderTipos()}
           {currentLevel === 'modulos' && renderModulos()}
           {currentLevel === 'simulaciones' && renderSimulaciones()}
-          
+
           {/* Modal de historial */}
           {selectedSimulacionHistorial && renderHistorialModal()}
-          
+
           {/* Modal de notificación */}
           {renderNotificationModal()}
         </>
       )}
-      
+
       {/* Confetti effect */}
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50">
@@ -2300,11 +2297,11 @@ export function Simulaciones_Alumno_comp() {
             </div>
             {/* Contenido con scroll */}
             <div className="flex-1 overflow-y-auto px-4 py-3 sm:p-4 min-h-0">
-              <div 
-                className="text-sm sm:text-base text-gray-800 whitespace-pre-wrap" 
-                style={{ 
-                  textAlign: 'justify', 
-                  lineHeight: 1.6, 
+              <div
+                className="text-sm sm:text-base text-gray-800 whitespace-pre-wrap"
+                style={{
+                  textAlign: 'justify',
+                  lineHeight: 1.6,
                   wordBreak: 'break-word'
                 }}
               >

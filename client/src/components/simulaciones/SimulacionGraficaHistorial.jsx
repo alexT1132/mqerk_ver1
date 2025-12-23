@@ -205,13 +205,6 @@ function SimulacionGraficaHistorial({
     }
   }, [isOpen]);
 
-  // Incrementar uso cuando se genera un análisis exitoso con Gemini
-  useEffect(() => {
-    if (analisisIA && !analisisIA.esFallbackLocal && !cargandoIA && !errorIA) {
-      incrementUsage();
-    }
-  }, [analisisIA]);
-
 
   // Función para calcular métricas de efectividad comparando el análisis IA con reglas heurísticas locales
   const calcularMetricasIA = (analisis, materiasPromedios) => {
@@ -608,6 +601,12 @@ function SimulacionGraficaHistorial({
       setAnalisisIA(analisis);
       setRecursos(recursosRecomendados);
       setMostrarAnalisisIA(true);
+
+      // ✅ INCREMENTAR USO INMEDIATAMENTE si es análisis de Gemini (no fallback)
+      if (!analisis.esFallbackLocal && !analisis.desdeCache) {
+        incrementUsage(); // Actualiza el contador en tiempo real
+      }
+
       // Calcular métricas de efectividad
       const m = calcularMetricasIA(analisis, promediosPorMateria);
       setMetricasIA(m);
@@ -1666,9 +1665,13 @@ function SimulacionGraficaHistorial({
             <div className="flex items-center gap-2">
               <button
                 onClick={generarAnalisisDetallado}
-                disabled={isLoadingAnalysis || (historial?.intentos?.length || 0) < MIN_INTENTOS_TENDENCIA}
-                title={(historial?.intentos?.length || 0) < MIN_INTENTOS_TENDENCIA ? `Requiere mínimo ${MIN_INTENTOS_TENDENCIA} intentos` : ''}
-                className="flex items-center justify-center w-full sm:w-auto space-x-2 px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg font-medium transition-colores text-sm disabled:cursor-not-allowed"
+                disabled={isLoadingAnalysis || (historial?.intentos?.length || 0) < MIN_INTENTOS_TENDENCIA || aiUsage.remaining === 0}
+                title={
+                  aiUsage.remaining === 0 ? 'Límite diario de análisis alcanzado. Vuelve mañana.' :
+                    (historial?.intentos?.length || 0) < MIN_INTENTOS_TENDENCIA ? `Requiere mínimo ${MIN_INTENTOS_TENDENCIA} intentos` :
+                      'Generar análisis con IA'
+                }
+                className="flex items-center justify-center w-full sm:w-auto space-x-2 px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors text-sm"
               >
                 {isLoadingAnalysis ? (
                   <>
@@ -1682,25 +1685,44 @@ function SimulacionGraficaHistorial({
                   </>
                 )}
               </button>
-              {/* Indicador de uso de IA */}
-              <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg">
-                <span className="text-xs text-indigo-700 font-medium">Análisis hoy:</span>
-                <span className={`text-xs font-bold ${aiUsage.remaining <= 1 ? 'text-red-600' :
-                  aiUsage.remaining <= 2 ? 'text-yellow-600' :
-                    'text-emerald-600'
-                  }`}>
-                  {aiUsage.remaining}/{aiUsage.limit}
-                </span>
-                {aiUsage.remaining === 0 && (
-                  <span className="text-[10px] text-red-600 animate-pulse ml-1">
-                    ⚠️
-                  </span>
-                )}
-                {aiUsage.remaining === 1 && (
-                  <span className="text-[10px] text-yellow-600 ml-1">
-                    ⚡
-                  </span>
-                )}
+              {/* Indicador de uso de IA - MÁS VISIBLE */}
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 ${aiUsage.remaining === 0 ? 'bg-red-50 border-red-300' :
+                aiUsage.remaining <= 1 ? 'bg-yellow-50 border-yellow-300' :
+                  aiUsage.remaining <= 2 ? 'bg-orange-50 border-orange-300' :
+                    'bg-blue-50 border-blue-200'
+                }`}>
+                <Brain className={`w-5 h-5 ${aiUsage.remaining === 0 ? 'text-red-600' :
+                  aiUsage.remaining <= 1 ? 'text-yellow-600' :
+                    aiUsage.remaining <= 2 ? 'text-orange-600' :
+                      'text-blue-600'
+                  }`} />
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-gray-700">Análisis IA hoy:</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-bold ${aiUsage.remaining === 0 ? 'text-red-600' :
+                      aiUsage.remaining <= 1 ? 'text-yellow-700' :
+                        aiUsage.remaining <= 2 ? 'text-orange-600' :
+                          'text-blue-600'
+                      }`}>
+                      {aiUsage.remaining}/{aiUsage.limit}
+                    </span>
+                    {aiUsage.remaining === 0 && (
+                      <span className="text-[10px] text-red-600 font-semibold animate-pulse">
+                        ⚠️ Límite alcanzado
+                      </span>
+                    )}
+                    {aiUsage.remaining === 1 && (
+                      <span className="text-[10px] text-yellow-700 font-semibold">
+                        ⚡ Último disponible
+                      </span>
+                    )}
+                    {aiUsage.remaining === 2 && (
+                      <span className="text-[10px] text-orange-600 font-semibold">
+                        ⚠️ Quedan 2
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

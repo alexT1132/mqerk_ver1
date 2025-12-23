@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 18-12-2025 a las 23:58:23
+-- Tiempo de generación: 23-12-2025 a las 05:09:21
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.0.30
 
@@ -734,6 +734,23 @@ INSERT INTO `calendar_events` (`id`, `user_id`, `titulo`, `descripcion`, `fecha`
 (90, 6, 'Gasto variable: material', 'Unidades: 1 | Método: Efectivo | Importe: $800.00 | Estatus: Pagado | Entidad: comex', '2025-09-26', '10:00:00', 'finanzas', 'media', 10, 0, '2025-09-26 20:38:38', '2025-09-26 20:38:38'),
 (91, 6, 'Gasto variable: puerta', 'Unidades: 1 | Método: Efectivo | Importe: $950.00 | Estatus: Pagado | Entidad: carpintero | Nota: reparacion de puerta', '2025-09-26', '10:00:00', 'finanzas', 'media', 10, 0, '2025-09-26 20:41:13', '2025-09-26 20:41:13'),
 (92, 6, 'Inicio asesoria de prueba - alumno de prueba', 'Asesor: Jair Iván Martínez Palacios | Método: Efectivo | Importe: $450.00 | Estatus: Pagado', '2025-12-11', '12:35:00', 'trabajo', 'media', 30, 0, '2025-12-10 17:36:19', '2025-12-10 17:36:19');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `chat_messages`
+--
+
+CREATE TABLE `chat_messages` (
+  `id` int(11) NOT NULL,
+  `student_id` int(11) NOT NULL,
+  `sender_role` enum('estudiante','admin','asesor','sistema') NOT NULL,
+  `message` text DEFAULT NULL,
+  `type` enum('text','image','file') DEFAULT 'text',
+  `category` enum('general','support','academic') DEFAULT 'general',
+  `is_read` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -2836,7 +2853,7 @@ INSERT INTO `student_notifications` (`id`, `student_id`, `type`, `title`, `messa
 (289, 67, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Español y redacción indirecta (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=4', '{\"actividad_id\":4,\"kind\":\"quiz\"}', 1, '2025-12-17 20:44:03'),
 (290, 69, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Español y redacción indirecta (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=4', '{\"actividad_id\":4,\"kind\":\"quiz\"}', 0, '2025-12-17 20:44:03'),
 (291, 73, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Español y redacción indirecta (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=4', '{\"actividad_id\":4,\"kind\":\"quiz\"}', 0, '2025-12-17 20:44:03'),
-(292, 67, 'assignment', 'Nueva simulación asignada', 'Se te asignó: algebra (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":36,\"kind\":\"simulacion\"}', 0, '2025-12-17 21:54:47'),
+(292, 67, 'assignment', 'Nueva simulación asignada', 'Se te asignó: algebra (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":36,\"kind\":\"simulacion\"}', 1, '2025-12-17 21:54:47'),
 (293, 69, 'assignment', 'Nueva simulación asignada', 'Se te asignó: algebra (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":36,\"kind\":\"simulacion\"}', 0, '2025-12-17 21:54:47'),
 (294, 73, 'assignment', 'Nueva simulación asignada', 'Se te asignó: algebra (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":36,\"kind\":\"simulacion\"}', 0, '2025-12-17 21:54:47');
 
@@ -3012,12 +3029,12 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `usuario`, `contraseña`, `must_change`, `last_login_at`, `password_changed_at`, `failed_attempts`, `locked_until`, `role`, `id_estudiante`, `created_at`) VALUES
-(3, 'miguel', '$2b$10$JkGqmotlDUI4Kuutn3ywoesTpA3izIF6QjlJUygfyizNoO9xJpJye', 1, '2025-12-18 16:49:15', NULL, 0, NULL, 'estudiante', 67, '2025-08-11 00:41:45'),
-(6, 'jesica_admin', '$2b$10$C9FZlnOw4.vJfjxh5E/H8OZu0S7g7ZF.dRiCopqNfz/8Hta1ta9VW', 1, '2025-12-18 16:48:38', NULL, 0, NULL, 'admin', NULL, '2025-08-11 04:00:37'),
+(3, 'miguel', '$2b$10$JkGqmotlDUI4Kuutn3ywoesTpA3izIF6QjlJUygfyizNoO9xJpJye', 1, '2025-12-22 22:04:25', NULL, 0, NULL, 'estudiante', 67, '2025-08-11 00:41:45'),
+(6, 'jesica_admin', '$2b$10$C9FZlnOw4.vJfjxh5E/H8OZu0S7g7ZF.dRiCopqNfz/8Hta1ta9VW', 1, '2025-12-22 21:57:26', NULL, 0, NULL, 'admin', NULL, '2025-08-11 04:00:37'),
 (8, 'jessica.mqerk', '$2b$10$/.53BvJ4Vuh6E910koGzqOOHU7m5kvsR2x8q8gE.4iN7tEem93Une', 1, NULL, NULL, 0, NULL, 'estudiante', 69, '2025-08-11 19:36:41'),
 (10, 'kelvincienytec', '$2b$10$A.Y8E73jINN6a0AWHDEId.lxAy6F4HBSz83NZhEvchCwAgGXfa7Oa', 1, '2025-10-06 11:03:12', NULL, 0, NULL, 'asesor', NULL, '2025-08-11 22:48:41'),
 (20, 'juan8', '$2b$10$WY5sxiP7FVP5q6MxJHcsFeKo5P8Aah.9HvfqfWYkQF.ULEeBPewdC', 1, NULL, NULL, 0, NULL, 'estudiante', 73, '2025-08-21 18:19:30'),
-(21, 'jair.asesor', '$2b$10$UjpfEXATomGY6ftdqu2niuLgNQ7sGLkd8Or/5EeQwsJW5d.ybdDp6', 0, '2025-12-18 15:14:32', '2025-10-13 12:59:25', 0, NULL, 'asesor', NULL, '2025-10-06 17:29:14'),
+(21, 'jair.asesor', '$2b$10$UjpfEXATomGY6ftdqu2niuLgNQ7sGLkd8Or/5EeQwsJW5d.ybdDp6', 0, '2025-12-22 21:57:13', '2025-10-13 12:59:25', 0, NULL, 'asesor', NULL, '2025-10-06 17:29:14'),
 (22, 'Eduardo_1', '$2b$10$KkhPtNqVnR4qJmSFWi1mL.YyregJKx7/f1C0Pt2iIhZMZSDxeX12e', 1, '2025-12-09 18:36:21', NULL, 0, NULL, 'estudiante', 74, '2025-12-10 00:36:12');
 
 -- --------------------------------------------------------
@@ -3312,6 +3329,16 @@ ALTER TABLE `asistencias`
 ALTER TABLE `calendar_events`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_calendar_events_user_fecha` (`user_id`,`fecha`);
+
+--
+-- Indices de la tabla `chat_messages`
+--
+ALTER TABLE `chat_messages`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_student` (`student_id`),
+  ADD KEY `idx_created` (`created_at`),
+  ADD KEY `idx_chat_category` (`category`),
+  ADD KEY `idx_chat_category_student` (`category`,`student_id`);
 
 --
 -- Indices de la tabla `comprobantes`
@@ -3771,6 +3798,12 @@ ALTER TABLE `asistencias`
 --
 ALTER TABLE `calendar_events`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=93;
+
+--
+-- AUTO_INCREMENT de la tabla `chat_messages`
+--
+ALTER TABLE `chat_messages`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `comprobantes`

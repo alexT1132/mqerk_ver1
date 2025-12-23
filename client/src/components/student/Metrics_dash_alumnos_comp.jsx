@@ -1,3 +1,4 @@
+// imoprtaciones de React y hooks
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useCourse } from '../../context/CourseContext.jsx';
@@ -23,23 +24,23 @@ const reeseProfilePic = "https://placehold.co/128x128/A0AEC0/FFFFFF?text=Foto";
 // Se mantienen aquí solo como referencia/documentación
 // Datos de usuario por defecto (NO SE USAN - solo referencia)
 // eslint-disable-next-line no-unused-vars
-const DEFAULT_USER_DATA = {
-  name: "Mari Lu Rodríguez Marquez",
-  email: "XXXXXXXXXXXXX@gmail.com",
-  telefono: "",
-  comunidad: "",
-  telTutor: "",
-  nombreTutor: "",
-  activeCourse: "XXXXXXXXX",
-  currentBachillerato: "XXXXXXXXXXXXX",
-  academy: "MQerK Academy",
-  universityOption: "XXXXXXXXX",
-  licenciaturaOption: "XXXXXXXXX",
-  advisor: "L.C.Q Kelvin Valentin Gomez Ramirez",
-  group: "xXXXX",
-  folio: "MEEAU25-0001",
-  profilePic: reeseProfilePic,
-};
+// const DEFAULT_USER_DATA = {
+//   name: "Mari Lu Rodríguez Marquez",
+//   email: "XXXXXXXXXXXXX@gmail.com",
+//   telefono: "",
+//   comunidad: "",
+//   telTutor: "",
+//   nombreTutor: "",
+//   activeCourse: "XXXXXXXXX",
+//   currentBachillerato: "XXXXXXXXXXXXX",
+//   academy: "MQerK Academy",
+//   universityOption: "XXXXXXXXX",
+//   licenciaturaOption: "XXXXXXXXX",
+//   advisor: "L.C.Q Kelvin Valentin Gomez Ramirez",
+//   group: "xXXXX",
+//   folio: "MEEAU25-0001",
+//   profilePic: reeseProfilePic,
+// };
 
 // Datos de métricas por defecto (NO SE USAN - solo referencia)
 // eslint-disable-next-line no-unused-vars
@@ -227,14 +228,14 @@ const getSimulatorRecommendation = (score, allSubjectsData) => {
  */
 const calculateAcademicStatus = (metrics) => {
   const { attendance, monthlyAverage, activities, quiz } = metrics;
-  
+
   // Calcular promedio ponderado
   const activityProgress = activities?.total ? (activities.current / activities.total) * 100 : 0;
   const quizProgress = quiz?.total ? (quiz.current / quiz.total) * 100 : 0;
-  
+
   // Promedio general considerando todas las métricas
   const overallScore = (attendance * 0.2 + monthlyAverage * 0.4 + activityProgress * 0.2 + quizProgress * 0.2);
-  
+
   if (overallScore >= 85) {
     return { level: 'D', color: 'green', description: 'Destacado', score: overallScore };
   } else if (overallScore >= 65) {
@@ -268,6 +269,7 @@ const calculatePerformanceLevel = (score) => {
  * @param {Object} academicStatus - Estado académico del estudiante
  * @returns {string} Frase motivacional personalizada
  */
+
 const getAcademicMotivationalPhrase = (academicStatus) => {
   const riesgoFrases = [
     "Cada día es una nueva oportunidad para mejorar. ¡No te rindas, tu esfuerzo vale la pena!",
@@ -302,8 +304,9 @@ const getAcademicMotivationalPhrase = (academicStatus) => {
     "No solo estás aprendiendo, estás dominando. ¡Tu futuro es extraordinario!"
   ];
 
+
   let frases = [];
-  
+
   switch (academicStatus.level) {
     case 'R': // Riesgo
       frases = riesgoFrases;
@@ -334,7 +337,7 @@ const ChartModal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -376,7 +379,7 @@ const ChartModal = ({ isOpen, onClose, title, children }) => {
 export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = false, error = null, showMetrics = false }) {
   const { selectedCourse } = useCourse();
   const { alumno } = useAuth();
-  
+
   // Estados para datos reales de las APIs
   const [realMetricsData, setRealMetricsData] = useState(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
@@ -480,11 +483,11 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
       let attendanceData = null;
       if (attendanceGeneral) {
         // Usar el porcentaje calculado por el backend, o calcularlo si no está disponible
-        attendancePercentage = attendanceGeneral.porcentaje != null 
-          ? Number(attendanceGeneral.porcentaje) 
-          : (attendanceGeneral.total > 0 
-              ? Math.round((attendanceGeneral.asistidas / attendanceGeneral.total) * 100) 
-              : null);
+        attendancePercentage = attendanceGeneral.porcentaje != null
+          ? Number(attendanceGeneral.porcentaje)
+          : (attendanceGeneral.total > 0
+            ? Math.round((attendanceGeneral.asistidas / attendanceGeneral.total) * 100)
+            : null);
         // Guardar también los datos de total y asistidas para mostrar información más precisa
         attendanceData = {
           total: attendanceGeneral.total || 0,
@@ -508,12 +511,112 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         monthlyAverageData,
         activityProgress,
         feedbackScore,
-        // Datos de simuladores y materias - se mantendrán vacíos hasta que haya datos reales
+
+        // Procesar simuladores - separar generales de específicos
+        simulatorGrades: (() => {
+          const simulacionesArray = Array.isArray(simulacionesData) ? simulacionesData : [];
+
+          if (simulacionesArray.length === 0) {
+            return { generales: [], especificos: [] };
+          }
+
+          // Separar por tipo:
+          // - GENERALES: id_area null (sin categoría) o id_area 1-5 (áreas fundamentales)
+          // - ESPECÍFICOS: id_area >= 100 (módulos universitarios: UNAM, IPN, etc.)
+          const simuladoresGenerales = simulacionesArray.filter(sim => {
+            const area = sim.id_area;
+            // Considerar como general si:
+            // 1. No tiene id_area (null/undefined) - simuladores sin categoría específica
+            // 2. Tiene id_area entre 1-5 - áreas fundamentales
+            if (area === null || area === undefined) return true;
+            const areaNum = Number(area);
+            return areaNum >= 1 && areaNum <= 5;
+          });
+
+          const simuladoresEspecificos = simulacionesArray.filter(sim => {
+            const area = sim.id_area;
+            // Solo considerar como específico si tiene id_area >= 100
+            if (area === null || area === undefined) return false;
+            const areaNum = Number(area);
+            return areaNum >= 100;
+          });
+
+          // console.log('🔍 Simuladores generales filtrados:', simuladoresGenerales);
+          // console.log('🔍 Simuladores específicos filtrados:', simuladoresEspecificos);
+
+          // Calcular puntajes por área general (mejor puntaje de cada área)
+          const puntajesPorArea = {};
+
+          // Primero, calcular puntajes para áreas 1-5
+          [1, 2, 3, 4, 5].forEach(areaId => {
+            const simsArea = simuladoresGenerales.filter(s => Number(s.id_area) === areaId);
+            if (simsArea.length > 0) {
+              const puntajes = simsArea.map(sim => {
+                const puntaje = sim.mejor_puntaje ?? sim.ultimo_puntaje ?? sim.oficial_puntaje ?? 0;
+                return Number(puntaje) || 0;
+              });
+              puntajesPorArea[areaId] = Math.max(...puntajes, 0);
+            } else {
+              puntajesPorArea[areaId] = 0;
+            }
+          });
+
+          // Luego, calcular puntaje para simuladores sin categoría (id_area null)
+          const simsSinCategoria = simuladoresGenerales.filter(s => s.id_area === null || s.id_area === undefined);
+          if (simsSinCategoria.length > 0) {
+            const puntajes = simsSinCategoria.map(sim => {
+              const puntaje = sim.mejor_puntaje ?? sim.ultimo_puntaje ?? sim.oficial_puntaje ?? 0;
+              return Number(puntaje) || 0;
+            });
+            puntajesPorArea[0] = Math.max(...puntajes, 0); // Usar área 0 para "General"
+          } else {
+            puntajesPorArea[0] = 0;
+          }
+
+          // Calcular puntajes por módulo específico (solo id_area >= 100)
+          const puntajesPorModulo = {};
+
+          simuladoresEspecificos.forEach(sim => {
+            const area = sim.id_area;
+            const key = `modulo_${area}`;
+
+            if (!puntajesPorModulo[key]) {
+              puntajesPorModulo[key] = {
+                puntajes: [],
+                nombre: `Módulo ${area}`,
+                id_area: area
+              };
+            }
+
+            const puntaje = sim.mejor_puntaje ?? sim.ultimo_puntaje ?? sim.oficial_puntaje ?? 0;
+            puntajesPorModulo[key].puntajes.push(Number(puntaje) || 0);
+          });
+
+          // console.log('🔍 Puntajes por área (incluyendo área 0 para generales):', puntajesPorArea);
+          // console.log('🔍 Puntajes por módulo:', puntajesPorModulo);
+
+          return {
+            generales: [
+              { area: 'General', id_area: 0, puntaje: puntajesPorArea[0] || 0, color: '#A855F7' },
+              { area: 'Español', id_area: 1, puntaje: puntajesPorArea[1] || 0, color: '#8B5CF6' },
+              { area: 'Matemáticas', id_area: 2, puntaje: puntajesPorArea[2] || 0, color: '#EC4899' },
+              { area: 'Hab. Trans.', id_area: 3, puntaje: puntajesPorArea[3] || 0, color: '#F59E0B' },
+              { area: 'L. Extranjera', id_area: 4, puntaje: puntajesPorArea[4] || 0, color: '#6366F1' }
+            ],
+            especificos: Object.entries(puntajesPorModulo).map(([key, data]) => ({
+              modulo: data.nombre,
+              id_area: data.id_area,
+              puntaje: Math.max(...data.puntajes, 0),
+              color: '#10B981'
+            }))
+          };
+        })(),
+
+        // Datos de materias - se mantendrán vacíos hasta que haya datos reales
         subjectResults: {
           total: 0,
           subjects: []
         },
-        simulatorGrades: [],
       };
     };
   }, []);
@@ -533,7 +636,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         const fechaDesde = new Date();
         fechaDesde.setMonth(fechaDesde.getMonth() - 1);
         const fechaDesdeStr = fechaDesde.toISOString().split('T')[0];
-        
+
         const [quizzesRes, actividadesRes, simulacionesRes, asistenciaRes] = await Promise.allSettled([
           resumenQuizzesEstudiante(alumno.id),
           resumenActividadesEstudiante(alumno.id),
@@ -546,18 +649,25 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
 
         if (!alive) return;
 
-        const quizzesData = quizzesRes.status === 'fulfilled' 
-          ? (quizzesRes.value?.data || quizzesRes.value || [])
+        const quizzesData = quizzesRes.status === 'fulfilled'
+          ? (quizzesRes.value?.data?.data || quizzesRes.value?.data || [])
           : [];
         const actividadesData = actividadesRes.status === 'fulfilled'
           ? (actividadesRes.value?.data || actividadesRes.value || [])
           : [];
         const simulacionesData = simulacionesRes.status === 'fulfilled'
-          ? (simulacionesRes.value?.data || simulacionesRes.value || [])
+          ? (simulacionesRes.value?.data?.data || simulacionesRes.value?.data || [])
           : [];
         const asistenciaResumen = asistenciaRes.status === 'fulfilled'
           ? (asistenciaRes.value?.data || asistenciaRes.value || null)
           : null;
+
+        // DEBUG TEMPORAL: Ver estructura de simuladores
+        // console.log('🎯 DEBUG SIMULADORES - Datos completos:', simulacionesData);
+        // console.log('🎯 DEBUG SIMULADORES - Total:', simulacionesData.length);
+        // if (simulacionesData.length > 0) {
+        //   console.log('🎯 DEBUG SIMULADORES - Primer elemento:', simulacionesData[0]);
+        // }
 
         const transformed = transformApiDataToMetrics(quizzesData, actividadesData, simulacionesData, asistenciaResumen);
         setRealMetricsData(transformed);
@@ -651,7 +761,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
   }), [currentMetricsData, calculatedAcademicStatus]);
 
   // Fusiona: alumno (Auth) <- props (override) - sin datos mock
-  const currentUserData = { 
+  const currentUserData = {
     name: '',
     email: '',
     telefono: '',
@@ -660,8 +770,8 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
     nombreTutor: '',
     folio: '',
     profilePic: reeseProfilePic,
-    ...alumnoUserData, 
-    ...userData 
+    ...alumnoUserData,
+    ...userData
   };
 
   const buildCourseCode = () => 'MEEAU';
@@ -694,7 +804,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
   const pieChartData = useMemo(() => {
     const subjects = finalMetricsData?.subjectResults?.subjects || currentMetricsData?.subjectResults?.subjects || [];
     const totalPercent = subjects.reduce((sum, subject) => sum + subject.percent, 0);
-    
+
     return subjects.map((subject, index) => {
       const normalizedPercent = (subject.percent / totalPercent) * 100;
       return {
@@ -723,7 +833,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
       return (
         <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-4 rounded-xl shadow-2xl border border-gray-600 relative z-[9999] backdrop-blur-sm">
           <div className="flex items-center space-x-3">
-            <div 
+            <div
               className="w-4 h-4 rounded-full shadow-lg"
               style={{ backgroundColor: data.color }}
             ></div>
@@ -749,7 +859,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
           <p className="font-bold text-blue-200 mb-2">{label}</p>
           {payload.map((entry, index) => (
             <div key={index} className="flex items-center space-x-2 mb-1">
-              <div 
+              <div
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: entry.color }}
               ></div>
@@ -848,7 +958,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 mb-6 shadow-lg">
                 <h3 className="text-lg font-bold text-white flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 13a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 13a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                   DATOS PERSONALES
                 </h3>
@@ -860,7 +970,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   <div className="flex items-start">
                     <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 13H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 13H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z" />
                       </svg>
                     </div>
                     <div className="flex-1">
@@ -875,7 +985,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   <div className="flex items-start">
                     <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                       </svg>
                     </div>
                     <div className="flex-1">
@@ -890,8 +1000,8 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   <div className="flex items-start">
                     <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z"/>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </div>
                     <div className="flex-1">
@@ -906,7 +1016,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   <div className="flex items-start">
                     <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                       </svg>
                     </div>
                     <div className="flex-1">
@@ -921,7 +1031,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   <div className="flex items-start">
                     <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 15v2m-2 2h4M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 15v2m-2 2h4M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <div className="flex-1">
@@ -988,7 +1098,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
             <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 mb-6 shadow-lg">
               <h3 className="text-lg font-bold text-white flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 13a2 2 0 11-4 0 2 2 0 014 0z"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 13a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 DATOS PERSONALES
               </h3>
@@ -1000,7 +1110,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 13H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 13H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z" />
                     </svg>
                   </div>
                   <div className="flex-1">
@@ -1015,7 +1125,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
                   </div>
                   <div className="flex-1">
@@ -1030,8 +1140,8 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z"/>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
                   <div className="flex-1">
@@ -1046,7 +1156,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
                   </div>
                   <div className="flex-1">
@@ -1061,7 +1171,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 15v2m-2 2h4M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 15v2m-2 2h4M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
                   <div className="flex-1">
@@ -1086,31 +1196,31 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
       </div>
 
       {/* Primera fila de métricas (5 columnas) - Diseño MÁS GRANDE y premium */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 md:gap-12 mb-16 max-w-8xl mx-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 md:gap-8 lg:gap-12 mb-16 max-w-8xl mx-auto">
 
-        {/* Métrica de Asistencia - Mismo estilo que las otras tarjetas */}
-        <div className="flex flex-col items-center group cursor-pointer transition-all duration-150" title="Porcentaje de días asistidos en el mes actual">
-          <div className="relative mb-6 group-hover:scale-105 transition-transform duration-300">
-            {/* Tarjeta principal con mismo estilo que las demás */}
-            <div className="relative w-40 h-40 bg-gradient-to-br from-blue-50 via-cyan-100 to-blue-150 rounded-2xl flex flex-col items-center justify-center shadow-xl border-2 border-blue-200 p-4">
-              
-              {/* Icono en la parte superior */}
-              <div className="w-10 h-10 text-blue-500 mb-3">
-                <svg fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+        {/* Métrica de Asistencia - Diseño Moderno con Gradientes Vibrantes */}
+        <div className="flex flex-col items-center group cursor-pointer transition-all duration-300" title="Porcentaje de días asistidos en el mes actual">
+          <div className="relative mb-6 group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-500">
+            {/* Tarjeta principal con gradiente oscuro para mejor legibilidad */}
+            <div className="relative w-36 h-36 sm:w-40 sm:h-40 lg:w-44 lg:h-44 bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600 rounded-3xl flex flex-col items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.12)] group-hover:shadow-[0_20px_60px_rgba(6,182,212,0.5)] border border-white/20 p-4 sm:p-5 backdrop-blur-sm transition-all duration-500">
+
+              {/* Icono animado con efecto de brillo */}
+              <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-white mb-2 sm:mb-3 drop-shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <svg fill="currentColor" viewBox="0 0 24 24" className="animate-pulse">
+                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
                 </svg>
               </div>
-              
+
               {/* Información principal - Porcentaje grande */}
               <div className="text-center mb-3">
                 {(() => {
                   const attendance = finalMetricsData.attendance ?? null;
-                  
+
                   // Intentar obtener datos reales del resumen de asistencia si están disponibles
                   const attendanceData = finalMetricsData.attendanceData;
                   const totalDays = attendanceData?.total ?? null;
                   const attendedDays = attendanceData?.asistidas ?? null;
-                  
+
                   if (attendance === null || attendance === undefined) {
                     return (
                       <>
@@ -1123,11 +1233,11 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                       </>
                     );
                   }
-                  
+
                   // Si tenemos datos reales de días, usarlos; si no, calcular basado en el mes actual
                   let displayDays = null;
                   let displayTotal = null;
-                  
+
                   if (totalDays != null && attendedDays != null) {
                     displayDays = attendedDays;
                     displayTotal = totalDays;
@@ -1137,57 +1247,57 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                     displayDays = Math.round((attendance / 100) * daysInMonth);
                     displayTotal = daysInMonth;
                   }
-                  
+
                   return (
                     <>
-                      <div className="text-2xl font-black text-blue-600 mb-1">
+                      <div className="text-3xl font-black text-white mb-1 drop-shadow-lg">
                         {Math.round(attendance)}%
                       </div>
-                      <div className="text-sm text-blue-500 font-bold">
+                      <div className="text-sm text-white/90 font-bold drop-shadow-md">
                         {displayDays} de {displayTotal} días
                       </div>
                     </>
                   );
                 })()}
               </div>
-              
-              {/* Barra de progreso horizontal */}
-              <div className="w-full h-3 bg-blue-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-blue-400 to-cyan-500 rounded-full transition-all duration-150 ease-out"
+
+              {/* Barra de progreso con efecto glassmorphism */}
+              <div className="w-full h-3 bg-white/20 backdrop-blur-sm rounded-full overflow-hidden border border-white/30">
+                <div
+                  className="h-full bg-gradient-to-r from-white via-cyan-100 to-white rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(255,255,255,0.5)]"
                   style={{ width: `${Math.min(100, Math.max(0, finalMetricsData.attendance ?? 0))}%` }}
                 ></div>
               </div>
             </div>
           </div>
-          {/* Título */}
-          <h3 className="text-gray-700 font-bold text-lg mb-2">
+          {/* Título con gradiente */}
+          <h3 className="text-gray-800 font-black text-base sm:text-lg lg:text-xl mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             Asistencia
           </h3>
-          <p className="text-sm text-gray-500 text-center">
+          <p className="text-sm text-gray-600 text-center font-semibold">
             Este mes
           </p>
         </div>
 
-        {/* Métrica de Actividades - Card mejorado con hover unificado */}
-        <div className="flex flex-col items-center group cursor-pointer transition-all duration-150" title="Progreso en actividades del curso actual">
-          <div className="relative mb-6 group-hover:scale-105 transition-transform duration-300">
-            {/* Card principal */}
-            <div className="relative w-40 h-40 bg-gradient-to-br from-orange-50 via-orange-100 to-orange-150 rounded-2xl flex flex-col items-center justify-center shadow-xl border-2 border-orange-200 p-4">
-              {/* Header con icono */}
-              <div className="w-10 h-10 text-orange-500 mb-3">
-                <svg fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        {/* Métrica de Actividades - Diseño Moderno con Gradiente Naranja */}
+        <div className="flex flex-col items-center group cursor-pointer transition-all duration-300" title="Progreso en actividades del curso actual">
+          <div className="relative mb-6 group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-500">
+            {/* Card principal con gradiente oscuro para mejor legibilidad */}
+            <div className="relative w-36 h-36 sm:w-40 sm:h-40 lg:w-44 lg:h-44 bg-gradient-to-br from-orange-600 via-amber-600 to-yellow-600 rounded-3xl flex flex-col items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.12)] group-hover:shadow-[0_20px_60px_rgba(251,146,60,0.5)] border border-white/20 p-4 sm:p-5 backdrop-blur-sm transition-all duration-500">
+              {/* Header con icono animado */}
+              <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-white mb-2 sm:mb-3 drop-shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <svg fill="currentColor" viewBox="0 0 24 24" className="animate-pulse">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                 </svg>
               </div>
-              
+
               {/* Progreso principal */}
               <div className="text-center mb-3">
                 {(() => {
                   const current = finalMetricsData.activities?.current ?? 0;
                   const total = finalMetricsData.activities?.total ?? 0;
                   const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
-                  
+
                   if (total === 0) {
                     return (
                       <>
@@ -1200,29 +1310,29 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                       </>
                     );
                   }
-                  
+
                   return (
                     <>
-                      <div className="text-xl font-black text-orange-600 mb-1">
+                      <div className="text-2xl sm:text-3xl font-black text-white mb-1 drop-shadow-lg">
                         {current}/{total}
                       </div>
-                      <div className="text-sm text-orange-500 font-bold">
+                      <div className="text-xs sm:text-sm text-white/90 font-bold drop-shadow-md">
                         {percentage}%
                       </div>
                     </>
                   );
                 })()}
               </div>
-              
-              {/* Barra de progreso */}
-              <div className="w-full h-3 bg-orange-100 rounded-full overflow-hidden">
+
+              {/* Barra de progreso con glassmorphism */}
+              <div className="w-full h-3 bg-white/20 backdrop-blur-sm rounded-full overflow-hidden border border-white/30">
                 {(() => {
                   const current = finalMetricsData.activities?.current ?? 0;
                   const total = finalMetricsData.activities?.total ?? 0;
                   const percentage = total > 0 ? Math.min(100, Math.max(0, (current / total) * 100)) : 0;
                   return (
-                    <div 
-                      className="h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full transition-all duration-150 ease-out"
+                    <div
+                      className="h-full bg-gradient-to-r from-white via-amber-100 to-white rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(255,255,255,0.5)]"
                       style={{ width: `${percentage}%` }}
                     ></div>
                   );
@@ -1230,35 +1340,35 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               </div>
             </div>
           </div>
-          {/* Título */}
-          <h3 className="text-gray-700 font-bold text-lg mb-2">
+          {/* Título con gradiente */}
+          <h3 className="text-gray-800 font-black text-base sm:text-lg lg:text-xl mb-2 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
             Actividades
           </h3>
-          <p className="text-sm text-gray-500 text-center">
+          <p className="text-sm text-gray-600 text-center font-semibold">
             Curso actual
           </p>
         </div>
 
-        {/* Métrica de Quiz - Diseño mejorado y contenido visible */}
-        <div className="flex flex-col items-center group cursor-pointer transition-all duration-150" title="Porcentaje de quizzes aprobados">
-          <div className="relative mb-6 group-hover:scale-105 transition-transform duration-300">
-            {/* Card principal */}
-            <div className="relative w-40 h-40 bg-gradient-to-br from-emerald-50 via-green-100 to-emerald-100 rounded-2xl flex flex-col items-center justify-center shadow-xl border-2 border-emerald-200 p-4">
-              
-              {/* Icono */}
-              <div className="w-10 h-10 text-emerald-600 mb-3">
-                <svg fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        {/* Métrica de Quiz - Diseño Moderno con Gradiente Verde */}
+        <div className="flex flex-col items-center group cursor-pointer transition-all duration-300" title="Porcentaje de quizzes aprobados">
+          <div className="relative mb-6 group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-500">
+            {/* Card principal con gradiente oscuro para mejor legibilidad */}
+            <div className="relative w-36 h-36 sm:w-40 sm:h-40 lg:w-44 lg:h-44 bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 rounded-3xl flex flex-col items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.12)] group-hover:shadow-[0_20px_60px_rgba(16,185,129,0.5)] border border-white/20 p-4 sm:p-5 backdrop-blur-sm transition-all duration-500">
+
+              {/* Icono animado */}
+              <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-white mb-2 sm:mb-3 drop-shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <svg fill="currentColor" viewBox="0 0 24 24" className="animate-pulse">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                 </svg>
               </div>
-              
+
               {/* Datos principales */}
-              <div className="text-emerald-700 text-center">
+              <div className="text-white text-center">
                 {(() => {
                   const current = finalMetricsData.quiz?.current ?? 0;
                   const total = finalMetricsData.quiz?.total ?? 0;
                   const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
-                  
+
                   if (total === 0) {
                     return (
                       <>
@@ -1271,16 +1381,16 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                       </>
                     );
                   }
-                  
+
                   return (
                     <>
-                      <div className="text-2xl font-black mb-1">
+                      <div className="text-2xl sm:text-3xl font-black mb-1 drop-shadow-lg">
                         {percentage}%
                       </div>
-                      <div className="text-sm font-bold">
+                      <div className="text-xs sm:text-sm font-bold drop-shadow-md">
                         {current} de {total}
                       </div>
-                      <div className="text-xs mt-1">
+                      <div className="text-xs mt-1 text-white/90">
                         aprobados
                       </div>
                     </>
@@ -1289,11 +1399,11 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               </div>
             </div>
           </div>
-          {/* Título */}
-          <h3 className="text-gray-700 font-bold text-lg mb-2">
+          {/* Título con gradiente */}
+          <h3 className="text-gray-800 font-black text-base sm:text-lg lg:text-xl mb-2 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
             Quiz
           </h3>
-          <p className="text-sm text-gray-500 text-center">
+          <p className="text-sm text-gray-600 text-center font-semibold">
             Evaluaciones
           </p>
         </div>
@@ -1301,75 +1411,75 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         {/* Métrica de Promedio Mensual - Con clic para abrir modal de Material UI */}
         {(() => {
           const monthlyAverage = finalMetricsData.monthlyAverage ?? 0;
-          const hasMonthlyData = finalMetricsData.monthlyAverageData && 
+          const hasMonthlyData = finalMetricsData.monthlyAverageData &&
             finalMetricsData.monthlyAverageData.length > 0 &&
             finalMetricsData.monthlyAverageData.some(item => item.promedio > 0);
-          
+
           // Mostrar siempre, incluso si no hay datos (mostrará 0%)
           // if (!hasMonthlyData || monthlyAverage === 0) return null;
-          
+
           return (
-            <div 
-              className="flex flex-col items-center group cursor-pointer transition-all duration-150" 
+            <div
+              className="flex flex-col items-center group cursor-pointer transition-all duration-150"
               title="Haz clic para ver el gráfico detallado de tu promedio mensual"
               onClick={() => setIsMonthlyAverageModalOpen(true)}
             >
-          <div className="relative mb-6 group-hover:scale-105 transition-transform duration-300">
-            {/* Contenedor del gráfico visual */}
-            <div className="relative w-40 h-40 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl shadow-xl border-2 border-blue-200 p-4 flex flex-col items-center justify-center group-hover:shadow-2xl transition-shadow duration-300">
-              
-              {/* Header del gráfico */}
-              <div className="flex items-center justify-center mb-4">
-                <div className="w-8 h-8 text-blue-500 mr-2">
-                  <svg fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M16 6l2.3 2.3-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
-                  </svg>
-                </div>
-                <span className="text-2xl font-black text-blue-600">
-                  {monthlyAverage > 0 ? `${Math.round(monthlyAverage)}%` : '—'}
-                </span>
-              </div>
-              
-              {/* Gráfico de barras simplificado */}
-              {hasMonthlyData ? (
-                <div className="flex items-end justify-center space-x-1 h-12 mb-2">
-                  {finalMetricsData.monthlyAverageData.slice(-5).map((item, index) => (
-                    <div key={index} className="flex flex-col items-center">
-                      <div 
-                        className="w-3 bg-gradient-to-t from-blue-400 to-purple-500 rounded-t-sm"
-                        style={{ height: `${Math.max(4, (item.promedio / 100) * 40)}px` }}
-                      ></div>
+              <div className="relative mb-6 group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-500">
+                {/* Contenedor del gráfico visual con gradiente oscuro para mejor legibilidad */}
+                <div className="relative w-36 h-36 sm:w-40 sm:h-40 lg:w-44 lg:h-44 bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-600 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] group-hover:shadow-[0_20px_60px_rgba(139,92,246,0.5)] border border-white/20 p-4 sm:p-5 flex flex-col items-center justify-center backdrop-blur-sm transition-all duration-500">
+
+                  {/* Header del gráfico con icono animado */}
+                  <div className="flex items-center justify-center mb-3 sm:mb-4">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 text-white mr-1 sm:mr-2 drop-shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <svg fill="currentColor" viewBox="0 0 24 24" className="animate-pulse">
+                        <path d="M16 6l2.3 2.3-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" />
+                      </svg>
                     </div>
-                  ))}
+                    <span className="text-2xl sm:text-3xl font-black text-white drop-shadow-lg">
+                      {monthlyAverage > 0 ? `${Math.round(monthlyAverage)}%` : '—'}
+                    </span>
+                  </div>
+
+                  {/* Gráfico de barras simplificado */}
+                  {hasMonthlyData ? (
+                    <div className="flex items-end justify-center space-x-1 h-12 mb-2">
+                      {finalMetricsData.monthlyAverageData.slice(-5).map((item, index) => (
+                        <div key={index} className="flex flex-col items-center">
+                          <div
+                            className="w-3 bg-gradient-to-t from-blue-400 to-purple-500 rounded-t-sm"
+                            style={{ height: `${Math.max(4, (item.promedio / 100) * 40)}px` }}
+                          ></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-12 mb-2">
+                      <span className="text-xs text-white/80">Sin datos históricos</span>
+                    </div>
+                  )}
+
+                  {/* Indicador de clic */}
+                  {hasMonthlyData && (
+                    <div className="text-center">
+                      <span className="text-xs text-white font-bold drop-shadow-md">Clic para ver detalle</span>
+                    </div>
+                  )}
+
+                  {/* Icono de expansión */}
+                  <div className="absolute top-2 right-2 w-5 h-5 text-white/70 opacity-90">
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M15 3l2.3 2.3-2.89 2.87 1.42 1.42L18.7 6.7 21 9V3h-6zM3 9l2.3-2.3 2.87 2.89 1.42-1.42L6.7 5.3 9 3H3v6z" />
+                    </svg>
+                  </div>
                 </div>
-              ) : (
-                <div className="flex items-center justify-center h-12 mb-2">
-                  <span className="text-xs text-gray-400">Sin datos históricos</span>
-                </div>
-              )}
-              
-              {/* Indicador de clic */}
-              {hasMonthlyData && (
-                <div className="text-center">
-                  <span className="text-xs text-blue-600 font-bold">Clic para ver detalle</span>
-                </div>
-              )}
-              
-              {/* Icono de expansión */}
-              <div className="absolute top-2 right-2 w-5 h-5 text-blue-400 opacity-70">
-                <svg fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M15 3l2.3 2.3-2.89 2.87 1.42 1.42L18.7 6.7 21 9V3h-6zM3 9l2.3-2.3 2.87 2.89 1.42-1.42L6.7 5.3 9 3H3v6z"/>
-                </svg>
               </div>
-            </div>
-          </div>
-          {/* Título */}
-          <h3 className="text-gray-700 font-bold text-lg mb-2">
-            Promedio mensual
-          </h3>
-          <p className="text-sm text-gray-500 text-center">
-            Tendencia histórica
-          </p>
+              {/* Título con gradiente */}
+              <h3 className="text-gray-800 font-black text-base sm:text-lg lg:text-xl mb-2 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                Promedio mensual
+              </h3>
+              <p className="text-sm text-gray-600 text-center font-semibold">
+                Tendencia histórica
+              </p>
             </div>
           );
         })()}
@@ -1378,31 +1488,29 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         <div className="flex flex-col items-center group cursor-pointer transform hover:scale-105 transition-all duration-200">
           <div className="relative mb-10">
             {/* Contenedor principal rediseñado MÁS GRANDE */}
-            <div className="relative w-48 h-48 bg-gradient-to-br from-gray-50 via-slate-100 to-gray-200 rounded-3xl shadow-2xl group-hover:shadow-3xl group-hover:scale-105 transition-all duration-200 border-2 border-gray-300 p-8 backdrop-blur-sm bg-white/25 border border-white/20 hover:scale-105 hover:-translate-y-1">
-              
+            <div className="relative w-36 h-36 sm:w-40 sm:h-40 lg:w-48 lg:h-48 bg-gradient-to-br from-gray-50 via-slate-100 to-gray-200 rounded-3xl shadow-2xl group-hover:shadow-3xl group-hover:scale-105 transition-all duration-200 border-2 border-gray-300 p-6 sm:p-8 backdrop-blur-sm bg-white/25 border border-white/20 hover:scale-105 hover:-translate-y-1">
+
               {/* Estado actual destacado MÁS GRANDE */}
-              <div className="text-center mb-6">
-                <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-xl ring-8 mb-4 transition-all duration-200 animate-pulse drop-shadow-lg ${
-                  finalMetricsData.academicStatus.level === 'R' ? 'bg-gradient-to-br from-red-600 to-red-700 ring-red-200 group-hover:ring-red-300' : 
-                  finalMetricsData.academicStatus.level === 'A' ? 'bg-gradient-to-br from-yellow-400 to-yellow-500 ring-yellow-200 group-hover:ring-yellow-300' : 
-                  'bg-gradient-to-br from-green-600 to-green-700 ring-green-200 group-hover:ring-green-300'
-                } group-hover:ring-12 group-hover:shadow-2xl`}>
-                  <span className="text-white font-black text-3xl drop-shadow-sm">
+              <div className="text-center mb-4 sm:mb-6">
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mx-auto rounded-full flex items-center justify-center shadow-xl ring-4 sm:ring-6 lg:ring-8 mb-3 sm:mb-4 transition-all duration-200 animate-pulse drop-shadow-lg ${finalMetricsData.academicStatus.level === 'R' ? 'bg-gradient-to-br from-red-600 to-red-700 ring-red-200 group-hover:ring-red-300' :
+                  finalMetricsData.academicStatus.level === 'A' ? 'bg-gradient-to-br from-yellow-400 to-yellow-500 ring-yellow-200 group-hover:ring-yellow-300' :
+                    'bg-gradient-to-br from-green-600 to-green-700 ring-green-200 group-hover:ring-green-300'
+                  } group-hover:ring-8 sm:group-hover:ring-10 lg:group-hover:ring-12 group-hover:shadow-2xl`}>
+                  <span className="text-white font-black text-xl sm:text-2xl lg:text-3xl drop-shadow-sm">
                     {finalMetricsData.academicStatus.level}
                   </span>
                 </div>
-                <div className={`text-lg font-black ${
-                  finalMetricsData.academicStatus.level === 'R' ? 'text-red-700' : 
-                  finalMetricsData.academicStatus.level === 'A' ? 'text-yellow-600' : 
-                  'text-green-700'
-                }`}>
+                <div className={`text-base sm:text-lg font-black ${finalMetricsData.academicStatus.level === 'R' ? 'text-red-700' :
+                  finalMetricsData.academicStatus.level === 'A' ? 'text-yellow-600' :
+                    'text-green-700'
+                  }`}>
                   {finalMetricsData.academicStatus.description}
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
                   Puntaje: {Math.round(finalMetricsData.academicStatus.score)}%
                 </div>
               </div>
-              
+
               {/* Indicadores pequeños de otros estados con tooltip - COLORES MÁS FUERTES */}
               <div className="flex justify-center space-x-3">
                 {[
@@ -1410,15 +1518,13 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   { level: 'A', name: 'Activo', desc: 'Progreso satisfactorio' },
                   { level: 'D', name: 'Destacado', desc: 'Rendimiento excepcional' }
                 ].map((status) => (
-                  <div 
+                  <div
                     key={status.level}
-                    className={`w-6 h-6 rounded-full cursor-help transition-all duration-150 ${
-                      finalMetricsData.academicStatus.level === status.level ? 'opacity-100 scale-110' : 'opacity-40 hover:opacity-70'
-                    } ${
-                      status.level === 'R' ? 'bg-red-600' : 
-                      status.level === 'A' ? 'bg-yellow-400' : 
-                      'bg-green-600'
-                    }`}
+                    className={`w-6 h-6 rounded-full cursor-help transition-all duration-150 ${finalMetricsData.academicStatus.level === status.level ? 'opacity-100 scale-110' : 'opacity-40 hover:opacity-70'
+                      } ${status.level === 'R' ? 'bg-red-600' :
+                        status.level === 'A' ? 'bg-yellow-400' :
+                          'bg-green-600'
+                      }`}
                     title={`${status.name}: ${status.desc}`}
                   ></div>
                 ))}
@@ -1426,7 +1532,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
             </div>
           </div>
           {/* Título */}
-          <h3 className="text-gray-700 font-bold text-xl mb-3 group-hover:text-gray-800 transition-colors duration-200">
+          <h3 className="text-gray-700 font-bold text-base sm:text-lg lg:text-xl mb-2 sm:mb-3 group-hover:text-gray-800 transition-colors duration-200">
             Estado académico
           </h3>
           <p className="text-base text-gray-500 text-center leading-relaxed">
@@ -1448,564 +1554,690 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
       {/* Segunda fila de tarjetas de métricas (4 columnas) - MÁS GRANDES y elegantes */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 max-w-8xl mx-auto">
 
-        {/* Gráfico de Actividades / Quiz - Sin Contenedor, Estilo Limpio */}
+        {/* Gráfico de Actividades / Quiz - Diseño Moderno Premium */}
         {(() => {
-          const hasActivityData = currentMetricsData.activityProgress && 
+          const hasActivityData = currentMetricsData.activityProgress &&
             currentMetricsData.activityProgress.length > 0 &&
             currentMetricsData.activityProgress.some(item => (item.activities > 0 || item.quizts > 0));
-          
+
           if (!hasActivityData) return null;
-          
+
           return (
-        <div
-          className="cursor-pointer transition-all duration-200 hover:scale-105"
-          onClick={() => setIsActivitiesChartModalOpen(true)}
-        >
-          {/* Título simple */}
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-bold text-gray-700 flex items-center justify-center">
-              <svg className="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M9 11H7v9h2v-9zm4-4h-2v13h2V7zm4-3h-2v16h2V4z"/>
-              </svg>
-              Actividades / Quiz
-            </h3>
-          </div>
+            <div
+              className="group cursor-pointer transition-all duration-300 hover:scale-105"
+              onClick={() => setIsActivitiesChartModalOpen(true)}
+            >
+              {/* Contenedor con gradiente moderno */}
+              <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-3xl shadow-xl border-2 border-blue-200/50 p-6 hover:shadow-2xl transition-all duration-300 overflow-hidden">
 
-          {/* Línea de tendencia */}
-          <div className="mb-3">
-            <svg className="w-full h-6" viewBox="0 0 200 24">
-              <polyline
-                fill="none"
-                stroke="#3b82f6"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                points="20,16 50,14 80,12 110,10 140,8 170,6"
-              />
-              <polygon
-                fill="#3b82f6"
-                stroke="#3b82f6"
-                strokeWidth="1"
-                points="170,3 175,6 170,9"
-              />
-            </svg>
-          </div>
+                {/* Efectos de fondo decorativos */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100/40 to-purple-100/40 rounded-full blur-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-indigo-100/40 to-blue-100/40 rounded-full blur-xl"></div>
 
-          {/* Gráfico de barras limpio */}
-          <div className="flex items-end justify-center space-x-2 h-16 mb-3">
-            {currentMetricsData.activityProgress.slice(-4).map((item, index) => (
-              <div key={index} className="flex flex-col items-center space-y-1">
-                <div className="flex items-end space-x-0.5">
-                  <div 
-                    className="w-3 rounded-t-sm hover:opacity-80 transition-opacity"
-                    style={{ 
-                      height: `${(item.activities / 100) * 50}px`,
-                      backgroundColor: '#3b82f6'
-                    }}
-                  ></div>
-                  <div 
-                    className="w-3 rounded-t-sm hover:opacity-80 transition-opacity"
-                    style={{ 
-                      height: `${(item.quizts / 100) * 50}px`,
-                      backgroundColor: '#8b5cf6'
-                    }}
-                  ></div>
+                {/* Contenido relativo */}
+                <div className="relative z-10">
+
+                  {/* Título con icono */}
+                  <div className="text-center mb-5">
+                    <div className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full px-4 py-2 mb-3 shadow-lg">
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 11H7v9h2v-9zm4-4h-2v13h2V7zm4-3h-2v16h2V4z" />
+                      </svg>
+                      <h3 className="text-base font-black">Actividades / Quiz</h3>
+                    </div>
+                  </div>
+
+                  {/* Línea de tendencia mejorada */}
+                  <div className="mb-4">
+                    <svg className="w-full h-8" viewBox="0 0 200 32">
+                      <defs>
+                        <linearGradient id="trendGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
+                          <stop offset="100%" style={{ stopColor: '#8b5cf6', stopOpacity: 1 }} />
+                        </linearGradient>
+                      </defs>
+                      <polyline
+                        fill="none"
+                        stroke="url(#trendGradient)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        points="20,20 60,18 100,15 140,12 180,8"
+                      />
+                      <polygon
+                        fill="#8b5cf6"
+                        stroke="#8b5cf6"
+                        strokeWidth="2"
+                        points="180,5 188,8 180,11"
+                      />
+                    </svg>
+                  </div>
+
+                  {/* Gráfico de barras mejorado con gradientes */}
+                  <div className="flex items-end justify-center space-x-4 h-24 mb-5">
+                    {currentMetricsData.activityProgress.slice(-4).map((item, index) => (
+                      <div key={index} className="flex flex-col items-center space-y-2">
+                        <div className="flex items-end space-x-1">
+                          {/* Barra de Actividades con gradiente */}
+                          <div className="relative group/bar">
+                            <div
+                              className="w-4 rounded-t-lg bg-gradient-to-t from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 transition-all duration-300 shadow-lg hover:shadow-xl"
+                              style={{ height: `${Math.max(8, (item.activities / 100) * 80)}px` }}
+                            ></div>
+                            {/* Tooltip */}
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover/bar:opacity-100 transition-opacity bg-blue-600 text-white text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none">
+                              {item.activities}%
+                            </div>
+                          </div>
+                          {/* Barra de Quizzes con gradiente */}
+                          <div className="relative group/bar">
+                            <div
+                              className="w-4 rounded-t-lg bg-gradient-to-t from-purple-600 to-purple-400 hover:from-purple-700 hover:to-purple-500 transition-all duration-300 shadow-lg hover:shadow-xl"
+                              style={{ height: `${Math.max(8, (item.quizts / 100) * 80)}px` }}
+                            ></div>
+                            {/* Tooltip */}
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover/bar:opacity-100 transition-opacity bg-purple-600 text-white text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none">
+                              {item.quizts}%
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-xs font-semibold text-gray-600">{item.period}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Leyenda mejorada */}
+                  <div className="flex justify-center space-x-6 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 rounded-sm bg-gradient-to-br from-blue-600 to-blue-400 shadow-md"></div>
+                      <span className="text-sm font-semibold text-gray-700">Actividades</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 rounded-sm bg-gradient-to-br from-purple-600 to-purple-400 shadow-md"></div>
+                      <span className="text-sm font-semibold text-gray-700">Quizzes</span>
+                    </div>
+                  </div>
+
+                  {/* Botón de acción */}
+                  <div className="text-center mb-4">
+                    <div className="inline-flex items-center text-blue-600 font-bold text-sm bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border-2 border-blue-200 shadow-md hover:shadow-lg transition-all group-hover:scale-105">
+                      <span>Clic para ver detalle</span>
+                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Números finales con diseño mejorado */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl p-4 border-2 border-blue-200 shadow-md">
+                      <div className="text-3xl font-black text-blue-600 mb-1">
+                        {currentMetricsData.activities.current}
+                      </div>
+                      <div className="text-xs font-bold text-blue-700 mb-1">Actividades</div>
+                      <div className="text-xs text-blue-500">de {currentMetricsData.activities.total}</div>
+                    </div>
+                    <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-2xl p-4 border-2 border-purple-200 shadow-md">
+                      <div className="text-3xl font-black text-purple-600 mb-1">
+                        {currentMetricsData.quiz.current}
+                      </div>
+                      <div className="text-xs font-bold text-purple-700 mb-1">Quizzes</div>
+                      <div className="text-xs text-purple-500">de {currentMetricsData.quiz.total}</div>
+                    </div>
+                  </div>
+
                 </div>
-                <span className="text-xs text-gray-500">{item.period}</span>
               </div>
-            ))}
-          </div>
-
-          {/* Leyenda simple */}
-          <div className="flex justify-center space-x-3 mb-3">
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#3b82f6' }}></div>
-              <span className="text-xs text-gray-600">Actividades</span>
             </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#8b5cf6' }}></div>
-              <span className="text-xs text-gray-600">Quizzes</span>
-            </div>
-          </div>
-
-          {/* Texto "Clic para ver detalle" */}
-          <div className="text-center mb-3">
-            <span className="text-xs text-blue-600 font-medium hover:text-blue-700">Clic para ver detalle</span>
-          </div>
-
-          {/* Números finales */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="text-center">
-              <div className="text-xl font-bold" style={{ color: '#3b82f6' }}>
-                {currentMetricsData.activities.current}
-              </div>
-              <div className="text-xs text-gray-600">Actividades</div>
-              <div className="text-xs text-gray-400">de {currentMetricsData.activities.total}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl font-bold" style={{ color: '#8b5cf6' }}>
-                {currentMetricsData.quiz.current}
-              </div>
-              <div className="text-xs text-gray-600">Quizzes</div>
-              <div className="text-xs text-gray-400">de {currentMetricsData.quiz.total}</div>
-            </div>
-          </div>
-        </div>
           );
         })()}
 
         {/* Resultados por materia - Representación Visual Exacta */}
         {(() => {
-          const hasSubjectData = currentMetricsData.subjectResults && 
+          const hasSubjectData = currentMetricsData.subjectResults &&
             currentMetricsData.subjectResults.subjects &&
             currentMetricsData.subjectResults.subjects.length > 0 &&
             currentMetricsData.subjectResults.total > 0;
-          
+
           if (!hasSubjectData) return null;
-          
+
           return (
-        <div
-          className="cursor-pointer transition-all duration-200 hover:scale-105"
-          onClick={() => setIsSubjectResultsModalOpen(true)}
-        >
-          {/* Título simple */}
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-bold text-purple-600 flex items-center justify-center">
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.5 6L12 10.5 8.5 8 12 5.5 15.5 8z"/>
-              </svg>
-              Resultados por materia
-            </h3>
-          </div>
-
-          {/* Gráfico de donut exacto como en la imagen */}
-          <div className="relative flex items-center justify-center mb-4">
-            <svg width="220" height="220" viewBox="0 0 220 220" className="drop-shadow-lg">
-              {/* Definir los datos exactos como en la imagen */}
-              {(() => {
-                const subjects = currentMetricsData.subjectResults.subjects;
-                
-                // Calcular el total de todos los porcentajes para normalizar
-                const totalPercent = subjects.reduce((sum, subject) => sum + subject.percent, 0);
-                
-                const centerX = 110;
-                const centerY = 110;
-                const radius = 85;
-                const innerRadius = 40;
-                let currentAngle = -90; // Empezar desde arriba
-                
-                return subjects.map((subject, index) => {
-                  // Normalizar el porcentaje para que el círculo esté completo
-                  const normalizedPercent = (subject.percent / totalPercent) * 100;
-                  const angle = (normalizedPercent / 100) * 360;
-                  const nextAngle = currentAngle + angle;
-                  
-                  // Calcular las coordenadas del arco (círculo completo)
-                  const x1 = centerX + radius * Math.cos((currentAngle * Math.PI) / 180);
-                  const y1 = centerY + radius * Math.sin((currentAngle * Math.PI) / 180);
-                  const x2 = centerX + radius * Math.cos((nextAngle * Math.PI) / 180);
-                  const y2 = centerY + radius * Math.sin((nextAngle * Math.PI) / 180);
-                  
-                  const x3 = centerX + innerRadius * Math.cos((nextAngle * Math.PI) / 180);
-                  const y3 = centerY + innerRadius * Math.sin((nextAngle * Math.PI) / 180);
-                  const x4 = centerX + innerRadius * Math.cos((currentAngle * Math.PI) / 180);
-                  const y4 = centerY + innerRadius * Math.sin((currentAngle * Math.PI) / 180);
-                  
-                  const largeArcFlag = angle > 180 ? 1 : 0;
-                  
-                  const pathData = [
-                    `M ${x1} ${y1}`,
-                    `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-                    `L ${x3} ${y3}`,
-                    `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4}`,
-                    'Z'
-                  ].join(' ');
-                  
-                  // Calcular posición del texto
-                  const textAngle = currentAngle + angle / 2;
-                  const textRadius = (radius + innerRadius) / 2;
-                  const textX = centerX + textRadius * Math.cos((textAngle * Math.PI) / 180);
-                  const textY = centerY + textRadius * Math.sin((textAngle * Math.PI) / 180);
-
-                  const result = (
-                    <g key={index}>
-                      <path
-                        d={pathData}
-                        fill={subject.color}
-                        stroke="white"
-                        strokeWidth="3"
-                        className="hover:opacity-80 transition-opacity cursor-pointer"
-                        title={`${subject.code}: ${subject.fullName} - ${subject.percent}%`}
-                      />
-                      {/* Texto con abreviación */}
-                      <text
-                        x={textX}
-                        y={textY - 6}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fill="white"
-                        fontSize="16"
-                        fontWeight="bold"
-                        className="pointer-events-none drop-shadow-sm"
-                      >
-                        {subject.code}
-                      </text>
-                      {/* Texto con porcentaje */}
-                      <text
-                        x={textX}
-                        y={textY + 12}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fill="white"
-                        fontSize="14"
-                        fontWeight="bold"
-                        className="pointer-events-none drop-shadow-sm"
-                      >
-                        {subject.percent}%
-                      </text>
-                    </g>
-                  );
-                  
-                  currentAngle = nextAngle;
-                  return result;
-                });
-              })()}
-            </svg>
-            
-            {/* Porcentaje central exacto como en la imagen */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-              <div className="text-4xl font-bold text-purple-600">
-                {currentMetricsData.subjectResults.total}%
+            <div
+              className="cursor-pointer transition-all duration-200 hover:scale-105"
+              onClick={() => setIsSubjectResultsModalOpen(true)}
+            >
+              {/* Título simple */}
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-bold text-purple-600 flex items-center justify-center">
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.5 6L12 10.5 8.5 8 12 5.5 15.5 8z" />
+                  </svg>
+                  Resultados por materia
+                </h3>
               </div>
-            </div>
-          </div>
 
-          {/* Texto "Clic para ver detalle" */}
-          <div className="text-center mb-2">
-            <span className="text-xs text-purple-600 font-medium hover:text-purple-700">Clic para ver detalle</span>
-          </div>
-
-          {/* Etiqueta "1er simulador" */}
-          <div className="text-center text-sm font-bold text-purple-600 mb-2">
-            1er simulador
-          </div>
-
-          {/* Materias por reforzar compacto */}
-          <div className="text-center">
-            <div className="text-xs text-red-600 font-medium mb-1">
-              Materias por reforzar:
-            </div>
-            <div className="text-xs font-bold text-red-700">
-              {(() => {
-                // Encontrar las dos materias con menor porcentaje
-                const sortedSubjects = [...currentMetricsData.subjectResults.subjects]
-                  .sort((a, b) => a.percent - b.percent)
-                  .slice(0, 2);
-                return sortedSubjects.map(s => s.code).join(' - ');
-              })()}
-            </div>
-          </div>
-        </div>
-          );
-        })()}
-
-        {/* Resultados del simulador - Sin Contenedor, Estilo Limpio */}
-        {(() => {
-          const hasSimulatorData = currentMetricsData.simulatorGrades && 
-            currentMetricsData.simulatorGrades.length > 0 &&
-            currentMetricsData.simulatorGrades.some(item => item.score > 0);
-          
-          if (!hasSimulatorData) return null;
-          
-          return (
-        <div className="cursor-pointer transition-all duration-200 hover:scale-105">
-          {/* Título simple */}
-          <div className="text-center mb-6">
-            <h3 className="text-lg font-bold text-purple-600 flex items-center justify-center">
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M9 11H7v9h2v-9zm4-4h-2v13h2V7zm4-3h-2v16h2V4z"/>
-              </svg>
-              Resultados del simulador
-            </h3>
-          </div>
-
-          {/* Barras horizontales limpias */}
-          <div className="space-y-4 mb-4">
-            {currentMetricsData.simulatorGrades.map((item, index) => (
-              <div key={index} className="flex items-center group">
-                {/* Etiqueta */}
-                <div className="w-12 text-right text-base font-bold pr-3 flex-shrink-0" style={{ color: item.color }}>
-                  {item.label}
-                </div>
-                {/* Barra */}
-                <div className="flex-1 bg-gray-100 h-10 relative flex items-center overflow-hidden">
-                  <div
-                    className="h-full transition-all duration-300 ease-out"
-                    style={{ 
-                      width: `${item.score}%`, 
-                      backgroundColor: item.color
-                    }}
-                  ></div>
-                  {/* Porcentaje */}
-                  <span className="absolute right-3 text-white font-bold text-base drop-shadow-sm">
-                    {item.score}%
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Línea lateral izquierda como en la imagen */}
-          <div className="relative">
-            <div className="absolute left-0 top-0 bottom-0 w-2 bg-purple-600"></div>
-          </div>
-        </div>
-          );
-        })()}
-
-        {/* Feedback - Gráfica de Velocímetro (Gauge Chart) */}
-        <div className="cursor-pointer transition-all duration-200 hover:scale-105">
-          {/* Título simple */}
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-bold text-purple-600 flex items-center justify-center">
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-              </svg>
-              Feedback
-            </h3>
-          </div>
-
-          {/* Gráfica de Velocímetro Mejorada */}
-          {(() => {
-            const score = currentMetricsData.feedbackScore || 0;
-            const performanceLevel = calculatePerformanceLevel(score);
-            const feedback = getMotivationalFeedback(score);
-            
-            // Calcular el ángulo de la aguja basado en el score (0-100 -> 0-180 grados)
-            // El velocímetro va de 0° (izquierda) a 180° (derecha)
-            const needleAngle = (score / 100) * 180;
-            
-            // Definir los niveles con emojis, colores y posiciones
-            const levels = [
-              { level: 'E', emoji: '😟', color: '#DC2626', startAngle: 0, endAngle: 36, name: 'Nível E', gradient: 'from-red-600 to-red-700' },
-              { level: 'D', emoji: '😐', color: '#F97316', startAngle: 36, endAngle: 72, name: 'Nível D', gradient: 'from-orange-500 to-orange-600' },
-              { level: 'C', emoji: '🙂', color: '#FCD34D', startAngle: 72, endAngle: 108, name: 'Nível C', gradient: 'from-yellow-400 to-yellow-500' },
-              { level: 'B', emoji: '😊', color: '#F59E0B', startAngle: 108, endAngle: 144, name: 'Nível B', gradient: 'from-amber-500 to-amber-600' },
-              { level: 'A', emoji: '🎉', color: '#10B981', startAngle: 144, endAngle: 180, name: 'Nível A', gradient: 'from-green-500 to-green-600' }
-            ];
-            
-            const centerX = 150;
-            const centerY = 150;
-            const radius = 110;
-            const innerRadius = 70;
-            
-            // Función para convertir ángulo a coordenadas (0° = izquierda, 180° = derecha)
-            const angleToCoord = (angle, r = radius) => {
-              // Convertir ángulo del velocímetro (0-180) a ángulo matemático (180-0)
-              const mathAngle = 180 - angle;
-              const rad = mathAngle * (Math.PI / 180);
-              return {
-                x: centerX + r * Math.cos(rad),
-                y: centerY - r * Math.sin(rad) // Negativo porque Y aumenta hacia abajo
-              };
-            };
-            
-            return (
-              <div className="flex flex-col items-center">
-                {/* SVG del velocímetro mejorado */}
-                <svg width="320" height="200" viewBox="0 0 320 200" className="mb-4 drop-shadow-lg">
-                  {/* Fondo del semicírculo (gris claro) */}
-                  <path
-                    d={`M ${centerX} ${centerY} L ${angleToCoord(0, radius).x} ${angleToCoord(0, radius).y} A ${radius} ${radius} 0 0 1 ${angleToCoord(180, radius).x} ${angleToCoord(180, radius).y} Z`}
-                    fill="#f3f4f6"
-                    stroke="#e5e7eb"
-                    strokeWidth="1"
-                  />
-                  
-                  {/* Arcos de los niveles con gradiente */}
-                  {levels.map((level) => {
-                    const start = angleToCoord(level.startAngle, radius);
-                    const end = angleToCoord(level.endAngle, radius);
-                    const largeArc = level.endAngle - level.startAngle > 180 ? 1 : 0;
-                    
-                    return (
-                      <g key={level.level}>
-                        {/* Sombra del arco */}
-                        <path
-                          d={`M ${centerX} ${centerY} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z`}
-                          fill="rgba(0,0,0,0.1)"
-                          transform={`translate(2, 2)`}
-                        />
-                        {/* Arco principal */}
-                        <path
-                          d={`M ${centerX} ${centerY} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z`}
-                          fill={level.color}
-                          stroke="#fff"
-                          strokeWidth="3"
-                          opacity={performanceLevel.level === level.level ? 1 : 0.5}
-                          className="transition-opacity duration-300"
-                        />
-                        {/* Borde interno para profundidad */}
-                        <path
-                          d={`M ${centerX} ${centerY} L ${angleToCoord(level.startAngle, innerRadius).x} ${angleToCoord(level.startAngle, innerRadius).y} A ${innerRadius} ${innerRadius} 0 ${largeArc} 1 ${angleToCoord(level.endAngle, innerRadius).x} ${angleToCoord(level.endAngle, innerRadius).y} Z`}
-                          fill="rgba(255,255,255,0.3)"
-                        />
-                      </g>
-                    );
-                  })}
-                  
-                  {/* Líneas divisorias entre niveles con sombra */}
-                  {levels.slice(0, -1).map((level) => {
-                    const coord = angleToCoord(level.endAngle, radius);
-                    const innerCoord = angleToCoord(level.endAngle, innerRadius);
-                    return (
-                      <g key={`divider-${level.level}`}>
-                        <line
-                          x1={innerCoord.x}
-                          y1={innerCoord.y}
-                          x2={coord.x}
-                          y2={coord.y}
-                          stroke="rgba(0,0,0,0.1)"
-                          strokeWidth="2"
-                          transform="translate(1, 1)"
-                        />
-                        <line
-                          x1={innerCoord.x}
-                          y1={innerCoord.y}
-                          x2={coord.x}
-                          y2={coord.y}
-                          stroke="#fff"
-                          strokeWidth="2.5"
-                        />
-                      </g>
-                    );
-                  })}
-                  
-                  {/* Aguja mejorada con sombra y punta */}
+              {/* Gráfico de donut exacto como en la imagen */}
+              <div className="relative flex items-center justify-center mb-4">
+                <svg width="220" height="220" viewBox="0 0 220 220" className="drop-shadow-lg">
+                  {/* Definir los datos exactos como en la imagen */}
                   {(() => {
-                    const needleCoord = angleToCoord(needleAngle, radius - 5);
-                    const needleBase = angleToCoord(needleAngle, 15);
-                    
-                    return (
-                      <g>
-                        {/* Sombra de la aguja */}
-                        <line
-                          x1={centerX + 1}
-                          y1={centerY + 1}
-                          x2={needleCoord.x + 1}
-                          y2={needleCoord.y + 1}
-                          stroke="rgba(0,0,0,0.2)"
-                          strokeWidth="4"
-                          strokeLinecap="round"
-                        />
-                        {/* Aguja principal */}
-                        <line
-                          x1={centerX}
-                          y1={centerY}
-                          x2={needleCoord.x}
-                          y2={needleCoord.y}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                        />
-                        {/* Base de la aguja (triángulo) */}
-                        <polygon
-                          points={`${centerX},${centerY} ${needleBase.x - 8},${needleBase.y} ${needleBase.x + 8},${needleBase.y}`}
-                          fill="#1f2937"
-                        />
-                        {/* Círculo central con gradiente */}
-                        <circle
-                          cx={centerX}
-                          cy={centerY}
-                          r="12"
-                          fill="#1f2937"
-                          stroke="#fff"
-                          strokeWidth="3"
-                        />
-                        <circle
-                          cx={centerX}
-                          cy={centerY}
-                          r="6"
-                          fill="#fff"
-                        />
-                      </g>
-                    );
+                    const subjects = currentMetricsData.subjectResults.subjects;
+
+                    // Calcular el total de todos los porcentajes para normalizar
+                    const totalPercent = subjects.reduce((sum, subject) => sum + subject.percent, 0);
+
+                    const centerX = 110;
+                    const centerY = 110;
+                    const radius = 85;
+                    const innerRadius = 40;
+                    let currentAngle = -90; // Empezar desde arriba
+
+                    return subjects.map((subject, index) => {
+                      // Normalizar el porcentaje para que el círculo esté completo
+                      const normalizedPercent = (subject.percent / totalPercent) * 100;
+                      const angle = (normalizedPercent / 100) * 360;
+                      const nextAngle = currentAngle + angle;
+
+                      // Calcular las coordenadas del arco (círculo completo)
+                      const x1 = centerX + radius * Math.cos((currentAngle * Math.PI) / 180);
+                      const y1 = centerY + radius * Math.sin((currentAngle * Math.PI) / 180);
+                      const x2 = centerX + radius * Math.cos((nextAngle * Math.PI) / 180);
+                      const y2 = centerY + radius * Math.sin((nextAngle * Math.PI) / 180);
+
+                      const x3 = centerX + innerRadius * Math.cos((nextAngle * Math.PI) / 180);
+                      const y3 = centerY + innerRadius * Math.sin((nextAngle * Math.PI) / 180);
+                      const x4 = centerX + innerRadius * Math.cos((currentAngle * Math.PI) / 180);
+                      const y4 = centerY + innerRadius * Math.sin((currentAngle * Math.PI) / 180);
+
+                      const largeArcFlag = angle > 180 ? 1 : 0;
+
+                      const pathData = [
+                        `M ${x1} ${y1}`,
+                        `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                        `L ${x3} ${y3}`,
+                        `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4}`,
+                        'Z'
+                      ].join(' ');
+
+                      // Calcular posición del texto
+                      const textAngle = currentAngle + angle / 2;
+                      const textRadius = (radius + innerRadius) / 2;
+                      const textX = centerX + textRadius * Math.cos((textAngle * Math.PI) / 180);
+                      const textY = centerY + textRadius * Math.sin((textAngle * Math.PI) / 180);
+
+                      const result = (
+                        <g key={index}>
+                          <path
+                            d={pathData}
+                            fill={subject.color}
+                            stroke="white"
+                            strokeWidth="3"
+                            className="hover:opacity-80 transition-opacity cursor-pointer"
+                            title={`${subject.code}: ${subject.fullName} - ${subject.percent}%`}
+                          />
+                          {/* Texto con abreviación */}
+                          <text
+                            x={textX}
+                            y={textY - 6}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fill="white"
+                            fontSize="16"
+                            fontWeight="bold"
+                            className="pointer-events-none drop-shadow-sm"
+                          >
+                            {subject.code}
+                          </text>
+                          {/* Texto con porcentaje */}
+                          <text
+                            x={textX}
+                            y={textY + 12}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fill="white"
+                            fontSize="14"
+                            fontWeight="bold"
+                            className="pointer-events-none drop-shadow-sm"
+                          >
+                            {subject.percent}%
+                          </text>
+                        </g>
+                      );
+
+                      currentAngle = nextAngle;
+                      return result;
+                    });
                   })()}
-                  
-                  {/* Etiquetas de niveles con emojis - Emojis arriba, textos abajo */}
-                  {levels.map((level) => {
-                    const midAngle = (level.startAngle + level.endAngle) / 2;
-                    const isActive = performanceLevel.level === level.level;
-                    
-                    // Emoji en la parte superior del arco (más cerca del borde)
-                    const emojiRadius = radius * 0.95;
-                    const emojiCoord = angleToCoord(midAngle, emojiRadius);
-                    
-                    // Texto en la parte inferior, cerca del centro del velocímetro
-                    const textRadius = radius * 0.50;
-                    const textCoord = angleToCoord(midAngle, textRadius);
-                    
-                    return (
-                      <g key={`label-${level.level}`}>
-                        {/* Fondo circular para el emoji - en la parte superior */}
-                        <circle
-                          cx={emojiCoord.x}
-                          cy={emojiCoord.y}
-                          r="20"
-                          fill={isActive ? level.color : "#f3f4f6"}
-                          stroke={isActive ? "#fff" : "#e5e7eb"}
-                          strokeWidth={isActive ? "3" : "2"}
-                          className="transition-all duration-300"
-                        />
-                        {/* Emoji - centrado en el círculo superior */}
-                        <text
-                          x={emojiCoord.x}
-                          y={emojiCoord.y + 6}
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                          fontSize="22"
-                          className="select-none pointer-events-none"
-                        >
-                          {level.emoji}
-                        </text>
-                        {/* Nombre del nivel en la parte inferior, cerca del centro */}
-                        <text
-                          x={textCoord.x}
-                          y={textCoord.y + 5}
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                          fontSize="12"
-                          fontWeight="bold"
-                          fill={isActive ? level.color : "#6b7280"}
-                          className="transition-all duration-300"
-                        >
-                          {level.name}
-                        </text>
-                      </g>
-                    );
-                  })}
                 </svg>
-                
-                {/* Mensaje motivacional mejorado */}
-                <div className="text-center mt-2 px-4">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <span className="text-3xl">{feedback.emoji}</span>
-                    <div className="text-3xl font-black text-gray-800">{score}%</div>
+
+                {/* Porcentaje central exacto como en la imagen */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                  <div className="text-4xl font-bold text-purple-600">
+                    {currentMetricsData.subjectResults.total}%
                   </div>
-                  <div className={`text-xl font-bold mb-2 px-4 py-2 rounded-lg ${
-                    performanceLevel.level === 'A' ? 'bg-green-50 text-green-700' :
-                    performanceLevel.level === 'B' ? 'bg-amber-50 text-amber-700' :
-                    performanceLevel.level === 'C' ? 'bg-yellow-50 text-yellow-700' :
-                    performanceLevel.level === 'D' ? 'bg-orange-50 text-orange-700' :
-                    'bg-red-50 text-red-700'
-                  }`}>
-                    {feedback.message}
-                  </div>
-                  <div className="text-sm text-gray-600 font-medium">{feedback.description}</div>
                 </div>
               </div>
-            );
-          })()}
+
+              {/* Texto "Clic para ver detalle" */}
+              <div className="text-center mb-2">
+                <span className="text-xs text-purple-600 font-medium hover:text-purple-700">Clic para ver detalle</span>
+              </div>
+
+              {/* Etiqueta "1er simulador" */}
+              <div className="text-center text-sm font-bold text-purple-600 mb-2">
+                1er simulador
+              </div>
+
+              {/* Materias por reforzar compacto */}
+              <div className="text-center">
+                <div className="text-xs text-red-600 font-medium mb-1">
+                  Materias por reforzar:
+                </div>
+                <div className="text-xs font-bold text-red-700">
+                  {(() => {
+                    // Encontrar las dos materias con menor porcentaje
+                    const sortedSubjects = [...currentMetricsData.subjectResults.subjects]
+                      .sort((a, b) => a.percent - b.percent)
+                      .slice(0, 2);
+                    return sortedSubjects.map(s => s.code).join(' - ');
+                  })()}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Gráfica 1: Simuladores Generales */}
+        {(() => {
+          // Mostrar siempre que haya datos, incluso si todos tienen 0%
+          const hasGeneralData = currentMetricsData.simulatorGrades?.generales?.length > 0;
+
+          if (!hasGeneralData) return null;
+
+          return (
+            <div className="group cursor-pointer transition-all duration-300 hover:scale-105">
+              {/* Contenedor con gradiente azul-índigo */}
+              <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-3xl shadow-xl border-2 border-blue-200/50 p-6 hover:shadow-2xl transition-all duration-300 overflow-hidden">
+
+                {/* Efectos decorativos */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100/40 to-indigo-100/40 rounded-full blur-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-indigo-100/40 to-blue-100/40 rounded-full blur-xl"></div>
+
+                {/* Contenido */}
+                <div className="relative z-10">
+
+                  {/* Título */}
+                  <div className="text-center mb-5">
+                    <div className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full px-4 py-2 mb-3 shadow-lg">
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                      </svg>
+                      <h3 className="text-base font-black">Simuladores Generales</h3>
+                    </div>
+                    <p className="text-xs text-gray-600 font-medium">Áreas Fundamentales</p>
+                  </div>
+
+                  {/* Barras horizontales */}
+                  <div className="space-y-3">
+                    {currentMetricsData.simulatorGrades.generales.map((item, index) => (
+                      <div key={index} className="group/bar">
+                        {/* Etiqueta arriba de la barra */}
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold" style={{ color: item.color }}>
+                            {item.area}
+                          </span>
+                          <span className="text-xs font-bold text-gray-700">
+                            {item.puntaje}%
+                          </span>
+                        </div>
+                        {/* Barra */}
+                        <div className="w-full bg-white/60 backdrop-blur-sm h-3 relative flex items-center overflow-hidden rounded-full border border-gray-200 shadow-sm">
+                          <div
+                            className="h-full transition-all duration-500 ease-out rounded-full shadow-inner"
+                            style={{
+                              width: `${Math.max(item.puntaje, 2)}%`,
+                              background: `linear-gradient(90deg, ${item.color}dd, ${item.color})`
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Gráfica 2: Módulos Específicos */}
+        {(() => {
+          const hasSpecificData = currentMetricsData.simulatorGrades?.especificos?.length > 0 &&
+            currentMetricsData.simulatorGrades.especificos.some(item => item.puntaje > 0);
+
+          if (!hasSpecificData) return null;
+
+          return (
+            <div className="group cursor-pointer transition-all duration-300 hover:scale-105">
+              {/* Contenedor con gradiente púrpura-rosa */}
+              <div className="relative bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 rounded-3xl shadow-xl border-2 border-purple-200/50 p-6 hover:shadow-2xl transition-all duration-300 overflow-hidden">
+
+                {/* Efectos decorativos */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100/40 to-pink-100/40 rounded-full blur-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-pink-100/40 to-purple-100/40 rounded-full blur-xl"></div>
+
+                {/* Contenido */}
+                <div className="relative z-10">
+
+                  {/* Título */}
+                  <div className="text-center mb-5">
+                    <div className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full px-4 py-2 mb-3 shadow-lg">
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 14l9-5-9-5-9 5 9 5z" />
+                        <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                      </svg>
+                      <h3 className="text-base font-black">Módulos Específicos</h3>
+                    </div>
+                    <p className="text-xs text-gray-600 font-medium">Simuladores por Universidad</p>
+                  </div>
+
+                  {/* Barras */}
+                  <div className="space-y-4">
+                    {currentMetricsData.simulatorGrades.especificos.map((item, index) => {
+                      // Truncar nombre si es muy largo
+                      const nombreCompleto = item.modulo || 'Sin nombre';
+                      const nombreTruncado = nombreCompleto.length > 25
+                        ? nombreCompleto.substring(0, 22) + '...'
+                        : nombreCompleto;
+
+                      return (
+                        <div key={index} className="group/bar">
+                          {/* Etiqueta arriba de la barra */}
+                          <div className="flex items-center justify-between mb-1">
+                            <span
+                              className="text-xs font-bold text-purple-600 truncate max-w-[70%]"
+                              title={nombreCompleto}
+                            >
+                              {nombreTruncado}
+                            </span>
+                            <span className="text-xs font-bold text-gray-700">
+                              {item.puntaje}%
+                            </span>
+                          </div>
+                          {/* Barra */}
+                          <div className="w-full bg-white/60 backdrop-blur-sm h-3 relative flex items-center overflow-hidden rounded-full border border-gray-200 shadow-sm">
+                            <div
+                              className="h-full transition-all duration-500 ease-out rounded-full bg-gradient-to-r from-purple-600 to-pink-600 shadow-inner"
+                              style={{ width: `${Math.max(item.puntaje, 2)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+
+        {/* Feedback - Velocímetro Mejorado y Más Grande */}
+        <div className="group cursor-pointer transition-all duration-300 hover:scale-105">
+          {/* Contenedor con gradiente moderno */}
+          <div className="relative bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 rounded-3xl shadow-xl border-2 border-purple-200/50 p-6 hover:shadow-2xl transition-all duration-300 overflow-hidden">
+
+            {/* Efectos de fondo decorativos */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100/40 to-pink-100/40 rounded-full blur-2xl"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-rose-100/40 to-purple-100/40 rounded-full blur-xl"></div>
+
+            {/* Contenido relativo */}
+            <div className="relative z-10">
+
+              {/* Título con icono */}
+              <div className="text-center mb-5">
+                <div className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full px-4 py-2 mb-3 shadow-lg">
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                  </svg>
+                  <h3 className="text-base font-black">Feedback</h3>
+                </div>
+              </div>
+
+              {/* Gráfica de Velocímetro Mejorada y Más Grande */}
+              {(() => {
+                const score = currentMetricsData.feedbackScore || 0;
+                const performanceLevel = calculatePerformanceLevel(score);
+                const feedback = getMotivationalFeedback(score);
+
+                // Calcular el ángulo de la aguja basado en el score (0-100 -> 0-180 grados)
+                // El velocímetro va de 0° (izquierda) a 180° (derecha)
+                const needleAngle = (score / 100) * 180;
+
+                // Definir los niveles con emojis, colores y posiciones
+                const levels = [
+                  { level: 'E', emoji: '😟', color: '#DC2626', startAngle: 0, endAngle: 36, name: 'Nível E', gradient: 'from-red-600 to-red-700' },
+                  { level: 'D', emoji: '😐', color: '#F97316', startAngle: 36, endAngle: 72, name: 'Nível D', gradient: 'from-orange-500 to-orange-600' },
+                  { level: 'C', emoji: '🙂', color: '#FCD34D', startAngle: 72, endAngle: 108, name: 'Nível C', gradient: 'from-yellow-400 to-yellow-500' },
+                  { level: 'B', emoji: '😊', color: '#F59E0B', startAngle: 108, endAngle: 144, name: 'Nível B', gradient: 'from-amber-500 to-amber-600' },
+                  { level: 'A', emoji: '🎉', color: '#10B981', startAngle: 144, endAngle: 180, name: 'Nível A', gradient: 'from-green-500 to-green-600' }
+                ];
+
+                const centerX = 150;
+                const centerY = 150;
+                const radius = 110;
+                const innerRadius = 70;
+
+                // Función para convertir ángulo a coordenadas (0° = izquierda, 180° = derecha)
+                const angleToCoord = (angle, r = radius) => {
+                  // Convertir ángulo del velocímetro (0-180) a ángulo matemático (180-0)
+                  const mathAngle = 180 - angle;
+                  const rad = mathAngle * (Math.PI / 180);
+                  return {
+                    x: centerX + r * Math.cos(rad),
+                    y: centerY - r * Math.sin(rad) // Negativo porque Y aumenta hacia abajo
+                  };
+                };
+
+                return (
+                  <div className="flex flex-col items-center">
+                    {/* SVG del velocímetro mejorado */}
+                    <svg width="320" height="200" viewBox="0 0 320 200" className="mb-4 drop-shadow-lg">
+                      {/* Fondo del semicírculo (gris claro) */}
+                      <path
+                        d={`M ${centerX} ${centerY} L ${angleToCoord(0, radius).x} ${angleToCoord(0, radius).y} A ${radius} ${radius} 0 0 1 ${angleToCoord(180, radius).x} ${angleToCoord(180, radius).y} Z`}
+                        fill="#f3f4f6"
+                        stroke="#e5e7eb"
+                        strokeWidth="1"
+                      />
+
+                      {/* Arcos de los niveles con gradiente */}
+                      {levels.map((level) => {
+                        const start = angleToCoord(level.startAngle, radius);
+                        const end = angleToCoord(level.endAngle, radius);
+                        const largeArc = level.endAngle - level.startAngle > 180 ? 1 : 0;
+
+                        return (
+                          <g key={level.level}>
+                            {/* Sombra del arco */}
+                            <path
+                              d={`M ${centerX} ${centerY} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z`}
+                              fill="rgba(0,0,0,0.1)"
+                              transform={`translate(2, 2)`}
+                            />
+                            {/* Arco principal */}
+                            <path
+                              d={`M ${centerX} ${centerY} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z`}
+                              fill={level.color}
+                              stroke="#fff"
+                              strokeWidth="3"
+                              opacity={performanceLevel.level === level.level ? 1 : 0.5}
+                              className="transition-opacity duration-300"
+                            />
+                            {/* Borde interno para profundidad */}
+                            <path
+                              d={`M ${centerX} ${centerY} L ${angleToCoord(level.startAngle, innerRadius).x} ${angleToCoord(level.startAngle, innerRadius).y} A ${innerRadius} ${innerRadius} 0 ${largeArc} 1 ${angleToCoord(level.endAngle, innerRadius).x} ${angleToCoord(level.endAngle, innerRadius).y} Z`}
+                              fill="rgba(255,255,255,0.3)"
+                            />
+                          </g>
+                        );
+                      })}
+
+                      {/* Líneas divisorias entre niveles con sombra */}
+                      {levels.slice(0, -1).map((level) => {
+                        const coord = angleToCoord(level.endAngle, radius);
+                        const innerCoord = angleToCoord(level.endAngle, innerRadius);
+                        return (
+                          <g key={`divider-${level.level}`}>
+                            <line
+                              x1={innerCoord.x}
+                              y1={innerCoord.y}
+                              x2={coord.x}
+                              y2={coord.y}
+                              stroke="rgba(0,0,0,0.1)"
+                              strokeWidth="2"
+                              transform="translate(1, 1)"
+                            />
+                            <line
+                              x1={innerCoord.x}
+                              y1={innerCoord.y}
+                              x2={coord.x}
+                              y2={coord.y}
+                              stroke="#fff"
+                              strokeWidth="2.5"
+                            />
+                          </g>
+                        );
+                      })}
+
+                      {/* Aguja mejorada con sombra y punta */}
+                      {(() => {
+                        const needleCoord = angleToCoord(needleAngle, radius - 5);
+                        const needleBase = angleToCoord(needleAngle, 15);
+
+                        return (
+                          <g>
+                            {/* Sombra de la aguja */}
+                            <line
+                              x1={centerX + 1}
+                              y1={centerY + 1}
+                              x2={needleCoord.x + 1}
+                              y2={needleCoord.y + 1}
+                              stroke="rgba(0,0,0,0.2)"
+                              strokeWidth="4"
+                              strokeLinecap="round"
+                            />
+                            {/* Aguja principal */}
+                            <line
+                              x1={centerX}
+                              y1={centerY}
+                              x2={needleCoord.x}
+                              y2={needleCoord.y}
+                              stroke="#1f2937"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                            />
+                            {/* Base de la aguja (triángulo) */}
+                            <polygon
+                              points={`${centerX},${centerY} ${needleBase.x - 8},${needleBase.y} ${needleBase.x + 8},${needleBase.y}`}
+                              fill="#1f2937"
+                            />
+                            {/* Círculo central con gradiente */}
+                            <circle
+                              cx={centerX}
+                              cy={centerY}
+                              r="12"
+                              fill="#1f2937"
+                              stroke="#fff"
+                              strokeWidth="3"
+                            />
+                            <circle
+                              cx={centerX}
+                              cy={centerY}
+                              r="6"
+                              fill="#fff"
+                            />
+                          </g>
+                        );
+                      })()}
+
+                      {/* Etiquetas de niveles con emojis - Emojis arriba, textos abajo */}
+                      {levels.map((level) => {
+                        const midAngle = (level.startAngle + level.endAngle) / 2;
+                        const isActive = performanceLevel.level === level.level;
+
+                        // Emoji en la parte superior del arco (más cerca del borde)
+                        const emojiRadius = radius * 0.95;
+                        const emojiCoord = angleToCoord(midAngle, emojiRadius);
+
+                        // Texto en la parte inferior, cerca del centro del velocímetro
+                        const textRadius = radius * 0.50;
+                        const textCoord = angleToCoord(midAngle, textRadius);
+
+                        return (
+                          <g key={`label-${level.level}`}>
+                            {/* Fondo circular para el emoji - en la parte superior */}
+                            <circle
+                              cx={emojiCoord.x}
+                              cy={emojiCoord.y}
+                              r="20"
+                              fill={isActive ? level.color : "#f3f4f6"}
+                              stroke={isActive ? "#fff" : "#e5e7eb"}
+                              strokeWidth={isActive ? "3" : "2"}
+                              className="transition-all duration-300"
+                            />
+                            {/* Emoji - centrado en el círculo superior */}
+                            <text
+                              x={emojiCoord.x}
+                              y={emojiCoord.y + 6}
+                              textAnchor="middle"
+                              dominantBaseline="middle"
+                              fontSize="22"
+                              className="select-none pointer-events-none"
+                            >
+                              {level.emoji}
+                            </text>
+                            {/* Nombre del nivel en la parte inferior, cerca del centro */}
+                            <text
+                              x={textCoord.x}
+                              y={textCoord.y + 5}
+                              textAnchor="middle"
+                              dominantBaseline="middle"
+                              fontSize="12"
+                              fontWeight="bold"
+                              fill={isActive ? level.color : "#6b7280"}
+                              className="transition-all duration-300"
+                            >
+                              {level.name}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+
+                    {/* Mensaje motivacional mejorado */}
+                    <div className="text-center mt-2 px-4">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <span className="text-3xl">{feedback.emoji}</span>
+                        <div className="text-3xl font-black text-gray-800">{score}%</div>
+                      </div>
+                      <div className={`text-xl font-bold mb-2 px-4 py-2 rounded-lg ${performanceLevel.level === 'A' ? 'bg-green-50 text-green-700' :
+                        performanceLevel.level === 'B' ? 'bg-amber-50 text-amber-700' :
+                          performanceLevel.level === 'C' ? 'bg-yellow-50 text-yellow-700' :
+                            performanceLevel.level === 'D' ? 'bg-orange-50 text-orange-700' :
+                              'bg-red-50 text-red-700'
+                        }`}>
+                        {feedback.message}
+                      </div>
+                      <div className="text-sm text-gray-600 font-medium">{feedback.description}</div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+            </div>
+          </div>
         </div>
 
       </div> {/* Close grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 */}
@@ -2025,8 +2257,8 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   {currentMetricsData.activities.current} / {currentMetricsData.activities.total}
                 </div>
                 <div className="text-xs text-blue-500 mt-1">
-                  {currentMetricsData.activities.total > 0 
-                    ? Math.round((currentMetricsData.activities.current / currentMetricsData.activities.total) * 100) 
+                  {currentMetricsData.activities.total > 0
+                    ? Math.round((currentMetricsData.activities.current / currentMetricsData.activities.total) * 100)
                     : 0}% completadas
                 </div>
               </div>
@@ -2036,8 +2268,8 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   {currentMetricsData.quiz.current} / {currentMetricsData.quiz.total}
                 </div>
                 <div className="text-xs text-purple-500 mt-1">
-                  {currentMetricsData.quiz.total > 0 
-                    ? Math.round((currentMetricsData.quiz.current / currentMetricsData.quiz.total) * 100) 
+                  {currentMetricsData.quiz.total > 0
+                    ? Math.round((currentMetricsData.quiz.current / currentMetricsData.quiz.total) * 100)
                     : 0}% aprobados
                 </div>
               </div>
@@ -2050,24 +2282,24 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                 margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
-                  dataKey="period" 
+                <XAxis
+                  dataKey="period"
                   tick={{ fill: '#6b7280', fontSize: 12 }}
                   label={{ value: 'Meses', position: 'insideBottom', offset: -5, style: { textAnchor: 'middle', fill: '#6b7280' } }}
                 />
-                <YAxis 
+                <YAxis
                   tick={{ fill: '#6b7280', fontSize: 12 }}
                   label={{ value: 'Porcentaje (%)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6b7280' } }}
                 />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                    border: '1px solid #e5e7eb', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '1px solid #e5e7eb',
                     borderRadius: '8px',
                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                   }}
                 />
-                <Legend 
+                <Legend
                   wrapperStyle={{ paddingTop: '20px' }}
                   iconType="square"
                 />
@@ -2102,8 +2334,8 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               width={typeof window !== 'undefined' ? Math.min(800, window.innerWidth - 100) : 800}
               height={450}
               dataset={finalMetricsData.monthlyAverageData || []}
-              xAxis={[{ 
-                scaleType: 'band', 
+              xAxis={[{
+                scaleType: 'band',
                 dataKey: 'month',
                 label: 'Meses',
                 labelStyle: { fontSize: 14, fill: '#6b7280' }
@@ -2115,8 +2347,8 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                 labelStyle: { fontSize: 14, fill: '#6b7280' }
               }]}
               series={[
-                { 
-                  dataKey: 'promedio', 
+                {
+                  dataKey: 'promedio',
                   label: 'Promedio Mensual',
                   color: '#3b82f6'
                 }
@@ -2188,14 +2420,14 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   ))}
                 </Pie>
                 <Tooltip content={<CustomPieTooltip />} />
-                <Legend 
+                <Legend
                   wrapperStyle={{ paddingTop: '20px' }}
                   iconType="square"
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          
+
           {/* Información adicional en el modal */}
           <div className="mt-6 p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2211,7 +2443,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   {currentMetricsData.subjectResults.subjects.map((subject, index) => (
                     <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       <div className="flex items-center space-x-3">
-                        <div 
+                        <div
                           className="w-4 h-4 rounded-sm shadow-sm"
                           style={{ backgroundColor: subject.color }}
                         ></div>
@@ -2223,7 +2455,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   ))}
                 </div>
               </div>
-              
+
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <h4 className="font-bold text-gray-800 mb-4 text-lg flex items-center">
                   <svg className="w-5 h-5 mr-2 text-red-600" fill="currentColor" viewBox="0 0 20 20">
@@ -2270,45 +2502,45 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
             const isRiesgo = finalAcademicStatus.level === 'R';
             const isActivo = finalAcademicStatus.level === 'A';
             const isDestacado = finalAcademicStatus.level === 'D';
-            
-            const cardBgClass = isRiesgo 
+
+            const cardBgClass = isRiesgo
               ? 'bg-gradient-to-br from-red-50 via-pink-50 to-red-100 border-red-200'
-              : isActivo 
-              ? 'bg-gradient-to-br from-yellow-50 via-amber-50 to-yellow-100 border-yellow-200'
-              : 'bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 border-green-200';
-            
+              : isActivo
+                ? 'bg-gradient-to-br from-yellow-50 via-amber-50 to-yellow-100 border-yellow-200'
+                : 'bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 border-green-200';
+
             const iconBgClass = isRiesgo
               ? 'bg-gradient-to-br from-red-500 to-red-600'
               : isActivo
-              ? 'bg-gradient-to-br from-yellow-500 to-amber-600'
-              : 'bg-gradient-to-br from-green-500 to-emerald-600';
-            
+                ? 'bg-gradient-to-br from-yellow-500 to-amber-600'
+                : 'bg-gradient-to-br from-green-500 to-emerald-600';
+
             const badgeBgClass = isRiesgo
               ? 'bg-gradient-to-r from-red-500 to-red-600'
               : isActivo
-              ? 'bg-gradient-to-r from-yellow-500 to-amber-600'
-              : 'bg-gradient-to-r from-green-500 to-emerald-600';
-            
+                ? 'bg-gradient-to-r from-yellow-500 to-amber-600'
+                : 'bg-gradient-to-r from-green-500 to-emerald-600';
+
             const textClass = isRiesgo
               ? 'text-red-700'
               : isActivo
-              ? 'text-amber-700'
-              : 'text-green-700';
-            
+                ? 'text-amber-700'
+                : 'text-green-700';
+
             const separatorClass = isRiesgo
               ? 'bg-gradient-to-r from-red-400 to-red-600'
               : isActivo
-              ? 'bg-gradient-to-r from-yellow-400 to-amber-600'
-              : 'bg-gradient-to-r from-green-400 to-emerald-600';
+                ? 'bg-gradient-to-r from-yellow-400 to-amber-600'
+                : 'bg-gradient-to-r from-green-400 to-emerald-600';
 
             return (
               <div className={`relative p-8 rounded-3xl shadow-2xl border-2 transition-all duration-300 hover:shadow-3xl hover:-translate-y-1 ${cardBgClass}`}>
-                
+
                 {/* Icono de bandera en la esquina superior izquierda */}
                 <div className="absolute top-4 left-4">
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg ${iconBgClass}`}>
                     <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M4 4v18l6-3 6 3 6-3V4l-6 3-6-3-6 3z"/>
+                      <path d="M4 4v18l6-3 6 3 6-3V4l-6 3-6-3-6 3z" />
                     </svg>
                   </div>
                 </div>
@@ -2377,14 +2609,14 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                   <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div>
                   <h4 className="font-bold text-blue-700 mb-2">Recomendación:</h4>
                   <p className="text-sm text-blue-600 leading-relaxed">
-                    Considera establecer un horario de estudio diario, buscar apoyo de tu asesor académico, 
-                    y utilizar técnicas de estudio que se adapten mejor a tu estilo de aprendizaje. 
+                    Considera establecer un horario de estudio diario, buscar apoyo de tu asesor académico,
+                    y utilizar técnicas de estudio que se adapten mejor a tu estilo de aprendizaje.
                     ¡Cada pequeño paso cuenta hacia tu éxito!
                   </p>
                 </div>

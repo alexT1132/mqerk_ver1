@@ -4,10 +4,10 @@ import { useStudent } from '../../context/StudentContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useComprobante } from '../../context/ComprobantesContext.jsx';
 import { generatePaymentSchedule as genScheduleShared, resolvePlanType as resolvePlanTypeShared, getActivationDate as getActivationDateShared } from '../../utils/payments.js';
-import { 
-  useStudentNotifications, 
-  NOTIFICATION_TYPES, 
-  NOTIFICATION_PRIORITIES 
+import {
+  useStudentNotifications,
+  NOTIFICATION_TYPES,
+  NOTIFICATION_PRIORITIES
 } from '../../context/StudentNotificationContext.jsx';
 import ComprobanteVirtual from '../shared/ComprobanteVirtual.jsx';
 
@@ -65,7 +65,7 @@ const X = ({ className }) => (
 const IconoTarjeta = () => (
   <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-2 sm:mb-3">
     <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+      <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
     </svg>
   </div>
 );
@@ -209,11 +209,11 @@ function PaymentMethodCard({ method, onClick }) {
       p-4 sm:p-5 md:p-6 flex flex-col items-center justify-center text-center min-h-[120px] sm:min-h-[140px] md:min-h-[160px] group border-2 border-white/20 ring-2 ring-white/10`}
     >
       <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-xl sm:rounded-2xl"></div>
-  {method.icon}
-  <h3 className="text-white text-[10px] xs:text-xs sm:text-sm md:text-base font-extrabold mt-1 sm:mt-2 leading-tight relative z-10 px-1 sm:px-2">
+      {method.icon}
+      <h3 className="text-white text-[10px] xs:text-xs sm:text-sm md:text-base font-extrabold mt-1 sm:mt-2 leading-tight relative z-10 px-1 sm:px-2">
         {method.title}
       </h3>
-  <p className="hidden sm:block text-white/90 text-[10px] sm:text-xs mt-1 sm:mt-2 relative z-10 font-semibold">
+      <p className="hidden sm:block text-white/90 text-[10px] sm:text-xs mt-1 sm:mt-2 relative z-10 font-semibold">
         Haz clic para ver detalles
       </p>
       {method.id === 'card' && showComingSoon && (
@@ -285,8 +285,8 @@ function CardPaymentModal({ onReceiptUpload }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <a 
-            href="#" 
+          <a
+            href="#"
             className="block w-full text-center py-4 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-200 text-lg"
           >
             💳 Pagar con Tarjeta - $XXX MXN
@@ -327,7 +327,7 @@ function CardPaymentModal({ onReceiptUpload }) {
                   </button>
                 </div>
               </div>
-              
+
               <div className="flex gap-3">
                 <button className="flex-1 text-sm bg-blue-100 text-blue-700 py-2 rounded-lg hover:bg-blue-200 transition flex items-center justify-center gap-2">
                   <Eye className="w-4 h-4" />
@@ -357,7 +357,7 @@ function TransferPaymentModal({ onReceiptUpload }) {
     beneficiary: 'KELVIN VALENTIN GOMEZ RAMIREZ', // TODO: Verificar razón social correcta
     account: '4169 1608 5392 8977', // TODO: Reemplazar con número de cuenta real
     clabe: '137628103732170052'
-    
+
   };
 
   const handleCopy = (text, fieldName) => {
@@ -368,7 +368,7 @@ function TransferPaymentModal({ onReceiptUpload }) {
     textarea.select();
     document.execCommand('copy');
     document.body.removeChild(textarea);
-    
+
     setCopiedMessage({ visible: true, target: fieldName });
     setTimeout(() => {
       setCopiedMessage({ visible: false, target: '' });
@@ -415,8 +415,8 @@ function TransferPaymentModal({ onReceiptUpload }) {
               <div className="flex items-center gap-3">
                 <span className="font-mono font-bold text-lg">{bankInfo.account}</span>
                 <div className="relative">
-                  <button 
-                    onClick={() => handleCopy(bankInfo.account, 'account')} 
+                  <button
+                    onClick={() => handleCopy(bankInfo.account, 'account')}
                     className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition"
                   >
                     📋 Copiar
@@ -434,8 +434,8 @@ function TransferPaymentModal({ onReceiptUpload }) {
               <div className="flex items-center gap-3">
                 <span className="font-mono font-bold text-lg">{bankInfo.clabe}</span>
                 <div className="relative">
-                  <button 
-                    onClick={() => handleCopy(bankInfo.clabe, 'clabe')} 
+                  <button
+                    onClick={() => handleCopy(bankInfo.clabe, 'clabe')}
                     className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition"
                   >
                     📋 Copiar
@@ -502,7 +502,7 @@ function TransferPaymentModal({ onReceiptUpload }) {
                   </button>
                 </div>
               </div>
-              
+
               <div className="flex gap-3">
                 <button className="flex-1 text-sm bg-blue-100 text-blue-700 py-2 rounded-lg hover:bg-blue-200 transition flex items-center justify-center gap-2">
                   <Eye className="w-4 h-4" />
@@ -528,7 +528,7 @@ function CashPaymentModal({ onReceiptUpload }) {
 
   const locationInfo = {
     address: 'Calle Juárez entre Av. Independencia y 5 de Mayo, C.P. 68300. En altos de COMPUMAX, Tuxtepec, Oaxaca',
-  hours: 'Horario: Lunes a Viernes, 9:00 a 17:00 h',
+    hours: 'Horario: Lunes a Viernes, 9:00 a 17:00 h',
     contact: 'Tel: 287-151-5760'
   };
 
@@ -581,7 +581,7 @@ function CashPaymentModal({ onReceiptUpload }) {
               <p className="font-semibold">{locationInfo.contact}</p>
             </div>
           </div>
-          
+
           {/* Tarjeta decorativa con consejos */}
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-green-200 shadow-sm">
             <div className="flex items-center gap-3 mb-3">
@@ -603,7 +603,7 @@ function CashPaymentModal({ onReceiptUpload }) {
                 <span className="text-green-500 mt-1">•</span>
                 <span>Pregunta por descuentos disponibles.</span>
               </p>
-        
+
             </div>
           </div>
         </div>
@@ -659,7 +659,7 @@ function CashPaymentModal({ onReceiptUpload }) {
                   </button>
                 </div>
               </div>
-              
+
               <div className="flex gap-3">
                 <button className="flex-1 text-sm bg-blue-100 text-blue-700 py-2 rounded-lg hover:bg-blue-200 transition flex items-center justify-center gap-2">
                   <Eye className="w-4 h-4" />
@@ -798,12 +798,12 @@ function PaymentHistoryIntelligent({ allPaymentsHistory = [], onFilterChange, on
   // Filtrar y buscar en el historial
   const filteredHistory = (allPaymentsHistory || []).filter(plan => {
     const matchesPlan = selectedPlan === 'all' || plan.planType === selectedPlan;
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       plan.planName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      plan.payments.some(payment => 
+      plan.payments.some(payment =>
         payment.method.toLowerCase().includes(searchTerm.toLowerCase())
       );
-    
+
     return matchesPlan && matchesSearch;
   });
 
@@ -872,7 +872,7 @@ function PaymentHistoryIntelligent({ allPaymentsHistory = [], onFilterChange, on
             Consulta todos tus planes y pagos históricos. Solo lectura.
           </p>
         </div>
-        
+
         {/* Controles de filtro */}
         <div className="flex flex-col sm:flex-row gap-3">
           <input
@@ -882,7 +882,7 @@ function PaymentHistoryIntelligent({ allPaymentsHistory = [], onFilterChange, on
             onChange={(e) => setSearchTerm(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           />
-          
+
           <select
             value={selectedPlan}
             onChange={(e) => setSelectedPlan(e.target.value)}
@@ -904,113 +904,112 @@ function PaymentHistoryIntelligent({ allPaymentsHistory = [], onFilterChange, on
         </div>
       </div>
 
-  {/* Lista de planes históricos */}
+      {/* Lista de planes históricos */}
       <div className="max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-2">
         <div className="space-y-6">
           {filteredHistory.length > 0 ? (
-          filteredHistory.map((plan) => (
-            <div key={plan.id} className="border border-gray-200 rounded-xl overflow-hidden">
-              {/* Header del plan */}
-              <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                    <div className={`w-3 h-3 rounded-full ${planColors[plan.planType]}`}></div>
-                    <h4 className="font-bold text-gray-800">{plan.planName}</h4>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      plan.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      plan.status === 'active' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {plan.status === 'completed' ? 'Completado' :
-                       plan.status === 'active' ? 'Activo' : 'Cancelado'}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <span className="font-medium">Período:</span> {new Date(plan.startDate).toLocaleDateString('es-MX')} 
-                    {plan.endDate && ` - ${new Date(plan.endDate).toLocaleDateString('es-MX')}`}
+            filteredHistory.map((plan) => (
+              <div key={plan.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                {/* Header del plan */}
+                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3 mb-2 sm:mb-0">
+                      <div className={`w-3 h-3 rounded-full ${planColors[plan.planType]}`}></div>
+                      <h4 className="font-bold text-gray-800">{plan.planName}</h4>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${plan.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          plan.status === 'active' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                        }`}>
+                        {plan.status === 'completed' ? 'Completado' :
+                          plan.status === 'active' ? 'Activo' : 'Cancelado'}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">Período:</span> {new Date(plan.startDate).toLocaleDateString('es-MX')}
+                      {plan.endDate && ` - ${new Date(plan.endDate).toLocaleDateString('es-MX')}`}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Tabla de pagos del plan */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Pago</th>
-                      <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Monto</th>
-                      <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Fecha Límite</th>
-                      <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Fecha Pago</th>
-                      <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Método</th>
-                      <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Estado</th>
-                      <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Comprobante</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(plan.payments || []).map((payment) => (
-                      <tr key={payment.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4">
-                          <span className="font-medium text-gray-800">#{payment.paymentNumber}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="font-bold text-gray-800">{formatCurrencyMXN(payment.amount)}</span>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 text-sm">
-                          {new Date(payment.dueDate).toLocaleDateString('es-MX')}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 text-sm">
-                          {payment.paidDate ? new Date(payment.paidDate).toLocaleDateString('es-MX') : '-'}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 text-sm">
-                          {payment.method}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${statusColors[payment.status]}`}>
-                            {statusIcons[payment.status]}
-                            {statusLabels[payment.status]}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          {payment.receiptUrl ? (
-                            <button
-                              onClick={() => handleDownloadReceipt(payment.receiptUrl, payment.id)}
-                              className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
-                            >
-                              <Eye className="w-4 h-4" />
-                              Ver comprobante
-                            </button>
-                          ) : (
-                            <span className="text-gray-400 text-sm">-</span>
-                          )}
-                        </td>
+                {/* Tabla de pagos del plan */}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Pago</th>
+                        <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Monto</th>
+                        <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Fecha Límite</th>
+                        <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Fecha Pago</th>
+                        <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Método</th>
+                        <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Estado</th>
+                        <th className="text-left py-2 px-4 font-medium text-gray-700 text-sm">Comprobante</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {(plan.payments || []).map((payment) => (
+                        <tr key={payment.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <span className="font-medium text-gray-800">#{payment.paymentNumber}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="font-bold text-gray-800">{formatCurrencyMXN(payment.amount)}</span>
+                          </td>
+                          <td className="py-3 px-4 text-gray-600 text-sm">
+                            {new Date(payment.dueDate).toLocaleDateString('es-MX')}
+                          </td>
+                          <td className="py-3 px-4 text-gray-600 text-sm">
+                            {payment.paidDate ? new Date(payment.paidDate).toLocaleDateString('es-MX') : '-'}
+                          </td>
+                          <td className="py-3 px-4 text-gray-600 text-sm">
+                            {payment.method}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${statusColors[payment.status]}`}>
+                              {statusIcons[payment.status]}
+                              {statusLabels[payment.status]}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            {payment.receiptUrl ? (
+                              <button
+                                onClick={() => handleDownloadReceipt(payment.receiptUrl, payment.id)}
+                                className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                              >
+                                <Eye className="w-4 h-4" />
+                                Ver comprobante
+                              </button>
+                            ) : (
+                              <span className="text-gray-400 text-sm">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-              {/* Footer del plan con resumen */}
-              <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm">
-                  <div className="text-gray-600 mb-2 sm:mb-0">
-                    <span className="font-medium">Total del plan:</span> {formatCurrencyMXN(plan.totalAmount)}
-                  </div>
-                  <div className="text-gray-600">
-                    <span className="font-medium">Pagos realizados:</span> {(plan.payments || []).filter(p => p.status === 'paid').length} de {(plan.payments || []).length}
+                {/* Footer del plan con resumen */}
+                <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm">
+                    <div className="text-gray-600 mb-2 sm:mb-0">
+                      <span className="font-medium">Total del plan:</span> {formatCurrencyMXN(plan.totalAmount)}
+                    </div>
+                    <div className="text-gray-600">
+                      <span className="font-medium">Pagos realizados:</span> {(plan.payments || []).filter(p => p.status === 'paid').length} de {(plan.payments || []).length}
+                    </div>
                   </div>
                 </div>
               </div>
+            ))
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-gray-400 text-4xl mb-4">📊</div>
+              <h4 className="text-lg font-medium text-gray-600 mb-2">No se encontraron registros</h4>
+              <p className="text-gray-500 text-sm">
+                {searchTerm ? 'Intenta con otros términos de búsqueda' : 'No tienes historial de pagos aún'}
+              </p>
             </div>
-          ))
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-4xl mb-4">📊</div>
-            <h4 className="text-lg font-medium text-gray-600 mb-2">No se encontraron registros</h4>
-            <p className="text-gray-500 text-sm">
-              {searchTerm ? 'Intenta con otros términos de búsqueda' : 'No tienes historial de pagos aún'}
-            </p>
-          </div>
-        )}
+          )}
         </div>
       </div>
 
@@ -1076,13 +1075,13 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
   const totalPayments = selectedPlan === 'premium' ? 1 : (selectedPlan === 'start' ? 2 : 8);
   const baseTotalAmount = (
     selectedPlan === 'premium' ? 10500 :
-    selectedPlan === 'start' ? 11000 :
-    1500 * 8 // mensual
+      selectedPlan === 'start' ? 11000 :
+        1500 * 8 // mensual
   );
   const perPaymentAmount = (
     selectedPlan === 'premium' ? 10500 :
-    selectedPlan === 'start' ? 5500 :
-    1500
+      selectedPlan === 'start' ? 5500 :
+        1500
   );
   const currentPlan = {
     name: selectedPlan === 'premium' ? 'Plan Premium' : (selectedPlan === 'start' ? 'Plan Start' : 'Plan Mensual'),
@@ -1115,12 +1114,12 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
     if (!allPaymentsPaid) return null;
     if (!planCompletionDate) return null;
     const lastPaymentDate = new Date(planCompletionDate);
-  // Premium: acceso durante el curso (8 meses), no de por vida.
+    // Premium: acceso durante el curso (8 meses), no de por vida.
     if (selectedPlan === 'premium') {
       const courseEnd = new Date(currentPlan.startDate);
       courseEnd.setMonth(courseEnd.getMonth() + 8);
       return courseEnd;
-  }
+    }
     if (selectedPlan === 'mensual') { lastPaymentDate.setMonth(lastPaymentDate.getMonth() + 8); return lastPaymentDate; }
     if (selectedPlan === 'start') { lastPaymentDate.setMonth(lastPaymentDate.getMonth() + 12); return lastPaymentDate; }
     return null;
@@ -1131,19 +1130,19 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
   const isPlanExpired = planExpirationDate && new Date() > planExpirationDate;
   const amountPaid = paymentSchedule.filter(p => p.status === 'paid').length * currentPlan.paymentAmount;
   const upgradeDifference = Math.max(0, 10500 - amountPaid);
-  
+
   // TODO BACKEND: Función para procesar el pago de un elemento específico
   const handlePayment = async (paymentId) => {
     try {
       // TODO: Integrar con el modal de métodos de pago y pasar el paymentId
-      
+
       // TODO BACKEND: POST /api/payments/initiate
       // const response = await fetch('/api/payments/initiate', {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify({ paymentId, amount: currentPlan.paymentAmount })
       // });
-      
+
     } catch (error) {
       console.error('Error al iniciar pago:', error);
       // TODO: Mostrar toast de error
@@ -1151,7 +1150,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
   };
 
 
-  
+
   // Función auxiliar para obtener el nombre del método de pago
   const getPaymentMethodName = (status) => {
     // TODO BACKEND: Obtener el método real del pago desde la API
@@ -1161,7 +1160,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
     }
     return 'Pendiente';
   };
-  
+
   const getStatusColor = (status, isOverdue) => {
     if (status === 'paid') return 'bg-green-100 text-green-800';
     if (status === 'overdue' || isOverdue) return 'bg-red-100 text-red-800';
@@ -1231,20 +1230,18 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
           </thead>
           <tbody>
             {paymentSchedule.map((payment) => (
-              <tr 
-                key={payment.id} 
-                className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                  payment.isOverdue ? 'bg-red-50' : ''
-                } ${allPaymentsPaid ? 'bg-green-50/30' : ''}`}
+              <tr
+                key={payment.id}
+                className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${payment.isOverdue ? 'bg-red-50' : ''
+                  } ${allPaymentsPaid ? 'bg-green-50/30' : ''}`}
               >
                 <td className="py-3 sm:py-4 px-2 sm:px-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      payment.status === 'paid' ? 'bg-green-500 text-white' :
-                      payment.isOverdue ? 'bg-red-500 text-white' :
-                      payment.status === 'pending' ? 'bg-yellow-500 text-white' :
-                      'bg-gray-300 text-gray-600'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${payment.status === 'paid' ? 'bg-green-500 text-white' :
+                        payment.isOverdue ? 'bg-red-500 text-white' :
+                          payment.status === 'pending' ? 'bg-yellow-500 text-white' :
+                            'bg-gray-300 text-gray-600'
+                      }`}>
                       {payment.status === 'paid' && allPaymentsPaid ? '✓' : payment.paymentNumber}
                     </div>
                     <span className="font-medium text-gray-800">
@@ -1273,18 +1270,17 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                   </div>
                 </td>
                 <td className="py-3 sm:py-4 px-2 sm:px-4">
-                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border ${
-                    getStatusColor(payment.status, payment.isOverdue)
-                  }`}>
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border ${getStatusColor(payment.status, payment.isOverdue)
+                    }`}>
                     {getStatusIcon(payment.status, payment.isOverdue)}
                     {getStatusLabel(payment.status, payment.isOverdue)}
                   </div>
                 </td>
                 <td className="py-3 sm:py-4 px-2 sm:px-4">
-      {payment.status === 'paid' ? (
+                  {payment.status === 'paid' ? (
                     <div className="flex gap-2">
-                      <button 
-        onClick={() => onViewScheduleReceipt && onViewScheduleReceipt(payment)}
+                      <button
+                        onClick={() => onViewScheduleReceipt && onViewScheduleReceipt(payment)}
                         className="text-xs sm:text-sm bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-200 transition flex items-center gap-1"
                       >
                         <Eye className="w-3 h-3" />
@@ -1293,13 +1289,12 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                     </div>
                   ) : payment.status === 'pending' || payment.isOverdue ? (
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => handlePayment(payment.id)}
-                        className={`text-xs sm:text-sm px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${
-                          payment.isOverdue 
-                            ? 'bg-red-500 text-white hover:bg-red-600' 
+                        className={`text-xs sm:text-sm px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${payment.isOverdue
+                            ? 'bg-red-500 text-white hover:bg-red-600'
                             : 'bg-green-500 text-white hover:bg-green-600'
-                        }`}
+                          }`}
                       >
                         💳 {payment.isOverdue ? 'Pagar Ahora' : 'Pagar'}
                       </button>
@@ -1315,11 +1310,10 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
       </div>
 
       {/* Resumen del plan - MEJORADO */}
-  <div className={`mt-5 sm:mt-6 p-3.5 sm:p-4 rounded-xl border-2 ${
-        allPaymentsPaid 
-          ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300' 
+      <div className={`mt-5 sm:mt-6 p-3.5 sm:p-4 rounded-xl border-2 ${allPaymentsPaid
+          ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300'
           : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
-      }`}>
+        }`}>
         {/* Header del resumen */}
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <h4 className={`font-bold text-base sm:text-lg ${allPaymentsPaid ? 'text-green-800' : 'text-blue-800'}`}>
@@ -1362,7 +1356,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
               {allPaymentsPaid ? 'Total Invertido' : 'Pendiente'}
             </div>
             <div className={`text-xl font-bold ${allPaymentsPaid ? 'text-green-800' : 'text-yellow-800'}`}>
-              {allPaymentsPaid 
+              {allPaymentsPaid
                 ? formatCurrencyMXN(currentPlan.totalAmount)
                 : formatCurrencyMXN((currentPlan.totalPayments - paymentSchedule.filter(p => p.status === 'paid').length) * currentPlan.paymentAmount)
               }
@@ -1384,7 +1378,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
             )}
           </div>
         </div>
-        
+
         {/* Barra de progreso mejorada */}
         <div className="mt-4">
           <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
@@ -1394,14 +1388,13 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
             </span>
           </div>
           <div className="bg-white rounded-full h-3 overflow-hidden shadow-inner">
-            <div 
-              className={`h-full transition-all duration-1000 ease-out ${
-                allPaymentsPaid 
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+            <div
+              className={`h-full transition-all duration-1000 ease-out ${allPaymentsPaid
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-600'
                   : 'bg-gradient-to-r from-blue-500 to-purple-600'
-              }`}
-              style={{ 
-                width: `${(paymentSchedule.filter(p => p.status === 'paid').length / currentPlan.totalPayments) * 100}%` 
+                }`}
+              style={{
+                width: `${(paymentSchedule.filter(p => p.status === 'paid').length / currentPlan.totalPayments) * 100}%`
               }}
             >
               {allPaymentsPaid && (
@@ -1427,7 +1420,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
             <div>
               <h4 className="font-bold text-red-800">⚠️ Pagos Vencidos Detectados</h4>
               <p className="text-red-700 text-sm">
-                Tienes {paymentSchedule.filter(p => p.isOverdue).length} pago(s) vencido(s). 
+                Tienes {paymentSchedule.filter(p => p.isOverdue).length} pago(s) vencido(s).
                 Tu acceso a la plataforma podría verse limitado hasta que regularices tus pagos.
               </p>
             </div>
@@ -1440,7 +1433,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
         <div className="mt-6 relative overflow-hidden">
           {/* Fondo animado */}
           <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 opacity-10 animate-pulse"></div>
-          
+
           <div className="relative bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl p-6 shadow-xl">
             {/* Header del plan completado */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -1463,7 +1456,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                   </p>
                 </div>
               </div>
-              
+
               {/* Badge de logro */}
               <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-full shadow-lg">
                 <div className="text-center">
@@ -1500,18 +1493,18 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
               <div className="bg-white/90 rounded-xl p-5 shadow-sm border border-green-200">
                 <div className="text-sm text-green-600 font-medium mb-2">📅 Fecha de Finalización</div>
                 <div className="text-lg font-bold text-green-800">
-                  {planCompletionDate?.toLocaleDateString('es-ES', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                  {planCompletionDate?.toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
                   })}
                 </div>
                 <div className="text-xs text-green-600 mt-1">
                   Último pago verificado
                 </div>
               </div>
-              
+
               <div className="bg-white/90 rounded-xl p-5 shadow-sm border border-green-200">
                 <div className="text-sm text-green-600 font-medium mb-2">🔐 Estado de Acceso</div>
                 <div className="text-lg font-bold text-green-800">
@@ -1585,7 +1578,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                   <h5 className="font-bold text-xl">Plan Expirado</h5>
                 </div>
                 <p className="text-orange-100 mb-4">
-                  Tu acceso expiró el <strong className="text-white">{planExpirationDate?.toLocaleDateString('es-MX')}</strong>. 
+                  Tu acceso expiró el <strong className="text-white">{planExpirationDate?.toLocaleDateString('es-MX')}</strong>.
                   Para continuar disfrutando del contenido, necesitas renovar tu plan.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -1678,10 +1671,10 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
   const { studentData, hasPaid, currentCourse, updatePaymentStatus, hasContentAccess, overdueDays, checkPaymentStatus } = useStudent();
   const { alumno, user } = useAuth();
   const { comprobantes, getComprobantes, crearComprobante } = useComprobante();
-  
+
   // Datos del estudiante desde el contexto (se usarán para el recibo si el backend los provee)
   // Nota: ya no usamos hooks de mocks
-  
+
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [isLoading, setIsLoading] = useState(propIsLoading);
   const [error, setError] = useState(propError);
@@ -1689,11 +1682,11 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFetchingComprobantes, setIsFetchingComprobantes] = useState(false);
   const [comprobantesError, setComprobantesError] = useState(null);
-  
+
   // Estados para el recibo virtual
   const [showRecibo, setShowRecibo] = useState(false);
   const [selectedPaymentForRecibo, setSelectedPaymentForRecibo] = useState(null);
-  
+
   // TODO BACKEND: Reemplazar con datos reales de la API
   // const [paymentHistory, setPaymentHistory] = useState([]);
   // useEffect(() => {
@@ -1805,12 +1798,12 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
       date: payment.paymentDate?.toISOString?.() || new Date().toISOString(),
       method: 'Efectivo',
       status: 'paid',
-  plan: `Plan ${planType === 'premium' ? 'Premium' : (planType === 'start' ? 'Start' : 'Mensual')} - Pago ${payment.paymentNumber}`,
-  planType, // pasar el tipo de plan real
+      plan: `Plan ${planType === 'premium' ? 'Premium' : (planType === 'start' ? 'Start' : 'Mensual')} - Pago ${payment.paymentNumber}`,
+      planType, // pasar el tipo de plan real
       paymentNumber: payment.paymentNumber,
       dueDate: payment.dueDate?.toISOString?.() || new Date().toISOString(),
       verificationDate: payment.verificationDate?.toISOString?.() || payment.paymentDate?.toISOString?.() || new Date().toISOString(),
-  description: `Pago ${payment.paymentNumber} del plan ${planType}`
+      description: `Pago ${payment.paymentNumber} del plan ${planType}`
     };
     setSelectedPaymentForRecibo(paymentData);
     setShowRecibo(true);
@@ -1844,7 +1837,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
   // Construir URL absoluta del archivo desde VITE_API_URL
   const buildReceiptUrl = (relativePath) => {
     if (!relativePath) return null;
-    const apiBase = (import.meta?.env?.VITE_API_URL) || 'http://localhost:1002/api';
+    const apiBase = (import.meta?.env?.VITE_API_URL) || (typeof window !== 'undefined' ? `http://${window.location.hostname}:1002/api` : 'http://localhost:1002/api');
     const host = apiBase.replace(/\/?api\/?$/, '');
     return `${host}${relativePath}`;
   };
@@ -1863,8 +1856,8 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
       penalty: 0,
       method,
       status,
-  plan: alumno?.plan || 'Plan actual',
-  planType: alumno?.plan || alumno?.plan_type || 'mensual',
+      plan: alumno?.plan || 'Plan actual',
+      planType: alumno?.plan || alumno?.plan_type || 'mensual',
       cashReceived: amount || 0,
       transactionId: `TXN-${alumno?.folio || 'MQ'}`,
       verificationDate: status === 'paid' ? (row?.created_at || new Date().toISOString()) : null,
@@ -1963,13 +1956,13 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
         // 
         // if (!data.hasPaid) {
         //   // Si no ha pagado, redirigir a la página de pagos
-  //   window.location.href = '/alumno/mis-pagos';
+        //   window.location.href = '/alumno/mis-pagos';
         // }
-        
+
         // MOCK - Remover cuando conectes el backend
         // hasPaid = true;
         // overdueDays = 0;
-        
+
         // Actualizar estado de la aplicación
         // checkPaymentStatus();
       } catch (error) {
@@ -2007,33 +2000,31 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
   }
 
   return (
-  <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 lg:py-8">
-    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-5 md:space-y-6">
+    <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 lg:py-8">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-5 md:space-y-6">
         {/* Título principal y navegación por tabs */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
           <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight">
             MIS PAGOS
           </h1>
-          
+
           {/* Tabs de navegación mejorados */}
-      <div className="flex bg-white rounded-xl sm:rounded-2xl p-1 shadow-xl border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+          <div className="flex bg-white rounded-xl sm:rounded-2xl p-1 shadow-xl border-2 border-violet-200/50 ring-2 ring-violet-100/50">
             <button
               onClick={() => setActiveTab('current')}
-        className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-extrabold transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation ${
-                activeTab === 'current'
+              className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-extrabold transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation ${activeTab === 'current'
                   ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-violet-200/50'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-violet-50'
-              }`}
+                }`}
             >
               📋 Plan Actual
             </button>
             <button
               onClick={() => setActiveTab('history')}
-        className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-extrabold transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation ${
-                activeTab === 'history'
+              className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-extrabold transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation ${activeTab === 'history'
                   ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-violet-200/50'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-violet-50'
-              }`}
+                }`}
             >
               📚 Historial
             </button>

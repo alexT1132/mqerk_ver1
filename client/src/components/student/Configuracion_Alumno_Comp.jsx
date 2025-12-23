@@ -147,7 +147,7 @@ export function Configuracion_Alumno_comp() {
     const [photoError, setPhotoError] = useState(false);
     // Modal de notificación personalizada
     const [notificationModal, setNotificationModal] = useState({ open: false, message: '', type: 'success' }); // 'success' | 'error'
-    
+
     // Cerrar automáticamente la modal de éxito después de 3 segundos
     useEffect(() => {
         if (notificationModal.open && notificationModal.type === 'success') {
@@ -157,7 +157,7 @@ export function Configuracion_Alumno_comp() {
             return () => clearTimeout(timer);
         }
     }, [notificationModal.open, notificationModal.type]);
-    
+
     // Tabs
     const [activeTab, setActiveTab] = useState('perfil'); // 'perfil' | 'preferencias' | 'apariencia' | 'seguridad' | 'peligro'
 
@@ -184,7 +184,7 @@ export function Configuracion_Alumno_comp() {
     }, [isMdUp, activeTab]);
 
     // Carga inicial de datos del usuario
-    
+
     useEffect(() => {
         const loadUserData = async () => {
             if (!alumno?.id) return;
@@ -242,7 +242,7 @@ export function Configuracion_Alumno_comp() {
     }, [alumno?.id]);
 
     // Manejadores de eventos
-    
+
     const handleProfileChange = (e) => {
         const { name, value } = e.target;
         const nextValue = name === 'fechaNacimiento' ? formatDateForInput(value) : value;
@@ -266,7 +266,7 @@ export function Configuracion_Alumno_comp() {
         const { value, checked } = e.target;
         setLearningPreferences(prev => ({
             ...prev,
-            intereses: checked 
+            intereses: checked
                 ? [...prev.intereses, value]
                 : prev.intereses.filter(interest => interest !== value)
         }));
@@ -423,7 +423,7 @@ export function Configuracion_Alumno_comp() {
 
     const handleChangePassword = async (e) => {
         e.preventDefault();
-        
+
         if (!passwordValidation.isValid) {
             alert("Tu nueva contraseña no cumple con todos los requisitos de seguridad.");
             return;
@@ -432,7 +432,7 @@ export function Configuracion_Alumno_comp() {
             alert("Las nuevas contraseñas no coinciden.");
             return;
         }
-        
+
         setIsLoading(true);
         try {
             if (!user?.id) throw new Error('ID de usuario no disponible');
@@ -441,7 +441,7 @@ export function Configuracion_Alumno_comp() {
                 newPassword: security.newPassword,
             });
             alert("Contraseña cambiada con éxito!");
-            
+
             setSecurity({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
             setPasswordValidation({
                 length: false,
@@ -464,7 +464,7 @@ export function Configuracion_Alumno_comp() {
         input.type = 'file';
         input.accept = 'image/*';
         input.style.display = 'none';
-        
+
         input.onchange = async (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -472,12 +472,12 @@ export function Configuracion_Alumno_comp() {
                     alert('La imagen debe ser menor a 5MB');
                     return;
                 }
-                
+
                 if (!file.type.startsWith('image/')) {
                     alert('Solo se permiten archivos de imagen');
                     return;
                 }
-                
+
                 try {
                     setIsLoading(true);
                     // Subir a servidor
@@ -498,7 +498,7 @@ export function Configuracion_Alumno_comp() {
                 }
             }
         };
-        
+
         document.body.appendChild(input);
         input.click();
         document.body.removeChild(input);
@@ -509,16 +509,16 @@ export function Configuracion_Alumno_comp() {
     // Secciones estilo admin para navegación lateral
     const secciones = [
         { id: 'perfil', nombre: 'Mi Perfil', icono: '👤', descripcion: 'Tu información personal' },
-    { id: 'preferencias', nombre: 'Preferencias', icono: '📚', descripcion: 'Aprendizaje' },
-    { id: 'apariencia', nombre: 'Apariencia', icono: '🎛️', descripcion: 'Barra superior' },
-    { id: 'seguridad', nombre: 'Seguridad', icono: '🔒', descripcion: 'Protege tu cuenta' },
+        { id: 'preferencias', nombre: 'Preferencias', icono: '📚', descripcion: 'Aprendizaje' },
+        { id: 'apariencia', nombre: 'Apariencia', icono: '🎛️', descripcion: 'Barra superior' },
+        { id: 'seguridad', nombre: 'Seguridad', icono: '🔒', descripcion: 'Protege tu cuenta' },
         { id: 'peligro', nombre: 'Zona de Peligro', icono: '⚠️', descripcion: 'Acciones irreversibles' },
     ];
 
     // Render del componente
     return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 lg:py-8 text-gray-900">
-        <div className="max-w-[90rem] mx-auto">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-8 sm:py-10 lg:py-12 text-gray-900">
+            <div className="max-w-[90rem] mx-auto">
                 <ConfirmModal
                     isOpen={showDeleteModal}
                     variant="danger"
@@ -550,24 +550,21 @@ export function Configuracion_Alumno_comp() {
                 {notificationModal.open && (
                     <div className="fixed inset-0 z-[6000] flex items-center justify-center p-3 sm:p-4" onClick={() => setNotificationModal({ open: false, message: '', type: 'success' })}>
                         <div className="bg-black/50 backdrop-blur-sm absolute inset-0" onClick={() => setNotificationModal({ open: false, message: '', type: 'success' })}></div>
-                        <div 
-                            className={`relative bg-white rounded-xl sm:rounded-2xl shadow-2xl border-2 ${
-                                notificationModal.type === 'success' 
-                                    ? 'border-emerald-200 shadow-emerald-200/30' 
-                                    : 'border-rose-200 shadow-rose-200/30'
-                            } max-w-md w-full p-4 sm:p-5 md:p-6 animate-in zoom-in-95 duration-300 ring-2 ${
-                                notificationModal.type === 'success' 
-                                    ? 'ring-emerald-100/50' 
+                        <div
+                            className={`relative bg-white rounded-xl sm:rounded-2xl shadow-2xl border-2 ${notificationModal.type === 'success'
+                                ? 'border-emerald-200 shadow-emerald-200/30'
+                                : 'border-rose-200 shadow-rose-200/30'
+                                } max-w-md w-full p-4 sm:p-5 md:p-6 animate-in zoom-in-95 duration-300 ring-2 ${notificationModal.type === 'success'
+                                    ? 'ring-emerald-100/50'
                                     : 'ring-rose-100/50'
-                            }`}
+                                }`}
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex items-start gap-3 sm:gap-4">
-                                <div className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ring-2 ${
-                                    notificationModal.type === 'success' 
-                                        ? 'bg-emerald-100 ring-emerald-200/50' 
-                                        : 'bg-rose-100 ring-rose-200/50'
-                                }`}>
+                                <div className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ring-2 ${notificationModal.type === 'success'
+                                    ? 'bg-emerald-100 ring-emerald-200/50'
+                                    : 'bg-rose-100 ring-rose-200/50'
+                                    }`}>
                                     {notificationModal.type === 'success' ? (
                                         <svg className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -579,9 +576,8 @@ export function Configuracion_Alumno_comp() {
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className={`text-base sm:text-lg font-extrabold mb-1 ${
-                                        notificationModal.type === 'success' ? 'text-emerald-900' : 'text-rose-900'
-                                    }`}>
+                                    <h3 className={`text-base sm:text-lg font-extrabold mb-1 ${notificationModal.type === 'success' ? 'text-emerald-900' : 'text-rose-900'
+                                        }`}>
                                         {notificationModal.type === 'success' ? 'Éxito' : 'Error'}
                                     </h3>
                                     <p className="text-gray-700 text-xs sm:text-sm font-semibold break-words">{notificationModal.message}</p>
@@ -598,11 +594,10 @@ export function Configuracion_Alumno_comp() {
                             <div className="mt-4 sm:mt-6 flex justify-end">
                                 <button
                                     onClick={() => setNotificationModal({ open: false, message: '', type: 'success' })}
-                                    className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-extrabold text-xs sm:text-sm transition-all duration-200 active:scale-95 touch-manipulation ${
-                                        notificationModal.type === 'success'
-                                            ? 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg ring-2 ring-emerald-200/50'
-                                            : 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white shadow-lg ring-2 ring-rose-200/50'
-                                    }`}
+                                    className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-extrabold text-xs sm:text-sm transition-all duration-200 active:scale-95 touch-manipulation ${notificationModal.type === 'success'
+                                        ? 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg ring-2 ring-emerald-200/50'
+                                        : 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white shadow-lg ring-2 ring-rose-200/50'
+                                        }`}
                                 >
                                     Aceptar
                                 </button>
@@ -676,20 +671,18 @@ export function Configuracion_Alumno_comp() {
                                         <button
                                             key={s.id}
                                             onClick={() => setActiveTab(s.id)}
-                                            className={`w-full text-left p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 flex items-center space-x-3 sm:space-x-4 group relative overflow-hidden active:scale-95 touch-manipulation ${
-                                                activeTab === s.id
-                                                    ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-xl shadow-violet-500/40 transform scale-105 ring-2 ring-violet-200/50'
-                                                    : 'text-gray-700 hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 hover:shadow-lg hover:scale-[1.02] hover:shadow-violet-200/30 border-2 border-transparent hover:border-violet-200/50'
-                                            } ${s.id === 'apariencia' ? 'hidden md:flex' : ''}`}
+                                            className={`w-full text-left p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 flex items-center space-x-3 sm:space-x-4 group relative overflow-hidden active:scale-95 touch-manipulation ${activeTab === s.id
+                                                ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-xl shadow-violet-500/40 transform scale-105 ring-2 ring-violet-200/50'
+                                                : 'text-gray-700 hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 hover:shadow-lg hover:scale-[1.02] hover:shadow-violet-200/30 border-2 border-transparent hover:border-violet-200/50'
+                                                } ${s.id === 'apariencia' ? 'hidden md:flex' : ''}`}
                                         >
                                             {activeTab === s.id && (
                                                 <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-xl sm:rounded-2xl"></div>
                                             )}
-                                            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center relative z-10 transition-all duration-300 ${
-                                                activeTab === s.id
-                                                    ? 'bg-white/20 shadow-lg ring-2 ring-white/30'
-                                                    : 'bg-gradient-to-br from-violet-100 to-indigo-100 group-hover:from-violet-200 group-hover:to-indigo-200'
-                                            }`}>
+                                            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center relative z-10 transition-all duration-300 ${activeTab === s.id
+                                                ? 'bg-white/20 shadow-lg ring-2 ring-white/30'
+                                                : 'bg-gradient-to-br from-violet-100 to-indigo-100 group-hover:from-violet-200 group-hover:to-indigo-200'
+                                                }`}>
                                                 <span className="text-base sm:text-lg">{s.icono}</span>
                                             </div>
                                             <div className="relative z-10 flex-1 min-w-0">
@@ -709,522 +702,518 @@ export function Configuracion_Alumno_comp() {
                             <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
                             <div className="relative z-10 space-y-4 sm:space-y-5 md:space-y-6">
                                 {/* Contenido por pestaña */}
-                    {activeTab === 'perfil' && (
-                        <>
-                        {/* Información Personal */}
-                        <div>
-                                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
-                                    <div className="p-2 sm:p-2.5 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-lg sm:rounded-xl ring-2 ring-violet-200/50">
-                                        <IconoUsuario />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">Información Personal</h2>
-                                        <p className="text-gray-600 text-xs sm:text-sm font-semibold">Tu perfil público</p>
-                                    </div>
-                                </div>
-                                
-                                <div className="space-y-6">
-                                    {/* Foto de Perfil */}
-                                    <div className="flex justify-center">
-                                        <div className="relative group">
-                                            <div className="w-24 h-24 xs:w-28 xs:h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 rounded-full overflow-hidden shadow-lg ring-2 sm:ring-4 ring-violet-200 ring-offset-2 ring-offset-white transition-all duration-300 group-hover:ring-violet-300 group-hover:shadow-xl bg-gradient-to-br from-violet-100 to-indigo-100">
-                                                {profile.fotoUrl && !photoError ? (
-                                                    <img
-                                                        src={profile.fotoUrl}
-                                                        alt="Foto de Perfil"
-                                                        className="w-full h-full object-cover object-center"
-                                                        onError={() => setPhotoError(true)}
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center">
-                                                        <div className="text-gray-400 text-center">
-                                                            <IconoUsuario />
-                                                            <span className="block text-xs mt-1">Sin foto</span>
+                                {activeTab === 'perfil' && (
+                                    <>
+                                        {/* Información Personal */}
+                                        <div>
+                                            <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
+                                                <div className="p-2 sm:p-2.5 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-lg sm:rounded-xl ring-2 ring-violet-200/50">
+                                                    <IconoUsuario />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">Información Personal</h2>
+                                                    <p className="text-gray-600 text-xs sm:text-sm font-semibold">Tu perfil público</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-6">
+                                                {/* Foto de Perfil */}
+                                                <div className="flex justify-center">
+                                                    <div className="relative group">
+                                                        <div className="w-24 h-24 xs:w-28 xs:h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 rounded-full overflow-hidden shadow-lg ring-2 sm:ring-4 ring-violet-200 ring-offset-2 ring-offset-white transition-all duration-300 group-hover:ring-violet-300 group-hover:shadow-xl bg-gradient-to-br from-violet-100 to-indigo-100">
+                                                            {profile.fotoUrl && !photoError ? (
+                                                                <img
+                                                                    src={profile.fotoUrl}
+                                                                    alt="Foto de Perfil"
+                                                                    className="w-full h-full object-cover object-center"
+                                                                    onError={() => setPhotoError(true)}
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center">
+                                                                    <div className="text-gray-400 text-center">
+                                                                        <IconoUsuario />
+                                                                        <span className="block text-xs mt-1">Sin foto</span>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleChangeProfilePicture}
+                                                            disabled={isLoading}
+                                                            className="absolute -bottom-1 sm:-bottom-2 -right-1 sm:-right-2 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white p-2 sm:p-2.5 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 disabled:opacity-50 active:scale-95 touch-manipulation ring-2 ring-violet-200/50"
+                                                            title="Cambiar foto de perfil"
+                                                        >
+                                                            {isLoading ? <IconoCargando /> : <IconoCamara />}
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Campos del formulario */}
+                                                <div className="space-y-3 sm:space-y-4">
+                                                    <div>
+                                                        <label htmlFor="nombre" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
+                                                            Nombre Completo
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            id="nombre"
+                                                            name="nombre"
+                                                            value={profile.nombre}
+                                                            onChange={handleProfileChange}
+                                                            disabled={isLoading}
+                                                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-violet-300 transition-all duration-150 hover:bg-gray-50 hover:border-violet-200 text-sm font-medium"
+                                                            placeholder="Ingresa tu nombre completo"
+                                                        />
+                                                    </div>
+
+                                                    <div>
+                                                        <label htmlFor="email" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
+                                                            Correo Electrónico
+                                                        </label>
+                                                        <input
+                                                            type="email"
+                                                            id="email"
+                                                            name="email"
+                                                            value={profile.email}
+                                                            onChange={handleProfileChange}
+                                                            disabled={isLoading}
+                                                            className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 rounded-xl sm:rounded-2xl focus:ring-2 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm font-medium ${!emailValid && profile.email.length > 0
+                                                                ? 'border-rose-300 focus:ring-rose-500 hover:border-rose-400'
+                                                                : 'border-gray-200 focus:ring-violet-500 hover:border-violet-200'
+                                                                }`}
+                                                            placeholder="ejemplo@correo.com"
+                                                        />
+                                                        {!emailValid && profile.email.length > 0 && (
+                                                            <div className="flex items-center gap-2 text-rose-600 text-sm font-medium mt-2">
+                                                                <IconoAlertaCirculo />
+                                                                <span>Formato de correo inválido</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                                                        <div>
+                                                            <label htmlFor="telefono" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
+                                                                Teléfono
+                                                            </label>
+                                                            <input
+                                                                type="tel"
+                                                                id="telefono"
+                                                                name="telefono"
+                                                                value={profile.telefono}
+                                                                onChange={handleProfileChange}
+                                                                disabled={isLoading}
+                                                                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-violet-300 transition-all duration-150 hover:bg-gray-50 hover:border-violet-200 text-sm font-medium"
+                                                                placeholder="(123) 456-7890"
+                                                            />
+                                                        </div>
+
+                                                        <div>
+                                                            <label htmlFor="fechaNacimiento" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
+                                                                Fecha de Nacimiento
+                                                            </label>
+                                                            <input
+                                                                type="date"
+                                                                id="fechaNacimiento"
+                                                                name="fechaNacimiento"
+                                                                value={profile.fechaNacimiento}
+                                                                onChange={handleProfileChange}
+                                                                disabled={isLoading}
+                                                                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-violet-300 transition-all duration-150 hover:bg-gray-50 hover:border-violet-200 text-sm font-medium"
+                                                            />
                                                         </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={handleChangeProfilePicture}
-                                                disabled={isLoading}
-                                                className="absolute -bottom-1 sm:-bottom-2 -right-1 sm:-right-2 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white p-2 sm:p-2.5 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 disabled:opacity-50 active:scale-95 touch-manipulation ring-2 ring-violet-200/50"
-                                                title="Cambiar foto de perfil"
-                                            >
-                                                {isLoading ? <IconoCargando /> : <IconoCamara />}
-                                            </button>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Campos del formulario */}
-                                    <div className="space-y-3 sm:space-y-4">
-                                        <div>
-                                            <label htmlFor="nombre" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
-                                                Nombre Completo
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="nombre"
-                                                name="nombre"
-                                                value={profile.nombre}
-                                                onChange={handleProfileChange}
-                                                disabled={isLoading}
-                                                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-violet-300 transition-all duration-150 hover:bg-gray-50 hover:border-violet-200 text-sm font-medium"
-                                                placeholder="Ingresa tu nombre completo"
-                                            />
-                                        </div>
-                                        
-                                        <div>
-                                            <label htmlFor="email" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
-                                                Correo Electrónico
-                                            </label>
-                                            <input
-                                                type="email"
-                                                id="email"
-                                                name="email"
-                                                value={profile.email}
-                                                onChange={handleProfileChange}
-                                                disabled={isLoading}
-                                                className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 rounded-xl sm:rounded-2xl focus:ring-2 focus:border-transparent transition-all duration-150 hover:bg-gray-50 text-sm font-medium ${
-                                                    !emailValid && profile.email.length > 0 
-                                                        ? 'border-rose-300 focus:ring-rose-500 hover:border-rose-400' 
-                                                        : 'border-gray-200 focus:ring-violet-500 hover:border-violet-200'
-                                                }`}
-                                                placeholder="ejemplo@correo.com"
-                                            />
-                                            {!emailValid && profile.email.length > 0 && (
-                                                <div className="flex items-center gap-2 text-rose-600 text-sm font-medium mt-2">
-                                                    <IconoAlertaCirculo />
-                                                    <span>Formato de correo inválido</span>
                                                 </div>
-                                            )}
-                                        </div>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                                            <div>
-                                                <label htmlFor="telefono" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
-                                                    Teléfono
-                                                </label>
-                                                <input
-                                                    type="tel"
-                                                    id="telefono"
-                                                    name="telefono"
-                                                    value={profile.telefono}
-                                                    onChange={handleProfileChange}
-                                                    disabled={isLoading}
-                                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-violet-300 transition-all duration-150 hover:bg-gray-50 hover:border-violet-200 text-sm font-medium"
-                                                    placeholder="(123) 456-7890"
-                                                />
-                                            </div>
-                                            
-                                            <div>
-                                                <label htmlFor="fechaNacimiento" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
-                                                    Fecha de Nacimiento
-                                                </label>
-                                                <input
-                                                    type="date"
-                                                    id="fechaNacimiento"
-                                                    name="fechaNacimiento"
-                                                    value={profile.fechaNacimiento}
-                                                    onChange={handleProfileChange}
-                                                    disabled={isLoading}
-                                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-violet-300 transition-all duration-150 hover:bg-gray-50 hover:border-violet-200 text-sm font-medium"
-                                                />
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                        </div>
-                        </>
-                    )}
+                                    </>
+                                )}
 
-                    {activeTab === 'preferencias' && (
-                        <>
-                        {/* Preferencias de Aprendizaje */}
-                        <div>
-                                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
-                                    <div className="p-2 sm:p-2.5 bg-gradient-to-br from-emerald-100 to-green-100 rounded-lg sm:rounded-xl ring-2 ring-emerald-200/50">
-                                        <IconoLibroAbierto />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600">Preferencias de Aprendizaje</h2>
-                                        <p className="text-gray-600 text-xs sm:text-sm font-semibold">Personaliza tu experiencia</p>
-                                    </div>
-                                </div>
-                                
-                                <div className="space-y-6">
-                                    {/* Nivel de Experiencia - Segmented Control */}
-                                    <div>
-                                        <label className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-2 sm:mb-3">
-                                            Nivel de Experiencia
-                                        </label>
-                                        <div role="radiogroup" aria-label="Nivel de experiencia" className="inline-flex rounded-xl sm:rounded-2xl border-2 border-emerald-200 bg-white overflow-hidden shadow-md">
-                                            {[
-                                                { key: 'principiante', label: '🌱 Principiante' },
-                                                { key: 'intermedio', label: '📈 Intermedio' },
-                                                { key: 'avanzado', label: '🚀 Avanzado' },
-                                            ].map((opt, i, arr) => {
-                                                const active = learningPreferences.nivelExperiencia === opt.key;
-                                                const isFirst = i === 0; const isLast = i === arr.length - 1;
-                                                return (
-                                                    <button
-                                                        key={opt.key}
-                                                        type="button"
-                                                        role="radio"
-                                                        aria-checked={active}
-                                                        disabled={isLoading}
-                                                        onClick={() => {
-                                                            setLearningPreferences(prev => ({ ...prev, nivelExperiencia: opt.key }));
-                                                            setNewSuggestionLevel(opt.key);
-                                                        }}
-                                                        className={`px-2.5 sm:px-3.5 py-2 sm:py-2.5 text-[10px] xs:text-xs sm:text-sm font-extrabold transition-all duration-200 border-emerald-200 active:scale-95 touch-manipulation ${
-                                                            active
-                                                            ? 'bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-800 ring-2 ring-emerald-400 shadow-md'
-                                                            : 'bg-transparent text-emerald-700/80 hover:text-emerald-900 hover:bg-emerald-50'
-                                                        } ${isFirst ? 'rounded-l-xl sm:rounded-l-2xl' : ''} ${isLast ? 'rounded-r-xl sm:rounded-r-2xl' : 'border-l-2'}`}
-                                                    >
-                                                        {opt.label}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
+                                {activeTab === 'preferencias' && (
+                                    <>
+                                        {/* Preferencias de Aprendizaje */}
+                                        <div>
+                                            <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
+                                                <div className="p-2 sm:p-2.5 bg-gradient-to-br from-emerald-100 to-green-100 rounded-lg sm:rounded-xl ring-2 ring-emerald-200/50">
+                                                    <IconoLibroAbierto />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600">Preferencias de Aprendizaje</h2>
+                                                    <p className="text-gray-600 text-xs sm:text-sm font-semibold">Personaliza tu experiencia</p>
+                                                </div>
+                                            </div>
 
-                                    {/* Áreas de Interés - Toggle grid */}
-                                    <div>
-                                        <div className="flex items-center justify-between mb-2 sm:mb-3">
-                                            <h3 className="text-xs sm:text-sm font-extrabold text-gray-700">Áreas de Interés</h3>
-                                            <span className="text-[10px] sm:text-xs text-gray-500 font-semibold bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">{learningPreferences.intereses.length} seleccionadas</span>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-                                            {Object.entries(interestLabels).map(([key, label]) => {
-                                                const selected = learningPreferences.intereses.includes(key);
-                                                return (
-                                                    <button
-                                                        key={key}
-                                                        type="button"
-                                                        disabled={isLoading}
-                                                        onClick={() => {
-                                                            setLearningPreferences(prev => ({
-                                                                ...prev,
-                                                                intereses: selected
-                                                                    ? prev.intereses.filter(i => i !== key)
-                                                                    : [...prev.intereses, key]
-                                                            }));
-                                                        }}
-                                                        className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl border-2 transition-all duration-200 active:scale-95 touch-manipulation ${
-                                                            selected 
-                                                                ? 'border-emerald-400 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-800 shadow-md ring-2 ring-emerald-200/50' 
-                                                                : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/40 text-gray-700'
-                                                        }`}
-                                                        aria-pressed={selected}
-                                                    >
-                                                        <div className="flex items-center gap-2">
-                                                            <span className={`inline-flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-lg border-2 transition-all ${
-                                                                selected 
-                                                                    ? 'bg-emerald-500 text-white border-emerald-600 ring-2 ring-emerald-200' 
-                                                                    : 'bg-gray-200 text-transparent border-gray-300'
-                                                            }`}>✓</span>
-                                                            <span className="text-xs sm:text-sm font-extrabold">{label}</span>
-                                                        </div>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    {/* Sugerencias de nuevos cursos o materias */}
-                                    <div>
-                                        <div className="flex items-end justify-between gap-2 mb-2">
-                                            <h3 className="text-sm font-semibold text-gray-700">Sugerir nuevos cursos o materias</h3>
-                                            {suggestions.length > 0 && (
-                                                <span className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">{suggestions.length} sugerencia(s)</span>
-                                            )}
-                                        </div>
-                                        <p className="text-gray-500 text-xs sm:text-sm mb-2.5">Cuéntanos qué temas te interesaría que impartamos y desde qué nivel te gustaría comenzar.</p>
-
-                    {/* Input + selector: grid para mejor acomodo */}
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 items-stretch w-full">
-                                            <input
-                                                type="text"
-                                                value={newSuggestionTitle}
-                                                onChange={(e) => setNewSuggestionTitle(e.target.value)}
-                        placeholder="Ej. Robótica o Dibujo técnico"
-                                                disabled={isLoading}
-                        className="sm:col-span-7 lg:col-span-8 w-full px-3 sm:px-4 h-10 sm:h-11 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-150 hover:bg-gray-50 hover:border-emerald-200 placeholder:text-gray-400 text-xs sm:text-sm font-medium appearance-none"
-                                            />
-                                            <select
-                                                value={newSuggestionLevel}
-                                                onChange={(e) => setNewSuggestionLevel(e.target.value)}
-                                                disabled={isLoading}
-                        className="sm:col-span-3 lg:col-span-2 w-full px-3 sm:px-4 h-10 sm:h-11 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-150 hover:bg-gray-50 hover:border-emerald-200 text-xs sm:text-sm font-medium appearance-none"
-                                            >
-                                                <option value="principiante">🌱 Principiante</option>
-                                                <option value="intermedio">📈 Intermedio</option>
-                                                <option value="avanzado">🚀 Avanzado</option>
-                                            </select>
-                                            <button
-                                                type="button"
-                                                onClick={addSuggestion}
-                                                disabled={isLoading || !newSuggestionTitle.trim()}
-                        className="sm:col-span-2 lg:col-span-2 w-full px-3 sm:px-5 h-10 sm:h-11 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl sm:rounded-2xl hover:from-emerald-700 hover:to-green-700 transition-all duration-150 disabled:opacity-50 font-extrabold shadow-lg text-xs sm:text-sm active:scale-95 touch-manipulation ring-2 ring-emerald-200/50"
-                                            >
-                                                Agregar
-                                            </button>
-                                        </div>
-
-                                        {/* Lista de sugerencias agregadas */}
-                                        {suggestions.length > 0 && (
-                                            <div className="mt-3">
-                                                <ul className="divide-y divide-emerald-100 border border-emerald-200 rounded-lg bg-emerald-50/30">
-                                                    {suggestions.map((sug, idx) => (
-                                                        <li key={idx} className="flex items-center justify-between gap-2 px-3 py-2">
-                                                            <span className="text-sm font-medium truncate" title={sug.titulo}>{sug.titulo}</span>
-                                                            <div className="flex items-center gap-2">
-                                                                <select
-                                                                    value={sug.nivel}
-                                                                    onChange={(e) => updateSuggestionLevel(idx, e.target.value)}
-                                                                    className="text-xs bg-white border border-emerald-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                                                >
-                                                                    <option value="principiante">Principiante</option>
-                                                                    <option value="intermedio">Intermedio</option>
-                                                                    <option value="avanzado">Avanzado</option>
-                                                                </select>
+                                            <div className="space-y-6">
+                                                {/* Nivel de Experiencia - Segmented Control */}
+                                                <div>
+                                                    <label className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-2 sm:mb-3">
+                                                        Nivel de Experiencia
+                                                    </label>
+                                                    <div role="radiogroup" aria-label="Nivel de experiencia" className="inline-flex rounded-xl sm:rounded-2xl border-2 border-emerald-200 bg-white overflow-hidden shadow-md">
+                                                        {[
+                                                            { key: 'principiante', label: '🌱 Principiante' },
+                                                            { key: 'intermedio', label: '📈 Intermedio' },
+                                                            { key: 'avanzado', label: '🚀 Avanzado' },
+                                                        ].map((opt, i, arr) => {
+                                                            const active = learningPreferences.nivelExperiencia === opt.key;
+                                                            const isFirst = i === 0; const isLast = i === arr.length - 1;
+                                                            return (
                                                                 <button
+                                                                    key={opt.key}
                                                                     type="button"
-                                                                    className="text-emerald-700 hover:text-emerald-900 px-2 py-1 rounded"
-                                                                    onClick={() => removeSuggestion(idx)}
-                                                                    aria-label="Eliminar sugerencia"
+                                                                    role="radio"
+                                                                    aria-checked={active}
+                                                                    disabled={isLoading}
+                                                                    onClick={() => {
+                                                                        setLearningPreferences(prev => ({ ...prev, nivelExperiencia: opt.key }));
+                                                                        setNewSuggestionLevel(opt.key);
+                                                                    }}
+                                                                    className={`px-2.5 sm:px-3.5 py-2 sm:py-2.5 text-[10px] xs:text-xs sm:text-sm font-extrabold transition-all duration-200 border-emerald-200 active:scale-95 touch-manipulation ${active
+                                                                        ? 'bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-800 ring-2 ring-emerald-400 shadow-md'
+                                                                        : 'bg-transparent text-emerald-700/80 hover:text-emerald-900 hover:bg-emerald-50'
+                                                                        } ${isFirst ? 'rounded-l-xl sm:rounded-l-2xl' : ''} ${isLast ? 'rounded-r-xl sm:rounded-r-2xl' : 'border-l-2'}`}
                                                                 >
-                                                                    ✕
+                                                                    {opt.label}
                                                                 </button>
-                                                            </div>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                        </div>
-                        </>
-                    )}
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
 
-                    {activeTab === 'apariencia' && isMdUp && (
-                        <>
-                            <div>
-                                    <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
-                                        <div className="p-2 sm:p-2.5 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg sm:rounded-xl ring-2 ring-indigo-200/50">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-2-2h-3l-2-2h-4L8 6H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/></svg>
-                                        </div>
-                                        <div>
-                                            <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600">Barra superior</h2>
-                                            <p className="text-gray-600 text-xs sm:text-sm font-semibold">Configura los accesos rápidos del header</p>
-                                        </div>
-                                    </div>
+                                                {/* Áreas de Interés - Toggle grid */}
+                                                <div>
+                                                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                                                        <h3 className="text-xs sm:text-sm font-extrabold text-gray-700">Áreas de Interés</h3>
+                                                        <span className="text-[10px] sm:text-xs text-gray-500 font-semibold bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">{learningPreferences.intereses.length} seleccionadas</span>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                                                        {Object.entries(interestLabels).map(([key, label]) => {
+                                                            const selected = learningPreferences.intereses.includes(key);
+                                                            return (
+                                                                <button
+                                                                    key={key}
+                                                                    type="button"
+                                                                    disabled={isLoading}
+                                                                    onClick={() => {
+                                                                        setLearningPreferences(prev => ({
+                                                                            ...prev,
+                                                                            intereses: selected
+                                                                                ? prev.intereses.filter(i => i !== key)
+                                                                                : [...prev.intereses, key]
+                                                                        }));
+                                                                    }}
+                                                                    className={`w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl border-2 transition-all duration-200 active:scale-95 touch-manipulation ${selected
+                                                                        ? 'border-emerald-400 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-800 shadow-md ring-2 ring-emerald-200/50'
+                                                                        : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/40 text-gray-700'
+                                                                        }`}
+                                                                    aria-pressed={selected}
+                                                                >
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className={`inline-flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-lg border-2 transition-all ${selected
+                                                                            ? 'bg-emerald-500 text-white border-emerald-600 ring-2 ring-emerald-200'
+                                                                            : 'bg-gray-200 text-transparent border-gray-300'
+                                                                            }`}>✓</span>
+                                                                        <span className="text-xs sm:text-sm font-extrabold">{label}</span>
+                                                                    </div>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
 
-                                    <div className="space-y-6">
-                                        <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
-                                            <div>
-                                                <p className="font-medium text-gray-800 text-sm">Mostrar accesos rápidos</p>
-                                                <p className="text-xs text-gray-500">Si lo desactivas, se mostrará solo el nombre de la academia</p>
-                                            </div>
-                                            <label className="inline-flex items-center cursor-pointer">
-                                                <input type="checkbox" className="sr-only peer" checked={!!headerPrefs?.showQuickLinks} onChange={(e)=> updateHeaderPrefs({ showQuickLinks: e.target.checked })} />
-                                                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-indigo-600 transition-colors relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:after:translate-x-5"></div>
-                                            </label>
-                                        </div>
+                                                {/* Sugerencias de nuevos cursos o materias */}
+                                                <div>
+                                                    <div className="flex items-end justify-between gap-2 mb-2">
+                                                        <h3 className="text-sm font-semibold text-gray-700">Sugerir nuevos cursos o materias</h3>
+                                                        {suggestions.length > 0 && (
+                                                            <span className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">{suggestions.length} sugerencia(s)</span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-gray-500 text-xs sm:text-sm mb-2.5">Cuéntanos qué temas te interesaría que impartamos y desde qué nivel te gustaría comenzar.</p>
 
-                                        {headerPrefs?.showQuickLinks && (
-                                            <div>
-                                                <p className="text-sm font-semibold text-gray-700 mb-2">Orden de accesos</p>
-                                                <p className="text-xs text-gray-500 mb-3">Arrastra para reordenar o usa los botones</p>
-                                                <div className="space-y-2">
-                                                    {(headerPrefs?.links || ['cursos','calendario','pagos']).map((key, idx, arr)=>{
-                                                        const label = key==='cursos'?'Cursos': key==='calendario'?'Calendario':'Mis pagos';
-                                                        return (
-                                                            <div key={key} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-gray-400 cursor-grab">⋮⋮</span>
-                                                                    <span className="text-sm font-medium text-gray-800">{label}</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <button type="button" disabled={idx===0} onClick={()=> updateHeaderPrefs(prev=>{ const links=[...(prev.links || ['cursos','calendario','pagos'])]; [links[idx-1],links[idx]]=[links[idx],links[idx-1]]; return { ...prev, links }; })} className="px-2 py-1 text-xs border rounded disabled:opacity-40">↑</button>
-                                                                    <button type="button" disabled={idx===arr.length-1} onClick={()=> updateHeaderPrefs(prev=>{ const links=[...(prev.links || ['cursos','calendario','pagos'])]; [links[idx+1],links[idx]]=[links[idx],links[idx+1]]; return { ...prev, links }; })} className="px-2 py-1 text-xs border rounded disabled:opacity-40">↓</button>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
+                                                    {/* Input + selector: grid para mejor acomodo */}
+                                                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 items-stretch w-full">
+                                                        <input
+                                                            type="text"
+                                                            value={newSuggestionTitle}
+                                                            onChange={(e) => setNewSuggestionTitle(e.target.value)}
+                                                            placeholder="Ej. Robótica o Dibujo técnico"
+                                                            disabled={isLoading}
+                                                            className="sm:col-span-7 lg:col-span-8 w-full px-3 sm:px-4 h-10 sm:h-11 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-150 hover:bg-gray-50 hover:border-emerald-200 placeholder:text-gray-400 text-xs sm:text-sm font-medium appearance-none"
+                                                        />
+                                                        <select
+                                                            value={newSuggestionLevel}
+                                                            onChange={(e) => setNewSuggestionLevel(e.target.value)}
+                                                            disabled={isLoading}
+                                                            className="sm:col-span-3 lg:col-span-2 w-full px-3 sm:px-4 h-10 sm:h-11 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all duration-150 hover:bg-gray-50 hover:border-emerald-200 text-xs sm:text-sm font-medium appearance-none"
+                                                        >
+                                                            <option value="principiante">🌱 Principiante</option>
+                                                            <option value="intermedio">📈 Intermedio</option>
+                                                            <option value="avanzado">🚀 Avanzado</option>
+                                                        </select>
+                                                        <button
+                                                            type="button"
+                                                            onClick={addSuggestion}
+                                                            disabled={isLoading || !newSuggestionTitle.trim()}
+                                                            className="sm:col-span-2 lg:col-span-2 w-full px-3 sm:px-5 h-10 sm:h-11 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl sm:rounded-2xl hover:from-emerald-700 hover:to-green-700 transition-all duration-150 disabled:opacity-50 font-extrabold shadow-lg text-xs sm:text-sm active:scale-95 touch-manipulation ring-2 ring-emerald-200/50"
+                                                        >
+                                                            Agregar
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Lista de sugerencias agregadas */}
+                                                    {suggestions.length > 0 && (
+                                                        <div className="mt-3">
+                                                            <ul className="divide-y divide-emerald-100 border border-emerald-200 rounded-lg bg-emerald-50/30">
+                                                                {suggestions.map((sug, idx) => (
+                                                                    <li key={idx} className="flex items-center justify-between gap-2 px-3 py-2">
+                                                                        <span className="text-sm font-medium truncate" title={sug.titulo}>{sug.titulo}</span>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <select
+                                                                                value={sug.nivel}
+                                                                                onChange={(e) => updateSuggestionLevel(idx, e.target.value)}
+                                                                                className="text-xs bg-white border border-emerald-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                                                            >
+                                                                                <option value="principiante">Principiante</option>
+                                                                                <option value="intermedio">Intermedio</option>
+                                                                                <option value="avanzado">Avanzado</option>
+                                                                            </select>
+                                                                            <button
+                                                                                type="button"
+                                                                                className="text-emerald-700 hover:text-emerald-900 px-2 py-1 rounded"
+                                                                                onClick={() => removeSuggestion(idx)}
+                                                                                aria-label="Eliminar sugerencia"
+                                                                            >
+                                                                                ✕
+                                                                            </button>
+                                                                        </div>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
-                            </div>
-                        </>
-                    )}
+                                        </div>
+                                    </>
+                                )}
 
-                    {activeTab === 'seguridad' && (
-                        <>
-                        {/* Seguridad de la Cuenta */}
-                        <div>
-                                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
-                                    <div className="p-2 sm:p-2.5 bg-gradient-to-br from-rose-100 to-red-100 rounded-lg sm:rounded-xl ring-2 ring-rose-200/50">
-                                        <IconoCandado />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-red-600 to-pink-600">Seguridad</h2>
-                                        <p className="text-gray-600 text-xs sm:text-sm font-semibold">Protege tu cuenta</p>
-                                    </div>
-                                </div>
-                                
-                                <div className="space-y-3 sm:space-y-4">
-                                    <div>
-                                        <label htmlFor="currentPassword" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
-                                            Contraseña Actual
-                                        </label>
-                                        <input
-                                            type="password"
-                                            id="currentPassword"
-                                            name="currentPassword"
-                                            value={security.currentPassword}
-                                            onChange={handleSecurityChange}
-                                            disabled={isLoading}
-                                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-300 transition-all duration-150 hover:bg-gray-50 hover:border-rose-200 text-sm font-medium"
-                                            placeholder="Tu contraseña actual"
-                                        />
-                                    </div>
-                                    
-                                    <div>
-                                        <label htmlFor="newPassword" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
-                                            Nueva Contraseña
-                                        </label>
-                                        <input
-                                            type="password"
-                                            id="newPassword"
-                                            name="newPassword"
-                                            value={security.newPassword}
-                                            onChange={handleSecurityChange}
-                                            disabled={isLoading}
-                                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-300 transition-all duration-150 hover:bg-gray-50 hover:border-rose-200 text-sm font-medium"
-                                            placeholder="Nueva contraseña"
-                                        />
-                                    </div>
-                                    
-                                    <div>
-                                        <label htmlFor="confirmNewPassword" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
-                                            Confirmar Contraseña
-                                        </label>
-                                        <input
-                                            type="password"
-                                            id="confirmNewPassword"
-                                            name="confirmNewPassword"
-                                            value={security.confirmNewPassword}
-                                            onChange={handleSecurityChange}
-                                            disabled={isLoading}
-                                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-300 transition-all duration-150 hover:bg-gray-50 hover:border-rose-200 text-sm font-medium"
-                                            placeholder="Confirma tu nueva contraseña"
-                                        />
-                                        {security.newPassword.length > 0 && security.confirmNewPassword.length > 0 && (
-                                            <div className="flex items-center gap-2 text-sm font-medium mt-2">
-                                                {passwordValidation.match ? (
-                                                    <>
-                                                        <IconoCheckCirculo />
-                                                        <span className="text-emerald-600">Las contraseñas coinciden</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <IconoAlertaCirculo />
-                                                        <span className="text-rose-600">Las contraseñas no coinciden</span>
-                                                    </>
+                                {activeTab === 'apariencia' && isMdUp && (
+                                    <>
+                                        <div>
+                                            <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
+                                                <div className="p-2 sm:p-2.5 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg sm:rounded-xl ring-2 ring-indigo-200/50">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-2-2h-3l-2-2h-4L8 6H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z" /></svg>
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600">Barra superior</h2>
+                                                    <p className="text-gray-600 text-xs sm:text-sm font-semibold">Configura los accesos rápidos del header</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-6">
+                                                <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                                    <div>
+                                                        <p className="font-medium text-gray-800 text-sm">Mostrar accesos rápidos</p>
+                                                        <p className="text-xs text-gray-500">Si lo desactivas, se mostrará solo el nombre de la academia</p>
+                                                    </div>
+                                                    <label className="inline-flex items-center cursor-pointer">
+                                                        <input type="checkbox" className="sr-only peer" checked={!!headerPrefs?.showQuickLinks} onChange={(e) => updateHeaderPrefs({ showQuickLinks: e.target.checked })} />
+                                                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-indigo-600 transition-colors relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:after:translate-x-5"></div>
+                                                    </label>
+                                                </div>
+
+                                                {headerPrefs?.showQuickLinks && (
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-gray-700 mb-2">Orden de accesos</p>
+                                                        <p className="text-xs text-gray-500 mb-3">Arrastra para reordenar o usa los botones</p>
+                                                        <div className="space-y-2">
+                                                            {(headerPrefs?.links || ['cursos', 'calendario', 'pagos']).map((key, idx, arr) => {
+                                                                const label = key === 'cursos' ? 'Cursos' : key === 'calendario' ? 'Calendario' : 'Mis pagos';
+                                                                return (
+                                                                    <div key={key} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-gray-400 cursor-grab">⋮⋮</span>
+                                                                            <span className="text-sm font-medium text-gray-800">{label}</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <button type="button" disabled={idx === 0} onClick={() => updateHeaderPrefs(prev => { const links = [...(prev.links || ['cursos', 'calendario', 'pagos'])];[links[idx - 1], links[idx]] = [links[idx], links[idx - 1]]; return { ...prev, links }; })} className="px-2 py-1 text-xs border rounded disabled:opacity-40">↑</button>
+                                                                            <button type="button" disabled={idx === arr.length - 1} onClick={() => updateHeaderPrefs(prev => { const links = [...(prev.links || ['cursos', 'calendario', 'pagos'])];[links[idx + 1], links[idx]] = [links[idx], links[idx + 1]]; return { ...prev, links }; })} className="px-2 py-1 text-xs border rounded disabled:opacity-40">↓</button>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </div>
-                                        )}
-                                    </div>
-                                    
-                                    {/* Requisitos de Contraseña */}
-                                    {security.newPassword.length > 0 && (
-                                        <div className="bg-gradient-to-br from-gray-50 to-violet-50/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 border-2 border-violet-200/50">
-                                            <h4 className="font-extrabold text-gray-700 mb-2 sm:mb-3 text-xs sm:text-sm">Requisitos de Seguridad</h4>
-                                            <div className="space-y-1.5 sm:space-y-2">
-                                                {[
-                                                    { key: 'length', text: 'Al menos 8 caracteres' },
-                                                    { key: 'uppercase', text: 'Una letra mayúscula' },
-                                                    { key: 'lowercase', text: 'Una letra minúscula' },
-                                                    { key: 'number', text: 'Un número' },
-                                                    { key: 'specialChar', text: 'Un carácter especial' }
-                                                ].map(({ key, text }) => (
-                                                    <div key={key} className="flex items-center gap-2 text-xs sm:text-sm">
-                                                        {passwordValidation[key] ? <IconoCheckCirculo /> : <IconoAlertaCirculo />}
-                                                        <span className={passwordValidation[key] ? 'text-emerald-600 font-extrabold' : 'text-gray-600 font-semibold'}>
-                                                            {text}
-                                                        </span>
+                                        </div>
+                                    </>
+                                )}
+
+                                {activeTab === 'seguridad' && (
+                                    <>
+                                        {/* Seguridad de la Cuenta */}
+                                        <div>
+                                            <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
+                                                <div className="p-2 sm:p-2.5 bg-gradient-to-br from-rose-100 to-red-100 rounded-lg sm:rounded-xl ring-2 ring-rose-200/50">
+                                                    <IconoCandado />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-red-600 to-pink-600">Seguridad</h2>
+                                                    <p className="text-gray-600 text-xs sm:text-sm font-semibold">Protege tu cuenta</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-3 sm:space-y-4">
+                                                <div>
+                                                    <label htmlFor="currentPassword" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
+                                                        Contraseña Actual
+                                                    </label>
+                                                    <input
+                                                        type="password"
+                                                        id="currentPassword"
+                                                        name="currentPassword"
+                                                        value={security.currentPassword}
+                                                        onChange={handleSecurityChange}
+                                                        disabled={isLoading}
+                                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-300 transition-all duration-150 hover:bg-gray-50 hover:border-rose-200 text-sm font-medium"
+                                                        placeholder="Tu contraseña actual"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label htmlFor="newPassword" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
+                                                        Nueva Contraseña
+                                                    </label>
+                                                    <input
+                                                        type="password"
+                                                        id="newPassword"
+                                                        name="newPassword"
+                                                        value={security.newPassword}
+                                                        onChange={handleSecurityChange}
+                                                        disabled={isLoading}
+                                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-300 transition-all duration-150 hover:bg-gray-50 hover:border-rose-200 text-sm font-medium"
+                                                        placeholder="Nueva contraseña"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label htmlFor="confirmNewPassword" className="block text-xs sm:text-sm font-extrabold text-gray-700 mb-1.5 sm:mb-2">
+                                                        Confirmar Contraseña
+                                                    </label>
+                                                    <input
+                                                        type="password"
+                                                        id="confirmNewPassword"
+                                                        name="confirmNewPassword"
+                                                        value={security.confirmNewPassword}
+                                                        onChange={handleSecurityChange}
+                                                        disabled={isLoading}
+                                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-300 transition-all duration-150 hover:bg-gray-50 hover:border-rose-200 text-sm font-medium"
+                                                        placeholder="Confirma tu nueva contraseña"
+                                                    />
+                                                    {security.newPassword.length > 0 && security.confirmNewPassword.length > 0 && (
+                                                        <div className="flex items-center gap-2 text-sm font-medium mt-2">
+                                                            {passwordValidation.match ? (
+                                                                <>
+                                                                    <IconoCheckCirculo />
+                                                                    <span className="text-emerald-600">Las contraseñas coinciden</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <IconoAlertaCirculo />
+                                                                    <span className="text-rose-600">Las contraseñas no coinciden</span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Requisitos de Contraseña */}
+                                                {security.newPassword.length > 0 && (
+                                                    <div className="bg-gradient-to-br from-gray-50 to-violet-50/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 border-2 border-violet-200/50">
+                                                        <h4 className="font-extrabold text-gray-700 mb-2 sm:mb-3 text-xs sm:text-sm">Requisitos de Seguridad</h4>
+                                                        <div className="space-y-1.5 sm:space-y-2">
+                                                            {[
+                                                                { key: 'length', text: 'Al menos 8 caracteres' },
+                                                                { key: 'uppercase', text: 'Una letra mayúscula' },
+                                                                { key: 'lowercase', text: 'Una letra minúscula' },
+                                                                { key: 'number', text: 'Un número' },
+                                                                { key: 'specialChar', text: 'Un carácter especial' }
+                                                            ].map(({ key, text }) => (
+                                                                <div key={key} className="flex items-center gap-2 text-xs sm:text-sm">
+                                                                    {passwordValidation[key] ? <IconoCheckCirculo /> : <IconoAlertaCirculo />}
+                                                                    <span className={passwordValidation[key] ? 'text-emerald-600 font-extrabold' : 'text-gray-600 font-semibold'}>
+                                                                        {text}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                ))}
+                                                )}
+
+                                                <button
+                                                    type="button"
+                                                    onClick={handleChangePassword}
+                                                    disabled={!passwordValidation.isValid || !passwordValidation.match || security.newPassword === '' || isLoading}
+                                                    className="w-full px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-extrabold text-white shadow-lg transition-all duration-150 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-600 hover:from-rose-700 hover:via-pink-700 hover:to-rose-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-xs sm:text-sm active:scale-95 touch-manipulation ring-2 ring-rose-200/50"
+                                                >
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        {isLoading ? <IconoCargando /> : <IconoEscudo />}
+                                                        {isLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
+                                                    </div>
+                                                </button>
                                             </div>
                                         </div>
-                                    )}
-                                    
-                                    <button
-                                        type="button"
-                                        onClick={handleChangePassword}
-                                        disabled={!passwordValidation.isValid || !passwordValidation.match || security.newPassword === '' || isLoading}
-                                        className="w-full px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-extrabold text-white shadow-lg transition-all duration-150 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-600 hover:from-rose-700 hover:via-pink-700 hover:to-rose-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-xs sm:text-sm active:scale-95 touch-manipulation ring-2 ring-rose-200/50"
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            {isLoading ? <IconoCargando /> : <IconoEscudo />}
-                                            {isLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
-                                        </div>
-                                    </button>
-                                </div>
-                        </div>
-                        </>
-                    )}
+                                    </>
+                                )}
 
-                    {activeTab === 'peligro' && (
-                        <>
-                        {/* Zona de Peligro */}
-                        <div className="bg-gradient-to-br from-rose-50 to-red-50 rounded-xl sm:rounded-2xl shadow-lg border-2 border-rose-200 overflow-hidden transition-all duration-200 ring-2 ring-rose-100/50 p-4 sm:p-5 md:p-6">
-                                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5">
-                                    <div className="p-2 sm:p-2.5 bg-rose-200 rounded-lg sm:rounded-xl ring-2 ring-rose-300/50">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-red-600 to-pink-600">Zona de Peligro</h2>
-                                        <p className="text-rose-700 text-xs sm:text-sm font-semibold">Acciones irreversibles</p>
-                                    </div>
-                                </div>
-                                
-                                <div className="bg-white/60 rounded-xl sm:rounded-2xl p-4 sm:p-5 border-2 border-rose-200">
-                                    <div className="flex items-start gap-3 mb-3 sm:mb-4">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                        </svg>
-                                        <div>
-                                            <h3 className="font-extrabold text-rose-900 text-sm sm:text-base">Eliminar Acceso</h3>
-                                            <p className="text-rose-700 mt-1 text-xs sm:text-sm font-semibold">
-                                                Esta acción eliminará permanentemente tu acceso a la cuenta. 
-                                                <span className="font-extrabold"> NO se puede deshacer.</span>
-                                            </p>
+                                {activeTab === 'peligro' && (
+                                    <>
+                                        {/* Zona de Peligro */}
+                                        <div className="bg-gradient-to-br from-rose-50 to-red-50 rounded-xl sm:rounded-2xl shadow-lg border-2 border-rose-200 overflow-hidden transition-all duration-200 ring-2 ring-rose-100/50 p-4 sm:p-5 md:p-6">
+                                            <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5">
+                                                <div className="p-2 sm:p-2.5 bg-rose-200 rounded-lg sm:rounded-xl ring-2 ring-rose-300/50">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-red-600 to-pink-600">Zona de Peligro</h2>
+                                                    <p className="text-rose-700 text-xs sm:text-sm font-semibold">Acciones irreversibles</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white/60 rounded-xl sm:rounded-2xl p-4 sm:p-5 border-2 border-rose-200">
+                                                <div className="flex items-start gap-3 mb-3 sm:mb-4">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                                    </svg>
+                                                    <div>
+                                                        <h3 className="font-extrabold text-rose-900 text-sm sm:text-base">Eliminar Acceso</h3>
+                                                        <p className="text-rose-700 mt-1 text-xs sm:text-sm font-semibold">
+                                                            Esta acción eliminará permanentemente tu acceso a la cuenta.
+                                                            <span className="font-extrabold"> NO se puede deshacer.</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={handleDeleteAccount}
+                                                    disabled={isLoading}
+                                                    className="w-full px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-extrabold text-white shadow-lg transition-all duration-150 bg-gradient-to-r from-rose-600 via-red-600 to-rose-600 hover:from-rose-700 hover:via-red-700 hover:to-rose-700 disabled:opacity-50 text-xs sm:text-sm active:scale-95 touch-manipulation ring-2 ring-rose-200/50"
+                                                >
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        {isLoading ? <IconoCargando /> : <IconoTrash />}
+                                                        {isLoading ? 'Procesando...' : 'Eliminar Acceso Permanentemente'}
+                                                    </div>
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                    
-                                    <button
-                                        type="button"
-                                        onClick={handleDeleteAccount}
-                                        disabled={isLoading}
-                                        className="w-full px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-extrabold text-white shadow-lg transition-all duration-150 bg-gradient-to-r from-rose-600 via-red-600 to-rose-600 hover:from-rose-700 hover:via-red-700 hover:to-rose-700 disabled:opacity-50 text-xs sm:text-sm active:scale-95 touch-manipulation ring-2 ring-rose-200/50"
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            {isLoading ? <IconoCargando /> : <IconoTrash />}
-                                            {isLoading ? 'Procesando...' : 'Eliminar Acceso Permanentemente'}
-                                        </div>
-                                    </button>
-                                </div>
-                        </div>
-                        </>
-                    )}
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

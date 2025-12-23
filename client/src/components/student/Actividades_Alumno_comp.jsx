@@ -642,10 +642,10 @@ export function Actividades_Alumno_comp() {
             const cal = r.calificacion ?? r.entrega_calificacion ?? null;
             const estadoCalc = (r.estado_revision || r.entrega_estado || 'pendiente');
             // Normalizar el valor de permite_editar_despues_calificada
-            const permiteEditar = r.permite_editar_despues_calificada === 1 || 
-                                  r.permite_editar_despues_calificada === true || 
-                                  r.permite_editar_despues_calificada === '1' ||
-                                  String(r.permite_editar_despues_calificada) === '1';
+            const permiteEditar = r.permite_editar_despues_calificada === 1 ||
+              r.permite_editar_despues_calificada === true ||
+              r.permite_editar_despues_calificada === '1' ||
+              String(r.permite_editar_despues_calificada) === '1';
             return {
               id: r.id,
               nombre: r.titulo,
@@ -1264,10 +1264,10 @@ export function Actividades_Alumno_comp() {
             recursos,
             entrega_id: r.entrega_id || r.entregaId || null,
             // Normalizar el valor de permite_editar_despues_calificada
-            permite_editar_despues_calificada: (r.permite_editar_despues_calificada === 1 || 
-                                                r.permite_editar_despues_calificada === true || 
-                                                r.permite_editar_despues_calificada === '1' ||
-                                                String(r.permite_editar_despues_calificada) === '1'),
+            permite_editar_despues_calificada: (r.permite_editar_despues_calificada === 1 ||
+              r.permite_editar_despues_calificada === true ||
+              r.permite_editar_despues_calificada === '1' ||
+              String(r.permite_editar_despues_calificada) === '1'),
           };
         });
         setActividades(mapped);
@@ -1300,7 +1300,7 @@ export function Actividades_Alumno_comp() {
           plantilla: null
         }));
         setActividades(mapped);
-        
+
         // Cargar respuestas pendientes para quizzes completados
         if (estudianteId) {
           mapped.forEach(async (quiz) => {
@@ -1712,7 +1712,7 @@ export function Actividades_Alumno_comp() {
     if (areaIdValue != null) {
       target += `?areaId=${areaIdValue}`;
     }
-    
+
     try {
       // Pre-marcar este quiz como "abierto" para reflejar el estado de inmediato en UI
       try { localStorage.setItem(`quiz_open_${qid}`, JSON.stringify({ ts: Date.now(), pid: 'preopen' })); } catch { }
@@ -2402,7 +2402,7 @@ export function Actividades_Alumno_comp() {
 
   // Función para renderizar las áreas principales
   const renderAreas = () => (
-    <div className="min-h-screen bg-transparent dark:bg-transparent px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
+    <div className="min-h-screen bg-transparent dark:bg-transparent px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-8 sm:py-10 lg:py-12">
       <div className="max-w-7xl mx-auto">
         {error && !loading && (
           <div className="mb-4 p-4 rounded-xl border border-red-200 bg-red-50 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -2499,7 +2499,7 @@ export function Actividades_Alumno_comp() {
     const hasInitialArea = allowedActivityAreas.length > 0;
 
     return (
-      <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
+      <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-8 sm:py-10 lg:py-12">
         <div className="max-w-7xl mx-auto">
           {/* Header con navegación - Mejorado para móviles */}
           <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
@@ -2617,7 +2617,7 @@ export function Actividades_Alumno_comp() {
 
   // Función para renderizar botones de actividades y quiz
   const renderButtons = () => (
-    <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
+    <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-8 sm:py-10 lg:py-12">
       <div className="max-w-7xl mx-auto">
         {/* Header con navegación - Mejorado para móviles */}
         <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
@@ -2912,9 +2912,9 @@ export function Actividades_Alumno_comp() {
                   actividad.permite_editar_despues_calificada === '1' ||
                   String(actividad.permite_editar_despues_calificada) === '1';
                 // Bloqueado si ya fue revisada (calificada) y no permite editar, o si está vencida
-                const puedeEditar = actividad.entregada && !vencida && 
+                const puedeEditar = actividad.entregada && !vencida &&
                   (actividad.estado !== 'revisada' || tienePermisoEditar);
-                
+
                 // Debug temporal
                 if (actividad.estado === 'revisada' && actividad.entregada) {
                   console.log(`[DEBUG] Actividad ${actividad.id}:`, {
@@ -2981,10 +2981,10 @@ export function Actividades_Alumno_comp() {
                     </td>
                     <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <div className="text-xs sm:text-sm text-gray-900 font-semibold">{new Date(actividad.fechaEntrega).toLocaleDateString('es-ES')}</div>
-                      {actividad.fecha_limite_original && actividad.fechaEntrega && 
-                       new Date(actividad.fechaEntrega).getTime() > new Date(actividad.fecha_limite_original).getTime() && (
-                        <div className="text-[10px] sm:text-xs text-purple-600 font-bold bg-purple-50 px-1.5 py-0.5 rounded mt-0.5">✨ Fecha extendida</div>
-                      )}
+                      {actividad.fecha_limite_original && actividad.fechaEntrega &&
+                        new Date(actividad.fechaEntrega).getTime() > new Date(actividad.fecha_limite_original).getTime() && (
+                          <div className="text-[10px] sm:text-xs text-purple-600 font-bold bg-purple-50 px-1.5 py-0.5 rounded mt-0.5">✨ Fecha extendida</div>
+                        )}
                       <div className={`text-[10px] sm:text-xs font-bold ${vencida ? 'text-red-600' : 'text-green-600'}`}>{vencida ? 'Vencida' : 'A tiempo'}</div>
                     </td>
                     <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
@@ -3038,10 +3038,10 @@ export function Actividades_Alumno_comp() {
                         actividad.estado === 'revisada' ? (
                           <span className="font-extrabold text-gray-900 inline-flex items-center gap-2">
                             <span className="bg-gradient-to-r from-emerald-100 to-green-100 px-2.5 py-1 rounded-lg border-2 border-emerald-200 text-emerald-700">
-                              {actividad.score !== null && actividad.score !== undefined 
-                                ? `${Number(actividad.score).toFixed(1)}/10` 
-                                : (actividad.mejorPuntaje !== null && actividad.mejorPuntaje !== undefined 
-                                  ? `${Number(actividad.mejorPuntaje > 10 ? actividad.mejorPuntaje / 10 : actividad.mejorPuntaje).toFixed(1)}/10` 
+                              {actividad.score !== null && actividad.score !== undefined
+                                ? `${Number(actividad.score).toFixed(1)}/10`
+                                : (actividad.mejorPuntaje !== null && actividad.mejorPuntaje !== undefined
+                                  ? `${Number(actividad.mejorPuntaje > 10 ? actividad.mejorPuntaje / 10 : actividad.mejorPuntaje).toFixed(1)}/10`
                                   : '—')}
                             </span>
                             {actividad.notas && String(actividad.notas).trim().length > 0 && (
@@ -3250,11 +3250,10 @@ export function Actividades_Alumno_comp() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 pr-2">
                     <h3 className="text-sm font-bold text-gray-900 leading-tight mb-1">{quiz.nombre}</h3>
-                    <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded-full border ${
-                      est === 'completado' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                    <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded-full border ${est === 'completado' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
                       est === 'disponible' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                      'bg-red-100 text-red-800 border-red-200'
-                    }`}>
+                        'bg-red-100 text-red-800 border-red-200'
+                      }`}>
                       {est === 'completado' ? 'Completado' : est === 'disponible' ? 'Disponible' : 'Vencido'}
                     </span>
                   </div>
@@ -3279,7 +3278,7 @@ export function Actividades_Alumno_comp() {
 
                 {/* Descripción */}
                 {quiz.descripcion && (
-                  <div 
+                  <div
                     onClick={() => openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id })}
                     className="mb-3 cursor-pointer"
                   >
@@ -3370,7 +3369,7 @@ export function Actividades_Alumno_comp() {
                     <div>
                       <div className="text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-900 leading-tight">{quiz.nombre}</div>
                       {quiz.descripcion && (
-                        <div 
+                        <div
                           onClick={() => openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id })}
                           className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-500 mt-0.5 cursor-pointer group"
                         >
@@ -3547,14 +3546,14 @@ export function Actividades_Alumno_comp() {
             </div>
             {/* Contenido con scroll */}
             <div className="flex-1 overflow-y-auto px-3 py-2 sm:p-3 lg:p-4 min-h-0">
-              <div 
-                className="text-sm sm:text-base lg:text-[12px] xl:text-[12.5px] 2xl:text-[12.5px] text-gray-800 whitespace-pre-wrap pr-1 sm:pr-2" 
-                style={{ 
-                  textAlign: 'justify', 
-                  lineHeight: 1.42, 
-                  wordBreak: 'break-word', 
-                  maxWidth: (isMobile ? '42ch' : (isTablet ? (isLandscape ? '40ch' : '44ch') : '44ch')), 
-                  margin: '0 auto' 
+              <div
+                className="text-sm sm:text-base lg:text-[12px] xl:text-[12.5px] 2xl:text-[12.5px] text-gray-800 whitespace-pre-wrap pr-1 sm:pr-2"
+                style={{
+                  textAlign: 'justify',
+                  lineHeight: 1.42,
+                  wordBreak: 'break-word',
+                  maxWidth: (isMobile ? '42ch' : (isTablet ? (isLandscape ? '40ch' : '44ch') : '44ch')),
+                  margin: '0 auto'
                 }}
               >
                 {longTextModal.content}

@@ -41,31 +41,49 @@ export const obtenerEEAU = async (req, res) => {
       res.setHeader('Cache-Control', 'no-store');
       return res.status(200).json({ data: cursoConProgreso });
     } catch (e) {
-      // Log estructurado para depurar en producción y evitar perder el stack
-      console.error('[eeau.controller] Error obteniendo EEAU (primer intento)', {
-        message: e?.message,
-        code: e?.code,
-        errno: e?.errno,
-        sqlState: e?.sqlState,
-        stack: e?.stack?.split?.('\n')?.slice(0,6).join('\n')
-      });
-      // Intentar recrear tabla si se rompió el schema
-      try { 
-        await ensureEEAUTable(); 
-        // Si se creó la tabla, intentar obtener el curso nuevamente
-        try {
-          const cursoRetry = await getEEAUCourse();
-          if (cursoRetry) {
-            res.setHeader('Cache-Control', 'no-store');
-            return res.status(200).json({ data: cursoRetry });
+      // Detectar errores de conexión específicamente
+      const isConnectionError = e?.code === 'ECONNREFUSED' || e?.code === 'ETIMEDOUT';
+      
+      if (isConnectionError) {
+        console.error('[eeau.controller] Error de conexión a MySQL:', {
+          message: e?.message,
+          code: e?.code,
+          suggestion: 'MySQL no está disponible. Verifica que el servicio esté corriendo.',
+          config: {
+            host: process.env.DB_HOST || '127.0.0.1',
+            port: process.env.DB_PORT || '3306',
+            user: process.env.DB_USER || 'root',
+            database: process.env.DB_NAME || 'mqerkacademy'
           }
-        } catch (retryErr) {
-          console.error('[eeau.controller] Error al obtener EEAU después de recrear tabla:', retryErr?.message);
+        });
+        // No intentar recrear tabla si es error de conexión
+      } else {
+        // Log estructurado para depurar en producción y evitar perder el stack
+        console.error('[eeau.controller] Error obteniendo EEAU (primer intento)', {
+          message: e?.message,
+          code: e?.code,
+          errno: e?.errno,
+          sqlState: e?.sqlState,
+          stack: e?.stack?.split?.('\n')?.slice(0,6).join('\n')
+        });
+        // Intentar recrear tabla solo si NO es error de conexión
+        try { 
+          await ensureEEAUTable(); 
+          // Si se creó la tabla, intentar obtener el curso nuevamente
+          try {
+            const cursoRetry = await getEEAUCourse();
+            if (cursoRetry) {
+              res.setHeader('Cache-Control', 'no-store');
+              return res.status(200).json({ data: cursoRetry });
+            }
+          } catch (retryErr) {
+            console.error('[eeau.controller] Error al obtener EEAU después de recrear tabla:', retryErr?.message);
+          }
+        } catch(tableErr){ 
+          console.error('[eeau.controller] No se pudo asegurar tabla EEAU', { 
+            message: tableErr?.message, code: tableErr?.code, stack: tableErr?.stack?.split?.('\n')?.slice(0,4).join('\n')
+          }); 
         }
-      } catch(tableErr){ 
-        console.error('[eeau.controller] No se pudo asegurar tabla EEAU', { 
-          message: tableErr?.message, code: tableErr?.code, stack: tableErr?.stack?.split?.('\n')?.slice(0,4).join('\n')
-        }); 
       }
       
       // Respuesta de respaldo para evitar 500 en el cliente

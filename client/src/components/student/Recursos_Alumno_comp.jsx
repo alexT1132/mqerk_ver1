@@ -62,20 +62,20 @@ const buildFileUrl = (resource) => {
 // Helper para extraer ID de video de YouTube
 const getYouTubeVideoId = (url) => {
   if (!url) return null;
-  
+
   // Diferentes formatos de URLs de YouTube
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)/,
     /youtube\.com\/watch\?.*v=([^&\n?#]+)/
   ];
-  
+
   for (const pattern of patterns) {
     const match = url.match(pattern);
     if (match && match[1]) {
       return match[1];
     }
   }
-  
+
   return null;
 };
 
@@ -166,7 +166,7 @@ export default function Recursos_Alumno_comp() {
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-8 sm:py-10 lg:py-12">
         {/* Header - Optimizado para móviles */}
         <div className="mb-4 sm:mb-6">
           <div className="flex items-center gap-3 sm:gap-4 mb-3">
@@ -277,7 +277,7 @@ export default function Recursos_Alumno_comp() {
                   <div className={`shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl bg-white flex items-center justify-center border-2 ${getFileBorderColor(r.file_type_display)}`}>
                     {getFileIcon(r.file_type_display)}
                   </div>
-                  
+
                   {/* Título y tipo */}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold sm:font-semibold text-sm sm:text-base text-slate-800 line-clamp-2 mb-1" title={r.title}>
@@ -354,26 +354,17 @@ export default function Recursos_Alumno_comp() {
         {/* Modal de preview - Compacto y optimizado */}
         {preview && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setPreview(null)}>
-            <div className="bg-white rounded-none sm:rounded-2xl w-full h-full sm:h-auto sm:max-w-2xl sm:max-h-[85vh] shadow-2xl flex flex-col border-0 sm:border-2 border-slate-200 ring-0 sm:ring-2 ring-violet-100 animate-in zoom-in-95 duration-200 relative overflow-hidden" onClick={e => e.stopPropagation()}>
-              {/* Botón de cerrar flotante - Icono normal */}
-              <button
-                onClick={(e) => { e.stopPropagation(); setPreview(null); }}
-                className="fixed top-4 right-4 sm:absolute sm:top-4 sm:right-4 z-[9999] p-2 rounded-lg bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 shadow-lg transition-all duration-200 flex items-center justify-center border border-gray-200"
-                aria-label="Cerrar modal"
-                title="Cerrar"
-              >
-                <X className="size-5 sm:size-5" strokeWidth={2.5} />
-              </button>
+            <div className="bg-white rounded-none sm:rounded-2xl w-full h-full sm:h-auto sm:max-w-xl sm:max-h-[80vh] sm:mt-12 shadow-2xl flex flex-col border-0 sm:border-2 border-slate-200 ring-0 sm:ring-2 ring-violet-100 animate-in zoom-in-95 duration-200 relative overflow-hidden" onClick={e => e.stopPropagation()}>
               {/* Botón de cerrar adicional - Solo visible en móvil */}
               <button
                 onClick={(e) => { e.stopPropagation(); setPreview(null); }}
                 className="fixed top-3 left-3 sm:hidden z-[9999] rounded-full bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white shadow-xl transition-all duration-200 flex items-center justify-center border-2 border-white"
                 aria-label="Cerrar modal"
                 title="Cerrar"
-                style={{ 
-                  width: '56px', 
-                  height: '56px', 
-                  minWidth: '56px', 
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  minWidth: '56px',
                   minHeight: '56px',
                   boxShadow: '0 4px 15px rgba(139, 92, 246, 0.6), 0 0 0 2px rgba(255, 255, 255, 0.9)'
                 }}
@@ -388,21 +379,21 @@ export default function Recursos_Alumno_comp() {
                     {preview.file_type_display} {preview.file_size_mb ? `• ${preview.file_size_mb} MB` : preview.resource_type === 'link' ? '• Enlace externo' : ''}
                   </p>
                 </div>
-                
-                {/* Botón de cerrar en el header - Diseño como en la imagen solo en PC */}
+
+                {/* Botón de cerrar - Estilo transparente limpio */}
                 <button
                   onClick={(e) => { e.stopPropagation(); setPreview(null); }}
-                  className="p-2 sm:p-0 rounded-lg bg-white/40 sm:bg-violet-700/90 hover:bg-white/60 sm:hover:bg-violet-800 active:bg-white/80 sm:active:bg-violet-900 text-violet-700 sm:text-white transition-all duration-200 shrink-0 ml-2 shadow-md sm:shadow-sm flex items-center justify-center sm:w-8 sm:h-8 sm:min-w-8 sm:min-h-8"
+                  className="p-2.5 sm:p-2 rounded-xl sm:rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 backdrop-blur-sm text-white transition-all duration-200 shrink-0 ml-2 shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center border border-white/20"
                   aria-label="Cerrar"
                   title="Cerrar"
                   style={{
-                    minWidth: '40px',
-                    minHeight: '40px',
-                    width: '40px',
-                    height: '40px'
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    width: '44px',
+                    height: '44px'
                   }}
                 >
-                  <X className="size-5 sm:size-4 font-bold" strokeWidth={3} />
+                  <X className="size-6 sm:size-5 font-bold" strokeWidth={2.5} />
                 </button>
               </div>
 
@@ -414,55 +405,63 @@ export default function Recursos_Alumno_comp() {
                       {/* Contenedor del video con aspect ratio 16:9 */}
                       <div className="relative w-full bg-black rounded-none sm:rounded-lg overflow-hidden" style={{ paddingBottom: '56.25%' }}>
                         <iframe
-                          src={`https://www.youtube.com/embed/${getYouTubeVideoId(preview.link_url)}?rel=0&modestbranding=1&playsinline=1`}
+                          src={`https://www.youtube.com/embed/${getYouTubeVideoId(preview.link_url)}?rel=0&modestbranding=1&playsinline=1&enablejsapi=1`}
                           title={preview.title}
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           allowFullScreen
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          sandbox="allow-same-origin allow-scripts allow-presentation allow-popups allow-popups-to-escape-sandbox"
                           className="absolute top-0 left-0 w-full h-full border-0"
                           style={{ width: '100%', height: '100%' }}
                         />
                       </div>
-                      {/* Botones de acción - Compactos */}
-                      <div className="mt-3 sm:mt-4 px-3 sm:px-0 pb-3 sm:pb-0 flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center justify-center w-full sm:w-auto">
+                      {/* Mensaje de ayuda si el video no carga */}
+                      <div className="mt-2 px-3 sm:px-0 text-center">
+                        <p className="text-xs text-slate-500">
+                          ¿No se reproduce el video? Usa el botón "Ver en YouTube" abajo
+                        </p>
+                      </div>
+                      {/* Botones de acción - Más compactos en móvil */}
+                      <div className="mt-2 sm:mt-4 px-3 sm:px-0 pb-2 sm:pb-0 flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center justify-center w-full sm:w-auto">
                         {/* Botón para abrir en YouTube */}
                         <a
                           href={preview.link_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-2 px-4 sm:px-4 py-2.5 sm:py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 w-full sm:w-auto"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 w-full sm:w-auto"
                         >
-                          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
                           </svg>
                           <span>Ver en YouTube</span>
                         </a>
                         {/* Botón de descargar/abrir */}
                         <button
                           onClick={() => handleDownload(preview.id, preview.file_name, preview.resource_type, preview.link_url)}
-                          className="inline-flex items-center justify-center gap-2 px-4 sm:px-4 py-2.5 sm:py-2 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 w-full sm:w-auto"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 w-full sm:w-auto"
                         >
                           {preview.resource_type === 'link' ? (
                             <>
-                              <LinkIcon className="size-4" />
+                              <LinkIcon className="size-3.5 sm:size-4" />
                               <span>Abrir enlace</span>
                             </>
                           ) : (
                             <>
-                              <Download className="size-4" />
+                              <Download className="size-3.5 sm:size-4" />
                               <span>Descargar</span>
                             </>
                           )}
                         </button>
                       </div>
-                      {/* Botón de cerrar grande - Solo visible en móvil */}
-                      <div className="mt-3 sm:hidden px-3 pb-3 flex justify-center">
+                      {/* Botón de cerrar - Más pequeño y discreto en móvil */}
+                      <div className="mt-2 sm:hidden px-3 pb-2 flex justify-center">
                         <button
                           onClick={(e) => { e.stopPropagation(); setPreview(null); }}
-                          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-900 active:bg-black text-white rounded-xl text-base font-bold transition-all duration-200 shadow-lg active:scale-95 border-2 border-white"
+                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-gray-700 hover:bg-gray-800 active:bg-gray-900 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-md active:scale-95"
                           aria-label="Cerrar modal"
                           title="Cerrar"
                         >
-                          <X className="size-5 font-extrabold" strokeWidth={3} />
+                          <X className="size-3.5" strokeWidth={2.5} />
                           <span>CERRAR</span>
                         </button>
                       </div>
@@ -488,12 +487,34 @@ export default function Recursos_Alumno_comp() {
                     </div>
                   )
                 ) : preview.file_type_display === 'PDF' ? (
-                  <iframe
-                    allowFullScreen
-                    src={buildFileUrl(preview)}
-                    className="w-full h-full min-h-[300px] sm:min-h-[400px] max-h-[50vh] sm:max-h-[60vh] rounded-lg border-2 border-slate-200"
-                    title={preview.title}
-                  />
+                  <div className="flex flex-col items-center">
+                    <iframe
+                      src={buildFileUrl(preview)}
+                      className="w-full h-full min-h-[300px] sm:min-h-[400px] max-h-[50vh] sm:max-h-[60vh] rounded-lg border-2 border-slate-200"
+                      title={preview.title}
+                    />
+                    <div className="mt-3 text-center">
+                      <p className="text-xs text-slate-500 mb-2">
+                        ¿No se visualiza el PDF? Descárgalo o ábrelo en una nueva pestaña
+                      </p>
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          onClick={() => handleDownload(preview.id, preview.file_name, preview.resource_type, preview.link_url)}
+                          className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                        >
+                          Descargar PDF
+                        </button>
+                        <a
+                          href={buildFileUrl(preview)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                        >
+                          Abrir en nueva pestaña
+                        </a>
+                      </div>
+                    </div>
+                  </div>
                 ) : preview.file_type_display === 'VIDEO' ? (
                   <video
                     src={buildFileUrl(preview)}

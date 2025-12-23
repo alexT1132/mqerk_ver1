@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { BsGraphUp } from "react-icons/bs";
 import { Link, useLocation, useNavigate } from "react-router-dom"; // Importamos useLocation y useNavigate
 import { logoutRequest } from "../../api/usuarios.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import axios from "../../api/axios";
 
 /**
  * Componente para un elemento individual de la barra lateral.
@@ -13,7 +14,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
  * @param {string} props.to - La ruta a la que apunta el enlace.
  * @param {function} [props.onClick] - Función opcional para manejar clics (principalmente para cerrar el menú móvil).
  */
-function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick }) { // Renombramos onClick a mobileOnClick
+function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, badge }) { // Renombramos onClick a mobileOnClick
   const location = useLocation(); // Hook para obtener la ubicación actual
   const navigate = useNavigate(); // Hook para navegar programáticamente
   const { logout: authLogout } = useAuth();
@@ -29,12 +30,12 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick }) 
       try {
         // Cerrar menú móvil si está abierto
         if (mobileOnClick) mobileOnClick();
-        
+
         // Esperar a que el logout se complete antes de redirigir
         await authLogout?.();
         // Limpiar cookies del backend (sin bloquear si falla)
-        await logoutRequest().catch(() => {});
-        
+        await logoutRequest().catch(() => { });
+
         // Limpieza adicional
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminProfile');
@@ -58,7 +59,7 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick }) 
       e.preventDefault(); // Previene la navegación por defecto del Link si ya está activo
       // Navegamos de vuelta a la página de bienvenida
       // Asegúrate de que esta ruta '/administrativo/bienvenida' es la correcta para tu pantalla de bienvenida
-      navigate("/administrativo/bienvenida"); 
+      navigate("/administrativo/bienvenida");
     }
     // Si no está activo, o si es el botón de cerrar sesión, permitimos que la navegación predeterminada del Link continúe
   };
@@ -86,6 +87,12 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick }) 
             ...(to === "/administrativo/lista-alumnos" && isActive ? { fill: "white" } : {})
           })}
         </div>
+        {/* Badge de notificación */}
+        {badge && badge > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg border-2 border-white animate-pulse" style={{ zIndex: 60 }}>
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
         {/*
           AJUSTE DE ESTILO: Tooltip mejorado para escritorio y texto visible para móvil
           CAMBIADO Z-INDEX A Z-50 PARA ASEGURAR QUE ESTÉ POR ENCIMA DEL SIDEBAR.
@@ -203,11 +210,55 @@ const LogoLogOut = (
 // Icono de Finanzas usando react-icons (gráfica ascendente)
 const LogoFinanzas = (<BsGraphUp size={28} />);
 
+// Icono de Chat
+const LogoChat = (
+  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+  </svg>
+);
+
 /**
  * Componente de la barra lateral para escritorio (usando Flexbox ajustado).
  * Exportado como SideBarDesktop.
  */
 export function SideBarDesktop() {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Cargar conteo de mensajes sin leer
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      try {
+        const res = await axios.get('/chat/support/unread');
+        setUnreadCount(res.data?.data?.total || 0);
+      } catch (e) {
+        console.error('Error loading unread count:', e);
+      }
+    };
+
+    loadUnreadCount();
+
+    // Actualizar cuando cambie el chat
+    const handler = () => loadUnreadCount();
+    window.addEventListener('admin-chat-update', handler);
+
+    // Actualizar en tiempo real cuando llegan mensajes por WebSocket
+    const wsHandler = (e) => {
+      const data = e.detail;
+      if (data?.type === 'chat_message' && data.data) {
+        const msg = data.data;
+        if (msg.sender_role === 'estudiante') {
+          // Incrementar contador inmediatamente
+          setUnreadCount(prev => prev + 1);
+        }
+      }
+    };
+    window.addEventListener('student-ws-message', wsHandler);
+
+    return () => {
+      window.removeEventListener('admin-chat-update', handler);
+      window.removeEventListener('student-ws-message', wsHandler);
+    };
+  }, []);
   return (
     <aside
       className="max-sm:hidden flex flex-col fixed w-[80px] shadow-[4px_0_10px_-2px_rgba(0,0,0,0.3)] z-40 top-[84px] h-[calc(100vh-84px)] bg-gray-50"
@@ -217,7 +268,7 @@ export function SideBarDesktop() {
         <ul className="p-4 h-full flex flex-col">
           {/* Grupo superior de elementos de navegación principales */}
           <div className="space-y-2">
-       
+
             <ElementoSideBar to="/administrativo/bienvenida" Icono={LogoInicio} NombreElemento="Bienvenida" />
             <ElementoSideBar to="/administrativo/dashboard-metricas" Icono={LogoDashboard} NombreElemento="Dashboard" />
             <ElementoSideBar to="/administrativo/comprobantes-recibo" Icono={LogoComprobantes} NombreElemento="Comprobantes Recibidos" />
@@ -227,12 +278,14 @@ export function SideBarDesktop() {
             <ElementoSideBar to="/administrativo/calendario" Icono={LogoCalendario} NombreElemento="Calendario" />
             <ElementoSideBar to="/administrativo/email" Icono={LogoEmail} NombreElemento="Email" />
             <ElementoSideBar to="/administrativo/asesores" Icono={LogoAlumnos} NombreElemento="Asesores" />
+            {/* Chat de soporte */}
+            <ElementoSideBar to="/administrativo/chat" Icono={LogoChat} NombreElemento="Chat de Soporte" badge={unreadCount > 0 ? unreadCount : undefined} />
             {/* Nueva opción: Finanzas */}
             <ElementoSideBar to="/administrativo/finanzas" Icono={LogoFinanzas} NombreElemento="Finanzas" />
           </div>
 
           {/* Espacio flexible que empuja los elementos inferiores */}
-          <div className="flex-grow"></div> 
+          <div className="flex-grow"></div>
 
           {/* Elementos de Configuración y Cerrar Sesión en la parte inferior */}
           <div className="pt-2 space-y-2">
@@ -253,6 +306,43 @@ export function SideBarDesktop() {
  * @param {function} props.closeMenu - Función para cerrar el menú, se pasa a los ElementoSideBar.
  */
 export function SideBarsm({ isMenuOpen, closeMenu }) {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Cargar conteo de mensajes sin leer
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      try {
+        const res = await axios.get('/chat/support/unread');
+        setUnreadCount(res.data?.data?.total || 0);
+      } catch (e) {
+        console.error('Error loading unread count:', e);
+      }
+    };
+
+    loadUnreadCount();
+
+    // Actualizar cuando cambie el chat
+    const handler = () => loadUnreadCount();
+    window.addEventListener('admin-chat-update', handler);
+
+    // Actualizar en tiempo real cuando llegan mensajes por WebSocket
+    const wsHandler = (e) => {
+      const data = e.detail;
+      if (data?.type === 'chat_message' && data.data) {
+        const msg = data.data;
+        if (msg.sender_role === 'estudiante') {
+          // Incrementar contador inmediatamente
+          setUnreadCount(prev => prev + 1);
+        }
+      }
+    };
+    window.addEventListener('student-ws-message', wsHandler);
+
+    return () => {
+      window.removeEventListener('admin-chat-update', handler);
+      window.removeEventListener('student-ws-message', wsHandler);
+    };
+  }, []);
   return (
     <>
       {isMenuOpen && (
@@ -323,6 +413,14 @@ export function SideBarsm({ isMenuOpen, closeMenu }) {
                     Icono={LogoAlumnos}
                     NombreElemento="Asesores"
                     onClick={closeMenu}
+                  />
+                  {/* Chat de soporte */}
+                  <ElementoSideBar
+                    to="/administrativo/chat"
+                    Icono={LogoChat}
+                    NombreElemento="Chat de Soporte"
+                    onClick={closeMenu}
+                    badge={unreadCount > 0 ? unreadCount : undefined}
                   />
                   {/* Nueva opción: Finanzas */}
                   <ElementoSideBar

@@ -16,6 +16,7 @@ import CursoBienvenida from './Dashboard.jsx';   // Bienvenida del curso (usa st
 import PerfilAsesor from './PerfilAsesor.jsx';
 import Cursos from './Cursos.jsx';
 import Asesorias from './Asesorias.jsx';
+import ChatAsesor from './ChatAsesor.jsx';
 import AsesorSimuladores from './AsesorSimuladores.jsx';
 import SimuladoresGen from './SimuladoresGen.jsx';
 import SimuladoresEspecificos from './SimuladoresEspecificos.jsx';
@@ -48,13 +49,13 @@ import FeedbackListPage from '../../pages/Asesor/Feedback.jsx';
 import FeedbackDetailPage from '../../pages/Asesor/FeedbackDetail.jsx';
 
 // Adaptador del sidebar móvil al contrato del Layout
-function SideBarSmWrapper({ isMenuOpen, closeMenu }) {
+function SideBarSmWrapper({ isMenuOpen, closeMenu, counts }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isFeedback = location.pathname.startsWith('/asesor/feedback');
   const handleLogout = async () => { await logout(); navigate('/login', { replace: true }); };
-  return <MobileSidebar open={isMenuOpen} onClose={closeMenu} onLogout={handleLogout} active={isFeedback ? 'feedback' : undefined} />;
+  return <MobileSidebar open={isMenuOpen} onClose={closeMenu} onLogout={handleLogout} active={isFeedback ? 'feedback' : undefined} counts={counts} />;
 }
 
 function AsesorLayout({ children }) {
@@ -63,10 +64,10 @@ function AsesorLayout({ children }) {
   const handleLogout = async () => { await logout(); navigate('/login', { replace: true }); };
   const location = useLocation();
   const isFeedback = location.pathname.startsWith('/asesor/feedback');
-  
+
   // Verificar si estamos en la página de selección de curso (inicio)
   const isInicioPage = location.pathname === '/asesor/inicio' || location.pathname === '/asesor/inicio/';
-  
+
   // Estado reactivo para verificar si hay un curso seleccionado
   const [cursoSeleccionado, setCursoSeleccionado] = useState(() => {
     try {
@@ -75,7 +76,7 @@ function AsesorLayout({ children }) {
       return null;
     }
   });
-  
+
   // Actualizar estado cuando cambia el localStorage o la ruta
   useEffect(() => {
     // Verificar el state de la navegación (si viene desde un click en curso)
@@ -83,24 +84,53 @@ function AsesorLayout({ children }) {
       setCursoSeleccionado(location.state.curso);
       return;
     }
-    
+
     // Verificar localStorage al cambiar de ruta
     try {
       const current = localStorage.getItem("cursoSeleccionado");
       if (current !== cursoSeleccionado) {
         setCursoSeleccionado(current);
       }
-    } catch {}
+    } catch { }
   }, [location.pathname, location.state?.curso]);
-  
+
   // Solo mostrar sidebar si NO estamos en la página de inicio Y hay un curso seleccionado
   const mostrarSidebar = !isInicioPage && cursoSeleccionado;
-  
+
+  // Estado para contadores de badge (ej. mensajes no leídos)
+  const [counts, setCounts] = useState({ chat: 0 });
+
+  useEffect(() => {
+    let interval;
+    const fetchCounts = async () => {
+      try {
+        const { default: axios } = await import('../../api/axios.js');
+        const res = await axios.get('/chat/unread/count');
+        // Nuevo formato: { data: { total: N, by_student: {...} } }
+        setCounts(prev => ({ ...prev, chat: res.data?.data?.total || 0 }));
+      } catch (e) {
+        // Silent error
+      }
+    };
+
+    fetchCounts();
+    interval = setInterval(fetchCounts, 15000); // Polling cada 15s
+
+    // Listener para actualizar si se envía/recibe mensaje (optimización)
+    const handleUpdate = () => fetchCounts();
+    window.addEventListener('advisor-chat-update', handleUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('advisor-chat-update', handleUpdate);
+    };
+  }, []);
+
   return (
     <Layout
       HeaderComponent={Topbar}
-      SideBarDesktopComponent={mostrarSidebar ? (props) => <SidebarIconOnly {...props} onLogout={handleLogout} active={isFeedback ? 'feedback' : undefined} /> : undefined}
-      SideBarSmComponent={mostrarSidebar ? SideBarSmWrapper : undefined}
+      SideBarDesktopComponent={mostrarSidebar ? (props) => <SidebarIconOnly {...props} onLogout={handleLogout} active={isFeedback ? 'feedback' : undefined} counts={counts} /> : undefined}
+      SideBarSmComponent={mostrarSidebar ? (props) => <SideBarSmWrapper {...props} counts={counts} /> : undefined}
       backgroundClassName="bg-transparent"
       contentClassName="!px-0 !pb-0"
     >
@@ -137,22 +167,23 @@ export function AsesorDashboardBundle() {
         <Route path="perfil" element={<PerfilAsesor />} />
         <Route path="cursos" element={<Cursos />} />
 
-  {/* Áreas funcionales */}
-    <Route path="asesorias" element={<Asesorias />} />
-  <Route path="actividades" element={<Actividades />} />
-  {/* Al entrar a un módulo: pantalla con 2 opciones (Actividades y Quizzes) */}
-  <Route path="actividades/modulo" element={<ActividadesQuizzesPage />} />
-  {/* Selección de módulos específicos para actividades (12 áreas) */}
-  <Route path="actividades/modulos_especificos" element={<ActEspecificos />} />
-  {/* Tabla de actividades del módulo seleccionado */}
-  <Route path="actividades/modulo/tabla_actividades" element={<TablaActividades />} />
-  <Route path="actividades/:actividadId/entregas" element={<EntregasActividad />} />
-  {/* Acceso a Quizzes desde la pantalla de módulo */}
-  <Route path="actividades/quiz" element={<Quiz />} />
-  <Route path="agenda" element={<Agenda />} />
-  {/* Feedback dentro del bundle para mantener layout y sidebar activo, en modo embebido */}
-  <Route path="feedback" element={<FeedbackListPage embedded />} />
-  <Route path="feedback/:studentId" element={<FeedbackDetailPage embedded />} />
+        {/* Áreas funcionales */}
+        <Route path="asesorias" element={<Asesorias />} />
+        <Route path="chat" element={<ChatAsesor />} />
+        <Route path="actividades" element={<Actividades />} />
+        {/* Al entrar a un módulo: pantalla con 2 opciones (Actividades y Quizzes) */}
+        <Route path="actividades/modulo" element={<ActividadesQuizzesPage />} />
+        {/* Selección de módulos específicos para actividades (12 áreas) */}
+        <Route path="actividades/modulos_especificos" element={<ActEspecificos />} />
+        {/* Tabla de actividades del módulo seleccionado */}
+        <Route path="actividades/modulo/tabla_actividades" element={<TablaActividades />} />
+        <Route path="actividades/:actividadId/entregas" element={<EntregasActividad />} />
+        {/* Acceso a Quizzes desde la pantalla de módulo */}
+        <Route path="actividades/quiz" element={<Quiz />} />
+        <Route path="agenda" element={<Agenda />} />
+        {/* Feedback dentro del bundle para mantener layout y sidebar activo, en modo embebido */}
+        <Route path="feedback" element={<FeedbackListPage embedded />} />
+        <Route path="feedback/:studentId" element={<FeedbackDetailPage embedded />} />
         <Route path="recursos_educativos" element={<Recursos />} />
         <Route path="mis-pagos" element={<Pagos />} />
         <Route path="reportes" element={<Reportes />} />
@@ -164,10 +195,10 @@ export function AsesorDashboardBundle() {
         {/* Simuladores */}
         <Route path="simuladores" element={<AsesorSimuladores />} />
         <Route path="simuladores/generales" element={<SimuladoresGen />} />
-  <Route path="simuladores/especificos" element={<SimuladoresEspecificos />} />
-  <Route path="simuladores/area" element={<SimuladoresAreaHome />} />
-  <Route path="simuladores/modulo" element={<SimuladoresPorArea />} />
-  <Route path="simuladores/:simId" element={<SimRouteToBuilder />} />
+        <Route path="simuladores/especificos" element={<SimuladoresEspecificos />} />
+        <Route path="simuladores/area" element={<SimuladoresAreaHome />} />
+        <Route path="simuladores/modulo" element={<SimuladoresPorArea />} />
+        <Route path="simuladores/:simId" element={<SimRouteToBuilder />} />
 
         {/* Quizt */}
         <Route path="quizt" element={<Quiz />} />
@@ -181,9 +212,9 @@ export function AsesorDashboardBundle() {
         <Route path="registro-asistencia" element={<RegistroAsistencia />} />
         <Route path="estudiante/:id" element={<PerfilEstudiante />} />
 
-  {/* Rutas de compatibilidad / redirecciones */}
-  {/* Fallback absoluto para evitar concatenaciones relativas - redirigir a inicio para seleccionar curso */}
-  <Route path="*" element={<Navigate to="/asesor/inicio" replace />} />
+        {/* Rutas de compatibilidad / redirecciones */}
+        {/* Fallback absoluto para evitar concatenaciones relativas - redirigir a inicio para seleccionar curso */}
+        <Route path="*" element={<Navigate to="/asesor/inicio" replace />} />
       </Routes>
     </AsesorLayout>
   );

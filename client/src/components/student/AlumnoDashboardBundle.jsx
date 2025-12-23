@@ -29,6 +29,7 @@ import Quizz_Review from './Quizz_Review.jsx';
 import Simulacion_Review from './Simulacion_Review.jsx';
 import SimulacionResultadosPage from '../../pages/alumnos/SimulacionResultadosPage.jsx';
 import QuizResultadosPage from '../../pages/alumnos/QuizResultadosPage.jsx';
+import ChatFloatingButton from '../shared/ChatFloatingButton.jsx';
 
 import { CourseProvider } from '../../context/CourseContext.jsx';
 
@@ -123,7 +124,7 @@ function StudentAwareLayout() {
 
   // BACKEND: Header personalizado con la lógica del botón de logout
   const CustomHeader = (props) => (
-      <Header_Alumno_comp
+    <Header_Alumno_comp
       {...props}
       showLogoutButton={showLogoutButton}
       // En el quiz/simulación deshabilitamos navegación del header por seguridad
@@ -188,7 +189,7 @@ function StudentAwareLayout() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 text-lg">Cargando dashboard...</p>
           <div className="mt-4 w-64 bg-gray-200 rounded-full h-2 mx-auto">
-            <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+            <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
           </div>
         </div>
       </div>
@@ -234,6 +235,8 @@ function StudentAwareLayout() {
           <Route path="/logout" element={<CerrarSesion_Alumno_comp />} />
         </Routes>
       </AlumnoLayout>
+      {/* Ocultar chat durante exámenes (quizzes y simulaciones) */}
+      {!isQuizRoute && !isSimRoute && <ChatFloatingButton />}
     </div>
   );
 }

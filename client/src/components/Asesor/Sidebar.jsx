@@ -22,7 +22,7 @@ function TooltipPortal({ visible, x, y, text, color = 'dark' }) {
   );
 }
 
-export default function SidebarIconOnly({ onLogout = () => {}, active }) {
+export default function SidebarIconOnly({ onLogout = () => { }, active, counts = {} }) {
   const location = useLocation();
   const path = location.pathname || '';
 
@@ -38,10 +38,10 @@ export default function SidebarIconOnly({ onLogout = () => {}, active }) {
   const hideTip = useCallback(() => setTip(t => ({ ...t, visible: false })), []);
 
   return (
-  <aside className="hidden md:flex fixed left-0 top-14 bottom-0 w-24 shrink-0 z-40 isolate border-r border-slate-200 box-border">
-    <div className="flex flex-col h-full w-full bg-white/90 backdrop-blur px-0 py-0 overflow-x-visible">
+    <aside className="hidden md:flex fixed left-0 top-14 bottom-0 w-24 shrink-0 z-40 isolate border-r border-slate-200 box-border">
+      <div className="flex flex-col h-full w-full bg-white/90 backdrop-blur px-0 py-0 overflow-x-visible">
         {/* Navegación */}
-  <nav className="mt-0 space-y-0 w-full flex-1 overflow-y-auto overflow-x-visible overscroll-contain no-scrollbar">
+        <nav className="mt-0 space-y-0 w-full flex-1 overflow-y-auto overflow-x-visible overscroll-contain no-scrollbar">
           {NAV_ITEMS.map(({ key, label, icon: Icon, href }) => (
             <NavLink
               key={key}
@@ -60,6 +60,14 @@ export default function SidebarIconOnly({ onLogout = () => {}, active }) {
                 <>
                   {/* Solo icono centrado */}
                   <Icon className={["h-6 w-6 transition-colors", (isActive || (!!active && ((active === key) || (key === 'feedback' && path.startsWith('/asesor/feedback'))))) ? "text-violet-700" : "text-slate-500 group-hover:text-violet-700"].join(" ")} />
+
+                  {/* Badge de contador */}
+                  {counts[key] > 0 && (
+                    <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow ring-2 ring-white transform translate-x-1/4 -translate-y-1/4">
+                      {counts[key] > 99 ? '99+' : counts[key]}
+                    </span>
+                  )}
+
                   {/* Indicador lateral al pasar el mouse */}
                   <span className={[
                     "pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded",
@@ -74,7 +82,7 @@ export default function SidebarIconOnly({ onLogout = () => {}, active }) {
           ))}
         </nav>
 
-  <div className="my-1 border-t border-slate-200" />
+        <div className="my-1 border-t border-slate-200" />
 
         {/* Cerrar sesión */}
         <button

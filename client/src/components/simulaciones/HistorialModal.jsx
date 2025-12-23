@@ -311,7 +311,7 @@ export default function HistorialModal({ open, item, historial, onClose }) {
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <div className="historial-modal compact-desktop no-scrollbar relative bg-white/98 rounded-2xl shadow-2xl ring-1 ring-black/5 w-[90%] sm:w-[88%] md:w-[78%] lg:w-auto sm:max-w-[85vw] md:max-w-[83vw] lg:max-w-2xl xl:max-w-3xl 2xl:max-w-[44rem] flex flex-col overflow-hidden max-h-[86vh] sm:max-h-[88vh] animate-slide-up sm:animate-scale-in max-[400px]:w-[96%] max-[380px]:w-full max-[380px]:min-h-[70vh] max-[380px]:max-h-[92vh]">
+        <div className="historial-modal compact-desktop no-scrollbar relative bg-white/98 rounded-2xl shadow-2xl ring-1 ring-black/5 w-full max-w-[92vw] md:max-w-[30rem] lg:max-w-[32rem] xl:max-w-[36rem] h-[72vh] sm:h-[68vh] md:h-[62vh] lg:h-[58vh] max-h-[720px] overflow-hidden flex flex-col transform translate-y-6 sm:translate-y-8 md:translate-x-8 lg:translate-x-0">
           <div className="hm-header sticky top-0 z-10 bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-3 sm:p-4 flex-shrink-0 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
@@ -476,144 +476,13 @@ export default function HistorialModal({ open, item, historial, onClose }) {
         @keyframes fade-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
 
-        /* Safe area helpers */
-        .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+        /* Smooth touch scroll on iOS */
+        .historial-modal { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
 
-        /* dvh/svh fallbacks for iOS/Android browser chrome variations */
-        .historial-modal { 
-          max-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-        }
-        @supports (height: 100dvh) {
-          .historial-modal { 
-            max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-          }
-        }
-        /* Phones: modal más baja + scroll interno */
-        @media (max-width: 639.98px) {
-          .historial-modal { width: 90vw; }
-        }
-        /* Phones muy pequeños (≤380px de ancho) */
-        @media (max-width: 380px) {
-          .historial-modal { height: calc(66svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-          @supports (height: 100dvh) {
-            .historial-modal { height: calc(66dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-          }
-          .historial-modal h2 { font-size: 1rem; }
-        }
-        /* Phones pequeños (381–430px) */
-        @media (min-width: 381px) and (max-width: 430px) {
-          .historial-modal { height: calc(70svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-          @supports (height: 100dvh) {
-            .historial-modal { height: calc(70dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-          }
-        }
-        /* Phones medianos (431–639px) */
-        @media (min-width: 431px) and (max-width: 639.98px) {
-          .historial-modal { height: calc(74svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-          @supports (height: 100dvh) {
-            .historial-modal { height: calc(74dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-          }
-        }
-
-  /* Smooth touch scroll on iOS + allow flex child to scroll (min-height:0) */
-          .historial-modal { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; min-height: 0; }
-
-        /* Default scrollbar look (desktop) */
-        @media (min-width: 640px) {
-            .historial-modal { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.25) transparent; }
-            .historial-modal::-webkit-scrollbar { width: 8px; height: 8px; }
-            .historial-modal::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,.25); border-radius: 9999px; }
-            .historial-modal::-webkit-scrollbar-track { background: transparent; }
-        }
-
-        /* Hide intrusive scrollbar on small/tall phones */
-        @media (max-width: 639.98px) {
-            .historial-modal { -ms-overflow-style: none; scrollbar-width: none; }
-            .historial-modal::-webkit-scrollbar { display: none; width: 0; height: 0; }
-        }
-
-        /* Phones: compact UI without affecting tablets/desktop */
-        @media (max-width: 430px) {
-          .historial-modal { width: 90vw; }
-          .historial-modal .hm-header { padding: 10px 12px; }
-          .historial-modal .hm-content { padding: 10px 12px; }
-          .historial-modal h2 { font-size: 1.05rem; }
-          .historial-modal [data-metric="title"] { font-size: 10.5px; }
-          .historial-modal [data-metric="value"] { font-size: 1rem; }
-          .historial-modal .attempt-row { padding: 10px 12px; }
-          .historial-modal .attempt-index { width: 22px; height: 22px; font-size: 10px; }
-        }
-        @media (min-width: 431px) and (max-width: 639.98px) {
-          .historial-modal { width: 90vw; }
-          .historial-modal .hm-header { padding: 12px 14px; }
-          .historial-modal .hm-content { padding: 12px 14px; }
-          .historial-modal h2 { font-size: 1.15rem; }
-          .historial-modal .attempt-row { padding: 12px 14px; }
-          .historial-modal .attempt-index { width: 24px; height: 24px; font-size: 11px; }
-        }
-
-        /* General phones and small tablets: denser spacing */
-        @media (max-width: 1024px) {
-          .historial-modal h3 { margin-bottom: 6px; }
-        }
-
-        /* iPad / tablets: empuja el modal más a la derecha para compensar el sidebar */
-        /* iPad portrait (768–900px aprox.) */
-        @media (min-width: 640px) and (max-width: 900px) {
-          .historial-modal { margin-left: clamp(48px, 8vw, 120px); }
-        }
-        /* iPad landscape y tablets medianas (901–1180px) */
-        @media (min-width: 901px) and (max-width: 1180px) {
-          .historial-modal { margin-left: clamp(40px, 6vw, 100px); }
-        }
-        /* móviles: centrado total */
-        @media (max-width: 639.98px) {
-          .historial-modal { margin-left: 0; width: 94vw; }
-        }
-
-        /* Ocultar scrollbars del área de contenido en todas las plataformas */
+        /* Ocultar scrollbars del área de contenido */
         .hm-content { -ms-overflow-style: none; scrollbar-width: none; }
         .hm-content::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
-        /* Bajar el modal en tablets y desktop (no móviles) */
-        @media (min-width: 640px) {
-          .historial-modal { margin-top: clamp(20px, 5vh, 64px); }
-        }
-        @media (min-width: 1024px) {
-          .historial-modal { margin-top: clamp(28px, 7vh, 84px); }
-        }
-        @media (min-width: 1280px) {
-          .historial-modal { margin-top: clamp(36px, 8vh, 96px); }
-        }
-        @media (min-width: 1536px) {
-          .historial-modal { margin-top: clamp(44px, 10vh, 112px); }
-        }
-
-        /* Compactar en pantallas grandes (>=1280px) para monitores grandes */
-        @media (min-width: 1280px) {
-          .historial-modal.compact-desktop { max-width: 40rem; }
-          .historial-modal.compact-desktop .hm-header { padding: 8px 12px; }
-          .historial-modal.compact-desktop .hm-header h2 { font-size: 1.1rem; }
-          .historial-modal.compact-desktop .hm-header p { font-size: .85rem; margin-top: 2px; }
-          .historial-modal.compact-desktop .hm-header button { padding: 6px; }
-          .historial-modal.compact-desktop .hm-content { padding: 10px 14px; }
-          .historial-modal.compact-desktop .metrics-grid { gap: 6px; margin-bottom: 8px; }
-          .historial-modal.compact-desktop .metrics-grid > div { padding: 8px 10px; }
-          .historial-modal.compact-desktop [data-metric="title"] { font-size: 11px; }
-          .historial-modal.compact-desktop [data-metric="value"] { font-size: 1rem; }
-          .historial-modal.compact-desktop .attempts-box { padding: 8px 10px; }
-          .historial-modal.compact-desktop .attempts-stack > * + * { margin-top: 8px; }
-          .historial-modal.compact-desktop .attempt-row { padding: 8px 10px; }
-          .historial-modal.compact-desktop .attempt-index { width: 22px; height: 22px; font-size: 10.5px; }
-          .historial-modal.compact-desktop .score-bar { height: 18px; }
-          .historial-modal.compact-desktop .hm-footer { padding-top: 8px; padding-bottom: 10px; }
-          .historial-modal.compact-desktop .hm-footer h3 { font-size: .95rem; }
-          .historial-modal.compact-desktop .hm-footer button { padding-top: 8px; padding-bottom: 8px; font-size: .95rem; }
-        }
-        @media (min-width: 1536px) {
-          .historial-modal.compact-desktop { max-width: 38rem; }
-        }
       `}</style>
     </>
   );

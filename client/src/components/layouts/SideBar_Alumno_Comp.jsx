@@ -73,7 +73,7 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onCli
   // Detectar logout tanto si llega como ruta absoluta como anidada
   const isLogout = to === "/logout" || to === "/alumno/logout";
   const isInicio = to === "/alumno/" || to === "/alumno";
-  
+
   // Para las secciones que usan el nuevo sistema, verificar si esta sección está activa
   const isActive = sectionKey ? activeSection === sectionKey : location.pathname === to;
   // Quitar bloqueo visual/funcional de elementos: todos accesibles
@@ -81,11 +81,11 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onCli
   const isMobileItem = !!mobileOnClick;
 
   const handleLinkClick = (e) => {
-  // Todos los elementos son accesibles; no bloquear navegación
+    // Todos los elementos son accesibles; no bloquear navegación
     if (mobileOnClick) {
       mobileOnClick();
     }
-    
+
     // Si tiene sectionKey, usar el nuevo sistema de navegación
     if (sectionKey) {
       e.preventDefault();
@@ -99,8 +99,8 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onCli
       if (activeSection) {
         setActiveSectionHandler(null);
       }
-      
-  if (isActive && !isLogout) {
+
+      if (isActive && !isLogout) {
         e.preventDefault();
         navigate("/alumno/");
       }
@@ -156,8 +156,8 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, onCli
 const svgColor = "#4F46E5"; // Azul más fuerte para iconos inactivos
 const svgColorLogout = "#EA3323"; // Rojo para cerrar sesión
 const xmlns = "http://www.w3.org/2000/svg";
-const width = "30px"; // Vuelto al tamaño original
-const height = "30px"; // Vuelto al tamaño original
+const width = "24px"; // Tamaño reducido para mejor apariencia
+const height = "24px"; // Tamaño reducido para mejor apariencia
 
 // Definición de los iconos SVG para cada elemento del menú - Actualizados para coincidir con la imagen
 const LogoInicio = (
@@ -169,79 +169,79 @@ const LogoInicio = (
 
 const LogoMisCursos = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
   </svg>
 );
 
 const LogoMiPerfil = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-    <circle cx="12" cy="7" r="4"/>
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
   </svg>
 );
 
 const LogoActividades = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/>
-    <polyline points="12 6 12 12 16 14"/>
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
   </svg>
 );
 
 const LogoSimulaciones = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
   </svg>
 );
 
 const LogoRecursos = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-    <line x1="12" y1="11" x2="12" y2="17"/>
-    <line x1="9" y1="14" x2="15" y2="14"/>
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    <line x1="12" y1="11" x2="12" y2="17" />
+    <line x1="9" y1="14" x2="15" y2="14" />
   </svg>
 );
 
 const LogoFeedback = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
   </svg>
 );
 
 const LogoCalendario = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-    <line x1="16" y1="2" x2="16" y2="6"/>
-    <line x1="8" y1="2" x2="8" y2="6"/>
-    <line x1="3" y1="10" x2="21" y2="10"/>
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
   </svg>
 );
 
 const LogoMisPagos = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-    <line x1="1" y1="10" x2="22" y2="10"/>
+    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+    <line x1="1" y1="10" x2="22" y2="10" />
   </svg>
 );
 
 const LogoAsistencia = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
 
 // Iconos que NO cambian (Configuración y Cerrar Sesión)
 const LogoConfigAlumno = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3"/>
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 );
 
 const LogoCerrarSesionAlumno = (
   <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColorLogout} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-    <polyline points="17 16 22 12 17 8"/>
-    <line x1="22" y1="12" x2="10" y2="12"/>
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <polyline points="17 16 22 12 17 8" />
+    <line x1="22" y1="12" x2="10" y2="12" />
   </svg>
 );
 
@@ -351,7 +351,7 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
         // Al liberar, permitir hover normal después de un corto margen para evitar apertura instantánea durante reflow
         pinnedGraceUntilRef.current = Date.now() + 100; // breve
       }
-      try { localStorage.setItem('sidebarPinnedCollapsed', String(next)); } catch (_) {}
+      try { localStorage.setItem('sidebarPinnedCollapsed', String(next)); } catch (_) { }
       return next;
     });
   };
@@ -368,7 +368,7 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
         setSidebarOpenSafe(false);
         pinnedGraceUntilRef.current = Date.now() + 800;
       }
-    } catch (_) {}
+    } catch (_) { }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -428,7 +428,7 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
   // Sincroniza el overlay de blur con el estado real del sidebar.
   // Si por cualquier motivo el sidebar se cierra, el overlay se limpia automáticamente.
   useEffect(() => {
-  if (setDesktopSidebarOpen) setDesktopSidebarOpen(isSidebarOpen);
+    if (setDesktopSidebarOpen) setDesktopSidebarOpen(isSidebarOpen);
   }, [isSidebarOpen, setDesktopSidebarOpen]);
 
   // En tablets respetamos el estado fijado; si está fijado, no debe abrirse
@@ -437,7 +437,7 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
   return (
     <aside
       ref={sidebarRef}
-  className={`hidden sm:flex flex-col fixed ${sidebarWidth} ${isTablet ? 'shadow-md' : 'shadow-lg'} z-[2000] top-[80px] h-[calc(100vh-80px)] bg-white/95 ${isTablet ? 'backdrop-blur-[2px]' : 'backdrop-blur-sm'} border-r border-gray-200/80 ${isTablet ? (isSidebarOpen ? 'translate-x-0' : '-translate-x-0') : ''} transition-transform duration-200 ease-out transform-gpu will-change-transform overflow-y-auto overflow-x-visible no-scrollbar`}
+      className={`hidden sm:flex flex-col fixed ${sidebarWidth} ${isTablet ? 'shadow-md' : 'shadow-lg'} z-[2000] top-[80px] h-[calc(100vh-80px)] bg-white/95 ${isTablet ? 'backdrop-blur-[2px]' : 'backdrop-blur-sm'} border-r border-gray-200/80 ${isTablet ? (isSidebarOpen ? 'translate-x-0' : '-translate-x-0') : ''} transition-transform duration-200 ease-out transform-gpu will-change-transform overflow-y-auto overflow-x-visible no-scrollbar`}
       style={{
         transform: 'translateX(0)',
         opacity: 1,
@@ -445,8 +445,8 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
         WebkitBackdropFilter: isTablet ? 'blur(2px)' : 'blur(10px)'
       }}
       aria-label="Sidebar de escritorio de alumno"
-  onMouseEnter={isTablet ? undefined : handleMouseEnter}
-  onMouseLeave={isTablet ? undefined : handleMouseLeave}
+      onMouseEnter={isTablet ? undefined : handleMouseEnter}
+      onMouseLeave={isTablet ? undefined : handleMouseLeave}
       onClickCapture={() => { freezeUntilRef.current = Date.now() + CLICK_FREEZE_MS; }}
       onClick={() => {
         // En tablets/touch sin hover: toggle manual, pero si está fijado, no abrir
@@ -458,17 +458,17 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
         // Desktop: permitir abrir con foco/click si no está fijado
         if (!effectivePinned && !isSidebarOpen) setSidebarOpenSafe(true);
       }}
-  onFocus={() => { /* En tablets no abrir al enfocar; en desktop sí */ if (!isTablet && !effectivePinned) setSidebarOpenSafe(true); }}
+      onFocus={() => { /* En tablets no abrir al enfocar; en desktop sí */ if (!isTablet && !effectivePinned) setSidebarOpenSafe(true); }}
       onBlur={(e) => {
-            if (isPinnedCollapsed) return; // si está fijado colapsado, ya está cerrado
+        if (isPinnedCollapsed) return; // si está fijado colapsado, ya está cerrado
         // Cerrar si el foco sale totalmente del sidebar
         if (sidebarRef.current && !sidebarRef.current.contains(e.relatedTarget)) {
           setSidebarOpenSafe(false);
         }
       }}
     >
-  {/* Barra superior con botón de fijar colapsado */}
-  <div className="px-3 py-2 flex items-center justify-end gap-2 border-b border-gray-200/60 bg-white/70">
+      {/* Barra superior con botón de fijar colapsado */}
+      <div className="px-3 py-2 flex items-center justify-end gap-2 border-b border-gray-200/60 bg-white/70">
         <button
           onClick={togglePinned}
           className={`inline-flex items-center justify-center w-8 h-8 rounded-md border text-xs font-medium transition-all
@@ -547,15 +547,15 @@ export function SideBarSm_Alumno_comp({ isMenuOpen, closeMenu, activo }) {
             {/* Grupo superior de elementos de navegación móvil */}
             <div>
               {alumnoMenuItems.map((item) => (<ElementoSideBarAlumno
-                  key={item.path}
-                  to={item.path}
-                  Icono={item.icon}
-                  NombreElemento={item.label}
-                  mobileOnClick={closeMenu}
-                  isSidebarOpen={true}
-                  activo={activo}
-                  sectionKey={item.sectionKey}
-                />
+                key={item.path}
+                to={item.path}
+                Icono={item.icon}
+                NombreElemento={item.label}
+                mobileOnClick={closeMenu}
+                isSidebarOpen={true}
+                activo={activo}
+                sectionKey={item.sectionKey}
+              />
               ))}
             </div>
             {/* Agrupación de Configuración y Cerrar Sesión en la parte inferior para móvil */}

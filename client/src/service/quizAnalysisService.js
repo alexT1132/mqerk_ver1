@@ -4,11 +4,10 @@
 // Configuración del proxy backend (igual que geminiService.js)
 const PROXY_ENDPOINT = '/api/ai/gemini/generate';
 // Modelo configurado manualmente (si se especifica, se usa ese directamente)
-const QUIZ_AI_MODEL_CONFIGURED = import.meta?.env?.VITE_GEMINI_QUIZ_MODEL || import.meta?.env?.VITE_GEMINI_MODEL || 'gemini-2.5-flash';
+const QUIZ_AI_MODEL_CONFIGURED = import.meta?.env?.VITE_GEMINI_QUIZ_MODEL || import.meta?.env?.VITE_GEMINI_MODEL || 'gemini-2.0-flash';
 // Lista de modelos a probar en orden de preferencia si el configurado falla
 const MODELOS_DISPONIBLES = [
-  'gemini-2.5-flash',
-  'gemini-2.5-pro',
+  'gemini-2.0-flash',
   'gemini-1.5-flash',
   'gemini-pro-latest',
 ];

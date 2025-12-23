@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Download, Eye, Trash2, UploadCloud, Search, FileText, File, Video, Image, Archive, FileEdit, X, Save, Loader2, Tag, Plus, CheckCircle, GraduationCap, Shield, Link as LinkIcon, Presentation, FileType } from 'lucide-react';
-import { 
+import {
   listRecursos, createRecurso, updateRecurso, deleteRecurso, downloadRecurso,
   listRecursosAdmin, downloadRecursoAdmin
 } from '../../api/recursos.js';
@@ -73,20 +73,20 @@ const buildFileUrl = (resource) => {
 // Helper para extraer ID de video de YouTube
 const getYouTubeVideoId = (url) => {
   if (!url) return null;
-  
+
   // Diferentes formatos de URLs de YouTube
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)/,
     /youtube\.com\/watch\?.*v=([^&\n?#]+)/
   ];
-  
+
   for (const pattern of patterns) {
     const match = url.match(pattern);
     if (match && match[1]) {
       return match[1];
     }
   }
-  
+
   return null;
 };
 
@@ -109,7 +109,7 @@ export default function Recursos() {
   const [editing, setEditing] = useState(null);
   const [editForm, setEditForm] = useState({ title: '', description: '', tags: [] });
   const [newTag, setNewTag] = useState('');
-  const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' });
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: () => { }, variant: 'default' });
   const [successMessage, setSuccessMessage] = useState('');
   const [linkModal, setLinkModal] = useState({ isOpen: false, title: '', description: '', linkUrl: '', tags: [] });
   const [newLinkTag, setNewLinkTag] = useState('');
@@ -220,7 +220,7 @@ export default function Recursos() {
 
       // Reset input
       e.target.value = '';
-      
+
       // Ocultar mensaje de éxito después de 3 segundos
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
@@ -303,7 +303,7 @@ export default function Recursos() {
       setResources(prev => [response.data.data, ...prev]);
       setSuccessMessage(`Enlace "${linkModal.title}" agregado correctamente`);
       closeLinkModal();
-      
+
       // Ocultar mensaje de éxito después de 3 segundos
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
@@ -316,13 +316,13 @@ export default function Recursos() {
   // Eliminar recurso
   const handleDelete = async (id) => {
     const resource = resources.find(r => r.id === id);
-    
+
     // Los recursos del admin no se pueden eliminar desde aquí (solo el admin puede)
     if (activeTab === 'admin') {
       setError('No tienes permiso para eliminar recursos del administrador');
       return;
     }
-    
+
     setConfirmModal({
       isOpen: true,
       message: '¿Estás seguro de eliminar este recurso?',
@@ -339,26 +339,26 @@ export default function Recursos() {
           setSelected(s);
           setSuccessMessage('Recurso eliminado correctamente');
           setTimeout(() => setSuccessMessage(''), 3000);
-          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' });
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => { }, variant: 'default' });
         } catch (err) {
           setError(err?.response?.data?.message || 'Error eliminando recurso');
-          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' });
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => { }, variant: 'default' });
         }
       },
-      onCancel: () => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' })
+      onCancel: () => setConfirmModal({ isOpen: false, message: '', onConfirm: () => { }, variant: 'default' })
     });
   };
 
   // Eliminación masiva
   const handleBulkDelete = async () => {
     if (selected.size === 0) return;
-    
+
     // Los recursos del admin no se pueden eliminar desde aquí
     if (activeTab === 'admin') {
       setError('No tienes permiso para eliminar recursos del administrador');
       return;
     }
-    
+
     setConfirmModal({
       isOpen: true,
       message: `¿Estás seguro de eliminar ${selected.size} recurso(s)?`,
@@ -373,13 +373,13 @@ export default function Recursos() {
           setSelected(new Set());
           setSuccessMessage(`${selected.size} recurso(s) eliminado(s) correctamente`);
           setTimeout(() => setSuccessMessage(''), 3000);
-          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' });
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => { }, variant: 'default' });
         } catch (err) {
           setError(err?.response?.data?.message || 'Error eliminando recursos');
-          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' });
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => { }, variant: 'default' });
         }
       },
-      onCancel: () => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' })
+      onCancel: () => setConfirmModal({ isOpen: false, message: '', onConfirm: () => { }, variant: 'default' })
     });
   };
 
@@ -505,11 +505,10 @@ export default function Recursos() {
         <div className="mb-6 flex gap-2 border-b border-slate-200">
           <button
             onClick={() => setActiveTab('asesor')}
-            className={`px-6 py-3 font-semibold text-sm rounded-t-xl transition-all ${
-              activeTab === 'asesor'
-                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
-                : 'text-slate-600 hover:text-violet-600 hover:bg-slate-50'
-            }`}
+            className={`px-6 py-3 font-semibold text-sm rounded-t-xl transition-all ${activeTab === 'asesor'
+              ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
+              : 'text-slate-600 hover:text-violet-600 hover:bg-slate-50'
+              }`}
           >
             <div className="flex items-center gap-2">
               <GraduationCap className="size-4" />
@@ -518,11 +517,10 @@ export default function Recursos() {
           </button>
           <button
             onClick={() => setActiveTab('admin')}
-            className={`px-6 py-3 font-semibold text-sm rounded-t-xl transition-all ${
-              activeTab === 'admin'
-                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
-                : 'text-slate-600 hover:text-violet-600 hover:bg-slate-50'
-            }`}
+            className={`px-6 py-3 font-semibold text-sm rounded-t-xl transition-all ${activeTab === 'admin'
+              ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
+              : 'text-slate-600 hover:text-violet-600 hover:bg-slate-50'
+              }`}
           >
             <div className="flex items-center gap-2">
               <Shield className="size-4" />
@@ -858,8 +856,8 @@ export default function Recursos() {
 
         {/* Modal de preview */}
         {preview && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setPreview(null)}>
-            <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col border-2 border-slate-200 ring-4 ring-violet-100" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[100] p-4 bg-black/60 backdrop-blur-sm" onClick={() => setPreview(null)}>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl w-full max-w-3xl max-h-[80vh] overflow-hidden shadow-2xl flex flex-col border-2 border-slate-200 ring-4 ring-violet-100" onClick={e => e.stopPropagation()}>
               {/* Header del modal */}
               <div className="px-5 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between shrink-0 shadow-lg">
                 <div className="flex-1 min-w-0">
@@ -901,12 +899,19 @@ export default function Recursos() {
                     <div className="w-full">
                       <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                         <iframe
-                          src={`https://www.youtube.com/embed/${getYouTubeVideoId(preview.link_url)}`}
+                          src={`https://www.youtube.com/embed/${getYouTubeVideoId(preview.link_url)}?rel=0&modestbranding=1&playsinline=1&enablejsapi=1`}
                           title={preview.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           allowFullScreen
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          sandbox="allow-same-origin allow-scripts allow-presentation allow-popups allow-popups-to-escape-sandbox"
                           className="absolute top-0 left-0 w-full h-full rounded-lg border-2 border-slate-200"
                         />
+                      </div>
+                      <div className="mt-2 text-center">
+                        <p className="text-xs text-slate-500">
+                          ¿No se reproduce el video? Usa el enlace "Ver en YouTube" abajo
+                        </p>
                       </div>
                       <div className="mt-4 flex items-center justify-center gap-3">
                         <a
@@ -940,12 +945,34 @@ export default function Recursos() {
                     </div>
                   )
                 ) : preview.file_type_display === 'PDF' ? (
-                  <iframe
-                    allowFullScreen
-                    src={buildFileUrl(preview)}
-                    className="w-full h-full min-h-[400px] max-h-[60vh] rounded-lg border-2 border-slate-200"
-                    title={preview.title}
-                  />
+                  <div className="flex flex-col items-center">
+                    <iframe
+                      src={buildFileUrl(preview)}
+                      className="w-full h-full min-h-[400px] max-h-[60vh] rounded-lg border-2 border-slate-200"
+                      title={preview.title}
+                    />
+                    <div className="mt-3 text-center">
+                      <p className="text-xs text-slate-500 mb-2">
+                        ¿No se visualiza el PDF? Descárgalo o ábrelo en una nueva pestaña
+                      </p>
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          onClick={() => handleDownload(preview.id, preview.file_name, preview.resource_type, preview.link_url)}
+                          className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                        >
+                          Descargar PDF
+                        </button>
+                        <a
+                          href={buildFileUrl(preview)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                        >
+                          Abrir en nueva pestaña
+                        </a>
+                      </div>
+                    </div>
+                  </div>
                 ) : preview.file_type_display === 'VIDEO' ? (
                   <video
                     src={buildFileUrl(preview)}
@@ -1008,13 +1035,13 @@ export default function Recursos() {
           confirmText={confirmModal.confirmText}
           cancelText={confirmModal.cancelText}
           onConfirm={confirmModal.onConfirm}
-          onCancel={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, variant: 'default' })}
+          onCancel={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => { }, variant: 'default' })}
         />
 
         {/* Modal de agregar enlace */}
         {linkModal.isOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={closeLinkModal}>
-            <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col border-2 border-slate-200 ring-4 ring-violet-100" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[100] p-4 bg-black/60 backdrop-blur-sm" onClick={closeLinkModal}>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl flex flex-col border-2 border-slate-200 ring-4 ring-violet-100" onClick={e => e.stopPropagation()}>
               {/* Header del modal */}
               <div className="px-5 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between shrink-0 shadow-lg">
                 <div className="flex items-center gap-3">

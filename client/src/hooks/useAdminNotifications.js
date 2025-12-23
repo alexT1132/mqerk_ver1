@@ -81,40 +81,40 @@ export function useAdminNotifications() {
         // Actualizar métricas y badge
         fetchMetrics();
         const p = data.payload || {};
-        const folioTxt = p.folio != null ? `Folio ${String(p.folio).padStart(4,'0')}` : 'Folio N/D';
+        const folioTxt = p.folio != null ? `Folio ${String(p.folio).padStart(4, '0')}` : 'Folio N/D';
         const cursoTxt = p.curso ? String(p.curso).toUpperCase() : 'CURSO';
         const grupoTxt = p.grupo ? String(p.grupo).toUpperCase() : 'GRUPO';
         const alumnoTxt = [p.nombre, p.apellidos].filter(Boolean).join(' ').trim();
         const msg = alumnoTxt
           ? `Nuevo comprobante: ${alumnoTxt} • ${cursoTxt}-${grupoTxt} • ${folioTxt}`
           : `Nuevo comprobante recibido • ${cursoTxt}-${grupoTxt} • ${folioTxt}`;
-        
+
         // Generar ID único basado en id_estudiante y folio para evitar duplicados
         const uniqueId = `cmp-${p.id_estudiante}-${p.folio || 'unknown'}`;
-        
+
         // Insertar notificación visible con más contexto, evitando duplicados
         setNotifications(prev => {
           // Verificar si ya existe una notificación con el mismo id_estudiante y folio
-          const exists = prev.some(n => 
-            n.id === uniqueId || 
+          const exists = prev.some(n =>
+            n.id === uniqueId ||
             (n.meta?.id_estudiante === p.id_estudiante && n.meta?.folio === p.folio && n.type === 'payment_pending')
           );
-          
+
           // Si ya existe, no agregar duplicado
           if (exists) {
             return prev;
           }
-          
+
           // Agregar nueva notificación
           return [
-            { 
-              id: uniqueId, 
-              timestamp: new Date(), 
-              isRead: false, 
-              priority: 'normal', 
-              type: 'payment_pending', 
-              message: msg, 
-              meta: { curso: p.curso, grupo: p.grupo, folio: p.folio, id_estudiante: p.id_estudiante } 
+            {
+              id: uniqueId,
+              timestamp: new Date(),
+              isRead: false,
+              priority: 'normal',
+              type: 'payment_pending',
+              message: msg,
+              meta: { curso: p.curso, grupo: p.grupo, folio: p.folio, id_estudiante: p.id_estudiante }
             },
             ...prev
           ];
@@ -123,10 +123,104 @@ export function useAdminNotifications() {
     };
     window.addEventListener('admin-ws-message', wsListener);
 
+    // Chat notification handling - GLOBAL
+    let notificationAudio = null;
+    let audioUnlocked = false;
+    let titleInterval = null;
+    let originalTitle = document.title;
+
+    const unlockAudio = () => {
+      try {
+        if (!notificationAudio) {
+          notificationAudio = new Audio('/notification-sound-for-whatsapp.mp3');
+        }
+        notificationAudio.play().then(() => {
+          notificationAudio.pause();
+          notificationAudio.currentTime = 0;
+          audioUnlocked = true;
+        }).catch(() => { });
+      } catch (e) { }
+    };
+
+    const playNotificationSound = () => {
+      try {
+        if (!audioUnlocked || !notificationAudio) {
+          unlockAudio();
+          return;
+        }
+        notificationAudio.currentTime = 0;
+        notificationAudio.play().catch(() => { });
+      } catch (e) { }
+    };
+
+    const startTitleNotification = (count = 1) => {
+      if (titleInterval) return;
+      originalTitle = document.title;
+      let showingAlert = false;
+      titleInterval = setInterval(() => {
+        document.title = showingAlert
+          ? originalTitle
+          : `(${count}) Nuevo${count > 1 ? 's' : ''} mensaje${count > 1 ? 's' : ''}`;
+        showingAlert = !showingAlert;
+      }, 1000);
+    };
+
+    const stopTitleNotification = () => {
+      if (titleInterval) {
+        clearInterval(titleInterval);
+        titleInterval = null;
+        document.title = originalTitle;
+      }
+    };
+
+    // Unlock audio on user interaction
+    const handleInteraction = () => {
+      unlockAudio();
+    };
+    unlockAudio();
+    document.addEventListener('click', handleInteraction, { once: true });
+    document.addEventListener('keydown', handleInteraction, { once: true });
+
+    // Listen for chat messages from students
+    const chatListener = (e) => {
+      const data = e.detail;
+      if (data?.type === 'chat_message' && data.data) {
+        const msg = data.data;
+        if (msg.sender_role === 'estudiante') {
+          // Check if we're in chat route
+          const isInChatRoute = window.location.pathname === '/administrativo/chat';
+
+          // Only play sound if NOT in chat route (ChatAdmin component handles it there)
+          if (!isInChatRoute) {
+            playNotificationSound();
+          }
+
+          // Show tab alert if not in chat route or tab is hidden
+          if (!isInChatRoute || document.hidden) {
+            startTitleNotification(1);
+          }
+        }
+      }
+    };
+    window.addEventListener('student-ws-message', chatListener);
+
+    // Stop title notification when tab becomes visible
+    const visibilityHandler = () => {
+      if (!document.hidden) {
+        stopTitleNotification();
+      }
+    };
+    document.addEventListener('visibilitychange', visibilityHandler);
+
     return () => {
       isMounted = false;
       if (pollingRef.current) clearInterval(pollingRef.current);
       window.removeEventListener('admin-ws-message', wsListener);
+      window.removeEventListener('student-ws-message', chatListener);
+      document.removeEventListener('visibilitychange', visibilityHandler);
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+      stopTitleNotification();
     };
   }, [authLoading, isAuthenticated, user?.role]);
 
@@ -137,7 +231,7 @@ export function useAdminNotifications() {
 
   // Función para marcar todas las notificaciones como leídas
   const markAllAsRead = () => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.map(notification => ({ ...notification, isRead: true }))
     );
   };
@@ -218,13 +312,13 @@ export function useAdminNotifications() {
   const getTimeAgo = (timestamp) => {
     const now = new Date();
     const diffInMinutes = Math.floor((now - timestamp) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'Ahora mismo';
     if (diffInMinutes < 60) return `Hace ${diffInMinutes} min`;
-    
+
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `Hace ${diffInHours}h`;
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     return `Hace ${diffInDays}d`;
   };
@@ -233,7 +327,7 @@ export function useAdminNotifications() {
     notifications,
     unreadNotifications,
     unreadCount,
-  pendingCount,
+    pendingCount,
     isNotificationsOpen,
     setIsNotificationsOpen,
     toggleNotifications,
