@@ -1225,10 +1225,10 @@ export function Simulaciones_Alumno_comp() {
 
   // NIVEL 1: Tipos de simuladores - Mejorado para móviles
   const renderTipos = () => (
-    <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-8 sm:py-10 lg:py-12">
+    <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 pt-6 sm:pt-8 md:pt-10 py-8 sm:py-10 lg:py-12">
       <div className="max-w-7xl mx-auto">
         {/* Header - Mejorado para móviles */}
-        <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
+        <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8 mt-4 sm:mt-6 md:mt-8">
           <div className="px-4 sm:px-6 py-5 sm:py-8">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
@@ -1288,7 +1288,7 @@ export function Simulaciones_Alumno_comp() {
                 <Target className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 text-white" />
               </div>
               <h3 className="text-base sm:text-lg lg:text-xl font-extrabold text-gray-900 mb-1 sm:mb-2">Simulador por</h3>
-              <h4 className="text-sm sm:text-base lg:text-lg font-extrabold text-violet-700 mb-2 sm:mb-3">áreas generales</h4>
+              <h4 className="text-sm sm:text-base lg:text-lg font-extrabold text-violet-700 mb-3 sm:mb-4">áreas generales</h4>
               <p className="text-gray-700 leading-relaxed text-xs sm:text-sm mb-3 sm:mb-4 px-1">
                 EXANI II, PAA y evaluaciones generales para ingreso universitario
               </p>
@@ -1311,7 +1311,7 @@ export function Simulaciones_Alumno_comp() {
                 <Brain className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 text-white" />
               </div>
               <h3 className="text-base sm:text-lg lg:text-xl font-extrabold text-gray-900 mb-1 sm:mb-2">Simulador por</h3>
-              <h4 className="text-sm sm:text-base lg:text-lg font-extrabold text-indigo-700 mb-2 sm:mb-3">módulos específicos</h4>
+              <h4 className="text-sm sm:text-base lg:text-lg font-extrabold text-indigo-700 mb-3 sm:mb-4">módulos específicos</h4>
               <p className="text-gray-700 leading-relaxed text-xs sm:text-sm mb-3 sm:mb-4 px-1">
                 Simulaciones especializadas por área de conocimiento y carrera
               </p>
@@ -1404,10 +1404,10 @@ export function Simulaciones_Alumno_comp() {
     const hasInitialArea = allowedSimulationAreas.length > 0;
 
     return (
-      <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
+      <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 pt-6 sm:pt-8 md:pt-10 py-4 lg:py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header con navegación - Mejorado para móviles */}
-          <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
+          <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8 mt-4 sm:mt-6 md:mt-8">
             <div className="px-4 sm:px-6 py-5 sm:py-8">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div className="flex items-center space-x-3 sm:space-x-4">
@@ -1536,23 +1536,23 @@ export function Simulaciones_Alumno_comp() {
 
   // NIVEL 3: Tabla de simulaciones
   const renderSimulaciones = () => (
-    <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-4 lg:py-8">
+    <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 pt-6 sm:pt-8 md:pt-10 py-4 lg:py-8">
       <div className="max-w-7xl mx-auto">
         {/* Header con navegación - Mejorado para móviles */}
-        <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
+        <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8 mt-4 sm:mt-6 md:mt-8">
           <div className="px-4 sm:px-6 py-5 sm:py-8">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="relative flex items-center justify-center">
                 <button
                   onClick={handleGoBack}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 active:scale-95 rounded-xl transition-all touch-manipulation"
+                  className="absolute left-0 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 active:scale-95 rounded-xl transition-all touch-manipulation"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div>
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 mb-2">
+                <div className="text-center px-2">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 mb-2 break-words">
                     {selectedTipo === 'generales' ? 'Simulaciones Generales' :
-                      selectedModulo ? `Simulaciones - ${selectedModulo.titulo}` : 'Simulaciones'}
+                      selectedModulo ? selectedModulo.titulo : 'Simulaciones'}
                   </h1>
                   <p className="text-sm sm:text-base text-gray-600 font-medium">
                     {selectedTipo === 'generales' ? 'Exámenes generales de ingreso universitario' :
@@ -1584,7 +1584,7 @@ export function Simulaciones_Alumno_comp() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center text-center">
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-cyan-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent tracking-wide">
                   SIMULACIONES DISPONIBLES
                 </h2>

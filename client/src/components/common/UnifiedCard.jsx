@@ -51,7 +51,7 @@ export const UnifiedCard = ({
         <div className={`w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform shadow-lg ring-2 ring-white/50 ${iconWrapperClass}`}>
           {icon}
         </div>
-        <h3 className="text-xs xs:text-sm sm:text-base font-extrabold text-gray-900 leading-tight mb-1.5 sm:mb-2 line-clamp-2 sm:line-clamp-3 flex-shrink-0 px-1">{title}</h3>
+        <h3 className="text-xs xs:text-sm sm:text-base font-extrabold text-gray-900 leading-tight mb-1.5 sm:mb-2 line-clamp-2 flex-shrink-0 px-1">{title}</h3>
         {description && (
           <p className="text-gray-600 text-[10px] xs:text-xs sm:text-sm mb-2 sm:mb-3 leading-relaxed line-clamp-2 sm:line-clamp-3 flex-shrink-0 px-1">
             {description}

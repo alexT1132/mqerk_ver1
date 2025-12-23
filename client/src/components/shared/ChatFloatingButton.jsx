@@ -381,7 +381,7 @@ const ChatFloatingButton = () => {
 
     // Clases CSS base (si position es null, usamos bottom/right por defecto)
     const defaultClasses = !position
-        ? "fixed bottom-24 md:bottom-6 right-6"
+        ? "fixed bottom-20 sm:bottom-6 right-4 sm:right-6"
         : "fixed";
 
     return (
@@ -393,13 +393,13 @@ const ChatFloatingButton = () => {
             {/* Ventana de Chat - Se renderiza relativa al contenedor movible */}
             {isOpen && (
                 <div
-                    className="w-80 sm:w-96 h-[32rem] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300 absolute bottom-16 right-0 origin-bottom-right"
+                    className="w-[calc(100vw-2rem)] max-w-sm sm:max-w-md h-[85vh] max-h-[32rem] sm:h-[32rem] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300 absolute bottom-16 right-0 origin-bottom-right"
                     // Evitar propagación del click/drag desde la ventana
                     onMouseDown={e => e.stopPropagation()}
                     onTouchStart={e => e.stopPropagation()}
                 >
                     {/* Header Dinámico */}
-                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-3 text-white shadow-md shrink-0 cursor-auto">
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-2 sm:p-3 text-white shadow-md shrink-0 cursor-auto">
                         <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-2">
                                 <div className="bg-white/20 p-1.5 rounded-full relative">
@@ -411,10 +411,10 @@ const ChatFloatingButton = () => {
                                     )}
                                 </div>
                                 <div className="flex flex-col">
-                                    <h3 className="font-bold text-sm leading-tight">
+                                    <h3 className="font-bold text-xs sm:text-sm leading-tight">
                                         {category === 'academic' ? advisorName : 'Soporte Técnico'}
                                     </h3>
-                                    <p className="text-[10px] text-indigo-100 opacity-90 flex items-center gap-1">
+                                    <p className="text-[9px] sm:text-[10px] text-indigo-100 opacity-90 flex items-center gap-1">
                                         <span className={`w-1.5 h-1.5 rounded-full inline-block ${currentOnlineStatus ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}></span>
                                         {currentOnlineStatus ? 'En línea' : 'Desconectado'}
                                     </p>
@@ -426,16 +426,16 @@ const ChatFloatingButton = () => {
                         </div>
 
                         {/* Selector de Canal */}
-                        <div className="flex gap-2 bg-black/10 p-1 rounded-lg">
+                        <div className="flex gap-1 sm:gap-2 bg-black/10 p-1 rounded-lg">
                             <button
                                 onClick={() => setCategory('academic')}
-                                className={`flex-1 text-xs py-1.5 px-2 rounded-md transition-all ${category === 'academic' ? 'bg-white text-indigo-700 shadow-sm font-semibold' : 'text-white/70 hover:bg-white/10'}`}
+                                className={`flex-1 text-[10px] sm:text-xs py-1.5 px-1 sm:px-2 rounded-md transition-all ${category === 'academic' ? 'bg-white text-indigo-700 shadow-sm font-semibold' : 'text-white/70 hover:bg-white/10'}`}
                             >
                                 Tutor Académico
                             </button>
                             <button
                                 onClick={() => setCategory('support')}
-                                className={`flex-1 text-xs py-1.5 px-2 rounded-md transition-all ${category === 'support' ? 'bg-white text-indigo-700 shadow-sm font-semibold' : 'text-white/70 hover:bg-white/10'}`}
+                                className={`flex-1 text-[10px] sm:text-xs py-1.5 px-1 sm:px-2 rounded-md transition-all ${category === 'support' ? 'bg-white text-indigo-700 shadow-sm font-semibold' : 'text-white/70 hover:bg-white/10'}`}
                             >
                                 Soporte Técnico
                             </button>
@@ -443,7 +443,7 @@ const ChatFloatingButton = () => {
                     </div>
 
                     {/* Lista de Mensajes */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 scrollbar-thin scrollbar-thumb-gray-200 cursor-auto">
+                    <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 sm:space-y-4 bg-gray-50/50 scrollbar-thin scrollbar-thumb-gray-200 cursor-auto">
                         {loading && (
                             <div className="flex justify-center py-4">
                                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
@@ -487,14 +487,14 @@ const ChatFloatingButton = () => {
                     </div>
 
                     {/* Input Area */}
-                    <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-100 flex gap-2 shrink-0 cursor-auto">
+                    <form onSubmit={handleSend} className="p-2 sm:p-3 bg-white border-t border-gray-100 flex gap-2 shrink-0 cursor-auto">
                         <input
                             type="text"
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder={`Escribe a ${category === 'academic' ? 'tu tutor' : 'soporte'}...`}
                             onMouseDown={e => e.stopPropagation()} // Allow selecting text
-                            className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 focus:bg-white transition-all placeholder-gray-400"
+                            className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 focus:bg-white transition-all placeholder-gray-400"
                         />
                         <button
                             type="submit"

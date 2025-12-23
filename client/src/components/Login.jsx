@@ -6,16 +6,35 @@ import ParticlesBackground from "./ParticlesBackground.jsx";
 
 // Login moderno con diseño más limpio y dark-mode real
 export default function LoginResponsive() {
-  const { register, handleSubmit } = useForm({ defaultValues: { rememberMe: true } });
+  const { register, handleSubmit, setValue } = useForm({ defaultValues: { rememberMe: true } });
   const { signin, isAuthenticated, user, errors } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
 
+  // Cargar usuario guardado al montar el componente
+  useEffect(() => {
+    try {
+      const savedUsername = localStorage.getItem('rememberedUsername');
+      if (savedUsername) {
+        setValue('usuario', savedUsername);
+      }
+    } catch (e) {
+      console.warn('No se pudo cargar el usuario guardado:', e);
+    }
+  }, [setValue]);
+
   const onSubmit = handleSubmit(async (data) => {
     if (submitting) return;
     setSubmitting(true);
     try {
+      // Guardar o eliminar usuario según checkbox
+      if (data.rememberMe) {
+        localStorage.setItem('rememberedUsername', (data.usuario || '').trim());
+      } else {
+        localStorage.removeItem('rememberedUsername');
+      }
+
       await signin({
         ...data,
         usuario: (data.usuario || "").trim(),
@@ -43,7 +62,7 @@ export default function LoginResponsive() {
       // Limpiar curso seleccionado al iniciar sesión para forzar selección
       try {
         localStorage.removeItem("cursoSeleccionado");
-      } catch {}
+      } catch { }
       // Siempre redirigir a inicio para seleccionar curso
       navigate("/asesor/inicio", { replace: true });
       return;
@@ -170,7 +189,7 @@ export default function LoginResponsive() {
                     <div className="mt-2 relative">
                       <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-zinc-400 dark:text-zinc-500">
                         {/* user icon */}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21a8 8 0 1 0-16 0" /><circle cx="12" cy="7" r="4" /></svg>
                       </span>
                       <input id="login-usuario" type="text" autoComplete="username" inputMode="email" autoCapitalize="none" autoCorrect="off"
                         className="block w-full rounded-xl border border-zinc-300/80 bg-white text-zinc-900 placeholder-zinc-400 focus:ring-2 focus:ring-[#7a24d8] focus:border-[#7a24d8] pl-10 pr-3 py-2.5 dark:bg-zinc-900/60 dark:text-zinc-100 dark:placeholder-zinc-500 dark:border-zinc-700"
@@ -184,23 +203,23 @@ export default function LoginResponsive() {
                     <div className="mt-2 relative">
                       <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-zinc-400 dark:text-zinc-500">
                         {/* lock icon */}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                       </span>
                       <input id="login-password" type={showPwd ? "text" : "password"} autoComplete="current-password" autoCapitalize="none" autoCorrect="off"
                         className="block w-full rounded-xl border border-zinc-300/80 bg-white text-zinc-900 placeholder-zinc-400 focus:ring-2 focus:ring-[#7a24d8] focus:border-[#7a24d8] pl-10 pr-10 py-2.5 dark:bg-zinc-900/60 dark:text-zinc-100 dark:placeholder-zinc-500 dark:border-zinc-700"
                         placeholder="••••••••" {...register("contraseña", { required: true })} />
                       <button type="button" onClick={() => setShowPwd((v) => !v)} aria-label={showPwd ? "Ocultar contraseña" : "Mostrar contraseña"} className="absolute inset-y-0 right-2 inline-flex items-center px-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200">
                         {showPwd ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5 0-9.27-3-11-8 1.04-2.71 2.98-4.94 5.41-6.31"/><path d="M1 1l22 22"/><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M6.1 6.1A10.94 10.94 0 0 1 12 4c5 0 9.27 3 11 8-.64 1.67-1.64 3.16-2.87 4.35"/></svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5 0-9.27-3-11-8 1.04-2.71 2.98-4.94 5.41-6.31" /><path d="M1 1l22 22" /><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M6.1 6.1A10.94 10.94 0 0 1 12 4c5 0 9.27 3 11 8-.64 1.67-1.64 3.16-2.87 4.35" /></svg>
                         ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                         )}
                       </button>
                     </div>
                   </div>
 
-                  {/* Remember + Olvidaste */}
-                  <div className="flex items-center justify-between">
+                  {/* Remember + Olvidaste - Mejorado para móviles */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
                     <label htmlFor="remember-me" className="inline-flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300 select-none">
                       <input id="remember-me" type="checkbox" className="accent-[#7a24d8] dark:accent-[#7a24d8]" {...register("rememberMe")} />
                       Recuérdame

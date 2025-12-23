@@ -164,7 +164,9 @@ function SimulacionGraficaHistorial({
         data.count = (data.count || 0) + 1;
         localStorage.setItem(AI_USAGE_KEY, JSON.stringify(data));
       }
-      setAiUsage(getUsageToday());
+      const newUsage = getUsageToday();
+      setAiUsage(newUsage);
+      console.log('AI Usage incremented:', newUsage);
     } catch (e) {
       console.error('Error incrementando uso de IA:', e);
     }
@@ -198,12 +200,15 @@ function SimulacionGraficaHistorial({
     return () => clearTimeout(t);
   }, [cooldownIA]);
 
-  // Cargar uso de IA al abrir la página
+  // Cargar uso de IA al abrir la página y cuando cambie el límite
   useEffect(() => {
     if (isOpen) {
-      setAiUsage(getUsageToday());
+      const usage = getUsageToday();
+      setAiUsage(usage);
+      console.log('AI Usage loaded:', usage);
     }
-  }, [isOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, DAILY_LIMIT]);
 
 
   // Función para calcular métricas de efectividad comparando el análisis IA con reglas heurísticas locales
@@ -1656,72 +1661,73 @@ function SimulacionGraficaHistorial({
 
         {/* Análisis detallado de preguntas (inline) */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-6 mb-6 sm:mb-8">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <div className="flex items-center">
-              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500 mr-2 flex-shrink-0" />
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Análisis detallado de preguntas</h3>
-            </div>
+          {/* Título del contenedor */}
+          <div className="flex items-center mb-3 sm:mb-4">
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500 mr-2 flex-shrink-0" />
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Análisis detallado de preguntas</h3>
+          </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={generarAnalisisDetallado}
-                disabled={isLoadingAnalysis || (historial?.intentos?.length || 0) < MIN_INTENTOS_TENDENCIA || aiUsage.remaining === 0}
-                title={
-                  aiUsage.remaining === 0 ? 'Límite diario de análisis alcanzado. Vuelve mañana.' :
-                    (historial?.intentos?.length || 0) < MIN_INTENTOS_TENDENCIA ? `Requiere mínimo ${MIN_INTENTOS_TENDENCIA} intentos` :
-                      'Generar análisis con IA'
-                }
-                className="flex items-center justify-center w-full sm:w-auto space-x-2 px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors text-sm"
-              >
-                {isLoadingAnalysis ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Analizando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Generar análisis</span>
-                  </>
-                )}
-              </button>
-              {/* Indicador de uso de IA - MÁS VISIBLE */}
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 ${aiUsage.remaining === 0 ? 'bg-red-50 border-red-300' :
-                aiUsage.remaining <= 1 ? 'bg-yellow-50 border-yellow-300' :
-                  aiUsage.remaining <= 2 ? 'bg-orange-50 border-orange-300' :
-                    'bg-blue-50 border-blue-200'
-                }`}>
-                <Brain className={`w-5 h-5 ${aiUsage.remaining === 0 ? 'text-red-600' :
-                  aiUsage.remaining <= 1 ? 'text-yellow-600' :
-                    aiUsage.remaining <= 2 ? 'text-orange-600' :
-                      'text-blue-600'
-                  }`} />
-                <div className="flex flex-col">
-                  <span className="text-xs font-medium text-gray-700">Análisis IA hoy:</span>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-bold ${aiUsage.remaining === 0 ? 'text-red-600' :
-                      aiUsage.remaining <= 1 ? 'text-yellow-700' :
-                        aiUsage.remaining <= 2 ? 'text-orange-600' :
-                          'text-blue-600'
-                      }`}>
-                      {aiUsage.remaining}/{aiUsage.limit}
+          {/* Botones y contador - Siempre en fila (dos columnas) */}
+          <div className="flex flex-row items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+
+            <button
+              onClick={generarAnalisisDetallado}
+              disabled={isLoadingAnalysis || (historial?.intentos?.length || 0) < MIN_INTENTOS_TENDENCIA || aiUsage.remaining === 0}
+              title={
+                aiUsage.remaining === 0 ? 'Límite diario de análisis alcanzado. Vuelve mañana.' :
+                  (historial?.intentos?.length || 0) < MIN_INTENTOS_TENDENCIA ? `Requiere mínimo ${MIN_INTENTOS_TENDENCIA} intentos` :
+                    'Generar análisis con IA'
+              }
+              className="flex items-center justify-center space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
+            >
+              {isLoadingAnalysis ? (
+                <>
+                  <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                  <span>Analizando...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>Generar análisis</span>
+                </>
+              )}
+            </button>
+            {/* Indicador de uso de IA - Optimizado para móviles */}
+            <div className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border-2 min-h-[44px] ml-6 sm:ml-8 ${aiUsage.remaining === 0 ? 'bg-red-50 border-red-300' :
+              aiUsage.remaining <= 1 ? 'bg-yellow-50 border-yellow-300' :
+                aiUsage.remaining <= 2 ? 'bg-orange-50 border-orange-300' :
+                  'bg-blue-50 border-blue-200'
+              }`}>
+              <Brain className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${aiUsage.remaining === 0 ? 'text-red-600' :
+                aiUsage.remaining <= 1 ? 'text-yellow-600' :
+                  aiUsage.remaining <= 2 ? 'text-orange-600' :
+                    'text-blue-600'
+                }`} />
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] sm:text-xs font-medium text-gray-700 whitespace-nowrap">Análisis IA hoy:</span>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <span className={`text-xs sm:text-sm font-bold whitespace-nowrap ${aiUsage.remaining === 0 ? 'text-red-600' :
+                    aiUsage.remaining <= 1 ? 'text-yellow-700' :
+                      aiUsage.remaining <= 2 ? 'text-orange-600' :
+                        'text-blue-600'
+                    }`}>
+                    {aiUsage.remaining}/{aiUsage.limit}
+                  </span>
+                  {aiUsage.remaining === 0 && (
+                    <span className="hidden sm:inline text-[10px] text-red-600 font-semibold animate-pulse whitespace-nowrap">
+                      ⚠️ Límite alcanzado
                     </span>
-                    {aiUsage.remaining === 0 && (
-                      <span className="text-[10px] text-red-600 font-semibold animate-pulse">
-                        ⚠️ Límite alcanzado
-                      </span>
-                    )}
-                    {aiUsage.remaining === 1 && (
-                      <span className="text-[10px] text-yellow-700 font-semibold">
-                        ⚡ Último disponible
-                      </span>
-                    )}
-                    {aiUsage.remaining === 2 && (
-                      <span className="text-[10px] text-orange-600 font-semibold">
-                        ⚠️ Quedan 2
-                      </span>
-                    )}
-                  </div>
+                  )}
+                  {aiUsage.remaining === 1 && (
+                    <span className="hidden sm:inline text-[10px] text-yellow-700 font-semibold whitespace-nowrap">
+                      ⚡ Último disponible
+                    </span>
+                  )}
+                  {aiUsage.remaining === 2 && (
+                    <span className="hidden sm:inline text-[10px] text-orange-600 font-semibold whitespace-nowrap">
+                      ⚠️ Quedan 2
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
