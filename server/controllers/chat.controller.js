@@ -310,13 +310,37 @@ export const getSupportStudents = async (req, res) => {
 
         const db = (await import('../db.js')).default;
 
-        // Obtener estudiantes únicos que han enviado mensajes de soporte
+        // Obtener TODOS los estudiantes Y asesores activos
+        // Estudiantes: verificacion=2, sin soft-delete, estatus='Activo'
+        // Asesores: status='completed' (aprobados)
         const sql = `
-            SELECT DISTINCT e.id, e.nombre, e.apellidos, e.foto, e.grupo
-            FROM chat_messages cm
-            JOIN estudiantes e ON cm.student_id = e.id
-            WHERE cm.category = 'support'
-            ORDER BY e.nombre, e.apellidos
+            SELECT 
+                e.id, 
+                e.nombre COLLATE utf8mb4_unicode_ci as nombre, 
+                e.apellidos COLLATE utf8mb4_unicode_ci as apellidos, 
+                e.foto COLLATE utf8mb4_unicode_ci as foto, 
+                e.grupo COLLATE utf8mb4_unicode_ci as grupo, 
+                'estudiante' as tipo
+            FROM estudiantes e
+            LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+            WHERE e.verificacion = 2
+              AND sd.id IS NULL
+              AND (e.estatus = 'Activo' OR e.estatus IS NULL)
+            
+            UNION
+            
+            SELECT 
+                ap.id, 
+                ap.nombres COLLATE utf8mb4_unicode_ci as nombre, 
+                ap.apellidos COLLATE utf8mb4_unicode_ci as apellidos, 
+                COALESCE(perf.doc_fotografia, '/default-avatar.png') COLLATE utf8mb4_unicode_ci as foto,
+                COALESCE(perf.grupo_asesor, '') COLLATE utf8mb4_unicode_ci as grupo,
+                'asesor' as tipo
+            FROM asesor_preregistros ap
+            LEFT JOIN asesor_perfiles perf ON perf.preregistro_id = ap.id
+            WHERE ap.status = 'completed'
+            
+            ORDER BY nombre, apellidos
         `;
 
         const [rows] = await db.query(sql);

@@ -523,7 +523,7 @@ const InicioAlumnoDashboard = ({
   }, [mostrarBloqueo, activeSection, goToWelcome]);
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden">
+    <div className="relative min-h-full w-full">
       {/* Modal de aviso de pago cercano/tolerancia */}
       {showPagoAviso && pagoAviso && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
@@ -601,9 +601,9 @@ const InicioAlumnoDashboard = ({
 
       {/* Mostrar mensaje de bienvenida cuando NO hay sección activa o cuando hay BLOQUEO */}
       {(!activeSection || mostrarBloqueo) && (
-        <div className={`min-h-screen w-full relative transition-all duration-1000`}>
+        <div className={`min-h-full w-full relative transition-all duration-1000`}>
           {/* Fondo a pantalla completa sin scroll secundario */}
-          <div className={`fixed inset-0 w-screen h-screen bg-gradient-to-br ${themes[currentTheme]} z-0 pointer-events-none`} />
+          <div className={`fixed inset-0 bg-gradient-to-br ${themes[currentTheme]} z-0 pointer-events-none`} />
 
           {/* Partículas flotantes */}
           <FloatingParticles />
@@ -649,18 +649,23 @@ const InicioAlumnoDashboard = ({
             ))}
           </div>
 
-          {/* Layout principal para bienvenida (centrado y sin sangría lateral excesiva) */}
-          <div className="relative z-10 min-h-screen p-2 sm:p-4 md:p-6 lg:p-8 pt-14 sm:pt-20 md:pt-24 lg:pt-28">
-            {/* Header con saludo animado - Mejorado para móviles */}
-            <div className={`text-center mb-2 sm:mb-10 md:mb-12 lg:mb-16 transition-all duration-1000 ${elementsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <h1 className="text-[2.5rem] leading-[1.1] sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-pink-200 to-indigo-200 drop-shadow-xl hover:scale-[1.02] transition-transform cursor-pointer break-words px-1 sm:px-3 md:px-4 pb-2"
-                style={{ textWrap: 'balance', WebkitTextStroke: '0.5px rgba(255, 255, 255, 0.2)' }}>
+          {/* Layout principal para bienvenida - Padding fluido */}
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20 lg:py-24">
+            {/* Header con saludo animado - Tipografía fluida y robusta */}
+            <div className={`text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16 transition-all duration-1000 ${elementsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <h1 className="font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-pink-200 to-indigo-200 drop-shadow-xl hover:scale-[1.02] transition-transform cursor-default px-2 pb-2"
+                style={{
+                  fontSize: 'clamp(2rem, 5vw + 1rem, 4.5rem)',
+                  lineHeight: 1.1,
+                  textWrap: 'balance',
+                  WebkitTextStroke: '0.5px rgba(255, 255, 255, 0.2)'
+                }}>
                 {getWelcomeMessage()}
               </h1>
             </div>
 
-            {/* Grid principal - responsive mejorado para móviles */}
-            <div className={`max-w-7xl mx-auto ${mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido) ? 'grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-6 md:gap-8 xl:gap-12' : 'flex justify-center'} items-start`}>
+            {/* Grid principal - Adaptable */}
+            <div className={`w-full ${mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido) ? 'grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12' : 'flex justify-center'} items-start`}>
 
               {/* Columna izquierda - Área de comprobante O nombre del curso */}
               {(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) && (
@@ -824,7 +829,7 @@ const InicioAlumnoDashboard = ({
                 {/* Reloj grande con efecto 3D grueso y sólido - Optimizado para móviles */}
                 <div className="text-center mb-6 sm:mb-8 group">
                   <div
-                    className={`${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-[22vw] sm:text-7xl md:text-8xl lg:text-9xl xl:text-[11rem] 2xl:text-[13rem]' : 'text-[20vw] sm:text-6xl md:text-7xl lg:text-8xl xl:text-[10rem] 2xl:text-[11rem]'} font-black text-white mb-4 sm:mb-4 leading-[0.85] transition-all duration-300 ${clockPulse ? 'scale-[1.02]' : 'scale-100'} group-hover:scale-[1.02] cursor-pointer select-none tracking-tighter`}
+                    className={`${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-[18vw] sm:text-7xl md:text-8xl lg:text-9xl xl:text-[11rem] 2xl:text-[13rem]' : 'text-[16vw] sm:text-6xl md:text-7xl lg:text-8xl xl:text-[10rem] 2xl:text-[11rem]'} font-black text-white mb-4 sm:mb-4 leading-[0.85] transition-all duration-300 ${clockPulse ? 'scale-[1.02]' : 'scale-100'} group-hover:scale-[1.02] cursor-pointer select-none tracking-tighter`}
                     style={{
                       fontFamily: 'system-ui, -apple-system, sans-serif',
                       textShadow: `
@@ -836,12 +841,13 @@ const InicioAlumnoDashboard = ({
                       WebkitTextStroke: `${(!mostrarBloqueo && !tieneNumCursoValido) ? '2px' : '1px'} rgba(255, 255, 255, 0.5)`,
                       animation: 'breathe 8s ease-in-out infinite'
                     }}
+                    aria-hidden="true"
                   >
                     {hora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
 
                   {/* Fecha pequeña con hover - Mejorado para móviles */}
-                  <span className={`text-purple-200 font-semibold bg-white/15 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl ${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'} inline-block mx-auto hover:bg-white/25 transition-all duration-300 cursor-pointer border border-white/20 shadow-md`}>
+                  <span className={`text-purple-200 font-semibold bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full ${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'} inline-block relative z-30 mt-3 sm:mt-4 hover:bg-white/20 transition-all duration-300 cursor-default border border-white/10`}>
                     {hora.toLocaleDateString('es-ES', {
                       weekday: 'long',
                       year: 'numeric',

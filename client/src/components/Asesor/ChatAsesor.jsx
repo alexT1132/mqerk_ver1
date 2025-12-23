@@ -6,71 +6,6 @@ import axios from '../../api/axios';
 import { buildStaticUrl } from '../../utils/url';
 import { useLocation } from 'react-router-dom';
 
-// Audio preloading para evitar bloqueo del navegador
-let audioUnlocked = false;
-let notificationAudio = null;
-
-const unlockAudio = () => {
-    if (audioUnlocked) return;
-    try {
-        notificationAudio = new Audio('/notification-sound-for-whatsapp.mp3');
-        notificationAudio.volume = 0.5;
-        // Intentar reproducir y pausar inmediatamente para "desbloquear"
-        notificationAudio.play().then(() => {
-            notificationAudio.pause();
-            notificationAudio.currentTime = 0;
-            audioUnlocked = true;
-        }).catch(() => {
-            // Si falla, intentaremos de nuevo en la próxima interacción
-        });
-    } catch (e) {
-        console.log('Audio unlock failed:', e);
-    }
-};
-
-const playNotificationSound = () => {
-    try {
-        if (!audioUnlocked || !notificationAudio) {
-            // Si aún no está desbloqueado, intentar desbloquear
-            unlockAudio();
-            return;
-        }
-        // Reproducir el audio precargado
-        notificationAudio.currentTime = 0;
-        notificationAudio.play().catch(e => {
-            console.log('Audio play blocked:', e);
-        });
-    } catch (e) {
-        console.log('Audio error:', e);
-    }
-};
-
-// Notificación en el título de la pestaña
-let titleInterval = null;
-let originalTitle = document.title;
-
-const startTitleNotification = (count = 1) => {
-    if (titleInterval) return; // Ya está parpadeando
-
-    originalTitle = document.title;
-    let showingAlert = false;
-
-    titleInterval = setInterval(() => {
-        document.title = showingAlert
-            ? originalTitle
-            : `(${count}) Nuevo${count > 1 ? 's' : ''} mensaje${count > 1 ? 's' : ''}`;
-        showingAlert = !showingAlert;
-    }, 1000);
-};
-
-const stopTitleNotification = () => {
-    if (titleInterval) {
-        clearInterval(titleInterval);
-        titleInterval = null;
-        document.title = originalTitle;
-    }
-};
-
 const ChatAsesor = () => {
     const { user } = useAuth();
     const location = useLocation();
@@ -282,13 +217,13 @@ const ChatAsesor = () => {
                         // Verificar si estamos en la ruta del chat
                         const isInChatRoute = location.pathname === '/asesor/chat';
 
-                        // Reproducir sonido siempre que llegue un mensaje del estudiante
-                        playNotificationSound();
+                        // Sonido manejado por useAdminNotifications hook
+                        // playNotificationSound();
 
-                        // Si no estamos en la ruta del chat O la pestaña está oculta, mostrar alerta en título
-                        if (!isInChatRoute || document.hidden) {
-                            startTitleNotification(1);
-                        }
+                        // Título manejado por useAdminNotifications hook
+                        // if (!isInChatRoute || document.hidden) {
+                        //     startTitleNotification(1);
+                        // }
 
                         axios.post('/chat/read', { student_id: selectedStudent.id }).catch(() => { });
                         // Disparar update global (puede que el conteo baje o se mantenga)
@@ -304,13 +239,13 @@ const ChatAsesor = () => {
                         const isInChatRoute = location.pathname === '/asesor/chat';
 
                         // Reproducir sonido siempre
-                        playNotificationSound();
+                        // playNotificationSound();
 
                         // Notificar en título si no estamos en chat O si la pestaña está oculta
-                        if (!isInChatRoute || document.hidden) {
-                            const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0) + 1;
-                            startTitleNotification(totalUnread);
-                        }
+                        // if (!isInChatRoute || document.hidden) {
+                        //     const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0) + 1;
+                        //     startTitleNotification(totalUnread);
+                        // }
                     }
                 }
             }

@@ -91,7 +91,7 @@ function StudentAwareLayout() {
 
   // Regla simplificada: mostrar sidebar en TODAS las rutas del alumno excepto en los "runners"
   // (tomar quiz/simulación). Esto evita ocultamientos tras refresh en secciones como Asistencia/Calendario.
-  const isAlumnoSection = location.pathname.startsWith('/alumno/');
+  const isAlumnoSection = location.pathname.startsWith('/alumno');
   // Ocultar sidebar en Mis Cursos cuando aún no hay curso seleccionado
   const shouldShowSidebar = isAlumnoSection && !isQuizRoute && !isSimRoute && !(isCoursesRoute && !hasSelectedCourse);
 

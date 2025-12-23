@@ -119,9 +119,13 @@ export function AsesorProvider({ children }) {
                 if (!notificationAudio) {
                     notificationAudio = new Audio('/notification-sound-for-whatsapp.mp3');
                 }
+                // Silent unlock
+                const originalVolume = notificationAudio.volume;
+                notificationAudio.volume = 0;
                 notificationAudio.play().then(() => {
                     notificationAudio.pause();
                     notificationAudio.currentTime = 0;
+                    notificationAudio.volume = 0.5; // Restore volume
                     audioUnlocked = true;
                 }).catch(() => { });
             } catch (e) { }
@@ -162,7 +166,7 @@ export function AsesorProvider({ children }) {
         const handleInteraction = () => {
             unlockAudio();
         };
-        unlockAudio();
+        // Removed auto unlockAudio() call to prevent login noise
         document.addEventListener('click', handleInteraction, { once: true });
         document.addEventListener('keydown', handleInteraction, { once: true });
 
