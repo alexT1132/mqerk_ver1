@@ -206,14 +206,56 @@ goto MAIN_MENU
 :: ==========================================
 :GIT_BRANCH_MANAGER
 cls
-echo 🌲 GESTOR DE RAMAS
+echo [ GESTOR DE RAMAS ]
+echo.
+echo --- RAMAS LOCALES ---
 git branch
+echo.
+echo --- RAMAS REMOTAS ---
+git branch -r 2>nul
+echo.
 echo [1] Cambiar Rama (Checkout) 
 echo [2] Crear Rama Nueva
 echo [V] Volver
 set /p o="> "
-if "%o%"=="1" set /p b="Nombre rama: " & git checkout !b!
-if "%o%"=="2" set /p b="Nombre nueva rama: " & git checkout -b !b!
+if "%o%"=="1" (
+    echo.
+    set /p b="> Nombre de la rama (solo el nombre, ej: main, master, dev): "
+    if "!b!"=="" (
+        echo [X] No se ingreso nombre de rama.
+    ) else (
+        echo !b! | findstr /R "http:// https:// git@" >nul
+        if !errorlevel! equ 0 (
+            echo [X] ERROR: Has ingresado una URL. Debes ingresar solo el NOMBRE de la rama.
+            echo     Ejemplos validos: main, master, dev, feature/nueva-funcion
+            echo     El nombre de la rama aparece en la lista de arriba (sin "origin/").
+        ) else (
+            echo [*] Cambiando a rama: !b!
+            git checkout !b! 2>&1
+            if !errorlevel! neq 0 (
+                echo [X] Error al cambiar de rama. Verifica que la rama existe.
+                echo     Si es una rama remota, usa: git checkout -b !b! origin/!b!
+            ) else (
+                echo [+] Cambio exitoso.
+            )
+        )
+    )
+)
+if "%o%"=="2" (
+    echo.
+    set /p b="> Nombre de la nueva rama: "
+    if "!b!"=="" (
+        echo [X] No se ingreso nombre de rama.
+    ) else (
+        echo [*] Creando nueva rama: !b!
+        git checkout -b !b! 2>&1
+        if !errorlevel! neq 0 (
+            echo [X] Error al crear la rama. Verifica que el nombre sea valido.
+        ) else (
+            echo [+] Rama creada y activada.
+        )
+    )
+)
 pause
 goto MAIN_MENU
 
