@@ -70,9 +70,11 @@ export const buildStaticUrl = (p) => {
   s = s.replace(/^([A-Za-z]:)?\/+/, '/');
   if (!s.startsWith('/')) s = '/' + s;
 
-  // --- Desarrollo: devolver siempre rutas relativas para evitar Mixed Content cuando se usa túnel HTTPS ---
+  // En desarrollo, usar URL completa del backend para archivos estáticos
+  // Esto evita problemas con el proxy y permite ver errores más claros
   if (import.meta.env.DEV) {
-    return s;
+    const origin = getApiOrigin();
+    return `${origin}${s}`;
   }
 
   // En producción, sí construimos la URL completa como antes.

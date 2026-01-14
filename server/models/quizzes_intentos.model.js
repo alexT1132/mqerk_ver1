@@ -303,13 +303,15 @@ export const resumenQuizzesEstudiante = async (id_estudiante) => {
     const [rows] = await db.query(`
       SELECT q.*, 
         (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? ORDER BY qi.id DESC LIMIT 1) AS ultimo_puntaje,
+        (SELECT qi.created_at FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? ORDER BY qi.id DESC LIMIT 1) AS fecha_ultimo_intento,
         (SELECT MAX(qi.puntaje) FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ?) AS mejor_puntaje,
         (SELECT COUNT(*) FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ?) AS total_intentos,
-        (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? AND qi.intent_number = 1 LIMIT 1) AS oficial_puntaje
+        (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? AND qi.intent_number = 1 LIMIT 1) AS oficial_puntaje,
+        (SELECT qi.created_at FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? AND qi.intent_number = 1 LIMIT 1) AS fecha_oficial_intento
       FROM quizzes q
       WHERE q.activo = 1
       ORDER BY q.fecha_limite ASC, q.id DESC
-    `, [id_estudiante, id_estudiante, id_estudiante, id_estudiante]);
+    `, [id_estudiante, id_estudiante, id_estudiante, id_estudiante, id_estudiante, id_estudiante]);
     return rows;
   } catch (e) {
     // Si la tabla quizzes no existe, usar actividades como fallback
@@ -317,13 +319,15 @@ export const resumenQuizzesEstudiante = async (id_estudiante) => {
       const [rows] = await db.query(`
         SELECT q.*, 
           (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? ORDER BY qi.id DESC LIMIT 1) AS ultimo_puntaje,
+          (SELECT qi.created_at FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? ORDER BY qi.id DESC LIMIT 1) AS fecha_ultimo_intento,
           (SELECT MAX(qi.puntaje) FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ?) AS mejor_puntaje,
           (SELECT COUNT(*) FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ?) AS total_intentos,
-          (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? AND qi.intent_number = 1 LIMIT 1) AS oficial_puntaje
+          (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? AND qi.intent_number = 1 LIMIT 1) AS oficial_puntaje,
+          (SELECT qi.created_at FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? AND qi.intent_number = 1 LIMIT 1) AS fecha_oficial_intento
         FROM actividades q
         WHERE q.tipo = 'quiz' AND q.activo = 1
         ORDER BY q.fecha_limite ASC, q.id DESC
-      `, [id_estudiante, id_estudiante, id_estudiante, id_estudiante]);
+      `, [id_estudiante, id_estudiante, id_estudiante, id_estudiante, id_estudiante, id_estudiante]);
       return rows;
     }
     throw e;

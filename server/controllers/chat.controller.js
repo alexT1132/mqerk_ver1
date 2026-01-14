@@ -1,5 +1,5 @@
 import { saveMessage, getHistory, markAsRead } from '../models/chat.model.js';
-import { broadcastStudent, broadcastAdmins } from '../ws.js';
+import { broadcastStudent, broadcastAdmins, getOnlineStudents, getOnlineUsers } from '../ws.js';
 
 export const sendMessage = async (req, res) => {
     try {
@@ -34,10 +34,38 @@ export const sendMessage = async (req, res) => {
             return res.status(403).json({ error: 'Role not supported for chat' });
         }
 
-        if (!message) return res.status(400).json({ error: 'Message content required' });
+        // Si hay un archivo adjunto, procesarlo
+        let file_path = null;
+        let messageType = type || 'text';
+        
+        if (req.file) {
+            // Construir la ruta relativa del archivo
+            file_path = `/uploads/chat/${req.file.filename}`;
+            
+            // Determinar el tipo de mensaje basado en el tipo de archivo
+            if (req.file.mimetype.startsWith('image/')) {
+                messageType = 'image';
+            } else {
+                messageType = 'file';
+            }
+        }
 
-        // 1. Guardar en DB con category
-        const savedMsg = await saveMessage({ student_id, sender_role, message, type, category });
+        // El mensaje puede estar vacío si solo se envía un archivo
+        const messageContent = message || (req.file ? `Archivo: ${req.file.originalname}` : '');
+
+        if (!messageContent && !req.file) {
+            return res.status(400).json({ error: 'Message content or file required' });
+        }
+
+        // 1. Guardar en DB con category y file_path
+        const savedMsg = await saveMessage({ 
+            student_id, 
+            sender_role, 
+            message: messageContent, 
+            type: messageType, 
+            category, 
+            file_path 
+        });
 
         // 2. Emitir WebSocket
         const payload = {
@@ -45,14 +73,17 @@ export const sendMessage = async (req, res) => {
             data: savedMsg
         };
 
+        // Convertir student_id a número para asegurar compatibilidad con studentRooms
+        const studentIdNum = Number(student_id);
+
         if (sender_role === 'estudiante') {
             // El estudiante envía -> notificar a admins
             broadcastAdmins(payload);
             // Opcional: confirmar al estudiante por socket también si se quiere consistencia realtime
-            broadcastStudent(student_id, payload);
+            broadcastStudent(studentIdNum, payload);
         } else {
             // Admin envía -> notificar al estudiante
-            broadcastStudent(student_id, payload);
+            broadcastStudent(studentIdNum, payload);
             // Notificar a otros admins (para sincronizar entre soportes)
             broadcastAdmins(payload);
         }
@@ -205,12 +236,16 @@ export const getChatStatus = async (req, res) => {
         const { isRoleOnline } = await import('../ws.js');
 
         // Verificar status por separado
-        const advisorOnline = advisorId ? (isRoleOnline('asesor', advisorId) || isRoleOnline('admin', advisorId)) : false;
+        // Advisor: solo el asesor específico asignado al estudiante (no admins)
+        const advisorOnline = advisorId ? isRoleOnline('asesor', advisorId) : false;
 
-        // Soporte: cualquier admin o asesor conectado (general fallback)
-        const supportOnline = isRoleOnline('admin') || isRoleOnline('asesor');
+        // Soporte: cualquier admin conectado (no incluye asesores, solo admins para soporte técnico)
+        const supportOnline = isRoleOnline('admin');
+        
+        // Debug log para verificar el estado
+        console.log(`[getChatStatus] student_id=${userFull.id_estudiante}, advisorOnline=${advisorOnline}, supportOnline=${supportOnline}, advisorId=${advisorId}`);
 
-        // Retrocompatibilidad 'online' (general)
+        // Retrocompatibilidad 'online' (general) - solo para compatibilidad, no se usa en el frontend
         const online = advisorOnline || supportOnline;
 
         res.json({ online, advisorOnline, supportOnline, advisorName });
@@ -311,24 +346,25 @@ export const getSupportStudents = async (req, res) => {
         const db = (await import('../db.js')).default;
 
         // Obtener TODOS los estudiantes Y asesores activos
-        // Estudiantes: verificacion=2, sin soft-delete, estatus='Activo'
-        // Asesores: status='completed' (aprobados)
+        // Prioridad: Si un usuario tiene perfil de asesor, es asesor (no estudiante)
+        // Asesores: desde asesor_perfiles con usuario_id activo
+        // Estudiantes: verificacion=2, sin soft-delete, estatus='Activo', Y que NO tengan perfil de asesor
         const sql = `
+            -- Primero obtener asesores desde asesor_perfiles (tienen usuario_id asignado)
             SELECT 
-                e.id, 
-                e.nombre COLLATE utf8mb4_unicode_ci as nombre, 
-                e.apellidos COLLATE utf8mb4_unicode_ci as apellidos, 
-                e.foto COLLATE utf8mb4_unicode_ci as foto, 
-                e.grupo COLLATE utf8mb4_unicode_ci as grupo, 
-                'estudiante' as tipo
-            FROM estudiantes e
-            LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
-            WHERE e.verificacion = 2
-              AND sd.id IS NULL
-              AND (e.estatus = 'Activo' OR e.estatus IS NULL)
+                perf.id, 
+                COALESCE(ap.nombres, '') COLLATE utf8mb4_unicode_ci as nombre, 
+                COALESCE(ap.apellidos, '') COLLATE utf8mb4_unicode_ci as apellidos, 
+                COALESCE(perf.doc_fotografia, '/default-avatar.png') COLLATE utf8mb4_unicode_ci as foto,
+                COALESCE(perf.grupo_asesor, '') COLLATE utf8mb4_unicode_ci as grupo,
+                'asesor' as tipo
+            FROM asesor_perfiles perf
+            LEFT JOIN asesor_preregistros ap ON ap.id = perf.preregistro_id
+            WHERE perf.usuario_id IS NOT NULL
             
             UNION
             
+            -- Asesores desde preregistros que aún no tienen usuario asignado pero están completos
             SELECT 
                 ap.id, 
                 ap.nombres COLLATE utf8mb4_unicode_ci as nombre, 
@@ -339,6 +375,26 @@ export const getSupportStudents = async (req, res) => {
             FROM asesor_preregistros ap
             LEFT JOIN asesor_perfiles perf ON perf.preregistro_id = ap.id
             WHERE ap.status = 'completed'
+              AND (perf.usuario_id IS NULL OR perf.usuario_id = 0)
+            
+            UNION
+            
+            -- Estudiantes que NO son asesores (verificar que no tengan perfil de asesor)
+            SELECT 
+                e.id, 
+                e.nombre COLLATE utf8mb4_unicode_ci as nombre, 
+                e.apellidos COLLATE utf8mb4_unicode_ci as apellidos, 
+                e.foto COLLATE utf8mb4_unicode_ci as foto, 
+                e.grupo COLLATE utf8mb4_unicode_ci as grupo, 
+                'estudiante' as tipo
+            FROM estudiantes e
+            LEFT JOIN soft_deletes sd ON sd.id_estudiante = e.id
+            LEFT JOIN usuarios u ON u.id_estudiante = e.id
+            LEFT JOIN asesor_perfiles perf ON perf.usuario_id = u.id
+            WHERE e.verificacion = 2
+              AND sd.id IS NULL
+              AND (e.estatus = 'Activo' OR e.estatus IS NULL)
+              AND perf.id IS NULL  -- Excluir si tiene perfil de asesor
             
             ORDER BY nombre, apellidos
         `;
@@ -390,18 +446,37 @@ export const sendSupportMessage = async (req, res) => {
 
         const { student_id, message, type = 'text' } = req.body;
 
-        if (!student_id || !message) {
-            return res.status(400).json({ error: 'student_id and message required' });
+        // Si hay un archivo adjunto, procesarlo
+        let file_path = null;
+        let messageType = type || 'text';
+        
+        if (req.file) {
+            // Construir la ruta relativa del archivo
+            file_path = `/uploads/chat/${req.file.filename}`;
+            
+            // Determinar el tipo de mensaje basado en el tipo de archivo
+            if (req.file.mimetype.startsWith('image/')) {
+                messageType = 'image';
+            } else {
+                messageType = 'file';
+            }
+        }
+
+        // El mensaje puede estar vacío si solo se envía un archivo
+        const messageContent = message || (req.file ? `Archivo: ${req.file.originalname}` : '');
+
+        if (!student_id || (!messageContent && !req.file)) {
+            return res.status(400).json({ error: 'student_id and message or file required' });
         }
 
         const db = (await import('../db.js')).default;
 
         const sql = `
-            INSERT INTO chat_messages (student_id, sender_role, message, type, category, created_at)
-            VALUES (?, 'admin', ?, ?, 'support', NOW())
+            INSERT INTO chat_messages (student_id, sender_role, message, type, category, file_path, created_at)
+            VALUES (?, 'admin', ?, ?, 'support', ?, NOW())
         `;
 
-        const [result] = await db.query(sql, [student_id, message, type]);
+        const [result] = await db.query(sql, [student_id, messageContent, messageType, file_path]);
 
         // Obtener el mensaje guardado
         const [savedMsg] = await db.query('SELECT * FROM chat_messages WHERE id = ?', [result.insertId]);
@@ -412,7 +487,17 @@ export const sendSupportMessage = async (req, res) => {
             data: savedMsg[0]
         };
 
-        broadcastStudent(student_id, payload);
+        // Convertir student_id a número para asegurar compatibilidad con studentRooms
+        const studentIdNum = Number(student_id);
+        
+        console.log('[sendSupportMessage] Emitiendo mensaje por WebSocket:', {
+            student_id: studentIdNum,
+            sender_role: savedMsg[0]?.sender_role,
+            category: savedMsg[0]?.category,
+            message: savedMsg[0]?.message?.substring(0, 50)
+        });
+
+        broadcastStudent(studentIdNum, payload);
         broadcastAdmins(payload);
 
         res.json({ success: true, message: savedMsg[0] });
@@ -499,6 +584,40 @@ export const getSupportUnreadCount = async (req, res) => {
         });
     } catch (error) {
         console.error('getSupportUnreadCount error', error);
+        res.status(500).json({ error: 'Internal error' });
+    }
+};
+
+// Obtener estado online de estudiantes y asesores (para asesores/admins)
+export const getStudentsOnlineStatus = async (req, res) => {
+    try {
+        const user = req.user;
+        if (!user || (user.role !== 'asesor' && user.role !== 'admin')) {
+            return res.status(403).json({ error: 'Asesor or admin access required' });
+        }
+
+        const { studentIds, advisorUserIds } = getOnlineUsers();
+        
+        // Para el admin, necesitamos mapear los advisorUserIds a los IDs de asesor_perfiles
+        // porque la lista muestra IDs de asesor_perfiles, no usuario_id
+        const db = (await import('../db.js')).default;
+        let advisorIds = [];
+        
+        if (advisorUserIds.length > 0) {
+            const placeholders = advisorUserIds.map(() => '?').join(',');
+            const [advisorRows] = await db.query(
+                `SELECT id FROM asesor_perfiles WHERE usuario_id IN (${placeholders})`,
+                advisorUserIds
+            );
+            advisorIds = advisorRows.map(row => row.id);
+        }
+        
+        // Combinar estudiantes y asesores online
+        const allOnline = [...studentIds, ...advisorIds];
+        
+        res.json({ data: allOnline });
+    } catch (error) {
+        console.error('getStudentsOnlineStatus error', error);
         res.status(500).json({ error: 'Internal error' });
     }
 };

@@ -1,13 +1,18 @@
 import { Router } from 'express';
 import { geminiGenerate, geminiListModels, calificarRespuestaCorta } from '../controllers/gemini.controller.js';
-// import { verificarLimitesAI, registrarUsoAI, agregarInfoCuota } from '../middleware/aiUsageControl.js';
+import { authREquired } from '../middlewares/validateToken.js';
+import { verificarLimitesAI, registrarUsoAI } from '../middlewares/aiUsageControl.js';
 
 const router = Router();
 
 // Ruta para generar contenido con IA
-// NOTA: Middleware de control de límites deshabilitado temporalmente
-// TODO: Ejecutar migración 008_ai_usage_control.sql y luego habilitar middleware
-router.post('/ai/gemini/generate', geminiGenerate);
+router.post(
+  '/ai/gemini/generate',
+  authREquired,
+  verificarLimitesAI,
+  registrarUsoAI,
+  geminiGenerate
+);
 
 // Ruta para listar modelos disponibles
 router.get('/ai/gemini/models', geminiListModels);

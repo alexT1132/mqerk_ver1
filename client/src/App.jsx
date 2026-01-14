@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword2.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
 import Web from "./Web.jsx";
+import Cursos from "./components/mqerk/Cursos.jsx"; // <--- 1. IMPORTACIÓN AGREGADA
 import Blog from "./pages/web/Blog.jsx";
 import About from "./pages/web/About.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
@@ -29,6 +30,8 @@ import RegistroEstudiante from "./pages/alumnos/RegistroEstudiante.jsx";
 import RegisterAlumno from "./pages/alumnos/Register.jsx";
 import Eeau from "./pages/web/preview/Eeau.jsx";
 import Eeap from "./pages/web/preview/Eeap.jsx";
+import Politicas from "./pages/web/Politicas.jsx";
+import Terminos from "./pages/web/T&C.jsx";
 import { AlumnoDashboardBundle } from './components/student/AlumnoDashboardBundle.jsx'; 
 import { StudentProvider } from './context/StudentContext.jsx'; 
 import { ComprobanteProvider } from "./context/ComprobantesContext.jsx";
@@ -67,6 +70,10 @@ import QuizResultadosPage from './pages/alumnos/QuizResultadosPage.jsx';
 import SimulacionResultadosPage from './pages/alumnos/SimulacionResultadosPage.jsx';
 import { InactivityHandler } from './components/InactivityHandler.jsx';
 
+// temporalmente importamos el componente de conversión de WebP a PNG
+
+import WebPConverter from './components/tools/WebPConverter';
+
 export default function App(){
     return(
 
@@ -90,8 +97,12 @@ export default function App(){
                     <Route path='/index' element={<Index />} />
                     <Route path='/blog' element={<Blog />} />
                     <Route path='/acerca_de' element={<About />} />
+                    <Route path='/cursos' element={<Cursos fullPage={true} />} />
                     <Route path='/entrenamiento_examen_admision_universidad' element={<Eeau />} />
                     <Route path='/entrenamiento_examen_admision_preparatoria' element={<Eeap />} />
+                    <Route path="/politicas_de_privacidad" element={<Politicas />} />  
+                    <Route path="/terminos_y_condiciones" element={<Terminos />} /> 
+                    <Route path="/herramientas/convertidor" element={<WebPConverter />} />
 
                     {/* Catálogo de eventos y modalidades */}
                     <Route path="/talleres" element={<Talleres />} />
@@ -195,6 +206,9 @@ export default function App(){
 
                       {/* Panel Administrativo moderno (bundle) */}
                       <Route path="/administrativo/*" element={<AdminDashboardBundle />} />
+
+
+                      
 
                     </Route>
 

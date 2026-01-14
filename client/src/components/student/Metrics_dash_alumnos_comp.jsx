@@ -333,32 +333,32 @@ const getAcademicMotivationalPhrase = (academicStatus) => {
  * @param {string} props.title - Título de la modal.
  * @param {React.ReactNode} props.children - Contenido a mostrar dentro de la modal.
  */
-const ChartModal = ({ isOpen, onClose, title, children }) => {
+const ChartModal = ({ isOpen, onClose, title, children, maxWidth = "max-w-5xl" }) => {
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] relative flex flex-col overflow-hidden">
+      <div className={`bg-white rounded-none sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto ${maxWidth} sm:max-h-[95vh] relative flex flex-col overflow-hidden`}>
         {/* Header con gradiente */}
-        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-6 relative">
-          <h2 className="text-2xl font-bold text-white text-center pr-10">{title}</h2>
+        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-4 sm:p-6 relative shrink-0">
+          <h2 className="text-lg sm:text-2xl font-bold text-white text-center pr-8 sm:pr-10 leading-tight">{title}</h2>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white rounded-full p-2 transition-all duration-200 hover:scale-110"
+            className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-white/20 hover:bg-white/30 text-white rounded-full p-1.5 sm:p-2 transition-all duration-200 hover:scale-110"
             aria-label="Cerrar modal"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
         {/* Contenido con scroll si es necesario */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-gray-50">
           {children}
         </div>
       </div>
@@ -384,6 +384,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
   const [realMetricsData, setRealMetricsData] = useState(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [metricsError, setMetricsError] = useState(null);
+  const [showPersonalData, setShowPersonalData] = useState(false); // Estado para colapsar datos personales por defecto
 
   // Helper to build absolute URL for stored photos
   const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
@@ -457,21 +458,88 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         overallAverage = actividadAverage;
       }
 
-      // Generar datos para gráfico de progreso mensual (últimos 12 meses)
-      // Crear datos históricos básicos con el promedio actual en el último mes
+      // Generar datos para gráfico de progreso mensual (historial real)
+      const currentYear = new Date().getFullYear();
       const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      const monthlyAverageData = months.map((month, idx) => ({
-        month,
-        promedio: idx === 11 ? overallAverage : (overallAverage > 0 ? Math.max(0, overallAverage - (11 - idx) * 2) : 0)
-      }));
 
-      // Generar datos para gráfico de actividades/quiz (últimos 8 meses)
+      const getDate = (d) => d ? new Date(d) : null;
+
+      // Helper para calcular promedios acumulados por mes
+      const monthlyAverageData = months.map((month, idx) => {
+        const limitDate = new Date(currentYear, idx + 1, 0, 23, 59, 59); // Fin del mes
+
+        // Filtrar quizzes hasta esa fecha
+        const relevantQuizzes = quizzesArray.filter(q => {
+          const fecha = getDate(q.fecha_oficial_intento ?? q.fecha_ultimo_intento ?? q.created_at);
+          return fecha && fecha <= limitDate;
+        }).map(q => {
+          const puntaje = q.oficial_puntaje ?? q.mejor_puntaje ?? q.ultimo_puntaje;
+          const val = Number(puntaje);
+          return val > 10 ? val / 10 : val; // Normalizar 0-10
+        }).filter(p => p != null);
+
+        // Filtrar actividades hasta esa fecha
+        const relevantActs = actividadesArray.filter(a => {
+          const fecha = getDate(a.entregada_at ?? a.revisada_at ?? a.created_at);
+          return fecha && fecha <= limitDate;
+        }).map(a => {
+          const val = Number(a.calificacion);
+          if (isNaN(val) || a.calificacion == null) return null;
+          return val > 10 ? val / 10 : val; // Normalizar 0-10
+        }).filter(p => p != null);
+
+        // Calcular promedio ponderado acumulado
+        let qAvg = 0;
+        if (relevantQuizzes.length > 0) {
+          qAvg = relevantQuizzes.reduce((sum, val) => sum + val, 0) / relevantQuizzes.length;
+        }
+
+        let aAvg = 0;
+        if (relevantActs.length > 0) {
+          aAvg = relevantActs.reduce((sum, val) => sum + val, 0) / relevantActs.length;
+        }
+
+        let avg = 0;
+        if (relevantQuizzes.length > 0 && relevantActs.length > 0) {
+          avg = (qAvg * 0.6) + (aAvg * 0.4);
+        } else if (relevantQuizzes.length > 0) {
+          avg = qAvg;
+        } else if (relevantActs.length > 0) {
+          avg = aAvg;
+        }
+
+        return {
+          month,
+          promedio: Math.round(avg * 10) // Escala 0-100
+        };
+      });
+
+      // Generar datos para gráfico de actividades/quiz (últimos 8 meses - acumulativo real)
       const last8Months = months.slice(-8);
-      const activityProgress = last8Months.map((period, idx) => ({
-        period,
-        activities: idx === 7 ? activitiesProgress : Math.max(0, activitiesProgress - (7 - idx) * 3),
-        quizts: idx === 7 ? quizProgress : Math.max(0, quizProgress - (7 - idx) * 3)
-      }));
+      const activityProgressChartData = last8Months.map((period, idx) => {
+        // Mapear idx (0-7) a mes real (4-11, May-Dic)
+        // Nota: Esto asume visualización fija May-Dic. Idealmente debería ser dinámico.
+        const monthIndex = 4 + idx;
+        const limitDate = new Date(currentYear, monthIndex + 1, 0, 23, 59, 59);
+
+        const quizzesPasados = quizzesArray.filter(q => {
+          const fecha = getDate(q.fecha_oficial_intento ?? q.fecha_ultimo_intento ?? q.created_at);
+          const puntaje = Number(q.oficial_puntaje ?? q.mejor_puntaje ?? q.ultimo_puntaje);
+          return fecha && fecha <= limitDate && puntaje >= 70;
+        }).length;
+
+        const actsCompletadas = actividadesArray.filter(a => {
+          const fecha = getDate(a.entregada_at ?? a.revisada_at ?? a.created_at);
+          const estado = a.entrega_estado;
+          return fecha && fecha <= limitDate && (estado === 'revisada' || estado === 'entregada');
+        }).length;
+
+        return {
+          period,
+          quizts: totalQuizzes > 0 ? Math.round((quizzesPasados / totalQuizzes) * 100) : 0,
+          activities: totalActividades > 0 ? Math.round((actsCompletadas / totalActividades) * 100) : 0
+        };
+      });
 
       // Calcular feedback score (promedio de calificaciones de actividades o quizzes)
       const feedbackScore = actividadAverage || monthlyAverage || 0;
@@ -509,7 +577,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         },
         monthlyAverage: overallAverage,
         monthlyAverageData,
-        activityProgress,
+        activityProgress: activityProgressChartData,
         feedbackScore,
 
         // Procesar simuladores - separar generales de específicos
@@ -1065,122 +1133,142 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         </div>
       </div>
 
-      {/* Sección de Información del Usuario */}
-      <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 hover:shadow-3xl transition-all duration-150">
-
-        {/* Columna izquierda: Foto de perfil y nombre */}
-        <div className="flex flex-col items-center justify-center">
-          <div className="relative mb-4">
-            <img
-              src={currentUserData.profilePic}
-              alt={currentUserData.name}
-              className="w-32 h-32 rounded-full object-cover border-4 border-blue-400 shadow-xl hover:shadow-2xl transition-all duration-150 hover:scale-105"
-              // Fallback para errores de carga de imagen
-              onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/128x128/A0AEC0/FFFFFF?text=Foto"; }}
-            />
-            {/* Indicador de estado activo */}
-            <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-              <span className="text-white text-xs font-bold">✓</span>
-            </div>
-          </div>
-          <div className="text-center bg-white rounded-xl px-3 py-2 shadow-lg border border-gray-100">
-            <p className="text-lg font-bold text-gray-900 mb-1">{currentUserData.name}</p>
-            <div className="flex items-center justify-center text-xs text-green-600 font-medium">
-              <div className="w-1.5 h-1.5 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-              Estudiante Activo
-            </div>
-          </div>
-        </div>
-
-        {/* Columnas derechas para detalles de datos personales */}
-        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
-          <div className="md:col-span-2">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 mb-6 shadow-lg">
-              <h3 className="text-lg font-bold text-white flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 13a2 2 0 11-4 0 2 2 0 014 0z" />
+      {/* Sección de Información del Usuario - Colapsable */}
+      <div className="mb-6">
+        <button
+          onClick={() => setShowPersonalData(!showPersonalData)}
+          className="w-full bg-white rounded-xl shadow-lg border border-gray-200 p-4 flex items-center justify-between hover:bg-gray-50 transition-all duration-200 group ring-1 ring-gray-100"
+        >
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <img
+                src={currentUserData.profilePic}
+                alt={currentUserData.name}
+                className="w-14 h-14 rounded-full object-cover border-2 border-blue-500 shadow-md group-hover:scale-105 transition-transform duration-200"
+                onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/128x128/A0AEC0/FFFFFF?text=Foto"; }}
+              />
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white shadow-sm flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                DATOS PERSONALES
-              </h3>
+              </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="text-left">
+              <h3 className="text-lg font-extrabold text-gray-800 group-hover:text-blue-600 transition-colors">
+                {currentUserData.name}
+              </h3>
+              <p className="text-xs font-semibold text-gray-500 flex items-center">
+                <span className={`w-2 h-2 rounded-full mr-2 ${showPersonalData ? 'bg-blue-500' : 'bg-gray-400'}`}></span>
+                {showPersonalData ? 'Ocultar datos personales' : 'Ver datos personales completos'}
+              </p>
+            </div>
+          </div>
 
-              {/* Tarjeta de Correo Electrónico */}
-              <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1">
-                <div className="flex items-start">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 13H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Correo electrónico</p>
-                    <p className="text-sm font-bold text-gray-800 break-all">{currentUserData.email}</p>
+          <div className={`p-2 rounded-full bg-gray-100 group-hover:bg-blue-100 transition-colors duration-200`}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className={`h-6 w-6 text-gray-500 group-hover:text-blue-600 transform transition-transform duration-300 ${showPersonalData ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </button>
+
+        <div className={`transition-all duration-500 ease-in-out overflow-hidden ${showPersonalData ? 'max-h-[2000px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+          <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-200 hover:shadow-2xl transition-all duration-150">
+
+            {/* Contenedor de detalles de datos personales */}
+            <div className="w-full">
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 mb-6 shadow-lg">
+                <h3 className="text-lg font-bold text-white flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 13a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  DATOS PERSONALES
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                {/* Correo */}
+                <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1">
+                  <div className="flex items-start">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 13H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Correo electrónico</p>
+                      <p className="text-sm font-bold text-gray-800 break-all">{currentUserData.email}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Tarjeta de Número de Teléfono del Estudiante */}
-              <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1">
-                <div className="flex items-start">
-                  <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Mi número de teléfono</p>
-                    <p className="text-sm font-bold text-gray-800">{currentUserData.telefono || '—'}</p>
+                {/* Teléfono estudiante */}
+                <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1">
+                  <div className="flex items-start">
+                    <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Mi número de teléfono</p>
+                      <p className="text-sm font-bold text-gray-800">{currentUserData.telefono || '—'}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Tarjeta de Municipio o Comunidad */}
-              <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1">
-                <div className="flex items-start">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Municipio o comunidad</p>
-                    <p className="text-sm font-bold text-gray-800">{currentUserData.comunidad || '—'}</p>
+                {/* Municipio / Comunidad */}
+                <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1">
+                  <div className="flex items-start">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Municipio o comunidad</p>
+                      <p className="text-sm font-bold text-gray-800">{currentUserData.comunidad || '—'}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Tarjeta de Número de Teléfono del Tutor */}
-              <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1">
-                <div className="flex items-start">
-                  <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Teléfono de mi tutor</p>
-                    <p className="text-sm font-bold text-gray-800">{currentUserData.telTutor || '—'}</p>
+                {/* Teléfono tutor */}
+                <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1">
+                  <div className="flex items-start">
+                    <div className="w-10 h-10 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Teléfono de mi tutor</p>
+                      <p className="text-sm font-bold text-gray-800">{currentUserData.telTutor || '—'}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Tarjeta de Nombre del Tutor */}
-              <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1 sm:col-span-2">
-                <div className="flex items-start">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 15v2m-2 2h4M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Nombre de mi tutor</p>
-                    <p className="text-sm font-bold text-gray-800">{currentUserData.nombreTutor || '—'}</p>
+                {/* Nombre tutor - Ocupar más espacio si es posible */}
+                <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-150 hover:-translate-y-1 md:col-span-2 lg:col-span-1">
+                  <div className="flex items-start">
+                    <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 15v2m-2 2h4M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Nombre de mi tutor</p>
+                      <p className="text-sm font-bold text-gray-800">{currentUserData.nombreTutor || '—'}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
+              </div>
             </div>
           </div>
         </div>
@@ -1847,142 +1935,6 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
           );
         })()}
 
-        {/* Gráfica 1: Simuladores Generales */}
-        {(() => {
-          // Mostrar siempre que haya datos, incluso si todos tienen 0%
-          const hasGeneralData = currentMetricsData.simulatorGrades?.generales?.length > 0;
-
-          if (!hasGeneralData) return null;
-
-          return (
-            <div className="group cursor-pointer transition-all duration-300 hover:scale-105">
-              {/* Contenedor con gradiente azul-índigo */}
-              <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-3xl shadow-xl border-2 border-blue-200/50 p-6 hover:shadow-2xl transition-all duration-300 overflow-hidden">
-
-                {/* Efectos decorativos */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100/40 to-indigo-100/40 rounded-full blur-2xl"></div>
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-indigo-100/40 to-blue-100/40 rounded-full blur-xl"></div>
-
-                {/* Contenido */}
-                <div className="relative z-10">
-
-                  {/* Título */}
-                  <div className="text-center mb-5">
-                    <div className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full px-4 py-2 mb-3 shadow-lg">
-                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                      </svg>
-                      <h3 className="text-base font-black">Simuladores Generales</h3>
-                    </div>
-                    <p className="text-xs text-gray-600 font-medium">Áreas Fundamentales</p>
-                  </div>
-
-                  {/* Barras horizontales */}
-                  <div className="space-y-3">
-                    {currentMetricsData.simulatorGrades.generales.map((item, index) => (
-                      <div key={index} className="group/bar">
-                        {/* Etiqueta arriba de la barra */}
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-bold" style={{ color: item.color }}>
-                            {item.area}
-                          </span>
-                          <span className="text-xs font-bold text-gray-700">
-                            {item.puntaje}%
-                          </span>
-                        </div>
-                        {/* Barra */}
-                        <div className="w-full bg-white/60 backdrop-blur-sm h-3 relative flex items-center overflow-hidden rounded-full border border-gray-200 shadow-sm">
-                          <div
-                            className="h-full transition-all duration-500 ease-out rounded-full shadow-inner"
-                            style={{
-                              width: `${Math.max(item.puntaje, 2)}%`,
-                              background: `linear-gradient(90deg, ${item.color}dd, ${item.color})`
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Gráfica 2: Módulos Específicos */}
-        {(() => {
-          const hasSpecificData = currentMetricsData.simulatorGrades?.especificos?.length > 0 &&
-            currentMetricsData.simulatorGrades.especificos.some(item => item.puntaje > 0);
-
-          if (!hasSpecificData) return null;
-
-          return (
-            <div className="group cursor-pointer transition-all duration-300 hover:scale-105">
-              {/* Contenedor con gradiente púrpura-rosa */}
-              <div className="relative bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 rounded-3xl shadow-xl border-2 border-purple-200/50 p-6 hover:shadow-2xl transition-all duration-300 overflow-hidden">
-
-                {/* Efectos decorativos */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100/40 to-pink-100/40 rounded-full blur-2xl"></div>
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-pink-100/40 to-purple-100/40 rounded-full blur-xl"></div>
-
-                {/* Contenido */}
-                <div className="relative z-10">
-
-                  {/* Título */}
-                  <div className="text-center mb-5">
-                    <div className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full px-4 py-2 mb-3 shadow-lg">
-                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 14l9-5-9-5-9 5 9 5z" />
-                        <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                      </svg>
-                      <h3 className="text-base font-black">Módulos Específicos</h3>
-                    </div>
-                    <p className="text-xs text-gray-600 font-medium">Simuladores por Universidad</p>
-                  </div>
-
-                  {/* Barras */}
-                  <div className="space-y-4">
-                    {currentMetricsData.simulatorGrades.especificos.map((item, index) => {
-                      // Truncar nombre si es muy largo
-                      const nombreCompleto = item.modulo || 'Sin nombre';
-                      const nombreTruncado = nombreCompleto.length > 25
-                        ? nombreCompleto.substring(0, 22) + '...'
-                        : nombreCompleto;
-
-                      return (
-                        <div key={index} className="group/bar">
-                          {/* Etiqueta arriba de la barra */}
-                          <div className="flex items-center justify-between mb-1">
-                            <span
-                              className="text-xs font-bold text-purple-600 truncate max-w-[70%]"
-                              title={nombreCompleto}
-                            >
-                              {nombreTruncado}
-                            </span>
-                            <span className="text-xs font-bold text-gray-700">
-                              {item.puntaje}%
-                            </span>
-                          </div>
-                          {/* Barra */}
-                          <div className="w-full bg-white/60 backdrop-blur-sm h-3 relative flex items-center overflow-hidden rounded-full border border-gray-200 shadow-sm">
-                            <div
-                              className="h-full transition-all duration-500 ease-out rounded-full bg-gradient-to-r from-purple-600 to-pink-600 shadow-inner"
-                              style={{ width: `${Math.max(item.puntaje, 2)}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
-
         {/* Feedback - Velocímetro Mejorado y Más Grande */}
         <div className="group cursor-pointer transition-all duration-300 hover:scale-105">
           {/* Contenedor con gradiente moderno */}
@@ -2240,6 +2192,141 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
           </div>
         </div>
 
+        {/* Gráfica 1: Simuladores Generales */}
+        {(() => {
+          // Mostrar siempre que haya datos, incluso si todos tienen 0%
+          const hasGeneralData = currentMetricsData.simulatorGrades?.generales?.length > 0;
+
+          if (!hasGeneralData) return null;
+
+          return (
+            <div className="group cursor-pointer transition-all duration-300 hover:scale-105">
+              {/* Contenedor con gradiente azul-índigo */}
+              <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-3xl shadow-xl border-2 border-blue-200/50 p-6 hover:shadow-2xl transition-all duration-300 overflow-hidden">
+
+                {/* Efectos decorativos */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100/40 to-indigo-100/40 rounded-full blur-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-indigo-100/40 to-blue-100/40 rounded-full blur-xl"></div>
+
+                {/* Contenido */}
+                <div className="relative z-10">
+
+                  {/* Título */}
+                  <div className="text-center mb-5">
+                    <div className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full px-4 py-2 mb-3 shadow-lg">
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                      </svg>
+                      <h3 className="text-base font-black">Simuladores Generales</h3>
+                    </div>
+                    <p className="text-xs text-gray-600 font-medium">Áreas Fundamentales</p>
+                  </div>
+
+                  {/* Barras horizontales */}
+                  <div className="space-y-3">
+                    {currentMetricsData.simulatorGrades.generales.map((item, index) => (
+                      <div key={index} className="group/bar">
+                        {/* Etiqueta arriba de la barra */}
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold" style={{ color: item.color }}>
+                            {item.area}
+                          </span>
+                          <span className="text-xs font-bold text-gray-700">
+                            {item.puntaje}%
+                          </span>
+                        </div>
+                        {/* Barra */}
+                        <div className="w-full bg-white/60 backdrop-blur-sm h-3 relative flex items-center overflow-hidden rounded-full border border-gray-200 shadow-sm">
+                          <div
+                            className="h-full transition-all duration-500 ease-out rounded-full shadow-inner"
+                            style={{
+                              width: `${Math.max(item.puntaje, 2)}%`,
+                              background: `linear-gradient(90deg, ${item.color}dd, ${item.color})`
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Gráfica 2: Módulos Específicos */}
+        {(() => {
+          const hasSpecificData = currentMetricsData.simulatorGrades?.especificos?.length > 0 &&
+            currentMetricsData.simulatorGrades.especificos.some(item => item.puntaje > 0);
+
+          if (!hasSpecificData) return null;
+
+          return (
+            <div className="group cursor-pointer transition-all duration-300 hover:scale-105">
+              {/* Contenedor con gradiente púrpura-rosa */}
+              <div className="relative bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 rounded-3xl shadow-xl border-2 border-purple-200/50 p-6 hover:shadow-2xl transition-all duration-300 overflow-hidden">
+
+                {/* Efectos decorativos */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100/40 to-pink-100/40 rounded-full blur-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-pink-100/40 to-purple-100/40 rounded-full blur-xl"></div>
+
+                {/* Contenido */}
+                <div className="relative z-10">
+
+                  {/* Título */}
+                  <div className="text-center mb-5">
+                    <div className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full px-4 py-2 mb-3 shadow-lg">
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 14l9-5-9-5-9 5 9 5z" />
+                        <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                      </svg>
+                      <h3 className="text-base font-black">Módulos Específicos</h3>
+                    </div>
+                    <p className="text-xs text-gray-600 font-medium">Simuladores por Universidad</p>
+                  </div>
+
+                  {/* Barras */}
+                  <div className="space-y-4">
+                    {currentMetricsData.simulatorGrades.especificos.map((item, index) => {
+                      // Truncar nombre si es muy largo
+                      const nombreCompleto = item.modulo || 'Sin nombre';
+                      const nombreTruncado = nombreCompleto.length > 25
+                        ? nombreCompleto.substring(0, 22) + '...'
+                        : nombreCompleto;
+
+                      return (
+                        <div key={index} className="group/bar">
+                          {/* Etiqueta arriba de la barra */}
+                          <div className="flex items-center justify-between mb-1">
+                            <span
+                              className="text-xs font-bold text-purple-600 truncate max-w-[70%]"
+                              title={nombreCompleto}
+                            >
+                              {nombreTruncado}
+                            </span>
+                            <span className="text-xs font-bold text-gray-700">
+                              {item.puntaje}%
+                            </span>
+                          </div>
+                          {/* Barra */}
+                          <div className="w-full bg-white/60 backdrop-blur-sm h-3 relative flex items-center overflow-hidden rounded-full border border-gray-200 shadow-sm">
+                            <div
+                              className="h-full transition-all duration-500 ease-out rounded-full bg-gradient-to-r from-purple-600 to-pink-600 shadow-inner"
+                              style={{ width: `${Math.max(item.puntaje, 2)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
       </div> {/* Close grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 */}
 
       {/* Modal para el Gráfico de Actividades / Quizt */}
@@ -2247,27 +2334,28 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         isOpen={isActivitiesChartModalOpen}
         onClose={() => setIsActivitiesChartModalOpen(false)}
         title="Avance Mensual de Actividades y Quizts"
+        maxWidth="max-w-3xl"
       >
-        <div className="bg-white rounded-xl p-6 shadow-lg">
-          <div className="mb-4">
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <div className="text-sm text-blue-600 font-semibold mb-1">Total Actividades</div>
+        <div className="bg-white rounded-xl p-4 shadow-lg">
+          <div className="mb-2">
+            <div className="grid grid-cols-2 gap-3 mb-2">
+              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                <div className="text-sm text-blue-600 font-semibold mb-0">Total Actividades</div>
                 <div className="text-2xl font-bold text-blue-700">
                   {currentMetricsData.activities.current} / {currentMetricsData.activities.total}
                 </div>
-                <div className="text-xs text-blue-500 mt-1">
+                <div className="text-xs text-blue-500 mt-0">
                   {currentMetricsData.activities.total > 0
                     ? Math.round((currentMetricsData.activities.current / currentMetricsData.activities.total) * 100)
                     : 0}% completadas
                 </div>
               </div>
-              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                <div className="text-sm text-purple-600 font-semibold mb-1">Total Quizts</div>
+              <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                <div className="text-sm text-purple-600 font-semibold mb-0">Total Quizts</div>
                 <div className="text-2xl font-bold text-purple-700">
                   {currentMetricsData.quiz.current} / {currentMetricsData.quiz.total}
                 </div>
-                <div className="text-xs text-purple-500 mt-1">
+                <div className="text-xs text-purple-500 mt-0">
                   {currentMetricsData.quiz.total > 0
                     ? Math.round((currentMetricsData.quiz.current / currentMetricsData.quiz.total) * 100)
                     : 0}% aprobados
@@ -2275,11 +2363,11 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               </div>
             </div>
           </div>
-          <div style={{ width: '100%', height: '400px' }}>
+          <div style={{ width: '100%', height: '250px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={currentMetricsData.activityProgress}
-                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                margin={{ top: 20, right: 10, left: -20, bottom: 60 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
@@ -2300,7 +2388,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   }}
                 />
                 <Legend
-                  wrapperStyle={{ paddingTop: '20px' }}
+                  wrapperStyle={{ paddingTop: '5px' }}
                   iconType="square"
                 />
                 <Bar dataKey="activities" name="Actividades" fill="#3b82f6" radius={[8, 8, 0, 0]} />
@@ -2316,35 +2404,45 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         isOpen={isMonthlyAverageModalOpen}
         onClose={() => setIsMonthlyAverageModalOpen(false)}
         title="Evolución del Promedio Mensual - Últimos 12 Meses"
+        maxWidth="max-w-3xl"
       >
-        <div className="bg-white rounded-xl p-6 shadow-lg">
-          <div className="mb-4">
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
-              <div className="text-sm text-blue-600 font-semibold mb-1">Promedio General</div>
+        <div className="bg-white rounded-xl p-4 shadow-lg">
+          <div className="mb-2">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between">
+              <div>
+                <div className="text-sm text-blue-600 font-semibold mb-0">Promedio General</div>
+                <div className="text-xs text-blue-500 mt-0">
+                  Basado en {finalMetricsData.monthlyAverageData?.length || 0} meses de datos
+                </div>
+              </div>
               <div className="text-3xl font-bold text-blue-700">
                 {finalMetricsData.monthlyAverage}%
               </div>
-              <div className="text-xs text-blue-500 mt-1">
-                Basado en {finalMetricsData.monthlyAverageData?.length || 0} meses de datos
-              </div>
             </div>
           </div>
-          <div className="w-full flex items-center justify-center bg-white rounded-lg p-4">
+          <div className="w-full flex items-center justify-center bg-white rounded-lg p-1 overflow-hidden" ref={(el) => {
+            if (el) {
+              // Simple hack to force redraw if needed, but mainly relying on new width logic below
+            }
+          }}>
             <MUIBarChart
-              width={typeof window !== 'undefined' ? Math.min(800, window.innerWidth - 100) : 800}
-              height={450}
+              // Ajuste dinámico de ancho para móviles: restar padding del modal (aprox 32-48px)
+              width={typeof window !== 'undefined' ? Math.min(600, window.innerWidth - 48) : 300}
+              height={250}
               dataset={finalMetricsData.monthlyAverageData || []}
               xAxis={[{
                 scaleType: 'band',
                 dataKey: 'month',
                 label: 'Meses',
-                labelStyle: { fontSize: 14, fill: '#6b7280' }
+                labelStyle: { fontSize: 12, fill: '#6b7280' },
+                tickLabelStyle: { fontSize: 10, angle: -45, textAnchor: 'end' }
               }]}
               yAxis={[{
                 label: 'Promedio (%)',
                 min: 0,
                 max: 100,
-                labelStyle: { fontSize: 14, fill: '#6b7280' }
+                labelStyle: { fontSize: 12, fill: '#6b7280' },
+                tickLabelStyle: { fontSize: 10 }
               }]}
               series={[
                 {
@@ -2353,7 +2451,8 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                   color: '#3b82f6'
                 }
               ]}
-              margin={{ left: 80, right: 30, top: 30, bottom: 80 }}
+              // Margen izquierdo reducido drásticamente para móviles (de 80 a 40 o 50)
+              margin={{ left: 50, right: 10, top: 20, bottom: 60 }}
               sx={{
                 '& .MuiChartsAxis-line': {
                   stroke: '#6b7280',
@@ -2364,16 +2463,16 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                 },
                 '& .MuiChartsAxis-tickLabel': {
                   fill: '#374151',
-                  fontSize: '12px',
+                  fontSize: '10px',
                   fontWeight: 500,
                 },
                 '& .MuiChartsLegend-label': {
                   fill: '#374151',
-                  fontSize: '14px',
+                  fontSize: '12px',
                   fontWeight: 600,
                 },
                 '& .MuiChartsBar-root': {
-                  rx: 8,
+                  rx: 6,
                 }
               }}
             />
@@ -2387,9 +2486,9 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         onClose={() => setIsSubjectResultsModalOpen(false)}
         title="Resultados Detallados por Materia - 1er Simulador"
       >
-        <div className="bg-white rounded-xl p-6 shadow-lg">
+        <div className="bg-white rounded-xl p-3 sm:p-6 shadow-lg">
           {/* Resumen general */}
-          <div className="mb-6">
+          <div className="mb-4">
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200 text-center">
               <div className="text-sm text-purple-600 font-semibold mb-1">Puntuación General del Simulador</div>
               <div className="text-4xl font-bold text-purple-700">
@@ -2399,15 +2498,15 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
           </div>
 
           {/* Gráfico de pastel */}
-          <div style={{ width: '100%', height: '400px', marginBottom: '24px' }}>
+          <div style={{ width: '100%', height: '300px', marginBottom: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={pieChartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={80}
-                  outerRadius={140}
+                  innerRadius={70}
+                  outerRadius={120}
                   fill="#8884d8"
                   paddingAngle={3}
                   cornerRadius={6}
@@ -2421,7 +2520,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                 </Pie>
                 <Tooltip content={<CustomPieTooltip />} />
                 <Legend
-                  wrapperStyle={{ paddingTop: '20px' }}
+                  wrapperStyle={{ paddingTop: '10px' }}
                   iconType="square"
                 />
               </PieChart>
@@ -2429,8 +2528,8 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
           </div>
 
           {/* Información adicional en el modal */}
-          <div className="mt-6 p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="mt-4 p-3 sm:p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <h4 className="font-bold text-gray-800 mb-4 text-lg flex items-center">
                   <svg className="w-5 h-5 mr-2 text-purple-600" fill="currentColor" viewBox="0 0 20 20">

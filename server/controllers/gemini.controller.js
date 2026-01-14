@@ -281,7 +281,12 @@ const getApiKeyByPurpose = (purpose) => {
 export const geminiGenerate = async (req, res) => {
   try {
     // Extraer el propósito de la petición para seleccionar la API key correcta
-    const { purpose } = req.body || {};
+    const { purpose, proveedor } = req.body || {};
+    
+    // Si el proveedor no es 'gemini' o está vacío, permitir (compatibilidad)
+    // pero registrar como 'gemini' para este endpoint
+    const finalProveedor = (proveedor && proveedor.toLowerCase() === 'groq') ? 'groq' : 'gemini';
+    
     const apiKey = getApiKeyByPurpose(purpose);
 
     if (!apiKey) {

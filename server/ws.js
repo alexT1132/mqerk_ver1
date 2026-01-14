@@ -20,11 +20,32 @@ function removeFromRoom(ws) {
 }
 
 export function broadcastStudent(studentId, payload) {
-  const set = studentRooms.get(studentId); if (!set) return;
-  const data = JSON.stringify(payload);
-  for (const sock of set) {
-    if (sock.readyState === 1) { try { sock.send(data); } catch (_) { } }
+  const set = studentRooms.get(studentId);
+  console.log('[broadcastStudent] Intentando enviar a estudiante:', {
+    studentId,
+    hasRoom: !!set,
+    roomSize: set?.size || 0,
+    payloadType: payload?.type,
+    senderRole: payload?.data?.sender_role,
+    category: payload?.data?.category
+  });
+  if (!set) {
+    console.log('[broadcastStudent] No hay sala para estudiante:', studentId);
+    return;
   }
+  const data = JSON.stringify(payload);
+  let sentCount = 0;
+  for (const sock of set) {
+    if (sock.readyState === 1) {
+      try {
+        sock.send(data);
+        sentCount++;
+      } catch (err) {
+        console.error('[broadcastStudent] Error enviando:', err);
+      }
+    }
+  }
+  console.log('[broadcastStudent] Mensajes enviados:', sentCount, 'de', set.size);
 }
 
 // Broadcast a todos los administradores conectados
@@ -38,16 +59,101 @@ export function broadcastAdmins(payload) {
 
 export function isRoleOnline(role, specificUserId = null) {
   if (role === 'admin' || role === 'asesor') {
+    // Limpiar sockets muertos antes de verificar
+    const deadSockets = [];
+    for (const s of adminSockets) {
+      // Verificar que el socket esté realmente abierto (readyState === 1 = OPEN)
+      // 0 = CONNECTING, 1 = OPEN, 2 = CLOSING, 3 = CLOSED
+      if (s.readyState !== 1) {
+        deadSockets.push(s);
+      }
+    }
+    // Eliminar sockets muertos
+    if (deadSockets.length > 0) {
+      deadSockets.forEach(s => {
+        adminSockets.delete(s);
+        console.log(`[ws.js] Socket muerto eliminado: role=${s._role}, userId=${s._userId}`);
+      });
+    }
+    
     if (specificUserId) {
-      // Check if any socket in adminSockets belongs to this user
+      // Check if any socket in adminSockets belongs to this user AND has the correct role
       for (const s of adminSockets) {
-        if (s._userId == specificUserId && s.readyState === 1) return true;
+        if (s._userId == specificUserId && s.readyState === 1 && s._role === role) {
+          return true;
+        }
       }
       return false;
     }
-    return adminSockets.size > 0;
+    // Si no se especifica userId, verificar si hay algún socket con ese role
+    if (role === 'admin' || role === 'asesor') {
+      let foundOnline = false;
+      for (const s of adminSockets) {
+        if (s.readyState === 1 && s._role === role) {
+          foundOnline = true;
+          break;
+        }
+      }
+      // Debug log
+      if (role === 'admin') {
+        console.log(`[ws.js] isRoleOnline('admin'): ${foundOnline}, total adminSockets: ${adminSockets.size}`);
+      }
+      return foundOnline;
+    }
+    return false;
   }
   return false;
+}
+
+// Verificar si un estudiante específico está online
+export function isStudentOnline(studentId) {
+  const sockets = studentRooms.get(studentId);
+  if (!sockets) return false;
+  // Verificar si hay al menos un socket activo para este estudiante
+  for (const sock of sockets) {
+    if (sock.readyState === 1) return true;
+  }
+  return false;
+}
+
+// Obtener lista de estudiantes online (para asesores/admins)
+export function getOnlineStudents() {
+  const online = [];
+  for (const [studentId, sockets] of studentRooms.entries()) {
+    for (const sock of sockets) {
+      if (sock.readyState === 1) {
+        online.push(Number(studentId));
+        break; // Solo necesitamos saber que está online, no cuántos sockets
+      }
+    }
+  }
+  return online;
+}
+
+// Obtener lista de usuarios online (estudiantes y asesores) por sus IDs de usuario
+// Retorna un objeto: { studentIds: [...], advisorUserIds: [...] }
+export function getOnlineUsers() {
+  const studentIds = [];
+  const advisorUserIds = [];
+  
+  // Estudiantes online
+  for (const [studentId, sockets] of studentRooms.entries()) {
+    for (const sock of sockets) {
+      if (sock.readyState === 1) {
+        studentIds.push(Number(studentId));
+        break;
+      }
+    }
+  }
+  
+  // Asesores/Admins online (por usuario_id)
+  for (const sock of adminSockets) {
+    if (sock.readyState === 1 && sock._userId) {
+      advisorUserIds.push(Number(sock._userId));
+    }
+  }
+  
+  return { studentIds, advisorUserIds };
 }
 
 export function setupWebSocket(server) {
@@ -57,7 +163,24 @@ export function setupWebSocket(server) {
   function heartbeat() { this.isAlive = true; }
   const interval = setInterval(() => {
     wss.clients.forEach(ws => {
-      if (ws.isAlive === false) { try { ws.terminate(); } catch (_) { } return; }
+      if (ws.isAlive === false) { 
+        try { 
+          // Si es un admin, eliminarlo del Set antes de terminar
+          if (ws._isAdmin) {
+            adminSockets.delete(ws);
+            // Notificar a estudiantes que el admin se desconectó
+            if (ws._role === 'admin') {
+              broadcastToAllStudents({
+                type: 'advisor-status-change',
+                online: false,
+                role: 'admin'
+              });
+            }
+          }
+          ws.terminate(); 
+        } catch (_) { } 
+        return; 
+      }
       ws.isAlive = false;
       try { ws.ping(); } catch (_) { }
     });
@@ -107,14 +230,27 @@ export function setupWebSocket(server) {
           adminSockets.delete(ws);
 
           // Broadcast to all students that admin/advisor went offline
-          broadcastToAllStudents({
-            type: 'advisor-status-change',
-            online: false,
-            role: wasRole
-          });
+          // Solo notificar si realmente era admin (no asesor)
+          if (wasRole === 'admin') {
+            broadcastToAllStudents({
+              type: 'advisor-status-change',
+              online: false,
+              role: 'admin'
+            });
+          } else if (wasRole === 'asesor') {
+            broadcastToAllStudents({
+              type: 'advisor-status-change',
+              online: false,
+              role: 'asesor'
+            });
+          }
         }
         else { removeFromRoom(ws); }
-      } catch (_) { removeFromRoom(ws); }
+      } catch (_) { 
+        // Asegurar limpieza incluso si hay error
+        if (ws._isAdmin) adminSockets.delete(ws);
+        removeFromRoom(ws); 
+      }
     });
   });
   return wss;
@@ -131,3 +267,4 @@ function broadcastToAllStudents(payload) {
     }
   }
 }
+

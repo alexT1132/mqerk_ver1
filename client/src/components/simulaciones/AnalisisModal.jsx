@@ -550,7 +550,7 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
                 <div className="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-full">
                   <span className="text-white/90">Análisis hoy:</span>
                   <span className={`font-bold ${aiUsage.remaining <= 1 ? 'text-red-300' : aiUsage.remaining <= 2 ? 'text-yellow-300' : 'text-emerald-300'}`}>
-                    {aiUsage.remaining}/{aiUsage.limit}
+                    {aiUsage.remaining} de {aiUsage.limit} disponibles
                   </span>
                 </div>
                 {aiUsage.remaining === 0 && (

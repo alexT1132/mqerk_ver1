@@ -6,14 +6,14 @@ import Cookies from "js-cookie";
 export const AuthContext = createContext();
 
 const defaultAuthContext = {
-    signup: async () => {},
-    signin: async () => {},
-    logout: async () => {}, // función async que siempre resuelve
+    signup: async () => { },
+    signin: async () => { },
+    logout: async () => { }, // función async que siempre resuelve
     isVerde: false,
     errors: [],
     user: null,
     alumno: null,
-    setAlumno: () => {},
+    setAlumno: () => { },
     isAuthenticated: false,
     loading: false,
     remember: () => false,
@@ -29,13 +29,13 @@ export const useAuth = () => {
                 console.warn('useAuth used outside AuthProvider. Using fallback to prevent crash.');
                 __authWarnShown = true;
             }
-        } catch {}
+        } catch { }
         return defaultAuthContext;
     }
     return context;
 }
 
-export const AuthProvider = ({children}) => {
+export const AuthProvider = ({ children }) => {
 
     const [user, setUser] = useState(null);
     const [alumno, setAlumno] = useState(null);
@@ -47,8 +47,8 @@ export const AuthProvider = ({children}) => {
     // StrictMode en desarrollo monta -> desmonta -> vuelve a montar.
     // El código previo usaba done=true en la PRIMERA (falsa) ejecución, luego el segundo montaje real se saltaba el efecto y nunca dejaba de estar en Loading.
     // Ahora diferenciamos: started / completed. Solo evitamos reruns después de completar correctamente.
-    const authInitRef = useRef({ started:false, completed:false });
-    const debug = (...args)=>{ if(import.meta.env.DEV) console.debug('[Auth]', ...args); };
+    const authInitRef = useRef({ started: false, completed: false });
+    const debug = (...args) => { if (import.meta.env.DEV) console.debug('[Auth]', ...args); };
 
     const signup = async (user) => {
         try {
@@ -58,10 +58,10 @@ export const AuthProvider = ({children}) => {
         } catch (error) {
             console.log(error);
             // Capturar y mostrar errores del servidor
-            const errorMessage = error.response?.data?.message || 
-                               (error.response?.status === 409 ? 'Este nombre de usuario ya está en uso. Por favor, elige otro.' : 
-                                error.response?.status === 400 ? 'Todos los campos son obligatorios' :
-                                'Error al crear la cuenta. Por favor, intenta de nuevo.');
+            const errorMessage = error.response?.data?.message ||
+                (error.response?.status === 409 ? 'Este nombre de usuario ya está en uso. Por favor, elige otro.' :
+                    error.response?.status === 400 ? 'Todos los campos son obligatorios' :
+                        'Error al crear la cuenta. Por favor, intenta de nuevo.');
             setErrors([errorMessage]);
             setVerde(false);
         }
@@ -81,14 +81,14 @@ export const AuthProvider = ({children}) => {
             setIsAuthenticated(true);
             if (formData.rememberMe) {
                 try {
-                    localStorage.setItem('rememberMe','1');
+                    localStorage.setItem('rememberMe', '1');
                     localStorage.setItem('mq_user', JSON.stringify(usuarioResp));
-                } catch {}
+                } catch { }
             } else {
                 try {
                     localStorage.removeItem('rememberMe');
                     localStorage.removeItem('mq_user');
-                } catch {}
+                } catch { }
             }
         } catch (error) {
             const errMsg = error.response?.data?.message || (error.response?.status === 404 ? 'Endpoint /login no encontrado' : undefined);
@@ -96,21 +96,59 @@ export const AuthProvider = ({children}) => {
         }
     }
 
-                const logout = async () => {
-                        try { await logoutRequest().catch(()=>{}); } catch {}
-                        // El backend ya borra todas, pero limpiamos manual para reflejar inmediatamente
-                        ['token','rtoken','token_admin','rtoken_admin','token_asesor','rtoken_asesor','token_estudiante','rtoken_estudiante','access_token','refresh_token']
-                            .forEach(c=> Cookies.remove(c));
-                        setIsAuthenticated(false);
-                        setUser(null);
-                        setAlumno(null);
-                        try {
-                                localStorage.removeItem('mq_user');
-                                localStorage.removeItem('rememberMe');
-                                // Limpiar curso seleccionado del asesor al cerrar sesión
-                                localStorage.removeItem('cursoSeleccionado');
-                        } catch {}
+    const logout = async () => {
+        try { await logoutRequest().catch(() => { }); } catch { }
+
+        // SEGURIDAD: Limpieza exhaustiva de cookies
+        // El backend ya borra todas, pero limpiamos manual para reflejar inmediatamente
+        const cookiesToRemove = [
+            'token', 'rtoken', 'token_admin', 'rtoken_admin',
+            'token_asesor', 'rtoken_asesor', 'token_estudiante',
+            'rtoken_estudiante', 'access_token', 'refresh_token'
+        ];
+
+        // Limpiar cookies con diferentes paths y domains para asegurar eliminación completa
+        cookiesToRemove.forEach(cookieName => {
+            Cookies.remove(cookieName);
+            Cookies.remove(cookieName, { path: '/' });
+            Cookies.remove(cookieName, { path: '', domain: window.location.hostname });
+        });
+
+        // SEGURIDAD: Resetear estado de autenticación INMEDIATAMENTE
+        setIsAuthenticated(false);
+        setUser(null);
+        setAlumno(null);
+
+        // SEGURIDAD: Limpieza de almacenamiento local
+        try {
+            localStorage.removeItem('mq_user');
+            localStorage.removeItem('rememberMe');
+            localStorage.removeItem('cursoSeleccionado');
+            // Limpiar cualquier otro dato sensible que pueda existir
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('mq_') || key.includes('token') || key.includes('auth')) {
+                    localStorage.removeItem(key);
                 }
+            });
+        } catch { }
+
+        // SEGURIDAD: Limpieza de sessionStorage
+        try {
+            sessionStorage.clear();
+        } catch { }
+
+        // SEGURIDAD: Limpieza de IndexedDB si existe
+        try {
+            if (window.indexedDB) {
+                const dbs = await window.indexedDB.databases();
+                dbs.forEach(db => {
+                    if (db.name && (db.name.includes('mq') || db.name.includes('auth'))) {
+                        window.indexedDB.deleteDatabase(db.name);
+                    }
+                });
+            }
+        } catch { }
+    }
 
     // const getUsuarios = async () => {
     //     try {
@@ -131,15 +169,15 @@ export const AuthProvider = ({children}) => {
     }, [errors]);
 
     useEffect(() => {
-    const initRef = authInitRef.current;
-    if (initRef.started && initRef.completed) return; // ya completado anteriormente
-    // Permitimos segunda ejecución si StrictMode desmontó antes de completar
-    initRef.started = true;
+        const initRef = authInitRef.current;
+        if (initRef.started && initRef.completed) return; // ya completado anteriormente
+        // Permitimos segunda ejecución si StrictMode desmontó antes de completar
+        initRef.started = true;
         debug('init effect start');
 
         let cancelled = false;
-    let attempt = 0;
-    const maxNetworkAttempts = 3; // después de este número de intentos salimos del estado Loading
+        let attempt = 0;
+        const maxNetworkAttempts = 3; // después de este número de intentos salimos del estado Loading
         let retryTimer = null;
         const remember = localStorage.getItem('rememberMe') === '1';
         const currentPath = (typeof window !== 'undefined' && window.location?.pathname) || '';
@@ -153,21 +191,21 @@ export const AuthProvider = ({children}) => {
                     setUser(parsed);
                     setIsAuthenticated(true);
                 }
-            } catch {}
+            } catch { }
         }
 
-    const scheduleRetry = (delayMs) => {
+        const scheduleRetry = (delayMs) => {
             if (cancelled) return;
             if (retryTimer) clearTimeout(retryTimer);
             retryTimer = setTimeout(() => verifyFlow(), delayMs);
         };
 
-    // Hard fallback: liberar loading si algo bloquea (p.ej. backend caído) tras 12s
-    const hardTimeout = setTimeout(() => { if (!cancelled && loading) setLoading(false); }, 12000);
+        // Hard fallback: liberar loading si algo bloquea (p.ej. backend caído) tras 12s
+        const hardTimeout = setTimeout(() => { if (!cancelled && loading) setLoading(false); }, 12000);
 
         const applyUser = (data) => {
             const u = data.usuario;
-            if (data.asesor_profile){
+            if (data.asesor_profile) {
                 u.asesor_profile = data.asesor_profile;
                 u.grupo_asesor = data.asesor_profile?.grupo_asesor || null;
             }
@@ -189,7 +227,7 @@ export const AuthProvider = ({children}) => {
             scheduleRetry(backoff);
         };
 
-        const verifyFlow = async (label='initial') => {
+        const verifyFlow = async (label = 'initial') => {
             if (cancelled) return;
             // Si estamos en rutas públicas, siempre saltar /verify para evitar 401 visibles
             const publicNoAuthRoutes = ['/login', '/pre_registro'];
@@ -202,10 +240,10 @@ export const AuthProvider = ({children}) => {
                 debug('calling /verify', label);
                 const res = await Promise.race([
                     verifyTokenRequest(),
-                    new Promise((_r, rej)=> setTimeout(()=> rej(new Error('verify-timeout')), 8000))
+                    new Promise((_r, rej) => setTimeout(() => rej(new Error('verify-timeout')), 8000))
                 ]);
-                if (!cancelled){
-                    if (res.data?.usuario){
+                if (!cancelled) {
+                    if (res.data?.usuario) {
                         applyUser(res.data);
                         debug('/verify success user id=%s role=%s', res.data.usuario?.id, res.data.usuario?.role);
                     } else {
@@ -217,7 +255,7 @@ export const AuthProvider = ({children}) => {
                     setLoading(false); initRef.completed = true; debug('loading=false after verify response');
                 }
             } catch (e) {
-                if(e.message === 'verify-timeout'){
+                if (e.message === 'verify-timeout') {
                     debug('verify timeout');
                     handleNetworkError();
                     return;
@@ -227,12 +265,12 @@ export const AuthProvider = ({children}) => {
                 const isNetwork = !e.response; // ECONNREFUSED, timeout, etc.
                 if (isNetwork) {
                     debug('network error on verify', e?.message);
-                    if(!cancelled) handleNetworkError();
+                    if (!cancelled) handleNetworkError();
                     return; // loading se mantiene true hasta primer éxito o desistimos
                 }
                 // Si no hay token y tampoco remember, terminar silenciosamente sin marcar error
                 if (!remember && (reason === 'no-token' || reason === 'invalid-token')) {
-                    if(!cancelled){
+                    if (!cancelled) {
                         debug('no token & no remember -> guest');
                         setIsAuthenticated(false); setUser(null); setAlumno(null); setLoading(false);
                     }
@@ -244,23 +282,23 @@ export const AuthProvider = ({children}) => {
                         debug('trying refresh after reason=%s status=%s', reason, status);
                         await axios.post('/token/refresh');
                         const res2 = await verifyTokenRequest();
-                        if (!cancelled && res2.data?.usuario){
+                        if (!cancelled && res2.data?.usuario) {
                             applyUser(res2.data);
                             debug('refresh+verify success');
-                        } else if(!cancelled){
+                        } else if (!cancelled) {
                             setIsAuthenticated(false); setUser(null); setAlumno(null);
                             debug('refresh+verify failed no user');
                         }
                     } catch (e2) {
                         debug('refresh failed', e2?.response?.data || e2?.message);
-                        if(!cancelled){
+                        if (!cancelled) {
                             setIsAuthenticated(false); setUser(null); setAlumno(null);
-                            try { localStorage.removeItem('rememberMe'); localStorage.removeItem('mq_user'); } catch {}
+                            try { localStorage.removeItem('rememberMe'); localStorage.removeItem('mq_user'); } catch { }
                         }
                     } finally {
-                        if(!cancelled) { setLoading(false); initRef.completed = true; debug('loading=false after refresh flow'); }
+                        if (!cancelled) { setLoading(false); initRef.completed = true; debug('loading=false after refresh flow'); }
                     }
-                } else if(!cancelled){
+                } else if (!cancelled) {
                     setIsAuthenticated(false); setUser(null); setAlumno(null);
                     setLoading(false); initRef.completed = true; debug('unauthenticated final');
                 }
@@ -269,7 +307,7 @@ export const AuthProvider = ({children}) => {
 
         verifyFlow();
         // Exponer helper para depuración manual desde consola
-        if(typeof window !== 'undefined') window._mq_forceVerify = ()=> verifyFlow('manual');
+        if (typeof window !== 'undefined') window._mq_forceVerify = () => verifyFlow('manual');
         return () => { cancelled = true; if (retryTimer) clearTimeout(retryTimer); clearTimeout(hardTimeout); };
     }, []);
 
@@ -286,7 +324,7 @@ export const AuthProvider = ({children}) => {
             isAuthenticated,
             loading,
             // Exponer bandera remember a posibles hooks futuros
-            remember: ()=> localStorage.getItem('rememberMe')==='1'
+            remember: () => localStorage.getItem('rememberMe') === '1'
         }}>
             {children}
         </AuthContext.Provider>

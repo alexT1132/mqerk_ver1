@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 23-12-2025 a las 05:09:21
+-- Tiempo de generación: 12-01-2026 a las 19:41:54
 -- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.0.30
+-- Versión de PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -20,20 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `mqerkacademy`
 --
-
-DELIMITER $$
---
--- Procedimientos
---
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_limpiar_logs_antiguos` ()   BEGIN
-  DELETE FROM ai_usage_log 
-  WHERE timestamp < DATE_SUB(NOW(), INTERVAL 90 DAY);
-  
-  DELETE FROM ai_usage_stats 
-  WHERE fecha < DATE_SUB(CURDATE(), INTERVAL 90 DAY);
-END$$
-
-DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -752,6 +738,31 @@ CREATE TABLE `chat_messages` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Volcado de datos para la tabla `chat_messages`
+--
+
+INSERT INTO `chat_messages` (`id`, `student_id`, `sender_role`, `message`, `type`, `category`, `is_read`, `created_at`) VALUES
+(1, 67, 'admin', '/uploads/chat/1766602768763-94087292-reporte2miguelangel.pdf', 'file', 'support', 1, '2025-12-24 18:59:28'),
+(2, 67, 'admin', '/uploads/chat/1766602808624-151098164-Capturadepantalla2025-12-19132408.png', 'image', 'support', 1, '2025-12-24 19:00:08'),
+(3, 67, 'estudiante', 'gracias', 'text', 'support', 1, '2025-12-24 19:00:39'),
+(4, 67, 'admin', 'por cierto', 'text', 'support', 1, '2025-12-24 19:02:24'),
+(5, 67, 'admin', 'quiero que', 'text', 'support', 1, '2025-12-24 19:02:50'),
+(6, 67, 'admin', 'probando', 'text', 'support', 1, '2025-12-24 19:05:09'),
+(7, 67, 'admin', '...', 'text', 'support', 1, '2025-12-24 19:07:04'),
+(8, 67, 'admin', 'hola', 'text', 'support', 1, '2025-12-24 19:10:10'),
+(9, 67, 'estudiante', 'dime', 'text', 'support', 1, '2025-12-24 19:11:34'),
+(10, 67, 'estudiante', 'hola', 'text', 'support', 1, '2025-12-24 19:12:08'),
+(11, 67, 'estudiante', 'hola', 'text', 'support', 1, '2025-12-24 19:14:37'),
+(12, 67, 'admin', 'hola', 'text', 'support', 1, '2025-12-24 19:25:48'),
+(13, 67, 'asesor', 'hola', 'text', 'general', 1, '2025-12-24 19:51:27'),
+(14, 67, 'estudiante', 'digame', 'text', 'academic', 1, '2025-12-24 19:51:38'),
+(15, 67, 'estudiante', '/uploads/chat/1766608009269-565996311-reporte2miguelangel.pdf', 'file', 'academic', 1, '2025-12-24 20:26:49'),
+(16, 67, 'estudiante', 'es esto', 'text', 'academic', 1, '2025-12-24 20:26:49'),
+(17, 67, 'asesor', '/uploads/chat/1766608020117-637610246-Capturadepantalla2025-12-19134718.png', 'image', 'general', 1, '2025-12-24 20:27:00'),
+(18, 67, 'asesor', '/uploads/chat/1766608157096-792383668-Capturadepantalla2025-12-19134718.png', 'image', 'general', 1, '2025-12-24 20:29:17'),
+(19, 67, 'asesor', 'mira yo te decia alho ais', 'text', 'general', 1, '2025-12-24 20:29:17');
+
 -- --------------------------------------------------------
 
 --
@@ -774,13 +785,14 @@ CREATE TABLE `comprobantes` (
 --
 
 INSERT INTO `comprobantes` (`id`, `id_estudiante`, `comprobante`, `importe`, `metodo`, `motivo_rechazo`, `created_at`, `updated_at`) VALUES
-(9, 67, '/comprobantes/1754873043799-comprobante-pago-MQ-20250729-0001.pdf', 1500.00, 'efectivo', NULL, '2025-08-11 12:00:09', '2025-08-11 15:46:48'),
+(9, 67, '/comprobantes/1754873043799-comprobante-pago-MQ-20250729-0001.pdf', 1500.00, 'transferencia', NULL, '2025-11-25 10:00:00', '2025-11-25 12:00:00'),
 (11, 69, '/comprobantes/1754941053364-518323640_2494738954216624_926389333829993898_n.jpg', 1200.00, 'efectivo', NULL, '2025-08-11 13:50:53', '2025-08-11 15:46:48'),
 (12, 70, '/comprobantes/1754943978532-comprobante-pago-MQ-20250729-0001.pdf', 0.00, 'transferencia', 'no se transfirio', '2025-08-11 14:26:18', '2025-08-11 15:47:34'),
 (13, 71, '/comprobantes/1755028526990-ENTRENAMIENTO PARA EL EXAMEN UNIVERSIDAD 2025.png', 10500.00, 'efectivo', NULL, '2025-08-12 13:55:27', '2025-08-12 13:57:55'),
 (14, 72, '/comprobantes/1755029908064-Gemini_Generated_Image_14ox9014ox9014ox.png', 5500.00, 'transferencia', NULL, '2025-08-12 14:18:28', '2025-08-12 14:20:08'),
 (15, 73, '/comprobantes/1755800393550-ChatGPT Image 10 ago 2025, 18_11_50.png', 10500.00, 'efectivo', NULL, '2025-08-21 12:19:53', '2025-08-21 12:21:16'),
-(16, 74, '/comprobantes/1765328228550-Documento A4 Hoja de Papel con Flor Delicado Rosado 3.pdf', 1500.00, 'Transferencia', NULL, '2025-12-09 18:57:08', '2025-12-09 19:35:12');
+(16, 74, '/comprobantes/1765328228550-Documento A4 Hoja de Papel con Flor Delicado Rosado 3.pdf', 1500.00, 'Transferencia', NULL, '2025-12-09 18:57:08', '2025-12-09 19:35:12'),
+(23, 76, '/comprobantes/1766642026679-Captura de pantalla 2025-12-19 133319.png', 1500.00, 'efectivo', NULL, '2025-12-24 23:53:46', '2025-12-24 23:55:46');
 
 -- --------------------------------------------------------
 
@@ -928,13 +940,14 @@ CREATE TABLE `estudiantes` (
 --
 
 INSERT INTO `estudiantes` (`id`, `nombre`, `apellido_paterno`, `apellido_materno`, `apellidos`, `email`, `foto`, `grupo`, `comunidad1`, `comunidad2`, `telefono`, `fecha_nacimiento`, `nombre_tutor`, `tel_tutor`, `academico1`, `academico2`, `semestre`, `alergia`, `alergia2`, `discapacidad1`, `discapacidad2`, `orientacion`, `universidades1`, `universidades2`, `postulacion`, `modalidad`, `comentario1`, `comentario2`, `curso`, `turno`, `plan`, `estatus`, `academia`, `anio`, `folio`, `verificacion`, `created_at`, `asesor`) VALUES
-(67, 'Miguel', 'Angel', 'Cruz vargas', 'Angel Cruz vargas', 'isc20350265@gmail.com', '/public/1763671884564-chicha-ifucdr.jpeg', 'V1', 'SAN JUAN BAUTISTA TUXTEPEC', '', '2811975587', '2000-11-01', 'Rosa Isela zamora', '2818707500', 'MQerKAcademy', 'CBTis', 'Concluido', 'Si', 'Antibioticos', 'Si', 'Autismo', 'No', 'NAVAL,TECNM', '', 'ISC', 'ISC', 'ok', 'bien', 'EEAU', 'VESPERTINO', 'Start', 'Activo', 'CBTis', 25, 1, 2, '2025-08-11 00:41:37', 'Carlos Pérez'),
+(67, 'Miguel', 'Angel', 'Cruz vargas', 'Angel Cruz vargas', 'isc20350265@gmail.com', '/public/1763671884564-chicha-ifucdr.jpeg', 'V1', 'SAN JUAN BAUTISTA TUXTEPEC', '', '2811975587', '2000-11-01', 'Rosa Isela zamora', '2818707500', 'MQerKAcademy', 'CBTis', 'Concluido', 'Si', 'Antibioticos', 'Si', 'Autismo', 'No', 'NAVAL,TECNM', '', 'ISC', 'ISC', 'ok', 'bien', 'EEAU', 'VESPERTINO', 'Start', 'Activo', 'CBTis', 25, 1, 2, '2025-10-24 06:00:00', 'Carlos Pérez'),
 (69, 'Jessica', 'Fernandez', '', 'Fernandez', 'ige19350409@gmail.com', '/public/1754940987329-518323640_2494738954216624_926389333829993898_n.jpg', 'V1', 'SAN JUAN BAUTISTA TUXTEPEC', '', '2878819370', NULL, 'kelvin', '2874581265', 'CBTis', '', 'Concluido', 'No', '', 'No', '', 'No', 'TECNM', '', 'ige', 'ige', '...', '...', 'EEAU', 'VESPERTINO', 'Start', 'Activo', 'MQerKAcademy', 25, 3, 2, '2025-08-11 19:36:27', 'Carlos Pérez'),
 (70, 'Emir', 'cruz', 'zamora', 'cruz zamora', 'isc20350265@gmail.com', '/public/1754943896459-WhatsApp Image 2025-08-10 at 2.33.38 PM.jpeg', 'V2', 'LOMA BONITA', '', '281975587', NULL, 'Miguel Angel', '281975587', 'CBTis', '', '6° semestre', 'No', '', 'No', '', 'No', 'TECNM,NAVAL', '', 'ISC', 'ISC', 'xxx', 'xxx', 'EEAU', 'VESPERTINO', 'Mensual', 'Activo', 'MQerKAcademy', 25, 4, 3, '2025-08-11 20:24:56', 'Kélvil Valentín Gómez Ramírez'),
 (71, 'Gerardo ', 'Arcilla', '', 'Arcilla', 'gera@gmail.com', '/public/1755028421157-ChatGPT Image 10 ago 2025, 18_11_50.png', 'V1', 'SAN JOSÉ CHILTEPEC', '', '2871811232', NULL, 'Alejandro Lopez', '2871809089', 'CBTis', '', '5° semestre', 'Si', 'Antibioticos', 'Si', 'TDH', 'No', 'IPN,UAQ', '', 'Logistica', 'Logistica', 'educar', 'excelente', 'EEAU', 'VESPERTINO', 'Premium', 'Activo', 'MQerKAcademy', 25, 5, 2, '2025-08-12 19:53:41', 'Carlos Pérez'),
 (72, 'Andres', 'Saul', 'Canelo', 'Saul Canelo', 'andy@gmail.com', '/public/1755029883708-file_000000007acc61f6a8019e5a25720850.png', 'V1', 'AYOTZINTEPEC', '', '2871811231', NULL, 'Aron Vazquez', '2878752825', 'COLEGIO AMÉRICA', 'cbtis', '6° semestre', 'si', 'Antibioticos', 'Si', 'Autismo', 'No', 'ANAHUAC', '', 'Medicina', 'Presencial', 'x', 'x', 'EEAU', 'VESPERTINO', 'Start', 'Activo', 'COLEGIO AMÉRICA', 25, 6, 2, '2025-08-12 20:18:03', 'Carlos Pérez'),
 (73, 'Juan ', 'Perez', 'Del Rio ', 'Perez Del Rio ', 'juanperez8@gmail.com', '/public/1755800362156-5-7u6pqt.png', 'V1', '', 'Valle de bravo', '2871811233', NULL, 'Jessica Hernandez', '2871811234', '', 'CEBETIS', '5° semestre', 'Si', 'ANTIBIOTICOS', 'Si', 'Autismo', 'Si', '', '', '', 'Presencial', 'SSS', 'SSS', 'EEAU', 'VESPERTINO', 'Premium', 'Activo', 'MQerKAcademy', 25, 7, 2, '2025-08-21 18:19:22', 'Carlos Pérez'),
-(74, 'Eduerdado', 'de Jesus ', 'zamora', 'de Jesus  zamora', 'alex@siventux.com', '/public/1765326405959-grooming-axwx8b.jpg', 'M1', 'LOMA BONITA', '', '2132133123', NULL, 'miguel', '2132133123', 'CBTis', '', '5° semestre', 'No', '', 'No', '', 'Si', '', '', '', 'Presencial', 'nada', 'nada', 'EEAU', 'VESPERTINO', 'Mensual', 'Activo', 'MQerKAcademy', 25, 8, 2, '2025-12-10 00:26:45', 'Kélvil Valentín Gómez Ramírez');
+(74, 'Eduerdado', 'de Jesus ', 'zamora', 'de Jesus  zamora', 'alex@siventux.com', '/public/1765326405959-grooming-axwx8b.jpg', 'M1', 'LOMA BONITA', '', '2132133123', NULL, 'miguel', '2132133123', 'CBTis', '', '5° semestre', 'No', '', 'No', '', 'Si', '', '', '', 'Presencial', 'nada', 'nada', 'EEAU', 'VESPERTINO', 'Mensual', 'Activo', 'MQerKAcademy', 25, 8, 2, '2025-12-10 00:26:45', 'Kélvil Valentín Gómez Ramírez'),
+(76, 'Haniel', 'Flores', 'Cruz', 'Flores Cruz', 'haniel.freefire@gmail.com', '/public/1766626627826-captura-de-pantalla-2025-12-22-134936-dvso7q.png', 'V2', 'LOMA BONITA', '', '1234567890', NULL, 'Petra vargas roxairo', '1234567890', 'CBTis', '', '5° semestre', 'No', '', 'No', '', 'Si', '', '', '', 'Presencial', 'no se', 'que me enseñen', 'EEAU', 'VESPERTINO', 'Mensual', 'Activo', 'MQerKAcademy', 25, 9, 2, '2025-12-25 01:37:07', 'Kélvil Valentín Gómez Ramírez');
 
 -- --------------------------------------------------------
 
@@ -946,7 +959,7 @@ CREATE TABLE `estudiantes_config` (
   `id` int(11) NOT NULL,
   `id_estudiante` int(11) NOT NULL,
   `nivel_experiencia` varchar(32) DEFAULT 'intermedio',
-  `intereses` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT json_array() CHECK (json_valid(`intereses`)),
+  `intereses` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `theme_preference` varchar(16) DEFAULT 'system',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -1045,7 +1058,8 @@ INSERT INTO `feedback_tasks` (`id`, `nombre`, `descripcion`, `archivos_json`, `i
 (3, 'Geometría Básica', NULL, NULL, NULL, 10, '2025-08-25 16:37:50', NULL, 1, '2025-08-16 16:37:50', '2025-08-16 16:37:50'),
 (4, 'probando', NULL, NULL, NULL, 10, '2025-08-21 20:25:51', '[67]', 1, '2025-08-21 20:24:16', '2025-08-21 20:25:51'),
 (5, 'dsa', NULL, NULL, NULL, 10, '2025-08-21 20:59:22', '[67]', 1, '2025-08-21 20:47:30', '2025-08-21 20:59:22'),
-(6, 'adasdasd', NULL, NULL, NULL, 10, '2025-09-01 17:34:51', '[67]', 1, '2025-09-01 17:34:51', '2025-09-01 17:34:51');
+(6, 'adasdasd', NULL, NULL, NULL, 10, '2025-09-01 17:34:51', '[67]', 1, '2025-09-01 17:34:51', '2025-09-01 17:34:51'),
+(7, 'prueba', NULL, NULL, NULL, 10, '2025-12-24 16:53:53', '[67]', 1, '2025-12-24 16:53:54', '2025-12-24 16:53:54');
 
 -- --------------------------------------------------------
 
@@ -1864,7 +1878,9 @@ INSERT INTO `quizzes_intentos` (`id`, `id_quiz`, `id_estudiante`, `puntaje`, `in
 (15, 5, 67, 50, 5, 79, 5, 2, NULL, '2025-12-18 19:02:59'),
 (16, 5, 67, 25, 6, 82, 5, 1, NULL, '2025-12-18 19:12:47'),
 (17, 5, 67, 0, 7, 445, 5, NULL, NULL, '2025-12-18 20:24:53'),
-(18, 5, 67, 0, 8, 972, 5, NULL, NULL, '2025-12-18 20:44:51');
+(18, 5, 67, 0, 8, 972, 5, NULL, NULL, '2025-12-18 20:44:51'),
+(19, 4, 67, 25, 3, 47, 5, 1, NULL, '2025-12-23 19:25:51'),
+(20, 4, 67, 75, 4, 30, 5, 3, NULL, '2025-12-23 19:34:13');
 
 -- --------------------------------------------------------
 
@@ -2046,15 +2062,18 @@ CREATE TABLE `quizzes_sesiones` (
 
 INSERT INTO `quizzes_sesiones` (`id`, `id_quiz`, `id_estudiante`, `intento_num`, `estado`, `started_at`, `finished_at`, `tiempo_limite_seg`, `created_at`, `metadata_json`) VALUES
 ('187a5100-2caf-4887-b55f-634a4258fd7f', 5, 67, 8, 'finalizado', '2025-12-18 20:28:38', '2025-12-18 20:44:51', 3600, '2025-12-18 14:28:38', NULL),
+('19ef7e97-1908-4f5e-83c0-919e5a0eac6d', 4, 67, 3, 'finalizado', '2025-12-23 19:25:04', '2025-12-23 19:25:51', 3600, '2025-12-23 13:25:04', NULL),
 ('266acd2b-8604-416e-9ead-24ad22b3fafe', 5, 67, 2, 'finalizado', '2025-12-18 18:37:52', '2025-12-18 18:40:41', 3600, '2025-12-18 12:37:52', NULL),
 ('3015eaee-9b45-4528-9832-5f0a543d8f09', 5, 67, 4, 'finalizado', '2025-12-18 18:48:11', '2025-12-18 18:50:07', 3600, '2025-12-18 12:48:11', NULL),
 ('4252a3d4-d1df-4c74-84b2-af37d85d84a3', 5, 67, 6, 'finalizado', '2025-12-18 19:11:25', '2025-12-18 19:12:47', 3600, '2025-12-18 13:11:25', NULL),
 ('5beaa9df-e230-4ae7-a286-48e83983fed5', 4, 67, 2, 'finalizado', '2025-12-17 20:48:12', '2025-12-17 20:52:29', 3600, '2025-12-17 14:48:12', NULL),
 ('66c7aeb6-88e9-4ce1-84f8-9bd586de536f', 5, 67, 5, 'finalizado', '2025-12-18 19:01:39', '2025-12-18 19:02:59', 3600, '2025-12-18 13:01:39', NULL),
+('7e72ce80-e0b8-459a-8a9f-34ec18bce54f', 4, 67, 3, 'en_progreso', '2025-12-23 19:23:33', NULL, 3600, '2025-12-23 13:23:33', NULL),
 ('85032148-36f1-4360-804e-0043bde60463', 5, 67, 1, 'finalizado', '2025-12-18 18:28:17', '2025-12-18 18:35:54', 3600, '2025-12-18 12:28:17', NULL),
 ('cd2f86f0-d3ba-4174-bb04-aee4d31b5e41', 4, 67, 1, 'finalizado', '2025-12-17 20:46:03', '2025-12-17 20:47:46', 3600, '2025-12-17 14:46:03', NULL),
 ('d77dc666-83cd-4539-a850-5db4e5cdffba', 5, 67, 3, 'finalizado', '2025-12-18 18:42:38', '2025-12-18 18:43:48', 3600, '2025-12-18 12:42:38', NULL),
-('e64260ae-7246-4195-98af-aa425b2c1515', 5, 67, 7, 'finalizado', '2025-12-18 20:17:28', '2025-12-18 20:24:53', 3600, '2025-12-18 14:17:28', NULL);
+('e64260ae-7246-4195-98af-aa425b2c1515', 5, 67, 7, 'finalizado', '2025-12-18 20:17:28', '2025-12-18 20:24:53', 3600, '2025-12-18 14:17:28', NULL),
+('ff240335-e103-4e42-8a29-758accf6d384', 4, 67, 4, 'finalizado', '2025-12-23 19:33:44', '2025-12-23 19:34:13', 3600, '2025-12-23 13:33:44', NULL);
 
 -- --------------------------------------------------------
 
@@ -2130,7 +2149,17 @@ INSERT INTO `quizzes_sesiones_respuestas` (`id`, `id_sesion`, `id_pregunta`, `id
 (68, '187a5100-2caf-4887-b55f-634a4258fd7f', 47, 140, NULL, 0, 901, '2025-12-18 20:44:51', 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
 (69, '187a5100-2caf-4887-b55f-634a4258fd7f', 48, 147, NULL, 0, 2140, '2025-12-18 20:44:51', 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
 (70, '187a5100-2caf-4887-b55f-634a4258fd7f', 49, 149, NULL, 0, 1154, '2025-12-18 20:44:51', 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
-(71, '187a5100-2caf-4887-b55f-634a4258fd7f', 50, NULL, '     √a\n     ─── = √(a/b)\n     √b', 0, 950538, '2025-12-18 20:44:51', 'graded', 'palabras_clave', 100, '2025-12-18 20:44:53', NULL, NULL, NULL);
+(71, '187a5100-2caf-4887-b55f-634a4258fd7f', 50, NULL, '     √a\n     ─── = √(a/b)\n     √b', 0, 950538, '2025-12-18 20:44:51', 'graded', 'palabras_clave', 100, '2025-12-18 20:44:53', NULL, NULL, NULL),
+(72, '19ef7e97-1908-4f5e-83c0-919e5a0eac6d', 21, 62, NULL, 0, 1750, '2025-12-23 19:25:51', 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(73, '19ef7e97-1908-4f5e-83c0-919e5a0eac6d', 22, 68, NULL, 0, 4451, '2025-12-23 19:25:51', 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(74, '19ef7e97-1908-4f5e-83c0-919e5a0eac6d', 23, 71, NULL, 1, 1215, '2025-12-23 19:25:51', 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(75, '19ef7e97-1908-4f5e-83c0-919e5a0eac6d', 24, 73, NULL, 0, 6329, '2025-12-23 19:25:51', 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(76, '19ef7e97-1908-4f5e-83c0-919e5a0eac6d', 25, NULL, 'puro mqerkacademy', 0, 7241, '2025-12-23 19:25:51', 'graded', 'palabras_clave', 100, '2025-12-23 19:25:53', NULL, NULL, NULL),
+(77, 'ff240335-e103-4e42-8a29-758accf6d384', 21, 63, NULL, 1, 6330, '2025-12-23 19:34:13', 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(78, 'ff240335-e103-4e42-8a29-758accf6d384', 22, 66, NULL, 1, 1652, '2025-12-23 19:34:13', 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(79, 'ff240335-e103-4e42-8a29-758accf6d384', 23, 72, NULL, 0, 3916, '2025-12-23 19:34:13', 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(80, 'ff240335-e103-4e42-8a29-758accf6d384', 24, 74, NULL, 1, 3174, '2025-12-23 19:34:13', 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(81, 'ff240335-e103-4e42-8a29-758accf6d384', 25, NULL, 'mqerkacademy\n', 0, 10927, '2025-12-23 19:34:13', 'graded', 'palabras_clave', 100, '2025-12-23 19:34:15', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -2160,7 +2189,8 @@ CREATE TABLE `simulaciones` (
 INSERT INTO `simulaciones` (`id`, `titulo`, `descripcion`, `id_area`, `fecha_limite`, `time_limit_min`, `publico`, `activo`, `creado_por`, `created_at`, `updated_at`, `grupos`) VALUES
 (11, 'NKLJKJKJKLJLKJ', 'NKKJKJKKJLKJKLJKL', 103, '2025-11-22 00:00:00', 60, 0, 1, 21, '2025-11-22 00:51:22', '2025-11-22 00:51:22', '[\"V1\"]'),
 (27, 'cdsadasdsa', 'sadsadsadsadasd', 101, '2025-12-10 00:00:00', 120, 1, 1, 21, '2025-12-10 22:41:02', '2025-12-10 23:17:57', '[\"V1\",\"M1\"]'),
-(36, 'algebra (IA · 5 preguntas)', 'Simulación de práctica sobre algebra. Cubre contenido general y contiene 5 preguntas generadas con inteligencia artificial para ayudarte a prepararte para tu examen de ingreso universitario.', NULL, NULL, NULL, 1, 1, 21, '2025-12-16 16:57:42', '2025-12-17 21:54:47', NULL);
+(36, 'algebra (IA · 5 preguntas)', 'Simulación de práctica sobre algebra. Cubre contenido general y contiene 5 preguntas generadas con inteligencia artificial para ayudarte a prepararte para tu examen de ingreso universitario.', NULL, NULL, NULL, 1, 1, 21, '2025-12-16 16:57:42', '2025-12-17 21:54:47', NULL),
+(38, 'cdsadasdsa', 'sadsadsadsadasd', 101, '2025-12-26 00:00:00', 120, 1, 1, 21, '2025-12-25 22:13:18', '2025-12-25 22:13:18', '[\"V1\"]');
 
 -- --------------------------------------------------------
 
@@ -2194,7 +2224,9 @@ INSERT INTO `simulaciones_intentos` (`id`, `id_simulacion`, `id_estudiante`, `pu
 (13, 36, 67, 60.00, 4, 114, 5, 3, '2025-12-17 22:25:26'),
 (14, 36, 67, 75.00, 5, 124, 5, 3, '2025-12-18 19:22:45'),
 (15, 36, 67, 50.00, 6, 112, 5, 2, '2025-12-18 19:33:23'),
-(16, 36, 67, 100.00, 7, 128, 5, 4, '2025-12-18 19:54:20');
+(16, 36, 67, 100.00, 7, 128, 5, 4, '2025-12-18 19:54:20'),
+(17, 36, 67, 0.00, 8, 24, 5, 0, '2025-12-23 19:26:41'),
+(18, 36, 67, 75.00, 9, 18, 5, 3, '2025-12-23 19:34:54');
 
 -- --------------------------------------------------------
 
@@ -2439,7 +2471,27 @@ INSERT INTO `simulaciones_respuestas` (`id`, `id_sesion`, `id_pregunta`, `id_opc
 (189, 17, 189, 562, NULL, 1373, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
 (190, 17, 190, 567, NULL, 1596, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
 (191, 17, 191, 570, NULL, 2469, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
-(192, 17, 192, NULL, 'x = (-b ± √(b² - 4ac)) / (2a)', 110955, 'graded', 'palabras_clave', 0, '2025-12-18 19:54:22', NULL, NULL, NULL);
+(192, 17, 192, NULL, 'x = (-b ± √(b² - 4ac)) / (2a)', 110955, 'graded', 'palabras_clave', 0, '2025-12-18 19:54:22', NULL, NULL, NULL),
+(193, 18, 188, 558, NULL, 6164, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(194, 18, 189, 564, NULL, 3166, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(195, 18, 190, 565, NULL, 3049, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(196, 18, 191, 569, NULL, 1002, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(197, 18, 192, NULL, 'mqerkacademy', 7805, 'graded', 'palabras_clave', 0, '2025-12-23 19:26:43', NULL, NULL, NULL),
+(198, 18, 188, 558, NULL, 6164, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(199, 18, 189, 564, NULL, 3166, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(200, 18, 190, 565, NULL, 3049, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(201, 18, 191, 569, NULL, 1002, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(202, 18, 192, NULL, 'mqerkacademy', 7805, 'graded', 'palabras_clave', 0, '2025-12-23 19:26:43', NULL, NULL, NULL),
+(203, 19, 188, 557, NULL, 2761, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(204, 19, 189, 564, NULL, 3649, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(205, 19, 190, 567, NULL, 1535, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(206, 19, 191, 570, NULL, 3082, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(207, 19, 192, NULL, 'mqerkacademy', 5379, 'graded', 'palabras_clave', 0, '2025-12-23 19:34:56', NULL, NULL, NULL),
+(208, 19, 188, 557, NULL, 2761, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(209, 19, 189, 564, NULL, 3649, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(210, 19, 190, 567, NULL, 1535, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(211, 19, 191, 570, NULL, 3082, 'graded', NULL, NULL, NULL, NULL, NULL, NULL),
+(212, 19, 192, NULL, 'mqerkacademy', 5379, 'graded', 'palabras_clave', 0, '2025-12-23 19:34:56', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -2471,7 +2523,9 @@ INSERT INTO `simulaciones_sesiones` (`id`, `id_simulacion`, `id_estudiante`, `st
 (14, 36, 67, '2025-12-18 19:20:41', '2025-12-18 19:22:45', 124126),
 (15, 36, 67, '2025-12-18 19:29:42', NULL, NULL),
 (16, 36, 67, '2025-12-18 19:31:31', '2025-12-18 19:33:23', 111559),
-(17, 36, 67, '2025-12-18 19:52:12', '2025-12-18 19:54:20', 128211);
+(17, 36, 67, '2025-12-18 19:52:12', '2025-12-18 19:54:20', 128211),
+(18, 36, 67, '2025-12-23 19:26:17', '2025-12-23 19:26:41', 23612),
+(19, 36, 67, '2025-12-23 19:34:36', '2025-12-23 19:34:54', 18036);
 
 -- --------------------------------------------------------
 
@@ -2855,7 +2909,10 @@ INSERT INTO `student_notifications` (`id`, `student_id`, `type`, `title`, `messa
 (291, 73, 'assignment', 'Nuevo quiz publicado', 'Se publicó un nuevo quiz: Español y redacción indirecta (IA · 5 preguntas)', '/alumno/actividades?type=quiz&quizId=4', '{\"actividad_id\":4,\"kind\":\"quiz\"}', 0, '2025-12-17 20:44:03'),
 (292, 67, 'assignment', 'Nueva simulación asignada', 'Se te asignó: algebra (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":36,\"kind\":\"simulacion\"}', 1, '2025-12-17 21:54:47'),
 (293, 69, 'assignment', 'Nueva simulación asignada', 'Se te asignó: algebra (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":36,\"kind\":\"simulacion\"}', 0, '2025-12-17 21:54:47'),
-(294, 73, 'assignment', 'Nueva simulación asignada', 'Se te asignó: algebra (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":36,\"kind\":\"simulacion\"}', 0, '2025-12-17 21:54:47');
+(294, 73, 'assignment', 'Nueva simulación asignada', 'Se te asignó: algebra (IA · 5 preguntas)', '/alumno/simulaciones', '{\"simulacion_id\":36,\"kind\":\"simulacion\"}', 0, '2025-12-17 21:54:47'),
+(295, 67, 'assignment', 'Nueva simulación asignada', 'Se te asignó: cdsadasdsa', '/alumno/simulaciones', '{\"simulacion_id\":38,\"kind\":\"simulacion\"}', 1, '2025-12-25 22:13:18'),
+(296, 69, 'assignment', 'Nueva simulación asignada', 'Se te asignó: cdsadasdsa', '/alumno/simulaciones', '{\"simulacion_id\":38,\"kind\":\"simulacion\"}', 0, '2025-12-25 22:13:18'),
+(297, 73, 'assignment', 'Nueva simulación asignada', 'Se te asignó: cdsadasdsa', '/alumno/simulaciones', '{\"simulacion_id\":38,\"kind\":\"simulacion\"}', 0, '2025-12-25 22:13:18');
 
 -- --------------------------------------------------------
 
@@ -3029,13 +3086,14 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `usuario`, `contraseña`, `must_change`, `last_login_at`, `password_changed_at`, `failed_attempts`, `locked_until`, `role`, `id_estudiante`, `created_at`) VALUES
-(3, 'miguel', '$2b$10$JkGqmotlDUI4Kuutn3ywoesTpA3izIF6QjlJUygfyizNoO9xJpJye', 1, '2025-12-22 22:04:25', NULL, 0, NULL, 'estudiante', 67, '2025-08-11 00:41:45'),
-(6, 'jesica_admin', '$2b$10$C9FZlnOw4.vJfjxh5E/H8OZu0S7g7ZF.dRiCopqNfz/8Hta1ta9VW', 1, '2025-12-22 21:57:26', NULL, 0, NULL, 'admin', NULL, '2025-08-11 04:00:37'),
+(3, 'miguel', '$2b$10$JkGqmotlDUI4Kuutn3ywoesTpA3izIF6QjlJUygfyizNoO9xJpJye', 1, '2025-12-25 16:20:52', NULL, 0, NULL, 'estudiante', 67, '2025-08-11 00:41:45'),
+(6, 'jesica_admin', '$2b$10$C9FZlnOw4.vJfjxh5E/H8OZu0S7g7ZF.dRiCopqNfz/8Hta1ta9VW', 1, '2025-12-25 16:09:36', NULL, 0, NULL, 'admin', NULL, '2025-08-11 04:00:37'),
 (8, 'jessica.mqerk', '$2b$10$/.53BvJ4Vuh6E910koGzqOOHU7m5kvsR2x8q8gE.4iN7tEem93Une', 1, NULL, NULL, 0, NULL, 'estudiante', 69, '2025-08-11 19:36:41'),
 (10, 'kelvincienytec', '$2b$10$A.Y8E73jINN6a0AWHDEId.lxAy6F4HBSz83NZhEvchCwAgGXfa7Oa', 1, '2025-10-06 11:03:12', NULL, 0, NULL, 'asesor', NULL, '2025-08-11 22:48:41'),
 (20, 'juan8', '$2b$10$WY5sxiP7FVP5q6MxJHcsFeKo5P8Aah.9HvfqfWYkQF.ULEeBPewdC', 1, NULL, NULL, 0, NULL, 'estudiante', 73, '2025-08-21 18:19:30'),
-(21, 'jair.asesor', '$2b$10$UjpfEXATomGY6ftdqu2niuLgNQ7sGLkd8Or/5EeQwsJW5d.ybdDp6', 0, '2025-12-22 21:57:13', '2025-10-13 12:59:25', 0, NULL, 'asesor', NULL, '2025-10-06 17:29:14'),
-(22, 'Eduardo_1', '$2b$10$KkhPtNqVnR4qJmSFWi1mL.YyregJKx7/f1C0Pt2iIhZMZSDxeX12e', 1, '2025-12-09 18:36:21', NULL, 0, NULL, 'estudiante', 74, '2025-12-10 00:36:12');
+(21, 'jair.asesor', '$2b$10$UjpfEXATomGY6ftdqu2niuLgNQ7sGLkd8Or/5EeQwsJW5d.ybdDp6', 0, '2025-12-25 16:11:23', '2025-10-13 12:59:25', 0, NULL, 'asesor', NULL, '2025-10-06 17:29:14'),
+(22, 'Eduardo_1', '$2b$10$KkhPtNqVnR4qJmSFWi1mL.YyregJKx7/f1C0Pt2iIhZMZSDxeX12e', 1, '2025-12-09 18:36:21', NULL, 0, NULL, 'estudiante', 74, '2025-12-10 00:36:12'),
+(24, 'haniel1', '$2b$10$VWtioJTqDMtc4DeBAz4O/uOesqFZLHyzWtSLq9Z.q/IQog1.94MLe', 1, '2025-12-25 11:15:19', NULL, 0, NULL, 'estudiante', 76, '2025-12-25 01:37:17');
 
 -- --------------------------------------------------------
 
@@ -3144,7 +3202,9 @@ ALTER TABLE `actividades`
   ADD KEY `idx_actividades_tipo` (`tipo`),
   ADD KEY `idx_actividades_fecha_limite` (`fecha_limite`),
   ADD KEY `idx_actividades_activo` (`activo`),
-  ADD KEY `idx_actividades_area` (`id_area`);
+  ADD KEY `idx_actividades_area` (`id_area`),
+  ADD KEY `idx_actividades_activo_publicado` (`activo`,`publicado`),
+  ADD KEY `idx_actividades_publicado` (`publicado`);
 
 --
 -- Indices de la tabla `actividades_entregas`
@@ -3157,14 +3217,18 @@ ALTER TABLE `actividades_entregas`
   ADD KEY `fk_entregas_replaced` (`replaced_by`),
   ADD KEY `idx_entregas_estudiante_estado` (`id_estudiante`,`estado`),
   ADD KEY `idx_entregas_revisada_at` (`revisada_at`),
-  ADD KEY `idx_entregas_comentarios_updated_at` (`comentarios_updated_at`);
+  ADD KEY `idx_entregas_comentarios_updated_at` (`comentarios_updated_at`),
+  ADD KEY `idx_entregas_estudiante_created` (`id_estudiante`,`created_at`),
+  ADD KEY `idx_entregas_actividad_estado` (`id_actividad`,`estado`),
+  ADD KEY `idx_entregas_actividad` (`id_actividad`);
 
 --
 -- Indices de la tabla `actividades_entregas_archivos`
 --
 ALTER TABLE `actividades_entregas_archivos`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_entrega_archivos_entrega` (`entrega_id`);
+  ADD KEY `idx_entrega_archivos_entrega` (`entrega_id`),
+  ADD KEY `idx_entregas_archivos_entrega` (`entrega_id`);
 
 --
 -- Indices de la tabla `actividades_fecha_extensiones`
@@ -3174,7 +3238,9 @@ ALTER TABLE `actividades_fecha_extensiones`
   ADD KEY `idx_extension_actividad` (`id_actividad`),
   ADD KEY `idx_extension_grupo` (`grupo`),
   ADD KEY `idx_extension_estudiante` (`id_estudiante`),
-  ADD KEY `idx_extension_tipo` (`tipo`);
+  ADD KEY `idx_extension_tipo` (`tipo`),
+  ADD KEY `idx_extensiones_actividad` (`id_actividad`),
+  ADD KEY `idx_extensiones_estudiante` (`id_estudiante`);
 
 --
 -- Indices de la tabla `admin_asesoria_confirmaciones`
@@ -3204,7 +3270,8 @@ ALTER TABLE `admin_emails`
 ALTER TABLE `admin_profiles`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uniq_admin_email` (`email`),
-  ADD KEY `idx_admin_user_id` (`user_id`);
+  ADD KEY `idx_admin_user_id` (`user_id`),
+  ADD KEY `idx_admin_profiles_user` (`user_id`);
 
 --
 -- Indices de la tabla `admin_resources`
@@ -3229,7 +3296,9 @@ ALTER TABLE `ai_usage_log`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_usuario_fecha` (`id_usuario`,`timestamp`),
   ADD KEY `idx_tipo_fecha` (`tipo_operacion`,`timestamp`),
-  ADD KEY `idx_fecha` (`timestamp`);
+  ADD KEY `idx_fecha` (`timestamp`),
+  ADD KEY `idx_ai_log_usuario` (`id_usuario`),
+  ADD KEY `idx_ai_log_timestamp` (`timestamp`);
 
 --
 -- Indices de la tabla `ai_usage_stats`
@@ -3255,7 +3324,9 @@ ALTER TABLE `asesor_notifications`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_asesor_unread` (`asesor_user_id`,`is_read`),
   ADD KEY `idx_asesor_created` (`asesor_user_id`,`created_at`),
-  ADD KEY `idx_type` (`type`);
+  ADD KEY `idx_type` (`type`),
+  ADD KEY `idx_asesor_notif_user` (`asesor_user_id`),
+  ADD KEY `idx_asesor_notif_read` (`is_read`);
 
 --
 -- Indices de la tabla `asesor_perfiles`
@@ -3266,14 +3337,17 @@ ALTER TABLE `asesor_perfiles`
   ADD KEY `idx_ap_preregistro` (`preregistro_id`),
   ADD KEY `idx_ap_usuario` (`usuario_id`),
   ADD KEY `idx_asesor_perfiles_curp` (`curp`),
-  ADD KEY `idx_asesor_perfiles_grupo` (`grupo_asesor`);
+  ADD KEY `idx_asesor_perfiles_grupo` (`grupo_asesor`),
+  ADD KEY `idx_asesor_perfiles_usuario` (`usuario_id`),
+  ADD KEY `idx_asesor_perfiles_preregistro` (`preregistro_id`);
 
 --
 -- Indices de la tabla `asesor_preregistros`
 --
 ALTER TABLE `asesor_preregistros`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uq_asesor_prereg_correo` (`correo`);
+  ADD UNIQUE KEY `uq_asesor_prereg_correo` (`correo`),
+  ADD KEY `idx_asesor_prereg_status` (`status`);
 
 --
 -- Indices de la tabla `asesor_reminders`
@@ -3321,14 +3395,25 @@ ALTER TABLE `asistencias`
   ADD KEY `idx_estudiante` (`id_estudiante`),
   ADD KEY `idx_asesor` (`id_asesor`),
   ADD KEY `idx_fecha` (`fecha`),
-  ADD KEY `idx_estudiante_fecha` (`id_estudiante`,`fecha`);
+  ADD KEY `idx_estudiante_fecha` (`id_estudiante`,`fecha`),
+  ADD KEY `idx_asistencias_estudiante_fecha` (`id_estudiante`,`fecha`),
+  ADD KEY `idx_asistencias_asesor_fecha` (`id_asesor`,`fecha`),
+  ADD KEY `idx_asistencias_tipo` (`tipo`),
+  ADD KEY `idx_asistencias_fecha` (`fecha`),
+  ADD KEY `idx_asistencias_estudiante` (`id_estudiante`),
+  ADD KEY `idx_asistencias_asesor` (`id_asesor`);
 
 --
 -- Indices de la tabla `calendar_events`
 --
 ALTER TABLE `calendar_events`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_calendar_events_user_fecha` (`user_id`,`fecha`);
+  ADD KEY `idx_calendar_events_user_fecha` (`user_id`,`fecha`),
+  ADD KEY `idx_calendar_user_fecha` (`user_id`,`fecha`),
+  ADD KEY `idx_calendar_completado` (`completado`),
+  ADD KEY `idx_calendar_tipo` (`tipo`),
+  ADD KEY `idx_calendar_fecha` (`fecha`),
+  ADD KEY `idx_calendar_user` (`user_id`);
 
 --
 -- Indices de la tabla `chat_messages`
@@ -3338,14 +3423,18 @@ ALTER TABLE `chat_messages`
   ADD KEY `idx_student` (`student_id`),
   ADD KEY `idx_created` (`created_at`),
   ADD KEY `idx_chat_category` (`category`),
-  ADD KEY `idx_chat_category_student` (`category`,`student_id`);
+  ADD KEY `idx_chat_category_student` (`category`,`student_id`),
+  ADD KEY `idx_chat_student_created` (`student_id`,`created_at`),
+  ADD KEY `idx_chat_unread` (`is_read`,`sender_role`),
+  ADD KEY `idx_chat_student_category` (`student_id`,`category`,`created_at`);
 
 --
 -- Indices de la tabla `comprobantes`
 --
 ALTER TABLE `comprobantes`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `id_estudiante` (`id_estudiante`);
+  ADD KEY `id_estudiante` (`id_estudiante`),
+  ADD KEY `idx_comprobantes_estudiante` (`id_estudiante`);
 
 --
 -- Indices de la tabla `contratos`
@@ -3353,7 +3442,8 @@ ALTER TABLE `comprobantes`
 ALTER TABLE `contratos`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_contratos_folio` (`folio`),
-  ADD KEY `fk_contratos_estudiante` (`id_estudiante`);
+  ADD KEY `fk_contratos_estudiante` (`id_estudiante`),
+  ADD KEY `idx_contratos_estudiante` (`id_estudiante`);
 
 --
 -- Indices de la tabla `documentos_asesor`
@@ -3377,7 +3467,11 @@ ALTER TABLE `eeau`
 --
 ALTER TABLE `estudiantes`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_estudiantes_folio_formateado` (`folio_formateado`);
+  ADD KEY `idx_estudiantes_folio_formateado` (`folio_formateado`),
+  ADD KEY `idx_estudiantes_estatus` (`estatus`),
+  ADD KEY `idx_estudiantes_grupo` (`grupo`),
+  ADD KEY `idx_estudiantes_asesor` (`asesor`),
+  ADD KEY `idx_estudiantes_curso` (`curso`);
 
 --
 -- Indices de la tabla `estudiantes_config`
@@ -3393,7 +3487,9 @@ ALTER TABLE `feedback_submissions`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_feedback_submissions_task_student` (`id_task`,`id_estudiante`),
   ADD KEY `idx_feedback_submissions_student` (`id_estudiante`),
-  ADD KEY `fk_feedback_submissions_replaced` (`replaced_by`);
+  ADD KEY `fk_feedback_submissions_replaced` (`replaced_by`),
+  ADD KEY `idx_feedback_estudiante` (`id_estudiante`),
+  ADD KEY `idx_feedback_task` (`id_task`);
 
 --
 -- Indices de la tabla `feedback_submission_notes`
@@ -3506,7 +3602,8 @@ ALTER TABLE `quizzes_materias`
 --
 ALTER TABLE `quizzes_preguntas`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_quiz_orden` (`id_quiz`,`orden`);
+  ADD KEY `idx_quiz_orden` (`id_quiz`,`orden`),
+  ADD KEY `idx_quiz_preguntas_quiz` (`id_quiz`);
 
 --
 -- Indices de la tabla `quizzes_preguntas_materias`
@@ -3531,7 +3628,11 @@ ALTER TABLE `quizzes_sesiones`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_sesion_quiz_estudiante` (`id_quiz`,`id_estudiante`),
   ADD KEY `fk_sesion_est` (`id_estudiante`),
-  ADD KEY `idx_qs_quiz_est` (`id_quiz`,`id_estudiante`);
+  ADD KEY `idx_qs_quiz_est` (`id_quiz`,`id_estudiante`),
+  ADD KEY `idx_quiz_sesiones_estudiante_created` (`id_estudiante`,`created_at`),
+  ADD KEY `idx_quiz_sesiones_quiz` (`id_quiz`),
+  ADD KEY `idx_quiz_sesiones_estado` (`estado`),
+  ADD KEY `idx_quiz_sesiones_estudiante` (`id_estudiante`);
 
 --
 -- Indices de la tabla `quizzes_sesiones_respuestas`
@@ -3543,27 +3644,35 @@ ALTER TABLE `quizzes_sesiones_respuestas`
   ADD KEY `fk_resp_opcion` (`id_opcion`),
   ADD KEY `idx_qsr_sesion` (`id_sesion`),
   ADD KEY `idx_quiz_resp_calificacion_status` (`calificacion_status`),
-  ADD KEY `idx_quiz_resp_revisada_por` (`revisada_por`);
+  ADD KEY `idx_quiz_resp_revisada_por` (`revisada_por`),
+  ADD KEY `idx_quiz_respuestas_sesion` (`id_sesion`),
+  ADD KEY `idx_quiz_respuestas_pregunta` (`id_pregunta`);
 
 --
 -- Indices de la tabla `simulaciones`
 --
 ALTER TABLE `simulaciones`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_simulaciones_area` (`id_area`),
+  ADD KEY `idx_simulaciones_activo` (`activo`);
 
 --
 -- Indices de la tabla `simulaciones_intentos`
 --
 ALTER TABLE `simulaciones_intentos`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_sim_int_sim` (`id_simulacion`);
+  ADD KEY `fk_sim_int_sim` (`id_simulacion`),
+  ADD KEY `idx_sim_intentos_estudiante_created` (`id_estudiante`,`created_at`),
+  ADD KEY `idx_sim_intentos_simulacion` (`id_simulacion`),
+  ADD KEY `idx_sim_intentos_estudiante` (`id_estudiante`);
 
 --
 -- Indices de la tabla `simulaciones_preguntas`
 --
 ALTER TABLE `simulaciones_preguntas`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_sim_preg_sim` (`id_simulacion`);
+  ADD KEY `fk_sim_preg_sim` (`id_simulacion`),
+  ADD KEY `idx_sim_preguntas_simulacion` (`id_simulacion`);
 
 --
 -- Indices de la tabla `simulaciones_preguntas_opciones`
@@ -3581,7 +3690,8 @@ ALTER TABLE `simulaciones_respuestas`
   ADD KEY `fk_sim_resp_preg` (`id_pregunta`),
   ADD KEY `fk_sim_resp_opc` (`id_opcion`),
   ADD KEY `idx_sim_resp_calificacion_status` (`calificacion_status`),
-  ADD KEY `idx_sim_resp_revisada_por` (`revisada_por`);
+  ADD KEY `idx_sim_resp_revisada_por` (`revisada_por`),
+  ADD KEY `idx_sim_respuestas_pregunta` (`id_pregunta`);
 
 --
 -- Indices de la tabla `simulaciones_sesiones`
@@ -3667,7 +3777,10 @@ ALTER TABLE `usuarios`
   ADD UNIQUE KEY `usuario` (`usuario`),
   ADD UNIQUE KEY `uniq_usuarios_usuario` (`usuario`),
   ADD KEY `id_estudiante` (`id_estudiante`),
-  ADD KEY `idx_usuarios_id_estudiante` (`id_estudiante`);
+  ADD KEY `idx_usuarios_id_estudiante` (`id_estudiante`),
+  ADD KEY `idx_usuarios_role` (`role`),
+  ADD KEY `idx_usuarios_usuario` (`usuario`),
+  ADD KEY `idx_usuarios_estudiante` (`id_estudiante`);
 
 --
 -- AUTO_INCREMENT de las tablas volcadas
@@ -3803,13 +3916,13 @@ ALTER TABLE `calendar_events`
 -- AUTO_INCREMENT de la tabla `chat_messages`
 --
 ALTER TABLE `chat_messages`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT de la tabla `comprobantes`
 --
 ALTER TABLE `comprobantes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT de la tabla `contratos`
@@ -3833,7 +3946,7 @@ ALTER TABLE `eeau`
 -- AUTO_INCREMENT de la tabla `estudiantes`
 --
 ALTER TABLE `estudiantes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=75;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
 
 --
 -- AUTO_INCREMENT de la tabla `estudiantes_config`
@@ -3857,7 +3970,7 @@ ALTER TABLE `feedback_submission_notes`
 -- AUTO_INCREMENT de la tabla `feedback_tasks`
 --
 ALTER TABLE `feedback_tasks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `formulas`
@@ -3911,7 +4024,7 @@ ALTER TABLE `quizzes`
 -- AUTO_INCREMENT de la tabla `quizzes_intentos`
 --
 ALTER TABLE `quizzes_intentos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT de la tabla `quizzes_materias`
@@ -3941,19 +4054,19 @@ ALTER TABLE `quizzes_preguntas_opciones`
 -- AUTO_INCREMENT de la tabla `quizzes_sesiones_respuestas`
 --
 ALTER TABLE `quizzes_sesiones_respuestas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
 
 --
 -- AUTO_INCREMENT de la tabla `simulaciones`
 --
 ALTER TABLE `simulaciones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT de la tabla `simulaciones_intentos`
 --
 ALTER TABLE `simulaciones_intentos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT de la tabla `simulaciones_preguntas`
@@ -3971,13 +4084,13 @@ ALTER TABLE `simulaciones_preguntas_opciones`
 -- AUTO_INCREMENT de la tabla `simulaciones_respuestas`
 --
 ALTER TABLE `simulaciones_respuestas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=193;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=213;
 
 --
 -- AUTO_INCREMENT de la tabla `simulaciones_sesiones`
 --
 ALTER TABLE `simulaciones_sesiones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT de la tabla `soft_deletes`
@@ -4001,7 +4114,7 @@ ALTER TABLE `student_area_requests`
 -- AUTO_INCREMENT de la tabla `student_notifications`
 --
 ALTER TABLE `student_notifications`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=295;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=298;
 
 --
 -- AUTO_INCREMENT de la tabla `student_reminders`
@@ -4031,7 +4144,7 @@ ALTER TABLE `test_questions`
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- Restricciones para tablas volcadas
@@ -4294,14 +4407,6 @@ ALTER TABLE `test_options`
 ALTER TABLE `usuarios`
   ADD CONSTRAINT `fk_usuarios_estudiante` FOREIGN KEY (`id_estudiante`) REFERENCES `estudiantes` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `usuarios_ibfk_1` FOREIGN KEY (`id_estudiante`) REFERENCES `estudiantes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
-DELIMITER $$
---
--- Eventos
---
-CREATE DEFINER=`root`@`localhost` EVENT `evt_limpiar_logs_ai` ON SCHEDULE EVERY 1 DAY STARTS '2025-12-11 03:00:00' ON COMPLETION NOT PRESERVE ENABLE DO CALL sp_limpiar_logs_antiguos()$$
-
-DELIMITER ;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

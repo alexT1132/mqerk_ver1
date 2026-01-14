@@ -1,10 +1,22 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getMisEstudiantes } from '../../api/asesores';
 import axios from '../../api/axios';
 import { buildStaticUrl } from '../../utils/url';
 import { useLocation } from 'react-router-dom';
+import { compressFile, formatFileSize } from '../../utils/fileCompression';
+import FileCompressionIndicator from '../shared/FileCompressionIndicator';
+import StatusModal from '../shared/StatusModal'; // IMPORTAR EL MODAL
+
+// Sonido de notificación
+const NOTIFICATION_SOUND = '/notification-sound-for-whatsapp.mp3';
+
+// Ícono de adjuntar archivo
+const AttachIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+    </svg>
+);
 
 const ChatAsesor = () => {
     const { user } = useAuth();
@@ -18,38 +30,85 @@ const ChatAsesor = () => {
     const messagesEndRef = useRef(null);
     const [loadingChat, setLoadingChat] = useState(false);
     const [unreadCounts, setUnreadCounts] = useState({}); // { studentId: count }
+    const [selectedFile, setSelectedFile] = useState(null);
+    const fileInputRef = useRef(null);
+    const [pdfViewerFailed, setPdfViewerFailed] = useState({});
+    const [onlineStudents, setOnlineStudents] = useState(new Set()); // Set de IDs de estudiantes online
+    
+    // --- ESTADOS DE COMPRESIÓN Y MODAL ---
+    const [compressing, setCompressing] = useState(false);
+    const [compressionProgress, setCompressionProgress] = useState({ progress: 0, message: '' });
+    const [modalData, setModalData] = useState({ isOpen: false, type: 'info', title: '', message: '' });
+
+    // Audio Ref para persistencia y unlock
+    const audioRef = useRef(new Audio(NOTIFICATION_SOUND));
+    const audioUnlocked = useRef(false);
+    const titleInterval = useRef(null);
+    const originalTitle = useRef(document.title);
+
+    // --- HELPER PARA MOSTRAR MODAL ---
+    const showModal = (type, title, message) => {
+        setModalData({ isOpen: true, type, title, message });
+    };
+
+    // Función para desbloquear el audio
+    const unlockAudio = () => {
+        if (audioUnlocked.current) return;
+        const p = audioRef.current.play();
+        if (p) {
+            p.then(() => {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+                audioUnlocked.current = true;
+            }).catch(e => { });
+        }
+    };
+
+    // Función para detener notificación de título
+    const stopTitleNotification = () => {
+        if (titleInterval.current) {
+            clearInterval(titleInterval.current);
+            titleInterval.current = null;
+            document.title = originalTitle.current;
+        }
+    };
 
     // Unlock audio on mount and user interaction
     useEffect(() => {
         const handleInteraction = () => {
             unlockAudio();
         };
-
-        // Try to unlock immediately
         unlockAudio();
-
-        // Add listeners for user interactions
         document.addEventListener('click', handleInteraction, { once: true });
         document.addEventListener('keydown', handleInteraction, { once: true });
-
         return () => {
             document.removeEventListener('click', handleInteraction);
             document.removeEventListener('keydown', handleInteraction);
         };
     }, []);
 
-    // Cargar estudiantes (reutilizando lógica de ListaAlumnos)
+    // Cargar estado online de estudiantes
+    const loadOnlineStatus = async () => {
+        try {
+            const res = await axios.get('/chat/students/online');
+            if (res.data?.data) {
+                setOnlineStudents(new Set(res.data.data));
+            }
+        } catch (error) {
+            console.error("Error loading online status:", error);
+        }
+    };
+
+    // Cargar estudiantes
     useEffect(() => {
         async function loadStudents() {
             setLoading(true);
             try {
-                // Filtrar por grupo del asesor si aplica
                 const grupoAsesor = user?.grupo_asesor || user?.asesor_profile?.grupo_asesor || null;
                 const params = grupoAsesor ? { grupo: grupoAsesor } : undefined;
                 const { data } = await getMisEstudiantes(params);
                 const list = Array.isArray(data?.data) ? data.data : (data || []);
 
-                // Procesar lista similar a ListaAlumnos
                 const processed = list
                     .filter(s => s.estatus === 'Activo')
                     .map(s => ({
@@ -60,7 +119,6 @@ const ChatAsesor = () => {
                     }));
                 setStudents(processed);
 
-                // Si viene preseleccionado por navegación (future proofing)
                 if (location.state?.studentId) {
                     const target = processed.find(s => s.id === location.state.studentId);
                     if (target) setSelectedStudent(target);
@@ -72,14 +130,16 @@ const ChatAsesor = () => {
             }
         }
         loadStudents();
-        loadUnreadCounts(); // Cargar conteos iniciales
+        loadUnreadCounts();
+        loadOnlineStatus();
+        
+        const interval = setInterval(loadOnlineStatus, 10000);
+        return () => clearInterval(interval);
     }, [user, location.state]);
 
-    // Cargar conteo de mensajes sin leer por estudiante
     const loadUnreadCounts = async () => {
         try {
             const res = await axios.get('/chat/unread/count');
-            // Formato esperado: { data: { total: N, by_student: { studentId: count } } }
             const counts = res.data?.data?.by_student || {};
             setUnreadCounts(counts);
         } catch (e) {
@@ -87,52 +147,28 @@ const ChatAsesor = () => {
         }
     };
 
-    // Actualizar conteos cuando cambie el chat o lleguen mensajes
     useEffect(() => {
         const handler = () => loadUnreadCounts();
         window.addEventListener('advisor-chat-update', handler);
         return () => window.removeEventListener('advisor-chat-update', handler);
     }, []);
 
-    // Desbloquear audio con la primera interacción del usuario
-    useEffect(() => {
-        const handleFirstClick = () => {
-            unlockAudio();
-            // Remover listener después de la primera interacción
-            document.removeEventListener('click', handleFirstClick);
-            document.removeEventListener('touchstart', handleFirstClick);
-        };
-
-        document.addEventListener('click', handleFirstClick);
-        document.addEventListener('touchstart', handleFirstClick);
-
-        return () => {
-            document.removeEventListener('click', handleFirstClick);
-            document.removeEventListener('touchstart', handleFirstClick);
-        };
-    }, []);
-
-    // Detener notificación de título cuando el usuario vuelve a la pestaña
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (!document.hidden) {
                 stopTitleNotification();
             }
         };
-
         document.addEventListener('visibilitychange', handleVisibilityChange);
-
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
-            stopTitleNotification(); // Limpiar al desmontar
+            stopTitleNotification();
         };
     }, []);
 
-    // Cargar historial y marcar como leídos al seleccionar estudiante
     useEffect(() => {
         if (!selectedStudent) return;
 
-        // isBackground = true evita mostrar el spinner de carga (útil para polling)
         async function loadChat(isBackground = false) {
             if (!isBackground) setLoadingChat(true);
             try {
@@ -140,8 +176,6 @@ const ChatAsesor = () => {
                 const newMessages = Array.isArray(res.data.data) ? [...res.data.data] : [];
 
                 setMessages(prev => {
-                    // Si es background update, solo actualizamos si hay cambios reales en longitud o contenido último
-                    // para evitar re-renders innecesarios o saltos de scroll
                     if (isBackground) {
                         if (prev.length === newMessages.length &&
                             JSON.stringify(prev[prev.length - 1]) === JSON.stringify(newMessages[newMessages.length - 1])) {
@@ -151,17 +185,15 @@ const ChatAsesor = () => {
                     return newMessages;
                 });
 
-                // Solo scroll al fondo si no es background o si hay nuevos mensajes
                 if (!isBackground) {
-                    setTimeout(scrollToBottom, 100);
+                    setTimeout(() => scrollToBottom(true), 0);
+                    setTimeout(() => scrollToBottom(true), 100);
+                    setTimeout(() => scrollToBottom(true), 300);
                 } else if (newMessages.length > messages.length) {
-                    // Opcional: solo scrollear si el usuario ya estaba abajo
-                    setTimeout(scrollToBottom, 100);
+                    setTimeout(() => scrollToBottom(false), 100);
                 }
 
-                // Marcar como leído
                 await axios.post('/chat/read', { student_id: selectedStudent.id });
-                // Disparar evento para actualizar sidebar badge
                 window.dispatchEvent(new CustomEvent('advisor-chat-update'));
             } catch (error) {
                 console.error("Error loading chat:", error);
@@ -171,129 +203,231 @@ const ChatAsesor = () => {
         }
         loadChat(false);
 
-        // Polling simple para updates (idealmente WS)
         const interval = setInterval(() => loadChat(true), 10000);
         return () => clearInterval(interval);
 
     }, [selectedStudent]);
 
-    // Escuchar WS (reutilizando el evento global student-ws-message si llega algo relevante para advisor)
-    // Nota: El backend actualmente emite a admins/asesores via broadcastAdmins.
-    // Necesitamos asegurarnos que el cliente escuche esos eventos.
+    useEffect(() => {
+        if (messages.length > 0 && !loadingChat) {
+            requestAnimationFrame(() => {
+                setTimeout(() => scrollToBottom(true), 0);
+            });
+        }
+    }, [messages.length, loadingChat]);
+
     useEffect(() => {
         const handler = (e) => {
             const data = e.detail;
             if (data?.type === 'chat_message' && data.data) {
                 const msg = data.data;
-                // Si el mensaje es del estudiante seleccionado o YO se lo envié a él
                 if (selectedStudent && (msg.student_id === selectedStudent.id)) {
                     setMessages(prev => {
-                        // 1. Si ya existe por ID real, ignorar
                         if (prev.some(m => m.id === msg.id)) return prev;
 
-                        // 2. Buscar si existe un mensaje optimista (id empieza con 'opt-')
-                        // que coincida en contenido (trim) y sea rol "mío" (asesor/admin)
                         const optimIdx = prev.findIndex(m =>
                             String(m.id).startsWith('opt-') &&
                             (m.sender_role === msg.sender_role || (['asesor', 'admin'].includes(m.sender_role) && ['asesor', 'admin'].includes(msg.sender_role))) &&
                             m.message.trim() === msg.message.trim() &&
-                            Math.abs(new Date(m.created_at) - new Date(msg.created_at)) < 20000 // 20s window
+                            Math.abs(new Date(m.created_at) - new Date(msg.created_at)) < 20000
                         );
 
                         if (optimIdx !== -1) {
-                            // Reemplazar el optimista con el real
                             const newArr = [...prev];
                             newArr[optimIdx] = msg;
                             return newArr;
                         }
-
-                        // 3. Si no es duplicado, agregar
                         return [...prev, msg];
                     });
                     setTimeout(scrollToBottom, 100);
 
-                    // Si el mensaje es del estudiante (no mío) y estoy viendo el chat, marcar leido
                     if (msg.sender_role === 'estudiante') {
-                        // Verificar si estamos en la ruta del chat
                         const isInChatRoute = location.pathname === '/asesor/chat';
-
-                        // Sonido manejado por useAdminNotifications hook
-                        // playNotificationSound();
-
-                        // Título manejado por useAdminNotifications hook
-                        // if (!isInChatRoute || document.hidden) {
-                        //     startTitleNotification(1);
-                        // }
-
                         axios.post('/chat/read', { student_id: selectedStudent.id }).catch(() => { });
-                        // Disparar update global (puede que el conteo baje o se mantenga)
-                        // Pequeño delay para que el backend procese
                         setTimeout(() => window.dispatchEvent(new CustomEvent('advisor-chat-update')), 500);
                     }
                 } else {
-                    // Si es de otro estudiante, disparar update para que suba el badge
                     if (msg.sender_role === 'estudiante') {
                         window.dispatchEvent(new CustomEvent('advisor-chat-update'));
-
-                        // Verificar si estamos en la ruta del chat
-                        const isInChatRoute = location.pathname === '/asesor/chat';
-
-                        // Reproducir sonido siempre
-                        // playNotificationSound();
-
-                        // Notificar en título si no estamos en chat O si la pestaña está oculta
-                        // if (!isInChatRoute || document.hidden) {
-                        //     const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0) + 1;
-                        //     startTitleNotification(totalUnread);
-                        // }
                     }
                 }
             }
         };
-        // Asumiendo que el cliente WS global también despacha eventos para asesores
         window.addEventListener('student-ws-message', handler);
         return () => window.removeEventListener('student-ws-message', handler);
     }, [selectedStudent, location.pathname, unreadCounts]);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const scrollToBottom = (instant = false) => {
+        if (instant) {
+            messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+        } else {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+    };
+
+    // -------------------------------------------------------------
+    // LÓGICA DE ARCHIVOS MEJORADA (COMPRESIÓN + MODAL + MENSAJE)
+    // -------------------------------------------------------------
+    const handleFileSelect = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Configuración de límites
+        const MAX_SIZE_MB = 5;
+        const maxSize = MAX_SIZE_MB * 1024 * 1024; // 5MB
+        const compressionThreshold = 1 * 1024 * 1024; // 1MB
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+        
+        // 1. Validación de Tipo
+        if (!allowedTypes.includes(file.type)) {
+            showModal('warning', 'Archivo no compatible', 'Solo permitimos imágenes (JPG, PNG) y documentos PDF.');
+            e.target.value = '';
+            return;
+        }
+
+        try {
+            // CASO A: Archivo MUY GRANDE (> 5MB) - Compresión Obligatoria
+            if (file.size > maxSize) {
+                setCompressing(true);
+                
+                // Mensaje Inicial con icono persistente
+                setCompressionProgress({ 
+                    progress: 0, 
+                    message: `⚠️ Archivo pesado detectado (${formatFileSize(file.size)}). Comprimiendo...` 
+                });
+
+                const compressedFile = await compressFile(file, (progress, message) => {
+                    // Mantenemos el icono de alerta
+                    setCompressionProgress({ 
+                        progress, 
+                        message: `⚠️ Reduciendo tamaño... ${message}` 
+                    });
+                });
+
+                // Si aún comprimido sigue siendo gigante
+                if (compressedFile.size > maxSize) {
+                    showModal('error', 'Imposible enviar', `Aun comprimido, el archivo pesa ${formatFileSize(compressedFile.size)}. El límite es 5MB.`);
+                    e.target.value = '';
+                    setCompressing(false);
+                    return;
+                }
+
+                setSelectedFile(compressedFile);
+                setCompressing(false);
+
+            // CASO B: Archivo mediano (1MB - 5MB) - Optimización recomendada
+            } else if (file.size > compressionThreshold && file.type.startsWith('image/')) {
+                setCompressing(true);
+                setCompressionProgress({ 
+                    progress: 0, 
+                    message: 'Optimizando imagen para carga rápida...' 
+                });
+                
+                const compressedFile = await compressFile(file, (progress, message) => {
+                    setCompressionProgress({ progress, message });
+                });
+
+                setSelectedFile(compressedFile);
+                setCompressing(false);
+
+            // CASO C: Archivo ligero - Pasa directo
+            } else {
+                setSelectedFile(file);
+            }
+
+        } catch (error) {
+            console.error('Error procesando archivo:', error);
+            setCompressing(false);
+            
+            if (error.message === 'NOT_SUPPORTED_TYPE') {
+                showModal('warning', 'Atención', 'Este archivo no se puede optimizar, se intentará enviar original.');
+                setSelectedFile(file);
+            } else {
+                showModal('error', 'Error', 'No se pudo procesar el archivo. Intenta con otro más ligero.');
+                e.target.value = '';
+            }
+        }
+    };
+
+    const handleRemoveFile = () => {
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     const handleSend = async (e) => {
         e.preventDefault();
-        if (!newMessage.trim() || !selectedStudent) return;
+        if ((!newMessage.trim() && !selectedFile) || !selectedStudent) return;
 
         setSending(true);
         try {
-            const msgData = {
-                student_id: selectedStudent.id,
-                message: newMessage,
-                type: 'text',
-                sender_role: 'asesor' // Backend lo validará con el token, pero enviamos explícito por claridad
-            };
+            const formData = new FormData();
+            formData.append('student_id', selectedStudent.id);
+            formData.append('message', newMessage || '');
+            formData.append('type', 'text');
+            formData.append('sender_role', 'asesor');
+
+            if (selectedFile) {
+                formData.append('file', selectedFile);
+            }
 
             // Optimistic Update
             const optimMsg = {
-                ...msgData,
+                student_id: selectedStudent.id,
+                message: newMessage || (selectedFile ? `Archivo: ${selectedFile.name}` : ''),
+                type: selectedFile ? (selectedFile.type.startsWith('image/') ? 'image' : 'file') : 'text',
+                sender_role: 'asesor',
+                file_path: selectedFile ? URL.createObjectURL(selectedFile) : null,
                 id: 'opt-' + Date.now(),
                 created_at: new Date().toISOString()
             };
             setMessages(prev => [...prev, optimMsg]);
             setNewMessage('');
+            setSelectedFile(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
             setTimeout(scrollToBottom, 50);
 
-            await axios.post('/chat/send', msgData);
-            // El WS o el polling confirmarán el mensaje real
+            await axios.post('/chat/send', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
         } catch (error) {
             console.error("Error sending message:", error);
-            alert("No se pudo enviar el mensaje");
+            showModal('error', 'Error', 'No se pudo enviar el mensaje. Verifica tu conexión.');
         } finally {
             setSending(false);
         }
     };
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mx-4 my-4">
+        <>
+            {/* COMPONENTES DE ESTADO Y MODAL */}
+            {compressing && (
+                <FileCompressionIndicator
+                    isOpen={compressing}
+                    progress={compressionProgress.progress}
+                    message={compressionProgress.message}
+                    fileName={fileInputRef.current?.files?.[0]?.name || 'Archivo'}
+                    onCancel={() => {
+                        setCompressing(false); 
+                        window.location.reload(); 
+                    }}
+                />
+            )}
+
+            <StatusModal 
+                isOpen={modalData.isOpen}
+                type={modalData.type}
+                title={modalData.title}
+                message={modalData.message}
+                onClose={() => setModalData({ ...modalData, isOpen: false })}
+            />
+
+            <div className="flex h-[calc(100vh-4rem)] bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mx-4 my-4">
             {/* Sidebar lista de alumnos */}
             <div className="w-80 border-r border-slate-200 flex flex-col bg-slate-50">
                 <div className="p-4 border-b border-slate-200 bg-white">
@@ -315,6 +449,7 @@ const ChatAsesor = () => {
                         <div className="divide-y divide-slate-100">
                             {students.map(s => {
                                 const unreadCount = unreadCounts[s.id] || 0;
+                                const isOnline = onlineStudents.has(s.id);
                                 const getInitials = (name) => {
                                     const parts = name.trim().split(' ').filter(Boolean);
                                     if (parts.length >= 2) {
@@ -349,6 +484,14 @@ const ChatAsesor = () => {
                                             >
                                                 {getInitials(s.name)}
                                             </div>
+                                            {/* Indicador de estado online */}
+                                            {isOnline && (
+                                                <div
+                                                    className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"
+                                                    style={{ zIndex: 10 }}
+                                                    title="En línea"
+                                                />
+                                            )}
                                             {/* Badge de notificación */}
                                             {unreadCount > 0 && (
                                                 <div
@@ -360,7 +503,12 @@ const ChatAsesor = () => {
                                             )}
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="font-medium text-slate-700 truncate">{s.name}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-medium text-slate-700 truncate">{s.name}</p>
+                                                {isOnline && (
+                                                    <span className="text-[10px] text-green-600 font-medium">●</span>
+                                                )}
+                                            </div>
                                             <p className="text-xs text-slate-400">Grupo: {s.grupo}</p>
                                         </div>
                                     </button>
@@ -379,6 +527,12 @@ const ChatAsesor = () => {
                             <div className="flex items-center gap-3">
                                 <h3 className="font-bold text-lg text-slate-800">{selectedStudent.name}</h3>
                                 <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs rounded-full font-medium">Estudiante</span>
+                                {onlineStudents.has(selectedStudent.id) && (
+                                    <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                        En línea
+                                    </span>
+                                )}
                             </div>
                         </div>
 
@@ -393,6 +547,17 @@ const ChatAsesor = () => {
                             ) : (
                                 messages.map((msg, idx) => {
                                     const isMe = msg.sender_role === 'asesor' || msg.sender_role === 'admin';
+                                    const fileUrl = msg.file_path ? (msg.isOptimistic ? msg.file_path : buildStaticUrl(msg.file_path)) : null;
+                                    const fileName = msg.file_path?.split('/').pop() || 'Archivo';
+                                    
+                                    const fileExt = fileName.toLowerCase().split('.').pop();
+                                    const isImageExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
+                                    const isPdfExt = fileExt === 'pdf';
+                                    
+                                    const isImage = (msg.type === 'image' || (msg.file_path && isImageExt)) && fileUrl;
+                                    const isFile = (msg.type === 'file' || (msg.file_path && isPdfExt)) && fileUrl;
+                                    const isPdf = isFile;
+                                    
                                     return (
                                         <div key={idx} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
                                             <div className={`max-w-[70%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
@@ -400,7 +565,105 @@ const ChatAsesor = () => {
                                                     ? 'bg-indigo-600 text-white rounded-br-sm'
                                                     : 'bg-white text-slate-700 border border-slate-200 rounded-bl-sm'
                                                     }`}>
-                                                    <p className="whitespace-pre-wrap">{msg.message}</p>
+                                                    {isImage && (
+                                                        <div className="mb-2">
+                                                            <img 
+                                                                src={fileUrl} 
+                                                                alt="Imagen adjunta" 
+                                                                className="max-w-full max-h-64 rounded-lg object-contain"
+                                                                onError={(e) => {
+                                                                    e.target.style.display = 'none';
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    {isPdf && (
+                                                        <div className="mb-2 -mx-2">
+                                                            <div className="bg-slate-100 rounded-lg p-2 border border-slate-200">
+                                                                {pdfViewerFailed[msg.id || idx] ? (
+                                                                    <iframe
+                                                                        src={`https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(fileUrl)}`}
+                                                                        className="w-full rounded-lg border-2 border-slate-300 bg-white"
+                                                                        title={fileName}
+                                                                        style={{ height: '400px', minHeight: '300px' }}
+                                                                        allowFullScreen
+                                                                    />
+                                                                ) : (
+                                                                    <iframe
+                                                                        src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                                                                        className="w-full rounded-lg border-2 border-slate-300 bg-white"
+                                                                        title={fileName}
+                                                                        style={{ height: '400px', minHeight: '300px' }}
+                                                                        allowFullScreen
+                                                                        type="application/pdf"
+                                                                        onError={() => setPdfViewerFailed(prev => ({ ...prev, [msg.id || idx]: true }))}
+                                                                        onLoad={(e) => {
+                                                                            try {
+                                                                                const iframe = e.target;
+                                                                                setTimeout(() => {
+                                                                                    if (iframe.contentDocument && iframe.contentDocument.body && iframe.contentDocument.body.innerHTML.trim() === '') {
+                                                                                        setPdfViewerFailed(prev => ({ ...prev, [msg.id || idx]: true }));
+                                                                                    }
+                                                                                }, 2000);
+                                                                            } catch (err) {
+                                                                                setPdfViewerFailed(prev => ({ ...prev, [msg.id || idx]: true }));
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                                <div className="mt-2 flex gap-2 justify-center flex-wrap">
+                                                                    <a
+                                                                        href={fileUrl}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                                                                            isMe 
+                                                                                ? 'bg-white/20 hover:bg-white/30 text-white' 
+                                                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                                                        }`}
+                                                                    >
+                                                                        Abrir en nueva pestaña
+                                                                    </a>
+                                                                    <a
+                                                                        href={fileUrl}
+                                                                        download
+                                                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                                                                            isMe 
+                                                                                ? 'bg-white/20 hover:bg-white/30 text-white' 
+                                                                                : 'bg-slate-600 hover:bg-slate-700 text-white'
+                                                                        }`}
+                                                                    >
+                                                                        Descargar PDF
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {isFile && !isPdf && !isImage && (
+                                                        <div className="mb-2">
+                                                            <a 
+                                                                href={fileUrl} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer"
+                                                                className={`underline flex items-center gap-2 ${isMe ? 'text-white' : 'text-indigo-600'}`}
+                                                            >
+                                                                <AttachIcon /> {fileName}
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                    {msg.file_path && !isImage && !isPdf && !isFile && (
+                                                        <div className="mb-2">
+                                                            <a 
+                                                                href={fileUrl} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer"
+                                                                className={`underline flex items-center gap-2 ${isMe ? 'text-white' : 'text-indigo-600'}`}
+                                                            >
+                                                                <AttachIcon /> {fileName}
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                    {msg.message && <p className="whitespace-pre-wrap">{msg.message}</p>}
                                                 </div>
                                                 <span className="text-[10px] text-slate-400 mt-1 px-1">
                                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -415,7 +678,36 @@ const ChatAsesor = () => {
                         </div>
 
                         <div className="p-4 bg-white border-t border-slate-200">
+                            {selectedFile && (
+                                <div className="mb-2 flex items-center gap-2 p-2 bg-indigo-50 rounded-lg">
+                                    <span className="text-sm text-indigo-700 flex-1 truncate">
+                                        <AttachIcon /> {selectedFile.name}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveFile}
+                                        className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            )}
                             <form onSubmit={handleSend} className="flex gap-2">
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*,application/pdf"
+                                    onChange={handleFileSelect}
+                                    className="hidden"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2.5 rounded-xl font-medium transition-all active:scale-95 flex items-center justify-center"
+                                    title="Adjuntar archivo"
+                                >
+                                    <AttachIcon />
+                                </button>
                                 <input
                                     type="text"
                                     value={newMessage}
@@ -425,7 +717,7 @@ const ChatAsesor = () => {
                                 />
                                 <button
                                     type="submit"
-                                    disabled={!newMessage.trim() || sending}
+                                    disabled={(!newMessage.trim() && !selectedFile) || sending}
                                     className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-2.5 rounded-xl font-medium hover:shadow-lg disabled:opacity-50 transition-all active:scale-95"
                                 >
                                     Enviar
@@ -442,6 +734,7 @@ const ChatAsesor = () => {
                 )}
             </div>
         </div>
+        </>
     );
 };
 

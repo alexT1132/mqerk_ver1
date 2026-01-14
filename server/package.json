@@ -22,14 +22,18 @@
     "dayjs": "^1.11.18",
     "dotenv": "^16.4.5",
     "express": "^5.1.0",
+    "file-saver": "^2.0.5",
     "googleapis": "^155.0.1",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^4.0.0",
+    "jszip": "^3.10.1",
     "morgan": "^1.10.0",
     "multer": "^2.0.1",
     "mysql2": "^3.14.1",
     "node-cron": "^3.0.3",
     "node-fetch": "^3.3.2",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^5.4.530",
     "ws": "^8.18.0"
   },
   "devDependencies": {

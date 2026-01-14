@@ -24,15 +24,22 @@ export const ensureChatTable = async () => {
         // Ignorar si ya existe
     }
 
+    // Agregar columna file_path si no existe (migración)
+    try {
+        await db.query(`ALTER TABLE chat_messages ADD COLUMN file_path VARCHAR(500) NULL AFTER message`);
+    } catch (e) {
+        // Ignorar si ya existe
+    }
+
     console.log('[DB] Tabla chat_messages asegurada.');
 };
 
-export const saveMessage = async ({ student_id, sender_role, message, type = 'text', category = 'general' }) => {
+export const saveMessage = async ({ student_id, sender_role, message, type = 'text', category = 'general', file_path = null }) => {
     const [result] = await db.query(
-        `INSERT INTO chat_messages (student_id, sender_role, message, type, category) VALUES (?, ?, ?, ?, ?)`,
-        [student_id, sender_role, message, type, category]
+        `INSERT INTO chat_messages (student_id, sender_role, message, type, category, file_path) VALUES (?, ?, ?, ?, ?, ?)`,
+        [student_id, sender_role, message, type, category, file_path]
     );
-    return { id: result.insertId, student_id, sender_role, message, type, category, created_at: new Date() };
+    return { id: result.insertId, student_id, sender_role, message, type, category, file_path, created_at: new Date() };
 };
 
 export const getHistory = async (student_id, limit = 50) => {

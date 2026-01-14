@@ -15,7 +15,7 @@ export const getEntregaById = async (id) => {
 export const createEntrega = async ({ id_actividad, id_estudiante, archivo, original_nombre, mime_type, tamano }) => {
   const [vr] = await db.query('SELECT COALESCE(MAX(version),0)+1 AS nextVersion FROM actividades_entregas WHERE id_actividad = ? AND id_estudiante = ?', [id_actividad, id_estudiante]);
   const nextVersion = vr[0]?.nextVersion || 1;
-  const sql = `INSERT INTO actividades_entregas (id_actividad, id_estudiante, archivo, original_nombre, mime_type, tamano, estado, version) VALUES (?,?,?,?,?,?, 'entregada', ?)`;
+  const sql = `INSERT INTO actividades_entregas (id_actividad, id_estudiante, archivo, original_nombre, mime_type, tamano, estado, version, entregada_at) VALUES (?,?,?,?,?,?, 'entregada', ?, NOW())`;
   const [res] = await db.query(sql, [id_actividad, id_estudiante, archivo, original_nombre, mime_type, tamano, nextVersion]);
   return res.insertId;
 };
@@ -27,7 +27,7 @@ export const createEntregaAttempt = async (args) => {
 
 export const replaceEntrega = async (prevEntregaId, { id_actividad, id_estudiante, archivo, original_nombre, mime_type, tamano, prevVersion }) => {
   const newVersion = (prevVersion || 1) + 1;
-  const sql = `INSERT INTO actividades_entregas (id_actividad, id_estudiante, archivo, original_nombre, mime_type, tamano, estado, version) VALUES (?,?,?,?,?,?, 'entregada', ?)`;
+  const sql = `INSERT INTO actividades_entregas (id_actividad, id_estudiante, archivo, original_nombre, mime_type, tamano, estado, version, entregada_at) VALUES (?,?,?,?,?,?, 'entregada', ?, NOW())`;
   const [res] = await db.query(sql, [id_actividad, id_estudiante, archivo, original_nombre, mime_type, tamano, newVersion]);
   const newId = res.insertId;
   await db.query('UPDATE actividades_entregas SET replaced_by = ? WHERE id = ?', [newId, prevEntregaId]);
@@ -72,7 +72,7 @@ export const listEntregasActividad = async (id_actividad, { limit = 100, offset 
     INNER JOIN estudiantes e ON ae.id_estudiante = e.id
     WHERE ae.id_actividad = ? AND e.estatus = 'Activo'
     ORDER BY ae.id DESC 
-    LIMIT ? OFFSET ?`, 
+    LIMIT ? OFFSET ?`,
     [id_actividad, Number(limit), Number(offset)]);
   return rows;
 };

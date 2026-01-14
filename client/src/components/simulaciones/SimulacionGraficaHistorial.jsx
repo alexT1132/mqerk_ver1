@@ -134,7 +134,9 @@ function SimulacionGraficaHistorial({
 
   // Helpers para tracking de uso de IA (localStorage)
   const AI_USAGE_KEY = 'ai_analysis_usage';
-  // Límites por rol: Asesores tienen más intentos porque generan preguntas y fórmulas
+  // Límites por rol: Los límites reales vienen del backend, estos son solo fallback
+  // El backend tiene configurado: estudiantes=30, asesores=100, admin=500
+  // Pero para análisis de simulaciones, limitamos a 5 para estudiantes
   const DAILY_LIMIT = userRole === 'asesor' || userRole === 'admin' ? 20 : 5;
 
   const getUsageToday = () => {
@@ -203,9 +205,54 @@ function SimulacionGraficaHistorial({
   // Cargar uso de IA al abrir la página y cuando cambie el límite
   useEffect(() => {
     if (isOpen) {
+      // Primero cargar desde localStorage (rápido)
       const usage = getUsageToday();
       setAiUsage(usage);
-      console.log('AI Usage loaded:', usage);
+      console.log('AI Usage loaded from localStorage:', usage);
+
+      // Luego sincronizar con el backend (más preciso)
+      const syncUsageFromBackend = async () => {
+        try {
+          const response = await fetch('/api/ai/quota/my-stats', {
+            credentials: 'include'
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.stats?.daily) {
+              // Para estudiantes, limitar a 5 análisis de simulaciones por día
+              // El backend puede tener 30 para otros usos, pero para análisis de simulaciones es 5
+              let displayLimit = data.stats.daily.limit;
+              let displayUsed = data.stats.daily.used;
+              let displayRemaining = data.stats.daily.remaining;
+              
+              if (userRole === 'estudiante') {
+                // Limitar a 5 para estudiantes en análisis de simulaciones
+                displayLimit = 5;
+                // Calcular cuántos análisis de simulaciones se han usado
+                // (asumiendo que todos los usos son de análisis de simulaciones por ahora)
+                if (displayUsed >= 5) {
+                  displayUsed = 5;
+                  displayRemaining = 0;
+                } else {
+                  displayRemaining = 5 - displayUsed;
+                }
+              }
+              
+              const backendUsage = {
+                count: displayUsed,
+                limit: displayLimit,
+                remaining: displayRemaining
+              };
+              setAiUsage(backendUsage);
+              console.log('AI Usage synced from backend:', backendUsage);
+            }
+          }
+        } catch (error) {
+          console.warn('Error syncing AI usage from backend, using localStorage:', error);
+          // Si falla, mantener el valor de localStorage
+        }
+      };
+      syncUsageFromBackend();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, DAILY_LIMIT]);
@@ -1668,7 +1715,7 @@ function SimulacionGraficaHistorial({
           </div>
 
           {/* Botones y contador - Siempre en fila (dos columnas) */}
-          <div className="flex flex-row items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <div className="flex flex-row items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
 
             <button
               onClick={generarAnalisisDetallado}
@@ -1678,7 +1725,7 @@ function SimulacionGraficaHistorial({
                   (historial?.intentos?.length || 0) < MIN_INTENTOS_TENDENCIA ? `Requiere mínimo ${MIN_INTENTOS_TENDENCIA} intentos` :
                     'Generar análisis con IA'
               }
-              className="flex items-center justify-center space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
+              className="flex items-center justify-center space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation flex-shrink-0"
             >
               {isLoadingAnalysis ? (
                 <>
@@ -1693,7 +1740,7 @@ function SimulacionGraficaHistorial({
               )}
             </button>
             {/* Indicador de uso de IA - Optimizado para móviles */}
-            <div className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border-2 min-h-[44px] ml-6 sm:ml-8 ${aiUsage.remaining === 0 ? 'bg-red-50 border-red-300' :
+            <div className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border-2 min-h-[44px] ml-auto ${aiUsage.remaining === 0 ? 'bg-red-50 border-red-300' :
               aiUsage.remaining <= 1 ? 'bg-yellow-50 border-yellow-300' :
                 aiUsage.remaining <= 2 ? 'bg-orange-50 border-orange-300' :
                   'bg-blue-50 border-blue-200'
@@ -1711,7 +1758,7 @@ function SimulacionGraficaHistorial({
                       aiUsage.remaining <= 2 ? 'text-orange-600' :
                         'text-blue-600'
                     }`}>
-                    {aiUsage.remaining}/{aiUsage.limit}
+                    {aiUsage.remaining} de {aiUsage.limit} disponibles
                   </span>
                   {aiUsage.remaining === 0 && (
                     <span className="hidden sm:inline text-[10px] text-red-600 font-semibold animate-pulse whitespace-nowrap">
