@@ -6,19 +6,22 @@ import { buildStaticUrl } from '../../utils/url';
 import { useLocation } from 'react-router-dom';
 import { compressFile, formatFileSize } from '../../utils/fileCompression';
 import FileCompressionIndicator from '../shared/FileCompressionIndicator';
-import StatusModal from '../shared/StatusModal'; // IMPORTAR EL MODAL
+import StatusModal from '../shared/StatusModal'; 
 
 // Sonido de notificación
 const NOTIFICATION_SOUND = '/notification-sound-for-whatsapp.mp3';
 
-// Ícono de adjuntar archivo
-const AttachIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+// Ícono de adjuntar archivo (Estilizado)
+const AttachIcon = ({ className = "w-5 h-5" }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
     </svg>
 );
 
 const ChatAsesor = () => {
+    // ----------------------------------------------------------------------
+    // LÓGICA ORIGINAL (INTACTA)
+    // ----------------------------------------------------------------------
     const { user } = useAuth();
     const location = useLocation();
     const [students, setStudents] = useState([]);
@@ -29,11 +32,11 @@ const ChatAsesor = () => {
     const [sending, setSending] = useState(false);
     const messagesEndRef = useRef(null);
     const [loadingChat, setLoadingChat] = useState(false);
-    const [unreadCounts, setUnreadCounts] = useState({}); // { studentId: count }
+    const [unreadCounts, setUnreadCounts] = useState({}); 
     const [selectedFile, setSelectedFile] = useState(null);
     const fileInputRef = useRef(null);
     const [pdfViewerFailed, setPdfViewerFailed] = useState({});
-    const [onlineStudents, setOnlineStudents] = useState(new Set()); // Set de IDs de estudiantes online
+    const [onlineStudents, setOnlineStudents] = useState(new Set()); 
     
     // --- ESTADOS DE COMPRESIÓN Y MODAL ---
     const [compressing, setCompressing] = useState(false);
@@ -242,7 +245,7 @@ const ChatAsesor = () => {
                     setTimeout(scrollToBottom, 100);
 
                     if (msg.sender_role === 'estudiante') {
-                        const isInChatRoute = location.pathname === '/asesor/chat';
+                        // const isInChatRoute = location.pathname === '/asesor/chat';
                         axios.post('/chat/read', { student_id: selectedStudent.id }).catch(() => { });
                         setTimeout(() => window.dispatchEvent(new CustomEvent('advisor-chat-update')), 500);
                     }
@@ -265,20 +268,15 @@ const ChatAsesor = () => {
         }
     };
 
-    // -------------------------------------------------------------
-    // LÓGICA DE ARCHIVOS MEJORADA (COMPRESIÓN + MODAL + MENSAJE)
-    // -------------------------------------------------------------
     const handleFileSelect = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Configuración de límites
         const MAX_SIZE_MB = 5;
-        const maxSize = MAX_SIZE_MB * 1024 * 1024; // 5MB
-        const compressionThreshold = 1 * 1024 * 1024; // 1MB
+        const maxSize = MAX_SIZE_MB * 1024 * 1024; 
+        const compressionThreshold = 1 * 1024 * 1024; 
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
         
-        // 1. Validación de Tipo
         if (!allowedTypes.includes(file.type)) {
             showModal('warning', 'Archivo no compatible', 'Solo permitimos imágenes (JPG, PNG) y documentos PDF.');
             e.target.value = '';
@@ -286,25 +284,20 @@ const ChatAsesor = () => {
         }
 
         try {
-            // CASO A: Archivo MUY GRANDE (> 5MB) - Compresión Obligatoria
             if (file.size > maxSize) {
                 setCompressing(true);
-                
-                // Mensaje Inicial con icono persistente
                 setCompressionProgress({ 
                     progress: 0, 
                     message: `⚠️ Archivo pesado detectado (${formatFileSize(file.size)}). Comprimiendo...` 
                 });
 
                 const compressedFile = await compressFile(file, (progress, message) => {
-                    // Mantenemos el icono de alerta
                     setCompressionProgress({ 
                         progress, 
                         message: `⚠️ Reduciendo tamaño... ${message}` 
                     });
                 });
 
-                // Si aún comprimido sigue siendo gigante
                 if (compressedFile.size > maxSize) {
                     showModal('error', 'Imposible enviar', `Aun comprimido, el archivo pesa ${formatFileSize(compressedFile.size)}. El límite es 5MB.`);
                     e.target.value = '';
@@ -315,7 +308,6 @@ const ChatAsesor = () => {
                 setSelectedFile(compressedFile);
                 setCompressing(false);
 
-            // CASO B: Archivo mediano (1MB - 5MB) - Optimización recomendada
             } else if (file.size > compressionThreshold && file.type.startsWith('image/')) {
                 setCompressing(true);
                 setCompressionProgress({ 
@@ -330,7 +322,6 @@ const ChatAsesor = () => {
                 setSelectedFile(compressedFile);
                 setCompressing(false);
 
-            // CASO C: Archivo ligero - Pasa directo
             } else {
                 setSelectedFile(file);
             }
@@ -372,7 +363,6 @@ const ChatAsesor = () => {
                 formData.append('file', selectedFile);
             }
 
-            // Optimistic Update
             const optimMsg = {
                 student_id: selectedStudent.id,
                 message: newMessage || (selectedFile ? `Archivo: ${selectedFile.name}` : ''),
@@ -403,9 +393,12 @@ const ChatAsesor = () => {
         }
     };
 
+    // ----------------------------------------------------------------------
+    // INTERFAZ VISUAL MEJORADA (PERO CON LA ESTRUCTURA DE LÓGICA ORIGINAL)
+    // ----------------------------------------------------------------------
     return (
         <>
-            {/* COMPONENTES DE ESTADO Y MODAL */}
+            {/* MODALES Y STATUS */}
             {compressing && (
                 <FileCompressionIndicator
                     isOpen={compressing}
@@ -428,11 +421,17 @@ const ChatAsesor = () => {
             />
 
             <div className="flex h-[calc(100vh-4rem)] bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mx-4 my-4">
-            {/* Sidebar lista de alumnos */}
-            <div className="w-80 border-r border-slate-200 flex flex-col bg-slate-50">
-                <div className="p-4 border-b border-slate-200 bg-white">
-                    <h2 className="font-bold text-slate-700">Mis Estudiantes</h2>
-                    <div className="mt-2 relative">
+            
+            {/* SIDEBAR */}
+            <div className="w-80 border-r border-slate-200 flex flex-col bg-slate-50/50">
+                <div className="p-4 border-b border-slate-200 bg-white shadow-sm z-10">
+                    <div className="flex justify-between items-center mb-3">
+                        <h2 className="font-bold text-slate-700">Mis Estudiantes</h2>
+                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-semibold">
+                            {students.length}
+                        </span>
+                    </div>
+                    <div className="relative group">
                         <input
                             type="text"
                             placeholder="Buscar..."
@@ -442,14 +441,19 @@ const ChatAsesor = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto no-scrollbar">
                     {loading ? (
-                        <div className="p-4 text-center text-slate-400">Cargando...</div>
+                        <div className="p-8 text-center text-slate-400 flex flex-col items-center">
+                            <div className="animate-spin w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full mb-2"></div>
+                            <span className="text-xs">Cargando...</span>
+                        </div>
                     ) : (
-                        <div className="divide-y divide-slate-100">
+                        <div className="divide-y divide-slate-100/50">
                             {students.map(s => {
                                 const unreadCount = unreadCounts[s.id] || 0;
                                 const isOnline = onlineStudents.has(s.id);
+                                const isSelected = selectedStudent?.id === s.id;
+                                
                                 const getInitials = (name) => {
                                     const parts = name.trim().split(' ').filter(Boolean);
                                     if (parts.length >= 2) {
@@ -462,54 +466,48 @@ const ChatAsesor = () => {
                                     <button
                                         key={s.id}
                                         onClick={() => setSelectedStudent(s)}
-                                        className={`w-full p-3 flex items-center gap-3 hover:bg-white transition-colors text-left relative ${selectedStudent?.id === s.id ? 'bg-white border-l-4 border-indigo-600 shadow-sm' : ''}`}
+                                        className={`w-full p-3 flex items-center gap-3 transition-all duration-200 text-left relative group
+                                            ${isSelected 
+                                                ? 'bg-white border-l-4 border-indigo-600 shadow-sm z-10' 
+                                                : 'hover:bg-white border-l-4 border-transparent'
+                                            }`}
                                     >
-                                        {/* Avatar con fallback mejorado */}
-                                        <div className="relative w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold shrink-0">
-                                            {s.avatar ? (
-                                                <img
-                                                    src={s.avatar}
-                                                    alt={s.name}
-                                                    className="w-full h-full rounded-full object-cover absolute inset-0"
-                                                    style={{ zIndex: 1 }}
-                                                    onError={(e) => {
-                                                        e.target.style.display = 'none';
-                                                        e.target.nextSibling.style.display = 'flex';
-                                                    }}
-                                                />
-                                            ) : null}
-                                            <div
-                                                className="w-full h-full flex items-center justify-center text-sm rounded-full absolute inset-0"
-                                                style={{ display: s.avatar ? 'none' : 'flex', zIndex: 1 }}
-                                            >
-                                                {getInitials(s.name)}
-                                            </div>
-                                            {/* Indicador de estado online */}
-                                            {isOnline && (
+                                        <div className="relative shrink-0">
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden 
+                                                ${isSelected ? 'ring-2 ring-indigo-100' : 'bg-indigo-100 text-indigo-700'}`}>
+                                                {s.avatar ? (
+                                                    <img
+                                                        src={s.avatar}
+                                                        alt={s.name}
+                                                        className="w-full h-full object-cover absolute inset-0"
+                                                        style={{ zIndex: 1 }}
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                            e.target.nextSibling.style.display = 'flex';
+                                                        }}
+                                                    />
+                                                ) : null}
                                                 <div
-                                                    className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"
-                                                    style={{ zIndex: 10 }}
-                                                    title="En línea"
-                                                />
-                                            )}
-                                            {/* Badge de notificación */}
-                                            {unreadCount > 0 && (
-                                                <div
-                                                    className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg border-2 border-white animate-pulse"
-                                                    style={{ zIndex: 10 }}
+                                                    className="w-full h-full flex items-center justify-center rounded-full absolute inset-0"
+                                                    style={{ display: s.avatar ? 'none' : 'flex', zIndex: 1 }}
                                                 >
+                                                    {getInitials(s.name)}
+                                                </div>
+                                            </div>
+                                            {isOnline && (
+                                                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" style={{ zIndex: 10 }}></div>
+                                            )}
+                                            {unreadCount > 0 && (
+                                                <div className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 shadow-sm ring-2 ring-white animate-pulse" style={{ zIndex: 10 }}>
                                                     {unreadCount > 9 ? '9+' : unreadCount}
                                                 </div>
                                             )}
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
-                                                <p className="font-medium text-slate-700 truncate">{s.name}</p>
-                                                {isOnline && (
-                                                    <span className="text-[10px] text-green-600 font-medium">●</span>
-                                                )}
+                                                <p className={`font-semibold truncate text-sm ${isSelected ? 'text-indigo-900' : 'text-slate-700'}`}>{s.name}</p>
                                             </div>
-                                            <p className="text-xs text-slate-400">Grupo: {s.grupo}</p>
+                                            <p className="text-xs text-slate-400 truncate">Grupo: {s.grupo}</p>
                                         </div>
                                     </button>
                                 );
@@ -519,30 +517,33 @@ const ChatAsesor = () => {
                 </div>
             </div>
 
-            {/* Chat Area */}
-            <div className="flex-1 flex flex-col bg-slate-50/50">
+            {/* CHAT AREA */}
+            <div className="flex-1 flex flex-col bg-slate-50 relative">
                 {selectedStudent ? (
                     <>
-                        <div className="p-4 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between">
+                        {/* Chat Header */}
+                        <div className="px-4 py-3 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between z-20 h-16">
                             <div className="flex items-center gap-3">
-                                <h3 className="font-bold text-lg text-slate-800">{selectedStudent.name}</h3>
-                                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs rounded-full font-medium">Estudiante</span>
+                                <h3 className="font-bold text-slate-800 text-sm">{selectedStudent.name}</h3>
+                                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full font-medium">Estudiante</span>
                                 {onlineStudents.has(selectedStudent.id) && (
-                                    <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                    <span className="flex items-center gap-1 text-[10px] text-green-600 font-medium">
+                                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
                                         En línea
                                     </span>
                                 )}
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        {/* Mensajes - Manteniendo la lógica de renderizado original */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar bg-slate-50">
                             {loadingChat ? (
-                                <div className="flex justify-center mt-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
+                                <div className="flex justify-center items-center h-full">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-200 border-t-indigo-600"></div>
+                                </div>
                             ) : messages.length === 0 ? (
-                                <div className="text-center text-slate-400 mt-20">
-                                    <p>No hay mensajes aún.</p>
-                                    <p className="text-sm">Inicia la conversación.</p>
+                                <div className="flex flex-col items-center justify-center h-full text-slate-400 opacity-60">
+                                    <p className="font-medium">Inicia la conversación</p>
                                 </div>
                             ) : (
                                 messages.map((msg, idx) => {
@@ -559,41 +560,45 @@ const ChatAsesor = () => {
                                     const isPdf = isFile;
                                     
                                     return (
-                                        <div key={idx} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                            <div className={`max-w-[70%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                                <div className={`px-4 py-2 rounded-2xl text-sm shadow-sm ${isMe
-                                                    ? 'bg-indigo-600 text-white rounded-br-sm'
-                                                    : 'bg-white text-slate-700 border border-slate-200 rounded-bl-sm'
+                                        <div key={idx} className={`flex w-full group ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                            <div className={`max-w-[85%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                                
+                                                <div className={`px-4 py-3 shadow-sm relative text-sm
+                                                    ${isMe
+                                                        ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-2xl rounded-tr-sm'
+                                                        : 'bg-white text-slate-700 border border-slate-100 rounded-2xl rounded-tl-sm'
                                                     }`}>
+                                                    
                                                     {isImage && (
-                                                        <div className="mb-2">
+                                                        <div className="mb-2 -mx-1">
                                                             <img 
                                                                 src={fileUrl} 
                                                                 alt="Imagen adjunta" 
-                                                                className="max-w-full max-h-64 rounded-lg object-contain"
-                                                                onError={(e) => {
-                                                                    e.target.style.display = 'none';
-                                                                }}
+                                                                className="max-w-full rounded-lg object-contain bg-black/5"
+                                                                style={{ maxHeight: '250px' }}
+                                                                onError={(e) => { e.target.style.display = 'none'; }}
                                                             />
                                                         </div>
                                                     )}
+
+                                                    {/* Mantengo lógica original de PDF con los iframes */}
                                                     {isPdf && (
-                                                        <div className="mb-2 -mx-2">
-                                                            <div className="bg-slate-100 rounded-lg p-2 border border-slate-200">
+                                                        <div className="mb-2 -mx-1">
+                                                            <div className="bg-slate-100 rounded-lg p-1 border border-slate-200">
                                                                 {pdfViewerFailed[msg.id || idx] ? (
                                                                     <iframe
                                                                         src={`https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(fileUrl)}`}
-                                                                        className="w-full rounded-lg border-2 border-slate-300 bg-white"
+                                                                        className="w-full rounded bg-white"
                                                                         title={fileName}
-                                                                        style={{ height: '400px', minHeight: '300px' }}
+                                                                        style={{ height: '300px', minHeight: '200px' }}
                                                                         allowFullScreen
                                                                     />
                                                                 ) : (
                                                                     <iframe
                                                                         src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                                                                        className="w-full rounded-lg border-2 border-slate-300 bg-white"
+                                                                        className="w-full rounded bg-white"
                                                                         title={fileName}
-                                                                        style={{ height: '400px', minHeight: '300px' }}
+                                                                        style={{ height: '300px', minHeight: '200px' }}
                                                                         allowFullScreen
                                                                         type="application/pdf"
                                                                         onError={() => setPdfViewerFailed(prev => ({ ...prev, [msg.id || idx]: true }))}
@@ -617,20 +622,16 @@ const ChatAsesor = () => {
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
                                                                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                                                                            isMe 
-                                                                                ? 'bg-white/20 hover:bg-white/30 text-white' 
-                                                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                                                            isMe ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'
                                                                         }`}
                                                                     >
-                                                                        Abrir en nueva pestaña
+                                                                        Abrir nueva pestaña
                                                                     </a>
                                                                     <a
                                                                         href={fileUrl}
                                                                         download
                                                                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                                                                            isMe 
-                                                                                ? 'bg-white/20 hover:bg-white/30 text-white' 
-                                                                                : 'bg-slate-600 hover:bg-slate-700 text-white'
+                                                                            isMe ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-slate-600 hover:bg-slate-700 text-white'
                                                                         }`}
                                                                     >
                                                                         Descargar PDF
@@ -639,33 +640,38 @@ const ChatAsesor = () => {
                                                             </div>
                                                         </div>
                                                     )}
+
                                                     {isFile && !isPdf && !isImage && (
                                                         <div className="mb-2">
                                                             <a 
                                                                 href={fileUrl} 
                                                                 target="_blank" 
                                                                 rel="noopener noreferrer"
-                                                                className={`underline flex items-center gap-2 ${isMe ? 'text-white' : 'text-indigo-600'}`}
+                                                                className={`flex items-center gap-2 underline text-xs ${isMe ? 'text-indigo-100' : 'text-indigo-600'}`}
                                                             >
-                                                                <AttachIcon /> {fileName}
+                                                                <AttachIcon className="w-4 h-4" /> {fileName}
                                                             </a>
                                                         </div>
                                                     )}
+                                                    
+                                                    {/* Fallback original */}
                                                     {msg.file_path && !isImage && !isPdf && !isFile && (
-                                                        <div className="mb-2">
+                                                         <div className="mb-2">
                                                             <a 
                                                                 href={fileUrl} 
                                                                 target="_blank" 
                                                                 rel="noopener noreferrer"
-                                                                className={`underline flex items-center gap-2 ${isMe ? 'text-white' : 'text-indigo-600'}`}
+                                                                className={`flex items-center gap-2 underline text-xs ${isMe ? 'text-indigo-100' : 'text-indigo-600'}`}
                                                             >
-                                                                <AttachIcon /> {fileName}
+                                                                <AttachIcon className="w-4 h-4" /> {fileName}
                                                             </a>
                                                         </div>
                                                     )}
-                                                    {msg.message && <p className="whitespace-pre-wrap">{msg.message}</p>}
+
+                                                    {msg.message && <p className="whitespace-pre-wrap leading-relaxed">{msg.message}</p>}
                                                 </div>
-                                                <span className="text-[10px] text-slate-400 mt-1 px-1">
+                                                
+                                                <span className={`text-[10px] mt-1 px-1 font-medium ${isMe ? 'text-slate-400' : 'text-slate-400'}`}>
                                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     {isMe && <span className="ml-1 opacity-70">({msg.sender_role})</span>}
                                                 </span>
@@ -677,22 +683,29 @@ const ChatAsesor = () => {
                             <div ref={messagesEndRef} />
                         </div>
 
-                        <div className="p-4 bg-white border-t border-slate-200">
+                        {/* Input Area */}
+                        <div className="p-4 bg-white border-t border-slate-200 z-20">
                             {selectedFile && (
-                                <div className="mb-2 flex items-center gap-2 p-2 bg-indigo-50 rounded-lg">
-                                    <span className="text-sm text-indigo-700 flex-1 truncate">
-                                        <AttachIcon /> {selectedFile.name}
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={handleRemoveFile}
-                                        className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                                    >
-                                        ✕
-                                    </button>
+                                <div className="mb-2 animate-fade-in-up">
+                                    <div className="inline-flex items-center gap-3 p-1.5 pr-3 bg-indigo-50 border border-indigo-100 rounded-lg shadow-sm">
+                                        <div className="w-6 h-6 bg-indigo-100 rounded flex items-center justify-center text-indigo-600">
+                                            <AttachIcon className="w-3 h-3"/>
+                                        </div>
+                                        <span className="text-xs text-slate-700 font-medium truncate max-w-[200px]">
+                                            {selectedFile.name}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveFile}
+                                            className="ml-2 text-slate-400 hover:text-rose-500 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
                                 </div>
                             )}
-                            <form onSubmit={handleSend} className="flex gap-2">
+
+                            <form onSubmit={handleSend} className="flex gap-2 items-center">
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -703,37 +716,49 @@ const ChatAsesor = () => {
                                 <button
                                     type="button"
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2.5 rounded-xl font-medium transition-all active:scale-95 flex items-center justify-center"
+                                    className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all active:scale-95 flex items-center justify-center"
                                     title="Adjuntar archivo"
                                 >
-                                    <AttachIcon />
+                                    <AttachIcon className="w-5 h-5" />
                                 </button>
-                                <input
-                                    type="text"
-                                    value={newMessage}
-                                    onChange={e => setNewMessage(e.target.value)}
-                                    placeholder="Escribir mensaje..."
-                                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:bg-white transition"
-                                />
+                                
+                                <div className="flex-1 bg-slate-100 rounded-xl border border-transparent focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 focus-within:bg-white transition-all">
+                                    <input
+                                        type="text"
+                                        value={newMessage}
+                                        onChange={e => setNewMessage(e.target.value)}
+                                        placeholder="Escribe un mensaje..."
+                                        className="w-full bg-transparent px-3 py-2.5 focus:outline-none text-slate-700 placeholder:text-slate-400 text-sm"
+                                    />
+                                </div>
+
                                 <button
                                     type="submit"
                                     disabled={(!newMessage.trim() && !selectedFile) || sending}
-                                    className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-2.5 rounded-xl font-medium hover:shadow-lg disabled:opacity-50 transition-all active:scale-95"
+                                    className="p-2.5 rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-200 hover:bg-indigo-700 hover:shadow-lg disabled:opacity-50 disabled:shadow-none transition-all active:scale-95 flex items-center justify-center"
                                 >
-                                    Enviar
+                                    {sending ? (
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        <svg className="w-4 h-4 translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                        </svg>
+                                    )}
                                 </button>
                             </form>
                         </div>
                     </>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
-                        <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-4 text-2xl">💬</div>
-                        <p className="font-medium">Selecciona un estudiante</p>
-                        <p className="text-sm">para comenzar a chatear</p>
+                    <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/50">
+                        <div className="w-16 h-16 bg-white rounded-full shadow-sm border border-slate-100 flex items-center justify-center mb-4">
+                            <span className="text-2xl">💬</span>
+                        </div>
+                        <p className="text-slate-500 font-medium text-sm">Selecciona un estudiante</p>
                     </div>
                 )}
             </div>
         </div>
+        
         </>
     );
 };

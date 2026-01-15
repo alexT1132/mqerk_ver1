@@ -118,7 +118,7 @@ const rutasEstudiante = {
       >
         <nav className="h-full">
 
-          <ul className="relative p-4 pb-20 h-full overflow-y-auto">
+          <ul className="relative p-4 pb-20 h-full overflow-y-auto no-scrollbar">
             
             <ElementoSideBar to={rutas.toInicio} Icono={LogoInicio} NombreElemento='Inicio'/>
 
