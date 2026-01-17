@@ -1,230 +1,201 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { BsGraphUp } from "react-icons/bs";
-import { Link, useLocation, useNavigate } from "react-router-dom"; // Importamos useLocation y useNavigate
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { logoutRequest } from "../../api/usuarios.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import axios from "../../api/axios";
+import { createPortal } from 'react-dom';
+
+// --- COLORES ---
+const svgColor = "#3818c3";       // Azul original
+const svgColorLogout = "#EA3323"; // Rojo original
+const svgColorActive = "#ffffff"; // Blanco
+
+// --- TOOLTIP (Solo PC) ---
+function HoverTooltip({ anchorRef, text, show }) {
+  const [style, setStyle] = useState({ display: 'none' });
+
+  useEffect(() => {
+    if (!show || !anchorRef?.current) {
+      setStyle({ display: 'none' });
+      return;
+    }
+    const rect = anchorRef.current.getBoundingClientRect();
+    const top = rect.top + rect.height / 2;
+    const left = rect.right + 15; 
+
+    setStyle({
+      position: 'fixed',
+      top: `${top}px`,
+      left: `${left}px`,
+      transform: 'translateY(-50%)',
+      zIndex: 9999, 
+      pointerEvents: 'none',
+      whiteSpace: 'nowrap',
+    });
+  }, [show, anchorRef]);
+
+  if (!show) return null;
+
+  return createPortal(
+    <div style={style} className="bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xl animate-in fade-in zoom-in-95 duration-100 border border-gray-700">
+      {text}
+      <div className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
+    </div>,
+    document.body
+  );
+}
 
 /**
- * Componente para un elemento individual de la barra lateral.
- * Se utiliza tanto en la versión de escritorio como en la móvil, ajustando su comportamiento.
- * @param {object} props - Las props del componente.
- * @param {JSX.Element} props.Icono - El icono SVG a mostrar.
- * @param {string} props.NombreElemento - El nombre del elemento de navegación.
- * @param {string} props.to - La ruta a la que apunta el enlace.
- * @param {function} [props.onClick] - Función opcional para manejar clics (principalmente para cerrar el menú móvil).
+ * ElementoSideBar
  */
-function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, badge }) { // Renombramos onClick a mobileOnClick
-  const location = useLocation(); // Hook para obtener la ubicación actual
-  const navigate = useNavigate(); // Hook para navegar programáticamente
+function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, badge }) { 
+  const location = useLocation(); 
+  const navigate = useNavigate(); 
   const { logout: authLogout } = useAuth();
-  const isActive = location.pathname === to; // Comprobamos si la ruta actual coincide con la ruta del enlace
+  const isActive = location.pathname === to; 
+  const linkRef = useRef(null); 
+  const [hovered, setHovered] = useState(false);
 
-  // Define si es un elemento para el menú móvil o de escritorio
-  const isMobileItem = !!mobileOnClick; // Si mobileOnClick está presente, asumimos que es para el menú móvil
+  const isMobileItem = !!mobileOnClick; 
 
   const handleLinkClick = async (e) => {
-    // Manejo especial para Cerrar Sesión
     if (to === "/login") {
       e.preventDefault();
       try {
-        // Cerrar menú móvil si está abierto
-        if (mobileOnClick) mobileOnClick();
-
-        // Esperar a que el logout se complete antes de redirigir
+        if (mobileOnClick) mobileOnClick(); 
         await authLogout?.();
-        // Limpiar cookies del backend (sin bloquear si falla)
         await logoutRequest().catch(() => { });
-
-        // Limpieza adicional
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminProfile');
       } catch (error) {
         console.error('Error durante logout:', error);
       } finally {
-        // Hard redirect para desmontar Providers y evitar llamadas residuales
-        // Usar replace para evitar que el usuario pueda volver atrás
         window.location.replace('/login');
       }
       return;
     }
-    // Si se proporciona una función de cierre para móvil, la llamamos primero
-    if (mobileOnClick) {
-      mobileOnClick();
-    }
+    
+    if (mobileOnClick) mobileOnClick();
 
-    // Lógica para alternar (toggle) la vista si el enlace ya está activo
-    // Esta lógica no se aplica al botón de "Cerrar Sesión" ya que siempre debe navegar.
-    if (isActive && to !== "/login") { // Agregamos la condición to !== "/login"
-      e.preventDefault(); // Previene la navegación por defecto del Link si ya está activo
-      // Navegamos de vuelta a la página de bienvenida
-      // Asegúrate de que esta ruta '/administrativo/bienvenida' es la correcta para tu pantalla de bienvenida
+    if (isActive && to !== "/login") { 
+      e.preventDefault(); 
       navigate("/administrativo/bienvenida");
     }
-    // Si no está activo, o si es el botón de cerrar sesión, permitimos que la navegación predeterminada del Link continúe
   };
 
+  // =====================================================================
+  // ESTILOS CORREGIDOS (MÓVIL VS PC)
+  // =====================================================================
+  
+  let containerClasses = "";
+  let linkClasses = "flex items-center transition-all duration-300 ease-out relative select-none ";
+
+  if (isMobileItem) {
+    // --- MÓVIL (CORREGIDO) ---
+    // Usamos px-3 y w-full para asegurar que llene el contenedor ampliado.
+    containerClasses = "w-full mb-1 px-3"; 
+    
+    // Ajuste: gap-3 en vez de gap-4 para ganar espacio, padding equilibrado.
+    linkClasses += "justify-start pl-4 pr-3 gap-3 py-3 rounded-2xl w-full border-none ";
+
+    if (isActive) {
+      // Activo Móvil: Gradiente bonito y texto blanco
+      linkClasses += "bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md ring-0 outline-none ";
+    } else {
+      // Inactivo Móvil: Transparente limpio
+      if (to === "/login") {
+        linkClasses += "text-red-500 bg-transparent active:bg-red-50 ";
+      } else {
+        linkClasses += "text-gray-600 bg-transparent active:bg-indigo-50 ";
+      }
+    }
+
+  } else {
+    // --- PC (RELIEVE MANTENIDO) ---
+    containerClasses = "group flex justify-center items-center relative z-10 min-h-[60px] w-full px-2";
+    linkClasses += "justify-center p-0 rounded-xl w-12 h-12 aspect-square ";
+
+    if (isActive) {
+      linkClasses += "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/40 transform scale-110 z-20 font-bold border-none ";
+    } else {
+      if (to === "/login") {
+        linkClasses += "bg-white text-red-500 border border-gray-200 shadow-sm hover:bg-red-50 hover:border-red-200 hover:text-red-600 ";
+      } else {
+        linkClasses += "bg-white text-gray-500 border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 hover:scale-105 ";
+      }
+    }
+  }
+
+  let currentIconColor = svgColor; 
+  if (to === "/login") currentIconColor = svgColorLogout;
+  else if (isActive) currentIconColor = svgColorActive;
+
   return (
-    <li className="group flex justify-start items-center h-fit gap-1.5 relative">
+    <li className={containerClasses} style={{ listStyle: 'none' }}>
       <Link
+        ref={linkRef}
         to={to}
-        onClick={handleLinkClick} // Usamos nuestro nuevo manejador de clic
-        // AÑADIDO 'relative' aquí para que el tooltip se posicione correctamente respecto a este enlace.
-        className={`
-          items-center p-2 rounded-lg flex w-full transition-colors duration-200 relative
-          ${isActive
-            ? "bg-indigo-600 text-white shadow-md" // Estilos para el estado activo
-            : "text-gray-900 dark:text-white hover:bg-indigo-100 dark:hover:bg-indigo-700" // Estilos para el estado inactivo
-          }
-          ${to === "/login" ? "hover:bg-red-100 dark:hover:bg-red-700" : ""} /* Estilos hover específicos para cerrar sesión */
-        `}
+        onClick={handleLinkClick}
+        className={linkClasses}
+        onMouseEnter={() => !isMobileItem && setHovered(true)}
+        onMouseLeave={() => !isMobileItem && setHovered(false)}
       >
-        <div className="flex-shrink-0">
-          {/* Clonamos el icono para aplicar color dinámico; compatible con SVG personalizados y react-icons */}
+        {/* Icono */}
+        <div className="flex-shrink-0 relative flex items-center justify-center">
           {React.cloneElement(Icono, {
-            color: to === "/login" ? svgColorLogout : (isActive ? "white" : svgColor),
-            stroke: to === "/login" ? svgColorLogout : (isActive ? "white" : svgColor),
+            stroke: currentIconColor,
+            color: currentIconColor,
+            fill: "none", 
+            // En móvil un poco más grande (24px) para que se vea bien
+            className: `transition-all duration-300 ${isMobileItem ? "w-6 h-6" : (isActive ? "w-6 h-6" : "w-5 h-5")}`,
+            strokeWidth: isActive ? 2.5 : 2,
             ...(to === "/administrativo/lista-alumnos" && isActive ? { fill: "white" } : {})
           })}
+          
+          {badge && badge > 0 && (
+            <span className={`absolute bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm border border-white z-50 animate-pulse
+              ${isMobileItem ? 'top-1/2 -translate-y-1/2 -right-2 min-w-[18px] h-[18px]' : '-top-1 -right-1 min-w-[18px] h-[18px]'}`}>
+              {badge > 9 ? '9+' : badge}
+            </span>
+          )}
         </div>
-        {/* Badge de notificación */}
-        {badge && badge > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg border-2 border-white animate-pulse" style={{ zIndex: 60 }}>
-            {badge > 9 ? '9+' : badge}
-          </span>
+
+        {/* Texto en Móvil - Ajustado tamaño de fuente */}
+        {isMobileItem && (
+           <span className={`text-[15px] leading-none font-medium ml-1 truncate ${isActive ? 'text-white' : 'text-gray-700'}`}>
+             {NombreElemento}
+           </span>
         )}
-        {/*
-          AJUSTE DE ESTILO: Tooltip mejorado para escritorio y texto visible para móvil
-          CAMBIADO Z-INDEX A Z-50 PARA ASEGURAR QUE ESTÉ POR ENCIMA DEL SIDEBAR.
-        */}
-        <span
-          className={`
-            text-sm font-medium whitespace-nowrap
-            ${isMobileItem
-              ? 'block ml-2' // Siempre visible en móvil
-              : 'hidden group-hover:block absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-gray-800 text-white px-3 py-2 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-all duration-300' // Z-INDEX CAMBIADO A Z-50
-            }
-          `}
-        >
-          {NombreElemento}
-        </span>
+
+        {/* Tooltip en PC */}
+        {!isMobileItem && (
+          <HoverTooltip anchorRef={linkRef} text={NombreElemento} show={hovered} />
+        )}
       </Link>
     </li>
   );
 }
 
-// Definiciones de colores y tamaños para los SVG, compartidas.
-const svgColor = "#3818c3"; // Azul principal
-const svgColorLogout = "#EA3323"; // Rojo para cerrar sesión
+// --- ICONOS ---
 const xmlns = "http://www.w3.org/2000/svg";
-const width = "30px";
-const height = "30px";
-
-// Definición de los iconos SVG para cada elemento del menú.
-const LogoInicio = (
-  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-  </svg>
-);
-
-const LogoDashboard = (
-  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="7" height="7"></rect>
-    <rect x="14" y="3" width="7" height="7"></rect>
-    <rect x="14" y="14" width="7" height="7"></rect>
-    <rect x="3" y="14" width="7" height="7"></rect>
-  </svg>
-);
-
-const LogoComprobantes = (
-  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16l4-2 4 2 4-2 4 2V8z"></path>
-    <polyline points="14 2 14 8 20 8"></polyline>
-    <line x1="8" y1="9" x2="16" y2="9"></line>
-    <line x1="8" y1="13" x2="16" y2="13"></line>
-    <line x1="8" y1="17" x2="13" y2="17"></line>
-  </svg>
-);
-
-// ACTUALIZADO: Logo para Lista de Alumnos - Ícono de tres personas (contorno más visible)
-const LogoAlumnos = (
-  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
-    <circle cx="9" cy="7" r="4"></circle>
-    <path d="M23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75"></path>
-  </svg>
-);
+const LogoInicio = (<svg xmlns={xmlns} viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>);
+const LogoDashboard = (<svg xmlns={xmlns} viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>);
+const LogoComprobantes = (<svg xmlns={xmlns} viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16l4-2 4 2 4-2 4 2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="9" x2="16" y2="9"></line><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="13" y2="17"></line></svg>);
+const LogoAlumnos = (<svg xmlns={xmlns} viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75"></path></svg>);
+const LogoGenerarContrato = (<svg xmlns={xmlns} viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="11.5" cy="14.5" r="2.5"></circle><path d="M13.25 16.25L15 18"></path></svg>);
+const LogoReportesPagos = (<svg xmlns={xmlns} viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="10" y2="9"></line></svg>);
+const LogoCalendario = (<svg xmlns={xmlns} viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>);
+const LogoEmail = (<svg xmlns={xmlns} viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>);
+const LogoConfig = (<svg xmlns={xmlns} viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>);
+const LogoLogOut = (<svg xmlns={xmlns} viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="17 16 22 12 17 8"></polyline><line x1="22" y1="12" x2="10" y2="12"></line></svg>);
+const LogoFinanzas = (<BsGraphUp size={20} />);
+const LogoChat = (<svg xmlns={xmlns} viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>);
 
 
-const LogoGenerarContrato = (
-  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-    <polyline points="14 2 14 8 20 8"></polyline>
-    <circle cx="11.5" cy="14.5" r="2.5"></circle>
-    <path d="M13.25 16.25L15 18"></path>
-  </svg>
-);
-
-const LogoReportesPagos = (
-  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-    <polyline points="14 2 14 8 20 8"></polyline>
-    <line x1="16" y1="13" x2="8" y2="13"></line>
-    <line x1="16" y1="17" x2="8" y2="17"></line>
-    <line x1="10" y1="9" x2="10" y2="9"></line>
-  </svg>
-);
-
-const LogoCalendario = (
-  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-    <line x1="16" y1="2" x2="16" y2="6"></line>
-    <line x1="8" y1="2" x2="8" y2="6"></line>
-    <line x1="3" y1="10" x2="21" y2="10"></line>
-  </svg>
-);
-
-const LogoEmail = (
-  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-    <polyline points="22,6 12,13 2,6"></polyline>
-  </svg>
-);
-
-const LogoConfig = (
-  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3"></circle>
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-  </svg>
-);
-
-const LogoLogOut = (
-  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColorLogout} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-    <polyline points="17 16 22 12 17 8"></polyline>
-    <line x1="22" y1="12" x2="10" y2="12"></line>
-  </svg>
-);
-
-// Icono de Finanzas usando react-icons (gráfica ascendente)
-const LogoFinanzas = (<BsGraphUp size={28} />);
-
-// Icono de Chat
-const LogoChat = (
-  <svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-  </svg>
-);
-
-/**
- * Componente de la barra lateral para escritorio (usando Flexbox ajustado).
- * Exportado como SideBarDesktop.
- */
 export function SideBarDesktop() {
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Cargar conteo de mensajes sin leer
   useEffect(() => {
     const loadUnreadCount = async () => {
       try {
@@ -234,41 +205,31 @@ export function SideBarDesktop() {
         console.error('Error loading unread count:', e);
       }
     };
-
     loadUnreadCount();
-
-    // Actualizar cuando cambie el chat
     const handler = () => loadUnreadCount();
     window.addEventListener('admin-chat-update', handler);
-
-    // Actualizar en tiempo real cuando llegan mensajes por WebSocket
     const wsHandler = (e) => {
       const data = e.detail;
       if (data?.type === 'chat_message' && data.data) {
         const msg = data.data;
-        if (msg.sender_role === 'estudiante') {
-          // Incrementar contador inmediatamente
-          setUnreadCount(prev => prev + 1);
-        }
+        if (msg.sender_role === 'estudiante') setUnreadCount(prev => prev + 1);
       }
     };
     window.addEventListener('student-ws-message', wsHandler);
-
     return () => {
       window.removeEventListener('admin-chat-update', handler);
       window.removeEventListener('student-ws-message', wsHandler);
     };
   }, []);
+
   return (
     <aside
-      className="max-sm:hidden flex flex-col fixed w-[80px] shadow-[4px_0_10px_-2px_rgba(0,0,0,0.3)] z-40 top-[84px] h-[calc(100vh-84px)] bg-gray-50"
+      className="max-sm:hidden flex flex-col fixed w-[80px] shadow-[4px_0_10px_-2px_rgba(0,0,0,0.1)] z-40 top-[84px] h-[calc(100vh-84px)] bg-white/95 backdrop-blur-sm border-r border-gray-100"
       aria-label="Sidebar de escritorio"
     >
-      <nav className="h-full">
-        <ul className="p-4 h-full flex flex-col">
-          {/* Grupo superior de elementos de navegación principales */}
-          <div className="space-y-2">
-
+      <nav className="h-full overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <ul className="p-2 min-h-full flex flex-col">
+          <div className="space-y-1">
             <ElementoSideBar to="/administrativo/bienvenida" Icono={LogoInicio} NombreElemento="Bienvenida" />
             <ElementoSideBar to="/administrativo/dashboard-metricas" Icono={LogoDashboard} NombreElemento="Dashboard" />
             <ElementoSideBar to="/administrativo/comprobantes-recibo" Icono={LogoComprobantes} NombreElemento="Comprobantes Recibidos" />
@@ -278,17 +239,13 @@ export function SideBarDesktop() {
             <ElementoSideBar to="/administrativo/calendario" Icono={LogoCalendario} NombreElemento="Calendario" />
             <ElementoSideBar to="/administrativo/email" Icono={LogoEmail} NombreElemento="Email" />
             <ElementoSideBar to="/administrativo/asesores" Icono={LogoAlumnos} NombreElemento="Asesores" />
-            {/* Chat de soporte */}
             <ElementoSideBar to="/administrativo/chat" Icono={LogoChat} NombreElemento="Chat de Soporte" badge={unreadCount > 0 ? unreadCount : undefined} />
-            {/* Nueva opción: Finanzas */}
             <ElementoSideBar to="/administrativo/finanzas" Icono={LogoFinanzas} NombreElemento="Finanzas" />
           </div>
 
-          {/* Espacio flexible que empuja los elementos inferiores */}
           <div className="flex-grow"></div>
 
-          {/* Elementos de Configuración y Cerrar Sesión en la parte inferior */}
-          <div className="pt-2 space-y-2">
+          <div className="pt-2 space-y-1 pb-4 border-t border-gray-100 mt-2">
             <ElementoSideBar to="/administrativo/configuracion" Icono={LogoConfig} NombreElemento="Configuración" />
             <ElementoSideBar to="/login" Icono={LogoLogOut} NombreElemento="Cerrar Sesión" />
           </div>
@@ -299,16 +256,12 @@ export function SideBarDesktop() {
 }
 
 /**
- * Componente de la barra lateral para dispositivos móviles.
- * Exportado como SideBarsm.
- * @param {object} props - Las props del componente.
- * @param {boolean} props.isMenuOpen - Estado para saber si el menú móvil está abierto.
- * @param {function} props.closeMenu - Función para cerrar el menú, se pasa a los ElementoSideBar.
+ * SideBarsm (Móvil - ARREGLADO)
+ * Se aumentó el ancho a w-72 para evitar que el texto se corte.
  */
 export function SideBarsm({ isMenuOpen, closeMenu }) {
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Cargar conteo de mensajes sin leer
   useEffect(() => {
     const loadUnreadCount = async () => {
       try {
@@ -318,132 +271,53 @@ export function SideBarsm({ isMenuOpen, closeMenu }) {
         console.error('Error loading unread count:', e);
       }
     };
-
     loadUnreadCount();
-
-    // Actualizar cuando cambie el chat
     const handler = () => loadUnreadCount();
     window.addEventListener('admin-chat-update', handler);
-
-    // Actualizar en tiempo real cuando llegan mensajes por WebSocket
     const wsHandler = (e) => {
       const data = e.detail;
       if (data?.type === 'chat_message' && data.data) {
         const msg = data.data;
-        if (msg.sender_role === 'estudiante') {
-          // Incrementar contador inmediatamente
-          setUnreadCount(prev => prev + 1);
-        }
+        if (msg.sender_role === 'estudiante') setUnreadCount(prev => prev + 1);
       }
     };
     window.addEventListener('student-ws-message', wsHandler);
-
     return () => {
       window.removeEventListener('admin-chat-update', handler);
       window.removeEventListener('student-ws-message', wsHandler);
     };
   }, []);
+
   return (
     <>
       {isMenuOpen && (
         <>
-          {/* Overlay oscuro cuando el menú está abierto para cerrar al hacer clic fuera */}
           <div
             className="sm:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={closeMenu}
             aria-hidden="true"
           ></div>
-          {/* Contenedor del menú lateral móvil con transición */}
-          <aside className="sm:hidden fixed top-[64px] left-0 w-64 h-[calc(100vh-64px)] bg-gray-50 shadow-lg z-50 transform transition-transform duration-300 ease-in-out">
+          {/* CORRECCIÓN: w-72 en lugar de w-64 para dar espacio al texto */}
+          <aside className="sm:hidden fixed top-[64px] left-0 w-72 h-[calc(100vh-64px)] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
             <nav className="h-full">
-              <ul className="p-4 space-y-2 h-full flex flex-col justify-between overflow-y-auto">
-                {/* Grupo superior de elementos de navegación móvil */}
+              {/* padding lateral reducido en el ul para aprovechar espacio */}
+              <ul className="py-4 px-2 space-y-1 h-full flex flex-col justify-between overflow-y-auto no-scrollbar">
                 <div>
-                  {/* Los componentes ElementoSideBar ahora manejan la lógica de toggle y el resaltado */}
-                  <ElementoSideBar
-                    to="/administrativo/bienvenida"
-                    Icono={LogoInicio}
-                    NombreElemento="Bienvenida"
-                    onClick={closeMenu}
-                  />
-                  <ElementoSideBar
-                    to="/administrativo/dashboard-metricas"
-                    Icono={LogoDashboard}
-                    NombreElemento="Dashboard"
-                    onClick={closeMenu}
-                  />
-                  <ElementoSideBar
-                    to="/administrativo/comprobantes-recibo"
-                    Icono={LogoComprobantes}
-                    NombreElemento="Comprobantes Recibidos"
-                    onClick={closeMenu}
-                  />
-                  <ElementoSideBar
-                    to="/administrativo/lista-alumnos"
-                    Icono={LogoAlumnos}
-                    NombreElemento="Lista de Alumnos"
-                    onClick={closeMenu}
-                  />
-                  <ElementoSideBar
-                    to="/administrativo/generar-contrato"
-                    Icono={LogoGenerarContrato}
-                    NombreElemento="Generar Contrato"
-                    onClick={closeMenu}
-                  />
-                  <ElementoSideBar
-                    to="/administrativo/reportes-pagos"
-                    Icono={LogoReportesPagos}
-                    NombreElemento="Reportes de Pagos"
-                    onClick={closeMenu}
-                  />
-                  <ElementoSideBar
-                    to="/administrativo/calendario"
-                    Icono={LogoCalendario}
-                    NombreElemento="Calendario"
-                    onClick={closeMenu}
-                  />
-                  <ElementoSideBar
-                    to="/administrativo/email"
-                    Icono={LogoEmail}
-                    NombreElemento="Email"
-                    onClick={closeMenu}
-                  />
-                  <ElementoSideBar
-                    to="/administrativo/asesores"
-                    Icono={LogoAlumnos}
-                    NombreElemento="Asesores"
-                    onClick={closeMenu}
-                  />
-                  {/* Chat de soporte */}
-                  <ElementoSideBar
-                    to="/administrativo/chat"
-                    Icono={LogoChat}
-                    NombreElemento="Chat de Soporte"
-                    onClick={closeMenu}
-                    badge={unreadCount > 0 ? unreadCount : undefined}
-                  />
-                  {/* Nueva opción: Finanzas */}
-                  <ElementoSideBar
-                    to="/administrativo/finanzas"
-                    Icono={LogoFinanzas}
-                    NombreElemento="Finanzas"
-                    onClick={closeMenu}
-                  />
+                  <ElementoSideBar to="/administrativo/bienvenida" Icono={LogoInicio} NombreElemento="Bienvenida" onClick={closeMenu} />
+                  <ElementoSideBar to="/administrativo/dashboard-metricas" Icono={LogoDashboard} NombreElemento="Dashboard" onClick={closeMenu} />
+                  <ElementoSideBar to="/administrativo/comprobantes-recibo" Icono={LogoComprobantes} NombreElemento="Comprobantes Recibidos" onClick={closeMenu} />
+                  <ElementoSideBar to="/administrativo/lista-alumnos" Icono={LogoAlumnos} NombreElemento="Lista de Alumnos" onClick={closeMenu} />
+                  <ElementoSideBar to="/administrativo/generar-contrato" Icono={LogoGenerarContrato} NombreElemento="Generar Contrato" onClick={closeMenu} />
+                  <ElementoSideBar to="/administrativo/reportes-pagos" Icono={LogoReportesPagos} NombreElemento="Reportes de Pagos" onClick={closeMenu} />
+                  <ElementoSideBar to="/administrativo/calendario" Icono={LogoCalendario} NombreElemento="Calendario" onClick={closeMenu} />
+                  <ElementoSideBar to="/administrativo/email" Icono={LogoEmail} NombreElemento="Email" onClick={closeMenu} />
+                  <ElementoSideBar to="/administrativo/asesores" Icono={LogoAlumnos} NombreElemento="Asesores" onClick={closeMenu} />
+                  <ElementoSideBar to="/administrativo/chat" Icono={LogoChat} NombreElemento="Chat de Soporte" onClick={closeMenu} badge={unreadCount > 0 ? unreadCount : undefined} />
+                  <ElementoSideBar to="/administrativo/finanzas" Icono={LogoFinanzas} NombreElemento="Finanzas" onClick={closeMenu} />
                 </div>
-                {/* Agrupación de Configuración y Cerrar Sesión en la parte inferior para móvil */}
-                <div className="mt-auto pb-4">
-                  <ElementoSideBar
-                    to="/administrativo/configuracion"
-                    Icono={LogoConfig}
-                    NombreElemento="Configuración"
-                    onClick={closeMenu}
-                  />
-                  <ElementoSideBar
-                    to="/login"
-                    Icono={LogoLogOut}
-                    NombreElemento="Cerrar Sesión"
-                    onClick={closeMenu}
-                  />
+                <div className="mt-auto pb-4 pt-2 border-t border-gray-100">
+                  <ElementoSideBar to="/administrativo/configuracion" Icono={LogoConfig} NombreElemento="Configuración" onClick={closeMenu} />
+                  <ElementoSideBar to="/login" Icono={LogoLogOut} NombreElemento="Cerrar Sesión" onClick={closeMenu} />
                 </div>
               </ul>
             </nav>

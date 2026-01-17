@@ -140,3 +140,76 @@ otra cosa que uiero es que no solo permits usar apis de gemin sino tambien de gr
 - [ ] Panel de administración para configurar límites
 - [ ] Análisis de costos por proveedor
 - [ ] Selección automática inteligente de proveedor según tipo de tarea
+
+
+
+
+
+## Componentes Duplicados Similares para Diferentes Roles
+
+### **1. Sidebars (Barras laterales)**
+- [`SideBar_Alumno_Comp.jsx`](client/src/components/layouts/SideBar_Alumno_Comp.jsx) - Para alumnos
+- [`SideBarAdmin.jsx`](client/src/components/layouts/SideBarAdmin.jsx) - Para administradores  
+- [`SideBarAsesor.jsx`](client/src/components/layouts/SideBarAsesor.jsx) - Para asesores
+
+**Problema**: Misma funcionalidad (navegación, colapsado, responsive) pero con menús diferentes. Podría ser un componente configurable.
+
+### **2. Layouts (Estructuras de página)**
+- [`AlumnoLayout.jsx`](client/src/components/layouts/AlumnoLayout.jsx) - Layout para alumnos
+- [`AdminLayout.jsx`](client/src/components/layouts/AdminLayout.jsx) - Layout para administradores
+- [`Layout.jsx`](client/src/components/layouts/Layout.jsx) - Layout general
+
+**Problema**: Estructura similar (Header + Sidebar + Contenido) pero con componentes específicos.
+
+### **3. Dashboards (Paneles de inicio)**
+- [`InicioAlumnoDashboard.jsx`](client/src/components/student/InicioAlumnoDashboard.jsx) - Dashboard alumno
+- [`inicio-admin.jsx`](client/src/components/admin/inicio-admin.jsx) - Dashboard admin
+- [`AsesorMaestro.jsx`](client/src/components/Asesor/AsesorMaestro.jsx) - Dashboard asesor
+
+**Problema**: Muestra métricas y resúmenes similares pero con datos específicos por rol.
+
+### **4. Componentes de Configuración**
+- [`Configuracion_Alumno_Comp.jsx`](client/src/components/student/Configuracion_Alumno_Comp.jsx) - Config alumno
+- [`Configuracion_Admin_comp.jsx`](client/src/components/admin/Configuracion_Admin_comp.jsx) - Config admin
+- [`Configuraciones.jsx`](client/src/components/Asesor/Configuraciones.jsx) - Config asesor
+
+**Problema**: Formularios de configuración de perfil con lógica similar.
+
+### **5. Componentes de Actividades/Quizzes**
+- [`Actividades_Alumno_comp.jsx`](client/src/components/student/Actividades_Alumno_comp.jsx) - Actividades alumno
+- [`Actividades.jsx`](client/src/pages/Asesor/Actividades.jsx) - Actividades asesor
+
+**Problema**: Vista y gestión de actividades con diferencias mínimas de permisos.
+
+### **6. Componentes de Calendario**
+- [`Calendar_Alumno_Comp.jsx`](client/src/components/student/Calendar_Alumno_Comp.jsx) - Calendario alumno
+- [`Calendario_Admin_comp.jsx`](client/src/components/admin/Calendario_Admin_comp.jsx) - Calendario admin
+
+**Problema**: Mismo componente de calendario con diferentes fuentes de datos.
+
+### **7. Componentes de Feedback**
+- [`Feedback_Alumno_Comp.jsx`](client/src/components/student/Feedback_Alumno_Comp.jsx) - Feedback alumno
+- [`Feedback.jsx`](client/src/pages/Asesor/Feedback.jsx) - Feedback asesor
+
+**Problema**: Sistema de retroalimentación con lógica similar.
+
+### **8. Headers (Encabezados)**
+- [`Header_Alumno_comp.jsx`](client/src/components/layouts/Header_Alumno_comp.jsx) - Header alumno
+- [`HeaderAdmin.jsx`](client/src/components/layouts/HeaderAdmin.jsx) - Header admin
+
+**Problema**: Barra superior con búsqueda, notificaciones y perfil.
+
+### **Patrón de Duplicación Identificado**
+Cada rol tiene su propia versión de componentes con:
+- **Misma estructura HTML/CSS**
+- **Misma lógica de estado y efectos**
+- **Diferentes permisos y datos**
+- **Diferentes rutas de API**
+
+### **Solución Propuesta**
+1. **Componentes Parametrizados**: Crear componentes base con props para personalizar por rol
+2. **HOCs (Higher-Order Components)**: Envolver componentes base con lógica específica
+3. **Render Props**: Pasar funciones de renderizado condicional
+4. **Contextos de Rol**: Usar contexto para determinar permisos y mostrar/ocultar elementos
+
+**Ejemplo**: Un único `SideBar` que reciba `menuItems` y `userRole` como props, en lugar de tres componentes separados.
