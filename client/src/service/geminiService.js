@@ -485,6 +485,7 @@ export const detectarTipoEstudiante = (datos) => {
   const promedio = Number(datos?.promedio) || 0;
   const intentos = Number(datos?.intentos) || 0;
   const tp = Number(datos?.tiempoPromedio) || 0;
+
   const eficiencia = tp > 0 ? promedio / tp : 0;
 
   // Criterios para estudiante avanzado
@@ -499,296 +500,94 @@ export const detectarTipoEstudiante = (datos) => {
 
   // Por defecto, intermedio
   return 'intermedio';
-}
+};
 
 /**
  * Crear prompt avanzado para análisis completo de rendimiento
- * @param {Object} datos - Datos del estudiante
- * @returns {string} - Prompt avanzado para Gemini
+ * MODIFICADO: Enfocado en resoluciones paso a paso y detalle pedagógico
  */
 const crearPromptAnalisis = (datos) => {
-  // Si es análisis de fallos repetidos, usar prompt específico
+  // Si es análisis de fallos repetidos, mantener su lógica
   if (datos?.analisisTipo === 'fallos_repetidos') {
     return crearPromptFallosRepetidos(datos);
   }
 
-  const tendenciaGeneral = calcularTendenciaGeneral(datos);
-  const patronesAprendizaje = identificarPatronesAprendizaje(datos);
-  const nivelDificultad = evaluarNivelDificultad(datos);
   const nombreEstudiante = datos?.alumnoNombre || null;
   const primerNombre = nombreEstudiante ? nombreEstudiante.split(/\s+/)[0] : null;
 
   return `
-Actúa como un TUTOR EDUCATIVO EXPERTO con especialización en psicología educativa, análisis de datos académicos y pedagogía personalizada. Sé claro, directo y pedagógico. Explica como un tutor paciente que quiere que el estudiante entienda completamente.
+Actúa como un TUTOR EXPERTO DE NIVEL UNIVERSITARIO. Tu objetivo no es solo evaluar, sino ENSEÑAR mediante la corrección detallada.
 
-CONTEXTO EDUCATIVO:
+CONTEXTO:
 Estudiante: ${nombreEstudiante || 'Estudiante'}
 Simulación: "${datos?.simulacion || 'Simulación'}"
-Tipo de evaluación: ${datos?.tipoEvaluacion || 'Simulacro académico'}
-Nivel educativo: ${datos?.nivelEducativo || 'Preparatoria/Universidad'}
+Puntaje Oficial: ${datos?.intentoOficial ? `${Number(datos?.intentoOficial?.puntaje || 0).toFixed(1)}%` : 'N/A'}
 
-IMPORTANTE: Al generar el mensaje motivacional y el resumen general, debes dirigirte al estudiante usando su nombre. Si el nombre está disponible, comienza con "Hola, ${primerNombre || 'estudiante'}. Analicemos tu rendimiento..." Si no hay nombre disponible, usa "Hola. Analicemos tu rendimiento..."
+INSTRUCCIONES CRÍTICAS DE PEDAGOGÍA:
+1. **CERO GENERALIDADES:** No digas "estudia más matemáticas". Di "revisa la factorización de trinomios cuadrados perfectos".
+2. **RESOLUCIÓN PASO A PASO OBLIGATORIA:** En la sección de "preguntasProblematicas", si la pregunta implica CÁLCULOS (Matemáticas, Física, Química, Finanzas) o LÓGICA secuencial:
+   - NO digas simplemente "La respuesta es 50".
+   - DEBES escribir el procedimiento: "Paso 1: Planteamos la fórmula F=ma... Paso 2: Sustituimos 10kg... Paso 3: Calculamos...".
+   - Si el estudiante se equivocó en un signo o un despeje, señálalo explícitamente.
 
-ESTILO Y TONO:
-- Sé claro, directo y pedagógico. Explica como un tutor paciente que quiere que el estudiante entienda.
-- Usa ejemplos concretos y números específicos cuando sea posible (no digas "algunas preguntas", di "2 preguntas" o "3 de las 5 preguntas").
-- Reconoce el esfuerzo del estudiante pero sé honesto sobre las áreas de mejora.
-- Haz que el análisis sea accionable: el estudiante debe saber QUÉ hacer después de leerlo.
-- Evita jerga técnica innecesaria, pero no simplifiques demasiado conceptos importantes.
-- En las explicaciones paso a paso, usa un lenguaje claro: "Primero...", "Luego...", "Finalmente...".
-- Conecta las recomendaciones con las preguntas específicas donde falló. Menciona los temas por nombre cuando sea relevante.
-
-DATOS DE RENDIMIENTO DETALLADOS:
-═══════════════════════════════════════
-
-📊 MÉTRICAS GENERALES:
-- Intentos realizados: ${Number(datos?.intentos) || 0}
-- Puntaje oficial (primer intento): ${datos?.intentoOficial ? `${Number(datos?.intentoOficial?.puntaje || 0).toFixed(1)}%` : 'N/A'}
-- Intentos de práctica: ${(Array.isArray(datos?.intentosPractica) ? datos.intentosPractica.length : 0)} ${Array.isArray(datos?.intentosPractica) && datos.intentosPractica.length ? `→ ${datos.intentosPractica.map(i => Number(i.puntaje) || 0).join(' | ')}` : ''}
-- Promedio general: ${(Number(datos?.promedio) || 0).toFixed(1)}%
-- Tiempo promedio por intento: ${(Number(datos?.tiempoPromedio) || 0).toFixed(1)} minutos
-- Mejor tiempo registrado: ${Number(datos?.mejorTiempo) || 0} minutos
-- Tendencia general: ${tendenciaGeneral}
-- Patrones de aprendizaje: ${patronesAprendizaje}
-- Nivel de dificultad percibido: ${nivelDificultad}
-
-📈 ANÁLISIS POR MATERIA:
-${(datos.materias || []).map(m => `
-▶ ${m.nombre}:
-  • Promedio: ${(Number(m?.promedio) || 0).toFixed(1)}%
-  • Tendencia: ${m.tendencia}
-  • Puntajes por intento: ${(m?.puntajes || []).join(' → ')}
-  • Mejora: ${calcularMejora(m?.puntajes || [])}%
-  • Consistencia: ${calcularConsistencia(m?.puntajes || [])}
-  • Tiempo promedio: ${m.tiempoPromedio || 'N/A'} min
-`).join('')}
-
-🔍 ÁREAS DE DIFICULTAD IDENTIFICADAS:
-${(datos.areasDebiles || []).map(a => `
-• ${a?.nombre || 'Área'}: ${(Number(a?.promedio) || 0).toFixed(1)}%
-  - Tipo de dificultad: ${a?.tipoDificultad || 'Comprensión conceptual'}
-  - Frecuencia de errores: ${a?.frecuenciaErrores || 'Alta'}
-`).join('')}
-
-🎯 ANÁLISIS TEMPORAL:
-- Eficiencia temporal: ${calcularEficienciaTemporal(datos)}
-- Gestión del tiempo: ${evaluarGestionTiempo(datos)}
-- Curva de aprendizaje: ${datos.curvaAprendizaje || 'Ascendente'}
-
-INSTRUCCIONES PARA ANÁLISIS AVANZADO:
-═══════════════════════════════════════
-
-0. RESPETO DE POLÍTICA DE INTENTOS:
-- Considera el primer intento como "puntaje oficial" del estudiante. No lo reemplaces por intentos posteriores.
-- Usa el resto de intentos solamente como evidencia de retroalimentación, tendencias y mejora; nunca para modificar el puntaje oficial.
-
-1. **ANÁLISIS PSICOPEDAGÓGICO**: Evalúa el estilo de aprendizaje, motivación y confianza académica
-2. **DIAGNÓSTICO COGNITIVO**: Identifica fortalezas y debilidades en diferentes tipos de pensamiento
-3. **ESTRATEGIAS METACOGNITIVAS**: Proporciona técnicas de autorregulación y monitoreo
-4. **PLAN DE INTERVENCIÓN**: Crea un programa estructurado de mejora académica
-5. **RECURSOS ESPECÍFICOS**: Recomienda herramientas, libros, videos y ejercicios concretos
-6. **SEGUIMIENTO**: Establece indicadores de progreso y metas alcanzables
-
-FORMATO DE RESPUESTA (JSON AVANZADO):
+FORMATO DE RESPUESTA (JSON ESTRICTO):
 {
   "analisisGeneral": {
-    "resumen": "${nombreEstudiante ? `Hola, ${primerNombre}. ` : 'Hola. '}Analicemos tu rendimiento en esta evaluación. El análisis se centrará en tu progreso a lo largo de los intentos y te proporcionará recomendaciones específicas para mejorar. [Continúa con el análisis integral del rendimiento académico...]",
+    "resumen": "${nombreEstudiante ? `Hola, ${primerNombre}. ` : 'Hola. '}He revisado tu simulación. Aquí tienes el desglose detallado de tus errores y cómo corregirlos paso a paso...",
     "nivelActual": "Básico/Intermedio/Avanzado",
-    "potencialEstimado": "Descripción del potencial académico",
-    "perfilAprendizaje": "Visual/Auditivo/Kinestésico/Mixto",
-    "motivacion": "Alta/Media/Baja con justificación"
+    "motivacion": "Frase breve de aliento basada en datos reales"
   },
   "fortalezasDetalladas": [
     {
-      "materia": "Nombre de la materia",
-      "nivel": "Excelente/Bueno/Regular",
-      "habilidadesEspecificas": ["Habilidad 1", "Habilidad 2"],
-      "comentario": "Análisis específico y constructivo",
-      "comoMantener": "Estrategias para mantener el nivel"
+      "materia": "Materia",
+      "comentario": "Por qué lo hizo bien (ej. 'Dominas perfectamente el despeje de ecuaciones lineales')"
     }
   ],
   "areasDeDesarrollo": [
     {
-      "materia": "Nombre de la materia",
-      "nivelDificultad": "Alta/Media/Baja",
-      "tipoProblema": "Conceptual/Procedimental/Actitudinal",
-      "diagnostico": "Análisis profundo del problema",
-      "estrategiasPrincipales": ["Estrategia 1", "Estrategia 2", "Estrategia 3"],
-      "recursosRecomendados": ["Recurso 1", "Recurso 2"],
-      "tiempoEstimado": "Tiempo para ver mejoras",
-      "indicadoresProgreso": ["Indicador 1", "Indicador 2"]
+      "materia": "Materia débil",
+      "diagnostico": "Diagnóstico técnico (ej. 'Errores consistentes en la aplicación de la jerarquía de operaciones')",
+      "estrategiasPrincipales": ["Acción concreta 1", "Acción concreta 2"],
+      "accionesEspecificas": ["Acción concreta 1", "Acción concreta 2"]
     }
   ],
   "preguntasProblematicas": [
     {
-      "idPregunta": "ID o número de pregunta",
-      "enunciado": "Enunciado completo de la pregunta (copia el texto exacto)",
-      "vecesFallada": "Número de veces que falló esta pregunta",
-      "seleccion": ["Respuesta exacta que el estudiante seleccionó (del campo 'seleccion' de incorrectasDetalle)"],
-      "respuestasIncorrectas": ["Respuesta que dio en intento 1", "Respuesta que dio en intento 2"],
-      "correctas": ["La respuesta correcta exacta (del campo 'correctas' de incorrectasDetalle)"],
+      "idPregunta": "ID",
+      "enunciado": "Texto breve de la pregunta",
+      "vecesFallada": 1,
+      "seleccion": ["Respuesta errónea del estudiante"],
+      "correctas": ["Respuesta correcta"],
       "tipoError": "Conceptual/Procedimental/Atención",
-      "analisis": "Análisis detallado y pedagógico de por qué falla en esta pregunta. Explica el razonamiento incorrecto que tuvo el estudiante. Sé específico y claro, como un tutor.",
-      "recomendacion": "Recomendación específica y accionable para mejorar en este tipo de pregunta. Incluye pasos concretos que el estudiante puede seguir."
+      "analisis": "EXPLICACIÓN MAESTRA: Aquí es donde debes brillar. 1. Explica el concepto. 2. DESARROLLA LA SOLUCIÓN COMPLETA PASO A PASO (usa texto plano claro, ej: 'Primero multiplicamos A por B...'). 3. Explica por qué la respuesta del estudiante es incorrecta (ej: 'Sumaste en lugar de restar en el segundo paso').",
+      "recomendacion": "Consejo técnico rápido (ej: 'Recuerda siempre convertir unidades a metros antes de calcular')."
     }
   ],
-  "patronesErrores": {
-    "tipoPreguntaMasFallada": "Tipo de pregunta donde más falla (múltiple, verdadero/falso, etc.)",
-    "materiaMasProblematica": "Materia donde más errores comete",
-    "longitudPregunta": "¿Falla más en preguntas largas o cortas?",
-    "patronTemporal": "¿Mejora en ciertas preguntas entre intentos?",
-    "erroresRecurrentes": ["Error 1 que se repite", "Error 2 que se repite"]
-  },
   "planEstudioPersonalizado": {
     "faseInicial": {
-      "duracion": "2-3 semanas",
-      "objetivos": ["Objetivo 1 específico y accionable", "Objetivo 2 específico y accionable"],
       "actividades": [
         {
-          "materia": "Nombre de la materia (basado en las preguntas donde más falla)",
-          "tiempo": "30-45 min diarios",
-          "actividad": "Descripción detallada y específica. Basada en las preguntas problemáticas identificadas. Incluye qué temas repasar primero, qué ejercicios hacer, y en qué orden estudiar.",
-          "recursos": ["Recurso 1 específico", "Recurso 2 específico"],
-          "evaluacion": "Cómo evaluar el progreso (métricas específicas)"
-        }
-      ]
-    },
-    "faseIntermedia": {
-      "duracion": "4-6 semanas",
-      "objetivos": ["Objetivo 1 específico y accionable", "Objetivo 2 específico y accionable"],
-      "actividades": [
-        {
-          "materia": "Nombre",
-          "tiempo": "Tiempo específico",
-          "actividad": "Descripción detallada basada en las áreas de mejora identificadas",
-          "recursos": ["Recursos específicos"],
-          "evaluacion": "Cómo evaluar el progreso"
-        }
-      ]
-    },
-    "faseAvanzada": {
-      "duracion": "6-8 semanas",
-      "objetivos": ["Objetivo 1 específico y accionable", "Objetivo 2 específico y accionable"],
-      "actividades": [
-        {
-          "materia": "Nombre",
-          "tiempo": "Tiempo específico",
-          "actividad": "Descripción detallada para consolidar el aprendizaje",
-          "recursos": ["Recursos específicos"],
-          "evaluacion": "Cómo evaluar el progreso"
+          "materia": "Materia prioritaria",
+          "tiempo": "30 min",
+          "actividad": "Tema específico a repasar basado en los errores"
         }
       ]
     }
-  },
-  "tecnicasEstudio": {
-    "metodosRecomendados": ["Método 1 vinculado a preguntas específicas donde falla", "Método 2 vinculado a preguntas específicas donde falla", "Método 3 vinculado a preguntas específicas donde falla"],
-    "organizacionTiempo": "Sugerencias específicas de horarios. Basadas en las materias y temas donde más necesita mejorar.",
-    "ambienteEstudio": "Recomendaciones para el espacio de estudio",
-    "tecnicasMemorizacion": ["Técnica 1 específica para los temas problemáticos", "Técnica 2 específica para los temas problemáticos"],
-    "controlAnsiedad": "Estrategias para manejar el estrés académico, especialmente en los tipos de preguntas donde más falla"
-  },
-  "seguimientoEvaluacion": {
-    "metasCortoplazo": ["Meta 1", "Meta 2"],
-    "metasMedianoplazo": ["Meta 1", "Meta 2"],
-    "metasLargoplazo": ["Meta 1", "Meta 2"],
-    "indicadoresExito": ["Indicador 1", "Indicador 2"],
-    "frecuenciaEvaluacion": "Semanal/Quincenal/Mensual",
-    "ajustesNecesarios": "Cómo y cuándo modificar el plan"
-  },
-  "recursosAdicionales": {
-    "librosRecomendados": ["Libro 1", "Libro 2"],
-    "videosEducativos": ["Video 1", "Video 2"],
-    "aplicacionesUtiles": ["App 1", "App 2"],
-    "paginasWeb": ["Sitio 1", "Sitio 2"],
-    "ejerciciosPracticos": ["Ejercicio 1", "Ejercicio 2"]
-  },
-  "mensajeMotivacional": "Mensaje personalizado inspirador y realista que reconozca los logros y motive a continuar mejorando${nombreEstudiante ? `. Dirígete al estudiante usando su nombre: "${primerNombre}"` : ''}"
+  }
 }
 
-${Array.isArray(datos?.incorrectasDetalle) && datos.incorrectasDetalle.length ? `
-🚨🚨🚨 DATOS DETALLADOS DE PREGUNTAS INCORRECTAS (USA ESTOS DATOS OBLIGATORIAMENTE): 🚨🚨🚨
-══════════════════════════════════════
-Tienes acceso a las preguntas ESPECÍFICAS donde el estudiante falló. DEBES usar estos datos para dar ejemplos concretos y personalizados en la sección "preguntasProblematicas" y en el análisis general.
+DATOS DE ERRORES DEL ESTUDIANTE (ANALIZA ESTO A FONDO):
+${Array.isArray(datos?.incorrectasDetalle) && datos.incorrectasDetalle.length ? JSON.stringify(datos.incorrectasDetalle.slice(0, 7), null, 2) : 'No hay detalles de errores específicos disponibles, genera recomendaciones generales basadas en los promedios.'}
 
-Para cada pregunta en incorrectasDetalle, tienes:
-- enunciado: El texto completo de la pregunta
-- seleccion: Las opciones que el estudiante seleccionó (puede estar vacío)
-- correctas: Las opciones correctas
-- tipo: Tipo de pregunta (multiple, tf, short, etc.)
-- materia: Materia o categoría de la pregunta
-- esOficial: Si viene del intento oficial (primer intento)
+MÉTRICAS POR MATERIA:
+${(datos.materias || []).map(m => `- ${m.nombre}: ${m.promedio}%`).join('\n')}
 
-**INSTRUCCIONES CRÍTICAS:**
-1. DEBES mencionar al menos 5 de estas preguntas específicas (o todas si hay menos de 5) en el campo "preguntasProblematicas".
-2. Para cada pregunta mencionada, incluye:
-   - El enunciado completo (copia el texto exacto del campo "enunciado")
-   - Qué respondió el estudiante (del campo "seleccion" - menciona la opción exacta que eligió)
-   - Cuál es la respuesta correcta (del campo "correctas" - menciona la opción exacta correcta)
-   - Por qué falló específicamente (error conceptual/procedimental/atención con explicación detallada del razonamiento incorrecto que tuvo el estudiante)
-   - Cómo resolverla correctamente paso a paso (explica cada paso del proceso de solución como si fueras un tutor, incluyendo fórmulas, conceptos clave, y el razonamiento correcto. Sé PEDAGÓGICO: explica como si estuvieras enseñando a alguien que no entiende el tema)
-   - Tipo de pregunta y materia (si está disponible)
-3. NO uses frases genéricas. Da EJEMPLOS CONCRETOS con los enunciados reales de las preguntas.
-4. Sé PEDAGÓGICO: explica como si estuvieras enseñando a alguien que no entiende el tema.
+IMPORTANTE:
+- Prioriza la sección "preguntasProblematicas". Es la más valiosa para el estudiante.
+- Usa lenguaje matemático preciso pero claro.
+- Si el estudiante respondió "$425" y era "$475", busca la lógica del error (quizás olvidó sumar el costo fijo).
 
-Datos disponibles (usa estos para dar ejemplos concretos):
-${JSON.stringify(datos.incorrectasDetalle.slice(0, 10), null, 2)}
-
-**IMPORTANTE:** Si hay datos de incorrectasDetalle, DEBES incluirlos en tu análisis. No los ignores. El estudiante necesita saber QUÉ preguntas específicas le cuestan trabajo.
-` : ''}
-
-📋 ANÁLISIS DETALLADO DE PREGUNTAS Y RESPUESTAS:
-═══════════════════════════════════════
-${datos?.detalle ? `
-Tienes acceso a TODAS las preguntas del examen y TODAS las respuestas de TODOS los intentos.
-
-PREGUNTAS DEL EXAMEN (${datos.detalle.preguntas?.length || 0} preguntas):
-${(datos.detalle.preguntas || []).map((p, idx) => `
-Pregunta ${idx + 1} (ID: ${p.id}, Tipo: ${p.tipo}, Puntos: ${p.puntos}):
-- Enunciado: "${p.enunciado || 'Sin enunciado'}"
-- Opciones:
-${(p.opciones || []).map((o, oIdx) => `  ${String.fromCharCode(65 + oIdx)}. "${o.texto || ''}" ${o.es_correcta ? '✓ CORRECTA' : ''}`).join('\n')}
-`).join('\n')}
-
-INTENTOS Y RESPUESTAS DEL ESTUDIANTE:
-${(datos.detalle.intentos || []).map((it, itIdx) => `
-Intento ${itIdx + 1} (ID: ${it.intentoId}):
-- Puntaje: ${it.puntaje}%
-- Correctas: ${it.correctas || 'N/D'} / Total: ${it.total_preguntas || 'N/D'}
-- Tiempo: ${it.tiempoSegundos ? Math.round(it.tiempoSegundos) + 's' : 'N/D'}
-- Respuestas:
-${(it.respuestas || []).map(r => {
-    const pregunta = datos.detalle.preguntas?.find(p => p.id === r.id_pregunta);
-    const opcionSeleccionada = pregunta?.opciones?.find(o => o.id === r.id_opcion);
-    const esCorrecta = opcionSeleccionada?.es_correcta || false;
-    return `  • Pregunta ${pregunta ? datos.detalle.preguntas.indexOf(pregunta) + 1 : r.id_pregunta}: ${opcionSeleccionada ? `"${opcionSeleccionada.texto}"` : (r.texto_libre || 'Sin respuesta')} ${esCorrecta ? '✓' : '✗'}`;
-  }).join('\n')}
-`).join('\n')}
-
-**TAREA CRÍTICA DE ANÁLISIS:**
-1. **Identifica las preguntas donde el estudiante falla MÁS VECES** (analiza todos los intentos)
-2. **Identifica patrones**: ¿Falla más en cierto tipo de pregunta? ¿En cierta materia? ¿En preguntas largas o cortas?
-3. **Analiza la evolución**: ¿Mejoró en preguntas específicas entre intentos? ¿Qué preguntas sigue fallando?
-4. **Proporciona ejemplos concretos**: Menciona específicamente 3-5 preguntas donde falla más, incluyendo:
-   - El enunciado completo o un resumen claro
-   - Qué respondió incorrectamente
-   - Por qué falló (error conceptual, procedimental, o de atención)
-   - Cómo corregirlo paso a paso (explica como un tutor)
-5. **Recomendaciones específicas**: Basadas en las preguntas reales donde falla, no solo en porcentajes generales
-
-**IMPORTANTE:** El análisis debe ser PRÁCTICO y ACCIONABLE. El estudiante necesita saber QUÉ preguntas específicas le cuestan trabajo y CÓMO mejorar en ellas. No te limites a porcentajes y tendencias generales. Si tienes acceso a incorrectasDetalle (arriba), PRIORIZA usar esos datos porque son más específicos.
-` : 'No hay datos detallados de preguntas y respuestas disponibles. Analiza basándote en las métricas generales.'}
-
-IMPORTANTE: 
-- Proporciona un análisis profundo, específico, pedagógico y personalizado. Usa datos concretos y evita generalidades. El análisis debe ser constructivo, motivador y orientado a la acción.
-- ${nombreEstudiante ? `El estudiante se llama "${nombreEstudiante}". En el campo "resumen" del "analisisGeneral", DEBES comenzar con "Hola, ${primerNombre}. Analicemos tu rendimiento en esta evaluación..." usando el primer nombre del estudiante.` : 'En el campo "resumen" del "analisisGeneral", comienza con "Hola. Analicemos tu rendimiento en esta evaluación..."'}
-- En el campo "mensajeMotivacional", ${nombreEstudiante ? `también debes dirigirte al estudiante usando su nombre: "Hola, ${primerNombre}. Analicemos tu rendimiento..."` : 'usa un saludo general: "Hola. Analicemos tu rendimiento..."'}
-- **ENFÓCATE EN PREGUNTAS ESPECÍFICAS**: Si tienes acceso a las preguntas y respuestas (ya sea a través de "detalle" o "incorrectasDetalle"), dedica una sección importante del análisis a identificar las preguntas donde más falla y dar ejemplos concretos. Esto es más útil que solo hablar de porcentajes.
-- **PRIORIZA incorrectasDetalle**: Si hay datos de "incorrectasDetalle" al inicio del prompt, DEBES usarlos obligatoriamente para generar ejemplos concretos en "preguntasProblematicas". No los ignores.
-- **SÉ PEDAGÓGICO**: Explica los conceptos como si estuvieras enseñando a alguien que no los entiende completamente. Usa lenguaje claro, ejemplos concretos, y pasos detallados.
-- **ANÁLISIS ACCIONABLE**: El estudiante debe saber QUÉ hacer después de leer el análisis. Cada recomendación debe ser específica y vinculada a las preguntas o temas donde falla.
-- **LONGITUD**: Genera un análisis completo y detallado. Prioriza la calidad y utilidad sobre la brevedad. El análisis debe tener entre 400 y 600 palabras equivalentes en el JSON.
-
-Responde SOLO con el JSON, sin texto adicional.
+Responde SOLO con el JSON.
 `;
 };
 

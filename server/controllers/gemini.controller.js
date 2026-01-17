@@ -498,14 +498,35 @@ export const geminiGenerate = async (req, res) => {
       }
     }
 
-    // --- RESPUESTA FINAL ---
-    console.error(`[Gemini] Falló tras ${attempt} intentos.`);
-    return res.status(lastStatus).json({
-      error: lastErrorData?.error?.message || 'Error en Gemini',
-      status: lastStatus,
-      finalModel: currentModel,
-      availableModelsHint: 'Revisa la consola del servidor para ver los modelos disponibles.'
-    });
+    // --- FALLBACK A GROQ CUANDO GEMINI FALLA ---
+    console.error(`[Gemini] Falló tras ${attempt} intentos. Intentando fallback a Groq...`);
+    
+    try {
+      // Importar dinámicamente para evitar dependencia circular
+      const { groqGenerate } = await import('./groq.controller.js');
+      
+      // Crear un mock request/response para reutilizar la lógica de Groq
+      const mockReq = {
+        ...req,
+        body: {
+          ...req.body,
+          proveedor: 'groq', // Forzar uso de Groq
+          purpose: purpose || 'general' // Usar el mismo propósito
+        }
+      };
+      
+      // Llamar a groqGenerate directamente
+      return groqGenerate(mockReq, res);
+      
+    } catch (groqError) {
+      console.error('[Gemini->Groq] Fallback también falló:', groqError.message);
+      return res.status(lastStatus).json({
+        error: 'Todos los proveedores de IA no disponibles. Intente más tarde.',
+        status: lastStatus,
+        finalModel: currentModel,
+        fallbackError: groqError.message
+      });
+    }
 
   } catch (e) {
     console.error('[Gemini] Internal Server Error:', e);

@@ -1,16 +1,21 @@
-// Servicio dedicado para análisis de rendimiento de quizzes con IA (Gemini)
+// Servicio dedicado para análisis de rendimiento de quizzes con IA (Gemini + Respaldo Groq)
 // REFACTORIZADO: Ahora usa el proxy backend en lugar de llamadas directas a Google API
 
-// Configuración del proxy backend (igual que geminiService.js)
+// Configuración del proxy backend (Gemini)
 const PROXY_ENDPOINT = '/api/ai/gemini/generate';
 // Modelo configurado manualmente (si se especifica, se usa ese directamente)
-const QUIZ_AI_MODEL_CONFIGURED = import.meta?.env?.VITE_GEMINI_QUIZ_MODEL || import.meta?.env?.VITE_GEMINI_MODEL || 'gemini-2.0-flash';
+const QUIZ_AI_MODEL_CONFIGURED = import.meta?.env?.VITE_GEMINI_QUIZ_MODEL || import.meta?.env?.VITE_GEMINI_MODEL || 'gemini-1.5-flash';
 // Lista de modelos a probar en orden de preferencia si el configurado falla
 const MODELOS_DISPONIBLES = [
-  'gemini-2.0-flash',
   'gemini-1.5-flash',
-  'gemini-pro-latest',
+  'gemini-1.5-pro',
+  'gemini-pro',
 ];
+
+// --- NUEVA CONFIGURACIÓN: RESPALDO GROQ ---
+// Asegúrate de que tu backend tenga esta ruta configurada para manejar peticiones a Groq
+const GROQ_PROXY_ENDPOINT = '/api/ai/groq/generate'; 
+const GROQ_MODEL = 'llama3-70b-8192'; // Modelo potente y rápido, buena alternativa a Gemini Pro
 
 // La IA siempre está "configurada" porque el proxy maneja la API key
 export function isQuizIAConfigured() {
@@ -28,15 +33,13 @@ function extractTextFromGemini(respJson) {
   return text;
 }
 
+// Normaliza la respuesta del endpoint de Groq (formato OpenAI)
+function extractTextFromGroq(respJson) {
+  return respJson?.choices?.[0]?.message?.content || null;
+}
+
 /**
  * Ejecuta un análisis resumido de desempeño para un quiz específico.
- * params: {
- * itemName: string,
- * totalIntentos: number,
- * mejorPuntaje: number,
- * promedio: number,
- * scores: number[] (orden cronológico),
- * }
  */
 export async function analyzeQuizPerformance(params) {
   const {
@@ -79,7 +82,7 @@ export async function analyzeQuizPerformance(params) {
     oficialDuracion,
   } = params || {};
 
-  // Utilidades locales para generación de fallback
+  // Utilidades locales para generación de fallback (INTACTAS)
   const stripMd = (s) => String(s || '')
     .replace(/`{1,3}[^`]*`{1,3}/g, '') // code
     .replace(/\*\*|__/g, '') // bold
@@ -93,6 +96,7 @@ export async function analyzeQuizPerformance(params) {
     .normalize('NFD').replace(/\p{Diacritic}/gu, '')
     .toLowerCase();
   const truncate = (s, n) => (String(s).length > n ? String(s).slice(0, n - 1).trimEnd() + '…' : String(s));
+  
   const pickMicroTip = (enun) => {
     const t = normalize(enun);
     // Gramática específica: queísmo / dequeísmo
@@ -115,7 +119,7 @@ export async function analyzeQuizPerformance(params) {
     if (/(idea principal|infer|argument|autor|parrafo|texto|titulo|resumen|contexto)/i.test(t)) {
       return 'Subraya palabras clave y distingue idea principal de detalles; parafrasea en una línea.';
     }
-    // Gramática y ortografía (solo si explícito)
+    // Gramática y ortografía
     if (/(ortograf|acentu|diacri|tilde|puntu|coma|punto y coma|signos|concord|sujeto|verbo|estilo indirecto|discurso indirecto)/i.test(t)) {
       if (/(acentu|diacri|tilde)/i.test(t)) return 'Repasa acentuación diacrítica: tú/tu, él/el, más/mas, sí/si, té/te.';
       if (/(puntu|coma|punto y coma|signos)/i.test(t)) return 'Cuida la puntuación: comas en incisos/listas y evita coma entre sujeto y predicado.';
@@ -171,6 +175,7 @@ export async function analyzeQuizPerformance(params) {
     if (/(gramatic|ortograf)/i.test(t)) return 'gramatica-general';
     return 'general';
   };
+
   const resourcesFor = (topic) => {
     switch (topic) {
       case 'queismo':
@@ -337,7 +342,7 @@ export async function analyzeQuizPerformance(params) {
   // Garantiza secciones mínimas en la salida final y normaliza encabezados
   const escapeReg = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const stripAccents = (s) => String(s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '');
-  const hasHeadingStrict = (md, title) => new RegExp(`(^|\n)###\s+${escapeReg(title)}\b`, 'i').test(String(md || ''));
+  const hasHeadingStrict = (md, title) => new RegExp(`(^|\n)###\\s+${escapeReg(title)}\\b`, 'i').test(String(md || ''));
   const hasHeadingLoose = (md, title) => {
     const lines = String(md || '').split('\n');
     const tNorm = stripAccents(title).toLowerCase();
@@ -543,8 +548,6 @@ export async function analyzeQuizPerformance(params) {
   };
 
   // CORRECCIÓN: El systemPrompt ahora se enfoca únicamente en el ROL y TONO de la IA.
-  // Se eliminaron las instrucciones sobre la longitud y el contenido del resumen para evitar conflictos
-  // con las instrucciones más detalladas del userQuery.
   const systemPrompt = `Actúa como un tutor experto, analítico y técnico. Tu tono debe ser profesional pero motivador. Tu objetivo es proporcionar un diagnóstico preciso y accionable para mejorar el rendimiento académico. Responde siempre en español.`;
 
   // Limitar longitud de listas para evitar respuestas muy largas
@@ -671,20 +674,21 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
   };
 
   let json, text;
+  let geminiSuccess = false; // Flag para controlar si necesitamos ir a Groq
+
+  // =================================================================================
+  // 1. INTENTO CON GEMINI (Estrategia Principal)
+  // =================================================================================
   try {
-    // Preparar lista de modelos a probar
     let modelosAProbar = [];
     if (QUIZ_AI_MODEL_CONFIGURED) {
-      // Si hay modelo configurado, intentar solo ese primero
-      modelosAProbar = [QUIZ_AI_MODEL_CONFIGURED];
+      modelosAProbar = [QUIZ_AI_MODEL_CONFIGURED, ...MODELOS_DISPONIBLES.filter(m => m !== QUIZ_AI_MODEL_CONFIGURED)];
     } else {
-      // Si no, probar todos en orden
       modelosAProbar = MODELOS_DISPONIBLES;
     }
 
     let res = null;
     let modeloUsado = null;
-    let ultimoError = null;
 
     console.log('🔍 Iniciando análisis de quiz con IA (usando proxy backend)...');
 
@@ -703,96 +707,81 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
         });
 
         if (res.ok) {
-          modeloUsado = modelo;
-          console.log(`✅ Modelo ${modelo} funcionó correctamente`);
-          break;
-        } else if (res.status === 404) {
-          // Modelo no disponible, continuar con el siguiente
-          console.warn(`⚠️ Modelo ${modelo} no disponible (404), probando siguiente...`);
-          const errorJson = await res.json().catch(() => ({}));
-          ultimoError = errorJson?.error?.message || errorJson?.error || `Modelo ${modelo} no encontrado`;
-          res = null; // Resetear para intentar siguiente
-        } else if (res.status === 429) {
-          // Rate limit - no continuar probando otros modelos
-          console.warn(`⚠️ Rate limit alcanzado (429)`);
-          const errorJson = await res.json().catch(() => ({}));
-          ultimoError = errorJson?.error?.message || errorJson?.error || 'Rate limit excedido';
-          break; // No probar más modelos
+          json = await res.json();
+          text = extractTextFromGemini(json);
+          if (text) {
+            modeloUsado = modelo;
+            geminiSuccess = true;
+            console.log(`✅ Análisis generado exitosamente con ${modeloUsado} (vía proxy)`);
+            break; // Éxito con Gemini, salir del loop
+          }
         } else {
-          // Otro error (403, 500, etc.) - no continuar probando
-          const errorJson = await res.json().catch(() => ({}));
-          ultimoError = errorJson?.error?.message || errorJson?.error || `Error ${res.status}`;
-          console.warn(`⚠️ Error ${res.status} con modelo ${modelo}:`, ultimoError);
-          break;
+          console.warn(`⚠️ Gemini ${modelo} no respondió OK: ${res.status}`);
         }
       } catch (err) {
-        console.warn(`⚠️ Error al probar modelo ${modelo}:`, err.message);
-        ultimoError = err.message;
-        res = null;
-        // Continuar con el siguiente modelo
+        console.warn(`⚠️ Error de red al probar modelo ${modelo}:`, err.message);
       }
-    }
-
-    if (!res || !res.ok) {
-      // Intentar obtener más información del error
-      let errorDetails = '';
-      if (res) {
-        try {
-          const errorJson = await res.json();
-          errorDetails = errorJson?.error?.message || errorJson?.message || JSON.stringify(errorJson);
-        } catch {
-          errorDetails = await res.text().catch(() => ultimoError || 'No se pudo leer el error');
-        }
-      } else {
-        errorDetails = ultimoError || 'Ningún modelo disponible';
-      }
-
-      if (res?.status === 403) {
-        console.warn('🔐 IA 403 Forbidden:', {
-          status: res.status,
-          statusText: res.statusText,
-          error: errorDetails,
-          suggestion: 'El servidor proxy no tiene permisos para acceder a la API de Gemini'
-        });
-      } else if (res?.status === 404 || !res) {
-        console.warn('📭 IA 404 Not Found - Ningún modelo disponible:', {
-          modelosProbados: modelosAProbar.join(', '),
-          error: errorDetails,
-          suggestion: 'Verifica la configuración del proxy backend y que tenga acceso a los modelos de Gemini'
-        });
-      } else if (res?.status === 429) {
-        console.warn('⏱️ Rate limit alcanzado:', {
-          status: res.status,
-          error: errorDetails,
-          suggestion: 'Espera unos minutos antes de intentar nuevamente'
-        });
-      } else {
-        console.warn('❌ IA no OK:', res?.status, res?.statusText, errorDetails);
-      }
-
-      console.log('🔄 Usando análisis de fallback local...');
-      return buildFallbackAnalysis(params);
-    }
-
-    json = await res.json();
-    text = extractTextFromGemini(json);
-    if (modeloUsado) {
-      console.log(`✅ Análisis generado exitosamente con ${modeloUsado} (vía proxy)`);
     }
   } catch (err) {
-    console.warn('Fallo al llamar/parsear IA, usando fallback:', err);
-    return buildFallbackAnalysis(params);
+    console.warn('Fallo general en bloque Gemini:', err);
   }
+
+  // =================================================================================
+  // 2. INTENTO CON GROQ (Respaldo si Gemini falló)
+  // =================================================================================
+  if (!geminiSuccess) {
+    console.log('🔄 Gemini falló o no devolvió texto. Activando respaldo de GROQ...');
+    
+    try {
+      // Groq usa formato OpenAI (messages), no el formato de Google (contents)
+      const groqPayload = {
+        model: GROQ_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userQuery }
+        ],
+        temperature: 0.7,
+        max_tokens: 3072
+      };
+
+      const resGroq = await fetch(GROQ_PROXY_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(groqPayload), // Asegúrate de que tu backend soporte este body
+      });
+
+      if (resGroq.ok) {
+        const jsonGroq = await resGroq.json();
+        text = extractTextFromGroq(jsonGroq);
+        if (text) {
+             console.log('✅ Respaldo Groq respondió exitosamente.');
+        } else {
+             console.warn('⚠️ Groq respondió OK pero sin contenido de texto.');
+        }
+      } else {
+        console.warn(`❌ Groq falló con status: ${resGroq.status}`);
+      }
+    } catch (groqErr) {
+      console.error('❌ Error crítico al intentar conectar con Groq:', groqErr);
+    }
+  }
+
+  // =================================================================================
+  // 3. FALLBACK FINAL (Si Gemini y Groq fallaron)
+  // =================================================================================
   if (!text) {
     if (json?.promptFeedback?.blockReason) {
       console.warn('IA bloqueó el prompt:', json.promptFeedback.blockReason, json.promptFeedback.safetyRatings || '');
-    } else if (Array.isArray(json?.candidates) && json.candidates[0]?.finishReason) {
-      console.warn('IA finishReason:', json.candidates[0].finishReason);
-    } else {
-      console.warn('IA sin texto utilizable, json=', json);
     }
+    console.warn('IA sin texto utilizable (ni Gemini ni Groq). Usando fallback local.');
     return buildFallbackAnalysis(params);
   }
+
+  // =================================================================================
+  // 4. POST-PROCESAMIENTO (Común para cualquier IA que haya respondido)
+  // =================================================================================
+  
   // Fallback: si la IA omitió la sección de ejemplos y tenemos datos, la agregamos de forma determinística
   const shouldAppendExamples = Array.isArray(incorrectasLista) && incorrectasLista.length > 0;
   const norm = normalize(text);
@@ -844,7 +833,7 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
     const hasRec = hasHeadingLoose(out, 'Errores recurrentes y recursos');
     const sec = buildRecurringSection(erroresRecurrentes);
     if (sec && !hasRec) {
-      // La colocamos antes de “Recomendaciones prácticas”
+      // La colocamos antes de “Recomendaciones técnicas”
       out = insertBeforeHeading(out, 'Recomendaciones técnicas', sec);
     }
   }
@@ -853,5 +842,8 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
     const secGuia = buildSecResourceGuide(params);
     out = insertBeforeHeading(out, 'Conclusión breve', secGuia);
   }
-  return out + '\n\n<<<AI_SOURCE:GEMINI>>>';
+  
+  // Marca la fuente según quién respondió
+  const sourceTag = geminiSuccess ? 'GEMINI' : 'GROQ';
+  return out + `\n\n<<<AI_SOURCE:${sourceTag}>>>`;
 }

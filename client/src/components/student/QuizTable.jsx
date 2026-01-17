@@ -83,6 +83,13 @@ export function QuizTable({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // Forzar vista de tabla en móvil
+    React.useEffect(() => {
+        if (isMobile && viewMode !== 'table') {
+            setViewMode('table');
+        }
+    }, [isMobile, viewMode]);
+
     return (
         <div className="px-0 sm:px-3 md:px-4 lg:px-6 pt-6 sm:pt-8 md:pt-10 py-6">
             {/* Header */}
@@ -147,22 +154,24 @@ export function QuizTable({
                             <span>Filtrar quizzes</span>
                         </div>
                         {/* Toggle de vista - Solo móvil */}
-                        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 md:hidden">
-                            <button
-                                onClick={() => setViewMode('table')}
-                                className={`p-1.5 rounded transition-all ${viewMode === 'table' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                                title="Vista de tabla"
-                            >
-                                <Table2 className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('cards')}
-                                className={`p-1.5 rounded transition-all ${viewMode === 'cards' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                                title="Vista de tarjetas"
-                            >
-                                <LayoutGrid className="w-4 h-4" />
-                            </button>
-                        </div>
+                        {!isMobile && (
+                            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 md:hidden">
+                                <button
+                                    onClick={() => setViewMode('table')}
+                                    className={`p-1.5 rounded transition-all ${viewMode === 'table' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    title="Vista de tabla"
+                                >
+                                    <Table2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('cards')}
+                                    className={`p-1.5 rounded transition-all ${viewMode === 'cards' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    title="Vista de tarjetas"
+                                >
+                                    <LayoutGrid className="w-4 h-4" />
+                                </button>
+                            </div>
+                        )}
                     </div>
                     {isMobile ? (
                         <div className="relative w-full">
@@ -285,7 +294,14 @@ export function QuizTable({
                                 >
                                     {/* Header: Título y Badge */}
                                     <div className="flex items-start justify-between gap-3 mb-2">
-                                        <h3 className="font-extrabold text-gray-900 text-sm leading-tight flex-1">{quiz.nombre}</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => { if (quiz.descripcion) openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id }); }}
+                                            className={`font-extrabold text-gray-900 text-sm leading-tight flex-1 text-left truncate ${quiz.descripcion ? 'cursor-pointer hover:underline' : ''}`}
+                                            title={quiz.nombre}
+                                        >
+                                            {quiz.nombre}
+                                        </button>
                                         <span className={`text-xs font-extrabold px-2 py-1 rounded-lg border-2 whitespace-nowrap ${est === 'completado' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                                             est === 'disponible' ? 'bg-blue-100 text-blue-700 border-blue-200' :
                                                 'bg-red-100 text-red-600 border-red-200'
@@ -435,25 +451,25 @@ export function QuizTable({
                     /* Vista de tabla */
                     <div>
                         <div className="overflow-x-auto">
-                            <table className="w-full divide-y divide-gray-200/50 text-sm" style={{ minWidth: '1000px' }}>
+                            <table className="w-full divide-y divide-gray-200/50 text-sm" style={{ minWidth: isMobile ? '1000px' : '1250px' }}>
                                 <thead className="bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500">
                                     <tr>
-                                        <th className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '250px' }}>
+                                        <th className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: isMobile ? '240px' : '280px' }}>
                                             Quiz
                                         </th>
-                                        <th className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '120px' }}>
+                                        <th className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '140px' }}>
                                             Fecha Límite
                                         </th>
-                                        <th className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '120px' }}>
+                                        <th className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '140px' }}>
                                             Estado
                                         </th>
-                                        <th className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '140px' }}>
+                                        <th className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '170px' }}>
                                             Mejor Puntaje
                                         </th>
-                                        <th className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '120px' }}>
+                                        <th className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '140px' }}>
                                             Intentos
                                         </th>
-                                        <th className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 text-center font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '150px' }}>
+                                        <th className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-center font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '170px' }}>
                                             Acciones
                                         </th>
                                     </tr>
@@ -487,40 +503,49 @@ export function QuizTable({
 
                                         return (
                                             <tr key={quiz.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-violet-50/30 transition-colors duration-200`}>
-                                                <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4">
+                                                <td className={`${isMobile ? 'px-1.5 py-1' : 'px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4'}`}>
                                                     <div>
-                                                        <div className="text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-900 leading-tight">{quiz.nombre}</div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => { if (quiz.descripcion) openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id }); }}
+                                                            className={`${isMobile ? 'text-[8px]' : 'text-[9px]'} sm:text-xs md:text-sm lg:text-base font-bold text-gray-900 leading-tight text-left w-full truncate ${quiz.descripcion ? 'cursor-pointer hover:underline' : ''}`}
+                                                            title={quiz.nombre}
+                                                        >
+                                                            {quiz.nombre}
+                                                        </button>
                                                         {quiz.descripcion && (
-                                                            <div className="text-xs text-gray-500 mt-0.5">
+                                                            <div
+                                                                onClick={() => openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id })}
+                                                                className="text-xs text-gray-500 mt-0.5 cursor-pointer group"
+                                                            >
                                                                 <p
                                                                     style={{
                                                                         display: '-webkit-box',
-                                                                        WebkitLineClamp: 2,
+                                                                        WebkitLineClamp: isMobile ? 1 : 2,
                                                                         WebkitBoxOrient: 'vertical',
                                                                         overflow: 'hidden',
                                                                         textAlign: 'justify',
                                                                         maxWidth: descMaxCh,
                                                                         wordBreak: 'break-word'
                                                                     }}
+                                                                    className="group-hover:text-gray-700 transition-colors"
                                                                 >
                                                                     {quiz.descripcion}
                                                                 </p>
-                                                                {String(quiz.descripcion).length > 160 && (
-                                                                    <button
-                                                                        onClick={() => openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id })}
-                                                                        className="mt-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline"
-                                                                    >
-                                                                        Ver instrucciones
-                                                                    </button>
-                                                                )}
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id }); }}
+                                                                    className={`mt-1 ${isMobile ? 'text-[10px]' : 'text-[11px]'} text-blue-600 hover:text-blue-800 hover:underline font-semibold`}
+                                                                >
+                                                                    Ver instrucciones
+                                                                </button>
                                                             </div>
                                                         )}
-                                                        <div className="text-[8px] sm:text-[9px] md:text-xs text-gray-400 mt-0.5">
+                                                        <div className={`${isMobile ? 'text-[6px] mt-0' : 'text-[8px] sm:text-[9px] md:text-xs'} text-gray-400 ${isMobile ? '' : 'mt-0.5'}`}>
                                                             Tiempo: {quiz.tiempoLimite} | Intentos: {quiz.maxIntentos}
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 whitespace-nowrap">
+                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap">
                                                     <div className="text-xs sm:text-sm text-gray-900 font-semibold">
                                                         {quiz.fechaEntrega ? new Date(quiz.fechaEntrega).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) : 'Sin fecha'}
                                                     </div>
@@ -528,7 +553,7 @@ export function QuizTable({
                                                         {isWithinDeadline(quiz.fechaEntrega) ? 'Disponible' : (quiz.fechaEntrega ? 'Vencido' : 'Disponible')}
                                                     </div>
                                                 </td>
-                                                <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 whitespace-nowrap">
+                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap">
                                                     <span className={`inline-flex px-1 sm:px-1.5 md:px-2.5 py-0.5 text-[8px] sm:text-[9px] md:text-xs font-extrabold rounded-full border ${est === 'completado' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
                                                         est === 'disponible' ? 'bg-blue-100 text-blue-800 border-blue-200' :
                                                             'bg-red-100 text-red-800 border-red-200'
@@ -536,7 +561,7 @@ export function QuizTable({
                                                         {est === 'completado' ? 'Completado' : est === 'disponible' ? 'Disponible' : 'Vencido'}
                                                     </span>
                                                 </td>
-                                                <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 whitespace-nowrap">
+                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap">
                                                     <div className="text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-900">
                                                         {getBestScore(quiz.id) !== 'En revisión' ? `${getBestScore(quiz.id)}%` : getBestScore(quiz.id)}
                                                     </div>
@@ -552,7 +577,7 @@ export function QuizTable({
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 whitespace-nowrap">
+                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap">
                                                     <div className="text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-900">
                                                         {attempts} / {quiz.maxIntentos}
                                                     </div>
@@ -565,7 +590,7 @@ export function QuizTable({
                                                         </button>
                                                     )}
                                                 </td>
-                                                <td className="px-1.5 sm:px-2 md:px-3 lg:px-6 py-1.5 sm:py-2 md:py-3 lg:py-4 whitespace-nowrap text-center">
+                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap text-center">
                                                     <div className="flex items-center justify-center space-x-0.5 sm:space-x-1 md:space-x-2">
                                                         <button
                                                             onClick={() => { if (available && !isOpen) handleIniciarSimulacion(quiz.id); }}

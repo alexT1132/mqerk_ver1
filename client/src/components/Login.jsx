@@ -11,6 +11,7 @@ export default function LoginResponsive() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   // Cargar usuario guardado al montar el componente
   useEffect(() => {
@@ -41,33 +42,40 @@ export default function LoginResponsive() {
         contraseña: (data.contraseña || "").trim(),
         rememberMe: Boolean(data.rememberMe),
       });
+      // El éxito se manejará en el useEffect cuando isAuthenticated cambie
     } finally {
       setSubmitting(false);
     }
   });
 
-  // Redirección según rol
+  // Redirección según rol + efecto de éxito
   useEffect(() => {
     if (!isAuthenticated) return;
-    const role = (user?.role || "").toLowerCase();
-    if (role === "admin" || role === "administrador" || role === "administrativo") {
-      navigate("/administrativo", { replace: true });
-      return;
-    }
-    if (role === "estudiante") {
-      navigate("/alumno", { replace: true });
-      return;
-    }
-    if (role === "asesor") {
-      // Limpiar curso seleccionado al iniciar sesión para forzar selección
-      try {
-        localStorage.removeItem("cursoSeleccionado");
-      } catch { }
-      // Siempre redirigir a inicio para seleccionar curso
-      navigate("/asesor/inicio", { replace: true });
-      return;
-    }
-    navigate("/", { replace: true });
+    // Activar efecto visual de éxito
+    setLoginSuccess(true);
+    // Retrasar redirección para mostrar efecto
+    const timer = setTimeout(() => {
+      const role = (user?.role || "").toLowerCase();
+      if (role === "admin" || role === "administrador" || role === "administrativo") {
+        navigate("/administrativo", { replace: true });
+        return;
+      }
+      if (role === "estudiante") {
+        navigate("/alumno", { replace: true });
+        return;
+      }
+      if (role === "asesor") {
+        // Limpiar curso seleccionado al iniciar sesión para forzar selección
+        try {
+          localStorage.removeItem("cursoSeleccionado");
+        } catch { }
+        // Siempre redirigir a inicio para seleccionar curso
+        navigate("/asesor/inicio", { replace: true });
+        return;
+      }
+      navigate("/", { replace: true });
+    }, 1200);
+    return () => clearTimeout(timer);
   }, [isAuthenticated, user, navigate]);
 
   // Título con efecto máquina de escribir (loop) + cursor que parpadea de forma real
@@ -149,10 +157,39 @@ export default function LoginResponsive() {
     loop: true,
   });
 
+  // Efecto de confeti cuando login es exitoso
+  useEffect(() => {
+    if (!loginSuccess) return;
+    const timer = setTimeout(() => {
+      setLoginSuccess(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [loginSuccess]);
+
   return (
     <div className="relative min-h-[100svh] md:min-h-[100dvh] w-full bg-gradient-to-br from-blue-900 via-indigo-700 to-purple-700 overflow-hidden">
       {/* Fondo con partículas (opcional) */}
       <ParticlesBackground className="opacity-40" color="255,255,255" linkDistance={140} density={12000} minCount={70} minCountMobile={40} maxSpeed={0.5} />
+
+      {/* Efecto de éxito - Overlay serio */}
+      {loginSuccess && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 max-w-sm mx-4 border border-white/30 shadow-2xl animate-fade-in-scale">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">Login exitoso</h3>
+              <p className="text-white/80 text-sm">Redirigiendo a tu panel...</p>
+              <div className="mt-6 w-full bg-white/20 rounded-full h-1.5">
+                <div className="bg-gradient-to-r from-green-400 to-emerald-500 h-1.5 rounded-full animate-progress-bar"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Contenedor */}
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 min-h-[100svh] md:min-h-[100dvh] flex flex-col items-center justify-center gap-4 sm:gap-6 py-8">
@@ -165,7 +202,7 @@ export default function LoginResponsive() {
         <div className="w-full max-w-[24rem] sm:max-w-[28rem] md:max-w-[32rem]">
           {/* Borde con degradado sutil */}
           <div className="p-[1px] rounded-2xl bg-gradient-to-br from-white/70 via-white/20 to-transparent dark:from-zinc-700 dark:via-zinc-700/30 dark:to-transparent">
-            <div className="rounded-2xl bg-white/90 backdrop-blur-md shadow-xl border border-white/70 dark:bg-zinc-900/70 dark:border-zinc-800">
+            <div className="rounded-2xl bg-gradient-to-br from-white/40 via-white/20 to-white/10 backdrop-blur-lg shadow-2xl border border-white/30 dark:from-zinc-900/40 dark:via-zinc-900/20 dark:to-zinc-900/10 dark:border-zinc-700/30">
               <div className="px-6 py-6 sm:px-7 sm:py-7">
                 <div className="mb-5 text-center">
                   <p className="text-sm text-zinc-600 dark:text-zinc-300">Inicia sesión para continuar.</p>

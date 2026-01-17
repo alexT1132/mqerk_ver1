@@ -274,7 +274,14 @@ export function ActivitiesTable({
                                         <span className="bg-violet-100 text-violet-700 font-bold text-xs px-2 py-1 rounded-lg border-2 border-violet-200">
                                             #{index + 1}
                                         </span>
-                                        <h3 className="font-extrabold text-gray-900 text-sm leading-tight flex-1">{actividad.nombre}</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => { if (actividad.descripcion) openLongText(actividad.nombre, actividad.descripcion, { tipo: 'actividad', id: actividad.id }); }}
+                                            className={`font-extrabold text-gray-900 text-sm leading-tight flex-1 text-left truncate ${actividad.descripcion ? 'cursor-pointer hover:underline' : ''}`}
+                                            title={actividad.nombre}
+                                        >
+                                            {actividad.nombre}
+                                        </button>
                                     </div>
                                     <span className={`text-xs font-extrabold px-2 py-1 rounded-lg border-2 whitespace-nowrap ${hasSubmission ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                                             withinDeadline ? 'bg-blue-100 text-blue-700 border-blue-200' :
@@ -405,17 +412,17 @@ export function ActivitiesTable({
                 /* Vista de tabla */
                 <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden border-2 border-gray-200/50 ring-2 ring-gray-100/50">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
+                        <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1250px' }}>
                             <thead className="bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500">
                                 <tr>
-                                    <th className="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">No.</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Actividad</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Recursos</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Fecha Límite</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Subir / Editar</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Entregado</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Visualizar</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest">Calificación</th>
+                                    <th className="px-4 sm:px-4 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '70px' }}>No.</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '320px' }}>Actividad</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '160px' }}>Recursos</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '150px' }}>Fecha Límite</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '160px' }}>Subir / Editar</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '130px' }}>Entregado</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '140px' }}>Visualizar</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '150px' }}>Calificación</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200/50">
@@ -447,12 +454,22 @@ export function ActivitiesTable({
 
                                     return (
                                         <tr key={actividad.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-violet-50/30 transition-colors duration-200`}>
-                                            <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-700 font-extrabold">{index + 1}</td>
+                                            <td className="px-4 sm:px-4 py-3 sm:py-4 text-sm text-gray-700 font-extrabold">{index + 1}</td>
                                             <td className="px-4 sm:px-6 py-3 sm:py-4">
                                                 <div>
-                                                    <div className="text-sm sm:text-base font-bold text-gray-900">{actividad.nombre}</div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { if (actividad.descripcion) openLongText(actividad.nombre, actividad.descripcion, { tipo: 'actividad', id: actividad.id }); }}
+                                                        className={`text-sm sm:text-base font-bold text-gray-900 text-left w-full truncate ${actividad.descripcion ? 'cursor-pointer hover:underline' : ''}`}
+                                                        title={actividad.nombre}
+                                                    >
+                                                        {actividad.nombre}
+                                                    </button>
                                                     {actividad.descripcion && (
-                                                        <div className="text-xs text-gray-500 mt-0.5">
+                                                        <div
+                                                            onClick={() => openLongText(actividad.nombre, actividad.descripcion, { tipo: 'actividad', id: actividad.id })}
+                                                            className="text-xs text-gray-500 mt-0.5 cursor-pointer group"
+                                                        >
                                                             <p
                                                                 style={{
                                                                     display: '-webkit-box',
@@ -463,17 +480,16 @@ export function ActivitiesTable({
                                                                     maxWidth: descMaxCh,
                                                                     wordBreak: 'break-word'
                                                                 }}
+                                                                className="group-hover:text-gray-700 transition-colors"
                                                             >
                                                                 {actividad.descripcion}
                                                             </p>
-                                                            {String(actividad.descripcion).length > 160 && (
-                                                                <button
-                                                                    onClick={() => openLongText(actividad.nombre, actividad.descripcion, { tipo: 'actividad', id: actividad.id })}
-                                                                    className="mt-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline"
-                                                                >
-                                                                    Ver más
-                                                                </button>
-                                                            )}
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); openLongText(actividad.nombre, actividad.descripcion, { tipo: 'actividad', id: actividad.id }); }}
+                                                                className="mt-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                                                            >
+                                                                Ver descripción completa
+                                                            </button>
                                                         </div>
                                                     )}
                                                 </div>

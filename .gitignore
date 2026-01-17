@@ -29,14 +29,14 @@ server/contratos/
 server/tokens/
 
 # Environment
-.env
-**/.env
-*.local
-*.env.*
-# Archivos de ejemplo con claves expuestas (no subir al repositorio)
-env.txt
-ENV.txt
-**/env.txt
+# .env
+# **/.env
+# *.local
+# *.env.*
+# # Archivos de ejemplo con claves expuestas (no subir al repositorio)
+# env.txt
+# ENV.txt
+# **/env.txt
 
 # Editor directories and files
 .vscode/*
