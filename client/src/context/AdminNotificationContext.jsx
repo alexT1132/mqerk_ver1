@@ -19,7 +19,7 @@ export function AdminNotificationProvider({ children }) {
     // Evitar ruido excesivo: log sólo primeras 2 montadas
     if (!window.__ADMIN_NOTIF_MOUNT_COUNT) window.__ADMIN_NOTIF_MOUNT_COUNT = 0;
     if (window.__ADMIN_NOTIF_MOUNT_COUNT < 2) {
-      // eslint-disable-next-line no-console
+       
       console.log('[AdminNotificationProvider] mount', {
         unreadCount: adminNotifications?.unreadCount,
         pendingCount: adminNotifications?.pendingCount,
@@ -45,7 +45,7 @@ export function useAdminNotificationContext() {
   if (!context) {
     // En desarrollo devolvemos un stub para no romper toda la UI mientras se depura
     if (import.meta?.env?.DEV) {
-      // eslint-disable-next-line no-console
+       
       console.warn('[useAdminNotificationContext] Contexto ausente. Devolviendo stub DEV. Revisa que <AdminNotificationProvider> envuelva tu árbol.');
       const stub = {
         notifications: [],

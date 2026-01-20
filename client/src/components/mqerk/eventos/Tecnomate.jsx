@@ -14,7 +14,7 @@ import { Link } from 'react-router-dom';
 import CuatroImg from "../../../assets/mqerk/talleres/1.png";
 import CincoImg from "../../../assets/mqerk/talleres/2.png";
 import SeisImg from "../../../assets/mqerk/talleres/3.png";
-import Footer from "../../footer";
+import Footer from "../../../components/layout/footer";
 
 function Talleres() {
   const [currentIndex, setCurrentIndex] = useState(0);

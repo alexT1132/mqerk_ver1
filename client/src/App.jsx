@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 // Componente para forzar el scroll al inicio en cada navegación
-import ScrollToTop from './components/ScrollToTop';
+import ScrollToTop from './components/common/ScrollToTop';
 import Index from './Index.jsx';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword2.jsx';
@@ -10,7 +10,7 @@ import Cursos from "./components/mqerk/Cursos.jsx"; // <--- 1. IMPORTACIÓN AGRE
 import Blog from "./pages/web/Blog.jsx";
 import About from "./pages/web/About.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
-import { DashboardAdm, ListaAsesores, ListaColaboradores } from './pages/admin/Panel.jsx';
+import { DashboardAdm, ListaAsesores, ListaColaboradores } from './pages/Admin/Panel.jsx';
 // Páginas del panel de Asesor ahora están agrupadas en AsesorDashboardBundle
 // Mantener solo las exportaciones que se usan globalmente fuera del bundle
 import { PreRegAsesor } from "./pages/Asesor/PreRegAsesor.jsx";
@@ -64,11 +64,11 @@ import ExporientaEducativa from "./components/mqerk/exporientas/ExporientaEducat
 import { AdminDashboardBundle } from './components/admin/AdminDashboardBundle.jsx';
 import { AsesorDashboardBundle } from './components/Asesor/AsesorDashboardBundle.jsx';
 import SetupAdmin from './components/admin/SetupAdmin.jsx';
-import ErrorBoundary from './components/ErrorBoundary.jsx';
+import ErrorBoundary from './components/common/ErrorBoundary.jsx';
 import { Error404, Error500 } from './pages/Error/ErrorPages.jsx';
 import QuizResultadosPage from './pages/alumnos/QuizResultadosPage.jsx';
 import SimulacionResultadosPage from './pages/alumnos/SimulacionResultadosPage.jsx';
-import { InactivityHandler } from './components/InactivityHandler.jsx';
+import { InactivityHandler } from './components/common/InactivityHandler.jsx';
 
 // temporalmente importamos el componente de conversión de WebP a PNG
 
@@ -78,8 +78,8 @@ export default function App(){
     return(
 
       // Árbol de proveedores de contexto y enrutador principal
-      <AsesorProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <AsesorProvider>
           <InactivityHandler />
           <EstudiantesProvider>
             <ComprobanteProvider>
@@ -221,8 +221,8 @@ export default function App(){
               </StudentProvider>
             </ComprobanteProvider>
           </EstudiantesProvider>
-        </AuthProvider>
-      </AsesorProvider>
+        </AsesorProvider>
+      </AuthProvider>
 
 )
 }

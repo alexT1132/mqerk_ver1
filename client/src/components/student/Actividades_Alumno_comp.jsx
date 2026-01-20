@@ -710,6 +710,18 @@ export function Actividades_Alumno_comp() {
           console.debug('[Quizzes] Filas base antes de filtrar duplicados:', baseRows.length);
           console.debug('[Quizzes] IDs de quizzes base:', baseRows.map(q => ({ id: q.id, titulo: q.titulo, id_area: q.id_area })));
 
+          // Defensa extra: nunca mostrar quizzes en borrador al alumno
+          // (por si falla el catálogo y caemos al resumen, o si el backend devuelve items legacy sin filtrar)
+          baseRows = baseRows.filter(q => {
+            if (!q) return false;
+            // Si existe el campo publicado, exigir que sea true/1
+            if (Object.prototype.hasOwnProperty.call(q, 'publicado')) {
+              const pub = q.publicado;
+              return pub === 1 || pub === true || pub === '1' || String(pub) === '1';
+            }
+            return true;
+          });
+
           // Eliminar duplicados por ID (por si algún quiz aparece en ambas fuentes)
           const seenIds = new Set();
           baseRows = baseRows.filter(q => {
@@ -913,7 +925,7 @@ export function Actividades_Alumno_comp() {
         };
         // Limitar concurrencia básica
         for (const act of missing) { // pequeño retardo para no saturar
-          // eslint-disable-next-line no-await-in-loop
+           
           await fetchOne(act);
         }
       } finally { gradeEnrichmentRef.current = false; }
@@ -932,7 +944,7 @@ export function Actividades_Alumno_comp() {
       if (pending.length === 0) return;
       try {
         const mod = await import('../../api/actividades');
-        for (const act of pending) { // eslint-disable-next-line no-await-in-loop
+        for (const act of pending) {  
           try {
             const resp = await mod.listEntregasActividad(act.id);
             const list = Array.isArray(resp.data?.data) ? resp.data.data : [];
@@ -1661,7 +1673,7 @@ export function Actividades_Alumno_comp() {
     // Para quiz: verificar fecha límite
     const now = new Date();
     const fechaEntrega = normalizeDeadlineEndOfDay(quiz.fechaEntrega);
-    const within = (!!fechaEntrega ? now <= fechaEntrega : true);
+    const within = (fechaEntrega ? now <= fechaEntrega : true);
     const attempts = Number((quiz.totalIntentos != null ? quiz.totalIntentos : getTotalAttempts(quiz.id)) || 0);
     const max = (quiz.maxIntentosValue != null) ? quiz.maxIntentosValue : (quiz.maxIntentos === '∞' ? Number.POSITIVE_INFINITY : Number(quiz.maxIntentos || 1));
     return within && attempts < max;
@@ -2306,7 +2318,7 @@ export function Actividades_Alumno_comp() {
     // BACKEND: Asesores solo pueden subir PDFs, así que asumimos siempre PDF y simplificamos la lógica
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-start px-2 pt-24 md:pt-28 pb-4 z-50" onClick={closeResourcesModal}>
-        <div className="bg-white rounded-t-2xl md:rounded-xl shadow-2xl w-full max-w-4xl h-[calc(100vh-7rem)] md:h-[80vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="bg-white rounded-t-2xl md:rounded-xl shadow-2xl w-full max-w-4xl max-h-[calc(100vh-4rem)] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()} style={{ marginLeft: 'clamp(80px, 5vw, 100px)' }}>
           <div className="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
             <h2 className="font-semibold text-lg flex-1 pr-2 truncate">Recursos de: {resourcesActividad.nombre}</h2>
             {isMobile && (
@@ -2811,7 +2823,7 @@ export function Actividades_Alumno_comp() {
       {longTextModal.open && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 px-2 sm:px-3 lg:px-4 2xl:px-6 py-4 sm:py-6" onClick={closeLongText}>
           <div
-            className="bg-white rounded-xl shadow-2xl w-full flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden"
+            className="bg-white rounded-xl shadow-2xl w-full flex flex-col max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-hidden"
             style={{ width: modalWidth, transform: modalOffsetX ? `translateX(${modalOffsetX}px)` : undefined }}
             onClick={e => e.stopPropagation()}
           >

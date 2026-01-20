@@ -1,6 +1,6 @@
 import React from 'react';
 import Navbar from "./Navbar"; 
-import Footer from "../footer"; 
+import Footer from "../../components/layout/footer";
 
 import { 
   Curso1, Curso2, Curso3, Curso4, Curso5, Curso6, 

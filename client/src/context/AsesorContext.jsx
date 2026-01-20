@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { buildApiUrl } from '../utils/url.js';
+import { useAuth } from './AuthContext.jsx';
 
 const AsesorContext = createContext();
 
@@ -16,6 +17,7 @@ export const useAsesor = () => {
 export function AsesorProvider({ children }) {
 
     const [datos1, setDatos1] = useState(null);
+    const { isAuthenticated, user } = useAuth();
     const [preregistroId, setPreregistroId] = useState(() => {
         const stored = localStorage.getItem('asesor_preregistro_id');
         return stored ? Number(stored) : null;
@@ -109,6 +111,11 @@ export function AsesorProvider({ children }) {
 
     // Chat notification handling - GLOBAL for advisors
     useEffect(() => {
+        // IMPORTANTE:
+        // Este provider puede estar montado globalmente incluso para alumnos/admin.
+        // Solo queremos reproducir sonido/alertas cuando el usuario actual sea ASESOR.
+        if (!(isAuthenticated && user?.role === 'asesor')) return;
+
         let notificationAudio = null;
         let audioUnlocked = false;
         let titleInterval = null;
@@ -204,7 +211,7 @@ export function AsesorProvider({ children }) {
             document.removeEventListener('keydown', handleInteraction);
             stopTitleNotification();
         };
-    }, []);
+    }, [isAuthenticated, user?.role]);
 
     return (
         <AsesorContext.Provider value={{

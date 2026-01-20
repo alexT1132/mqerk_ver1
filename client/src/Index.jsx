@@ -1,4 +1,4 @@
-import NavIndex from './components/NavIndex'
+import NavIndex from './components/layout/NavIndex'
 import { useState } from 'react';
 import { Link } from "react-router-dom";
 

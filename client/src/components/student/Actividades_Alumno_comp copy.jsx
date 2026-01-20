@@ -911,7 +911,7 @@ export function Actividades_Alumno_comp() {
         };
         // Limitar concurrencia básica
         for (const act of missing) { // pequeño retardo para no saturar
-          // eslint-disable-next-line no-await-in-loop
+           
           await fetchOne(act);
         }
       } finally { gradeEnrichmentRef.current = false; }
@@ -930,7 +930,7 @@ export function Actividades_Alumno_comp() {
       if (pending.length === 0) return;
       try {
         const mod = await import('../../api/actividades');
-        for (const act of pending) { // eslint-disable-next-line no-await-in-loop
+        for (const act of pending) {  
           try {
             const resp = await mod.listEntregasActividad(act.id);
             const list = Array.isArray(resp.data?.data) ? resp.data.data : [];
@@ -1659,7 +1659,7 @@ export function Actividades_Alumno_comp() {
     // Para quiz: verificar fecha límite
     const now = new Date();
     const fechaEntrega = normalizeDeadlineEndOfDay(quiz.fechaEntrega);
-    const within = (!!fechaEntrega ? now <= fechaEntrega : true);
+    const within = (fechaEntrega ? now <= fechaEntrega : true);
     const attempts = Number((quiz.totalIntentos != null ? quiz.totalIntentos : getTotalAttempts(quiz.id)) || 0);
     const max = (quiz.maxIntentosValue != null) ? quiz.maxIntentosValue : (quiz.maxIntentos === '∞' ? Number.POSITIVE_INFINITY : Number(quiz.maxIntentos || 1));
     return within && attempts < max;

@@ -1,9 +1,9 @@
 import {useState, useEffect, useRef} from 'react'
-import ActionSheetSelect from "../../components/ActionSheetSelect.jsx";
+import ActionSheetSelect from "../../components/ui/ActionSheetSelect.jsx";
 import { useAsesor } from "../../context/AsesorContext.jsx";
 import { usePreventPageReload } from "../../NoReload.jsx";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../../components/NavLogin.jsx";
+import NavLogin from "../../components/common/auth/NavLogin.jsx";
 import Veintiuno from "../../assets/21.png";
 import R21_1 from "../../assets/21-R1.png";
 import R21_2 from "../../assets/21-R2.png";

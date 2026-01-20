@@ -75,6 +75,7 @@ export function ActivitiesTable({
     }, []);
 
     return (
+        <>
         <div className="px-0 sm:px-3 md:px-4 lg:px-6 py-6">
             {/* Header */}
             <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
@@ -410,22 +411,25 @@ export function ActivitiesTable({
                 </div>
             ) : (
                 /* Vista de tabla */
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden border-2 border-gray-200/50 ring-2 ring-gray-100/50">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1250px' }}>
-                            <thead className="bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500">
-                                <tr>
-                                    <th className="px-4 sm:px-4 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '70px' }}>No.</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '320px' }}>Actividad</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '160px' }}>Recursos</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '150px' }}>Fecha Límite</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '160px' }}>Subir / Editar</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '130px' }}>Entregado</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '140px' }}>Visualizar</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '150px' }}>Calificación</th>
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-slate-200/90 border-b-0 ring-2 ring-slate-100/90">
+                    <div
+                        className="overflow-x-auto activities-table-scroll"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                        <table className="min-w-full" style={{ minWidth: '1250px' }}>
+                            <thead>
+                                <tr className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
+                                    <th className="px-4 sm:px-4 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '70px' }}>No.</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '320px' }}>Actividad</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '160px' }}>Recursos</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '150px' }}>Fecha Límite</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '160px' }}>Subir / Editar</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '130px' }}>Entregado</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '140px' }}>Visualizar</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider last:border-r-0" style={{ minWidth: '150px' }}>Calificación</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200/50">
+                            <tbody className="bg-white divide-y divide-slate-200/90">
                                 {loading && (
                                     <tr>
                                         <td colSpan={8} className="px-4 sm:px-6 py-6 sm:py-8 text-center text-sm sm:text-base text-gray-500 font-medium">Cargando actividades...</td>
@@ -453,9 +457,9 @@ export function ActivitiesTable({
                                         (actividad.estado !== 'revisada' || tienePermisoEditar);
 
                                     return (
-                                        <tr key={actividad.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-violet-50/30 transition-colors duration-200`}>
-                                            <td className="px-4 sm:px-4 py-3 sm:py-4 text-sm text-gray-700 font-extrabold">{index + 1}</td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4">
+                                        <tr key={actividad.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} hover:bg-violet-50/40 transition-colors duration-200`}>
+                                            <td className="px-4 sm:px-4 py-3 sm:py-4 text-sm text-gray-700 font-extrabold border-r border-slate-200/80 last:border-r-0">{index + 1}</td>
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 border-r border-slate-200/80 last:border-r-0">
                                                 <div>
                                                     <button
                                                         type="button"
@@ -494,7 +498,7 @@ export function ActivitiesTable({
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                 {actividad.recursos && actividad.recursos.length > 0 && (
                                                     <button
                                                         onClick={() => openResourcesModal(actividad)}
@@ -515,7 +519,7 @@ export function ActivitiesTable({
                                                     <span className="text-xs text-gray-400">-</span>
                                                 )}
                                             </td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                 <div className="text-xs sm:text-sm text-gray-900 font-semibold">{new Date(actividad.fechaEntrega).toLocaleDateString('es-ES')}</div>
                                                 {actividad.fecha_limite_original && actividad.fechaEntrega &&
                                                     new Date(actividad.fechaEntrega).getTime() > new Date(actividad.fecha_limite_original).getTime() && (
@@ -523,7 +527,7 @@ export function ActivitiesTable({
                                                     )}
                                                 <div className={`text-[10px] sm:text-xs font-bold ${vencida ? 'text-red-600' : 'text-green-600'}`}>{vencida ? 'Vencida' : 'A tiempo'}</div>
                                             </td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                 {!actividad.entregada ? (
                                                     <button
                                                         onClick={() => openUploadModal(actividad)}
@@ -552,14 +556,14 @@ export function ActivitiesTable({
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                 {actividad.entregada ? (
                                                     <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
                                                 ) : (
                                                     <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
                                                 )}
                                             </td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                 <button
                                                     onClick={() => openViewModal(actividad)}
                                                     disabled={!actividad.entregada}
@@ -569,7 +573,7 @@ export function ActivitiesTable({
                                                     <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                                                 </button>
                                             </td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm">
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm border-r border-slate-200/80 last:border-r-0">
                                                 {actividad.entregada ? (
                                                     actividad.estado === 'revisada' ? (
                                                         <span className="font-extrabold text-gray-900 inline-flex items-center gap-2">
@@ -617,6 +621,11 @@ export function ActivitiesTable({
                 </div>
             )}
         </div>
+        <style>{`
+.activities-table-scroll::-webkit-scrollbar { width: 0; height: 0; display: none !important; }
+.activities-table-scroll { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+        `}</style>
+        </>
     );
 }
 

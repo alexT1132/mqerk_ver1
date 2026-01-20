@@ -14,7 +14,7 @@ router.put('/quizzes/:id', authREquired, updateQuiz);
 router.delete('/quizzes/:id', authREquired, deleteQuiz);
 router.post('/quizzes/:id/intentos', authREquired, crearIntentoQuiz);
 router.get('/quizzes/:id/intentos/:id_estudiante', listIntentosQuizEstudiante);
-router.get('/quizzes/estudiante/:id_estudiante/resumen', resumenQuizzesEstudiante);
+router.get('/quizzes/estudiante/:id_estudiante/resumen', authREquired, resumenQuizzesEstudiante);
 // Estado por estudiante para un quiz (asesor)
 router.get('/quizzes/:id/estudiantes-estado', authREquired, estudiantesEstadoQuiz);
 

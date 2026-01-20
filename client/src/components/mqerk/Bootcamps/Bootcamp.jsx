@@ -3,7 +3,7 @@ import Navbar from '../../../components/mqerk/Navbar'
 import Uno from "../../../assets/mqerk/bootcamp/1.png";
 import Dos from "../../../assets/mqerk/bootcamp/2.png";
 import { Link } from "react-router-dom";
-import Footer from "../../footer";
+import Footer from "../../../components/layout/footer";
 
 function Talleres() {
   return (

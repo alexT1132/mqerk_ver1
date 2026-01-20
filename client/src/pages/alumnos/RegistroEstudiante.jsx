@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import NavLogin from "../../components/NavLogin.jsx";
-import { BtnForm } from "../../components/FormRegistroComp.jsx";
+import NavLogin from "../../components/common/auth/NavLogin.jsx";
+import { BtnForm } from "../../components/common/forms/FormRegistroComp.jsx";
 import { TextField, } from "@mui/material";
 import SelectField from "../../components/shared/SelectField.jsx";
 import { useEstudiantes } from "../../context/EstudiantesContext.jsx";

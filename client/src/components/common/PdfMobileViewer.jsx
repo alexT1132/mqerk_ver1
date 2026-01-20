@@ -4,7 +4,7 @@ import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 let __pdfWorkerInstance = null;
 try {
   // Vite puede no resolver ?worker para dependencias; envolvemos en try dinámico.
-  // eslint-disable-next-line no-undef
+   
   const WorkerCtor = null; // placeholder para evitar bundling de import fallido
   if (WorkerCtor) {
     __pdfWorkerInstance = new WorkerCtor();

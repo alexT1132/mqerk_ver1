@@ -918,9 +918,9 @@ export default function FinanzasEgresosVariables() {
 
       {/* Modal Nuevo gasto variable */}
       {showModal && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto pt-[92px] sm:pt-[112px] pb-6 px-3 sm:px-4 bg-black/40">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[90dvh] mx-auto my-6 sm:my-8">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+        <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-20 sm:pt-24 md:pt-28 pb-6 bg-black/40">
+          <div className="bg-white w-full max-w-md rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-300 overflow-hidden max-h-[calc(100vh-8rem)] flex flex-col mx-auto">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 flex-shrink-0">
               <h3 className="text-base font-semibold text-gray-900">
                 Nuevo gasto variable
               </h3>
@@ -931,8 +931,8 @@ export default function FinanzasEgresosVariables() {
                 ✕
               </button>
             </div>
-            <form onSubmit={submit} className="flex-1 flex flex-col">
-              <div className="px-4 sm:px-5 py-4 overflow-y-auto overscroll-contain">
+            <form onSubmit={submit} className="flex-1 flex flex-col min-h-0">
+              <div className="px-4 sm:px-5 py-4 overflow-y-auto overscroll-contain flex-1 min-h-0 no-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -1184,8 +1184,8 @@ export default function FinanzasEgresosVariables() {
 
       {/* Modal Editar gasto variable */}
       {editOpen && editData && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto pt-[92px] sm:pt-[112px] pb-6 px-3 sm:px-4 bg-black/40">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[90dvh] mx-auto my-6 sm:my-8">
+        <div className="fixed inset-0 z-[9999] overflow-y-auto pt-12 sm:pt-16 md:pt-20 pb-6 px-3 sm:px-4 bg-black/40">
+          <div className="bg-white w-full max-w-[95vw] sm:max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[calc(100vh-14rem)] mx-auto">
             <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
               <h3 className="text-base font-semibold text-gray-900">
                 Editar gasto variable
@@ -1417,7 +1417,7 @@ export default function FinanzasEgresosVariables() {
       {/* Modal Ver descripción */}
       {descOpen && (
         <div className="fixed inset-0 z-[9999] bg-black/40 px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-md rounded-2xl shadow-xl flex flex-col max-h-[90dvh]">
+          <div className="bg-white w-full max-w-[95vw] sm:max-w-md rounded-2xl shadow-xl flex flex-col max-h-[calc(100vh-14rem)]">
             <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
               <h3 className="text-base font-semibold text-gray-900">
                 Descripción

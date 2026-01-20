@@ -310,6 +310,9 @@ export const resumenQuizzesEstudiante = async (id_estudiante) => {
         (SELECT qi.created_at FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? AND qi.intent_number = 1 LIMIT 1) AS fecha_oficial_intento
       FROM quizzes q
       WHERE q.activo = 1
+        AND q.publicado = 1
+        AND (q.visible_desde IS NULL OR q.visible_desde <= NOW())
+        AND (q.visible_hasta IS NULL OR q.visible_hasta >= NOW())
       ORDER BY q.fecha_limite ASC, q.id DESC
     `, [id_estudiante, id_estudiante, id_estudiante, id_estudiante, id_estudiante, id_estudiante]);
     return rows;
@@ -325,7 +328,11 @@ export const resumenQuizzesEstudiante = async (id_estudiante) => {
           (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? AND qi.intent_number = 1 LIMIT 1) AS oficial_puntaje,
           (SELECT qi.created_at FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? AND qi.intent_number = 1 LIMIT 1) AS fecha_oficial_intento
         FROM actividades q
-        WHERE q.tipo = 'quiz' AND q.activo = 1
+        WHERE q.tipo = 'quiz'
+          AND q.activo = 1
+          AND q.publicado = 1
+          AND (q.visible_desde IS NULL OR q.visible_desde <= NOW())
+          AND (q.visible_hasta IS NULL OR q.visible_hasta >= NOW())
         ORDER BY q.fecha_limite ASC, q.id DESC
       `, [id_estudiante, id_estudiante, id_estudiante, id_estudiante, id_estudiante, id_estudiante]);
       return rows;

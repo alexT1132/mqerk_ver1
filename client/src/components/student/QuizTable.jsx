@@ -91,6 +91,7 @@ export function QuizTable({
     }, [isMobile, viewMode]);
 
     return (
+        <>
         <div className="px-0 sm:px-3 md:px-4 lg:px-6 pt-6 sm:pt-8 md:pt-10 py-6">
             {/* Header */}
             <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
@@ -257,7 +258,7 @@ export function QuizTable({
             </div>
 
             {/* Vista condicional: Tabla o Tarjetas */}
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden border-2 border-gray-200/50 ring-2 ring-gray-100/50">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-slate-200/90 border-b-0 ring-2 ring-slate-100/90">
                 {viewMode === 'cards' ? (
                     /* Vista de tarjetas - Estilo mejorado de simulaciones */
                     <div className="space-y-3 p-3">
@@ -449,32 +450,35 @@ export function QuizTable({
                     </div>
                 ) : (
                     /* Vista de tabla */
-                    <div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full divide-y divide-gray-200/50 text-sm" style={{ minWidth: isMobile ? '1000px' : '1250px' }}>
-                                <thead className="bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500">
-                                    <tr>
-                                        <th className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: isMobile ? '240px' : '280px' }}>
+                    <div className="rounded-b-xl overflow-hidden">
+                        <div
+                            className="overflow-x-auto quiz-table-scroll"
+                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        >
+                            <table className="w-full text-sm" style={{ minWidth: isMobile ? '1000px' : '1250px' }}>
+                                <thead>
+                                    <tr className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
+                                        <th className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-3.5 md:py-4 text-left font-bold uppercase tracking-wider text-[10px] sm:text-xs border-r border-white/30 last:border-r-0" style={{ minWidth: isMobile ? '240px' : '280px' }}>
                                             Quiz
                                         </th>
-                                        <th className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '140px' }}>
+                                        <th className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-3.5 md:py-4 text-left font-bold uppercase tracking-wider text-[10px] sm:text-xs border-r border-white/30 last:border-r-0" style={{ minWidth: '140px' }}>
                                             Fecha Límite
                                         </th>
-                                        <th className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '140px' }}>
+                                        <th className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-3.5 md:py-4 text-left font-bold uppercase tracking-wider text-[10px] sm:text-xs border-r border-white/30 last:border-r-0" style={{ minWidth: '140px' }}>
                                             Estado
                                         </th>
-                                        <th className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '170px' }}>
+                                        <th className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-3.5 md:py-4 text-left font-bold uppercase tracking-wider text-[10px] sm:text-xs border-r border-white/30 last:border-r-0" style={{ minWidth: '170px' }}>
                                             Mejor Puntaje
                                         </th>
-                                        <th className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-left font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '140px' }}>
+                                        <th className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-3.5 md:py-4 text-left font-bold uppercase tracking-wider text-[10px] sm:text-xs border-r border-white/30 last:border-r-0" style={{ minWidth: '140px' }}>
                                             Intentos
                                         </th>
-                                        <th className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-center font-extrabold text-white uppercase tracking-tight text-[9px] sm:text-[10px] md:text-xs" style={{ minWidth: '170px' }}>
+                                        <th className="px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-3.5 md:py-4 text-center font-bold uppercase tracking-wider text-[10px] sm:text-xs last:border-r-0" style={{ minWidth: '170px' }}>
                                             Acciones
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200/50">
+                                <tbody className="bg-white divide-y divide-slate-200/90">
                                     {loading && (
                                         <tr>
                                             <td colSpan={6} className="px-2 sm:px-4 md:px-6 py-6 sm:py-8 md:py-10 text-center text-sm sm:text-base text-gray-500 font-medium">Cargando quizzes...</td>
@@ -502,8 +506,8 @@ export function QuizTable({
                                         const pending = pendingAnswers[quiz.id];
 
                                         return (
-                                            <tr key={quiz.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-violet-50/30 transition-colors duration-200`}>
-                                                <td className={`${isMobile ? 'px-1.5 py-1' : 'px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4'}`}>
+                                            <tr key={quiz.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'} hover:bg-violet-50/50 transition-colors duration-200 group`}>
+                                                <td className={`${isMobile ? 'px-1.5 py-1' : 'px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4'} border-r border-slate-200/80 last:border-r-0`}>
                                                     <div>
                                                         <button
                                                             type="button"
@@ -545,7 +549,7 @@ export function QuizTable({
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap">
+                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                     <div className="text-xs sm:text-sm text-gray-900 font-semibold">
                                                         {quiz.fechaEntrega ? new Date(quiz.fechaEntrega).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) : 'Sin fecha'}
                                                     </div>
@@ -553,7 +557,7 @@ export function QuizTable({
                                                         {isWithinDeadline(quiz.fechaEntrega) ? 'Disponible' : (quiz.fechaEntrega ? 'Vencido' : 'Disponible')}
                                                     </div>
                                                 </td>
-                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap">
+                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                     <span className={`inline-flex px-1 sm:px-1.5 md:px-2.5 py-0.5 text-[8px] sm:text-[9px] md:text-xs font-extrabold rounded-full border ${est === 'completado' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
                                                         est === 'disponible' ? 'bg-blue-100 text-blue-800 border-blue-200' :
                                                             'bg-red-100 text-red-800 border-red-200'
@@ -561,7 +565,7 @@ export function QuizTable({
                                                         {est === 'completado' ? 'Completado' : est === 'disponible' ? 'Disponible' : 'Vencido'}
                                                     </span>
                                                 </td>
-                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap">
+                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                     <div className="text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-900">
                                                         {getBestScore(quiz.id) !== 'En revisión' ? `${getBestScore(quiz.id)}%` : getBestScore(quiz.id)}
                                                     </div>
@@ -577,7 +581,7 @@ export function QuizTable({
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap">
+                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                     <div className="text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-900">
                                                         {attempts} / {quiz.maxIntentos}
                                                     </div>
@@ -590,7 +594,7 @@ export function QuizTable({
                                                         </button>
                                                     )}
                                                 </td>
-                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap text-center">
+                                                <td className="px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 whitespace-nowrap text-center border-r border-slate-200/80 last:border-r-0">
                                                     <div className="flex items-center justify-center space-x-0.5 sm:space-x-1 md:space-x-2">
                                                         <button
                                                             onClick={() => { if (available && !isOpen) handleIniciarSimulacion(quiz.id); }}
@@ -620,7 +624,7 @@ export function QuizTable({
                                 </tbody>
                             </table>
                         </div>
-                        <div className="px-4 py-3 border-t border-gray-200 bg-white">
+                        <div className="px-4 py-3 bg-slate-50/50">
                             <Pagination
                                 totalItems={quizTotal}
                                 pageSize={QUIZ_PAGE_SIZE}
@@ -632,6 +636,11 @@ export function QuizTable({
                 )}
             </div>
         </div>
+        <style>{`
+.quiz-table-scroll::-webkit-scrollbar { width: 0; height: 0; display: none !important; }
+.quiz-table-scroll { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+        `}</style>
+        </>
     );
 }
 

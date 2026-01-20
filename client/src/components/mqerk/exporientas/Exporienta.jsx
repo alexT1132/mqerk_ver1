@@ -3,7 +3,7 @@ import Navbar from '../../../components/mqerk/Navbar'
 import Uno from "../../../assets/mqerk/exporientas/1.png";
 import Dos from "../../../assets/mqerk/exporientas/2.png";
 import { Link } from "react-router-dom";
-import Footer from "../../footer";
+import Footer from "../../../components/layout/footer";
 
 function Talleres() {
   return (

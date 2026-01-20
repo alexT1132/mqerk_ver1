@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FileText, Lightbulb, Sparkles, AlertTriangle, Eye } from 'lucide-react';
 import { analyzeQuizPerformance } from '../../service/quizAnalysisService';
-import AnalisisModal from './AnalisisModal';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getQuizIntentoReview } from '../../api/quizzes';
 import { useAuth } from '../../context/AuthContext';
@@ -15,11 +14,6 @@ export default function HistorialModal({ open, item, historial, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [isAnalisisModalOpen, setIsAnalisisModalOpen] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState('');
-  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
-  const [analysisError, setAnalysisError] = useState('');
-  const [analysisMeta, setAnalysisMeta] = useState(null);
   const { alumno, user } = useAuth() || {};
   const estudianteId = alumno?.id || user?.id_estudiante || user?.id || null;
   const estudianteNombre = (() => {
@@ -34,7 +28,7 @@ export default function HistorialModal({ open, item, historial, onClose }) {
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape' && !isAnalisisModalOpen) {
+      if (event.key === 'Escape') {
         onClose();
       }
     };
@@ -44,10 +38,10 @@ export default function HistorialModal({ open, item, historial, onClose }) {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, onClose, isAnalisisModalOpen]);
+  }, [open, onClose]);
 
   useEffect(() => {
-    if (open && !isAnalisisModalOpen) {
+    if (open) {
       previousFocusRef.current = document.activeElement;
       closeButtonRef.current?.focus();
     } else if (!open && previousFocusRef.current) {
@@ -55,7 +49,7 @@ export default function HistorialModal({ open, item, historial, onClose }) {
         previousFocusRef.current.focus();
       }
     }
-  }, [open, isAnalisisModalOpen]);
+  }, [open]);
 
   // Lock background scroll when the modal is open (prevents double scrollbars on mobile)
   useEffect(() => {
@@ -82,25 +76,38 @@ export default function HistorialModal({ open, item, historial, onClose }) {
 
   useEffect(() => {
     if (!open) {
-      setAnalysisResult('');
-      setIsLoadingAnalysis(false);
-      setAnalysisError('');
-      setIsAnalisisModalOpen(false);
     }
   }, [open]);
 
   const handleAnalyzePerformance = async () => {
     if (!historial || historial.intentos.length === 0) {
-      setAnalysisError("No hay suficientes datos para un análisis.");
-      setIsAnalisisModalOpen(true);
+      // Navegar a la página con error
+      navigate('/alumno/analisis-ia', {
+        state: {
+          analysisText: '',
+          itemName: item?.nombre || '',
+          analysisMeta: null,
+          isLoading: false,
+          error: "No hay suficientes datos para un análisis.",
+          itemId: item?.id,
+          estudianteId: estudianteId
+        }
+      });
       return;
     }
 
-    setIsAnalisisModalOpen(true);
-    setIsLoadingAnalysis(true);
-    setAnalysisResult('');
-    setAnalysisError('');
-    setAnalysisMeta(null);
+    // Navegar a la página con loading
+    navigate('/alumno/analisis-ia', {
+      state: {
+        analysisText: '',
+        itemName: item?.nombre || '',
+        analysisMeta: null,
+        isLoading: true,
+        error: null,
+        itemId: item?.id,
+        estudianteId: estudianteId
+      }
+    });
 
     try {
       // Ordenar cronológicamente (más antiguo -> más reciente) para análisis
@@ -263,7 +270,7 @@ export default function HistorialModal({ open, item, historial, onClose }) {
       };
       const result = await analyzeQuizPerformance(metaPayload);
       // Preparar metadatos para exportación clara
-      setAnalysisMeta({
+      const meta = {
         itemName: item?.nombre || '',
         alumnoNombre: estudianteNombre || null,
         totalIntentos: historial.totalIntentos || 0,
@@ -289,13 +296,35 @@ export default function HistorialModal({ open, item, historial, onClose }) {
         totalTiempoIntento: totalTiempoIntento != null ? Math.round(totalTiempoIntento / 1000) : null,
         promedioTiempoPregunta: promedioTiempoPregunta != null ? Math.round(promedioTiempoPregunta / 1000) : null,
         erroresRecurrentes: recurrentList,
+      };
+      
+      navigate('/alumno/analisis-ia', {
+        replace: true,
+        state: {
+          analysisText: result || '',
+          itemName: item?.nombre || '',
+          analysisMeta: meta,
+          isLoading: false,
+          error: null,
+          itemId: item?.id,
+          estudianteId: estudianteId
+        }
       });
-      setAnalysisResult(result);
     } catch (error) {
       console.error("Error al llamar a la API de Gemini:", error);
-      setAnalysisError("Hubo un problema al generar el análisis. Inténtalo de nuevo.");
-    } finally {
-      setIsLoadingAnalysis(false);
+      // Navegar a la página con error (replace para no duplicar la entrada de "loading" en el historial)
+      navigate('/alumno/analisis-ia', {
+        replace: true,
+        state: {
+          analysisText: '',
+          itemName: item?.nombre || '',
+          analysisMeta: null,
+          isLoading: false,
+          error: error?.message || "Hubo un problema al generar el análisis. Inténtalo de nuevo.",
+          itemId: item?.id,
+          estudianteId: estudianteId
+        }
+      });
     }
   };
 
@@ -306,12 +335,12 @@ export default function HistorialModal({ open, item, historial, onClose }) {
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 pt-safe pb-safe ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-300 overscroll-contain overflow-hidden`}
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 pt-8 sm:pt-12 md:pt-16 pb-safe ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-300 overscroll-contain overflow-hidden`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <div className="historial-modal compact-desktop no-scrollbar relative bg-white/98 rounded-2xl shadow-2xl ring-1 ring-black/5 w-full max-w-[92vw] md:max-w-[30rem] lg:max-w-[32rem] xl:max-w-[36rem] h-[72vh] sm:h-[68vh] md:h-[62vh] lg:h-[58vh] max-h-[720px] overflow-hidden flex flex-col transform translate-y-6 sm:translate-y-8 md:translate-x-8 lg:translate-x-0">
+        <div className="historial-modal compact-desktop no-scrollbar relative bg-white/98 rounded-2xl shadow-2xl ring-1 ring-black/5 w-full max-w-[92vw] md:max-w-[35rem] lg:max-w-[40rem] xl:max-w-[42rem] max-h-[calc(100vh-10rem)] overflow-hidden flex flex-col transform translate-y-6 sm:translate-y-8 md:translate-x-8 lg:translate-x-0">
           <div className="hm-header sticky top-0 z-10 bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-3 sm:p-4 flex-shrink-0 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
@@ -447,16 +476,6 @@ export default function HistorialModal({ open, item, historial, onClose }) {
         </div>
       </div>
 
-      <AnalisisModal
-        open={isAnalisisModalOpen}
-        onClose={() => setIsAnalisisModalOpen(false)}
-        isLoading={isLoadingAnalysis}
-        analysisText={analysisResult}
-        error={analysisError}
-        itemName={item ? item.nombre : ''}
-        analysisMeta={analysisMeta}
-        onRetry={handleAnalyzePerformance}
-      />
 
       <style>{`
         @keyframes scale-in {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Navbar from "../../components/mqerk/Navbar";
-import Footer from "../../components/footer";
+import Footer from "../../components/layout/footer";
 import { FaTag, FaSearch, FaChevronDown } from "react-icons/fa";
 import { IoMdEye } from "react-icons/io";
 

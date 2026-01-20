@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildApiUrl } from '../../utils/url.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAsesor } from '../../context/AsesorContext.jsx';
-import NavLogin from '../../components/NavLogin.jsx';
+import NavLogin from "../../components/common/auth/NavLogin.jsx";
 import { CheckCircle2, XCircle } from 'lucide-react';
 
 // Resultados del Test del Asesor

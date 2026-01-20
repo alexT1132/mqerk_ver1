@@ -5,6 +5,7 @@ import { logoutRequest } from "../../api/usuarios.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import axios from "../../api/axios";
 import { createPortal } from 'react-dom';
+import { DesktopSidebarBase } from "./SidebarBase.jsx";
 
 // --- COLORES ---
 const svgColor = "#3818c3";       // Azul original
@@ -62,17 +63,32 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, ba
   const handleLinkClick = async (e) => {
     if (to === "/login") {
       e.preventDefault();
-      try {
-        if (mobileOnClick) mobileOnClick(); 
-        await authLogout?.();
-        await logoutRequest().catch(() => { });
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminProfile');
-      } catch (error) {
-        console.error('Error durante logout:', error);
-      } finally {
-        window.location.replace('/login');
-      }
+      if (mobileOnClick) mobileOnClick();
+      
+      // Hacer logout en segundo plano sin bloquear la UI
+      (async () => {
+        try {
+          await logoutRequest().catch(() => { });
+          await authLogout?.();
+          // Limpiar solo lo necesario
+          try {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminProfile');
+            localStorage.removeItem('mq_user');
+            localStorage.removeItem('rememberMe');
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('mq_') || key.includes('token') || key.includes('auth')) {
+                localStorage.removeItem(key);
+              }
+            });
+          } catch { }
+        } catch (error) {
+          console.error('Error durante logout:', error);
+        } finally {
+          // Redirigir sin recargar la página
+          navigate('/login', { replace: true });
+        }
+      })();
       return;
     }
     
@@ -222,36 +238,53 @@ export function SideBarDesktop() {
     };
   }, []);
 
+  // Menú principal de admin
+  const adminMenuItems = [
+    { label: "Bienvenida", path: "/administrativo/bienvenida", icon: LogoInicio },
+    { label: "Dashboard", path: "/administrativo/dashboard-metricas", icon: LogoDashboard },
+    { label: "Comprobantes Recibidos", path: "/administrativo/comprobantes-recibo", icon: LogoComprobantes },
+    { label: "Lista de Alumnos", path: "/administrativo/lista-alumnos", icon: LogoAlumnos },
+    { label: "Generar Contrato", path: "/administrativo/generar-contrato", icon: LogoGenerarContrato },
+    { label: "Reportes de Pagos", path: "/administrativo/reportes-pagos", icon: LogoReportesPagos },
+    { label: "Calendario", path: "/administrativo/calendario", icon: LogoCalendario },
+    { label: "Email", path: "/administrativo/email", icon: LogoEmail },
+    { label: "Asesores", path: "/administrativo/asesores", icon: LogoAlumnos },
+    { label: "Chat de Soporte", path: "/administrativo/chat", icon: LogoChat, badgeKey: "chat" },
+    { label: "Finanzas", path: "/administrativo/finanzas", icon: LogoFinanzas },
+  ];
+
+  // Items del fondo (configuración y logout)
+  const adminBottomItems = [
+    { label: "Configuración", path: "/administrativo/configuracion", icon: LogoConfig, isBottom: true },
+    { label: "Cerrar Sesión", path: "/login", icon: LogoLogOut, isBottom: true },
+  ];
+
+  // Combinar todos los items
+  const allAdminMenuItems = [...adminMenuItems, ...adminBottomItems];
+
   return (
-    <aside
-      className="max-sm:hidden flex flex-col fixed w-[80px] shadow-[4px_0_10px_-2px_rgba(0,0,0,0.1)] z-40 top-[84px] h-[calc(100vh-84px)] bg-white/95 backdrop-blur-sm border-r border-gray-100"
-      aria-label="Sidebar de escritorio"
-    >
-      <nav className="h-full overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        <ul className="p-2 min-h-full flex flex-col">
-          <div className="space-y-1">
-            <ElementoSideBar to="/administrativo/bienvenida" Icono={LogoInicio} NombreElemento="Bienvenida" />
-            <ElementoSideBar to="/administrativo/dashboard-metricas" Icono={LogoDashboard} NombreElemento="Dashboard" />
-            <ElementoSideBar to="/administrativo/comprobantes-recibo" Icono={LogoComprobantes} NombreElemento="Comprobantes Recibidos" />
-            <ElementoSideBar to="/administrativo/lista-alumnos" Icono={LogoAlumnos} NombreElemento="Lista de Alumnos" />
-            <ElementoSideBar to="/administrativo/generar-contrato" Icono={LogoGenerarContrato} NombreElemento="Generar Contrato" />
-            <ElementoSideBar to="/administrativo/reportes-pagos" Icono={LogoReportesPagos} NombreElemento="Reportes de Pagos" />
-            <ElementoSideBar to="/administrativo/calendario" Icono={LogoCalendario} NombreElemento="Calendario" />
-            <ElementoSideBar to="/administrativo/email" Icono={LogoEmail} NombreElemento="Email" />
-            <ElementoSideBar to="/administrativo/asesores" Icono={LogoAlumnos} NombreElemento="Asesores" />
-            <ElementoSideBar to="/administrativo/chat" Icono={LogoChat} NombreElemento="Chat de Soporte" badge={unreadCount > 0 ? unreadCount : undefined} />
-            <ElementoSideBar to="/administrativo/finanzas" Icono={LogoFinanzas} NombreElemento="Finanzas" />
-          </div>
-
-          <div className="flex-grow"></div>
-
-          <div className="pt-2 space-y-1 pb-4 border-t border-gray-100 mt-2">
-            <ElementoSideBar to="/administrativo/configuracion" Icono={LogoConfig} NombreElemento="Configuración" />
-            <ElementoSideBar to="/login" Icono={LogoLogOut} NombreElemento="Cerrar Sesión" />
-          </div>
-        </ul>
-      </nav>
-    </aside>
+    <DesktopSidebarBase
+      menuItems={allAdminMenuItems}
+      userRole="admin"
+      showPinnedToggle={false}
+      showAutoCollapse={false}
+      forceOpen={false}
+      forceClosed={true}
+      logoutPath="/login"
+      topOffset="84px"
+      heightOffset="84px"
+      badgeConfig={{
+        loadFunction: async () => {
+          try {
+            const res = await axios.get('/chat/support/unread');
+            return { chat: res.data?.data?.total || 0 };
+          } catch (e) {
+            return { chat: 0 };
+          }
+        },
+        eventNames: ['admin-chat-update', 'student-ws-message']
+      }}
+    />
   );
 }
 
@@ -293,16 +326,19 @@ export function SideBarsm({ isMenuOpen, closeMenu }) {
       {isMenuOpen && (
         <>
           <div
-            className="sm:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+            className="sm:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
             onClick={closeMenu}
             aria-hidden="true"
+            style={{
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)'
+            }}
           ></div>
           {/* CORRECCIÓN: w-72 en lugar de w-64 para dar espacio al texto */}
-          <aside className="sm:hidden fixed top-[64px] left-0 w-72 h-[calc(100vh-64px)] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
-            <nav className="h-full">
-              {/* padding lateral reducido en el ul para aprovechar espacio */}
-              <ul className="py-4 px-2 space-y-1 h-full flex flex-col justify-between overflow-y-auto no-scrollbar">
-                <div>
+          <aside className="sm:hidden fixed top-[64px] left-0 w-72 h-[calc(100vh-64px)] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col overflow-hidden">
+            <nav className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
+                <ul className="py-4 px-2 space-y-1 list-none">
                   <ElementoSideBar to="/administrativo/bienvenida" Icono={LogoInicio} NombreElemento="Bienvenida" onClick={closeMenu} />
                   <ElementoSideBar to="/administrativo/dashboard-metricas" Icono={LogoDashboard} NombreElemento="Dashboard" onClick={closeMenu} />
                   <ElementoSideBar to="/administrativo/comprobantes-recibo" Icono={LogoComprobantes} NombreElemento="Comprobantes Recibidos" onClick={closeMenu} />
@@ -314,12 +350,14 @@ export function SideBarsm({ isMenuOpen, closeMenu }) {
                   <ElementoSideBar to="/administrativo/asesores" Icono={LogoAlumnos} NombreElemento="Asesores" onClick={closeMenu} />
                   <ElementoSideBar to="/administrativo/chat" Icono={LogoChat} NombreElemento="Chat de Soporte" onClick={closeMenu} badge={unreadCount > 0 ? unreadCount : undefined} />
                   <ElementoSideBar to="/administrativo/finanzas" Icono={LogoFinanzas} NombreElemento="Finanzas" onClick={closeMenu} />
-                </div>
-                <div className="mt-auto pb-4 pt-2 border-t border-gray-100">
                   <ElementoSideBar to="/administrativo/configuracion" Icono={LogoConfig} NombreElemento="Configuración" onClick={closeMenu} />
+                </ul>
+              </div>
+              <div className="flex-shrink-0 pb-4 pt-2 px-2 border-t border-gray-200/60 bg-white/50">
+                <ul className="space-y-1 list-none">
                   <ElementoSideBar to="/login" Icono={LogoLogOut} NombreElemento="Cerrar Sesión" onClick={closeMenu} />
-                </div>
-              </ul>
+                </ul>
+              </div>
             </nav>
           </aside>
         </>

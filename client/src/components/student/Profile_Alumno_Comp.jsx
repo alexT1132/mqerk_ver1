@@ -22,7 +22,7 @@ const InputField = ({ name, type = "text", placeholder, value, onChange, classNa
           onChange={onChange}
           placeholder={placeholder}
           maxLength={maxLength}
-          className={`w-full p-2 rounded-lg bg-white border-2 ${hasError
+          className={`w-full p-1.5 rounded-md bg-white border-2 ${hasError
               ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-200'
               : hasValue
                 ? `border-${borderColor}-400 focus:border-${borderColor}-500 focus:ring-1 focus:ring-${borderColor}-200`
@@ -42,15 +42,15 @@ const InputField = ({ name, type = "text", placeholder, value, onChange, classNa
         )}
       </div>
       {hasError && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-2">
-          <p className="text-red-600 text-xs font-medium flex items-center gap-1">
+        <div className="bg-red-50 border border-red-200 rounded-md p-1">
+          <p className="text-red-600 text-[10px] xs:text-xs font-medium flex items-center gap-1">
             <span>⚠️</span>
             {errors[name]}
           </p>
         </div>
       )}
       {helpText && !hasError && (
-        <p className="text-gray-500 text-xs flex items-center gap-1">
+        <p className="text-gray-500 text-[10px] xs:text-xs flex items-center gap-1">
           <span>💡</span>
           {helpText}
         </p>
@@ -270,27 +270,27 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
 
   return (
     <div className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm animate-in fade-in duration-500 overflow-y-auto">
-      <div className="min-h-screen flex items-end sm:items-center justify-center p-2 sm:p-3 md:p-4 pb-2 sm:pb-4 md:pb-8 pt-2 sm:pt-4 md:pt-8">
-        <div className="relative w-full max-w-sm mx-auto rounded-2xl sm:rounded-3xl shadow-2xl border-2 border-gray-200/50 bg-white overflow-hidden animate-in zoom-in-95 duration-600 mb-0 sm:my-auto ring-4 ring-violet-100/50 max-h-[85vh] sm:max-h-[80vh] flex flex-col">
+      <div className="min-h-screen flex items-end sm:items-center justify-center p-1 sm:p-2 md:p-3 pb-1 sm:pb-2 md:pb-3 pt-8 sm:pt-12 md:pt-16">
+        <div className="relative w-full max-w-sm mx-auto rounded-xl sm:rounded-2xl shadow-2xl border-2 border-gray-200/50 bg-white overflow-hidden animate-in zoom-in-95 duration-600 mb-0 sm:my-auto ring-4 ring-violet-100/50 max-h-[calc(100vh-3rem)] sm:max-h-[calc(100vh-5rem)] flex flex-col">
 
-          {/* Header visual mejorado */}
-          <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-3 xs:px-4 py-2 xs:py-2.5 text-center shadow-lg">
-            <div className="flex justify-center mb-1">
-              <span className="inline-flex items-center justify-center w-8 h-8 xs:w-10 xs:h-10 rounded-full bg-white/30 shadow-xl border-2 border-white/50 text-base xs:text-lg ring-2 ring-white/30">✏️</span>
+          {/* Header visual mejorado - Compacto */}
+          <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-3 py-1.5 text-center shadow-lg flex-shrink-0">
+            <div className="flex items-center justify-center gap-2">
+              <span className="inline-flex items-center justify-center w-6 h-6 xs:w-7 xs:h-7 rounded-full bg-white/30 shadow-xl border border-white/50 text-sm xs:text-base ring-1 ring-white/30">✏️</span>
+              <h2 className="text-xs xs:text-sm sm:text-base font-extrabold text-white drop-shadow-lg tracking-wide">Editar Perfil</h2>
             </div>
-            <h2 className="text-sm xs:text-base sm:text-lg font-extrabold text-white drop-shadow-lg tracking-wide">Editar Perfil</h2>
           </div>
 
           {/* Formulario compacto */}
-          <form onSubmit={handleSubmit} className="p-2 xs:p-2.5 flex flex-col flex-1 min-h-0">
-            <div className="space-y-1.5 xs:space-y-2 flex-1 overflow-y-auto pr-1 xs:pr-2 min-h-0" style={{ maxHeight: 'calc(85vh - 140px)' }}>
+          <form onSubmit={handleSubmit} className="p-1.5 xs:p-2 flex flex-col flex-1 min-h-0">
+            <div className="space-y-1 xs:space-y-1.5 flex-1 overflow-y-auto pr-1 min-h-0 no-scrollbar" style={{ maxHeight: 'calc(100vh - 250px)' }}>
 
               {/* Datos Personales */}
               <div>
-                <h3 className="text-xs font-bold text-purple-700 mb-2 flex items-center gap-1 uppercase tracking-wider">
+                <h3 className="text-[10px] xs:text-xs font-bold text-purple-700 mb-1 flex items-center gap-1 uppercase tracking-wider">
                   <span>👤</span> Datos Personales
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <InputField
                     type="email"
                     name="personal.email"
@@ -301,7 +301,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                     errors={errors}
                     maxLength={100}
                   />
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-1.5">
                     <InputField
                       name="personal.municipio"
                       value={formData.personal.municipio}
@@ -321,7 +321,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                       maxLength={100}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-1.5">
                     <InputField
                       type="tel"
                       name="personal.phoneNumber"
@@ -348,10 +348,10 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
 
               {/* Datos Académicos */}
               <div>
-                <h3 className="text-xs font-bold text-green-700 mb-2 flex items-center gap-1 uppercase tracking-wider">
+                <h3 className="text-[10px] xs:text-xs font-bold text-green-700 mb-1 flex items-center gap-1 uppercase tracking-wider">
                   <span>🎓</span> Datos Académicos
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <InputField
                     name="academic.bachillerato"
                     value={formData.academic.bachillerato}
@@ -362,7 +362,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                     errors={errors}
                     maxLength={100}
                   />
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-1.5">
                     <InputField
                       name="academic.licenciaturaOption"
                       value={formData.academic.licenciaturaOption}
@@ -398,10 +398,10 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
               </div>
             </div>
 
-            {/* Mostrar mensajes de estado */}
+            {/* Mostrar mensajes de estado - Compactos */}
             {errors.success && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                <p className="text-green-600 text-xs font-medium flex items-center gap-1">
+              <div className="bg-green-50 border border-green-200 rounded-md p-1.5 mb-1.5">
+                <p className="text-green-600 text-[10px] xs:text-xs font-medium flex items-center gap-1">
                   <span>✅</span>
                   {errors.success}
                 </p>
@@ -409,8 +409,8 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
             )}
 
             {errors.submit && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
-                <p className="text-red-600 text-xs font-medium flex items-center gap-1">
+              <div className="bg-red-50 border border-red-200 rounded-md p-1.5 mb-1.5">
+                <p className="text-red-600 text-[10px] xs:text-xs font-medium flex items-center gap-1">
                   <span>❌</span>
                   {errors.submit}
                 </p>
@@ -419,41 +419,21 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
 
             {/* Mostrar resumen de errores si hay muchos */}
             {Object.keys(errors).filter(key => key !== 'submit' && key !== 'success').length > 3 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
-                <p className="text-amber-600 text-xs font-medium flex items-center gap-1">
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-1.5 mb-1.5">
+                <p className="text-amber-600 text-[10px] xs:text-xs font-medium flex items-center gap-1">
                   <span>⚠️</span>
                   Por favor, revisa los campos marcados en rojo antes de continuar.
                 </p>
               </div>
             )}
 
-            {/* Mostrar mensaje de éxito */}
-            {errors.success && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                <p className="text-green-600 text-xs font-medium flex items-center gap-1">
-                  <span>✅</span>
-                  {errors.success}
-                </p>
-              </div>
-            )}
-
-            {/* Mostrar error de submit si existe */}
-            {errors.submit && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
-                <p className="text-red-600 text-xs font-medium flex items-center gap-1">
-                  <span>❌</span>
-                  {errors.submit}
-                </p>
-              </div>
-            )}
-
-            {/* Botones mejorados para móviles */}
-            <div className="flex gap-2 xs:gap-2.5 mt-2 xs:mt-3 pt-2 xs:pt-3 border-t-2 border-gray-200/50">
+            {/* Botones mejorados para móviles - Compactos */}
+            <div className="flex gap-1.5 xs:gap-2 mt-1.5 xs:mt-2 pt-1.5 xs:pt-2 border-t border-gray-200/50 flex-shrink-0">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="flex-1 px-3 xs:px-4 py-2.5 xs:py-3 rounded-xl bg-gray-200 text-gray-700 font-extrabold hover:bg-gray-300 active:scale-95 transition-all duration-200 text-sm disabled:opacity-50 touch-manipulation shadow-md"
+                className="flex-1 px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 active:scale-95 transition-all duration-200 text-xs xs:text-sm disabled:opacity-50 touch-manipulation shadow-sm"
               >
                 Cancelar
               </button>
@@ -465,7 +445,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                   setErrors({});
                 }}
                 disabled={isSubmitting}
-                className="px-3 xs:px-4 py-2.5 xs:py-3 rounded-xl bg-gradient-to-r from-blue-400 to-indigo-400 text-white font-extrabold hover:from-blue-500 hover:to-indigo-500 active:scale-95 transition-all duration-200 text-base disabled:opacity-50 touch-manipulation shadow-md"
+                className="px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg bg-gradient-to-r from-blue-400 to-indigo-400 text-white font-bold hover:from-blue-500 hover:to-indigo-500 active:scale-95 transition-all duration-200 text-sm disabled:opacity-50 touch-manipulation shadow-sm"
                 title="Restaurar valores originales"
               >
                 🔄
@@ -474,7 +454,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 px-3 xs:px-4 py-2.5 xs:py-3 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white font-extrabold hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 active:scale-95 transition-all duration-200 text-sm disabled:opacity-50 flex items-center justify-center gap-2 touch-manipulation shadow-lg ring-2 ring-violet-200/50"
+                className="flex-1 px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white font-bold hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 active:scale-95 transition-all duration-200 text-xs xs:text-sm disabled:opacity-50 flex items-center justify-center gap-1 touch-manipulation shadow-sm ring-1 ring-violet-200/50"
               >
                 {isSubmitting ? (
                   <>

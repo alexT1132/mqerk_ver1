@@ -107,8 +107,55 @@ export const listIntentosQuizEstudiante = async (req, res) => {
 };
 
 export const resumenQuizzesEstudiante = async (req, res) => {
-  try { const rows = await Quizzes.resumenQuizzesEstudiante(req.params.id_estudiante); res.json({ data: rows }); }
-  catch (e) { console.error('resumenQuizzesEstudiante', { id_estudiante: req.params?.id_estudiante, err: e }); res.status(500).json({ message: 'Error interno' }); }
+  try {
+    const id_estudiante = Number(req.params.id_estudiante);
+    if (!id_estudiante || Number.isNaN(id_estudiante)) {
+      return res.status(400).json({ message: 'id_estudiante inválido' });
+    }
+
+    const user = req.user || null;
+    // Si es estudiante, solo permitir acceder a su propio resumen
+    if (user?.role === 'estudiante' && user.id_estudiante && Number(user.id_estudiante) !== id_estudiante) {
+      return res.status(403).json({ message: 'Sin permiso' });
+    }
+
+    let rows = await Quizzes.resumenQuizzesEstudiante(id_estudiante);
+
+    // Enforce seguridad adicional: filtrar por áreas permitidas + grupos (mismo criterio que listQuizzes)
+    try {
+      const allowed = await Access.getAllowedAreaIds(id_estudiante);
+      if (Array.isArray(allowed) && allowed.length) {
+        rows = rows.filter(r => !r.id_area || allowed.includes(Number(r.id_area)));
+      } else {
+        rows = rows.filter(r => !r.id_area);
+      }
+
+      const [studentData] = await db.query('SELECT grupo FROM estudiantes WHERE id = ? LIMIT 1', [id_estudiante]);
+      const studentGrupo = studentData[0]?.grupo || null;
+      if (studentGrupo) {
+        rows = rows.filter(r => {
+          if (!r.grupos || r.grupos === null || r.grupos === '') return true;
+          let grupos = [];
+          try {
+            grupos = typeof r.grupos === 'string' ? JSON.parse(r.grupos) : r.grupos;
+            if (!Array.isArray(grupos)) return true;
+          } catch (parseError) {
+            console.warn('[resumenQuizzesEstudiante] Error parsing grupos for quiz', r.id, ':', parseError.message);
+            return true;
+          }
+          if (grupos.length === 0) return true;
+          return grupos.includes(studentGrupo);
+        });
+      }
+    } catch (_e) {
+      // si falla el filtro, devolvemos rows ya filtrados por publicado/ventana desde el modelo
+    }
+
+    res.json({ data: rows });
+  } catch (e) {
+    console.error('resumenQuizzesEstudiante', { id_estudiante: req.params?.id_estudiante, err: e });
+    res.status(500).json({ message: 'Error interno' });
+  }
 };
 
 // Listar, para un quiz, los estudiantes que ya tienen intentos y su puntaje oficial (primer intento)

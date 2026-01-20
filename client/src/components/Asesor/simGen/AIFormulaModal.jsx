@@ -135,7 +135,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
     const rem = getCooldownRemainingMs();
     if (rem > 0) {
       const secs = Math.ceil(rem / 1000);
-      setError(`Debes esperar ${secs} segundo${secs > 1 ? 's' : ''} antes de volver a generar con IA. Esto ayuda a evitar límites de la API.`);
+      setError(`Debes esperar ${secs} segundo${secs > 1 ? 's' : ''} antes de volver a generar con IA.`);
       return;
     }
 
@@ -192,8 +192,8 @@ Fórmula solicitada: ${query.trim()}`;
             : `${secs} segundo${secs > 1 ? 's' : ''}`;
 
           const errorMsg = is503
-            ? `El servicio de IA está temporalmente no disponible (saturado). Por favor, espera ${timeDisplay} antes de intentar nuevamente para evitar saturar el servicio.`
-            : `Se alcanzó el límite de solicitudes a la API. Por favor, espera ${timeDisplay} antes de intentar nuevamente.`;
+            ? `El servicio de IA está temporalmente no disponible (saturado). Por favor, espera ${timeDisplay}.`
+            : `Se alcanzó el límite de solicitudes a la API. Por favor, espera ${timeDisplay}.`;
           throw new Error(errorMsg);
         }
 
@@ -339,21 +339,23 @@ Fórmula solicitada: ${query.trim()}`;
   return (
     <>
       {/* Modal compacta personalizada */}
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-        <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 border-2 border-violet-200/50 h-[600px] max-h-[600px] flex flex-col overflow-hidden">
+      <div className="mqerk-ai-formula-overlay fixed inset-0 z-[60] flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-24 pb-6">
+        {/* Contenedor principal con altura reducida y scroll oculto */}
+        <div className="mqerk-ai-formula-dialog w-full max-w-lg rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 border-2 border-violet-200/50 
+                        max-h-[85vh] h-auto max-w-full md:max-w-lg md:h-auto md:max-h-[85vh] flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 flex-shrink-0">
+          <div className="mqerk-ai-formula-header flex items-center justify-between border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-4 sm:p-5 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/50">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">Generar fórmula con IA</h3>
+              <h3 className="mqerk-ai-formula-title text-lg sm:text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">Generar fórmula con IA</h3>
             </div>
             <button
               onClick={handleClose}
-              className="rounded-xl p-2.5 text-slate-500 hover:text-slate-700 transition-all hover:bg-white hover:scale-110 active:scale-95 border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md"
+              className="rounded-xl p-2 text-slate-500 hover:text-slate-700 transition-all hover:bg-white hover:scale-110 active:scale-95 border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md"
               aria-label="Cerrar"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -362,9 +364,9 @@ Fórmula solicitada: ${query.trim()}`;
             </button>
           </div>
 
-          {/* Contenido con scroll */}
-          <div className="overflow-y-auto flex-1 min-h-0 p-4 bg-gradient-to-b from-white to-slate-50/30">
-            <div className="space-y-4">
+          {/* Contenido con scroll oculto */}
+          <div className="mqerk-ai-formula-content mqerk-hide-scrollbar overflow-y-auto flex-1 min-h-0 p-4 bg-gradient-to-b from-white to-slate-50/30">
+            <div className="mqerk-ai-formula-stack space-y-4">
               {/* Input para la solicitud */}
               <div>
                 <label className="block text-sm font-extrabold text-violet-700 mb-2">
@@ -379,14 +381,14 @@ Fórmula solicitada: ${query.trim()}`;
                     }}
                     onKeyPress={handleKeyPress}
                     placeholder="Ej: Fórmula cuadrática, Teorema de Pitágoras, Ley de Ohm..."
-                    className="w-full rounded-xl border-2 border-slate-300 px-4 py-3 pr-28 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 resize-none hover:border-violet-400 bg-white h-24 shadow-sm hover:shadow-md"
+                    className="mqerk-ai-formula-textarea w-full rounded-xl border-2 border-slate-300 px-4 py-3 pr-28 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 resize-none hover:border-violet-400 bg-white h-20 sm:h-24 shadow-sm hover:shadow-md"
                     style={{ whiteSpace: 'pre-wrap' }}
                     disabled={loading}
                   />
                   <button
                     onClick={handleGenerate}
                     disabled={loading || !query.trim() || cooldownMs > 0}
-                    className="absolute right-2 bottom-2 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 py-2 text-xs font-bold text-white hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-violet-300/50 transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-1.5 ring-2 ring-violet-200/50"
+                    className="mqerk-ai-formula-generate absolute right-2 bottom-2 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 py-2 text-xs font-bold text-white hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-violet-300/50 transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-1.5 ring-2 ring-violet-200/50"
                   >
                     {loading ? (
                       <>
@@ -413,10 +415,7 @@ Fórmula solicitada: ${query.trim()}`;
                     )}
                   </button>
                 </div>
-                <div className="mt-2 flex items-center gap-2 text-xs text-violet-600 font-medium bg-gradient-to-r from-violet-50 to-indigo-50 px-3 py-2 rounded-xl border border-violet-200">
-                  <span className="text-base">💡</span>
-                  <span>Presiona Enter para generar</span>
-                </div>
+                {/* SE HA QUITADO EL TIP "Presiona Enter para generar" */}
               </div>
 
               {/* Mensaje de error */}
@@ -435,11 +434,12 @@ Fórmula solicitada: ${query.trim()}`;
                       </span>
                     </div>
                     <div className="flex-1">
-                      <p className={`text-sm font-bold leading-relaxed ${error.includes('espera') || error.includes('límite') || error.includes('no disponible') || error.includes('503') ? 'text-amber-800' : 'text-rose-700'
-                        }`}>{error}</p>
+                      {/* ESTE ES EL CAMBIO CLAVE: Tamaño de fuente fijo para el mensaje de error crítico */}
+                      <p className={`font-bold leading-relaxed ${error.includes('espera') || error.includes('límite') || error.includes('no disponible') || error.includes('503') ? 'text-amber-800' : 'text-rose-700'
+                        } ${error === 'Por favor, ingresa una descripción de la fórmula que necesitas' ? 'text-sm' : 'text-sm'}`}>{error}</p>
                       {(error.includes('espera') || error.includes('límite') || error.includes('no disponible') || error.includes('503')) && cooldownMs > 0 && (
                         <p className="text-xs text-amber-700 mt-2 font-medium">
-                          Esto ayuda a evitar límites de la API de Google. El temporizador se actualiza automáticamente.
+                          Esto ayuda a evitar límites de la API de Google.
                         </p>
                       )}
                     </div>
@@ -469,7 +469,7 @@ Fórmula solicitada: ${query.trim()}`;
                   </div>
                   <div className="bg-white/80 rounded-xl p-5 border-2 border-violet-200/50 min-h-[70px] flex items-center justify-center leading-relaxed shadow-sm max-w-full">
                     <div className={`w-full ${generatedFormula.length > 200 ? 'text-sm' : generatedFormula.length > 150 ? 'text-base' : generatedFormula.length > 80 ? 'text-lg' : 'text-2xl'} font-medium text-slate-900`}>
-                      <div className="overflow-x-auto overflow-y-hidden w-full" style={{ maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
+                      <div className="mqerk-hide-scrollbar overflow-x-auto overflow-y-hidden w-full" style={{ maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
                         <div className="inline-block min-w-full">
                           <InlineMath math={generatedFormula} display={generatedFormula.length > 50 || generatedFormula.includes('\\frac') || generatedFormula.includes('\\int')} />
                         </div>
@@ -479,7 +479,7 @@ Fórmula solicitada: ${query.trim()}`;
                   {/* Mostrar fórmula en texto plano si es muy larga o compleja para debugging */}
                   {process.env.NODE_ENV === 'development' && generatedFormula.length > 100 && (
                     <div className="mt-3 pt-3 border-t border-violet-200/50">
-                      <p className="text-xs text-slate-500 font-mono break-all bg-slate-50 p-2 rounded overflow-x-auto">
+                      <p className="mqerk-hide-scrollbar text-xs text-slate-500 font-mono break-all bg-slate-50 p-2 rounded overflow-x-auto">
                         {generatedFormula}
                       </p>
                     </div>
@@ -498,7 +498,7 @@ Fórmula solicitada: ${query.trim()}`;
               {/* Ejemplos de uso organizados por categoría */}
               {!generatedFormula && !loading && (
                 <div className="space-y-4">
-                  <div className="rounded-2xl border-2 border-violet-200/80 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 shadow-md ring-2 ring-violet-100/50">
+                  <div className="rounded-2xl border-2 border-violet-200/80 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 max-[700px]:p-4 shadow-md ring-2 ring-violet-100/50">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg ring-2 ring-violet-200/50">
                         <span className="text-lg">💡</span>
@@ -511,13 +511,14 @@ Fórmula solicitada: ${query.trim()}`;
                       {Object.entries(formulaExamples).map(([category, examples]) => (
                         <div key={category}>
                           <p className="text-xs font-extrabold text-violet-600 mb-2 uppercase tracking-wide">{category}</p>
-                          <div className="flex flex-wrap gap-2">
+                          {/* Grid responsive para ejemplos */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {examples.map((example, idx) => (
                               <button
                                 key={idx}
                                 type="button"
                                 onClick={() => handleExampleClick(example)}
-                                className="text-xs px-3 py-2 bg-white border-2 border-violet-200 rounded-xl hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 hover:border-violet-400 hover:text-violet-700 transition-all duration-200 font-bold shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
+                                className="text-xs px-3 py-2 bg-white border-2 border-violet-200 rounded-xl hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 hover:border-violet-400 hover:text-violet-700 transition-all duration-200 font-bold shadow-sm hover:shadow-md hover:scale-105 active:scale-95 text-left"
                                 title={`Generar: ${example}`}
                               >
                                 {example}
@@ -572,28 +573,65 @@ Fórmula solicitada: ${query.trim()}`;
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between border-t-2 border-violet-200/50 p-4 bg-gradient-to-r from-slate-50/50 to-white flex-shrink-0 rounded-b-3xl">
-            <button
-              onClick={handleClose}
-              className="rounded-xl border-2 border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
-            >
-              Cancelar
-            </button>
-            {generatedFormula && (
-              <button
-                onClick={handleInsert}
-                className="rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-6 py-2.5 text-sm font-bold text-white hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-violet-300/50 transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2 ring-2 ring-violet-200/50 hover:shadow-xl hover:shadow-violet-400/50"
-              >
-                <span>Insertar fórmula</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </button>
-            )}
-          </div>
+          {/* SE HA QUITADO EL FOOTER Y EL BOTÓN CANCELAR */}
         </div>
       </div>
+
+      {/* CSS local: ocultar barra de scroll manteniendo scroll */}
+      <style>{`
+        .mqerk-hide-scrollbar {
+          -ms-overflow-style: none; /* IE/Edge legacy */
+          scrollbar-width: none; /* Firefox */
+          scrollbar-gutter: auto;
+        }
+        .mqerk-hide-scrollbar::-webkit-scrollbar {
+          width: 0 !important;
+          height: 0 !important;
+          display: none !important;
+        }
+        .mqerk-hide-scrollbar::-webkit-scrollbar-thumb {
+          background: transparent !important;
+        }
+        .mqerk-hide-scrollbar::-webkit-scrollbar-track {
+          background: transparent !important;
+        }
+
+        /* Pantallas con poca altura: modal más compacto y un poco más abajo */
+        @media (max-height: 720px) {
+          .mqerk-ai-formula-overlay {
+            align-items: flex-start;
+            padding-top: max(8vh, 96px);
+            padding-bottom: 2vh;
+          }
+          .mqerk-ai-formula-dialog {
+            max-height: 82vh;
+          }
+          .mqerk-ai-formula-header {
+            padding: 0.75rem;
+          }
+          .mqerk-ai-formula-title {
+            font-size: 1rem;
+            line-height: 1.25rem;
+          }
+          .mqerk-ai-formula-content {
+            padding: 0.75rem;
+          }
+          .mqerk-ai-formula-stack {
+            gap: 0.75rem;
+          }
+          .mqerk-ai-formula-textarea {
+            height: 4rem; /* ~h-16 */
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+          }
+          .mqerk-ai-formula-generate {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+            padding-top: 0.375rem;
+            padding-bottom: 0.375rem;
+          }
+        }
+      `}</style>
 
       {/* Modal de placeholders para fórmulas con parámetros (legacy, puede que aún se use) */}
       <PlaceholderModal
@@ -613,4 +651,3 @@ Fórmula solicitada: ${query.trim()}`;
     </>
   );
 }
-

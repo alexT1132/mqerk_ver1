@@ -241,20 +241,20 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
+      className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6"
       aria-modal="true"
       role="dialog"
       aria-labelledby="sim-modal-title"
       onMouseDown={(e) => {
-        // clic fuera cierra
-        if (e.target === e.currentTarget) onClose?.();
+        if (!e.target.closest("[data-modal]")) onClose?.();
       }}
     >
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-
-      {/* Content */}
-      <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm -z-10" aria-hidden="true" />
+      <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-center py-2">
+        <div
+          data-modal
+          className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 max-h-[calc(100vh-3rem)] overflow-hidden flex flex-col"
+        >
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -296,8 +296,8 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
           </div>
         )}
 
-        {/* Body */}
-        <div className="px-4 py-3 sm:px-5 sm:py-4 overflow-y-auto flex-1">
+        {/* Body: min-h-0 para que haga scroll en pantallas bajas */}
+        <div className="flex-1 min-h-0 px-4 py-3 sm:px-5 sm:py-4 overflow-y-auto">
           {step === 1 ? (
             <StepOne form={form} setForm={setForm} />
           ) : (
@@ -397,6 +397,7 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

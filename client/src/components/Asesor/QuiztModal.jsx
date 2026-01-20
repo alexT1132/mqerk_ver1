@@ -234,26 +234,28 @@ export default function SimulatorModal({ open, onClose, onCreate, areaTitle, are
     }
   };
 
-  // Layout dinámico por paso
-  const containerPad = step === 2 ? "pt-36 sm:pt-40" : "pt-48 sm:pt-52";
   const contentMaxW = step === 2 ? "max-w-md sm:max-w-lg" : "max-w-sm sm:max-w-md";
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 ${containerPad}`}
+      className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6"
       aria-modal="true"
       role="dialog"
       aria-labelledby="sim-modal-title"
       onMouseDown={(e) => {
-        // clic fuera cierra
-        if (e.target === e.currentTarget) onClose?.();
+        if (!e.target.closest("[data-modal]")) onClose?.();
       }}
     >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-slate-900/55 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-slate-900/55 backdrop-blur-[2px] -z-10" aria-hidden="true" />
 
-      {/* Content */}
-      <div className={`relative w-full ${contentMaxW} rounded-2xl bg-white shadow-xl ring-1 ring-black/5 max-h-[85vh] overflow-hidden flex flex-col`}>
+      {/* Envuelve para centrar verticalmente en viewport; en pantallas bajas el overlay hace scroll */}
+      <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-center py-2">
+        {/* Content: max-height para pantallas con poca altura (ej. 15.6" alto reducido) */}
+        <div
+          data-modal
+          className={`relative w-full ${contentMaxW} rounded-2xl bg-white shadow-xl ring-1 ring-black/5 max-h-[calc(100vh-3rem)] overflow-hidden flex flex-col`}
+        >
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b px-4 py-2.5 bg-gradient-to-r from-violet-50 to-indigo-50">
           <div className="flex items-center gap-3">
@@ -287,8 +289,8 @@ export default function SimulatorModal({ open, onClose, onCreate, areaTitle, are
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-5 py-3 sm:px-6 sm:py-4 overflow-y-auto">
+        {/* Body: flex-1 min-h-0 para que haga scroll en pantallas bajas */}
+        <div className="flex-1 min-h-0 px-5 py-3 sm:px-6 sm:py-4 overflow-y-auto">
           {step === 1 ? (
             <StepOne form={form} setForm={setForm} />
           ) : (
@@ -331,6 +333,7 @@ export default function SimulatorModal({ open, onClose, onCreate, areaTitle, are
             </button>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

@@ -1066,9 +1066,9 @@ export default function FinanzasEgresosFijos() {
 
       {/* Modal Nuevo egreso fijo */}
       {showModal && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-[92px] sm:pt-[112px] pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[90dvh] mx-auto my-6 sm:my-8">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+        <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-20 sm:pt-24 md:pt-28 pb-6 bg-black/40">
+          <div className="bg-white w-full max-w-md rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-300 overflow-hidden max-h-[calc(100vh-8rem)] flex flex-col mx-auto">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 flex-shrink-0">
               <h3 className="text-base font-semibold text-gray-900">
                 Nuevo gasto fijo
               </h3>
@@ -1079,8 +1079,8 @@ export default function FinanzasEgresosFijos() {
                 ✕
               </button>
             </div>
-            <form onSubmit={submit} className="flex-1 flex flex-col">
-              <div className="px-4 sm:px-5 py-4 overflow-y-auto overscroll-contain">
+            <form onSubmit={submit} className="flex-1 flex flex-col min-h-0">
+              <div className="px-4 sm:px-5 py-4 overflow-y-auto overscroll-contain flex-1 min-h-0 no-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -1234,8 +1234,8 @@ export default function FinanzasEgresosFijos() {
 
       {/* Modal Plantillas de gastos fijos */}
       {plantillaModalOpen && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-[92px] sm:pt-[112px] pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-[96vw] sm:max-w-3xl rounded-2xl shadow-xl flex flex-col h-[70dvh] mx-auto my-6 sm:my-8">
+        <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-12 sm:pt-16 md:pt-20 pb-6 bg-black/40">
+          <div className="bg-white w-full max-w-[96vw] sm:max-w-3xl rounded-2xl shadow-xl flex flex-col max-h-[calc(100vh-14rem)] mx-auto">
             <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
               <h3 className="text-base font-semibold text-gray-900">Plantillas de gastos fijos</h3>
               <button onClick={() => setPlantillaModalOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
@@ -1427,7 +1427,7 @@ export default function FinanzasEgresosFijos() {
 
       {/* Modal Editar plantilla */}
       {plantillaEditOpen && plantillaEdit && (
-        <div className="fixed inset-0 z-[10000] overflow-y-auto p-3 sm:p-4 pt-[92px] sm:pt-[112px] pb-6 bg-black/40">
+        <div className="fixed inset-0 z-[10000] overflow-y-auto p-3 sm:p-4 pt-12 sm:pt-16 md:pt-20 pb-6 bg-black/40">
           <div className="bg-white w-full max-w-[96vw] sm:max-w-2xl rounded-2xl shadow-xl flex flex-col h-[70dvh] mx-auto my-6 sm:my-8">
             <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
               <h3 className="text-base font-semibold text-gray-900">Editar plantilla</h3>
@@ -1544,8 +1544,8 @@ export default function FinanzasEgresosFijos() {
 
       {/* Modal presupuesto insuficiente (nuevo diseño unificado) */}
       {budgetWarn.open && (()=>{ const i = budgetWarn.info||{}; const b = i.snap || { budget:0, spent:0, leftover:0 }; const fmt = (n)=> new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(n||0)); return (
-        <div className="fixed inset-0 z-[10000] bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden">
+        <div className="fixed inset-0 z-[10000] bg-black/40 flex items-center justify-center p-4 pt-12 sm:pt-16 md:pt-20">
+          <div className="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden max-h-[calc(100vh-14rem)] flex flex-col">
             <div className="px-5 py-4 border-b flex items-center justify-between bg-amber-50/60">
               <h3 className="text-base font-semibold text-amber-800">Presupuesto insuficiente</h3>
               <button onClick={()=> setBudgetWarn({ open:false, context:null, info:null })} className="text-amber-600 hover:text-amber-800">✕</button>
@@ -1581,7 +1581,7 @@ export default function FinanzasEgresosFijos() {
       {/* Modal Ver descripción */}
       {descOpen && (
         <div className="fixed inset-0 z-[9999] bg-black/40 p-3 sm:p-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-md rounded-2xl shadow-xl flex flex-col max-h-[90dvh]">
+          <div className="bg-white w-full max-w-[95vw] sm:max-w-md rounded-2xl shadow-xl flex flex-col max-h-[calc(100vh-14rem)]">
             <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
               <h3 className="text-base font-semibold text-gray-900">
                 Descripción
@@ -1613,8 +1613,8 @@ export default function FinanzasEgresosFijos() {
 
       {/* Modal Editar egreso fijo */}
       {editOpen && editData && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-[92px] sm:pt-[112px] pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[90dvh] mx-auto my-6 sm:my-8">
+        <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-12 sm:pt-16 md:pt-20 pb-6 bg-black/40">
+          <div className="bg-white w-full max-w-[95vw] sm:max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[calc(100vh-14rem)] mx-auto">
             <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
               <h3 className="text-base font-semibold text-gray-900">
                 Editar gasto fijo

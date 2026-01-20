@@ -1,4 +1,4 @@
-import NavLogin from "../../components/NavLogin";
+import NavLogin from "../../components/common/auth/NavLogin";
 import { useState, useEffect, useRef } from "react";
 import { buildApiUrl } from '../../utils/url.js';
 import { usePreventPageReload } from "../../NoReload";
@@ -12,10 +12,10 @@ import {
   Checkbox,
   FormGroup,
 } from "@mui/material";
-import { BtnForm } from "../../components/FormRegistroComp";
-import SignatureField from "../../components/SignatureField.jsx";
+import { BtnForm } from "../../components/common/forms/FormRegistroComp";
+import SignatureField from "../../components/common/forms/SignatureField.jsx";
 import { useForm, Controller } from "react-hook-form";
-import ActionSheetSelect from "../../components/ActionSheetSelect.jsx";
+import ActionSheetSelect from "../../components/ui/ActionSheetSelect.jsx";
 import { useAsesor } from "../../context/AsesorContext";
 import { useNavigate, useLocation } from "react-router-dom";
 

@@ -904,7 +904,7 @@ const InicioAlumnoDashboard = ({
             }
           `}</style>
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-1 sm:p-1.5 md:p-2">
-            <div className="bg-white/95 backdrop-blur-lg rounded-lg sm:rounded-xl shadow-2xl w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[85vh] sm:max-h-[78vh] md:max-h-[70vh] flex flex-col border border-indigo-200/60">
+            <div className="bg-white/95 backdrop-blur-lg rounded-lg sm:rounded-xl shadow-2xl w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] flex flex-col border border-indigo-200/60">
 
               {/* Header del Modal - Paleta armoniosa */}
               <div className="flex-shrink-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-t-lg sm:rounded-t-xl flex items-center justify-between shadow-md">

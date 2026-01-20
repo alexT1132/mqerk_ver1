@@ -15,6 +15,9 @@ import {
   ArrowLeft,
   AlertTriangle,
   X,
+  Brain,
+  ChevronDown,
+  ChevronUp,
   Loader2,
   UploadCloud
 } from "lucide-react";
@@ -300,6 +303,21 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   const [iaTopP, setIaTopP] = useState('');
   const [iaTopK, setIaTopK] = useState('');
   const [iaMaxTokens, setIaMaxTokens] = useState('');
+  // Lock page scroll while IA modal is open (avoid browser scrollbar)
+  useEffect(() => {
+    if (!iaChoiceOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+    document.body.style.overflow = 'hidden';
+    try {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+    } catch { }
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
+    };
+  }, [iaChoiceOpen]);
   // Vista previa
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -2125,9 +2143,9 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
       {/* Modal: elección de IA (para vista de área y simuladores generales) */}
       {iaChoiceOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-start justify-center px-4 pt-20 pb-6">
           <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={() => { setIaChoiceOpen(false); setIaError(''); }} />
-          <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-slate-200">
+          <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100">
             {/* Header */}
             <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
               <div className="flex items-center gap-2.5">
@@ -2148,7 +2166,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               </div>
             </div>
 
-            <div className="px-4 py-3 space-y-3 max-h-[60vh] overflow-y-auto">
+            <div className="mqerk-hide-scrollbar px-4 py-3 space-y-3 max-h-[70vh] overflow-y-auto">
               {/* Opciones de modo */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-2">Tipo de generación</label>
@@ -2460,97 +2478,88 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 <button
                   type="button"
                   onClick={() => setIaShowAdvanced(!iaShowAdvanced)}
-                  className="w-full flex items-center justify-between text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors"
+                  className="w-full flex items-center justify-between text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 p-2 rounded-lg border border-slate-200 transition-colors"
                 >
-                  <span>⚙️ Parámetros avanzados de IA</span>
-                  <span className="text-slate-500">{iaShowAdvanced ? '▼' : '▶'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <Brain className="h-3.5 w-3.5" />
+                    <span>Parámetros avanzados de IA</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {iaShowAdvanced ? (
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    )}
+                  </div>
                 </button>
 
                 {iaShowAdvanced && (
-                  <div className="mt-3 p-3 rounded-lg border-2 border-slate-200 bg-slate-50 space-y-3">
-                    {/* Temperature */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Temperature <span className="text-slate-500 font-normal">(0.0 - 1.0)</span>
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          min="0"
-                          max="1"
-                          step="0.1"
-                          value={iaTemperature}
-                          onChange={(e) => {
-                            const val = Math.max(0, Math.min(1, Number(e.target.value) || 0.6));
-                            setIaTemperature(val);
-                          }}
-                          className="flex-1 rounded-lg border-2 border-slate-200 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                        />
-                        <span className="text-[10px] text-slate-500 w-32">
-                          {iaTemperature < 0.3 ? 'Muy determinista' : iaTemperature < 0.7 ? 'Balanceado' : 'Más creativo'}
-                        </span>
+                  <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-3 animate-in slide-in-from-top-2">
+                    {/* Temperatura / Creatividad */}
+                    <div className="text-xs">
+                      <div className="flex justify-between mb-1">
+                        <label className="font-semibold text-slate-700">Creatividad (Temperatura)</label>
+                        <span className="text-slate-500">{Number(iaTemperature).toFixed(1)}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={iaTemperature}
+                        onChange={e => setIaTemperature(Number(e.target.value))}
+                        className="w-full accent-emerald-500"
+                      />
+                      <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                        <span>Preciso</span>
+                        <span>Creativo</span>
                       </div>
                     </div>
 
-                    {/* Top-P */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Top-P <span className="text-slate-500 font-normal">(0.0 - 1.0, opcional)</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value={iaTopP}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? '' : Math.max(0, Math.min(1, Number(e.target.value) || 0));
-                          setIaTopP(val === '' ? '' : String(val));
-                        }}
-                        placeholder="Auto (no configurado)"
-                        className="w-full rounded-lg border-2 border-slate-200 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <p className="text-[10px] text-slate-500 mt-1">Controla diversidad de tokens. Déjalo vacío para usar el valor por defecto.</p>
-                    </div>
-
-                    {/* Top-K */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Top-K <span className="text-slate-500 font-normal">(entero, opcional)</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={iaTopK}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? '' : Math.max(1, Number(e.target.value) || 1);
-                          setIaTopK(val === '' ? '' : String(val));
-                        }}
-                        placeholder="Auto (no configurado)"
-                        className="w-full rounded-lg border-2 border-slate-200 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <p className="text-[10px] text-slate-500 mt-1">Limita tokens candidatos. Déjalo vacío para usar el valor por defecto.</p>
-                    </div>
-
-                    {/* Max Output Tokens */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Max Output Tokens <span className="text-slate-500 font-normal">(opcional)</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="100"
-                        step="100"
-                        value={iaMaxTokens}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? '' : Math.max(100, Number(e.target.value) || 1200);
-                          setIaMaxTokens(val === '' ? '' : String(val));
-                        }}
-                        placeholder="Auto (calculado según cantidad)"
-                        className="w-full rounded-lg border-2 border-slate-200 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <p className="text-[10px] text-slate-500 mt-1">Máximo de tokens en la respuesta. Se calcula automáticamente si no se especifica.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Top‑P</label>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          value={iaTopP}
+                          onChange={(e) => setIaTopP(e.target.value)}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                          placeholder="(vacío)"
+                        />
+                        <p className="mt-1 text-[10px] text-slate-500">0–1 (vacío = default)</p>
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Top‑K</label>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min="1"
+                          step="1"
+                          value={iaTopK}
+                          onChange={(e) => setIaTopK(e.target.value)}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                          placeholder="(vacío)"
+                        />
+                        <p className="mt-1 text-[10px] text-slate-500">Entero (vacío = default)</p>
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Max tokens</label>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min="64"
+                          step="64"
+                          value={iaMaxTokens}
+                          onChange={(e) => setIaMaxTokens(e.target.value)}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                          placeholder="(vacío)"
+                        />
+                        <p className="mt-1 text-[10px] text-slate-500">Más alto = respuestas más largas</p>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -2686,6 +2695,37 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 </button>
               </div>
             </div>
+
+            {/* CSS local: ocultar barra de scroll manteniendo scroll */}
+            <style>{`
+              .mqerk-hide-scrollbar {
+                -ms-overflow-style: none; /* IE/Edge legacy */
+                scrollbar-width: none; /* Firefox */
+                scrollbar-color: transparent transparent; /* Firefox */
+              }
+              .mqerk-hide-scrollbar::-webkit-scrollbar {
+                width: 0 !important;
+                height: 0 !important;
+                display: none !important;
+              }
+              .mqerk-hide-scrollbar::-webkit-scrollbar-thumb {
+                background: transparent !important;
+              }
+              .mqerk-hide-scrollbar::-webkit-scrollbar-track {
+                background: transparent !important;
+              }
+
+              /* Pantallas con poca altura: modal más compacto y un poco más abajo */
+              @media (max-height: 720px) {
+                .mqerk-sim-ia-overlay {
+                  padding-top: max(6vh, 80px);
+                  padding-bottom: 2vh;
+                }
+                .mqerk-sim-ia-dialog {
+                  max-height: 82vh;
+                }
+              }
+            `}</style>
           </div>
         </div>
       )}

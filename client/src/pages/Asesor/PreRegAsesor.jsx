@@ -1,8 +1,8 @@
-import Navbar from "../../components/NavLogin.jsx";
+import Navbar from "../../components/common/auth/NavLogin.jsx";
 import { useForm, Controller } from "react-hook-form";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import ActionSheetSelect from "../../components/ActionSheetSelect.jsx";
+import ActionSheetSelect from "../../components/ui/ActionSheetSelect.jsx";
 import { useAsesor } from "../../context/AsesorContext.jsx";
 import { useNavigate } from "react-router-dom";
 

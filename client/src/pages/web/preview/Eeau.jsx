@@ -1,7 +1,7 @@
 // CourseDetail.jsx
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Navbar from "../../../components/mqerk/Navbar";
-import Footer from "../../../components/footer";
+import Footer from "../../../components/layout/footer";
 // TODO: Agregar imagen del curso cuando esté disponible
 import Curso2 from "../../../assets/mqerk/preview/curso1/3.png";
 

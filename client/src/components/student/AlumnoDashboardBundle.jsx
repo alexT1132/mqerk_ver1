@@ -18,7 +18,7 @@ import { Configuracion_Alumno_comp } from './Configuracion_Alumno_Comp.jsx';
 import Feedback_Alumno_Comp from './Feedback_Alumno_Comp.jsx';
 import { Asistencia_Alumno_comp } from './Asistencia_Alumno_comp.jsx';
 import { InicioAlumnoDashboard } from "./InicioAlumnoDashboard.jsx";
-import { SideBarDesktop_Alumno_comp, SideBarSm_Alumno_comp } from '../layouts/SideBar_Alumno_Comp.jsx';
+import { SideBarDesktop_Alumno_comp, SideBarSm_Alumno_comp } from '../layouts/SidebarAlumno.jsx';
 import CourseDetailDashboard from '../shared/CourseDetailDashboard.jsx';
 import { Actividades_Alumno_comp } from './Actividades_Alumno_comp.jsx';
 import { Simulaciones_Alumno_comp } from './Simulaciones_Alumno_comp.jsx';
@@ -29,6 +29,7 @@ import Quizz_Review from './Quizz_Review.jsx';
 import Simulacion_Review from './Simulacion_Review.jsx';
 import SimulacionResultadosPage from '../../pages/alumnos/SimulacionResultadosPage.jsx';
 import QuizResultadosPage from '../../pages/alumnos/QuizResultadosPage.jsx';
+import AnalisisIAPage from '../../pages/alumnos/AnalisisIAPage.jsx';
 import ChatFloatingButton from '../shared/ChatFloatingButton.jsx';
 
 import { CourseProvider } from '../../context/CourseContext.jsx';
@@ -226,6 +227,7 @@ function StudentAwareLayout() {
           <Route path="/simulaciones" element={<AccessGuard><Simulaciones_Alumno_comp /></AccessGuard>} />
           <Route path="/simulaciones/tomar/:simId" element={<AccessGuard><Simulacion_Review /></AccessGuard>} />
           <Route path="/simulaciones/tomar/:simId/resultados" element={<AccessGuard><SimulacionResultadosPage /></AccessGuard>} />
+          <Route path="/analisis-ia" element={<AccessGuard><AnalisisIAPage /></AccessGuard>} />
           <Route path="/recursos" element={<AccessGuard><Recursos_Alumno_comp /></AccessGuard>} />
           <Route path="/feedback" element={<AccessGuard><Feedback_Alumno_Comp /></AccessGuard>} />
           <Route path="/asistencia" element={<AccessGuard><Asistencia_Alumno_comp /></AccessGuard>} />

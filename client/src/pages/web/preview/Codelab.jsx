@@ -1,7 +1,7 @@
 // CourseDetail.jsx
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Navbar from "../../../components/mqerk/Navbar";
-import Footer from "../../../components/footer";
+import Footer from "../../../components/layout/footer";
 import Curso4 from "../../../assets/mqerk/cursos/CURSO 4.png";
 
 // --- Ajusta este número (sin +, ni espacios). Ejemplo MX: 5215555555555

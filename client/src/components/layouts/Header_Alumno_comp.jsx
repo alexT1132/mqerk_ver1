@@ -1,8 +1,8 @@
 // src/components/Header_Alumno_comp.jsx
 import React, { useRef, useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import MQerkLogo from "../../assets/MQerK_logo.png";
-import { Logos } from "../IndexComp"; // Asegúrate de que la ruta a IndexComp.jsx sea correcta
+import { Logos } from "../common/IndexComp"; // Asegúrate de que la ruta a IndexComp.jsx sea correcta
 import { useStudent } from "../../context/StudentContext";
 import { buildStaticUrl, getApiOrigin } from "../../utils/url";
 import { useStudentNotifications } from "../../context/StudentNotificationContext";
@@ -38,6 +38,7 @@ export function Header_Alumno_comp({
   const notificationRef = useRef(null);
 
   const { alumno, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   // Construir URL absoluto para archivos estticos del backend (evitar IPs fijas)
   const apiOrigin = getApiOrigin();
@@ -92,10 +93,28 @@ export function Header_Alumno_comp({
     if (propOnLogout) {
       propOnLogout();
     } else {
-      // Fallback si no se proporciona función de logout
-      console.log('👋 Cerrando sesión...');
-      localStorage.clear();
-      window.location.href = '/login';
+      // Fallback si no se proporciona función de logout - hacer en segundo plano
+      (async () => {
+        try {
+          await logout();
+          // Limpiar solo lo necesario
+          try {
+            localStorage.removeItem('mq_user');
+            localStorage.removeItem('rememberMe');
+            localStorage.removeItem('cursoSeleccionado');
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('mq_') || key.includes('token') || key.includes('auth')) {
+                localStorage.removeItem(key);
+              }
+            });
+          } catch { }
+        } catch (error) {
+          console.error('Error durante logout:', error);
+        } finally {
+          // Redirigir sin recargar la página
+          navigate('/login', { replace: true });
+        }
+      })();
     }
   };
 

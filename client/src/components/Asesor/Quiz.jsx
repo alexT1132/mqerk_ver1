@@ -345,7 +345,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const { data } = await getQuizFull(item.id);
       setPreviewQuiz(data?.data || null);
     } catch (e) {
-      // eslint-disable-next-line no-alert
+       
       alert(e?.response?.data?.message || 'No se pudo cargar la vista previa');
       setPreviewOpen(false);
     } finally {
@@ -370,7 +370,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const rows = Array.isArray(data?.data) ? data.data : [];
       setResultsRows(rows);
     } catch (e) {
-      // eslint-disable-next-line no-alert
+       
       alert(e?.response?.data?.message || 'No se pudo cargar el estado de estudiantes');
       setResultsOpen(false);
     } finally {
@@ -396,7 +396,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const { data } = await getQuizIntentoReview(resultsQuizMeta.id, row.id_estudiante, 1);
       setReviewData(data?.data || null);
     } catch (e) {
-      // eslint-disable-next-line no-alert
+       
       alert(e?.response?.data?.message || 'No se pudo cargar el detalle del intento');
       setReviewOpen(false);
     } finally {
@@ -413,7 +413,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const { data } = await getQuizIntentoReview(resultsQuizMeta.id, reviewHeader.estudiante.id, intentoNum);
       setReviewData(data?.data || null);
     } catch (e) {
-      // eslint-disable-next-line no-alert
+       
       alert(e?.response?.data?.message || 'No se pudo cargar el detalle del intento');
     } finally {
       setReviewLoading(false);

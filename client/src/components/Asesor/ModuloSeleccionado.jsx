@@ -105,7 +105,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "MODULO SE
   const handleEdit = (item) => navigate(`/simuladores/${item.id}/editar`);
   const handleDelete = (item) => {
     // aquí confirm + llamada a API
-    // eslint-disable-next-line no-alert
+     
     if (confirm(`¿Eliminar simulador "${item.name}"?`)) {
       console.log("Eliminar:", item.id);
     }

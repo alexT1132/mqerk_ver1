@@ -13,7 +13,7 @@ import Septimo from "../../../assets/mqerk/veranotx/07.png";
 import { Link } from "react-router-dom";
 import CincoImg from "../../../assets/mqerk/talleres/5.png";
 import SieteImg from "../../../assets/mqerk/talleres/7.png";
-import Footer from "../../footer";
+import Footer from "../../../components/layout/footer";
 
 function Talleres() {
   const [currentIndex, setCurrentIndex] = useState(0);
