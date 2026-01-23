@@ -35,8 +35,8 @@ import InlineMath from "./simGen/InlineMath.jsx";
 function MathText({ text = "" }) {
   if (!text) return null;
 
-  // Regex mejorado para capturar fórmulas LaTeX: $...$ (no greedy para evitar capturar múltiples fórmulas)
-  // También maneja fórmulas con caracteres especiales como \frac, \le, etc.
+  // ✅ Enfoque híbrido: usar regex simple (más robusto) pero mejorado para casos comunes
+  // El regex no-greedy funciona bien para la mayoría de casos y es más simple
   const re = /\$([^$]+?)\$/g;
   const parts = [];
   let lastIndex = 0;
@@ -55,11 +55,6 @@ function MathText({ text = "" }) {
     const formula = m[1].trim();
     if (formula) {
       parts.push({ type: 'math', content: formula });
-      
-      // Log en desarrollo para debugging
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[MathText] Fórmula detectada:', formula);
-      }
     }
     lastIndex = m.index + m[0].length;
   }
@@ -109,11 +104,16 @@ function MobileRow({ item, onView, onEdit, onDelete, onPublish, onResultados }) 
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-100">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-slate-900">
             {item.name}
           </h3>
-          <p className="text-sm text-slate-500">{item.type}</p>
+          {item.instrucciones && item.instrucciones.trim() && (
+            <p className="mt-1 text-xs text-slate-500 line-clamp-2">
+              {item.instrucciones}
+            </p>
+          )}
+          <p className="text-sm text-slate-500 mt-1">{item.type}</p>
         </div>
         {item.status === "Publicado" ? (
           <Badge type="success">Publicado</Badge>
@@ -287,9 +287,10 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   const [iaChoiceMode, setIaChoiceMode] = useState('general'); // 'general' | 'temas'
   const [iaChoiceTopics, setIaChoiceTopics] = useState(''); // coma-separado
   const [iaNivel, setIaNivel] = useState('intermedio'); // 'básico' | 'intermedio' | 'avanzado'
+  const [iaIdioma, setIaIdioma] = useState('auto'); // auto | es | en | mix
   const [iaError, setIaError] = useState('');
   const [showSummary, setShowSummary] = useState(false);
-  const [successModal, setSuccessModal] = useState({ open: false, message: '', count: 0 });
+  const [successModal, setSuccessModal] = useState({ open: false, message: '', count: 0, willRedirect: false });
   // Distribución personalizada de tipos de preguntas
   const [iaCountMultiple, setIaCountMultiple] = useState(3);
   const [iaCountVerdaderoFalso, setIaCountVerdaderoFalso] = useState(1);
@@ -374,28 +375,9 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       // Si no se envía id_area, el backend devuelve TODOS los simuladores (de todas las áreas)
       const params = areaId ? { ...baseParams, id_area: areaId } : { ...baseParams, id_area: 0 };
       
-      console.log('[SimuladoresGen] load - llamando a listSimulaciones con params:', {
-        areaId,
-        params,
-        esVistaGeneral: !areaId
-      });
-      
       const res = await listSimulaciones(params);
       let rows = res.data?.data || res.data || [];
       if (!Array.isArray(rows)) rows = [];
-      
-      console.log('[SimuladoresGen] load - respuesta del backend:', {
-        totalRows: rows.length,
-        rows: rows.map(r => ({
-          id: r.id,
-          titulo: r.titulo,
-          id_area: r.id_area,
-          tipoIdArea: typeof r.id_area,
-          esNull: r.id_area === null,
-          esUndefined: r.id_area === undefined,
-          esCero: Number(r.id_area) === 0
-        }))
-      });
       // ✅ IMPORTANTE: NO hacer fallback sin filtro de área
       // Si estamos en vista general y no hay resultados, está bien (no hay simuladores generales)
       // Si estamos en área específica y no hay resultados, está bien (no hay simuladores en esa área)
@@ -463,99 +445,76 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           }
         }
       }
+      
       // Filtro fuerte por área en cliente (si areaId -> solo de esa área; si no -> solo generales sin área)
       const filtered = Array.isArray(rows) ? rows.filter(r => {
         if (areaId) {
-          const rid = Number(r?.id_area ?? 0);
-          const matches = Number(areaId) === rid;
-          // ✅ Log para debugging cuando hay areaId
-          if (process.env.NODE_ENV === 'development' && !matches && rid > 0) {
-            console.log('[SimuladoresGen] load - simulador filtrado (área diferente):', {
-              id: r.id,
-              titulo: r.titulo,
-              id_area: r.id_area,
-              rid,
-              areaIdEsperado: areaId,
-              coincide: matches
-            });
-          }
+          // Para área específica: debe coincidir exactamente
+          const rid = r?.id_area;
+          const ridNum = rid !== null && rid !== undefined ? Number(rid) : null;
+          const areaIdNum = Number(areaId);
+          const matches = ridNum !== null && ridNum === areaIdNum;
+          
           return matches;
         }
-        // generales: id_area nulo / 0 / undefined
-        // ✅ CRÍTICO: Verificar explícitamente null, undefined y 0
+        // generales: id_area nulo / 0 / undefined / string "0"
+        // ✅ CRÍTICO: Verificar explícitamente null, undefined, 0 numérico y string "0"
         const ridGeneral = r?.id_area;
-        const isGeneral = ridGeneral === null || ridGeneral === undefined || Number(ridGeneral) === 0;
+        const isNull = ridGeneral === null;
+        const isUndefined = ridGeneral === undefined;
+        const isZero = Number(ridGeneral) === 0;
+        const isStringZero = String(ridGeneral) === '0';
+        const isGeneral = isNull || isUndefined || isZero || isStringZero;
+        
+        
         return isGeneral;
       }) : [];
-
-      // ✅ Log para debugging (tanto para áreas específicas como generales)
-      if (process.env.NODE_ENV === 'development') {
-        if (areaId) {
-          console.log('[SimuladoresGen] load - filtrado por área específica:', {
-            areaId,
-            totalRows: Array.isArray(rows) ? rows.length : 0,
-            filteredCount: filtered.length,
-            filteredIds: filtered.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area }))
-          });
-        } else {
-          const rowsConIdArea = rows.filter(r => {
-            const rid = r?.id_area;
-            return rid !== null && rid !== undefined && Number(rid) !== 0;
-          });
-          const rowsGenerales = rows.filter(r => {
-            const rid = r?.id_area;
-            return rid === null || rid === undefined || Number(rid) === 0;
-          });
-          
-          console.log('[SimuladoresGen] load - filtrado por generales:', {
-            areaId: null,
-            totalRows: Array.isArray(rows) ? rows.length : 0,
-            filteredCount: filtered.length,
-            filteredIds: filtered.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area })),
-            rowsConIdArea: rowsConIdArea.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area, tipoIdArea: typeof r.id_area })),
-            rowsGenerales: rowsGenerales.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area, tipoIdArea: typeof r.id_area })),
-            todosLosRows: rows.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area, tipoIdArea: typeof r.id_area, esNull: r.id_area === null, esUndefined: r.id_area === undefined, esCero: Number(r.id_area) === 0 }))
+      
+      setDebugInfo({ fetched: filtered.length, raw: Array.isArray(rows) ? rows.length : -1 });
+      
+      const mapped = filtered.map(r => {
+        // ✅ CRÍTICO: Usar múltiples fallbacks para el nombre/título
+        const nombreFinal = r.titulo || r.nombre || r.name || `Simulador ${r.id}` || 'Sin título';
+        
+        // ✅ Verificar que el nombre no esté vacío
+        if (!nombreFinal || nombreFinal.trim() === '') {
+          console.warn('[SimuladoresGen] ⚠️ Simulador sin título/nombre:', {
+            id: r.id,
+            titulo: r.titulo,
+            nombre: r.nombre,
+            name: r.name,
+            todosLosCampos: Object.keys(r || {})
           });
         }
-      }
-
-      setDebugInfo({ fetched: filtered.length, raw: Array.isArray(rows) ? rows.length : -1 });
-      const mapped = filtered.map(r => ({
-        id: r.id,
-        name: r.titulo,
-        type: areaId ? (areaTitle || `Área ${r.id_area}`) : "General",
-        questions: Number(r.total_preguntas || 0),
-        attempts: Number(r.total_intentos_global || 0),
-        status: r.publico ? "Publicado" : "Borrador",
-        updatedAt: r.updated_at ? new Date(r.updated_at).toLocaleDateString('es-MX') : ""
-      }));
-      
-      // ✅ Log para debugging después de mapear (tanto para áreas como generales)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[SimuladoresGen] load - items mapeados para la lista:', {
-          areaId: areaId || null,
-          areaTitle: areaTitle || null,
-          totalItems: mapped.length,
-          items: mapped.map(item => ({
-            id: item.id,
-            name: item.name,
-            type: item.type,
-            status: item.status,
-            questions: item.questions,
-            id_area: filtered.find(r => r.id === item.id)?.id_area
-          }))
-        });
-      }
+        
+        // ✅ CRÍTICO: Obtener instrucciones/descripción con múltiples fallbacks
+        const instruccionesFinal = r.descripcion || r.instrucciones || r.instructions || '';
+        
+        // ✅ Log si no hay instrucciones para debugging
+        if (!instruccionesFinal || instruccionesFinal.trim() === '') {
+          console.warn('[SimuladoresGen] ⚠️ Simulador sin instrucciones/descripción:', {
+            id: r.id,
+            titulo: r.titulo,
+            descripcion: r.descripcion,
+            instrucciones: r.instrucciones,
+            instructions: r.instructions,
+            todosLosCampos: Object.keys(r || {})
+          });
+        }
+        
+        return {
+          id: r.id,
+          name: nombreFinal,
+          instrucciones: instruccionesFinal,
+          type: areaId ? (areaTitle || `Área ${r.id_area}`) : "General",
+          questions: Number(r.total_preguntas || r.preguntas || 0),
+          attempts: Number(r.total_intentos_global || r.intentos || 0),
+          status: r.publico ? "Publicado" : "Borrador",
+          updatedAt: r.updated_at ? new Date(r.updated_at).toLocaleDateString('es-MX') : ""
+        };
+      });
       
       setItems(mapped);
-      
-      // ✅ Log adicional para verificar que el estado se actualizó
-      if (process.env.NODE_ENV === 'development' && mapped.length > 0) {
-        console.log('[SimuladoresGen] ✅ Estado actualizado con items:', {
-          cantidad: mapped.length,
-          primerItem: mapped[0]
-        });
-      }
     } catch (e) { console.error(e); setError(e?.response?.data?.message || "No se pudieron cargar simulaciones"); }
     finally { setLoading(false); }
   }, [areaId, areaTitle]);
@@ -663,23 +622,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       return okStatus && okSearch;
     });
     
-    // ✅ Log para debugging de viewItems
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[SimuladoresGen] viewItems - filtrado:', {
-        totalItems: items.length,
-        search: s || '(vacío)',
-        statusFilter,
-        filteredCount: filtered.length,
-        itemsOriginales: items.map(it => ({ id: it.id, name: it.name, status: it.status })),
-        itemsFiltrados: filtered.map(it => ({ id: it.id, name: it.name, status: it.status })),
-        razonFiltrado: items.length > 0 && filtered.length === 0 ? {
-          primerItem: items[0],
-          pasaStatus: statusFilter === 'all' ? true : items[0].status === statusFilter,
-          pasaSearch: s ? String(items[0].name || '').toLowerCase().includes(s) : true
-        } : null
-      });
-    }
-    
     return filtered;
   }, [items, statusFilter, search]);
 
@@ -740,14 +682,35 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     }
     
     try {
-      // Cargar los datos completos del simulador
-      const { data } = await getSimulacion(item.id);
-      const simData = data?.data || data || {};
+      // Cargar los datos completos del simulador (usar getSimulacionFull para obtener todos los campos)
+      const { data: fullData } = await getSimulacionFull(item.id).catch(async () => {
+        // Fallback a getSimulacion si getSimulacionFull falla
+        const { data } = await getSimulacion(item.id);
+        return { data };
+      });
+      
+      const simData = fullData?.data?.simulacion || fullData?.data || fullData || {};
+      
+      // Log completo de lo que viene del backend para debugging
+      console.log('[SimuladoresGen] handleEdit - Datos RAW del backend:', {
+        simDataCompleto: simData,
+        fecha_limite: simData.fecha_limite,
+        grupos: simData.grupos,
+        descripcion: simData.descripcion,
+        instrucciones: simData.instrucciones,
+        time_limit_min: simData.time_limit_min
+      });
       
       // Mapear los datos del simulador al formato del initialForm
-      const gruposArray = simData.grupos 
-        ? (typeof simData.grupos === 'string' ? simData.grupos.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(simData.grupos) ? simData.grupos : []))
-        : [];
+      // Grupos: puede venir como string separado por comas, array, o null
+      let gruposArray = [];
+      if (simData.grupos) {
+        if (typeof simData.grupos === 'string') {
+          gruposArray = simData.grupos.split(',').map(s => s.trim()).filter(Boolean);
+        } else if (Array.isArray(simData.grupos)) {
+          gruposArray = simData.grupos;
+        }
+      }
       
       // Calcular horas y minutos desde time_limit_min
       const timeLimitMin = Number(simData.time_limit_min || 0);
@@ -756,15 +719,16 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       
       // Formatear fecha_limite para el input type="date" (YYYY-MM-DD)
       let fechaLimiteFormatted = '';
-      if (simData.fecha_limite) {
+      const fechaLimiteRaw = simData.fecha_limite || simData.fechaLimite;
+      if (fechaLimiteRaw) {
         try {
           // Si viene como string de MySQL (YYYY-MM-DD o YYYY-MM-DD HH:mm:ss)
-          const fecha = new Date(simData.fecha_limite);
+          const fecha = new Date(fechaLimiteRaw);
           if (!isNaN(fecha.getTime())) {
             fechaLimiteFormatted = fecha.toISOString().split('T')[0]; // YYYY-MM-DD
           }
         } catch (e) {
-          console.warn('[SimuladoresGen] Error al formatear fecha_limite:', e);
+          console.warn('[SimuladoresGen] Error al formatear fecha_limite:', e, 'Valor recibido:', fechaLimiteRaw);
         }
       }
       
@@ -774,28 +738,32 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         // Datos del simulador completo
         titulo: simData.titulo || simData.nombre || item.name || '',
         nombre: simData.nombre || simData.titulo || item.name || '',
-        instrucciones: simData.instrucciones || simData.descripcion || '',
-        descripcion: simData.descripcion || simData.instrucciones || '',
-        fechaLimite: fechaLimiteFormatted || simData.fechaLimite || '',
-        publico: simData.publico !== undefined ? Boolean(simData.publico) : (simData.status === 'Publicado'),
+        // ✅ CRÍTICO: Buscar instrucciones/descripción en múltiples lugares
+        instrucciones: simData.instrucciones || simData.descripcion || item.instrucciones || item.descripcion || '',
+        descripcion: simData.descripcion || simData.instrucciones || item.descripcion || item.instrucciones || '',
+        fechaLimite: fechaLimiteFormatted, // ✅ Usar solo el formateado (no fallback a simData.fechaLimite que puede no existir)
+        publico: simData.publico !== undefined ? Boolean(simData.publico) : (simData.status === 'Publicado' || item.status === 'Publicado'),
         horas: horas,
         minutos: minutos,
-        grupos: gruposArray,
+        grupos: gruposArray, // ✅ Ya procesado como array
         areaId: simData.id_area !== undefined && simData.id_area !== null ? Number(simData.id_area) : null,
-        areaTitle: simData.materia || simData.titulo_area || null
+        areaTitle: simData.materia || simData.titulo_area || simData.areaTitle || null
       };
       
-      console.log('[SimuladoresGen] handleEdit - Datos cargados para editar:', {
+      console.log('[SimuladoresGen] handleEdit - Datos procesados para editar:', {
         id: item.id,
         titulo: editData.titulo,
         nombre: editData.nombre,
         instrucciones: editData.instrucciones,
         descripcion: editData.descripcion,
         fechaLimite: editData.fechaLimite,
+        fechaLimiteRaw,
         horas: editData.horas,
         minutos: editData.minutos,
         grupos: editData.grupos,
-        areaId: editData.areaId
+        gruposCount: editData.grupos.length,
+        areaId: editData.areaId,
+        timeLimitMin
       });
       
       setEditing(editData);
@@ -919,21 +887,22 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     // ✅ CRÍTICO: También buscar en iaPrefill si no hay descripción en el form
     // Esto es especialmente importante cuando se crea con IA, ya que la descripción viene en iaPrefill
     const descripcionDelIaPrefill = iaPrefill?.descripcion || iaPrefill?.instrucciones || '';
-    const descripcionFinal = (form.descripcion || form.instrucciones || descripcionDelIaPrefill || '').trim();
+    // ✅ CRÍTICO: No hacer .trim() aquí porque puede eliminar espacios válidos
+    // Usar el valor directamente y solo hacer trim al final si es necesario
+    const descripcionFinal = form.descripcion || form.instrucciones || descripcionDelIaPrefill || '';
     
-    // ✅ Log para debugging
+    // ✅ Log crítico solo si la descripción está vacía
     if (!descripcionFinal || descripcionFinal.length === 0) {
-      console.warn('[SimuladoresGen] ⚠️ DESCRIPCIÓN VACÍA al crear simulador:', {
-        formDescripcion: form.descripcion,
-        formInstrucciones: form.instrucciones,
-        iaPrefillDescripcion: iaPrefill?.descripcion,
-        iaPrefillInstrucciones: iaPrefill?.instrucciones,
-        descripcionFinal
+      console.warn('[SimuladoresGen] ⚠️ DESCRIPCIÓN VACÍA al crear:', {
+        formDescripcion: form.descripcion?.substring(0, 50),
+        iaPrefillDescripcion: iaPrefill?.descripcion?.substring(0, 50)
       });
     }
     const payload = {
       titulo: tituloFinal, // ✅ Usar título validado (no puede estar vacío)
-      descripcion: descripcionFinal || null, // ✅ Usar descripción del form (generada por IA) o instrucciones como fallback
+      // ✅ CRÍTICO: Siempre enviar descripcion como string (incluso si está vacío) para forzar que se guarde
+      // Si está vacío, enviar string vacío en lugar de null
+      descripcion: descripcionFinal !== null && descripcionFinal !== undefined ? String(descripcionFinal) : '',
       fecha_limite: form.fechaLimite || null,
       // No fijar tiempo por defecto; el asesor lo define explícitamente
       time_limit_min: (Number(form.horas || 0) * 60 + Number(form.minutos || 0)),
@@ -947,17 +916,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         : null
     };
     
-    // Log del payload para debugging
-    console.log('[SimuladoresGen] Payload de creación:', {
-      titulo: payload.titulo,
-      id_area: payload.id_area,
-      currentAreaId: currentAreaId,
-      currentAreaTitle: currentAreaTitle,
-      tienePreguntasIA: iaPreguntas && Array.isArray(iaPreguntas) && iaPreguntas.length > 0,
-      desdeIaPrefill: hasIaPrefill,
-      iaPrefillAreaId: iaPrefill?.areaId,
-      iaPrefillAreaTitle: iaPrefill?.areaTitle
-    });
     try {
       const hasIaQuestions = iaPreguntas && Array.isArray(iaPreguntas) && iaPreguntas.length > 0;
       // Si tenemos un banco IA pendiente, crear con preguntas incluidas
@@ -965,22 +923,10 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         ? { ...payload, preguntas: iaPreguntas }
         : { ...payload, publico: !!form.publico }; // Solo usar form.publico si no tiene preguntas IA
 
-      console.log('[SimuladoresGen] Enviando al backend:', {
-        id_area: withQuestions.id_area,
-        titulo: withQuestions.titulo,
-        descripcion: withQuestions.descripcion,
-        cantidadPreguntas: withQuestions.preguntas?.length || 0,
-        tienePreguntas: hasIaQuestions,
-        payloadCompleto: {
-          titulo: payload.titulo,
-          descripcion: payload.descripcion,
-          id_area: payload.id_area,
-          fecha_limite: payload.fecha_limite,
-          time_limit_min: payload.time_limit_min,
-          publico: payload.publico,
-          activo: payload.activo,
-          grupos: payload.grupos
-        }
+      // ✅ Log crítico: verificar descripción antes de enviar
+      console.log('[SimuladoresGen] Enviando al backend - descripcion:', {
+        descripcion: withQuestions.descripcion?.substring(0, 100),
+        descripcionLength: withQuestions.descripcion?.length || 0
       });
 
       const res = await createSimulacion(withQuestions);
@@ -1017,17 +963,13 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           const fullRes = await getSimulacionFull(s.id);
           const simuladorCompleto = fullRes?.data?.data || fullRes?.data;
           
-          console.log('[SimuladoresGen] Verificación post-creación:', {
-            id: simuladorVerificado?.id,
-            titulo: simuladorVerificado?.titulo,
-            descripcion: simuladorVerificado?.descripcion,
-            id_area: simuladorVerificado?.id_area,
-            id_areaEsperado: currentAreaId,
-            coincide: simuladorVerificado?.id_area === currentAreaId,
-            preguntasGuardadas: simuladorCompleto?.preguntas?.length || 0,
-            preguntasEsperadas: iaPreguntas?.length || 0,
-            todasLasPropiedades: Object.keys(simuladorVerificado || {})
-          });
+          // ✅ Log crítico: solo si descripción no se guardó
+          if (!simuladorVerificado?.descripcion || simuladorVerificado.descripcion.length === 0) {
+            console.warn('[SimuladoresGen] ⚠️ Descripción NO se guardó después de crear:', {
+              id: simuladorVerificado?.id,
+              descripcionEnviada: payload.descripcion?.substring(0, 50)
+            });
+          }
           
           if (simuladorVerificado) {
             const idAreaGuardado = simuladorVerificado.id_area;
@@ -1045,11 +987,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 payloadEnviado: withQuestions.id_area
               });
               alert(`⚠️ Advertencia: El simulador se creó pero el área no se guardó correctamente.\n\nEsperado: ${esperadoNum || 'null'} (${currentAreaTitle || 'General'})\nGuardado: ${guardadoNum || 'null'}\n\nPor favor, verifica en la lista y edita el simulador si es necesario.`);
-            } else {
-              console.log('[SimuladoresGen] ✅ id_area se guardó correctamente:', {
-                id_area: guardadoNum,
-                areaTitle: currentAreaTitle
-              });
             }
           }
         } catch (verifyError) {
@@ -1077,14 +1014,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       // ✅ CRÍTICO: Usar el título del simulador guardado, con fallback a nombre si titulo está vacío
       const tituloFinal = s.titulo || s.nombre || payload.titulo || 'Sin título';
       
-      console.log('[SimuladoresGen] Creando newItem - título:', {
-        titulo: s.titulo,
-        nombre: s.nombre,
-        payloadTitulo: payload.titulo,
-        tituloFinal,
-        tieneTitulo: !!s.titulo,
-        tieneNombre: !!s.nombre
-      });
       
       const newItem = {
         id: s.id,
@@ -1105,14 +1034,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       const coincideConVista = (isGeneralView && isGeneralSaved) || 
                                (!isGeneralView && !isGeneralSaved && Number(areaId) === idAreaGuardado);
       
-      console.log('[SimuladoresGen] Verificando coincideConVista:', {
-        areaId,
-        idAreaGuardado,
-        isGeneralView,
-        isGeneralSaved,
-        coincideConVista,
-        simuladorId: s.id
-      });
       
       setOpen(false);
       // Limpiar estado IA temporal
@@ -1130,17 +1051,24 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         setSuccessModal({
           open: true,
           message: `Simulador creado exitosamente con ${iaPreguntas.length} pregunta(s)${currentAreaId ? ` en el área ${currentAreaTitle || ''}` : ''}`,
-          count: iaPreguntas.length
+          count: iaPreguntas.length,
+          willRedirect: true
         });
-        // Cerrar automáticamente después de 4 segundos
+        // ✅ Volver a redirigir al editor, pero SIN marcarlo como temporal ni usar new=1
+        // (eso evita el bug donde se borraba / “se perdía” el contenido generado con IA).
+        const navState = currentAreaId
+          ? { simId: s.id, areaId: currentAreaId, areaTitle: currentAreaTitle }
+          : { simId: s.id };
         setTimeout(() => {
-          setSuccessModal(prev => ({ ...prev, open: false }));
-        }, 4000);
-        // NO navegar, quedarse en la lista para que pueda verlo y editarlo/publicarlo
+          navigate(`/asesor/quizt/builder?simId=${s.id}`, { state: navState });
+        }, 1200);
         return;
       } else {
         // Si no tiene preguntas IA, navegar inmediatamente al builder para agregarlas
-        const navState = currentAreaId ? { simId: s.id, areaId: currentAreaId, areaTitle: currentAreaTitle } : { simId: s.id };
+        // Marcar como "temporal" para que el builder pueda eliminarlo si el usuario cancela
+        const navState = currentAreaId
+          ? { simId: s.id, areaId: currentAreaId, areaTitle: currentAreaTitle, tempCreated: true }
+          : { simId: s.id, tempCreated: true };
         navigate(`/asesor/quizt/builder?simId=${s.id}&new=1`, { state: navState });
       }
     } catch (e) { 
@@ -1160,71 +1088,143 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       const simData = currentSim?.data?.data || currentSim?.data || null;
       if (simData && (simData.id_area !== null && simData.id_area !== undefined)) {
         currentIdArea = Number(simData.id_area);
-        console.log('[SimuladoresGen] handleUpdate - id_area actual del simulador:', currentIdArea);
       }
     } catch (err) {
-      console.warn('[SimuladoresGen] No se pudo obtener id_area actual del simulador:', err);
+      // Silencioso
     }
     
-    // ✅ CRÍTICO: Preservar id_area:
-    // 1. Si el form tiene areaId (viene del modal con iaPrefill preservado) → usarlo
-    // 2. Si estamos en vista de área específica (areaId del componente) → usarlo
-    // 3. Si no, preservar el id_area actual del simulador (no cambiarlo)
+    // ✅ CRÍTICO: Preservar id_area
     let finalIdArea = null;
     if (form && (form.areaId !== undefined && form.areaId !== null)) {
       finalIdArea = Number(form.areaId);
-      console.log('[SimuladoresGen] handleUpdate - usando areaId del form:', finalIdArea);
     } else if (areaId && areaId !== null && areaId !== undefined) {
       finalIdArea = Number(areaId);
-      console.log('[SimuladoresGen] handleUpdate - usando areaId del componente:', finalIdArea);
     } else if (currentIdArea !== null && currentIdArea !== undefined) {
       finalIdArea = currentIdArea;
-      console.log('[SimuladoresGen] handleUpdate - preservando id_area actual:', finalIdArea);
     } else {
       finalIdArea = null;
-      console.log('[SimuladoresGen] handleUpdate - estableciendo id_area como null (general)');
     }
     
-    // ✅ IMPORTANTE: El form usa "instrucciones" como descripción (ya que el modal mapea descripcion->instrucciones)
-    const descripcionFinal = (form.descripcion || form.instrucciones || '').trim();
+    // ✅ CRÍTICO: El form usa "instrucciones" como descripción (ya que el modal mapea descripcion->instrucciones)
+    // IMPORTANTE: No hacer .trim() aquí porque puede eliminar espacios válidos, y siempre enviar el valor aunque esté vacío
+    const descripcionFinal = form.descripcion || form.instrucciones || '';
+    
+    // ✅ Log para debugging
     
     // ✅ IMPORTANTE: Validar título antes de enviarlo (no enviar si está vacío para preservar el existente)
     const tituloDelForm = (form.nombre || form.titulo || '').trim();
     const tituloParaEnviar = tituloDelForm && tituloDelForm.length >= 3 ? tituloDelForm : undefined;
     
+    // ✅ CRÍTICO: Normalizar grupos - el backend espera JSON válido o NULL
+    // El campo grupos tiene un CHECK constraint que requiere JSON válido: CHECK (json_valid(`grupos`))
+    let gruposFinal = null;
+    if (form.grupos) {
+      if (Array.isArray(form.grupos) && form.grupos.length > 0) {
+        // Si es array, convertir a JSON string
+        gruposFinal = JSON.stringify(form.grupos);
+      } else if (typeof form.grupos === 'string' && form.grupos.trim()) {
+        // Si es string, puede ser:
+        // 1. JSON string ya válido (ej: '["V1","M1"]')
+        // 2. String separado por comas (ej: 'V1,M1')
+        try {
+          // Intentar parsear como JSON primero
+          JSON.parse(form.grupos);
+          // Si se puede parsear, es JSON válido, usarlo tal cual
+          gruposFinal = form.grupos;
+        } catch {
+          // Si no es JSON, asumir que es string separado por comas y convertir a JSON array
+          const gruposNormalizados = form.grupos.split(',').map(s => s.trim()).filter(Boolean);
+          gruposFinal = gruposNormalizados.length > 0 ? JSON.stringify(gruposNormalizados) : null;
+        }
+      }
+    }
+    // ✅ Asegurar que si gruposFinal es string vacío, se convierta a null
+    if (gruposFinal === '' || gruposFinal === undefined) {
+      gruposFinal = null;
+    }
+    
+    // ✅ CRÍTICO: Normalizar fecha_limite - debe ser null si está vacío, o una fecha válida en formato ISO
+    let fechaLimiteFinal = null;
+    if (form.fechaLimite) {
+      const fechaStr = String(form.fechaLimite).trim();
+      if (fechaStr && fechaStr !== '') {
+        try {
+          // Intentar parsear la fecha y convertirla a formato ISO (YYYY-MM-DD)
+          const fecha = new Date(fechaStr);
+          if (!isNaN(fecha.getTime())) {
+            // Formato ISO para MySQL: YYYY-MM-DD
+            fechaLimiteFinal = fecha.toISOString().split('T')[0];
+          } else {
+            console.warn('[SimuladoresGen] handleUpdate - fecha inválida, usando null:', fechaStr);
+          }
+        } catch (err) {
+          console.warn('[SimuladoresGen] handleUpdate - error al parsear fecha, usando null:', err);
+        }
+      }
+    }
+    
     const payload = {
       ...(tituloParaEnviar !== undefined ? { titulo: tituloParaEnviar } : {}), // Solo incluir si es válido
-      descripcion: descripcionFinal || null, // ✅ Usar instrucciones del form (puede contener descripción generada por IA)
-      fecha_limite: form.fechaLimite || null,
+      // ✅ CRÍTICO: Siempre incluir descripcion, incluso si está vacío (usar string vacío en lugar de null para forzar actualización)
+      descripcion: descripcionFinal !== null && descripcionFinal !== undefined ? String(descripcionFinal) : '',
+      fecha_limite: fechaLimiteFinal, // ✅ CRÍTICO: null si está vacío, o fecha en formato YYYY-MM-DD
       time_limit_min: Number(form.horas || 0) * 60 + Number(form.minutos || 0),
       publico: !!form.publico,
       activo: true, // ✅ IMPORTANTE: Siempre mantener activo al actualizar
-      grupos: form.grupos ? String(form.grupos).split(',').map(s => s.trim()).filter(Boolean) : null,
+      grupos: gruposFinal, // ✅ Ya normalizado como string separado por comas o null
       // ✅ CRÍTICO: Incluir id_area siempre para preservarlo (null para generales, número para áreas específicas)
       id_area: (finalIdArea !== null && finalIdArea !== undefined && Number(finalIdArea) > 0) 
         ? Number(finalIdArea) 
         : null
     };
     
-    console.log('[SimuladoresGen] handleUpdate - payload final:', {
-      id_area: payload.id_area,
-      titulo: payload.titulo,
-      publico: payload.publico
-    });
+    // ✅ Log crítico: solo si descripción está vacía
+    if (!payload.descripcion || payload.descripcion.length === 0) {
+      console.warn('[SimuladoresGen] handleUpdate - ⚠️ Descripción vacía en payload');
+    }
     
     try {
       const res = await updateSimulacion(editing.id, payload);
       const s = res.data?.data || res.data;
-      setItems(prev => prev.map(x => x.id === editing.id ? ({
-        id: s.id, name: s.titulo, type: (s.id_area && Number(s.id_area) > 0) ? (areaTitle || `Área ${s.id_area}`) : 'General',
-        questions: Number(x.questions || 0), attempts: Number(x.attempts || 0), status: s.publico ? 'Publicado' : 'Borrador', updatedAt: s.updated_at ? new Date(s.updated_at).toLocaleDateString('es-MX') : ''
-      }) : x));
+      
+      // ✅ CRÍTICO: Usar el valor del payload directamente (más confiable que la respuesta del backend)
+      const instruccionesActualizadas = payload.descripcion || s?.descripcion || s?.instrucciones || '';
+      
+      // ✅ Log crítico: solo si hay problema
+      if (!instruccionesActualizadas || instruccionesActualizadas.length === 0) {
+        console.warn('[SimuladoresGen] handleUpdate - ⚠️ Descripción vacía después de actualizar');
+      }
+      
+      // ✅ Actualizar el estado inmediatamente con los datos del payload (más confiable)
+      setItems(prev => prev.map(x => {
+        if (x.id === editing.id) {
+          const itemActualizado = {
+            id: s?.id || editing.id, 
+            name: s?.titulo || x.name, 
+            instrucciones: instruccionesActualizadas, // ✅ CRÍTICO: Usar las instrucciones del payload
+            type: (s?.id_area && Number(s.id_area) > 0) ? (areaTitle || `Área ${s.id_area}`) : 'General',
+            questions: Number(x.questions || 0), 
+            attempts: Number(x.attempts || 0), 
+            status: s?.publico ? 'Publicado' : 'Borrador', 
+            updatedAt: s?.updated_at ? new Date(s.updated_at).toLocaleDateString('es-MX') : x.updatedAt
+          };
+          return itemActualizado;
+        }
+        return x;
+      }));
       
       setEditing(null);
       setOpen(false);
+      
+      // ✅ Recargar la lista inmediatamente para sincronizar con el backend
+      // El estado ya se actualizó arriba con el valor del payload, pero recargamos para asegurar consistencia
+      await load();
     } catch (e) { 
-      console.error(e); 
-      alert('No se pudo guardar'); 
+      console.error('[SimuladoresGen] handleUpdate - Error completo:', e);
+      console.error('[SimuladoresGen] handleUpdate - Response data:', e?.response?.data);
+      console.error('[SimuladoresGen] handleUpdate - Response status:', e?.response?.status);
+      const errorMessage = e?.response?.data?.message || e?.message || 'No se pudo guardar';
+      alert(`Error al guardar: ${errorMessage}`);
     }
   };
 
@@ -1424,12 +1424,32 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         tf: iaCountVerdaderoFalso,
         short: iaCountCorta
       };
+      // ✅ Validación: Detectar múltiples materias en el tema (separadas por comas)
+      const temaConComas = tema.includes(',');
+      const materiasDelTema = temaConComas ? tema.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const numMaterias = materiasDelTema.length >= 2 ? materiasDelTema.length : 0;
+      
+      // ✅ Advertencia si hay más materias que preguntas
+      if (numMaterias > cantidad) {
+        const materiasTexto = materiasDelTema.join(', ');
+        const advertencia = `⚠️ Advertencia: Has especificado ${numMaterias} materia${numMaterias > 1 ? 's' : ''} (${materiasTexto}), ` +
+          `pero solo se generarán ${cantidad} pregunta${cantidad > 1 ? 's' : ''}. ` +
+          `Algunas materias no tendrán preguntas. ¿Deseas continuar de todas formas?`;
+        
+        const continuar = window.confirm(advertencia);
+        if (!continuar) {
+          setLoading(false);
+          return;
+        }
+      }
+      
       // Preparar parámetros avanzados de IA
       const aiParams = {
         tema: tema.trim(), // ✅ Asegurar que el tema tenga un valor válido
         cantidad,
         area: areaId ? (areaTitle || undefined) : undefined,
         nivel: iaNivel || 'intermedio',
+        idioma: iaIdioma,
         distribucion,
         temperature: iaTemperature,
         ...(iaTopP !== '' && { topP: Number(iaTopP) }),
@@ -1637,6 +1657,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         cantidad,
         area: areaId ? (areaTitle || undefined) : undefined,
         nivel: iaNivel,
+        idioma: iaIdioma,
         distribucion,
         temperature: iaTemperature,
         ...(iaTopP !== '' && { topP: Number(iaTopP) }),
@@ -1644,6 +1665,31 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         ...(iaMaxTokens !== '' && { maxOutputTokens: Number(iaMaxTokens) })
       };
       const temasList = String(temasText || '').split(',').map(s => s.trim()).filter(Boolean);
+      
+      // ✅ Validación: Detectar múltiples materias en el tema (separadas por comas)
+      const temaConComas = tema.includes(',');
+      const materiasDelTema = temaConComas ? tema.split(',').map(s => s.trim()).filter(Boolean) : [];
+      // En modo 'temas', usar temasList; en modo 'general' con comas en tema, usar materiasDelTema
+      const numMaterias = modo === 'temas' && temasList.length 
+        ? temasList.length 
+        : (materiasDelTema.length >= 2 ? materiasDelTema.length : 0);
+      
+      // ✅ Advertencia si hay más materias que preguntas
+      if (numMaterias > cantidad) {
+        const materiasTexto = modo === 'temas' && temasList.length 
+          ? temasList.join(', ') 
+          : (materiasDelTema.length >= 2 ? materiasDelTema.join(', ') : '');
+        const advertencia = `⚠️ Advertencia: Has especificado ${numMaterias} materia${numMaterias > 1 ? 's' : ''} (${materiasTexto}), ` +
+          `pero solo se generarán ${cantidad} pregunta${cantidad > 1 ? 's' : ''}. ` +
+          `Algunas materias no tendrán preguntas. ¿Deseas continuar de todas formas?`;
+        
+        const continuar = window.confirm(advertencia);
+        if (!continuar) {
+          setLoading(false);
+          return;
+        }
+      }
+      
       if (modo === 'temas' && temasList.length) {
         opts.modo = 'temas';
         opts.temas = temasList;
@@ -1933,7 +1979,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-500">Cargando…</div>
       )}
       <div className="grid gap-3 md:hidden">
-        {process.env.NODE_ENV === 'development' && console.log('[SimuladoresGen] Renderizando móvil - viewItems.length:', viewItems.length, 'items:', viewItems.map(i => ({ id: i.id, name: i.name })))}
         {viewItems.map((item) => (
           <MobileRow
             key={item.id}
@@ -2002,15 +2047,21 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               </thead>
 
               <tbody className="divide-y divide-slate-200 bg-white">
-                {process.env.NODE_ENV === 'development' && console.log('[SimuladoresGen] Renderizando tabla - viewItems.length:', viewItems.length, 'items:', viewItems.map(i => ({ id: i.id, name: i.name })))}
                 {viewItems.map((item, idx) => (
                   <tr
                     key={item.id}
                     className={(idx % 2 === 0 ? "bg-white" : "bg-slate-50/50") + " hover:bg-violet-50/30 transition-colors duration-150"}
                   >
                     <td className="sticky left-0 z-10 bg-inherit px-6 py-4 border-r border-slate-200">
-                      <div className="max-w-xs truncate font-semibold text-slate-900">
-                        {item.name}
+                      <div className="max-w-xs">
+                        <div className="font-semibold text-slate-900 truncate">
+                          {item.name}
+                        </div>
+                        {item.instrucciones && item.instrucciones.trim() && (
+                          <div className="mt-1 text-xs text-slate-500 line-clamp-2">
+                            {item.instrucciones}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-700 font-medium">{item.type}</td>
@@ -2116,19 +2167,37 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         onCreate={handleCreate}
         onUpdate={handleUpdate}
         mode={editing ? 'edit' : 'create'}
-        initialForm={editing ? {
-          titulo: editing.titulo || editing.nombre || editing.name || '',
-          nombre: editing.nombre || editing.titulo || editing.name || '',
-          instrucciones: editing.instrucciones || editing.descripcion || '',
-          descripcion: editing.descripcion || editing.instrucciones || '',
-          fechaLimite: editing.fechaLimite || editing.fecha_limite || '',
-          publico: editing.publico ?? (editing.status === 'Publicado'),
-          horas: editing.horas ?? 0,
-          minutos: editing.minutos ?? 0,
-          grupos: editing.grupos || [],
-          areaId: editing.areaId !== undefined ? editing.areaId : null,
-          areaTitle: editing.areaTitle || null
-        } : (iaPrefill || null)}
+        initialForm={editing ? (() => {
+          const formData = {
+            titulo: editing.titulo || editing.nombre || editing.name || '',
+            nombre: editing.nombre || editing.titulo || editing.name || '',
+            instrucciones: editing.instrucciones || editing.descripcion || '',
+            descripcion: editing.descripcion || editing.instrucciones || '',
+            fechaLimite: editing.fechaLimite || editing.fecha_limite || '',
+            publico: editing.publico ?? (editing.status === 'Publicado'),
+            horas: editing.horas ?? 0,
+            minutos: editing.minutos ?? 0,
+            grupos: Array.isArray(editing.grupos) ? editing.grupos : (editing.grupos ? [editing.grupos] : []),
+            areaId: editing.areaId !== undefined ? editing.areaId : null,
+            areaTitle: editing.areaTitle || null
+          };
+          // Log para debugging
+          console.log('[SimuladoresGen] initialForm para modal (modo edición):', {
+            id: editing.id,
+            titulo: formData.titulo,
+            nombre: formData.nombre,
+            instrucciones: formData.instrucciones,
+            descripcion: formData.descripcion,
+            fechaLimite: formData.fechaLimite,
+            horas: formData.horas,
+            minutos: formData.minutos,
+            grupos: formData.grupos,
+            gruposCount: formData.grupos.length,
+            editingGrupos: editing.grupos,
+            editingFechaLimite: editing.fechaLimite
+          });
+          return formData;
+        })() : (iaPrefill || null)}
         onEditQuestions={editing ? () => {
           // Navegar al builder después de guardar
           const finalIdArea = editing.areaId !== undefined && editing.areaId !== null ? Number(editing.areaId) : (areaId || null);
@@ -2143,11 +2212,11 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
       {/* Modal: elección de IA (para vista de área y simuladores generales) */}
       {iaChoiceOpen && (
-        <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-start justify-center px-4 pt-20 pb-6">
+        <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-start justify-center px-4 pt-24 pb-6">
           <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={() => { setIaChoiceOpen(false); setIaError(''); }} />
-          <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100">
+          <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 overflow-hidden">
             {/* Header */}
-            <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
+            <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
               <div className="flex items-center gap-2.5">
                 <div className="rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 p-1.5 shadow-md">
                   <Sparkles className="h-4 w-4 text-white" />
@@ -2166,7 +2235,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               </div>
             </div>
 
-            <div className="mqerk-hide-scrollbar px-4 py-3 space-y-3 max-h-[70vh] overflow-y-auto">
+            {/* Body con scroll */}
+            <div className="mqerk-hide-scrollbar flex-1 min-h-0 px-4 py-3 space-y-3 overflow-y-auto">
               {/* Opciones de modo */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-2">Tipo de generación</label>
@@ -2336,6 +2406,24 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Selector de idioma */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Idioma de salida</label>
+                <select
+                  value={iaIdioma}
+                  onChange={(e) => setIaIdioma(e.target.value)}
+                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
+                >
+                  <option value="auto">Auto (según área/tema)</option>
+                  <option value="es">Español (es-MX)</option>
+                  <option value="en">Inglés (en-US)</option>
+                  <option value="mix">Mixto (mitad ES, mitad EN)</option>
+                </select>
+                <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">
+                  Consejo: si mezclas materias (ej. “matemáticas, español, inglés…”), usa “Español” o “Auto”. Para practicar inglés, elige “Inglés” o “Mixto”.
+                </p>
               </div>
 
               {/* Distribución de tipos de preguntas */}
@@ -2623,6 +2711,12 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                       <span className="capitalize">{iaNivel}</span>
                     </div>
                     <div className="flex items-center gap-2">
+                      <span className="font-medium">Idioma:</span>
+                      <span>
+                        {iaIdioma === 'auto' ? 'Auto' : iaIdioma === 'es' ? 'Español' : iaIdioma === 'en' ? 'Inglés' : 'Mixto'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <span className="font-medium">Cantidad:</span>
                       <span>{iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''} ({iaCountMultiple} múltiple, {iaCountVerdaderoFalso} V/F, {iaCountCorta} corta)</span>
                     </div>
@@ -2651,8 +2745,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               </div>
             </div>
 
-            {/* Footer con botones */}
-            <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-t border-slate-200 bg-slate-50">
+            {/* Footer con botones - siempre visible */}
+            <div className="flex-shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 border-t border-slate-200 bg-slate-50">
               <div className="text-[11px] text-slate-500 flex items-center gap-2">
                 {cooldownMs > 0 && (
                   <span className="inline-flex items-center gap-1 text-amber-600">
@@ -2715,14 +2809,10 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 background: transparent !important;
               }
 
-              /* Pantallas con poca altura: modal más compacto y un poco más abajo */
+              /* Pantallas con poca altura: modal más compacto */
               @media (max-height: 720px) {
-                .mqerk-sim-ia-overlay {
-                  padding-top: max(6vh, 80px);
-                  padding-bottom: 2vh;
-                }
                 .mqerk-sim-ia-dialog {
-                  max-height: 82vh;
+                  max-height: 70vh;
                 }
               }
             `}</style>
@@ -3136,6 +3226,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         <SuccessModal
           message={successModal.message}
           count={successModal.count}
+          willRedirect={successModal.willRedirect}
           onClose={() => setSuccessModal(prev => ({ ...prev, open: false }))}
         />
       )}
@@ -3144,7 +3235,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 }
 
 // Componente de modal de éxito estético
-function SuccessModal({ message, count = 0, onClose }) {
+function SuccessModal({ message, count = 0, willRedirect = false, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none">
       <div className="relative w-full max-w-md pointer-events-auto animate-in fade-in zoom-in duration-300">
@@ -3163,7 +3254,7 @@ function SuccessModal({ message, count = 0, onClose }) {
           {/* Contenido */}
           <div className="px-6 py-5 text-center">
             <p className="text-lg font-semibold text-slate-900 mb-2">{message}</p>
-            {count > 0 && (
+            {willRedirect && (
               <p className="text-sm text-slate-600">
                 Serás redirigido al editor en unos momentos...
               </p>

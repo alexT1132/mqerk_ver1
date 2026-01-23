@@ -600,11 +600,30 @@ export const createSimulacion = async (req, res) => {
       grupos: gruposVal
     });
 
-    // ✅ IMPORTANTE: Usar título validado (trimmed) y asegurar descripción
-    const descripcionFinal = descripcion ? String(descripcion).trim() : null;
+    // ✅ CRÍTICO: Usar título validado (trimmed) y asegurar descripción
+    // IMPORTANTE: NO hacer trim de descripcion porque puede eliminar contenido válido
+    // Solo convertir a string si no es null/undefined, pero mantener el valor original
+    let descripcionFinal = null;
+    if (descripcion !== null && descripcion !== undefined) {
+      // Convertir a string pero NO hacer trim (puede tener espacios válidos al inicio/final)
+      descripcionFinal = String(descripcion);
+      // Solo convertir a null si después de convertir a string está completamente vacío
+      if (descripcionFinal.length === 0) {
+        descripcionFinal = null;
+      }
+    }
+    
+    // ✅ Log crítico: verificar qué se envía al modelo (SIEMPRE)
+    console.log('[createSimulacion] Enviando al modelo:', {
+      descripcion: descripcionFinal ? descripcionFinal.substring(0, 50) : null,
+      descripcionLength: descripcionFinal ? descripcionFinal.length : 0,
+      descripcionTipo: typeof descripcionFinal,
+      titulo: tituloTrimmed
+    });
+    
     const created = await Sims.createSimulacion({ 
       titulo: tituloTrimmed, // Usar título validado
-      descripcion: descripcionFinal || null, 
+      descripcion: descripcionFinal, // ✅ Mantener string vacío si viene vacío, null solo si no se proporciona 
       id_area: idAreaFinal, // ✅ Usar id_area normalizado
       fecha_limite, 
       time_limit_min, 
@@ -627,26 +646,23 @@ export const createSimulacion = async (req, res) => {
     }
     const fresh = await Sims.getSimulacionById(created.id);
     
-    // ✅ Log para verificar qué se guardó
-    console.log('[createSimulacion] Simulador guardado en BD:', {
-      id: fresh?.id,
-      titulo: fresh?.titulo,
-      tituloTipo: typeof fresh?.titulo,
-      tituloVacio: !fresh?.titulo || String(fresh?.titulo).trim() === '',
-      tituloLength: fresh?.titulo ? String(fresh?.titulo).length : 0,
-      descripcion: fresh?.descripcion ? String(fresh.descripcion).substring(0, 50) : null,
-      descripcionTipo: typeof fresh?.descripcion,
-      descripcionVacia: !fresh?.descripcion || String(fresh?.descripcion).trim() === '',
-      descripcionLength: fresh?.descripcion ? String(fresh?.descripcion).length : 0,
-      id_area: fresh?.id_area,
-      publico: fresh?.publico,
-      activo: fresh?.activo,
-      // Comparar con lo que se envió
-      tituloEnviado: tituloTrimmed,
-      descripcionEnviada: descripcionFinal ? String(descripcionFinal).substring(0, 50) : null,
-      tituloCoincide: fresh?.titulo === tituloTrimmed,
-      todosLosCampos: Object.keys(fresh || {})
-    });
+    // ✅ Log crítico: verificar si la descripción se guardó
+    if (process.env.NODE_ENV !== 'production') {
+      if (!fresh?.descripcion || fresh.descripcion.length === 0) {
+        console.warn('[createSimulacion] ⚠️ Descripción NO se guardó después de crear:', {
+          id: fresh?.id,
+          descripcionEnviada: descripcionFinal ? descripcionFinal.substring(0, 50) : null,
+          descripcionEnviadaLength: descripcionFinal ? descripcionFinal.length : 0,
+          descripcionGuardada: fresh?.descripcion,
+          descripcionGuardadaTipo: typeof fresh?.descripcion
+        });
+      } else {
+        console.log('[createSimulacion] ✅ Descripción guardada:', {
+          id: fresh?.id,
+          length: fresh.descripcion.length
+        });
+      }
+    }
 
     // ✅ SOLO notificar a estudiantes si la simulación está PUBLICADA (publico = 1)
     // No enviar notificaciones si está en borrador

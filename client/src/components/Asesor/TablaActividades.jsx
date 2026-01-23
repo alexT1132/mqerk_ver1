@@ -5,6 +5,7 @@ import { Eye, FileText, Save, Pencil, Trash2, CalendarDays, Plus, Filter, ArrowL
 import { useAuth } from "../../context/AuthContext.jsx";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
+import ConfirmModal from "../shared/ConfirmModal.jsx";
 
 /* ===== Datos de ejemplo ===== */
 const SEED = [];
@@ -416,11 +417,25 @@ export default function ActivitiesTable({
   const [editRow, setEditRow] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [averageGrades, setAverageGrades] = useState({}); // actividadId -> promedio
+  // Stats reales desde entregas (deriva estado y calificación promedio)
+  // actividadId -> { entregasCount, calificadasCount, promedio10 }
+  const [activityStats, setActivityStats] = useState({});
 
   const [groupFilter, setGroupFilter] = useState("todos");
   // Modal de recurso no disponible
   const [resModal, setResModal] = useState({ open: false, title: '', message: '', row: null });
+  // Modal de confirmación para eliminar
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    row: null,
+    message: '',
+    onConfirm: null,
+  });
+  // Modal de error (para reemplazar alert)
+  const [errorModal, setErrorModal] = useState({
+    isOpen: false,
+    message: '',
+  });
 
   // Configurar locale para fechas (español)
   dayjs.locale("es");
@@ -466,12 +481,14 @@ export default function ActivitiesTable({
     if (rows.length === 0) return;
     let alive = true;
     (async () => {
-      const grades = {};
+      const nextStats = {};
       for (const row of rows) {
         try {
           const { data: entregas } = await listEntregasActividad(row.id, { limit: 500 });
           const entregasArray = Array.isArray(entregas) ? entregas : [];
           const calificadas = entregasArray.filter(e => e.calificacion !== null && e.calificacion !== undefined);
+          const entregasCount = entregasArray.length;
+          const calificadasCount = calificadas.length;
           if (calificadas.length > 0) {
             // Las calificaciones en BD están en escala 0-100 (nuevas) o 0-10 (antiguas)
             // Detectar la escala: si alguna calificación es > 10, están en escala 0-100
@@ -488,16 +505,38 @@ export default function ActivitiesTable({
               const suma = calificadas.reduce((acc, e) => acc + Number(e.calificacion || 0), 0);
               promedio10 = suma / calificadas.length;
             }
-            grades[row.id] = Math.round(promedio10 * 10) / 10; // Redondear a 1 decimal
+            nextStats[row.id] = {
+              entregasCount,
+              calificadasCount,
+              promedio10: Math.round(promedio10 * 10) / 10, // 1 decimal
+            };
+          } else {
+            nextStats[row.id] = { entregasCount, calificadasCount, promedio10: undefined };
           }
         } catch (e) {
           // Silencioso, no afecta la carga principal
+          // Mantener undefined si falla; no asumimos "pendiente" por error de red.
         }
       }
-      if (alive) setAverageGrades(grades);
+      if (alive) setActivityStats(nextStats);
     })();
     return () => { alive = false; };
   }, [rows]);
+
+  const getEstadoActividad = (actividadId) => {
+    const st = activityStats?.[actividadId];
+    const entregasCount = Number(st?.entregasCount || 0);
+    const calificadasCount = Number(st?.calificadasCount || 0);
+    if (calificadasCount > 0) return { key: 'calificada', label: '✓ Calificada' };
+    if (entregasCount > 0) return { key: 'entregada', label: '⏳ Entregada' };
+    return { key: 'pendiente', label: '○ Pendiente' };
+  };
+
+  const badgeEstadoActividad = (key) => {
+    if (key === 'calificada') return "bg-gradient-to-r from-emerald-500 to-teal-600 text-white ring-emerald-300 shadow-md";
+    if (key === 'entregada') return "bg-gradient-to-r from-indigo-500 to-purple-600 text-white ring-indigo-300 shadow-md";
+    return "bg-gradient-to-r from-amber-500 to-orange-600 text-white ring-amber-300 shadow-md";
+  };
 
   const data = useMemo(() => {
     const sorted = [...rows].sort((a, b) => a.due.localeCompare(b.due));
@@ -505,6 +544,12 @@ export default function ActivitiesTable({
       ? sorted
       : sorted.filter(r => (r.group || "").toLowerCase() === groupFilter.toLowerCase());
   }, [rows, groupFilter]);
+
+  const summaryCounts = useMemo(() => {
+    const entregadas = data.filter(r => Number(activityStats?.[r.id]?.entregasCount || 0) > 0).length;
+    const pendientes = data.length - entregadas;
+    return { entregadas, pendientes };
+  }, [data, activityStats]);
 
   const addRow = async (r) => {
     try {
@@ -567,22 +612,30 @@ export default function ActivitiesTable({
   const goToEntregas = (row) => {
     navigate(`/asesor/actividades/${row.id}/entregas`, { state: { title: areaTitle } });
   };
-  const onDelete = async (row) => {
-    if (!confirm(`¿Eliminar (desactivar) "${row.title}"?`)) return;
-    try {
-      await apiUpdateActividad(row.id, { activo: 0 }); // soft-delete vía activo=0
-      setRows((prev) => prev.filter((x) => x.id !== row.id));
-      onDeleteExternal?.(row);
-    } catch (e) {
-      alert(e.message || 'No se pudo eliminar');
-    }
+  const onDelete = (row) => {
+    setConfirmModal({
+      isOpen: true,
+      row,
+      message: `¿Eliminar (desactivar) "${row.title}"?`,
+      onConfirm: async () => {
+        try {
+          await apiUpdateActividad(row.id, { activo: 0 }); // soft-delete vía activo=0
+          setRows((prev) => prev.filter((x) => x.id !== row.id));
+          onDeleteExternal?.(row);
+          setConfirmModal({ isOpen: false, row: null, message: '', onConfirm: null });
+        } catch (e) {
+          setConfirmModal({ isOpen: false, row: null, message: '', onConfirm: null });
+          setErrorModal({
+            isOpen: true,
+            message: e.message || 'No se pudo eliminar',
+          });
+        }
+      },
+    });
   };
 
-  const updateGrade = (id, val) =>
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, grade: val === "" ? null : Number(val) } : r)));
-
-  const toggleDelivered = (id) =>
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, delivered: !r.delivered } : r)));
+  // Nota: El “estado” aquí debe ser derivado de entregas/calificaciones reales,
+  // no editable localmente (si no, al refrescar se revierte).
 
   const IconButton = ({ onClick, variant = "default", label, children, disabled }) => {
     const base = "inline-grid place-items-center w-11 h-11 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-110 active:scale-95 shadow-md hover:shadow-lg";
@@ -695,11 +748,11 @@ export default function ActivitiesTable({
           </div>
           <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 via-emerald-100/50 to-white p-5 shadow-lg ring-2 ring-emerald-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-2">Entregadas</div>
-            <div className="text-3xl font-extrabold text-emerald-700">{data.filter(r => r.delivered).length}</div>
+            <div className="text-3xl font-extrabold text-emerald-700">{summaryCounts.entregadas}</div>
           </div>
           <div className="rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-amber-100/50 to-white p-5 shadow-lg ring-2 ring-amber-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-2">Pendientes</div>
-            <div className="text-3xl font-extrabold text-amber-700">{data.filter(r => !r.delivered).length}</div>
+            <div className="text-3xl font-extrabold text-amber-700">{summaryCounts.pendientes}</div>
           </div>
           <div className="rounded-2xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 via-indigo-100/50 to-white p-5 shadow-lg ring-2 ring-indigo-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">Con recurso</div>
@@ -767,22 +820,22 @@ export default function ActivitiesTable({
                   </div>
                 </td>
                 <td className="px-6 py-5">
-                  <button
-                    onClick={() => toggleDelivered(r.id)}
-                    className="cursor-pointer transform hover:scale-110 transition-transform"
-                  >
-                    <Badge className={badgeDelivered(r.delivered)}>
-                      {r.delivered ? "✓ Entregado" : "○ Pendiente"}
-                    </Badge>
-                  </button>
+                  {(() => {
+                    const st = getEstadoActividad(r.id);
+                    return (
+                      <Badge className={badgeEstadoActividad(st.key)}>
+                        {st.label}
+                      </Badge>
+                    );
+                  })()}
                 </td>
                 <td className="px-6 py-5">
-                  {averageGrades[r.id] !== undefined ? (
-                    <div className={`inline-flex items-center justify-center px-3 py-2 rounded-xl font-bold text-sm ring-2 ${averageGrades[r.id] < 6
+                  {activityStats?.[r.id]?.promedio10 !== undefined ? (
+                    <div className={`inline-flex items-center justify-center px-3 py-2 rounded-xl font-bold text-sm ring-2 ${activityStats[r.id].promedio10 < 6
                       ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white ring-rose-300 shadow-md'
                       : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white ring-emerald-300 shadow-md'
                       }`}>
-                      {averageGrades[r.id].toFixed(1)}/10
+                      {Number(activityStats[r.id].promedio10).toFixed(1)}/10
                     </div>
                   ) : (
                     <span className="text-slate-400 font-medium">—</span>
@@ -860,14 +913,14 @@ export default function ActivitiesTable({
                   <Badge className={`${badgeGroup} inline-block`}>{r.group.toUpperCase()}</Badge>
                 )}
               </div>
-              <button
-                onClick={() => toggleDelivered(r.id)}
-                className="shrink-0 transform hover:scale-105 transition-transform"
-              >
-                <Badge className={badgeDelivered(r.delivered)}>
-                  {r.delivered ? "✓ Entregado" : "○ Pendiente"}
-                </Badge>
-              </button>
+              {(() => {
+                const st = getEstadoActividad(r.id);
+                return (
+                  <Badge className={badgeEstadoActividad(st.key)}>
+                    {st.label}
+                  </Badge>
+                );
+              })()}
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-4">
@@ -882,12 +935,12 @@ export default function ActivitiesTable({
               <div className="rounded-xl border-2 border-slate-200 bg-white p-3">
                 <div className="text-xs font-medium text-slate-500 mb-2">Calificación</div>
                 <div className="flex justify-start">
-                  {averageGrades[r.id] !== undefined ? (
-                    <div className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-sm ${averageGrades[r.id] < 6
+                  {activityStats?.[r.id]?.promedio10 !== undefined ? (
+                    <div className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-sm ${activityStats[r.id].promedio10 < 6
                       ? 'bg-rose-50 text-rose-700 border-2 border-rose-200'
                       : 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200'
                       }`}>
-                      {averageGrades[r.id].toFixed(1)}/10
+                      {Number(activityStats[r.id].promedio10).toFixed(1)}/10
                     </div>
                   ) : (
                     <span className="text-slate-400 font-medium text-sm">—</span>
@@ -972,6 +1025,28 @@ export default function ActivitiesTable({
           </div>
         </div>
       )}
+
+      {/* Modal de confirmación para eliminar */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        message={confirmModal.message}
+        variant="danger"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false, row: null, message: '', onConfirm: null })}
+      />
+
+      {/* Modal de error */}
+      <ConfirmModal
+        isOpen={errorModal.isOpen}
+        message={errorModal.message}
+        variant="default"
+        confirmText="Aceptar"
+        cancelText={null}
+        onConfirm={() => setErrorModal({ isOpen: false, message: '' })}
+        onCancel={() => setErrorModal({ isOpen: false, message: '' })}
+      />
     </section>
   );
 }

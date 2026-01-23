@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getSimulacion, getSimulacionFull, listPreguntasSimulacion, updateSimulacion } from '../../api/simulaciones';
 import { generarPreguntasIA } from '../../service/simuladoresAI.js';
 import { getAreasCatalog } from '../../api/areas.js';
+import RichTextEditor from './simGen/RichTextEditor.jsx';
 
 // Mapeos de tipos
 const mapDbToUiType = (tipo) => {
@@ -29,12 +30,14 @@ export default function SimuladorBuilder(){
   const [iaErr, setIaErr] = useState('');
   const [iaCount, setIaCount] = useState(10);
   const [iaNivel, setIaNivel] = useState('intermedio');
+  const [iaIdioma, setIaIdioma] = useState('auto'); // auto | es | en | mix
   const [iaTopic, setIaTopic] = useState('');
   const [iaModo, setIaModo] = useState('general'); // 'general' | 'temas'
   const [iaTemasText, setIaTemasText] = useState(''); // coma-separado
   const [areaName, setAreaName] = useState('');
   const [confirmMsg, setConfirmMsg] = useState('');
   const [showSaveReminder, setShowSaveReminder] = useState(false);
+  const [descripcion, setDescripcion] = useState(''); // Estado para descripción editable
 
   // Cargar simulación y preguntas
   useEffect(()=>{
@@ -44,7 +47,24 @@ export default function SimuladorBuilder(){
       try{
         const res = await getSimulacionFull(simId).catch(()=> null) || await getSimulacion(simId);
         const data = res?.data?.data || res?.data || null;
-        if(alive) setSim(data);
+        
+        // ✅ Log crítico: solo si no hay descripción
+        if (!data?.descripcion || data.descripcion.length === 0) {
+          console.warn('[SimuladorBuilder] ⚠️ Simulador sin descripción al cargar:', { simId });
+        }
+        
+        if(alive) {
+          setSim(data);
+          // ✅ Inicializar descripción editable
+          const descripcionInicial = data?.descripcion || data?.instrucciones || '';
+          setDescripcion(descripcionInicial);
+          // ✅ Log para verificar que se carga
+          if (descripcionInicial) {
+            console.log('[SimuladorBuilder] Descripción cargada:', descripcionInicial.substring(0, 50));
+          } else {
+            console.warn('[SimuladorBuilder] ⚠️ No hay descripción para mostrar');
+          }
+        }
         // Resolver nombre de área si aplica
         try {
           if (data?.id_area) {
@@ -162,11 +182,19 @@ export default function SimuladorBuilder(){
           return { orden: i+1, text: q.text, type: 'short', puntos: Number(q.points||1), answer: q.answer || '' };
         }
       });
-  // Incluir id_area para evitar que el backend reasigne a 'General' si no se envía
+  // ✅ CRÍTICO: Incluir id_area y descripcion para preservarlos cuando se guardan solo las preguntas
+  // Usar la descripción del estado editable, no solo la del sim
   const areaPayload = (sim && (sim.id_area != null)) ? { id_area: sim.id_area } : {};
-  await updateSimulacion(simId, { preguntas: payloadPreguntas, ...areaPayload });
+  // ✅ Usar descripcion del estado editable (puede haber sido modificada por el usuario)
+  const descripcionPayload = descripcion && descripcion.trim().length > 0 ? { descripcion: descripcion.trim() } : {};
+  
+  await updateSimulacion(simId, { preguntas: payloadPreguntas, ...areaPayload, ...descripcionPayload });
       setMsg('Preguntas guardadas');
       setShowSaveReminder(false);
+      // ✅ Actualizar el estado sim con la descripción guardada
+      if (descripcionPayload.descripcion) {
+        setSim(prev => prev ? { ...prev, descripcion: descripcionPayload.descripcion } : prev);
+      }
     }catch(e){
       setError(e?.response?.data?.message || 'No se pudo guardar');
     }finally{ setSaving(false); }
@@ -195,14 +223,35 @@ export default function SimuladorBuilder(){
     setIaBusy(true); setIaErr(''); setMsg('');
     try {
       const tema = iaTopic?.trim() || sim?.titulo || areaName || 'Simulación';
-      const opts = { tema, cantidad: Number(iaCount)||10, area: areaName || undefined, nivel: iaNivel };
+      const cantidad = Number(iaCount) || 10;
+      const opts = { tema, cantidad, area: areaName || undefined, nivel: iaNivel, idioma: iaIdioma };
+      
       if (iaModo === 'temas') {
         const temasList = iaTemasText.split(',').map(s=>s.trim()).filter(Boolean);
-        if (temasList.length) { opts.modo = 'temas'; opts.temas = temasList; }
-        else { opts.modo = 'general'; }
+        if (temasList.length) { 
+          opts.modo = 'temas'; 
+          opts.temas = temasList;
+          
+          // ✅ Validación: Advertencia si hay más temas que preguntas
+          if (temasList.length > cantidad) {
+            const temasTexto = temasList.join(', ');
+            const advertencia = `⚠️ Advertencia: Has especificado ${temasList.length} tema${temasList.length > 1 ? 's' : ''} (${temasTexto}), ` +
+              `pero solo se generarán ${cantidad} pregunta${cantidad > 1 ? 's' : ''}. ` +
+              `Algunos temas no tendrán preguntas. ¿Deseas continuar de todas formas?`;
+            
+            const continuar = window.confirm(advertencia);
+            if (!continuar) {
+              setIaBusy(false);
+              return;
+            }
+          }
+        } else { 
+          opts.modo = 'general'; 
+        }
       } else {
         opts.modo = 'general';
       }
+      
       const bank = await generarPreguntasIA(opts);
       setQuestions(bank);
       setMsg(`Se generaron ${bank.length} preguntas con IA. Revisa y guarda.`);
@@ -226,28 +275,48 @@ export default function SimuladorBuilder(){
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-4">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-extrabold text-gray-900">Constructor de Simulación</h1>
-        <button onClick={()=> navigate('/asesor/simuladores/generales')} className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100">Regresar</button>
+        <h1 className="text-xl font-extrabold text-slate-900">Constructor de Simulación</h1>
+        <button onClick={()=> navigate('/asesor/simuladores/generales')} className="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50">Regresar</button>
       </div>
-      {loading && <div className="text-sm text-gray-600">Cargando…</div>}
-      {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mb-2">{error}</div>}
+      {loading && <div className="text-sm text-slate-600">Cargando…</div>}
+      {error && <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-md px-3 py-2 mb-2">{error}</div>}
       {msg && <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2 mb-2">{msg}</div>}
       {(!loading && sim) && (
         <div className="space-y-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm text-gray-500">Simulación</div>
-            <div className="text-lg font-semibold text-gray-900">{sim.titulo || `ID ${simId}`}</div>
-            {sim.descripcion && <p className="mt-1 text-gray-600 text-sm">{sim.descripcion}</p>}
+          <div className="rounded-2xl border-2 border-slate-200 bg-white p-4 shadow-sm">
+            <div className="text-xs font-extrabold text-violet-700 uppercase tracking-widest">Simulación</div>
+            <div className="text-lg font-semibold text-slate-900">{sim.titulo || `ID ${simId}`}</div>
+            
+            {/* ✅ Campo editable para descripción/instrucciones - SIEMPRE visible */}
+            <div className="mt-4 pt-4 border-t border-slate-200">
+              <label className="block text-xs font-semibold text-slate-700 mb-2">
+                Descripción / Instrucciones
+              </label>
+              <RichTextEditor
+                value={descripcion || ''}
+                onChange={(newValue) => {
+                  setDescripcion(newValue);
+                  // Actualizar también el estado sim para mantener consistencia
+                  setSim(prev => prev ? { ...prev, descripcion: newValue } : prev);
+                }}
+                placeholder="Describe el simulador y proporciona instrucciones para los estudiantes. Este texto aparecerá en la lista de simuladores y cuando los estudiantes vean el simulador."
+              />
+              {!descripcion && (
+                <p className="mt-1 text-xs text-amber-600">
+                  ⚠️ No hay descripción. Agrega una descripción para que los estudiantes sepan de qué trata este simulador.
+                </p>
+              )}
+            </div>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="rounded-2xl border-2 border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-gray-800">Preguntas</h2>
+              <h2 className="text-base font-semibold text-slate-800">Preguntas</h2>
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative inline-block">
                   <button onClick={()=> addQuestion('multi')} className="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-500">Añadir (opción múltiple)</button>
                 </div>
-                <button onClick={()=> addQuestion('tf')} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-100">Añadir (V/F)</button>
-                <button onClick={()=> addQuestion('short')} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-100">Añadir (respuesta corta)</button>
+                <button onClick={()=> addQuestion('tf')} className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 bg-white hover:bg-slate-50">Añadir (V/F)</button>
+                <button onClick={()=> addQuestion('short')} className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 bg-white hover:bg-slate-50">Añadir (respuesta corta)</button>
                 {false && (
                   <button className="px-3 py-1.5 text-sm rounded-lg border border-indigo-300 text-indigo-700 bg-white hover:bg-indigo-50">Auto-generar (Ciencias Exactas)</button>
                 )}
@@ -271,6 +340,12 @@ export default function SimuladorBuilder(){
                     <option value="intermedio">Intermedio</option>
                     <option value="avanzado">Avanzado</option>
                   </select>
+                  <select value={iaIdioma} onChange={e=> setIaIdioma(e.target.value)} className="text-xs border rounded px-1 py-0.5" title="Idioma de salida IA">
+                    <option value="auto">Idioma: Auto</option>
+                    <option value="es">Idioma: ES</option>
+                    <option value="en">Idioma: EN</option>
+                    <option value="mix">Idioma: Mixto</option>
+                  </select>
                   <button disabled={iaBusy} onClick={onGenerateIA} className="text-xs px-2 py-1 rounded bg-fuchsia-600 text-white hover:bg-fuchsia-500 disabled:opacity-50">{iaBusy? 'Generando…' : 'Generar con IA'}</button>
                 </div>
                 <button disabled={saving} onClick={onSaveAll} className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50">{saving? 'Guardando…' : 'Guardar cambios'}</button>
@@ -288,33 +363,39 @@ export default function SimuladorBuilder(){
               </div>
             )}
             <div className="mt-3 space-y-4">
-              {questions.length === 0 && <div className="text-sm text-gray-500">Aún no hay preguntas. Usa los botones de arriba para añadir.</div>}
+              {questions.length === 0 && <div className="text-sm text-slate-500">Aún no hay preguntas. Usa los botones de arriba para añadir.</div>}
               {questions.map((q, qi)=> (
-                <div key={qi} className="rounded-lg border border-gray-200 p-3">
+                <div key={qi} className="rounded-3xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/30 p-5 shadow-lg ring-2 ring-slate-100/50 hover:ring-violet-200/50 transition-all">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="text-[11px] text-gray-500">#{q.order}</div>
+                    <div className="text-[11px] text-slate-500">#{q.order}</div>
                     <div className="flex items-center gap-2">
-                      <button onClick={()=> moveQuestion(qi, -1)} className="text-xs px-2 py-1 rounded border">↑</button>
-                      <button onClick={()=> moveQuestion(qi, +1)} className="text-xs px-2 py-1 rounded border">↓</button>
+                      <button onClick={()=> moveQuestion(qi, -1)} className="text-xs px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50">↑</button>
+                      <button onClick={()=> moveQuestion(qi, +1)} className="text-xs px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50">↓</button>
                       <button onClick={()=> removeQuestion(qi)} className="text-xs px-2 py-1 rounded border border-rose-300 text-rose-700">Eliminar</button>
                     </div>
                   </div>
                   <div className="mt-2 grid grid-cols-1 md:grid-cols-6 gap-2 items-start">
                     <div className="md:col-span-4">
-                      <label className="block text-[11px] text-gray-600 mb-1">Enunciado</label>
-                      <textarea value={q.text} onChange={e=> setQuestionField(qi,'text', e.target.value)} className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500" rows={3} placeholder="Escribe el enunciado" />
+                      <RichTextEditor
+                        value={q.text}
+                        onChange={(newText) => setQuestionField(qi,'text', newText)}
+                        label="Enunciado de la pregunta"
+                        required
+                        placeholder="Escribe la consigna… Puedes insertar fórmulas con los botones."
+                        className="mb-0"
+                      />
                     </div>
                     <div>
-                      <label className="block text-[11px] text-gray-600 mb-1">Tipo</label>
-                      <select value={q.type} onChange={e=> setQuestionField(qi,'type', e.target.value)} className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500">
+                      <label className="block text-[11px] text-slate-600 mb-1">Tipo</label>
+                      <select value={q.type} onChange={e=> setQuestionField(qi,'type', e.target.value)} className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500">
                         <option value="multi">Opción múltiple</option>
                         <option value="tf">Verdadero/Falso</option>
                         <option value="short">Respuesta corta</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[11px] text-gray-600 mb-1">Puntos</label>
-                      <input value={q.points} onChange={e=> setQuestionField(qi,'points', e.target.value.replace(/[^0-9]/g,''))} className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500" />
+                      <label className="block text-[11px] text-slate-600 mb-1">Puntos</label>
+                      <input value={q.points} onChange={e=> setQuestionField(qi,'points', e.target.value.replace(/[^0-9]/g,''))} className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500" />
                     </div>
                   </div>
 
@@ -322,15 +403,24 @@ export default function SimuladorBuilder(){
                   {q.type === 'multi' && (
                     <div className="mt-3">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-sm font-semibold text-gray-700">Opciones</div>
-                        <button onClick={()=> addOption(qi)} className="text-xs px-2 py-1 rounded border bg-white hover:bg-gray-100">Añadir opción</button>
+                        <div className="text-sm font-semibold text-slate-700">Opciones</div>
+                        <button onClick={()=> addOption(qi)} className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50">Añadir opción</button>
                       </div>
                       <div className="space-y-2">
                         {(q.options||[]).map((opt, oi)=> (
-                          <div key={oi} className="flex items-center gap-2">
-                            <input type="radio" name={`correct-${qi}`} checked={!!opt.correct} onChange={()=> setOptionCorrect(qi, oi)} />
-                            <input value={opt.text} onChange={e=> setOptionText(qi, oi, e.target.value)} className="flex-1 px-3 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder={`Opción ${oi+1}`} />
-                            <button onClick={()=> removeOption(qi, oi)} className="text-xs px-2 py-1 rounded border border-rose-300 text-rose-700">Quitar</button>
+                          <div key={oi} className="rounded-2xl border border-slate-200 bg-white p-3">
+                            <div className="flex items-center gap-3">
+                              <input type="radio" name={`correct-${qi}`} checked={!!opt.correct} onChange={()=> setOptionCorrect(qi, oi)} />
+                              <div className="flex-1">
+                                <RichTextEditor
+                                  value={opt.text}
+                                  onChange={(newText) => setOptionText(qi, oi, newText)}
+                                  placeholder={`Opción ${oi+1}… (puedes insertar fórmulas)`}
+                                  className="mb-0"
+                                />
+                              </div>
+                              <button onClick={()=> removeOption(qi, oi)} className="text-xs px-3 py-1.5 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50">Quitar</button>
+                            </div>
                           </div>
                         ))}
                       </div>

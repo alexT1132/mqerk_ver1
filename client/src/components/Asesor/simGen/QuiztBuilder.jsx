@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getQuizFull, updateQuiz, createQuiz } from '../../../api/quizzes.js';
-import { getSimulacionFull, updateSimulacion } from '../../../api/simulaciones.js';
+import { getSimulacionFull, updateSimulacion, deleteSimulacion } from '../../../api/simulaciones.js';
 // Nota: reemplazado react-katex por un componente local liviano para evitar dependencia
 import InlineMath from './InlineMath.jsx';
 import MathExamplesHint from './MathExamplesHint.jsx';
@@ -56,19 +56,72 @@ const newQuestion = (type = "multiple") => ({
 /* ----------------------- Renderiza LaTeX con KaTeX ----------------------- */
 /** Renderiza texto plano mezclado con fórmulas delimitadas por $...$ y respeta saltos de línea */
 function MathText({ text = "", onFormulaClick }) {
-  const re = /\$(.+?)\$/g;
+  if (!text) return null;
+
+  // ✅ Función para sanitizar HTML (similar a RichTextEditor)
+  const sanitizeHtmlLite = (html) => {
+    if (!html) return '';
+    const div = document.createElement('div');
+    div.textContent = html;
+    const safe = div.innerHTML;
+    // Permitir etiquetas básicas de formato
+    return safe
+      .replace(/&lt;u&gt;/g, '<u>')
+      .replace(/&lt;\/u&gt;/g, '</u>')
+      .replace(/&lt;br\s*\/?&gt;/gi, '<br />')
+      .replace(/&lt;strong&gt;/g, '<strong>')
+      .replace(/&lt;\/strong&gt;/g, '</strong>')
+      .replace(/&lt;em&gt;/g, '<em>')
+      .replace(/&lt;\/em&gt;/g, '</em>')
+      .replace(/&lt;b&gt;/g, '<b>')
+      .replace(/&lt;\/b&gt;/g, '</b>')
+      .replace(/&lt;i&gt;/g, '<i>')
+      .replace(/&lt;\/i&gt;/g, '</i>');
+  };
+
+  // ✅ Usar regex simple y robusto: busca $...$ de forma no-greedy
+  // Esto funciona bien para la mayoría de casos, incluyendo fórmulas complejas
+  const re = /\$([^$]+?)\$/g;
   const parts = [];
   let lastIndex = 0;
   let m;
+  let matchFound = false;
+
+  // Resetear el regex para evitar problemas con múltiples llamadas
+  re.lastIndex = 0;
 
   while ((m = re.exec(text)) !== null) {
+    matchFound = true;
     if (m.index > lastIndex) {
-      parts.push({ t: text.slice(lastIndex, m.index) });
+      parts.push({ type: 'text', content: text.slice(lastIndex, m.index) });
     }
-    parts.push({ m: m[1], full: m[0], start: m.index, end: m.index + m[0].length });
+    // Limpiar espacios en blanco al inicio y final de la fórmula
+    const formula = m[1].trim();
+    if (formula) {
+      parts.push({ 
+        type: 'math', 
+        content: formula,
+        full: m[0],
+        start: m.index,
+        end: m.index + m[0].length
+      });
+    }
     lastIndex = m.index + m[0].length;
   }
-  if (lastIndex < text.length) parts.push({ t: text.slice(lastIndex) });
+  
+  if (lastIndex < text.length) {
+    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  }
+
+  // Si no se encontraron fórmulas, devolver el texto con HTML procesado
+  if (!matchFound || parts.length === 0) {
+    return (
+      <span 
+        className="whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(text) }}
+      />
+    );
+  }
 
   const handleFormulaClick = (formula, fullMatch, start, end) => {
     if (onFormulaClick) {
@@ -76,135 +129,28 @@ function MathText({ text = "", onFormulaClick }) {
     }
   };
 
-  // Dividir el texto en líneas para manejar saltos de línea y viñetas
-  const renderLine = (lineParts, lineIndex) => {
-    // Detectar si la línea es una viñeta (empieza con -, *, •, o números seguidos de punto)
-    const bulletPattern = /^(\s*)([-*•]\s+|(\d+\.)\s+)(.*)/;
-
-    let lineText = lineParts.map(p => p.t || '').join('');
-    const match = lineText.match(bulletPattern);
-
-    if (match) {
-      const indent = match[1];
-      const bullet = match[2] || match[3];
-      const content = match[4];
-
-      // Procesar el contenido después de la viñeta
-      const contentParts = [];
-      let contentIdx = 0;
-      const contentRe = /\$(.+?)\$/g;
-      let contentM;
-
-      while ((contentM = contentRe.exec(content)) !== null) {
-        if (contentM.index > contentIdx) {
-          contentParts.push({ t: content.slice(contentIdx, contentM.index) });
-        }
-        contentParts.push({ m: contentM[1], full: contentM[0] });
-        contentIdx = contentM.index + contentM[0].length;
-      }
-      if (contentIdx < content.length) {
-        contentParts.push({ t: content.slice(contentIdx) });
-      }
-
-      return (
-        <div key={lineIndex} className="flex items-start gap-2 py-1">
-          <span className="text-slate-600 font-bold mt-0.5 flex-shrink-0">{bullet.replace(/\d+\./, (m) => m + ' ')}</span>
-          <span className="flex-1">
-            {contentParts.map((p, i) =>
-              p.m ? (
-                <span
-                  key={i}
-                  onClick={() => handleFormulaClick(p.m, p.full, 0, 0)}
-                  className={onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors inline-block" : ""}
-                  title={onFormulaClick ? "Clic para editar esta fórmula" : ""}
-                >
-                  <InlineMath math={p.m} />
-                </span>
-              ) : (
-                <span key={i}>{p.t}</span>
-              )
-            )}
+  // Renderizar las partes encontradas, procesando HTML en las partes de texto
+  return (
+    <span className="whitespace-pre-wrap">
+      {parts.map((part, idx) =>
+        part.type === 'math' ? (
+          <span
+            key={`math-${idx}`}
+            onClick={() => onFormulaClick && handleFormulaClick(part.content, part.full, part.start, part.end)}
+            className={onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors inline-block" : "inline-block"}
+            title={onFormulaClick ? "Clic para editar esta fórmula" : ""}
+          >
+            <InlineMath math={part.content} />
           </span>
-        </div>
-      );
-    }
-
-    // Línea normal con fórmulas
-    return (
-      <div key={lineIndex} className="py-1">
-        {lineParts.map((p, i) =>
-          p.m ? (
-            <span
-              key={i}
-              onClick={() => onFormulaClick && handleFormulaClick(p.m, p.full, p.start, p.end)}
-              className={onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors inline-block" : ""}
-              title={onFormulaClick ? "Clic para editar esta fórmula" : ""}
-            >
-              <InlineMath math={p.m} />
-            </span>
-          ) : (
-            <span key={i} className="whitespace-pre-wrap">{p.t}</span>
-          )
-        )}
-      </div>
-    );
-  };
-
-  // Dividir en líneas y procesar cada una
-  const lines = text.split('\n');
-  let globalOffset = 0; // Offset acumulado para calcular índices globales
-
-  const processedLines = lines.map((line, lineIndex) => {
-    // Procesar fórmulas en esta línea
-    const lineParts = [];
-    let lineLastIndex = 0;
-    const lineRe = /\$(.+?)\$/g;
-    let lineM;
-
-    // Calcular el offset global para esta línea
-    const lineOffset = globalOffset;
-
-    while ((lineM = lineRe.exec(line)) !== null) {
-      if (lineM.index > lineLastIndex) {
-        lineParts.push({
-          t: line.slice(lineLastIndex, lineM.index),
-          start: lineOffset + lineLastIndex,
-          end: lineOffset + lineM.index
-        });
-      }
-      const globalStart = lineOffset + lineM.index;
-      const globalEnd = lineOffset + lineM.index + lineM[0].length;
-
-      lineParts.push({
-        m: lineM[1],
-        full: lineM[0],
-        start: globalStart,
-        end: globalEnd
-      });
-      lineLastIndex = lineM.index + lineM[0].length;
-    }
-    if (lineLastIndex < line.length) {
-      lineParts.push({
-        t: line.slice(lineLastIndex),
-        start: lineOffset + lineLastIndex,
-        end: lineOffset + line.length
-      });
-    }
-
-    if (lineParts.length === 0) {
-      lineParts.push({
-        t: line,
-        start: lineOffset,
-        end: lineOffset + line.length
-      });
-    }
-
-    globalOffset += line.length + 1;
-
-    return renderLine(lineParts, lineIndex);
-  });
-
-  return <div className="whitespace-pre-wrap">{processedLines}</div>;
+        ) : (
+          <span 
+            key={`text-${idx}`}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
+          />
+        )
+      )}
+    </span>
+  );
 }
 
 /* ----------------------------- Image Picker ------------------------------ */
@@ -321,105 +267,30 @@ function jumpToPlaceholder(el, backwards = false) {
 }
 
 /* -------------------------- Componente de Opción ------------------------- */
-function OptionRow({ option, optionIndex = 0, optionLabel = 'a', onChange, onRemove }) {
-  const inputRef = useRef(null);
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [aiModalOpen, setAiModalOpen] = useState(false);
-  const [showRawText, setShowRawText] = useState(false);
-  const [editingFormula, setEditingFormula] = useState(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-
-  const handlePick = (latexWithDelimiters) => {
-    if (editingFormula) {
-      // Reemplazar la fórmula existente
-      const { start, end } = editingFormula;
-      const currentText = option.text;
-      const newText = currentText.slice(0, start) + latexWithDelimiters + currentText.slice(end);
-      onChange({ ...option, text: newText });
-      setEditingFormula(null);
-    } else {
-      // Insertar nueva fórmula en el cursor
-      insertAtCursor(inputRef.current, latexWithDelimiters, (next) =>
-        onChange({ ...option, text: next })
-      );
-    }
-    setPaletteOpen(false);
-  };
-
-  const handleFormulaClick = ({ formula, fullMatch, start, end }) => {
-    setEditingFormula({ formula, fullMatch, start, end });
-    setEditModalOpen(true);
-  };
-
-  const handleAIInsert = (latexWithDelimiters) => {
-    // Insertar nueva fórmula generada por IA en el cursor
-    insertAtCursor(inputRef.current, latexWithDelimiters, (next) =>
-      onChange({ ...option, text: next })
-    );
-  };
-
-  const handleSaveEditedFormula = (newFormula) => {
-    if (editingFormula) {
-      const { fullMatch, start, end } = editingFormula;
-      const currentText = option.text;
-
-      // Asegurar que newFormula tenga delimitadores (viene del modal con delimitadores)
-      const formulaToInsert = newFormula.startsWith('$') ? newFormula : `$${newFormula}$`;
-
-      // Usar el índice si está disponible, sino buscar el fullMatch en el texto
-      let newText;
-      if (start !== undefined && end !== undefined && start >= 0 && end > start) {
-        // Verificar que los índices correspondan al fullMatch
-        const matchAtPosition = currentText.slice(start, end);
-        if (matchAtPosition === fullMatch) {
-          // Los índices son correctos, usar reemplazo por índices
-          newText = currentText.slice(0, start) + formulaToInsert + currentText.slice(end);
-        } else {
-          // Los índices no son correctos, buscar el fullMatch en el texto
-          const index = currentText.indexOf(fullMatch);
-          if (index !== -1) {
-            newText = currentText.slice(0, index) + formulaToInsert + currentText.slice(index + fullMatch.length);
-          } else {
-            // Fallback: reemplazar solo la primera ocurrencia
-            newText = currentText.replace(fullMatch, formulaToInsert);
-          }
-        }
-      } else {
-        // Buscar el fullMatch en el texto y reemplazarlo
-        const index = currentText.indexOf(fullMatch);
-        if (index !== -1) {
-          newText = currentText.slice(0, index) + formulaToInsert + currentText.slice(index + fullMatch.length);
-        } else {
-          // Fallback: reemplazar solo la primera ocurrencia
-          newText = currentText.replace(fullMatch, formulaToInsert);
-        }
-      }
-
-      onChange({ ...option, text: newText });
-      setEditingFormula(null);
-    }
-  };
-
-  // Detectar si hay fórmulas LaTeX
-  const hasMath = option.text && /\$[^$]+\$/.test(option.text);
-
+function OptionRow({ option, optionLabel = 'a', onChange, onRemove }) {
   return (
-    <div className={`flex flex-col gap-4 rounded-xl border-2 p-5 transition-all duration-200 ${option.correct
-      ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 shadow-lg ring-2 ring-emerald-200/50'
-      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
-      }`}>
+    <div
+      className={`flex flex-col gap-4 rounded-xl border-2 p-5 transition-all duration-200 ${
+        option.correct
+          ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 shadow-lg ring-2 ring-emerald-200/50'
+          : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+      }`}
+    >
       <div className="flex items-start gap-3">
         {/* Etiqueta de opción (a, b, c, ...) */}
         <div className="flex-shrink-0 mt-1">
-          <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg font-bold text-sm border-2 ${option.correct
-            ? 'border-emerald-500 bg-emerald-100 text-emerald-700'
-            : 'border-slate-300 bg-slate-100 text-slate-600'
-            }`}>
+          <span
+            className={`inline-flex items-center justify-center w-7 h-7 rounded-lg font-bold text-sm border-2 ${
+              option.correct
+                ? 'border-emerald-500 bg-emerald-100 text-emerald-700'
+                : 'border-slate-300 bg-slate-100 text-slate-600'
+            }`}
+          >
             {optionLabel})
           </span>
         </div>
 
-        {/* marcar correcta - mejor diseño */}
+        {/* marcar correcta */}
         <label className="mt-1 cursor-pointer">
           <input
             type="checkbox"
@@ -431,90 +302,12 @@ function OptionRow({ option, optionIndex = 0, optionLabel = 'a', onChange, onRem
         </label>
 
         <div className="flex-1">
-          {/* Textarea siempre visible para poder seguir editando */}
-          <div className="relative">
-            <textarea
-              ref={inputRef}
-              rows={2}
-              value={option.text}
-              onChange={(e) => onChange({ ...option, text: e.target.value })}
-              placeholder="Escribe el texto de la opción… Puedes usar fórmulas matemáticas. Usa Enter para saltos de línea."
-              className={`w-full rounded-xl border-2 px-4 py-3 pr-28 text-sm font-medium transition-all duration-200 resize-y
-                         focus:outline-none focus:ring-4 font-mono leading-relaxed ${option.correct
-                  ? 'border-emerald-300 bg-white focus:border-emerald-500 focus:ring-emerald-200/50 hover:border-emerald-400'
-                  : 'border-slate-300 bg-white focus:border-violet-500 focus:ring-violet-200/50 hover:border-violet-400'
-                }`}
-              style={{ whiteSpace: 'pre-wrap' }}
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2">
-              {/* Botón IA (generar fórmula con IA) */}
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setAiModalOpen(true); }}
-                className="grid h-9 w-9 place-items-center rounded-xl border-2 border-indigo-300 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-110 active:scale-95"
-                title="Generar fórmula con IA"
-                aria-label="Generar fórmula con IA"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              {/* Botón calculadora (abre paleta) */}
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setPaletteOpen(true); }}
-                className={`grid h-9 w-9 place-items-center rounded-xl border-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-110 active:scale-95 ${option.correct
-                  ? 'border-emerald-300 bg-gradient-to-br from-emerald-50 to-green-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-500'
-                  : 'border-violet-300 bg-gradient-to-br from-violet-50 to-indigo-50 text-violet-700 hover:bg-violet-100 hover:border-violet-500'
-                  }`}
-                title="Insertar fórmula matemática"
-                aria-label="Insertar fórmula"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <rect x="4" y="3" width="16" height="18" rx="2" />
-                  <path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Vista previa renderizada siempre visible y destacada */}
-          {hasMath && option.text && (
-            <div className={`mt-3 rounded-xl border-2 p-4 shadow-sm ${option.correct
-              ? 'border-emerald-300 bg-gradient-to-br from-emerald-50 to-green-50'
-              : 'border-violet-300 bg-gradient-to-br from-violet-50 to-indigo-50'
-              }`}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className={`w-1.5 h-1.5 rounded-full ${option.correct ? 'bg-emerald-500' : 'bg-violet-500'} animate-pulse`}></div>
-                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Vista previa renderizada</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setShowRawText(!showRawText); }}
-                  className="text-xs text-violet-600 hover:text-violet-700 font-bold transition-colors px-2 py-1 rounded-lg hover:bg-white/60"
-                >
-                  {showRawText ? '👁️ Ocultar código' : '📝 Ver código LaTeX'}
-                </button>
-              </div>
-              <div className="text-sm font-medium text-slate-900 bg-white/60 rounded-lg p-3 border border-slate-200/50 min-h-[40px] leading-relaxed">
-                <MathText text={option.text} onFormulaClick={handleFormulaClick} />
-              </div>
-              {showRawText && (
-                <div className="mt-3 pt-3 border-t border-slate-200">
-                  <p className="text-xs text-slate-600 font-mono bg-white/80 px-3 py-2 rounded-lg border border-slate-200 break-all">
-                    {option.text}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!option.text && (
-            <div className="mt-2">
-              <MathExamplesHint />
-            </div>
-          )}
+          <RichTextEditor
+            value={option.text}
+            onChange={(newText) => onChange({ ...option, text: newText })}
+            placeholder="Escribe el texto de la opción… Puedes insertar fórmulas con los botones."
+            className="mb-0"
+          />
         </div>
 
         {/* eliminar opción */}
@@ -534,35 +327,6 @@ function OptionRow({ option, optionIndex = 0, optionLabel = 'a', onChange, onRem
         value={option.image}
         onChange={(img) => onChange({ ...option, image: img })}
         label="Imagen de la opción (opcional)"
-      />
-
-      {/* Modal IA para generar fórmulas */}
-      <AIFormulaModal
-        open={aiModalOpen}
-        onClose={() => setAiModalOpen(false)}
-        onInsert={handleAIInsert}
-      />
-
-      {/* Paleta LaTeX */}
-      <MathPalette
-        open={paletteOpen}
-        onClose={() => {
-          setPaletteOpen(false);
-          setEditingFormula(null);
-        }}
-        onPick={handlePick}
-        initialFormula={editingFormula?.formula}
-      />
-
-      {/* Modal de edición de fórmula */}
-      <FormulaEditModal
-        open={editModalOpen}
-        onClose={() => {
-          setEditModalOpen(false);
-          setEditingFormula(null);
-        }}
-        formula={editingFormula ? `$${editingFormula.formula}$` : ''}
-        onSave={handleSaveEditedFormula}
       />
     </div>
   );
@@ -885,6 +649,7 @@ export default function EspanolFormBuilder() {
   const usp = new URLSearchParams(location.search || '');
   const quizId = location.state?.quizId || usp.get('id') || null;
   const simId = location.state?.simId || usp.get('simId') || null;
+  const tempCreated = !!location.state?.tempCreated;
   // Contexto de área (si se llegó desde una vista específica). Puede venir por state o se resolverá tras cargar la simulación.
   const initialAreaId = location.state?.areaId || null;
   const initialAreaTitle = typeof location.state?.areaTitle === 'string' ? location.state.areaTitle : null;
@@ -893,6 +658,7 @@ export default function EspanolFormBuilder() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [meta, setMeta] = useState({ titulo: '', materia: '', max_intentos: null, time_limit_min: null });
+  const [descripcion, setDescripcion] = useState(''); // Estado para descripción del simulador
   // Estado inicial: array vacío si hay quizId/simId (se cargarán), sino una pregunta por defecto
   const [questions, setQuestions] = useState(() => {
     const hasId = quizId || simId;
@@ -903,7 +669,14 @@ export default function EspanolFormBuilder() {
   const [questionsLoaded, setQuestionsLoaded] = useState(false); // Flag para saber si ya se cargaron las preguntas
   const [previewOpen, setPreviewOpen] = useState(false);
   // Título de área si llega desde navegación (cosmético)
-  const [areaTitle, setAreaTitle] = useState(() => initialAreaTitle || (typeof location.state?.title === 'string' ? location.state.title : 'Español'));
+  // Para simuladores, usar 'General' como fallback; para quizzes, 'Español'
+  const [areaTitle, setAreaTitle] = useState(() => {
+    const hasSimId = !!simId;
+    if (hasSimId) {
+      return initialAreaTitle || (typeof location.state?.title === 'string' ? location.state.title : 'General');
+    }
+    return initialAreaTitle || (typeof location.state?.title === 'string' ? location.state.title : 'Español');
+  });
   const [areaId, setAreaId] = useState(initialAreaId);
   const [publishing, setPublishing] = useState(false);
   const { showAlert, showConfirm, AlertComponent } = useAlert();
@@ -941,6 +714,8 @@ export default function EspanolFormBuilder() {
             max_intentos: quiz.max_intentos ?? null,
             time_limit_min: quiz.time_limit_min ?? null,
           });
+          // ✅ Cargar descripción del quiz
+          setDescripcion(quiz.descripcion || quiz.instrucciones || '');
           // IMPORTANTE: Cargar el id_area del quiz existente si no está establecido
           if (quiz.id_area && !areaId) {
             setAreaId(quiz.id_area);
@@ -1041,10 +816,20 @@ export default function EspanolFormBuilder() {
             max_intentos: null,
             time_limit_min: sim.time_limit_min ?? null,
           });
+          // ✅ Cargar descripción del simulador
+          setDescripcion(sim.descripcion || sim.instrucciones || '');
           // Resolver contexto de área desde la simulación si no vino por navegación
           try {
-            if (sim.id_area && !areaId) setAreaId(sim.id_area);
-            if (sim.id_area && !areaTitle) setAreaTitle(sim.titulo_area || areaTitle || 'Área');
+            if (sim.id_area && !areaId) {
+              setAreaId(sim.id_area);
+              // Si hay área, usar el título del área
+              if (!areaTitle || areaTitle === 'General') {
+                setAreaTitle(sim.titulo_area || 'Área');
+              }
+            } else if (!sim.id_area) {
+              // Si es un simulador general (sin área), asegurar que muestre 'General'
+              setAreaTitle('General');
+            }
           } catch { }
           const mapped = pregs.map((p) => {
             const type = p.tipo === 'verdadero_falso' ? 'tf' : (p.tipo === 'respuesta_corta' ? 'short' : 'multiple');
@@ -1143,16 +928,37 @@ export default function EspanolFormBuilder() {
     }
     try {
       setSaving(true);
-      const preguntas = questions.map(q => ({
-        type: q.type,
-        text: q.text,
-        points: q.points,
-        options: q.options,
-        answer: q.answer
-      }));
+      // ✅ Incluir imágenes en las preguntas
+      const preguntas = questions.map(q => {
+        const preguntaBase = {
+          type: q.type,
+          text: q.text,
+          points: q.points,
+          answer: q.answer
+        };
+        
+        // ✅ Incluir imagen de la pregunta si existe
+        if (q.image) {
+          preguntaBase.image = q.image.preview || q.image.url || null;
+        }
+        
+        // ✅ Incluir opciones con sus imágenes
+        if (q.type === 'multiple' && q.options) {
+          preguntaBase.options = q.options.map(o => {
+            const opcionBase = { text: o.text, correct: o.correct };
+            // ✅ Incluir imagen de la opción si existe
+            if (o.image) {
+              opcionBase.image = o.image.preview || o.image.url || null;
+            }
+            return opcionBase;
+          });
+        }
+        
+        return preguntaBase;
+      });
       const body = {
         titulo: meta.titulo || `Quiz ${new Date().toLocaleDateString()}`,
-        descripcion: '',
+        descripcion: descripcion && descripcion.trim().length > 0 ? descripcion.trim() : '', // ✅ Incluir descripción
         materia: meta.materia || areaTitle || 'Español',
         max_intentos: meta.max_intentos ?? null,
         time_limit_min: meta.time_limit_min ?? null,
@@ -1170,7 +976,7 @@ export default function EspanolFormBuilder() {
         await createQuiz(body);
       }
       await showAlert("Borrador guardado exitosamente.", 'Borrador guardado', 'success');
-      navigate('/asesor/quizt', { replace: true });
+      navigate('/asesor/quizt');
     } catch (e) {
       await showAlert(e?.response?.data?.message || 'No se pudo guardar el borrador', 'Error', 'error');
     } finally {
@@ -1227,17 +1033,39 @@ export default function EspanolFormBuilder() {
     }
     try {
       setSaving(true);
-      const preguntas = questions.map(q => ({
-        type: q.type,
-        text: q.text,
-        points: q.points,
-        options: q.options,
-        answer: q.answer
-      }));
+      // ✅ Incluir imágenes en las preguntas: si hay file, incluir la URL de preview temporalmente
+      // Si hay preview pero no file, es una imagen existente (URL), incluirla también
+      const preguntas = questions.map(q => {
+        const preguntaBase = {
+          type: q.type,
+          text: q.text,
+          points: q.points,
+          answer: q.answer
+        };
+        
+        // ✅ Incluir imagen de la pregunta si existe
+        if (q.image) {
+          preguntaBase.image = q.image.preview || q.image.url || null;
+        }
+        
+        // ✅ Incluir opciones con sus imágenes
+        if (q.type === 'multiple' && q.options) {
+          preguntaBase.options = q.options.map(o => ({
+            text: o.text,
+            correct: o.correct,
+            // ✅ Incluir imagen de la opción si existe
+            image: o.image ? (o.image.preview || o.image.url || null) : null
+          }));
+        }
+        
+        return preguntaBase;
+      });
+      
       if (quizId) {
         const body = {
           titulo: meta.titulo || undefined,
           materia: meta.materia || undefined,
+          descripcion: descripcion && descripcion.trim().length > 0 ? descripcion.trim() : undefined, // ✅ Incluir descripción
           max_intentos: meta.max_intentos ?? null,
           time_limit_min: meta.time_limit_min ?? null,
           id_area: areaId || null, // Conservar el id_area del quiz
@@ -1246,7 +1074,7 @@ export default function EspanolFormBuilder() {
         };
         await updateQuiz(quizId, body);
         await showAlert('Quiz actualizado exitosamente', 'Éxito', 'success');
-        navigate('/asesor/quizt', { replace: true });
+        navigate('/asesor/quizt');
       } else if (simId) {
         const body = {
           preguntas,
@@ -1254,12 +1082,12 @@ export default function EspanolFormBuilder() {
         };
         await updateSimulacion(simId, body);
         await showAlert('Simulador actualizado exitosamente', 'Éxito', 'success');
-        // Redirigir según contexto (área específica vs generales) - reemplazar en historial
+        // Redirigir según contexto (área específica vs generales) - NO usar replace para preservar historial
         if (areaId) {
           const areaParam = encodeURIComponent(areaTitle || areaId);
-          navigate(`/asesor/simuladores/modulo?area=${areaParam}`, { replace: true });
+          navigate(`/asesor/simuladores/modulo?area=${areaParam}`);
         } else {
-          navigate('/asesor/simuladores/generales', { replace: true });
+          navigate('/asesor/simuladores/generales');
         }
       }
     } catch (e) {
@@ -1283,19 +1111,38 @@ export default function EspanolFormBuilder() {
     try {
       if (publish) setPublishing(true); else setSaving(true);
       const preguntas = questions.map((q, i) => {
+        const preguntaBase = {
+          orden: i + 1,
+          text: q.text,
+          puntos: Number(q.points || 1)
+        };
+        
+        // ✅ Incluir imagen de la pregunta si existe
+        if (q.image) {
+          preguntaBase.image = q.image.preview || q.image.url || null;
+        }
+        
         if (q.type === 'multiple') {
-          const opciones = (q.options || []).map(o => ({ texto: o.text, es_correcta: !!o.correct }));
+          const opciones = (q.options || []).map(o => {
+            const opcionBase = { texto: o.text, es_correcta: !!o.correct };
+            // ✅ Incluir imagen de la opción si existe
+            if (o.image) {
+              opcionBase.image = o.image.preview || o.image.url || null;
+            }
+            return opcionBase;
+          });
           if (!opciones.some(o => o.es_correcta) && opciones.length) opciones[0].es_correcta = true;
-          return { orden: i + 1, tipo: 'opcion_multiple', text: q.text, puntos: Number(q.points || 1), opciones };
+          return { ...preguntaBase, tipo: 'opcion_multiple', opciones };
         } else if (q.type === 'tf') {
-          return { orden: i + 1, type: 'tf', text: q.text, puntos: Number(q.points || 1), answer: q.answer === 'false' ? 'false' : 'true' };
+          return { ...preguntaBase, type: 'tf', answer: q.answer === 'false' ? 'false' : 'true' };
         } else {
-          return { orden: i + 1, type: 'short', text: q.text, puntos: Number(q.points || 1), answer: q.answer || '' };
+          return { ...preguntaBase, type: 'short', answer: q.answer || '' };
         }
       });
       const body = {
         titulo: meta.titulo || undefined,
         time_limit_min: meta.time_limit_min ?? null,
+        descripcion: descripcion && descripcion.trim().length > 0 ? descripcion.trim() : undefined, // ✅ Incluir descripción
         preguntas,
         id_area: areaId || null, // Conservar el id_area del simulador
         activo: true
@@ -1307,9 +1154,9 @@ export default function EspanolFormBuilder() {
       }
       if (areaId) {
         const areaParam = encodeURIComponent(areaTitle || areaId);
-        navigate(`/asesor/simuladores/modulo?area=${areaParam}`, { replace: true });
+        navigate(`/asesor/simuladores/modulo?area=${areaParam}`);
       } else {
-        navigate('/asesor/simuladores/generales', { replace: true });
+        navigate('/asesor/simuladores/generales');
       }
     } catch (e) {
       await showAlert(e?.response?.data?.message || 'No se pudo guardar el simulador', 'Error', 'error');
@@ -1354,26 +1201,62 @@ export default function EspanolFormBuilder() {
           {/* Acciones */}
           <section className="mb-6 rounded-3xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-5 sm:p-6 shadow-lg ring-2 ring-slate-100/50">
             {isSim && (
-              <div className="mb-5 grid gap-4 sm:grid-cols-2 border-b border-slate-200 pb-5">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Título del simulador</label>
-                  <input
-                    value={meta.titulo}
-                    onChange={(e) => setMeta(m => ({ ...m, titulo: e.target.value }))}
-                    placeholder="Ej. Simulador General"
-                    className="w-full rounded-lg border-2 border-slate-300 px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-colors"
-                  />
+              <>
+                <div className="mb-5 grid gap-4 sm:grid-cols-2 border-b border-slate-200 pb-5">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Título del simulador</label>
+                    <input
+                      value={meta.titulo}
+                      onChange={(e) => setMeta(m => ({ ...m, titulo: e.target.value }))}
+                      placeholder="Ej. Simulador General"
+                      className="w-full rounded-lg border-2 border-slate-300 px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Duración (minutos)</label>
+                    <input
+                      type="number"
+                      value={meta.time_limit_min ?? ''}
+                      onChange={(e) => setMeta(m => ({ ...m, time_limit_min: e.target.value === '' ? null : Number(e.target.value) }))}
+                      placeholder="Ej. 60"
+                      className="w-full rounded-lg border-2 border-slate-300 px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-colors"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Duración (minutos)</label>
-                  <input
-                    type="number"
-                    value={meta.time_limit_min ?? ''}
-                    onChange={(e) => setMeta(m => ({ ...m, time_limit_min: e.target.value === '' ? null : Number(e.target.value) }))}
-                    placeholder="Ej. 60"
-                    className="w-full rounded-lg border-2 border-slate-300 px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-colors"
+                {/* ✅ Campo editable para descripción/instrucciones */}
+                <div className="mb-5 border-b border-slate-200 pb-5">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Descripción / Instrucciones
+                  </label>
+                  <RichTextEditor
+                    value={descripcion || ''}
+                    onChange={setDescripcion}
+                    placeholder="Describe el simulador y proporciona instrucciones para los estudiantes. Este texto aparecerá en la lista de simuladores y cuando los estudiantes vean el simulador."
                   />
+                  {!descripcion && (
+                    <p className="mt-2 text-xs text-amber-600">
+                      ⚠️ No hay descripción. Agrega una descripción para que los estudiantes sepan de qué trata este simulador.
+                    </p>
+                  )}
                 </div>
+              </>
+            )}
+            {/* ✅ Campo editable para descripción/instrucciones de quizzes */}
+            {!isSim && (
+              <div className="mb-5 border-b border-slate-200 pb-5">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Descripción / Instrucciones
+                </label>
+                <RichTextEditor
+                  value={descripcion || ''}
+                  onChange={setDescripcion}
+                  placeholder="Describe el quiz y proporciona instrucciones para los estudiantes. Este texto aparecerá en la lista de quizzes y cuando los estudiantes vean el quiz."
+                />
+                {!descripcion && (
+                  <p className="mt-2 text-xs text-amber-600">
+                    ⚠️ No hay descripción. Agrega una descripción para que los estudiantes sepan de qué trata este quiz.
+                  </p>
+                )}
               </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1385,21 +1268,34 @@ export default function EspanolFormBuilder() {
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
-                  onClick={() => {
-                    if (window.confirm('¿Estás seguro de que deseas cancelar? Se perderán los cambios no guardados. NO se guardará como borrador.')) {
-                      // IMPORTANTE: Solo navegar, NO guardar nada
-                      if (isSim) {
-                        // Para simuladores: navegar según si hay área o no
-                        if (areaId) {
-                          const areaParam = encodeURIComponent(areaTitle || areaId);
-                          navigate(`/asesor/simuladores/modulo?area=${areaParam}`, { replace: true });
-                        } else {
-                          navigate('/asesor/simuladores/generales', { replace: true });
-                        }
-                      } else {
-                        // Para quizzes: navegar a la lista de quizzes
-                        navigate('/asesor/quizt', { replace: true });
+                  onClick={async () => {
+                    const ok = window.confirm('¿Estás seguro de que deseas cancelar? Se perderán los cambios no guardados. NO se guardará como borrador.');
+                    if (!ok) return;
+
+                    // ✅ Caso especial: simulador recién creado para entrar al builder (new=1)
+                    // Si el usuario cancela, eliminar ese borrador para que no quede en la lista.
+                    if (isSim && isNew && tempCreated && simId) {
+                      try {
+                        await deleteSimulacion(simId);
+                      } catch (e) {
+                        await showAlert(
+                          e?.response?.data?.message || 'No se pudo eliminar el borrador automáticamente. Puedes eliminarlo desde la lista.',
+                          'Aviso',
+                          'warning'
+                        );
                       }
+                    }
+
+                    // Navegar a la lista correspondiente - NO usar replace para preservar historial
+                    if (isSim) {
+                      if (areaId) {
+                        const areaParam = encodeURIComponent(areaTitle || areaId);
+                        navigate(`/asesor/simuladores/modulo?area=${areaParam}`);
+                      } else {
+                        navigate('/asesor/simuladores/generales');
+                      }
+                    } else {
+                      navigate('/asesor/quizt');
                     }
                   }}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-rose-300 bg-white px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-50 hover:border-rose-400 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"

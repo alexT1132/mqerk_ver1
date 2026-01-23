@@ -34,6 +34,7 @@ export default function QuizIAModal({
     const [iaChoiceMode, setIaChoiceMode] = useState('general'); // 'general' | 'temas'
     const [iaChoiceTopics, setIaChoiceTopics] = useState(initialTopic || '');
     const [iaNivel, setIaNivel] = useState('intermedio');
+    const [iaIdioma, setIaIdioma] = useState('auto'); // auto | es | en | mix
     const [iaError, setIaError] = useState('');
     const [iaLoading, setIaLoading] = useState(false);
     const [cooldownMs, setCooldownMs] = useState(0);
@@ -178,6 +179,7 @@ export default function QuizIAModal({
                 cantidad,
                 area: areaTitle || undefined,
                 nivel: iaNivel,
+                idioma: iaIdioma,
                 distribucion,
                 temperature: iaTemperature,
                 ...(iaTopP !== '' && { topP: Number(iaTopP) }),
@@ -190,6 +192,23 @@ export default function QuizIAModal({
                 opts.temas = temasList;
             } else {
                 opts.modo = 'general';
+            }
+
+            // ✅ Validación: Detectar múltiples temas y comparar con cantidad de preguntas
+            const numTemas = iaChoiceMode === 'temas' && temasList.length ? temasList.length : 0;
+            
+            // ✅ Advertencia si hay más temas que preguntas
+            if (numTemas > cantidad) {
+                const temasTexto = temasList.join(', ');
+                const advertencia = `⚠️ Advertencia: Has especificado ${numTemas} tema${numTemas > 1 ? 's' : ''} (${temasTexto}), ` +
+                    `pero solo se generarán ${cantidad} pregunta${cantidad > 1 ? 's' : ''}. ` +
+                    `Algunos temas no tendrán preguntas. ¿Deseas continuar de todas formas?`;
+                
+                const continuar = window.confirm(advertencia);
+                if (!continuar) {
+                    setIaLoading(false);
+                    return;
+                }
             }
 
             const preguntasIA = await generarPreguntasIA({ ...opts, purpose: 'quizzes' });
@@ -300,11 +319,11 @@ export default function QuizIAModal({
 
     return (
         <>
-        <div className="mqerk-quiz-ia-overlay fixed inset-0 z-[60] flex items-start justify-center px-4 pt-20 pb-6">
+        <div className="mqerk-quiz-ia-overlay fixed inset-0 z-[60] flex items-start justify-center px-4 pt-24 pb-6">
             <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={onClose} />
-            <div className="mqerk-quiz-ia-dialog relative z-10 w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="mqerk-quiz-ia-dialog relative z-10 w-full max-w-xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
                 {/* Header */}
-                <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
+                <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
                     <div className="flex items-center gap-2.5">
                         <div className="rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 p-1.5 shadow-md">
                             <Sparkles className="h-4 w-4 text-white" />
@@ -319,7 +338,8 @@ export default function QuizIAModal({
                     </div>
                 </div>
 
-                <div className="mqerk-hide-scrollbar px-4 py-3 space-y-3 max-h-[70vh] overflow-y-auto">
+                {/* Body con scroll */}
+                <div className="mqerk-hide-scrollbar flex-1 min-h-0 px-4 py-3 space-y-3 overflow-y-auto">
                     {/* Mode Selection */}
                     <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-2">Tipo de generación</label>
@@ -417,6 +437,24 @@ export default function QuizIAModal({
                                 </button>
                             ))}
                         </ButtonGroup>
+                    </div>
+
+                    {/* Idioma */}
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Idioma de salida</label>
+                        <select
+                            value={iaIdioma}
+                            onChange={(e) => setIaIdioma(e.target.value)}
+                            className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                        >
+                            <option value="auto">Auto (según área/tema)</option>
+                            <option value="es">Español (es-MX)</option>
+                            <option value="en">Inglés (en-US)</option>
+                            <option value="mix">Mixto (mitad ES, mitad EN)</option>
+                        </select>
+                        <p className="mt-1 text-[10px] text-slate-500 leading-snug">
+                            Tip: si quieres practicar inglés, usa “Inglés” o “Mixto”. Si mezclas materias, deja “Auto” o “Español”.
+                        </p>
                     </div>
 
                     {/* Cantidad & Distribución */}
@@ -560,8 +598,8 @@ export default function QuizIAModal({
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+                {/* Footer - siempre visible */}
+                <div className="flex-shrink-0 p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
                     <div className="text-xs text-slate-500 flex items-center gap-2">
                         {cooldownMs > 0 && (
                             <span className="inline-flex items-center gap-1 text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
@@ -619,14 +657,10 @@ export default function QuizIAModal({
             background: transparent !important;
           }
 
-          /* Pantallas con poca altura: modal más compacto y un poco más abajo */
+          /* Pantallas con poca altura: modal más compacto */
           @media (max-height: 720px) {
-            .mqerk-quiz-ia-overlay {
-              padding-top: max(6vh, 80px);
-              padding-bottom: 2vh;
-            }
             .mqerk-quiz-ia-dialog {
-              max-height: 82vh;
+              max-height: 70vh;
             }
           }
         `}</style>

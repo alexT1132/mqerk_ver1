@@ -48,7 +48,20 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
     }
   }, [open, gruposAsesor.length]);
 
-  // Reset cuando se abra/cierre
+  // Reset cuando se abra/cierre o cuando cambie initialForm (importante para modo edición)
+  // Usar un string serializado de initialForm para detectar cambios de contenido, no solo de referencia
+  const initialFormKey = initialForm ? JSON.stringify({
+    titulo: initialForm.titulo,
+    nombre: initialForm.nombre,
+    instrucciones: initialForm.instrucciones,
+    descripcion: initialForm.descripcion,
+    fechaLimite: initialForm.fechaLimite,
+    horas: initialForm.horas,
+    minutos: initialForm.minutos,
+    grupos: initialForm.grupos,
+    areaId: initialForm.areaId
+  }) : '';
+  
   useEffect(() => {
     if (open) {
       setStep(1);
@@ -57,36 +70,52 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
         const gruposInicial = initialForm.grupos
           ? (Array.isArray(initialForm.grupos) ? initialForm.grupos : String(initialForm.grupos).split(',').map(s => s.trim()).filter(Boolean))
           : [];
-        setForm({
+        
+        const newForm = {
           titulo: initialForm.titulo || initialForm.nombre || "",
-          instrucciones: initialForm.instrucciones || initialForm.descripcion || "", // Instrucciones para el usuario
+          // ✅ CRÍTICO: Priorizar descripcion sobre instrucciones para preservar la descripción generada por IA
           descripcion: initialForm.descripcion || initialForm.instrucciones || "", // ✅ Preservar descripción generada por IA
+          instrucciones: initialForm.instrucciones || initialForm.descripcion || "", // Instrucciones para el usuario (fallback)
           nombre: initialForm.nombre || initialForm.titulo || "",
-          fechaLimite: initialForm.fechaLimite || "",
-          publico: initialForm.publico ?? true,
+          fechaLimite: initialForm.fechaLimite || initialForm.fecha_limite || "",
+          publico: initialForm.publico ?? (mode === 'edit' ? false : true),
           horas: Number(initialForm.horas || 0),
           minutos: Number(initialForm.minutos || 0),
           grupos: gruposInicial,
           // ✅ CRÍTICO: Preservar areaId y areaTitle del initialForm (viene de iaPrefill cuando se genera con IA)
           areaId: initialForm.areaId !== undefined ? initialForm.areaId : null,
           areaTitle: initialForm.areaTitle !== undefined ? initialForm.areaTitle : null
-        });
+        };
         
-        // Log para debugging
-        if (initialForm.areaId !== undefined || initialForm.areaTitle !== undefined) {
-          console.log('[SimulatorModal] initialForm con área preservada:', {
-            areaId: initialForm.areaId,
-            areaTitle: initialForm.areaTitle
-          });
+        // ✅ Log crítico: solo si no hay descripción cuando viene de IA
+        if ((initialForm.descripcion || initialForm.instrucciones) && (!newForm.descripcion || newForm.descripcion.length === 0)) {
+          console.warn('[SimulatorModal] ⚠️ Descripción de IA no se cargó correctamente');
         }
+        
+        setForm(newForm);
       } else {
         // Reset grupos al abrir sin initialForm
         setForm((prev) => ({ ...prev, grupos: [] }));
       }
       // foco inicial
       setTimeout(() => firstFocusable.current?.focus(), 50);
+    } else {
+      // Reset cuando se cierra
+      setForm({
+        titulo: "",
+        instrucciones: "",
+        descripcion: "",
+        nombre: "",
+        fechaLimite: "",
+        publico: false,
+        horas: 0,
+        minutos: 0,
+        grupos: [],
+        areaId: null,
+        areaTitle: null
+      });
     }
-  }, [open, initialForm]);
+  }, [open, initialFormKey, mode]); // ✅ Usar initialFormKey en lugar de initialForm para detectar cambios de contenido
 
   // Cerrar con ESC
   useEffect(() => {
@@ -138,13 +167,15 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
     const tituloFinalizado = (form.titulo?.trim() || form.nombre?.trim() || tituloDelInitialForm?.trim() || tituloFinal).trim();
     
     // ✅ CRÍTICO: Si la descripción está vacía pero viene de IA, usar la de IA
-    // Prioridad: 1) form.descripcion, 2) form.instrucciones, 3) initialForm.descripcion, 4) initialForm.instrucciones
+    // Prioridad: 1) form.descripcion (si tiene contenido), 2) form.instrucciones (si tiene contenido), 3) initialForm.descripcion, 4) initialForm.instrucciones
+    // IMPORTANTE: Verificar explícitamente si form.descripcion tiene contenido, no solo si es truthy
+    const formDescripcion = form.descripcion?.trim() || '';
+    const formInstrucciones = form.instrucciones?.trim() || '';
     const descripcionFinal = (
-      form.descripcion?.trim() || 
-      form.instrucciones?.trim() || 
-      descripcionDelInitialForm?.trim() || 
-      ''
-    ).trim();
+      (formDescripcion && formDescripcion.length > 0 ? formDescripcion : null) || 
+      (formInstrucciones && formInstrucciones.length > 0 ? formInstrucciones : null) || 
+      (descripcionDelInitialForm?.trim() || '')
+    );
     
     // ✅ Log para debugging si la descripción está vacía
     if (!descripcionFinal || descripcionFinal.length === 0) {
@@ -196,10 +227,29 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
     if (!canCreate) return;
     setLoading(true);
     try {
-      // Normalizar grupos: convertir array a string separado por comas para el backend
-      const gruposFinal = Array.isArray(form.grupos) && form.grupos.length > 0
-        ? form.grupos.join(',')
-        : '';
+      // ✅ CRÍTICO: Normalizar grupos - el backend espera JSON válido o null
+      // El campo grupos tiene un CHECK constraint que requiere JSON válido: CHECK (json_valid(`grupos`))
+      let gruposFinal = null;
+      if (form.grupos) {
+        if (Array.isArray(form.grupos) && form.grupos.length > 0) {
+          // Si es array, convertir a JSON string
+          gruposFinal = JSON.stringify(form.grupos);
+        } else if (typeof form.grupos === 'string' && form.grupos.trim()) {
+          // Si es string, puede ser:
+          // 1. JSON string ya válido (ej: '["V1","M1"]')
+          // 2. String separado por comas (ej: 'V1,M1')
+          try {
+            // Intentar parsear como JSON primero
+            JSON.parse(form.grupos);
+            // Si se puede parsear, es JSON válido, usarlo tal cual
+            gruposFinal = form.grupos;
+          } catch {
+            // Si no es JSON, asumir que es string separado por comas y convertir a JSON array
+            const gruposNormalizados = form.grupos.split(',').map(s => s.trim()).filter(Boolean);
+            gruposFinal = gruposNormalizados.length > 0 ? JSON.stringify(gruposNormalizados) : null;
+          }
+        }
+      }
       // ✅ Asegurar que título y nombre estén sincronizados antes de enviar
       // ✅ IMPORTANTE: Preservar la descripción del form (que puede venir de iaPrefill)
       // ✅ CRÍTICO: Preservar areaId y areaTitle del form (vienen de iaPrefill cuando se genera con IA)
@@ -329,15 +379,6 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all"
-            >
-              <X className="h-4 w-4" />
-              Cancelar
-            </button>
-            
             {step === 1 ? (
               <button
                 disabled={!canNext}

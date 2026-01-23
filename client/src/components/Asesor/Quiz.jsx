@@ -23,6 +23,7 @@ import { getCooldownRemainingMs } from "../../service/simuladoresAI";
 import { logInfo, logError, logDebug } from "../../utils/logger";
 import { listQuizzes, deleteQuiz as apiDeleteQuiz, getQuizFull, getQuizEstudiantesEstado, getQuizIntentoReview, updateQuiz } from "../../api/quizzes";
 import { getAreasCatalog } from "../../api/areas";
+import InlineMath from "./simGen/InlineMath";
 
 
 /* ------------------- helpers ------------------- */
@@ -41,6 +42,56 @@ function Badge({ children, type = "default" }) {
       {type === "success" && <CheckCircle2 className="h-4 w-4" />}
       {type === "draft" && <CircleDashed className="h-4 w-4" />}
       {children}
+    </span>
+  );
+}
+
+/* Renderiza texto con fórmulas LaTeX */
+function MathText({ text = "" }) {
+  if (!text) return null;
+
+  // ✅ Enfoque híbrido: usar regex simple (más robusto) pero mejorado para casos comunes
+  // El regex no-greedy funciona bien para la mayoría de casos y es más simple
+  const re = /\$([^$]+?)\$/g;
+  const parts = [];
+  let lastIndex = 0;
+  let m;
+  let matchFound = false;
+
+  // Resetear el regex para evitar problemas con múltiples llamadas
+  re.lastIndex = 0;
+
+  while ((m = re.exec(text)) !== null) {
+    matchFound = true;
+    if (m.index > lastIndex) {
+      parts.push({ type: 'text', content: text.slice(lastIndex, m.index) });
+    }
+    // Limpiar espacios en blanco al inicio y final de la fórmula
+    const formula = m[1].trim();
+    if (formula) {
+      parts.push({ type: 'math', content: formula });
+    }
+    lastIndex = m.index + m[0].length;
+  }
+  
+  if (lastIndex < text.length) {
+    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  }
+
+  // Si no se encontraron fórmulas, devolver el texto tal cual
+  if (!matchFound || parts.length === 0) {
+    return <span>{text}</span>;
+  }
+
+  return (
+    <span>
+      {parts.map((part, idx) =>
+        part.type === 'math' ? (
+          <InlineMath key={`math-${idx}`} math={part.content} />
+        ) : (
+          <span key={`text-${idx}`}>{part.content}</span>
+        )
+      )}
     </span>
   );
 }
@@ -174,7 +225,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
   const [iaQuestions, setIaQuestions] = useState(null);
   // Modal de elección IA (general vs por temas)
   const [iaChoiceOpen, setIaChoiceOpen] = useState(false);
-  const [successModal, setSuccessModal] = useState({ open: false, message: '', count: 0 });
+  const [successModal, setSuccessModal] = useState({ open: false, message: '', count: 0, willRedirect: false });
 
   // En esta vista trabajamos por área; ocultar filtro por materia para simplificar UX
   const SHOW_AREA_FILTER = false;
@@ -845,21 +896,23 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                         <div className="mb-0.5 text-xs text-slate-500">
                           {idx + 1}. {p.tipo === 'opcion_multiple' ? 'Opción múltiple' : p.tipo === 'verdadero_falso' ? 'Verdadero/Falso' : 'Respuesta corta'} • {p.puntos || 1} pt{(p.puntos || 1) > 1 ? 's' : ''}
                         </div>
-                        <div className="font-medium text-slate-900 mb-0.5 text-sm">{p.enunciado}</div>
+                        <div className="font-medium text-slate-900 mb-0.5 text-sm">
+                          <MathText text={p.enunciado || ''} />
+                        </div>
                         {p.tipo === 'opcion_multiple' && (
                           <ul className="mt-0.5 space-y-1">
                             {p.opciones?.map((o) => (
                               <li key={o.id} className={`rounded border px-1.5 py-1 text-xs ${o.es_correcta ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
-                                {o.texto || '—'}
+                                <MathText text={o.texto || '—'} />
                               </li>
                             ))}
                           </ul>
                         )}
                         {p.tipo === 'verdadero_falso' && (
-                          <p className="mt-0.5 text-xs text-slate-700">Correcta: <strong>{p.opciones?.find(x => x.es_correcta)?.texto || '—'}</strong></p>
+                          <p className="mt-0.5 text-xs text-slate-700">Correcta: <strong><MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} /></strong></p>
                         )}
                         {p.tipo === 'respuesta_corta' && (
-                          <p className="mt-0.5 text-xs text-slate-700">Respuesta esperada: <strong>{p.opciones?.find(x => x.es_correcta)?.texto || '—'}</strong></p>
+                          <p className="mt-0.5 text-xs text-slate-700">Respuesta esperada: <strong><MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} /></strong></p>
                         )}
                       </li>
                     ))}
@@ -1316,12 +1369,16 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                 setSuccessModal({
                   open: true,
                   message: `Quiz creado exitosamente con ${iaQuestions.length} pregunta(s)`,
-                  count: iaQuestions.length
+                  count: iaQuestions.length,
+                  willRedirect: true
                 });
-                // Cerrar automáticamente después de 4 segundos
-                setTimeout(() => setSuccessModal(prev => ({ ...prev, open: false })), 4000);
-
-                // NO navegar al builder, quedarse en la lista
+                // ✅ Volver a redirigir al editor, sin flags “temporales”.
+                setTimeout(() => {
+                  navigate(
+                    `/asesor/quizt/builder?id=${encodeURIComponent(created.id)}`,
+                    { state: { quizId: created.id, areaId: currentAreaId, areaTitle: currentAreaTitle } }
+                  );
+                }, 1200);
                 return;
               } else {
                 logError('Quiz.jsx', 'ERROR: No se recibió ID del quiz creado', { respuesta: res?.data });
@@ -1354,6 +1411,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
         <SuccessModal
           message={successModal.message}
           count={successModal.count}
+          willRedirect={successModal.willRedirect}
           onClose={() => setSuccessModal(prev => ({ ...prev, open: false }))}
         />
       )}
@@ -1449,7 +1507,7 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, type = 
 }
 
 // Componente de modal de éxito estético
-function SuccessModal({ message, count = 0, onClose }) {
+function SuccessModal({ message, count = 0, willRedirect = false, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none">
       <div className="relative w-full max-w-md pointer-events-auto animate-in fade-in zoom-in duration-300">
@@ -1468,11 +1526,15 @@ function SuccessModal({ message, count = 0, onClose }) {
           {/* Contenido */}
           <div className="px-6 py-5 text-center">
             <p className="text-lg font-semibold text-slate-900 mb-2">{message}</p>
-            {count > 0 && (
+            {willRedirect ? (
+              <p className="text-sm text-slate-600">
+                Serás redirigido al editor en unos momentos...
+              </p>
+            ) : count > 0 ? (
               <p className="text-sm text-slate-600">
                 Puedes editarlo haciendo clic en el botón "Editar" en la lista.
               </p>
-            )}
+            ) : null}
           </div>
 
           {/* Barra de progreso temporal */}

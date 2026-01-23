@@ -43,18 +43,16 @@ export const listSimulaciones = async ({ id_area, visible = true, soloPublicas =
 
   const [rows] = await db.query(sql, params);
 
-  // ✅ DEBUG: Log temporal para depurar
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[listSimulaciones MODEL] Resultados:', {
-      totalRows: rows.length,
-      sampleRows: rows.slice(0, 3).map(r => ({
-        id: r.id,
-        titulo: r.titulo,
-        publico: r.publico,
-        activo: r.activo,
-        id_area: r.id_area
-      }))
-    });
+  // ✅ Log crítico: solo si hay simuladores sin descripción
+  if (process.env.NODE_ENV !== 'production' && rows.length > 0) {
+    const sinDescripcion = rows.filter(r => !r.descripcion || r.descripcion.length === 0);
+    if (sinDescripcion.length > 0) {
+      console.warn('[listSimulaciones MODEL] ⚠️ Simuladores sin descripción:', {
+        total: rows.length,
+        sinDescripcion: sinDescripcion.length,
+        ids: sinDescripcion.map(r => r.id)
+      });
+    }
   }
 
   return rows;
@@ -102,11 +100,65 @@ export const createSimulacion = async ({ titulo, descripcion, id_area = null, fe
   // Guardar grupos como JSON string si es objeto/array
   let gruposVal = grupos;
   try { if (gruposVal && typeof gruposVal !== 'string') gruposVal = JSON.stringify(gruposVal); } catch { gruposVal = null; }
+  // ✅ CRÍTICO: Si descripcion es string vacío, mantenerlo como string vacío (no convertir a null)
+  // Esto permite que se guarde la descripción incluso si está vacía inicialmente
+  const descripcionVal = descripcion !== null && descripcion !== undefined ? String(descripcion) : null;
+  
+  // ✅ Log crítico: verificar qué se va a insertar (SIEMPRE, no solo en desarrollo)
+  console.log('[createSimulacion MODEL] INSERT - descripcionVal:', {
+    tipo: typeof descripcionVal,
+    length: descripcionVal ? descripcionVal.length : 0,
+    preview: descripcionVal ? descripcionVal.substring(0, 50) : null,
+    esNull: descripcionVal === null,
+    esUndefined: descripcionVal === undefined,
+    esStringVacio: descripcionVal === ''
+  });
+  
   const [res] = await db.query(
     'INSERT INTO simulaciones (titulo, descripcion, id_area, fecha_limite, time_limit_min, publico, activo, creado_por, grupos) VALUES (?,?,?,?,?,?,?,?,?)',
-    [titulo, descripcion || null, id_area || null, fecha_limite || null, time_limit_min || null, publico ? 1 : 0, activo ? 1 : 0, creado_por || null, gruposVal || null]
+    [titulo, descripcionVal, id_area || null, fecha_limite || null, time_limit_min || null, publico ? 1 : 0, activo ? 1 : 0, creado_por || null, gruposVal || null]
   );
-  return getSimulacionById(res.insertId);
+  
+  // ✅ Log crítico: verificar inmediatamente después del INSERT con SELECT directo (SIEMPRE)
+  const [verifyRows] = await db.query('SELECT id, titulo, descripcion FROM simulaciones WHERE id = ?', [res.insertId]);
+  const verify = verifyRows[0];
+  if (verify) {
+    if (!verify.descripcion || verify.descripcion.length === 0) {
+      console.error('[createSimulacion MODEL] ❌ ERROR: Descripción NO se guardó en BD:', {
+        id: verify.id,
+        descripcionEnviada: descripcionVal ? descripcionVal.substring(0, 50) : null,
+        descripcionEnviadaLength: descripcionVal ? descripcionVal.length : 0,
+        descripcionEnBD: verify.descripcion,
+        descripcionEnBDTipo: typeof verify.descripcion
+      });
+    } else {
+      console.log('[createSimulacion MODEL] ✅ Descripción guardada en BD:', {
+        id: verify.id,
+        length: verify.descripcion.length
+      });
+    }
+  }
+  
+  // ✅ Log crítico: verificar si la descripción se guardó
+  const saved = await getSimulacionById(res.insertId);
+  if (process.env.NODE_ENV !== 'production') {
+    if (!saved?.descripcion || saved.descripcion.length === 0) {
+      console.warn('[createSimulacion MODEL] ⚠️ Descripción NO se guardó:', {
+        id: saved?.id,
+        descripcionEnviada: descripcionVal ? descripcionVal.substring(0, 50) : null,
+        descripcionEnviadaLength: descripcionVal ? descripcionVal.length : 0,
+        descripcionGuardada: saved?.descripcion,
+        descripcionGuardadaTipo: typeof saved?.descripcion
+      });
+    } else {
+      console.log('[createSimulacion MODEL] ✅ Descripción guardada correctamente:', {
+        id: saved?.id,
+        length: saved.descripcion.length
+      });
+    }
+  }
+  
+  return saved;
 };
 
 export const updateSimulacionMeta = async (id, fields = {}) => {

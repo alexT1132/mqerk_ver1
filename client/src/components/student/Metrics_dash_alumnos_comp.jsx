@@ -24,10 +24,6 @@ import {
 } from './metricsAlumno/index.js';
 
 
-
-// Importa la imagen de perfil (reemplazada con un placeholder)
-// Nota: Las importaciones de archivos locales como './assets/reese.jfif' no son compatibles directamente en este entorno.
-// Se ha reemplazado con una URL de placeholder.
 const reeseProfilePic = "https://placehold.co/128x128/A0AEC0/FFFFFF?text=Foto";
 
 // --- CONSTANTES ---

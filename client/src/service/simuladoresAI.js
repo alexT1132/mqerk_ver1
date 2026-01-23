@@ -264,6 +264,90 @@ const extractJson = (src) => {
   t = t.replace(/:\s*nu\s*([,\}\]\n\s])/gi, ': null$1');
   t = t.replace(/:\s*nul([^a-z0-9_"])/gi, ': null$1');
 
+  // ✅ CRÍTICO: Escapar comandos LaTeX dentro de strings JSON antes del parseo
+  // Los comandos LaTeX como \$ \text \frac necesitan ser \\$ \\text \\frac en JSON
+  // Esto debe hacerse ANTES de intentar parsear para evitar errores de "Bad escaped character"
+  let fixedLatex = '';
+  let inString = false;
+  let escapeNext = false;
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    const nextCh = i + 1 < t.length ? t[i + 1] : null;
+    
+    if (escapeNext) {
+      // Si estamos escapando, verificar si es un escape válido de JSON
+      // 'u' es especial porque puede ser \uXXXX (unicode), verificar si sigue un dígito hex
+      if (ch === 'u' && i + 4 < t.length) {
+        const unicodeSeq = t.slice(i, i + 4);
+        if (/^[0-9a-fA-F]{4}$/.test(unicodeSeq)) {
+          // Es un escape unicode válido, mantenerlo y avanzar los 4 caracteres
+          fixedLatex += '\\' + ch + unicodeSeq;
+          i += 3; // Avanzar los 3 caracteres restantes (el bucle incrementará i en 1 más)
+          escapeNext = false;
+          continue;
+        }
+      }
+      
+      // Verificar si es un escape válido de JSON de un solo carácter
+      // Los escapes válidos son: \" \\ \/ \b \f \n \r \t
+      // Pero necesitamos verificar el contexto: \t es válido, pero \text no lo es
+      const singleCharEscapes = {
+        '"': true, '\\': true, '/': true, 'b': true, 'f': true, 'n': true, 'r': true
+      };
+      
+      // 't' es especial: puede ser \t (tab) o parte de \text, \frac, etc.
+      if (ch === 't') {
+        // Verificar si el siguiente carácter forma parte de un comando LaTeX común
+        const nextChars = t.slice(i, Math.min(i + 10, t.length));
+        const latexCommands = ['text', 'frac', 'sqrt', 'sum', 'int', 'lim', 'sin', 'cos', 'tan', 'log', 'ln', 'exp'];
+        const isLatexCommand = latexCommands.some(cmd => nextChars.startsWith(cmd));
+        
+        if (isLatexCommand) {
+          // Es un comando LaTeX, necesitamos doble escape
+          fixedLatex += '\\\\' + ch;
+        } else {
+          // Es \t (tab), escape válido
+          fixedLatex += '\\' + ch;
+        }
+      } else if (singleCharEscapes[ch]) {
+        // Es un escape válido de JSON de un solo carácter
+        fixedLatex += '\\' + ch;
+      } else {
+        // Es un comando LaTeX o carácter especial, necesitamos doble escape
+        fixedLatex += '\\\\' + ch;
+      }
+      escapeNext = false;
+      continue;
+    }
+    
+    if (ch === '\\') {
+      if (inString) {
+        // Dentro de un string, marcar que el siguiente carácter está escapado
+        escapeNext = true;
+        continue;
+      } else {
+        // Fuera de string, mantener la barra invertida
+        fixedLatex += ch;
+      }
+      continue;
+    }
+    
+    if (ch === '"') {
+      // Verificar si la comilla está escapada
+      if (i > 0 && t[i - 1] === '\\' && !escapeNext) {
+        // La comilla está escapada, mantenerla
+        fixedLatex += ch;
+        continue;
+      }
+      inString = !inString;
+      fixedLatex += ch;
+      continue;
+    }
+    
+    fixedLatex += ch;
+  }
+  t = fixedLatex;
+
   // Intentar parsear, si falla, intentar reparar
   try {
     return JSON.parse(t);
@@ -854,7 +938,7 @@ const normalizarPreguntas = (arr, cantidad, dist = null) => {
  * @param {number} [opts.maxOutputTokens] - Tokens máximos de salida (default: calculado automáticamente)
  * @returns {Promise<Array>} preguntas normalizadas
  */
-export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined, nivel = 'intermedio', modo = 'general', temas = undefined, distribucion = undefined, temperature = 0.2, topP = undefined, topK = undefined, maxOutputTokens = undefined, purpose = 'simuladores' }) {
+export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined, nivel = 'intermedio', modo = 'general', temas = undefined, distribucion = undefined, idioma = 'auto', temperature = 0.2, topP = undefined, topK = undefined, maxOutputTokens = undefined, purpose = 'simuladores' }) {
   // Normalizar temas a array si se provee como string
   let temasList = Array.isArray(temas) ? temas : (typeof temas === 'string' ? temas.split(',').map(s => s.trim()).filter(Boolean) : []);
   // Validación flexible: requiere al menos uno de tema | area | temas
@@ -892,7 +976,9 @@ export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined,
   }
 
   // Preparar guía según área
-  const { tag, directrices } = areaHints(area);
+  const hints = areaHints(area);
+  const tag = hints.tag;
+  let directrices = hints.directrices;
   // Usar distribución personalizada si se proporciona, sino calcular automáticamente
   const dist = distribucion || distribucionTipos(cantidad, tag);
   // Si hay distribución personalizada, recalcular cantidad total
@@ -905,6 +991,39 @@ export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined,
   const modoLine = (modo === 'temas' && temasList.length)
     ? `\nEnfoque por TEMAS específicos: ${temasList.map(t => `"${t}"`).join(', ')}. Distribuye las preguntas entre estos temas de forma equilibrada.`
     : `\nCobertura GENERAL del tema/área indicada.`;
+
+  // Reparto explícito entre temas:
+  // - Si modo === 'temas': usar temasList
+  // - Si modo !== 'temas' y "tema" es lista con comas: repartir entre esas "materias/temas"
+  const temasDesdeTema = (modo !== 'temas' && /,/.test(String(tema || '')))
+    ? String(tema || '').split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+  const listaReparto = (modo === 'temas' && temasList.length >= 2) ? temasList : temasDesdeTema;
+  const repartoTemasLine = (listaReparto.length >= 2)
+    ? (() => {
+        const total = Number(cantidadFinal) || (Number(cantidadFinal) === 0 ? 0 : (Number(cantidad) || 5));
+        const n = listaReparto.length;
+        const label = (modo === 'temas') ? 'temas específicos' : 'materias/temas';
+        if (total === n) {
+          // ✅ CASO ESPECIAL: Igual número de preguntas que materias = una pregunta por cada materia
+          return `\nIMPORTANTE: La lista contiene ${n} ${label}: ${listaReparto.map(t => `"${t}"`).join(', ')}. ` +
+            `Debes generar EXACTAMENTE ${total} preguntas, UNA pregunta por cada ${label.slice(0, -1)}. ` +
+            `La primera pregunta debe ser sobre "${listaReparto[0]}", la segunda sobre "${listaReparto[1]}", y así sucesivamente. ` +
+            `NO generes más de una pregunta por materia. Distribución: 1 pregunta por "${listaReparto.join('", 1 pregunta por "')}".`;
+        } else if (total > n) {
+          return `\nLa lista contiene múltiples ${label}: ${listaReparto.map(t => `"${t}"`).join(', ')}. ` +
+            `Distribuye las ${total} preguntas entre estos ${label} de forma equilibrada y genera AL MENOS 1 pregunta por cada uno; ` +
+            `reparte el resto de manera proporcional.`;
+        } else {
+          // total < n: más materias que preguntas
+          return `\nADVERTENCIA: La lista contiene ${n} ${label}: ${listaReparto.map(t => `"${t}"`).join(', ')}, ` +
+            `pero solo se generarán ${total} pregunta${total > 1 ? 's' : ''}. ` +
+            `Debes elegir una muestra diversa y repartir las ${total} pregunta${total > 1 ? 's' : ''} entre diferentes ${label}, ` +
+            `asegurándote de cubrir al menos ${Math.min(total, n)} ${label} diferentes (no te quedes en 1 solo tema/materia). ` +
+            `Prioriza la diversidad y el equilibrio en la distribución.`;
+        }
+      })()
+    : '';
 
   // Determinar si requiere problemas con fórmulas/ecuaciones (matemáticas, física, química)
   const requiereFormulas = /matemática|matematica|física|fisica|química|quimica|álgebra|algebra|geometría|geometria|pensamiento.*analítico|analítico/.test(
@@ -927,6 +1046,8 @@ IMPORTANTE PARA ÁREAS DE MATEMÁTICAS, FÍSICA O QUÍMICA (ESTILO EXAMEN IPN):
   const nivelInstrucciones = nivel === 'básico'
     ? `\n\nINSTRUCCIONES CRÍTICAS PARA NIVEL BÁSICO (CONCEPTOS FUNDAMENTALES):
 - ENFÓCATE EXCLUSIVAMENTE EN CONCEPTOS FUNDAMENTALES Y DEFINICIONES BÁSICAS.
+- DIFICULTAD: cada pregunta debe poder resolverse en 10–30 segundos por un estudiante promedio (sin cálculos largos).
+- Evita tecnicismos avanzados y evita enunciados largos; máximo ~2 oraciones por pregunta.
 - Para álgebra: genera preguntas MUY SIMPLES sobre:
   * ¿Qué es una variable? (ejemplos: x, y, a - sin operaciones complejas)
   * ¿Qué es una constante? (ejemplos: 5, 3, 7 - números simples)
@@ -943,20 +1064,41 @@ IMPORTANTE PARA ÁREAS DE MATEMÁTICAS, FÍSICA O QUÍMICA (ESTILO EXAMEN IPN):
     : nivel === 'intermedio'
       ? `\n\nINSTRUCCIONES ESPECÍFICAS PARA NIVEL INTERMEDIO (APLICACIÓN):
 - ENFÓCATE EN LA APLICACIÓN PRÁCTICA DE CONCEPTOS.
+- DIFICULTAD: preguntas de 30–90 segundos; permiten 1–2 pasos de razonamiento o 1 despeje/cálculo moderado.
+- Incluye distractores plausibles por errores comunes.
 - Genera preguntas que requieran aplicar conceptos en situaciones prácticas, resolver problemas con pasos intermedios, combinar conceptos básicos.
 - Puedes usar expresiones con múltiples términos, potencias simples, y operaciones más complejas.
 - Incluye problemas de la vida diaria y aplicaciones prácticas.`
       : `\n\nINSTRUCCIONES ESPECÍFICAS PARA NIVEL AVANZADO (ANÁLISIS):
 - ENFÓCATE EN ANÁLISIS COMPLEJO Y SÍNTESIS DE CONCEPTOS.
+- DIFICULTAD: preguntas de 90–180 segundos; multi‑paso (2–4 pasos), comparación de casos, o interpretación de datos.
+- Requiere justificar implícitamente (sin explicaciones largas), pero el enunciado debe traer los datos necesarios.
 - Genera preguntas que requieran análisis profundo, problemas multi-paso, síntesis de múltiples conceptos, razonamiento avanzado.
 - Puedes usar expresiones complejas con potencias, múltiples términos, fracciones algebraicas, y operaciones avanzadas.
 - Incluye problemas que desafíen el pensamiento crítico y la aplicación de conocimientos en contextos complejos.`;
 
-  // Detectar si el área es inglés o lengua extranjera para usar el idioma correcto
-  const esIngles = /inglés|english|lengua.*extranjera|foreign.*language/i.test(area || temaEfectivo);
-  const idiomaPrompt = esIngles
-    ? 'inglés (en-US)'
-    : 'español (es-MX)';
+  // Detectar si el examen DEBE salir en inglés (solo para modo auto).
+  // Importante: si el "tema" es una lista (ej. "matemáticas, español, inglés..."), NO forzar inglés solo por contener la palabra "inglés".
+  // Solo forzamos inglés cuando el área es claramente Inglés, o cuando el tema/temas indican ÚNICAMENTE inglés.
+  const areaIndicaIngles = /inglés|english|lengua.*extranjera|foreign.*language/i.test(area || '');
+  const temaRaw = String(tema || '').trim();
+  const temaPareceLista = /,/.test(temaRaw);
+  const temasSoloIngles =
+    (modo === 'temas' && temasList.length === 1 && /^(inglés|english)\b/i.test(String(temasList[0] || '').trim())) ||
+    (!temaPareceLista && /^(inglés|english)\b/i.test(temaRaw || temaEfectivo));
+  const idiomaMode = String(idioma || 'auto').toLowerCase(); // 'auto' | 'es' | 'en' | 'mix'
+  const esInglesAuto = areaIndicaIngles || temasSoloIngles;
+  const esIngles = idiomaMode === 'en' ? true : (idiomaMode === 'es' || idiomaMode === 'mix') ? false : esInglesAuto;
+
+  // Evitar directrices contradictorias (el área "inglés" trae un bloque que obliga EN).
+  if ((idiomaMode === 'es' || idiomaMode === 'mix') && tag === 'ingles') {
+    directrices = null;
+  }
+
+  const idiomaPrompt = (idiomaMode === 'mix')
+    ? 'mixto (es-MX + en-US)'
+    : (esIngles ? 'inglés (en-US)' : 'español (es-MX)');
+
   const instruccionesIdioma = esIngles
     ? `\n\n⚠️ CRITICAL LANGUAGE REQUIREMENT - ALL CONTENT MUST BE IN ENGLISH ONLY ⚠️
 This is an English language exam. EVERYTHING must be in English:
@@ -969,11 +1111,26 @@ This is an English language exam. EVERYTHING must be in English:
 - If the question asks about English grammar or vocabulary, the question itself must still be in English
 - Even instructions like "Read the following email" must be in English
 - The JSON structure can use Spanish keys, but ALL user-facing text content must be 100% in English`
-    : '';
+    : (idiomaMode === 'mix')
+      ? (() => {
+          const total = Number(cantidadFinal) || (Number(cantidadFinal) === 0 ? 0 : (Number(cantidad) || 5));
+          const enCount = Math.floor(total / 2);
+          const esCount = Math.max(0, total - enCount);
+          return `\n\nREQUISITO CRÍTICO DE IDIOMA (MIXTO es-MX + en-US):
+- Genera EXACTAMENTE ${total} preguntas: ${esCount} en español (es-MX) y ${enCount} en inglés (en-US).
+- Para las preguntas en español: enunciado y opciones en español.
+- Para las preguntas en inglés: enunciado y opciones en inglés.
+- No mezcles idiomas dentro de la MISMA pregunta (no Spanglish en un mismo enunciado/opciones).
+- Si aparece contenido de inglés como materia, úsalo dentro de las preguntas en inglés; si aparece como referencia en español, debe ser mínimo (ej. citar una oración).`;
+        })()
+      : `\n\nREQUISITO CRÍTICO DE IDIOMA (es-MX):
+- TODO el contenido visible para el estudiante debe estar en español (es-MX): enunciados, opciones, instrucciones, textos de lectura, etc.
+- NO generes el examen completo en inglés.
+- Si el tema incluye "inglés" como materia, puedes incluir PALABRAS/ORACIONES en inglés solo como parte del contenido evaluado (por ejemplo, citar una oración en inglés), pero la redacción general debe permanecer en español.`;
 
   const prompt = `Genera preguntas tipo examen en ${idiomaPrompt}, estilo examen de ingreso universitario (como IPN).${areaLine}
 Tema principal: "${temaEfectivo}".
-Nivel: ${nivel}. Tipos permitidos: ${tiposDesc}.${distLine}${modoLine}${dirLine}${instruccionesFormulas}${nivelInstrucciones}${instruccionesIdioma}
+Nivel: ${nivel}. Tipos permitidos: ${tiposDesc}.${distLine}${modoLine}${repartoTemasLine}${dirLine}${instruccionesFormulas}${nivelInstrucciones}${instruccionesIdioma}
 
 Requisitos estrictos:
 - EXACTAMENTE ${cantidadFinal} preguntas.

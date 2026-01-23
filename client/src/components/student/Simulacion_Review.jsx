@@ -11,6 +11,7 @@ import {
 } from '../../api/simulaciones';
 import { CheckCircle2, AlertTriangle, Timer, Send, Loader2, Maximize2 } from 'lucide-react';
 import MathEquationEditor, { isMathSubject, isMathQuestion } from '../shared/MathEquationEditor.jsx';
+import InlineMath from '../Asesor/simGen/InlineMath.jsx';
 
 // --- Ícono de Check para opciones seleccionadas ---
 const CheckIcon = () => (
@@ -18,6 +19,90 @@ const CheckIcon = () => (
     <polyline points="20 6 9 17 4 12"></polyline>
   </svg>
 );
+
+// --- Componente para renderizar texto con fórmulas LaTeX (EXACTO de QuiztBuilder.jsx) ---
+function MathText({ text = "" }) {
+  if (!text) return null;
+
+  // ✅ Función para sanitizar HTML (EXACTA de QuiztBuilder.jsx)
+  const sanitizeHtmlLite = (html) => {
+    if (!html) return '';
+    const div = document.createElement('div');
+    div.textContent = html;
+    const safe = div.innerHTML;
+    // Permitir etiquetas básicas de formato
+    return safe
+      .replace(/&lt;u&gt;/g, '<u>')
+      .replace(/&lt;\/u&gt;/g, '</u>')
+      .replace(/&lt;br\s*\/?&gt;/gi, '<br />')
+      .replace(/&lt;strong&gt;/g, '<strong>')
+      .replace(/&lt;\/strong&gt;/g, '</strong>')
+      .replace(/&lt;em&gt;/g, '<em>')
+      .replace(/&lt;\/em&gt;/g, '</em>')
+      .replace(/&lt;b&gt;/g, '<b>')
+      .replace(/&lt;\/b&gt;/g, '</b>')
+      .replace(/&lt;i&gt;/g, '<i>')
+      .replace(/&lt;\/i&gt;/g, '</i>');
+  };
+
+  // ✅ Usar regex simple y robusto: busca $...$ de forma no-greedy (EXACTO de QuiztBuilder.jsx)
+  const re = /\$([^$]+?)\$/g;
+  const parts = [];
+  let lastIndex = 0;
+  let m;
+  let matchFound = false;
+
+  // Resetear el regex para evitar problemas con múltiples llamadas
+  re.lastIndex = 0;
+
+  while ((m = re.exec(text)) !== null) {
+    matchFound = true;
+    if (m.index > lastIndex) {
+      parts.push({ type: 'text', content: text.slice(lastIndex, m.index) });
+    }
+    // Limpiar espacios en blanco al inicio y final de la fórmula
+    const formula = m[1].trim();
+    if (formula) {
+      parts.push({ 
+        type: 'math', 
+        content: formula
+      });
+    }
+    lastIndex = m.index + m[0].length;
+  }
+  
+  if (lastIndex < text.length) {
+    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  }
+
+  // Si no se encontraron fórmulas, devolver el texto con HTML procesado
+  if (!matchFound || parts.length === 0) {
+    return (
+      <span 
+        className="whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(text) }}
+      />
+    );
+  }
+
+  // Renderizar las partes encontradas, procesando HTML en las partes de texto (EXACTO de QuiztBuilder.jsx)
+  return (
+    <span className="whitespace-pre-wrap">
+      {parts.map((part, idx) =>
+        part.type === 'math' ? (
+          <span key={`math-${idx}`} className="inline-block">
+            <InlineMath math={part.content} />
+          </span>
+        ) : (
+          <span 
+            key={`text-${idx}`}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
+          />
+        )
+      )}
+    </span>
+  );
+}
 
 // Confetti overlay sin dependencias (canvas + requestAnimationFrame)
 function ConfettiOverlay({ run = true, duration = 2500 }) {
@@ -607,7 +692,9 @@ export default function Simulacion_Review() {
                   <div className="flex items-start gap-3 sm:gap-4">
                     <div className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[12px] sm:text-sm font-bold ring-3 sm:ring-4 ring-indigo-100">{idx + 1}</div>
                     <div className="w-full">
-                      <p className="font-semibold text-gray-900 mb-3 sm:mb-4 text-[15px] sm:text-lg">{p.enunciado || p.pregunta || `Pregunta ${idx+1}`}</p>
+                      <p className="font-semibold text-gray-900 mb-3 sm:mb-4 text-[15px] sm:text-lg">
+                        <MathText text={p.enunciado || p.pregunta || `Pregunta ${idx+1}`} />
+                      </p>
                       
                       {/* Pregunta de respuesta corta */}
                       {p.tipo === 'respuesta_corta' && (
@@ -660,7 +747,9 @@ export default function Simulacion_Review() {
                                   <span aria-hidden="true" className={`inline-flex flex-none shrink-0 grow-0 h-5 w-5 min-w-[20px] min-h-[20px] items-center justify-center rounded-full border-2 transition-colors duration-200 ${checked ? 'border-indigo-600 bg-indigo-600' : 'border-gray-400 bg-white group-hover:border-indigo-500'}`}>
                                     {checked && <CheckIcon />}
                                   </span>
-                                  <span className="text-[14px] sm:text-sm text-gray-800 leading-[1.35] break-words">{op.texto || op.opcion || `Opción ${op.id}`}</span>
+                                  <span className="text-[14px] sm:text-sm text-gray-800 leading-[1.35] break-words">
+                                    <MathText text={op.texto || op.opcion || `Opción ${op.id}`} />
+                                  </span>
                                 </div>
                               </button>
                             );
