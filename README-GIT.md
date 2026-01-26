@@ -164,3 +164,7 @@ Añade estas líneas solo si quieres compartir helpers con tu equipo; documenta 
 ---
 
 Estas líneas se añaden al final del README sin eliminar nada de lo que ya tenías arriba.
+
+
+
+otra cosa en la tabal de quizzes , actividades y simualciones en alumno pon un bootn discreto paar refrescar ya que es tioos etsar regresaco toda la pagina para cuando quieres ver si borranron y publiaron una acitiidas, quizzes  o simuaodor en la tabla 

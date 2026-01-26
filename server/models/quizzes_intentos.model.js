@@ -300,6 +300,7 @@ export const resumenQuizzesEstudiante = async (id_estudiante) => {
   // Para cada quiz visible, mostrar último intento (puntaje), mejor puntaje y total intentos
   // Buscar primero en la tabla quizzes (nueva estructura), luego en actividades como fallback
   try {
+    console.log('[DEBUG resumenQuizzesEstudiante MODEL] Buscando resumen para estudiante:', id_estudiante);
     const [rows] = await db.query(`
       SELECT q.*, 
         (SELECT qi.puntaje FROM quizzes_intentos qi WHERE qi.id_quiz = q.id AND qi.id_estudiante = ? ORDER BY qi.id DESC LIMIT 1) AS ultimo_puntaje,
@@ -315,6 +316,13 @@ export const resumenQuizzesEstudiante = async (id_estudiante) => {
         AND (q.visible_hasta IS NULL OR q.visible_hasta >= NOW())
       ORDER BY q.fecha_limite ASC, q.id DESC
     `, [id_estudiante, id_estudiante, id_estudiante, id_estudiante, id_estudiante, id_estudiante]);
+    console.log('[DEBUG resumenQuizzesEstudiante MODEL] Filas encontradas:', rows.length, 'Datos:', rows.map(r => ({
+      id: r.id,
+      titulo: r.titulo,
+      id_area: r.id_area,
+      total_intentos: r.total_intentos,
+      mejor_puntaje: r.mejor_puntaje
+    })));
     return rows;
   } catch (e) {
     // Si la tabla quizzes no existe, usar actividades como fallback

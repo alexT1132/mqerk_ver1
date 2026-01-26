@@ -120,19 +120,45 @@ export const resumenQuizzesEstudiante = async (req, res) => {
     }
 
     let rows = await Quizzes.resumenQuizzesEstudiante(id_estudiante);
+    
+    console.log('[DEBUG resumenQuizzesEstudiante] Datos del modelo:', {
+      totalRows: rows.length,
+      rows: rows.map(r => ({
+        id: r.id,
+        titulo: r.titulo,
+        id_area: r.id_area,
+        total_intentos: r.total_intentos,
+        oficial_puntaje: r.oficial_puntaje,
+        mejor_puntaje: r.mejor_puntaje
+      }))
+    });
 
     // Enforce seguridad adicional: filtrar por áreas permitidas + grupos (mismo criterio que listQuizzes)
+    // IMPORTANTE: No filtrar demasiado agresivamente - si el estudiante tiene acceso al área, mostrar el resumen
     try {
       const allowed = await Access.getAllowedAreaIds(id_estudiante);
+      console.log('[DEBUG resumenQuizzesEstudiante] Áreas permitidas:', allowed, 'Total filas antes de filtrar:', rows.length);
       if (Array.isArray(allowed) && allowed.length) {
-        rows = rows.filter(r => !r.id_area || allowed.includes(Number(r.id_area)));
+        const beforeFilter = rows.length;
+        // Solo filtrar si el quiz tiene área Y el área no está permitida
+        // Si el quiz no tiene área, mostrarlo siempre
+        rows = rows.filter(r => {
+          if (!r.id_area) return true; // Sin área = mostrar siempre
+          return allowed.includes(Number(r.id_area));
+        });
+        console.log('[DEBUG resumenQuizzesEstudiante] Después de filtrar por área:', { beforeFilter, afterFilter: rows.length, rows: rows.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area, total_intentos: r.total_intentos })) });
       } else {
+        // Si no hay áreas permitidas, mostrar solo quizzes sin área asignada
+        const beforeFilter = rows.length;
         rows = rows.filter(r => !r.id_area);
+        console.log('[DEBUG resumenQuizzesEstudiante] Sin áreas permitidas, filtrando sin área:', { beforeFilter, afterFilter: rows.length });
       }
 
       const [studentData] = await db.query('SELECT grupo FROM estudiantes WHERE id = ? LIMIT 1', [id_estudiante]);
       const studentGrupo = studentData[0]?.grupo || null;
+      console.log('[DEBUG resumenQuizzesEstudiante] Grupo del estudiante:', studentGrupo);
       if (studentGrupo) {
+        const beforeGrupoFilter = rows.length;
         rows = rows.filter(r => {
           if (!r.grupos || r.grupos === null || r.grupos === '') return true;
           let grupos = [];
@@ -146,10 +172,22 @@ export const resumenQuizzesEstudiante = async (req, res) => {
           if (grupos.length === 0) return true;
           return grupos.includes(studentGrupo);
         });
+        console.log('[DEBUG resumenQuizzesEstudiante] Después de filtrar por grupo:', { beforeGrupoFilter, afterGrupoFilter: rows.length });
       }
     } catch (_e) {
+      console.error('[DEBUG resumenQuizzesEstudiante] Error en filtrado:', _e);
       // si falla el filtro, devolvemos rows ya filtrados por publicado/ventana desde el modelo
     }
+
+    console.log('[DEBUG resumenQuizzesEstudiante] Filas finales a devolver:', {
+      total: rows.length,
+      rows: rows.map(r => ({
+        id: r.id,
+        titulo: r.titulo,
+        total_intentos: r.total_intentos,
+        mejor_puntaje: r.mejor_puntaje
+      }))
+    });
 
     res.json({ data: rows });
   } catch (e) {
@@ -265,6 +303,16 @@ export const createQuiz = async (req, res) => {
             ]);
             const [preguntaRow] = await conn.query('SELECT * FROM quizzes_preguntas WHERE id = ?', [resPregunta.insertId]);
             row = preguntaRow[0];
+            // ✅ CRÍTICO: Guardar imagen de la pregunta si existe (en metadata_json)
+            const preguntaImagen = q.image || q.imagen || null;
+            if (preguntaImagen) {
+              try {
+                const metadataJson = JSON.stringify({ imagen: preguntaImagen });
+                await conn.query('UPDATE quizzes_preguntas SET metadata_json = ? WHERE id = ?', [metadataJson, row.id]);
+              } catch (e) {
+                // Si metadata_json no existe, ignorar (tabla antigua)
+              }
+            }
           } catch (enumError) {
             // Si el error es porque respuesta_corta no existe en el enum, usar opcion_multiple como fallback
             if (enumError?.code === 'ER_WRONG_VALUE_FOR_TYPE' || enumError?.code === 'WARN_DATA_TRUNCATED' ||
@@ -282,8 +330,29 @@ export const createQuiz = async (req, res) => {
               ]);
               const [preguntaRow] = await conn.query('SELECT * FROM quizzes_preguntas WHERE id = ?', [resPregunta.insertId]);
               row = preguntaRow[0];
+              // ✅ CRÍTICO: Guardar imagen de la pregunta si existe (en metadata_json)
+              const preguntaImagen = q.image || q.imagen || null;
+              if (preguntaImagen) {
+                try {
+                  const metadataJson = JSON.stringify({ imagen: preguntaImagen });
+                  await conn.query('UPDATE quizzes_preguntas SET metadata_json = ? WHERE id = ?', [metadataJson, row.id]);
+                } catch (e) {
+                  // Si metadata_json no existe, ignorar (tabla antigua)
+                }
+              }
             } else {
               throw enumError; // Re-lanzar si es otro tipo de error
+            }
+          }
+
+          // ✅ CRÍTICO: Guardar imagen de la pregunta si existe (en metadata_json)
+          const preguntaImagen = q.image || q.imagen || null;
+          if (preguntaImagen) {
+            try {
+              const metadataJson = JSON.stringify({ imagen: preguntaImagen });
+              await conn.query('UPDATE quizzes_preguntas SET metadata_json = ? WHERE id = ?', [metadataJson, row.id]);
+            } catch (e) {
+              // Si metadata_json no existe, ignorar (tabla antigua)
             }
           }
 
@@ -292,7 +361,17 @@ export const createQuiz = async (req, res) => {
             let o = 1;
             const sqlOpcion = 'INSERT INTO quizzes_preguntas_opciones (id_pregunta, texto, es_correcta, orden) VALUES (?,?,?,?)';
             for (const opt of q.options) {
-              await conn.query(sqlOpcion, [row.id, opt.text || '', opt.correct ? 1 : 0, o++]);
+              const [resOpcion] = await conn.query(sqlOpcion, [row.id, opt.text || '', opt.correct ? 1 : 0, o++]);
+              // ✅ CRÍTICO: Guardar imagen de la opción si existe (en metadata_json)
+              const opcionImagen = opt.image || opt.imagen || null;
+              if (opcionImagen) {
+                try {
+                  const metadataJson = JSON.stringify({ imagen: opcionImagen });
+                  await conn.query('UPDATE quizzes_preguntas_opciones SET metadata_json = ? WHERE id = ?', [metadataJson, resOpcion.insertId]);
+                } catch (e) {
+                  // Si metadata_json no existe, ignorar (tabla antigua)
+                }
+              }
             }
           } else if (q.type === 'tf' || q.type === 'verdadero_falso') {
             const sqlOpcion = 'INSERT INTO quizzes_preguntas_opciones (id_pregunta, texto, es_correcta, orden) VALUES (?,?,?,?)';
@@ -672,6 +751,16 @@ export const updateQuiz = async (req, res) => {
             [id, ord, enunciado, tipo, puntos, 1]
           );
           preguntaId = resIns.insertId;
+          // ✅ CRÍTICO: Guardar imagen de la pregunta si existe (en metadata_json)
+          const preguntaImagen = q.image || q.imagen || null;
+          if (preguntaImagen) {
+            try {
+              const metadataJson = JSON.stringify({ imagen: preguntaImagen });
+              await conn.query('UPDATE quizzes_preguntas SET metadata_json = ? WHERE id = ?', [metadataJson, preguntaId]);
+            } catch (e) {
+              // Si metadata_json no existe, ignorar (tabla antigua)
+            }
+          }
         } catch (e) {
           if (e?.code === 'ER_BAD_FIELD_ERROR' || e?.errno === 1054) {
             const [resIns2] = await conn.query(
@@ -679,26 +768,59 @@ export const updateQuiz = async (req, res) => {
               [id, enunciado, tipo, puntos]
             );
             preguntaId = resIns2.insertId;
+            // ✅ CRÍTICO: Guardar imagen de la pregunta si existe (en metadata_json)
+            const preguntaImagen = q.image || q.imagen || null;
+            if (preguntaImagen) {
+              try {
+                const metadataJson = JSON.stringify({ imagen: preguntaImagen });
+                await conn.query('UPDATE quizzes_preguntas SET metadata_json = ? WHERE id = ?', [metadataJson, preguntaId]);
+              } catch (e) {
+                // Si metadata_json no existe, ignorar (tabla antigua)
+              }
+            }
           } else {
             throw e;
           }
         }
 
-        // Opciones
-        const insertOpcion = async ({ texto, es_correcta, orden }) => {
+        // ✅ CRÍTICO: Guardar imagen de la pregunta si existe (en metadata_json)
+        const preguntaImagen = q.image || q.imagen || null;
+        if (preguntaImagen) {
           try {
-            await conn.query(
+            const metadataJson = JSON.stringify({ imagen: preguntaImagen });
+            await conn.query('UPDATE quizzes_preguntas SET metadata_json = ? WHERE id = ?', [metadataJson, preguntaId]);
+          } catch (e) {
+            // Si metadata_json no existe, ignorar (tabla antigua)
+          }
+        }
+
+        // Opciones
+        const insertOpcion = async ({ texto, es_correcta, orden, imagen = null }) => {
+          let opcionId = null;
+          try {
+            const [resOpcion] = await conn.query(
               'INSERT INTO quizzes_preguntas_opciones (id_pregunta, texto, es_correcta, orden) VALUES (?,?,?,?)',
               [preguntaId, texto, es_correcta ? 1 : 0, orden ?? null]
             );
+            opcionId = resOpcion.insertId;
           } catch (e) {
             if (e?.code === 'ER_BAD_FIELD_ERROR' || e?.errno === 1054) {
-              await conn.query(
+              const [resOpcion] = await conn.query(
                 'INSERT INTO quizzes_preguntas_opciones (id_pregunta, texto, es_correcta) VALUES (?,?,?)',
                 [preguntaId, texto, es_correcta ? 1 : 0]
               );
+              opcionId = resOpcion.insertId;
             } else {
               throw e;
+            }
+          }
+          // ✅ CRÍTICO: Guardar imagen de la opción si existe (en metadata_json)
+          if (imagen && opcionId) {
+            try {
+              const metadataJson = JSON.stringify({ imagen: imagen });
+              await conn.query('UPDATE quizzes_preguntas_opciones SET metadata_json = ? WHERE id = ?', [metadataJson, opcionId]);
+            } catch (e) {
+              // Si metadata_json no existe, ignorar (tabla antigua)
             }
           }
         };
@@ -706,7 +828,8 @@ export const updateQuiz = async (req, res) => {
         if (Array.isArray(q.options) && q.options.length) {
           let o = 1;
           for (const opt of q.options) {
-            await insertOpcion({ texto: opt.text || '', es_correcta: !!opt.correct, orden: o++ });
+            const opcionImagen = opt.image || opt.imagen || null;
+            await insertOpcion({ texto: opt.text || '', es_correcta: !!opt.correct, orden: o++, imagen: opcionImagen });
           }
         } else if (q.type === 'tf') {
           await insertOpcion({ texto: 'Verdadero', es_correcta: q.answer === 'true', orden: 1 });

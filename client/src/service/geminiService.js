@@ -138,18 +138,27 @@ export const limpiarCacheAnalisisGemini = (datos) => {
 /**
  * Función para generar análisis de rendimiento usando Gemini API
  * @param {Object} datosAnalisis - Datos del rendimiento del estudiante
+ * @param {Object} opciones - Opciones adicionales (forceRegenerate: true para forzar regeneración sin cache)
  * @returns {Promise<Object>} - Análisis generado por IA
  */
-export const generarAnalisisConGemini = async (datosAnalisis) => {
+export const generarAnalisisConGemini = async (datosAnalisis, opciones = {}) => {
   try {
     console.log('🚀 Iniciando análisis con Gemini API');
     console.log('📊 Datos recibidos:', datosAnalisis);
-    // Intentar cache primero
+    
+    // Intentar cache primero (solo si no se fuerza la regeneración)
     const cacheKey = buildCacheKey(datosAnalisis || {});
-    const cache = leerCacheValido(cacheKey);
-    if (cache) {
-      console.warn('📦 Usando análisis desde cache');
-      return { ...cache, desdeCache: true };
+    
+    // Si se fuerza la regeneración, limpiar el cache primero
+    if (opciones.forceRegenerate) {
+      console.log('🔄 Forzando regeneración - limpiando cache');
+      limpiarCacheAnalisisGemini(datosAnalisis);
+    } else {
+      const cache = leerCacheValido(cacheKey);
+      if (cache) {
+        console.warn('📦 Usando análisis desde cache');
+        return { ...cache, desdeCache: true };
+      }
     }
 
     // Validar datos de entrada
@@ -266,10 +275,35 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
     }
 
     // Procesar respuesta de Gemini
-    const analisisTexto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    console.log('📝 Texto de análisis recibido:', analisisTexto.substring(0, 200) + '...');
-
-    let resultado = procesarRespuestaGemini(analisisTexto);
+    // Cuando se usa response_mime_type: 'application/json', la respuesta puede venir como JSON directo
+    let analisisTexto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // Si la respuesta viene como JSON estructurado (cuando se usa response_mime_type)
+    // Intentar parsear directamente primero
+    let resultado = null;
+    if (analisisTexto && analisisTexto.trim().startsWith('{')) {
+      try {
+        // Intentar parsear directamente como JSON
+        resultado = JSON.parse(analisisTexto);
+        console.log('✅ JSON parseado directamente desde respuesta estructurada');
+        resultado = validarEstructuraAnalisis(resultado);
+      } catch (e) {
+        console.warn('⚠️ No se pudo parsear directamente, usando procesamiento normal:', e.message);
+        // Continuar con el procesamiento normal
+      }
+    }
+    
+    // Si no se pudo parsear directamente, usar el procesador normal
+    if (!resultado) {
+      console.log('📝 Texto de análisis recibido:', analisisTexto.substring(0, 200) + '...');
+      // Si es análisis de fallos repetidos (para asesor), usar procesador especializado
+      if (datosAnalisis?.analisisTipo === 'fallos_repetidos') {
+        resultado = procesarRespuestaGeminiAsesor(analisisTexto);
+      } else {
+        resultado = procesarRespuestaGemini(analisisTexto);
+      }
+    }
+    
     console.log(`✅ Análisis procesado exitosamente (${resultado?.esFallback ? 'fallback' : 'IA'})`, resultado);
 
     // Transformar a formato simplificado esperado por el componente
@@ -297,7 +331,15 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
       metadata: resultado.metadata || {},
       puntuacionConfianza: resultado.puntuacionConfianza || 80,
       recomendaciones: resultado.recomendacionesPersonalizadas || [],
-      timestamp: new Date().toISOString()
+      // ✅ Campos adicionales para la modal del asesor
+      intervencionAsesor: resultado.intervencionAsesor || null,
+      planIntervencion: resultado.planIntervencion || null,
+      analisisGeneral: resultado.analisisGeneral || null,
+      estrategiasEstudio: resultado.estrategiasEstudio || [],
+      recomendacionesPersonalizadas: resultado.recomendacionesPersonalizadas || [],
+      timestamp: new Date().toISOString(),
+      // ✅ Incluir el resultado completo para la modal
+      _completo: resultado
     };
 
     // Guardar en cache
@@ -854,6 +896,262 @@ const obtenerEnfoqueEspecializadoArea = (area) => {
  * @returns {Object} - Objeto procesado
  */
 /**
+ * Procesar respuesta de Gemini para análisis del asesor (versión especializada más robusta)
+ * Esta función es más agresiva en reparar comillas sin escapar, especialmente en arrays
+ * @param {string} respuestaTexto - Respuesta de Gemini
+ * @returns {Object} - Análisis procesado
+ */
+const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
+  const original = String(respuestaTexto || '');
+  console.log('🔧 Usando procesador especializado para análisis del asesor');
+  
+  // Si falla, usar reparación ultra-agresiva específica para arrays
+  const repararJsonAsesor = (texto) => {
+    let resultado = '';
+    let dentroString = false;
+    let escape = false;
+    let dentroArray = false;
+    let depthArray = 0;
+    let depthObjeto = 0;
+    let i = 0;
+    
+    while (i < texto.length) {
+      const char = texto[i];
+      const siguiente = i + 1 < texto.length ? texto[i + 1] : null;
+      const siguiente2 = i + 2 < texto.length ? texto[i + 2] : null;
+      
+      // Manejar escape
+      if (escape) {
+        resultado += char;
+        escape = false;
+        i++;
+        continue;
+      }
+      
+      if (char === '\\') {
+        resultado += char;
+        escape = true;
+        i++;
+        continue;
+      }
+      
+      // Si estamos dentro de un string
+      if (dentroString) {
+        // Si encontramos una comilla
+        if (char === '"') {
+          // Verificar contexto para determinar si es cierre válido
+          let j = i + 1;
+          // Saltar espacios
+          while (j < texto.length && (texto[j] === ' ' || texto[j] === '\n' || texto[j] === '\r' || texto[j] === '\t')) {
+            j++;
+          }
+          
+          if (j >= texto.length) {
+            // Fin del texto - cierre válido
+            resultado += char;
+            dentroString = false;
+            i++;
+            continue;
+          }
+          
+          const siguienteNoEspacio = texto[j];
+          
+          // Si estamos dentro de un array y el siguiente es ',' o ']', es cierre válido
+          if (dentroArray && (siguienteNoEspacio === ',' || siguienteNoEspacio === ']')) {
+            resultado += char;
+            dentroString = false;
+            i++;
+            continue;
+          }
+          
+          // Si el siguiente es ',' o '}' o ']' o ':', es cierre válido
+          if (siguienteNoEspacio === ',' || siguienteNoEspacio === '}' || siguienteNoEspacio === ']' || siguienteNoEspacio === ':') {
+            resultado += char;
+            dentroString = false;
+            i++;
+            continue;
+          }
+          
+          // Si hay un patrón de nueva clave JSON después (ej: "key":)
+          const patronClave = texto.slice(j, Math.min(j + 10, texto.length)).match(/^\s*"[^"]*"\s*:/);
+          if (patronClave) {
+            resultado += char;
+            dentroString = false;
+            i++;
+            continue;
+          }
+          
+          // En cualquier otro caso, es una comilla dentro del string - ESCAPARLA
+          resultado += '\\"';
+          i++;
+          continue;
+        }
+        
+        // Escapar caracteres problemáticos dentro de strings
+        if (char === '\n') {
+          resultado += '\\n';
+        } else if (char === '\r') {
+          resultado += '\\r';
+        } else if (char === '\t') {
+          resultado += '\\t';
+        } else if (char.charCodeAt(0) < 32) {
+          resultado += `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`;
+        } else {
+          resultado += char;
+        }
+        i++;
+        continue;
+      }
+      
+      // Fuera de strings
+      if (char === '"') {
+        resultado += char;
+        dentroString = true;
+        i++;
+        continue;
+      }
+      
+      if (char === '[') {
+        depthArray++;
+        dentroArray = true;
+        resultado += char;
+        i++;
+        continue;
+      }
+      
+      if (char === ']') {
+        depthArray--;
+        if (depthArray === 0) dentroArray = false;
+        resultado += char;
+        i++;
+        continue;
+      }
+      
+      if (char === '{') {
+        depthObjeto++;
+        resultado += char;
+        i++;
+        continue;
+      }
+      
+      if (char === '}') {
+        depthObjeto--;
+        resultado += char;
+        i++;
+        continue;
+      }
+      
+      resultado += char;
+      i++;
+    }
+    
+    // Cerrar string si quedó abierto
+    if (dentroString) {
+      resultado += '"';
+    }
+    
+    // Balancear estructura
+    while (depthArray > 0) {
+      resultado += ']';
+      depthArray--;
+    }
+    while (depthObjeto > 0) {
+      resultado += '}';
+      depthObjeto--;
+    }
+    
+    return resultado;
+  };
+  
+  // Extraer JSON crudo
+  const extraerJsonCrudo = (txt) => {
+    let t = String(txt || '').trim();
+    const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fence && fence[1]) t = fence[1].trim();
+    const firstBrace = t.indexOf('{');
+    if (firstBrace === -1) return t;
+    let depth = 0;
+    let inStr = false;
+    let esc = false;
+    let endIdx = -1;
+    for (let i = firstBrace; i < t.length; i++) {
+      const ch = t[i];
+      if (inStr) {
+        if (!esc && ch === '"') inStr = false;
+        esc = (!esc && ch === '\\');
+        continue;
+      }
+      if (ch === '"') { inStr = true; esc = false; continue; }
+      if (ch === '{') depth++;
+      if (ch === '}') depth--;
+      if (depth === 0) { endIdx = i; break; }
+    }
+    if (endIdx !== -1) return t.slice(firstBrace, endIdx + 1).trim();
+    const lastClose = t.lastIndexOf('}');
+    if (lastClose > firstBrace) return t.slice(firstBrace, lastClose + 1).trim();
+    return t.trim();
+  };
+  
+  const sanearBasico = (t) => t
+    .replace(/^\uFEFF/, '')
+    .replace(/[\u0000-\u001F]+/g, ' ')
+    .replace(/[""]/g, '"')
+    .replace(/['']/g, "'")
+    .trim();
+  
+  const quitarComasColgantes = (t) => t.replace(/,\s*(\}|\])/g, '$1');
+  
+  // Intentar múltiples estrategias
+  const jsonCrudo = extraerJsonCrudo(original);
+  
+  // Intento 1: Reparación especializada para asesor
+  try {
+    let reparado = repararJsonAsesor(jsonCrudo);
+    reparado = quitarComasColgantes(sanearBasico(reparado));
+    const parsed = JSON.parse(reparado);
+    return validarEstructuraAnalisis(parsed);
+  } catch (e1) {
+    console.warn('⚠️ Intento 1 (reparación especializada) falló:', e1.message);
+  }
+  
+  // Intento 2: Reparación especializada + balanceo
+  try {
+    let reparado = repararJsonAsesor(jsonCrudo);
+    // Auto-balancear
+    const opens = (reparado.match(/\{/g) || []).length;
+    const closes = (reparado.match(/\}/g) || []).length;
+    const openB = (reparado.match(/\[/g) || []).length;
+    const closeB = (reparado.match(/\]/g) || []).length;
+    if (opens > closes) reparado += '}'.repeat(opens - closes);
+    if (openB > closeB) reparado += ']'.repeat(openB - closeB);
+    reparado = quitarComasColgantes(sanearBasico(reparado));
+    const parsed = JSON.parse(reparado);
+    return validarEstructuraAnalisis(parsed);
+  } catch (e2) {
+    console.warn('⚠️ Intento 2 (reparación + balanceo) falló:', e2.message);
+  }
+  
+  // Si todo falla, intentar parseo directo con reparación básica
+  try {
+    let ultimoIntento = repararJsonAsesor(jsonCrudo);
+    ultimoIntento = quitarComasColgantes(sanearBasico(ultimoIntento));
+    // Auto-balancear
+    const opens = (ultimoIntento.match(/\{/g) || []).length;
+    const closes = (ultimoIntento.match(/\}/g) || []).length;
+    const openB = (ultimoIntento.match(/\[/g) || []).length;
+    const closeB = (ultimoIntento.match(/\]/g) || []).length;
+    if (opens > closes) ultimoIntento += '}'.repeat(opens - closes);
+    if (openB > closeB) ultimoIntento += ']'.repeat(openB - closeB);
+    const parsed = JSON.parse(ultimoIntento);
+    return validarEstructuraAnalisis(parsed);
+  } catch (eFinal) {
+    console.error('❌ Todos los intentos especializados fallaron');
+    // Crear análisis fallback
+    return crearAnalisisFallback(original);
+  }
+};
+
+/**
  * Procesar respuesta de Gemini para extraer análisis estructurado
  * @param {string} respuestaTexto - Respuesta de Gemini
  * @returns {Object} - Análisis procesado
@@ -861,7 +1159,28 @@ const obtenerEnfoqueEspecializadoArea = (area) => {
 const procesarRespuestaGemini = (respuestaTexto) => {
   const original = String(respuestaTexto || '');
   const logFail = (err, intento, muestra) => {
-    try { console.warn(`Gemini JSON parse intento ${intento} falló:`, err?.message); if (muestra) console.debug('⮑ muestra:', (muestra.length > 4000 ? muestra.slice(0, 4000) + '…' : muestra)); } catch { }
+    try { 
+      console.warn(`Gemini JSON parse intento ${intento} falló:`, err?.message); 
+      if (err?.message && err.message.includes('position')) {
+        const posMatch = err.message.match(/position (\d+)/);
+        if (posMatch && muestra) {
+          const pos = parseInt(posMatch[1]);
+          const inicio = Math.max(0, pos - 200);
+          const fin = Math.min(muestra.length, pos + 200);
+          const contexto = muestra.slice(inicio, fin);
+          console.error(`⮑ Error en posición ${pos} (línea ${err.message.match(/line (\d+)/)?.[1] || '?'}):`);
+          console.error(`⮑ Contexto (200 chars antes y después):`, contexto);
+          console.error(`⮑ Carácter problemático:`, muestra[pos] || 'N/A');
+          console.error(`⮑ Caracteres alrededor:`, muestra.slice(Math.max(0, pos - 10), Math.min(muestra.length, pos + 10)));
+        }
+      }
+      // Solo mostrar muestra completa si es pequeña o en modo debug
+      if (muestra && muestra.length < 1000) {
+        console.debug('⮑ muestra completa:', muestra);
+      }
+    } catch (e) { 
+      console.error('Error en logFail:', e);
+    }
   };
 
   // 1) Extraer JSON probable (desde fences o por llaves/corchetes)
@@ -1206,6 +1525,550 @@ const procesarRespuestaGemini = (respuestaTexto) => {
       resultadoH = autoBalance(resultadoH);
       return validarEstructuraAnalisis(JSON.parse(resultadoH));
     } catch (e8) { logFail(e8, `${intento}-H`, s); }
+
+    try {
+      // Intento I: Reparación agresiva de comillas sin escapar dentro de strings
+      let i = extraerJsonCrudo(s);
+      let resultadoI = '';
+      let dentroString = false;
+      let escape = false;
+      let pos = 0;
+
+      while (pos < i.length) {
+        const char = i[pos];
+        
+        if (escape) {
+          resultadoI += char;
+          escape = false;
+          pos++;
+          continue;
+        }
+
+        if (char === '\\') {
+          resultadoI += char;
+          escape = true;
+          pos++;
+          continue;
+        }
+
+        if (char === '"') {
+          // Verificar si estamos cerrando un string o abriendo uno
+          // Si el siguiente carácter no es : o , o } o ] o espacio, podría ser una comilla dentro de un string
+          const siguiente = pos + 1 < i.length ? i[pos + 1] : '';
+          if (dentroString && siguiente !== '"' && siguiente !== ',' && siguiente !== '}' && siguiente !== ']' && siguiente !== ':' && siguiente !== ' ' && siguiente !== '\n' && siguiente !== '\r' && siguiente !== '\t') {
+            // Probablemente es una comilla dentro de un string sin escapar
+            resultadoI += '\\"';
+          } else {
+            resultadoI += char;
+            dentroString = !dentroString;
+          }
+          pos++;
+          continue;
+        }
+
+        if (dentroString) {
+          // Escapar caracteres problemáticos dentro de strings
+          if (char === '\n') {
+            resultadoI += '\\n';
+          } else if (char === '\r') {
+            resultadoI += '\\r';
+          } else if (char === '\t') {
+            resultadoI += '\\t';
+          } else if (char.charCodeAt(0) < 32) {
+            resultadoI += `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`;
+          } else {
+            resultadoI += char;
+          }
+        } else {
+          resultadoI += char;
+        }
+        pos++;
+      }
+
+      // Cerrar string si quedó abierto
+      if (dentroString) {
+        resultadoI += '"';
+      }
+
+      resultadoI = quitarComasColgantes(sanearBasico(resultadoI));
+      resultadoI = autoBalance(resultadoI);
+      return validarEstructuraAnalisis(JSON.parse(resultadoI));
+    } catch (e9) { logFail(e9, `${intento}-I`, s); }
+
+    try {
+      // Intento J: Extraer y reparar usando regex más agresivo para strings
+      let j = extraerJsonCrudo(s);
+      // Reemplazar comillas problemáticas dentro de strings JSON
+      // Patrón: buscar "key": "value" donde value puede tener comillas sin escapar
+      j = j.replace(/("(?:[^"\\]|\\.)*")\s*:\s*"([^"]*?)"/g, (match, key, value) => {
+        // Escapar comillas y caracteres especiales en el valor
+        const valueEscaped = value
+          .replace(/\\/g, '\\\\')
+          .replace(/"/g, '\\"')
+          .replace(/\n/g, '\\n')
+          .replace(/\r/g, '\\r')
+          .replace(/\t/g, '\\t');
+        return `${key}: "${valueEscaped}"`;
+      });
+      
+      j = quitarComasColgantes(sanearBasico(j));
+      j = autoBalance(j);
+      return validarEstructuraAnalisis(JSON.parse(j));
+    } catch (e10) { logFail(e10, `${intento}-J`, s); }
+
+    try {
+      // Intento K: Reparación robusta de comillas sin escapar en strings largos
+      // Esta estrategia recorre el JSON carácter por carácter y repara comillas problemáticas
+      let k = extraerJsonCrudo(s);
+      let resultadoK = '';
+      let dentroString = false;
+      let escape = false;
+      let pos = 0;
+      let ultimaComilla = -1;
+      let depth = 0; // Profundidad de objetos/arrays
+      let dentroObjeto = false;
+      let dentroArray = false;
+
+      while (pos < k.length) {
+        const char = k[pos];
+        const siguiente = pos + 1 < k.length ? k[pos + 1] : null;
+        const anterior = pos > 0 ? k[pos - 1] : null;
+
+        // Manejar escape
+        if (escape) {
+          resultadoK += char;
+          escape = false;
+          pos++;
+          continue;
+        }
+
+        if (char === '\\') {
+          resultadoK += char;
+          escape = true;
+          pos++;
+          continue;
+        }
+
+        // Si estamos dentro de un string
+        if (dentroString) {
+          // Si encontramos una comilla, verificar si es el cierre del string o una comilla dentro del string
+          if (char === '"') {
+            // Verificar si el siguiente carácter es válido para cerrar un string JSON
+            const esCierreValido = siguiente === null || 
+                                   siguiente === ',' || 
+                                   siguiente === '}' || 
+                                   siguiente === ']' || 
+                                   siguiente === ':' ||
+                                   siguiente === ' ' ||
+                                   siguiente === '\n' ||
+                                   siguiente === '\r' ||
+                                   siguiente === '\t';
+            
+            // Si no es un cierre válido, probablemente es una comilla dentro del string sin escapar
+            if (!esCierreValido && siguiente !== '"' && siguiente !== '\\') {
+              // Escapar esta comilla
+              resultadoK += '\\"';
+              pos++;
+              continue;
+            } else {
+              // Es un cierre válido
+              resultadoK += char;
+              dentroString = false;
+              ultimaComilla = -1;
+              pos++;
+              continue;
+            }
+          }
+
+          // Escapar caracteres problemáticos dentro de strings
+          if (char === '\n') {
+            resultadoK += '\\n';
+          } else if (char === '\r') {
+            resultadoK += '\\r';
+          } else if (char === '\t') {
+            resultadoK += '\\t';
+          } else if (char.charCodeAt(0) < 32) {
+            resultadoK += `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`;
+          } else {
+            resultadoK += char;
+          }
+          pos++;
+          continue;
+        }
+
+        // Fuera de strings: manejar estructura JSON
+        if (char === '"') {
+          resultadoK += char;
+          dentroString = true;
+          ultimaComilla = resultadoK.length - 1;
+          pos++;
+          continue;
+        }
+
+        if (char === '{') {
+          depth++;
+          dentroObjeto = true;
+          resultadoK += char;
+          pos++;
+          continue;
+        }
+
+        if (char === '}') {
+          depth--;
+          if (depth === 0) dentroObjeto = false;
+          resultadoK += char;
+          pos++;
+          continue;
+        }
+
+        if (char === '[') {
+          depth++;
+          dentroArray = true;
+          resultadoK += char;
+          pos++;
+          continue;
+        }
+
+        if (char === ']') {
+          depth--;
+          if (depth === 0) dentroArray = false;
+          resultadoK += char;
+          pos++;
+          continue;
+        }
+
+        resultadoK += char;
+        pos++;
+      }
+
+      // Si quedó un string abierto, cerrarlo
+      if (dentroString) {
+        resultadoK += '"';
+      }
+
+      resultadoK = quitarComasColgantes(sanearBasico(resultadoK));
+      resultadoK = autoBalance(resultadoK);
+      return validarEstructuraAnalisis(JSON.parse(resultadoK));
+    } catch (e11) { logFail(e11, `${intento}-K`, s); }
+
+    try {
+      // Intento L: Reparación ultra-agresiva usando regex para encontrar y reparar comillas problemáticas
+      let l = extraerJsonCrudo(s);
+      
+      // Estrategia: encontrar todos los strings JSON y reparar comillas sin escapar dentro de ellos
+      // Patrón: "key": "value" donde value puede extenderse hasta encontrar una comilla seguida de : o , o } o ]
+      let resultadoL = '';
+      let i = 0;
+      let dentroString = false;
+      let escape = false;
+      let inicioString = -1;
+      
+      while (i < l.length) {
+        const char = l[i];
+        const siguiente = i + 1 < l.length ? l[i + 1] : null;
+        const siguiente2 = i + 2 < l.length ? l[i + 2] : null;
+        
+        if (escape) {
+          resultadoL += char;
+          escape = false;
+          i++;
+          continue;
+        }
+        
+        if (char === '\\') {
+          resultadoL += char;
+          escape = true;
+          i++;
+          continue;
+        }
+        
+        if (char === '"') {
+          if (!dentroString) {
+            // Inicio de string
+            dentroString = true;
+            inicioString = resultadoL.length;
+            resultadoL += char;
+            i++;
+            continue;
+          } else {
+            // Posible cierre de string - verificar contexto
+            // Buscar hacia adelante para ver si es un cierre válido
+            let esCierreValido = false;
+            let j = i + 1;
+            while (j < l.length && (l[j] === ' ' || l[j] === '\n' || l[j] === '\r' || l[j] === '\t')) {
+              j++;
+            }
+            if (j < l.length) {
+              const siguienteNoEspacio = l[j];
+              esCierreValido = siguienteNoEspacio === ',' || 
+                              siguienteNoEspacio === '}' || 
+                              siguienteNoEspacio === ']' || 
+                              siguienteNoEspacio === ':';
+            } else {
+              esCierreValido = true; // Fin del texto
+            }
+            
+            if (esCierreValido) {
+              // Es un cierre válido
+              resultadoL += char;
+              dentroString = false;
+              inicioString = -1;
+              i++;
+              continue;
+            } else {
+              // Es una comilla dentro del string sin escapar - escapar
+              resultadoL += '\\"';
+              i++;
+              continue;
+            }
+          }
+        }
+        
+        if (dentroString) {
+          // Escapar caracteres problemáticos
+          if (char === '\n') {
+            resultadoL += '\\n';
+          } else if (char === '\r') {
+            resultadoL += '\\r';
+          } else if (char === '\t') {
+            resultadoL += '\\t';
+          } else if (char.charCodeAt(0) < 32) {
+            resultadoL += `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`;
+          } else {
+            resultadoL += char;
+          }
+        } else {
+          resultadoL += char;
+        }
+        
+        i++;
+      }
+      
+      // Cerrar string si quedó abierto
+      if (dentroString) {
+        resultadoL += '"';
+      }
+      
+      resultadoL = quitarComasColgantes(sanearBasico(resultadoL));
+      resultadoL = autoBalance(resultadoL);
+      return validarEstructuraAnalisis(JSON.parse(resultadoL));
+    } catch (e12) { logFail(e12, `${intento}-L`, s); }
+
+    try {
+      // Intento M: Reparación ultra-agresiva - reemplazar todas las comillas problemáticas dentro de strings
+      // Estrategia: identificar strings JSON y escapar TODAS las comillas dentro de ellos
+      let m = extraerJsonCrudo(s);
+      
+      // Primero, identificar todos los strings JSON usando un parser más inteligente
+      let resultadoM = '';
+      let dentroString = false;
+      let escape = false;
+      let i = 0;
+      let stack = []; // Para rastrear la estructura
+      
+      while (i < m.length) {
+        const char = m[i];
+        const siguiente = i + 1 < m.length ? m[i + 1] : null;
+        const siguiente2 = i + 2 < m.length ? m[i + 2] : null;
+        const anterior = i > 0 ? m[i - 1] : null;
+        
+        // Manejar escape
+        if (escape) {
+          resultadoM += char;
+          escape = false;
+          i++;
+          continue;
+        }
+        
+        if (char === '\\') {
+          resultadoM += char;
+          escape = true;
+          i++;
+          continue;
+        }
+        
+        // Si estamos dentro de un string
+        if (dentroString) {
+          // Si encontramos una comilla
+          if (char === '"') {
+            // Verificar si es realmente el cierre del string
+            // Buscar el siguiente carácter no-espacio después de esta comilla
+            let j = i + 1;
+            while (j < m.length && (m[j] === ' ' || m[j] === '\n' || m[j] === '\r' || m[j] === '\t')) {
+              j++;
+            }
+            
+            if (j >= m.length) {
+              // Fin del texto - es cierre válido
+              resultadoM += char;
+              dentroString = false;
+              i++;
+              continue;
+            }
+            
+            const siguienteNoEspacio = m[j];
+            
+            // Verificar si hay un patrón de clave JSON después (ej: "key":)
+            const patronClave = m.slice(j, Math.min(j + 20, m.length)).match(/^\s*"[^"]*"\s*:/);
+            
+            // Verificar si el siguiente carácter no-espacio es un delimitador válido
+            const esDelimitadorValido = siguienteNoEspacio === ',' || 
+                                      siguienteNoEspacio === '}' || 
+                                      siguienteNoEspacio === ']';
+            
+            // Verificar si hay un patrón "key": después (indica nueva propiedad)
+            const esNuevaPropiedad = patronClave !== null;
+            
+            // Si es delimitador válido o nueva propiedad, es cierre válido
+            if (esDelimitadorValido || esNuevaPropiedad) {
+              // Es un cierre válido
+              resultadoM += char;
+              dentroString = false;
+              i++;
+              continue;
+            } else {
+              // Si el siguiente carácter es ':', podría ser parte de un string o un cierre
+              // Verificar el contexto: si hay un patrón como ": "value"" entonces es cierre
+              if (siguienteNoEspacio === ':') {
+                // Verificar si después de : hay espacios y luego una comilla (nuevo string)
+                let k = j + 1;
+                while (k < m.length && (m[k] === ' ' || m[k] === '\n' || m[k] === '\r' || m[k] === '\t')) {
+                  k++;
+                }
+                if (k < m.length && m[k] === '"') {
+                  // Es un cierre válido (patrón: "value": "next")
+                  resultadoM += char;
+                  dentroString = false;
+                  i++;
+                  continue;
+                }
+              }
+              
+              // En cualquier otro caso, es una comilla dentro del string sin escapar - ESCAPARLA
+              resultadoM += '\\"';
+              i++;
+              continue;
+            }
+          }
+          
+          // Escapar caracteres problemáticos dentro de strings
+          if (char === '\n') {
+            resultadoM += '\\n';
+          } else if (char === '\r') {
+            resultadoM += '\\r';
+          } else if (char === '\t') {
+            resultadoM += '\\t';
+          } else if (char.charCodeAt(0) < 32) {
+            resultadoM += `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`;
+          } else {
+            resultadoM += char;
+          }
+          i++;
+          continue;
+        }
+        
+        // Fuera de strings
+        if (char === '"') {
+          resultadoM += char;
+          dentroString = true;
+          i++;
+          continue;
+        }
+        
+        // Manejar estructura JSON
+        if (char === '{') {
+          stack.push('{');
+          resultadoM += char;
+          i++;
+          continue;
+        }
+        
+        if (char === '}') {
+          if (stack.length > 0 && stack[stack.length - 1] === '{') {
+            stack.pop();
+          }
+          resultadoM += char;
+          i++;
+          continue;
+        }
+        
+        if (char === '[') {
+          stack.push('[');
+          resultadoM += char;
+          i++;
+          continue;
+        }
+        
+        if (char === ']') {
+          if (stack.length > 0 && stack[stack.length - 1] === '[') {
+            stack.pop();
+          }
+          resultadoM += char;
+          i++;
+          continue;
+        }
+        
+        resultadoM += char;
+        i++;
+      }
+      
+      // Cerrar string si quedó abierto
+      if (dentroString) {
+        resultadoM += '"';
+      }
+      
+      // Balancear estructura
+      while (stack.length > 0) {
+        const top = stack.pop();
+        if (top === '{') resultadoM += '}';
+        if (top === '[') resultadoM += ']';
+      }
+      
+      resultadoM = quitarComasColgantes(sanearBasico(resultadoM));
+      resultadoM = autoBalance(resultadoM);
+      return validarEstructuraAnalisis(JSON.parse(resultadoM));
+    } catch (e13) { logFail(e13, `${intento}-M`, s); }
+  }
+
+  // Intento final: Extraer solo campos esenciales usando regex y construir objeto manualmente
+  try {
+    console.warn('⚠️ Intentando extracción manual de campos esenciales del JSON');
+    const texto = original.toLowerCase();
+    const extraerCampo = (campo) => {
+      const regex = new RegExp(`"${campo}"\\s*:\\s*"([^"]*)"`, 'i');
+      const match = original.match(regex);
+      return match ? match[1] : null;
+    };
+
+    const resumen = extraerCampo('resumen') || extraerCampo('analisisGeneral')?.match(/"resumen"\s*:\s*"([^"]*)"/i)?.[1] || 'Análisis generado';
+    const diagnostico = extraerCampo('diagnosticoPrincipal') || extraerCampo('diagnostico') || '';
+    
+    // Extraer recomendaciones
+    const recomendacionesMatch = original.match(/"recomendacionesPersonalizadas"\s*:\s*\[(.*?)\]/is);
+    const recomendaciones = [];
+    if (recomendacionesMatch) {
+      const recs = recomendacionesMatch[1].match(/"([^"]*)"/g) || [];
+      recomendaciones.push(...recs.map(r => r.slice(1, -1)));
+    }
+
+    // Construir objeto mínimo válido
+    const analisisMinimo = {
+      analisisGeneral: {
+        resumen: resumen,
+        diagnosticoPrincipal: diagnostico
+      },
+      recomendacionesPersonalizadas: recomendaciones.slice(0, 5),
+      intervencionAsesor: {
+        queEnsenar: extraerCampo('queEnsenar') || '',
+        comoEnsenarlo: extraerCampo('comoEnsenarlo') || ''
+      },
+      esFallback: true,
+      nota: 'Análisis extraído manualmente debido a errores de formato JSON'
+    };
+
+    return validarEstructuraAnalisis(analisisMinimo);
+  } catch (eFinal) {
+    console.error('❌ Fallo total en procesamiento JSON:', eFinal);
   }
 
   // Todo falló: fallback
@@ -1685,9 +2548,10 @@ const crearPromptFallosRepetidos = (datos) => {
   const intentos = datos?.intentos || [];
 
   return `
-Actúa como un TUTOR EDUCATIVO EXPERTO especializado en identificar y resolver problemas de aprendizaje recurrentes. Tu objetivo es analizar por qué un estudiante falla REPETIDAMENTE en las mismas preguntas y proporcionar soluciones específicas y accionables.
+Eres un ASESOR PEDAGÓGICO EXPERTO que analiza el rendimiento de estudiantes para ayudar a otros asesores a intervenir efectivamente. Tu análisis debe ser ESPECÍFICO, ACCIONABLE y ORIENTADO A LA INTERVENCIÓN DEL ASESOR.
 
-CONTEXTO:
+CONTEXTO DEL ESTUDIANTE:
+═══════════════════════════════════════
 Tipo de evaluación: ${datos?.tipoEvaluacion || 'Simulación de examen'}
 Nivel educativo: ${datos?.nivelEducativo || 'Preparatoria/Universidad'}
 Total de intentos analizados: ${estadisticas.totalIntentosAnalizados || 0}
@@ -1695,104 +2559,190 @@ Total de preguntas problemáticas: ${estadisticas.preguntasConProblemas || 0}
 Preguntas que SIEMPRE falló: ${estadisticas.preguntasSiempreFalladas || 0}
 Porcentaje de problemas: ${estadisticas.porcentajeProblemas || 0}%
 
-${datos?.instruccionesEspeciales || ''}
-
-DATOS DE INTENTOS:
-${intentos.map((int, idx) => `
+EVOLUCIÓN DE INTENTOS (ANÁLISIS DE TENDENCIA):
+═══════════════════════════════════════
+${intentos.length > 0 ? intentos.map((int, idx) => `
 Intento ${int.numero || idx + 1}:
 - Puntaje: ${int.puntaje?.toFixed(1) || 0}%
-- Preguntas totales: ${int.totalPreguntas || 0}
-- Correctas: ${int.correctas || 0}
+- Correctas: ${int.correctas || 0} / ${int.totalPreguntas || 0}
 - Incorrectas: ${int.incorrectas || 0}
-`).join('')}
+${idx > 0 ? `- Comparación con intento anterior: ${(int.puntaje - (intentos[idx-1]?.puntaje || 0)).toFixed(1)}% ${int.puntaje > (intentos[idx-1]?.puntaje || 0) ? '↑ Mejoró' : int.puntaje < (intentos[idx-1]?.puntaje || 0) ? '↓ Empeoró' : '→ Sin cambio'}` : ''}
+`).join('') : 'No hay datos de intentos disponibles'}
 
-PREGUNTAS PROBLEMÁTICAS (FALLOS REPETIDOS):
+PREGUNTAS PROBLEMÁTICAS DETALLADAS:
 ═══════════════════════════════════════
 ${preguntasProblematicas.map((p, idx) => `
-${idx + 1}. PREGUNTA ${p.orden || 'N/A'}:
-   - Enunciado: "${p.enunciado || 'N/A'}"
-   - Tipo: ${p.tipo || 'N/A'}
-   - Fallos: ${p.fallos || 0} de ${p.totalIntentos || 0} intentos (${p.porcentajeFallo || 0}%)
-   - Siempre falló: ${p.siempreFallo ? 'SÍ' : 'NO'}
+${idx + 1}. PREGUNTA ${p.orden || 'N/A'} (${p.tipo || 'N/A'}):
+   📝 Enunciado completo: "${p.enunciado || 'N/A'}"
+   ❌ Fallos: ${p.fallos || 0} de ${p.totalIntentos || 0} intentos (${p.porcentajeFallo || 0}%)
+   ${p.siempreFallo ? '🔴 SIEMPRE FALLÓ - URGENTE' : '🟡 Falla frecuentemente'}
+   ${p.tipo ? `📋 Tipo: ${p.tipo}` : ''}
 `).join('')}
 
-INSTRUCCIONES ESPECÍFICAS PARA EL ANÁLISIS:
+INSTRUCCIONES CRÍTICAS PARA EL ASESOR:
 ═══════════════════════════════════════
 
-1. **ANÁLISIS DE PATRONES**: Identifica qué tienen en común las preguntas que siempre falla:
-   - ¿Son del mismo tipo? (opción múltiple, verdadero/falso, respuesta corta)
-   - ¿Tratan sobre los mismos temas/conceptos?
-   - ¿Tienen alguna característica común? (longitud, complejidad, formato)
+1. **DIAGNÓSTICO PROFUNDO**: Para cada pregunta problemática, identifica EXACTAMENTE:
+   - ¿Qué concepto específico no domina? (ej: "No comprende la fórmula de molaridad M=n/V, específicamente cómo despejar 'n'")
+   - ¿Qué error específico comete? (ej: "Confunde multiplicación con división al calcular moles")
+   - ¿Por qué comete ese error? (ej: "No memorizó la fórmula o no practicó ejercicios de despeje")
+   - ¿Qué confusión conceptual tiene? (ej: "Confunde masa molar con masa molecular")
 
-2. **DIAGNÓSTICO DE ERRORES**: Para cada pregunta problemática, identifica:
-   - Tipo de error: Conceptual (no entiende el concepto), Procedimental (sabe el concepto pero no el proceso), o de Comprensión (no entiende qué pregunta la pregunta)
-   - Razón específica del fallo repetido
-   - Qué confusión o malentendido tiene el estudiante
+2. **PATRONES IDENTIFICADOS**: Analiza si hay patrones entre las preguntas:
+   - ¿Todas son del mismo tema? (ej: "Todas son de química - cálculo de moles")
+   - ¿Todas requieren el mismo tipo de razonamiento? (ej: "Todas requieren despeje de fórmulas")
+   - ¿Hay un tema base que no domina? (ej: "No domina álgebra básica, por eso falla en despejes")
 
-3. **RECOMENDACIONES ACCIONABLES**: Proporciona recomendaciones específicas:
-   - Qué temas/conceptos necesita reforzar (menciona los temas específicos basados en los enunciados)
-   - Qué tipo de ejercicios debe practicar
-   - Qué estrategias de estudio son más efectivas para estos problemas específicos
-   - Cómo puede evitar cometer los mismos errores
+3. **INTERVENCIÓN ESPECÍFICA PARA EL ASESOR**: Proporciona:
+   - QUÉ enseñar específicamente (ej: "Enseñar paso a paso cómo despejar 'n' de M=n/V")
+   - CÓMO enseñarlo (ej: "Usar ejemplos concretos: Si tengo 0.5M en 250mL, ¿cuántos moles? Mostrar: n = M × V = 0.5 × 0.25 = 0.125 moles")
+   - QUÉ ejercicios específicos dar (ej: "5 ejercicios de despeje de fórmulas químicas, empezando con los más simples")
+   - QUÉ verificar que aprendió (ej: "Que pueda resolver 3 ejercicios similares sin ayuda")
 
-4. **ESTRATEGIAS DE ESTUDIO**: Sugiere técnicas específicas:
-   - Para errores conceptuales: explicaciones paso a paso, ejemplos, analogías
-   - Para errores procedimentales: práctica guiada, ejercicios similares
-   - Para errores de comprensión: ejercicios de lectura comprensiva, desglose de preguntas
+4. **ESTRATEGIAS DE INTERVENCIÓN**: Para el asesor:
+   - Si es error conceptual: "Explicar el concepto desde cero con analogías simples"
+   - Si es error procedimental: "Modelar el procedimiento paso a paso, luego hacerlo juntos, luego que lo haga solo"
+   - Si es error de comprensión: "Enseñar a leer preguntas: subrayar datos, identificar qué piden, identificar la fórmula"
 
-FORMATO DE RESPUESTA (JSON):
+5. **PRIORIZACIÓN**: Indica qué es más urgente:
+   - ¿Qué pregunta/tema debe abordarse PRIMERO?
+   - ¿Por qué es prioritario?
+   - ¿Cuánto tiempo estimado necesita el estudiante para dominarlo?
+
+FORMATO DE RESPUESTA (JSON ESTRICTO):
 ═══════════════════════════════════════
 {
   "analisisGeneral": {
-    "resumen": "Resumen breve (2-3 frases) del problema principal: qué tipo de errores comete repetidamente y por qué",
-    "patronPrincipal": "Descripción del patrón común encontrado en las preguntas que siempre falla",
-    "nivelUrgencia": "Alta/Media/Baja - basado en el porcentaje de problemas y si siempre falla"
+    "resumen": "Análisis conciso (3-4 frases) para el ASESOR: qué problema específico tiene el estudiante, por qué lo tiene, y qué debe hacer el asesor. Ejemplo: 'El estudiante falla consistentemente en preguntas de química que requieren despeje de fórmulas. Específicamente, no domina cómo despejar variables en M=n/V. El asesor debe enseñar álgebra básica aplicada a fórmulas químicas antes de continuar con problemas más complejos.'",
+    "diagnosticoPrincipal": "Diagnóstico técnico específico: qué concepto/tema/habilidad específica no domina y por qué",
+    "nivelUrgencia": "Alta/Media/Baja",
+    "razonUrgencia": "Por qué es urgente o no (basado en porcentaje de fallos y si siempre falla)"
   },
   "patronesErrores": {
-    "tipoPreguntaMasFallada": "Tipo de pregunta donde más falla (basado en los datos)",
-    "temasComunes": ["Tema 1 identificado de los enunciados", "Tema 2 identificado de los enunciados"],
-    "tipoError": "Conceptual/Procedimental/Comprensión",
-    "patronComun": "Descripción del patrón común en las preguntas problemáticas"
+    "temaComun": "Tema/concepto común identificado en TODAS las preguntas problemáticas (ej: 'Despeje de fórmulas químicas')",
+    "tipoErrorDominante": "Conceptual/Procedimental/Comprensión",
+    "causaRaiz": "La causa raíz del problema (ej: 'No domina álgebra básica, específicamente despeje de variables')",
+    "patronDetectado": "Descripción detallada del patrón: qué tienen en común las preguntas que falla"
+  },
+  "intervencionAsesor": {
+    "queEnsenar": "QUÉ debe enseñar el asesor específicamente (concepto/tema/habilidad exacta)",
+    "comoEnsenarlo": "CÓMO debe enseñarlo (método, pasos, ejemplos específicos)",
+    "ejerciciosEspecificos": ["Ejercicio 1 específico que debe dar", "Ejercicio 2 específico", "Ejercicio 3 específico"],
+    "verificacionAprendizaje": "CÓMO verificar que el estudiante aprendió (qué debe poder hacer)",
+    "tiempoEstimado": "Tiempo estimado para que el estudiante domine esto (ej: '2-3 sesiones de 45 min')"
   },
   "preguntasProblematicas": [
     {
       "idPregunta": "${preguntasProblematicas[0]?.id || 'N/A'}",
+      "orden": ${preguntasProblematicas[0]?.orden || 'N/A'},
       "enunciado": "${preguntasProblematicas[0]?.enunciado || 'N/A'}",
-      "vecesFallada": ${preguntasProblematicas[0]?.fallos || 0},
-      "tipoError": "Conceptual/Procedimental/Comprensión",
-      "analisis": "Análisis detallado de POR QUÉ falla repetidamente en esta pregunta específica. Explica el razonamiento incorrecto que tiene el estudiante.",
-      "recomendacion": "Recomendación específica y accionable para esta pregunta. Incluye pasos concretos."
+      "conceptoNoDomina": "Concepto específico que no domina (ej: 'Despeje de la variable n en la fórmula M=n/V')",
+      "errorEspecifico": "Error específico que comete (ej: 'Multiplica en lugar de dividir al calcular moles')",
+      "porQueFalla": "Por qué comete ese error (ej: 'No memorizó la fórmula o confunde el orden de operaciones')",
+      "queEnsenar": "QUÉ debe enseñar el asesor para esta pregunta específica",
+      "comoEnsenar": "CÓMO debe enseñarlo (pasos específicos, ejemplos)",
+      "ejercicioPractica": "Ejercicio específico de práctica para esta pregunta"
     }
   ],
   "recomendacionesPersonalizadas": [
-    "Recomendación 1 específica basada en los patrones identificados",
-    "Recomendación 2 específica para los temas problemáticos",
-    "Recomendación 3 con estrategias de estudio concretas"
+    "Recomendación 1 ESPECÍFICA para el asesor sobre QUÉ hacer (ej: 'Enseñar álgebra básica: cómo despejar variables en fórmulas. Empezar con ejemplos simples como despejar x en 2x=10')",
+    "Recomendación 2 ESPECÍFICA sobre CÓMO intervenir (ej: 'Usar el método de modelado: primero el asesor resuelve un ejercicio completo explicando cada paso, luego resuelven uno juntos, luego el estudiante resuelve uno solo')",
+    "Recomendación 3 ESPECÍFICA sobre QUÉ verificar (ej: 'Verificar que el estudiante puede despejar correctamente en 3 ejercicios similares sin ayuda antes de avanzar')"
   ],
-  "planEstudioPersonalizado": {
-    "faseInicial": {
-      "duracion": "1-2 semanas",
-      "objetivos": ["Objetivo 1 específico para las preguntas problemáticas", "Objetivo 2"],
-      "actividades": [
-        {
-          "materia": "Tema identificado de las preguntas",
-          "tiempo": "30-45 min diarios",
-          "actividad": "Descripción detallada de qué estudiar y cómo, basado en las preguntas que siempre falla",
-          "recursos": ["Recurso específico para el tema problemático"]
-        }
-      ]
+  "planIntervencion": {
+    "sesion1": {
+      "objetivo": "Objetivo específico de la primera sesión",
+      "actividades": ["Actividad 1 específica", "Actividad 2 específica"],
+      "duracion": "Duración estimada",
+      "materiales": ["Material 1 necesario", "Material 2 necesario"]
+    },
+    "sesion2": {
+      "objetivo": "Objetivo específico de la segunda sesión",
+      "actividades": ["Actividad 1 específica", "Actividad 2 específica"],
+      "duracion": "Duración estimada"
     }
-  }
+  },
+  "estrategiasEstudio": [
+    {
+      "materia": "Tema específico identificado",
+      "enfoque": "Enfoque específico de estudio (ej: 'Practicar despeje de fórmulas químicas')",
+      "tiempo": "Tiempo diario recomendado (ej: '30 min diarios')",
+      "actividadEspecifica": "Actividad específica que debe hacer (ej: 'Resolver 5 ejercicios de despeje de fórmulas, empezando con las más simples')"
+    }
+  ]
 }
 
-IMPORTANTE:
-- Sé ESPECÍFICO: menciona los temas/conceptos exactos de las preguntas problemáticas
-- Sé ACCIONABLE: cada recomendación debe ser algo que el estudiante pueda hacer inmediatamente
-- Sé PEDAGÓGICO: explica como si fueras un tutor enseñando a alguien que no entiende
-- NO uses frases genéricas: conecta cada recomendación con las preguntas específicas que falló
-- Analiza el CONTENIDO de los enunciados para identificar temas/conceptos específicos
+REGLAS CRÍTICAS:
+═══════════════════════════════════════
+1. PROHIBIDO usar frases genéricas como "necesita estudiar más" o "debe practicar". Sé ESPECÍFICO.
+2. OBLIGATORIO mencionar conceptos/temas EXACTOS extraídos de los enunciados de las preguntas.
+3. OBLIGATORIO proporcionar ejemplos CONCRETOS de qué enseñar y cómo.
+4. OBLIGATORIO incluir ejercicios ESPECÍFICOS, no solo "dar ejercicios".
+5. El análisis debe ser ÚTIL para el ASESOR, no solo para el estudiante.
+6. Analiza el CONTENIDO de cada enunciado para identificar temas/conceptos específicos.
+7. Si una pregunta menciona una fórmula (ej: "M=n/V"), identifica si el problema es que no conoce la fórmula, no sabe despejar, o no sabe aplicar.
 
-Responde SOLO con el JSON, sin texto adicional.
+REGLAS CRÍTICAS PARA JSON VÁLIDO:
+═══════════════════════════════════════
+⚠️ IMPORTANTE: El JSON DEBE ser válido o el análisis fallará.
+
+1. ESCAPA TODAS las comillas dobles dentro de strings con \\" (ej: "texto con \\"comillas\\" dentro")
+   - Si un campo contiene comillas (como en enunciados), DEBES escapar cada una: \\"
+   - Ejemplo CORRECTO: "enunciado": "El estudiante debe calcular \\"x\\" en la fórmula"
+   - Ejemplo INCORRECTO: "enunciado": "El estudiante debe calcular "x" en la fórmula"
+2. ESCAPA todos los saltos de línea con \\n (ej: "línea 1\\nlínea 2")
+3. ESCAPA todos los caracteres especiales: \\n para saltos de línea, \\t para tabs, \\r para retornos
+4. NO uses comillas dobles dentro de strings sin escaparlas - ESTO CAUSARÁ ERRORES DE PARSEO
+5. Si un campo contiene texto con comillas, REEMPLAZA las comillas por comillas simples o escápalas: \\"
+6. MANTÉN los strings relativamente cortos (máximo 500 caracteres por campo)
+7. Si un texto es muy largo, divídelo en múltiples recomendaciones en lugar de un string gigante
+8. VERIFICA que todas las llaves { } y corchetes [ ] estén balanceados
+9. VERIFICA que todas las comillas de strings estén cerradas
+10. ANTES de enviar el JSON, REVISA mentalmente: ¿hay alguna comilla doble dentro de un string que no esté escapada?
+
+EJEMPLO DE FORMATO CORRECTO (NOTA: todas las comillas dentro de strings están escapadas):
+{
+  "analisisGeneral": {
+    "resumen": "El estudiante falla en despeje de formulas. No domina algebra basica para despejar variables.",
+    "diagnosticoPrincipal": "No sabe despejar la variable n en la formula M=n/V"
+  },
+  "intervencionAsesor": {
+    "queEnsenar": "Ensenar despeje de variables paso a paso",
+    "comoEnsenarlo": "Mostrar: Si M=0.5 y V=0.25, entonces n = M x V = 0.125 moles"
+  },
+  "preguntasProblematicas": [
+    {
+      "idPregunta": "123",
+      "enunciado": "Calcula el valor de \\"x\\" en la ecuacion 2x + 5 = 15",
+      "conceptoNoDomina": "Despeje de ecuaciones lineales",
+      "errorEspecifico": "No sabe aislar la variable x"
+    }
+  ],
+  "recomendacionesPersonalizadas": [
+    "Ensenar algebra basica: como despejar variables",
+    "Practicar con 5 ejercicios de despeje de formulas quimicas",
+    "Verificar que puede resolver 3 ejercicios similares sin ayuda"
+  ]
+}
+
+IMPORTANTE: En el ejemplo anterior, nota que en el campo "enunciado" las comillas alrededor de "x" están escapadas como \\"x\\". 
+SIEMPRE haz esto cuando haya comillas dentro de un string JSON.
+
+Responde SOLO con el JSON válido, sin texto adicional antes o después. 
+
+⚠️ VALIDACIÓN FINAL OBLIGATORIA ANTES DE ENVIAR:
+1. Busca TODAS las comillas dobles (") dentro de los valores de strings
+2. Si encuentras una comilla doble dentro de un string, REEMPLÁZALA por \\"
+3. Verifica que NO haya comillas sin escapar dentro de ningún string
+4. Verifica que todas las llaves { } estén balanceadas
+5. Verifica que todos los corchetes [ ] estén balanceados
+6. Si el JSON no es válido, CORRÍGELO antes de enviarlo
+
+EJEMPLO DE CORRECCIÓN:
+❌ INCORRECTO: "enunciado": "Calcula el valor de "x" en la ecuación"
+✅ CORRECTO: "enunciado": "Calcula el valor de \\"x\\" en la ecuación"
+
+VALIDA que el JSON sea correcto antes de enviarlo. Si tienes dudas, ESCAPA todas las comillas dentro de strings.
 `;
 };
 

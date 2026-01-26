@@ -24,6 +24,7 @@ import {
 import SimuladorModalGen from "./SimulatorModal";
 import AnalizadorFallosRepetidos from "./AnalizadorFallosRepetidos";
 import ManualReviewShortAnswer from "./ManualReviewShortAnswer";
+import ReviewModal from "./ReviewModal";
 import { generarPreguntasIA, getCooldownRemainingMs } from "../../service/simuladoresAI";
 import { listSimulaciones, deleteSimulacion, createSimulacion, updateSimulacion, getSimulacion, getSimulacionFull, estudiantesEstadoSimulacion, getSimulacionIntentoReview } from "../../api/simulaciones";
 import InlineMath from "./simGen/InlineMath.jsx";
@@ -35,8 +36,59 @@ import InlineMath from "./simGen/InlineMath.jsx";
 function MathText({ text = "" }) {
   if (!text) return null;
 
-  // ✅ Enfoque híbrido: usar regex simple (más robusto) pero mejorado para casos comunes
-  // El regex no-greedy funciona bien para la mayoría de casos y es más simple
+  // ✅ Función para sanitizar HTML (similar a RichTextEditor)
+  // NOTA: El Markdown ya se procesa antes de llamar a esta función, así que puede contener <strong>, <b>, etc.
+  const sanitizeHtmlLite = (html) => {
+    if (!html) return '';
+    // Crear un elemento temporal para sanitizar
+    const div = document.createElement('div');
+    // Usar innerHTML para preservar las etiquetas HTML válidas que ya procesamos (como <strong>)
+    div.innerHTML = html;
+    // Lista blanca de etiquetas permitidas
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    // Recorrer todos los nodos y eliminar etiquetas no permitidas
+    const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
+    const nodesToRemove = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (!allowedTags.includes(node.tagName.toLowerCase())) {
+        nodesToRemove.push(node);
+      }
+    }
+    nodesToRemove.forEach(n => {
+      const parent = n.parentNode;
+      while (n.firstChild) {
+        parent.insertBefore(n.firstChild, n);
+      }
+      parent.removeChild(n);
+    });
+    return div.innerHTML;
+  };
+
+  // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
+  // Pero proteger las fórmulas LaTeX para no procesarlas
+  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
+  const latexMatches = [];
+  let processedText = text;
+  let placeholderIndex = 0;
+  
+  // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
+  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
+    latexMatches.push(match);
+    placeholderIndex++;
+    return placeholder;
+  });
+  
+  // Procesar Markdown: **texto** -> <strong>texto</strong>
+  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  
+  // Restaurar fórmulas LaTeX
+  latexMatches.forEach((match, idx) => {
+    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
+  });
+
+  // ✅ Usar regex simple y robusto: busca $...$ de forma no-greedy
   const re = /\$([^$]+?)\$/g;
   const parts = [];
   let lastIndex = 0;
@@ -46,10 +98,10 @@ function MathText({ text = "" }) {
   // Resetear el regex para evitar problemas con múltiples llamadas
   re.lastIndex = 0;
 
-  while ((m = re.exec(text)) !== null) {
+  while ((m = re.exec(processedText)) !== null) {
     matchFound = true;
     if (m.index > lastIndex) {
-      parts.push({ type: 'text', content: text.slice(lastIndex, m.index) });
+      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
     }
     // Limpiar espacios en blanco al inicio y final de la fórmula
     const formula = m[1].trim();
@@ -59,22 +111,30 @@ function MathText({ text = "" }) {
     lastIndex = m.index + m[0].length;
   }
   
-  if (lastIndex < text.length) {
-    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  if (lastIndex < processedText.length) {
+    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
   }
 
-  // Si no se encontraron fórmulas, devolver el texto tal cual
+  // Si no se encontraron fórmulas, devolver el texto con HTML procesado (ya con Markdown convertido)
   if (!matchFound || parts.length === 0) {
-    return <span>{text}</span>;
+    return (
+      <span 
+        className="whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
+      />
+    );
   }
 
   return (
-    <span>
+    <span className="whitespace-pre-wrap">
       {parts.map((part, idx) =>
         part.type === 'math' ? (
           <InlineMath key={`math-${idx}`} math={part.content} />
         ) : (
-          <span key={`text-${idx}`}>{part.content}</span>
+          <span 
+            key={`text-${idx}`}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
+          />
         )
       )}
     </span>
@@ -904,8 +964,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       // Si está vacío, enviar string vacío en lugar de null
       descripcion: descripcionFinal !== null && descripcionFinal !== undefined ? String(descripcionFinal) : '',
       fecha_limite: form.fechaLimite || null,
-      // No fijar tiempo por defecto; el asesor lo define explícitamente
-      time_limit_min: (Number(form.horas || 0) * 60 + Number(form.minutos || 0)),
+      // ✅ Calcular tiempo límite igual que en Quiz.jsx
+      time_limit_min: Number(form.horas || 0) * 60 + Number(form.minutos || 0),
       publico: false, // Crear como borrador para que pueda editarlo antes de publicar (cuando tiene preguntas IA)
       activo: true, // ✅ IMPORTANTE: Siempre crear como activo para que aparezca en la lista del asesor
       grupos: form.grupos ? String(form.grupos).split(',').map(s => s.trim()).filter(Boolean) : null,
@@ -1168,7 +1228,13 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       // ✅ CRÍTICO: Siempre incluir descripcion, incluso si está vacío (usar string vacío en lugar de null para forzar actualización)
       descripcion: descripcionFinal !== null && descripcionFinal !== undefined ? String(descripcionFinal) : '',
       fecha_limite: fechaLimiteFinal, // ✅ CRÍTICO: null si está vacío, o fecha en formato YYYY-MM-DD
-      time_limit_min: Number(form.horas || 0) * 60 + Number(form.minutos || 0),
+      time_limit_min: (() => {
+        const horas = Number(form.horas || 0);
+        const minutos = Number(form.minutos || 0);
+        const totalMin = horas * 60 + minutos;
+        // Solo usar 30 minutos por defecto si realmente no se especificó tiempo (ambos son 0)
+        return totalMin > 0 ? totalMin : 30;
+      })(),
       publico: !!form.publico,
       activo: true, // ✅ IMPORTANTE: Siempre mantener activo al actualizar
       grupos: gruposFinal, // ✅ Ya normalizado como string separado por comas o null
@@ -1324,7 +1390,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
         try {
           // ✅ CRÍTICO: Al publicar, preservar TODOS los datos importantes del simulador
-          // Incluir título, descripción e id_area para evitar que se borren
+          // Incluir título, descripción, id_area y time_limit_min para evitar que se borren
           const publishPayload = {
             publico: true,
             activo: true
@@ -1345,10 +1411,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           // ✅ Preservar id_area
           if (currentIdArea !== null && currentIdArea !== undefined && Number(currentIdArea) > 0) {
             publishPayload.id_area = Number(currentIdArea);
-            console.log('[SimuladoresGen] handlePublish - preservando id_area:', publishPayload.id_area);
           } else {
             publishPayload.id_area = null;
-            console.log('[SimuladoresGen] handlePublish - estableciendo id_area como null (general)');
           }
           
           await updateSimulacion(item.id, publishPayload);
@@ -3019,192 +3083,19 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         </div>
       )}
 
-      {/* Review modal */}
-      {reviewOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 px-0.5 mt-16">
-          <div className="w-full max-w-4xl rounded-lg bg-white shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between border-b px-2 py-1.5">
-              <div className="flex items-center gap-3">
-                <h3 className="text-base font-semibold text-slate-900">
-                  {reviewHeader.simulacion?.titulo || 'Simulación'} • {reviewHeader.estudiante?.nombre || 'Alumno'}
-                </h3>
-                {reviewHeader.estudiante?.totalIntentos > 1 && (
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs text-slate-600 font-medium">Intento:</label>
-                    <select
-                      value={selectedIntentoReview}
-                      onChange={(e) => handleChangeIntentoReview(Number(e.target.value))}
-                      className="text-xs border border-slate-300 rounded-md px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      {Array.from({ length: reviewHeader.estudiante.totalIntentos }, (_, i) => i + 1).map(num => (
-                        <option key={num} value={num}>
-                          {num === 1 ? `Intento ${num} (Oficial)` : `Intento ${num} (Práctica)`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-              <button onClick={() => setReviewOpen(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
-            </div>
-            <div className="max-h-[70vh] overflow-y-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {reviewLoading ? (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Cargando…</div>
-              ) : reviewData && Array.isArray(reviewData.preguntas) ? (
-                <div className="space-y-4">
-                  {/* Analizador de fallos repetidos */}
-                  {reviewHeader.estudiante?.totalIntentos >= 2 && (
-                    <AnalizadorFallosRepetidos
-                      tipo="simulacion"
-                      id={resultsSimMeta?.id}
-                      idEstudiante={reviewHeader.estudiante?.id}
-                      totalIntentos={reviewHeader.estudiante?.totalIntentos}
-                    />
-                  )}
-                  
-                  {/* Separar preguntas por tipo */}
-                  {(() => {
-                    const preguntasOpcionMultiple = reviewData.preguntas.filter(p => p.tipo === 'opcion_multiple' || p.tipo === 'verdadero_falso' || p.tipo === 'multi_respuesta');
-                    const respuestasCortas = reviewData.preguntas.filter(p => p.tipo === 'respuesta_corta');
-                    
-                    return (
-                      <>
-                        {/* Preguntas de opción múltiple */}
-                        {preguntasOpcionMultiple.length > 0 && (
-                          <div className="space-y-2.5">
-                            {preguntasOpcionMultiple.map((p, idx) => {
-                              const sel = new Set(p.seleccionadas || []);
-                              const corr = !!p.correcta;
-                              return (
-                                <div key={p.id || idx} className="rounded border border-slate-200 p-2">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="text-sm font-medium text-slate-900">{p.orden || (idx + 1)}. <MathText text={p.enunciado || ''} /></div>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${corr ? 'bg-green-50 text-green-700 border-green-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{corr ? 'Correcta' : 'Incorrecta'}</span>
-                                  </div>
-                                  <ul className="mt-1.5 space-y-1">
-                                    {(p.opciones || []).map((o) => {
-                                      const isSel = sel.has(o.id);
-                                      const isOk = o.es_correcta === 1;
-                                      const base = 'text-xs rounded-lg border px-3 py-1.5 flex items-center justify-between';
-                                      // Colores según el estado: seleccionada y correcta (verde), seleccionada e incorrecta (rojo), solo correcta (verde claro), ninguna (gris)
-                                      const cl = isSel && isOk ? 'bg-emerald-50 border-emerald-300' : isSel && !isOk ? 'bg-rose-50 border-rose-300' : !isSel && isOk ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200';
-                                      return (
-                                        <li key={o.id} className={`${base} ${cl}`}>
-                                          <span><MathText text={o.texto || ''} /></span>
-                                          <div className="flex items-center gap-2">
-                                            {isSel && <span className="text-[10px] font-bold text-slate-700">✓ Seleccionada</span>}
-                                            {isOk && <span className="text-[10px] font-bold text-green-700">Correcta</span>}
-                                          </div>
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {/* Sección de Respuestas Cortas para Revisión Manual */}
-                        {respuestasCortas.length > 0 && (
-                          <div className="mt-6 pt-6 border-t border-gray-200">
-                            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                              <span>📝</span>
-                              <span>Respuestas Cortas para Revisión</span>
-                              {respuestasCortas.filter(p => {
-                                // Verificar si requiere revisión (baja confianza o estado manual_review)
-                                const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
-                                return requiereRevision;
-                              }).length > 0 && (
-                                <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full">
-                                  {respuestasCortas.filter(p => {
-                                    const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
-                                    return requiereRevision;
-                                  }).length} requieren revisión
-                                </span>
-                              )}
-                            </h4>
-                            
-                            <div className="space-y-4">
-                              {respuestasCortas.map((pregunta) => {
-                                // Obtener respuesta esperada (opción correcta)
-                                const respuestaEsperada = pregunta.opciones?.find(o => o.es_correcta === 1)?.texto;
-                                
-                                if (!respuestaEsperada) return null;
-                                
-                                // Construir objeto respuesta para el componente
-                                // Usar los datos disponibles en la pregunta y mapear a la estructura esperada
-                                // Para simulaciones: correcta se determina desde calificacion_confianza cuando es manual (100 = correcta, 0 = incorrecta)
-                                const correctaValue = pregunta.calificacion_metodo === 'manual' && pregunta.calificacion_confianza != null
-                                  ? (pregunta.calificacion_confianza === 100 ? 1 : 0)
-                                  : (pregunta.correcta ? 1 : 0);
-                                
-                                // Validar que tenemos id_respuesta antes de crear el componente
-                                // Si no hay id_respuesta, no podemos hacer revisión manual
-                                if (!pregunta.id_respuesta) {
-                                  console.warn('[SimuladoresGen] Respuesta corta sin id_respuesta:', {
-                                    pregunta_id: pregunta.id,
-                                    valor_texto: pregunta.valor_texto,
-                                    calificacion_status: pregunta.calificacion_status
-                                  });
-                                  // Mostrar mensaje de que la respuesta aún no está disponible para revisión
-                                  return (
-                                    <div key={pregunta.id} className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                      <p className="text-sm text-yellow-800">
-                                        ⚠️ Esta respuesta aún no está disponible para revisión manual. 
-                                        La respuesta se está procesando automáticamente.
-                                      </p>
-                                    </div>
-                                  );
-                                }
-                                
-                                const respuestaObj = {
-                                  id: pregunta.id_respuesta, // DEBE ser el ID de la respuesta, no de la pregunta
-                                  valor_texto: pregunta.valor_texto || null,
-                                  texto_libre: pregunta.valor_texto || null,
-                                  correcta: correctaValue,
-                                  calificacion_status: pregunta.calificacion_status || 'pending',
-                                  calificacion_metodo: pregunta.calificacion_metodo || null,
-                                  calificacion_confianza: pregunta.calificacion_confianza != null ? Number(pregunta.calificacion_confianza) : null,
-                                  revisada_por: pregunta.revisada_por || null,
-                                  notas_revision: pregunta.notas_revision || null
-                                };
-                                
-                                return (
-                                  <ManualReviewShortAnswer
-                                    key={pregunta.id}
-                                    respuesta={respuestaObj}
-                                    pregunta={pregunta.enunciado}
-                                    respuestaEsperada={respuestaEsperada}
-                                    tipo="simulacion"
-                                    onReviewComplete={(updatedData) => {
-                                      // Recargar datos del intento actualmente seleccionado
-                                      if (resultsSimMeta?.id && reviewHeader.estudiante?.id) {
-                                        getSimulacionIntentoReview(resultsSimMeta.id, reviewHeader.estudiante.id, selectedIntentoReview)
-                                          .then(({ data }) => setReviewData(data?.data || null))
-                                          .catch(err => console.error('Error al recargar datos:', err));
-                                      }
-                                    }}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              ) : (
-                <div className="text-slate-600 text-sm">No se pudo cargar el detalle del intento.</div>
-              )}
-            </div>
-            <div className="flex justify-end gap-2 border-t px-2 py-1.5">
-              <button onClick={() => setReviewOpen(false)} className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Cerrar</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Review modal - Usando componente reutilizable */}
+      <ReviewModal
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        tipo="simulacion"
+        idEvaluacion={resultsSimMeta?.id}
+        estudiante={reviewHeader.estudiante ? {
+          id: reviewHeader.estudiante.id,
+          nombre: reviewHeader.estudiante.nombre,
+          totalIntentos: reviewHeader.estudiante.totalIntentos
+        } : null}
+        titulo={reviewHeader.simulacion?.titulo}
+      />
 
       {/* Modal de confirmación genérico */}
       {confirmModal.open && (

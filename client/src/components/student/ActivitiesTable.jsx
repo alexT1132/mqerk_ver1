@@ -14,7 +14,8 @@ import {
     MessageSquareText,
     Table2,
     LayoutGrid,
-    Star
+    Star,
+    RefreshCw
 } from 'lucide-react';
 
 /**
@@ -50,7 +51,10 @@ export function ActivitiesTable({
     handleDownload,
     openUploadModal,
     openViewModal,
-    openNotasModal
+    openNotasModal,
+    
+    // Función de refresh
+    onRefresh
 }) {
     // Estado para controlar el modo de vista (tabla o tarjetas)
     const [viewMode, setViewMode] = useState('table'); // 'table' o 'cards'
@@ -93,9 +97,21 @@ export function ActivitiesTable({
                                 <p className="text-sm sm:text-base text-gray-600 font-medium">{selectedArea?.titulo}</p>
                             </div>
                         </div>
-                        <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                            <Target className="w-4 h-4 mr-1.5 text-violet-600" />
-                            <span className="font-semibold">{filteredActividades.length} actividades disponibles</span>
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                <Target className="w-4 h-4 mr-1.5 text-violet-600" />
+                                <span className="font-semibold">{filteredActividades.length} actividades disponibles</span>
+                            </div>
+                            {onRefresh && (
+                                <button
+                                    onClick={onRefresh}
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:scale-95 rounded-lg transition-all"
+                                    title="Refrescar lista"
+                                    aria-label="Refrescar lista"
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

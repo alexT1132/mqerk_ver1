@@ -59,25 +59,56 @@ function MathText({ text = "", onFormulaClick }) {
   if (!text) return null;
 
   // ✅ Función para sanitizar HTML (similar a RichTextEditor)
+  // NOTA: El Markdown ya se procesa antes de llamar a esta función, así que puede contener <strong>, <b>, etc.
   const sanitizeHtmlLite = (html) => {
     if (!html) return '';
+    // Crear un elemento temporal para sanitizar
     const div = document.createElement('div');
-    div.textContent = html;
-    const safe = div.innerHTML;
-    // Permitir etiquetas básicas de formato
-    return safe
-      .replace(/&lt;u&gt;/g, '<u>')
-      .replace(/&lt;\/u&gt;/g, '</u>')
-      .replace(/&lt;br\s*\/?&gt;/gi, '<br />')
-      .replace(/&lt;strong&gt;/g, '<strong>')
-      .replace(/&lt;\/strong&gt;/g, '</strong>')
-      .replace(/&lt;em&gt;/g, '<em>')
-      .replace(/&lt;\/em&gt;/g, '</em>')
-      .replace(/&lt;b&gt;/g, '<b>')
-      .replace(/&lt;\/b&gt;/g, '</b>')
-      .replace(/&lt;i&gt;/g, '<i>')
-      .replace(/&lt;\/i&gt;/g, '</i>');
+    // Usar innerHTML para preservar las etiquetas HTML válidas que ya procesamos (como <strong>)
+    div.innerHTML = html;
+    // Lista blanca de etiquetas permitidas
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    // Recorrer todos los nodos y eliminar etiquetas no permitidas
+    const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
+    const nodesToRemove = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (!allowedTags.includes(node.tagName.toLowerCase())) {
+        nodesToRemove.push(node);
+      }
+    }
+    nodesToRemove.forEach(n => {
+      const parent = n.parentNode;
+      while (n.firstChild) {
+        parent.insertBefore(n.firstChild, n);
+      }
+      parent.removeChild(n);
+    });
+    return div.innerHTML;
   };
+
+  // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
+  // Pero proteger las fórmulas LaTeX para no procesarlas
+  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
+  const latexMatches = [];
+  let processedText = text;
+  let placeholderIndex = 0;
+  
+  // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
+  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
+    latexMatches.push(match);
+    placeholderIndex++;
+    return placeholder;
+  });
+  
+  // Procesar Markdown: **texto** -> <strong>texto</strong>
+  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  
+  // Restaurar fórmulas LaTeX
+  latexMatches.forEach((match, idx) => {
+    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
+  });
 
   // ✅ Usar regex simple y robusto: busca $...$ de forma no-greedy
   // Esto funciona bien para la mayoría de casos, incluyendo fórmulas complejas
@@ -90,10 +121,10 @@ function MathText({ text = "", onFormulaClick }) {
   // Resetear el regex para evitar problemas con múltiples llamadas
   re.lastIndex = 0;
 
-  while ((m = re.exec(text)) !== null) {
+  while ((m = re.exec(processedText)) !== null) {
     matchFound = true;
     if (m.index > lastIndex) {
-      parts.push({ type: 'text', content: text.slice(lastIndex, m.index) });
+      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
     }
     // Limpiar espacios en blanco al inicio y final de la fórmula
     const formula = m[1].trim();
@@ -109,16 +140,16 @@ function MathText({ text = "", onFormulaClick }) {
     lastIndex = m.index + m[0].length;
   }
   
-  if (lastIndex < text.length) {
-    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  if (lastIndex < processedText.length) {
+    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
   }
 
-  // Si no se encontraron fórmulas, devolver el texto con HTML procesado
+  // Si no se encontraron fórmulas, devolver el texto con HTML procesado (ya con Markdown convertido)
   if (!matchFound || parts.length === 0) {
     return (
       <span 
         className="whitespace-pre-wrap"
-        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(text) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
       />
     );
   }
@@ -771,13 +802,50 @@ export default function EspanolFormBuilder() {
               }
             }
 
+            // ✅ CRÍTICO: Cargar imagen de la pregunta si existe (puede venir como p.imagen, p.image, o en metadata_json)
+            let preguntaImage = null;
+            if (p.imagen) {
+              preguntaImage = { url: p.imagen, preview: p.imagen };
+            } else if (p.image) {
+              preguntaImage = { url: p.image, preview: p.image };
+            } else if (p.metadata_json) {
+              try {
+                const metadata = JSON.parse(p.metadata_json);
+                if (metadata.imagen) {
+                  preguntaImage = { url: metadata.imagen, preview: metadata.imagen };
+                } else if (metadata.image) {
+                  preguntaImage = { url: metadata.image, preview: metadata.image };
+                }
+              } catch {}
+            }
             return {
               id: genId(),
               type,
               text: p.enunciado || '',
               points: p.puntos || 1,
-              image: null,
-              options: finalOptions,
+              image: preguntaImage,
+              options: finalOptions.map(opt => {
+                // ✅ CRÍTICO: Cargar imagen de la opción si existe
+                let opcionImage = null;
+                const originalOpt = opts.find(o => o.texto === opt.text);
+                if (originalOpt) {
+                  if (originalOpt.imagen) {
+                    opcionImage = { url: originalOpt.imagen, preview: originalOpt.imagen };
+                  } else if (originalOpt.image) {
+                    opcionImage = { url: originalOpt.image, preview: originalOpt.image };
+                  } else if (originalOpt.metadata_json) {
+                    try {
+                      const metadata = JSON.parse(originalOpt.metadata_json);
+                      if (metadata.imagen) {
+                        opcionImage = { url: metadata.imagen, preview: metadata.imagen };
+                      } else if (metadata.image) {
+                        opcionImage = { url: metadata.image, preview: metadata.image };
+                      }
+                    } catch {}
+                  }
+                }
+                return { ...opt, image: opcionImage };
+              }),
               answer: answer || '',
             };
           });
@@ -835,13 +903,47 @@ export default function EspanolFormBuilder() {
             const type = p.tipo === 'verdadero_falso' ? 'tf' : (p.tipo === 'respuesta_corta' ? 'short' : 'multiple');
             const opts = Array.isArray(p.opciones) ? p.opciones : [];
             const answer = type === 'tf' ? (opts.find(o => o.es_correcta)?.texto === 'Verdadero' ? 'true' : 'false') : (type === 'short' ? (opts.find(o => o.es_correcta)?.texto || '') : '');
+            // ✅ CRÍTICO: Cargar imagen de la pregunta si existe (puede venir como p.imagen, p.image, o en metadata_json)
+            let preguntaImage = null;
+            if (p.imagen) {
+              preguntaImage = { url: p.imagen, preview: p.imagen };
+            } else if (p.image) {
+              preguntaImage = { url: p.image, preview: p.image };
+            } else if (p.metadata_json) {
+              try {
+                const metadata = JSON.parse(p.metadata_json);
+                if (metadata.imagen) {
+                  preguntaImage = { url: metadata.imagen, preview: metadata.imagen };
+                } else if (metadata.image) {
+                  preguntaImage = { url: metadata.image, preview: metadata.image };
+                }
+              } catch {}
+            }
             return {
               id: genId(),
               type,
               text: p.enunciado || '',
               points: p.puntos || 1,
-              image: null,
-              options: type === 'multiple' ? opts.map(o => ({ id: genId(), text: o.texto || '', correct: !!o.es_correcta, image: null })) : [],
+              image: preguntaImage,
+              options: type === 'multiple' ? opts.map(o => {
+                // ✅ CRÍTICO: Cargar imagen de la opción si existe
+                let opcionImage = null;
+                if (o.imagen) {
+                  opcionImage = { url: o.imagen, preview: o.imagen };
+                } else if (o.image) {
+                  opcionImage = { url: o.image, preview: o.image };
+                } else if (o.metadata_json) {
+                  try {
+                    const metadata = JSON.parse(o.metadata_json);
+                    if (metadata.imagen) {
+                      opcionImage = { url: metadata.imagen, preview: metadata.imagen };
+                    } else if (metadata.image) {
+                      opcionImage = { url: metadata.image, preview: metadata.image };
+                    }
+                  } catch {}
+                }
+                return { id: genId(), text: o.texto || '', correct: !!o.es_correcta, image: opcionImage };
+              }) : [],
               answer,
             };
           });
@@ -1500,7 +1602,7 @@ export default function EspanolFormBuilder() {
                     {q.points} pt{q.points > 1 ? "s" : ""}
                   </div>
 
-                  <div className="font-medium text-slate-900">
+                  <div className="text-slate-900">
                     {q.text ? <MathText text={q.text} /> : <em className="text-slate-400">Sin consigna</em>}
                   </div>
 

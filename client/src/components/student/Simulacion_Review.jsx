@@ -24,26 +24,63 @@ const CheckIcon = () => (
 function MathText({ text = "" }) {
   if (!text) return null;
 
-  // ✅ Función para sanitizar HTML (EXACTA de QuiztBuilder.jsx)
+  // ✅ Función para sanitizar HTML (similar a QuiztBuilder.jsx)
+  // NOTA: El Markdown ya se procesa antes de llamar a esta función, así que puede contener <strong>, <b>, etc.
   const sanitizeHtmlLite = (html) => {
     if (!html) return '';
+    // Crear un elemento temporal para sanitizar
     const div = document.createElement('div');
-    div.textContent = html;
-    const safe = div.innerHTML;
-    // Permitir etiquetas básicas de formato
-    return safe
-      .replace(/&lt;u&gt;/g, '<u>')
-      .replace(/&lt;\/u&gt;/g, '</u>')
-      .replace(/&lt;br\s*\/?&gt;/gi, '<br />')
-      .replace(/&lt;strong&gt;/g, '<strong>')
-      .replace(/&lt;\/strong&gt;/g, '</strong>')
-      .replace(/&lt;em&gt;/g, '<em>')
-      .replace(/&lt;\/em&gt;/g, '</em>')
-      .replace(/&lt;b&gt;/g, '<b>')
-      .replace(/&lt;\/b&gt;/g, '</b>')
-      .replace(/&lt;i&gt;/g, '<i>')
-      .replace(/&lt;\/i&gt;/g, '</i>');
+    // Usar innerHTML para preservar las etiquetas HTML válidas que ya procesamos (como <strong>)
+    div.innerHTML = html;
+    // Lista blanca de etiquetas permitidas
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    // Recorrer todos los nodos y eliminar etiquetas no permitidas
+    const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
+    const nodesToRemove = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (!allowedTags.includes(node.tagName.toLowerCase())) {
+        nodesToRemove.push(node);
+      }
+    }
+    nodesToRemove.forEach(n => {
+      const parent = n.parentNode;
+      while (n.firstChild) {
+        parent.insertBefore(n.firstChild, n);
+      }
+      parent.removeChild(n);
+    });
+    return div.innerHTML;
   };
+
+  // ✅ Normalizar saltos de línea y espacios primero
+  let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  
+  // ✅ Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
+  // Esto debe hacerse ANTES de proteger las fórmulas
+  processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
+  
+  // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
+  // Pero proteger las fórmulas LaTeX para no procesarlas
+  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
+  const latexMatches = [];
+  let placeholderIndex = 0;
+  
+  // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
+  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
+    latexMatches.push(match);
+    placeholderIndex++;
+    return placeholder;
+  });
+  
+  // Procesar Markdown: **texto** -> <strong>texto</strong>
+  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  
+  // Restaurar fórmulas LaTeX
+  latexMatches.forEach((match, idx) => {
+    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
+  });
 
   // ✅ Usar regex simple y robusto: busca $...$ de forma no-greedy (EXACTO de QuiztBuilder.jsx)
   const re = /\$([^$]+?)\$/g;
@@ -55,10 +92,10 @@ function MathText({ text = "" }) {
   // Resetear el regex para evitar problemas con múltiples llamadas
   re.lastIndex = 0;
 
-  while ((m = re.exec(text)) !== null) {
+  while ((m = re.exec(processedText)) !== null) {
     matchFound = true;
     if (m.index > lastIndex) {
-      parts.push({ type: 'text', content: text.slice(lastIndex, m.index) });
+      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
     }
     // Limpiar espacios en blanco al inicio y final de la fórmula
     const formula = m[1].trim();
@@ -71,16 +108,16 @@ function MathText({ text = "" }) {
     lastIndex = m.index + m[0].length;
   }
   
-  if (lastIndex < text.length) {
-    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  if (lastIndex < processedText.length) {
+    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
   }
 
-  // Si no se encontraron fórmulas, devolver el texto con HTML procesado
+  // Si no se encontraron fórmulas, devolver el texto con HTML procesado (ya con Markdown convertido)
   if (!matchFound || parts.length === 0) {
     return (
       <span 
         className="whitespace-pre-wrap"
-        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(text) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
       />
     );
   }
@@ -412,8 +449,13 @@ export default function Simulacion_Review() {
         setPreguntas(preg?.data?.data || preg?.data || []);
         const q = meta?.data?.data || meta?.data || {};
         const tlm = Number(q.time_limit_min || q.timeLimitMin || q.tiempo_limite_min || q.time_limit || 0);
-        if (!Number.isNaN(tlm) && tlm > 0) setTimeLimitSec(tlm * 60);
-        else setTimeLimitSec(null);
+        // ✅ CRÍTICO: Si no hay tiempo límite, usar 30 minutos por defecto (nunca null)
+        // Igual que en Quizz_Review.jsx
+        if (!Number.isNaN(tlm) && tlm > 0) {
+          setTimeLimitSec(tlm * 60);
+        } else {
+          setTimeLimitSec(30 * 60); // 30 minutos por defecto
+        }
         if (q.titulo || q.title || q.nombre || q.name || q.tema) setTitle(q.titulo || q.title || q.nombre || q.name || q.tema);
         if (estudianteId) {
           const ses = await crearSesionSimulacion(simId, { id_estudiante: estudianteId });
@@ -590,9 +632,14 @@ export default function Simulacion_Review() {
       setFinalizado(true);
       const key = sesionId ? `sim_end_${sesionId}` : `sim_end_s_${simId}`;
       sessionStorage.removeItem(key);
+      // Notificar a la ventana padre si existe
       if (window.opener && !window.opener.closed) {
         window.opener.postMessage({ type: 'SIM_FINISHED', simId, sesionId }, window.location.origin);
       }
+      // Fallback: usar localStorage para notificar si no hay window.opener
+      try {
+        localStorage.setItem('sim_finished_refresh', JSON.stringify({ simId, sesionId, timestamp: Date.now() }));
+      } catch {}
     } catch (e) {
       console.error(e);
       setError('No se pudo enviar la simulación. Intenta de nuevo.');
@@ -658,8 +705,8 @@ export default function Simulacion_Review() {
           </div>
         </div>
         {timePercent != null && (
-          <div className="w-full h-1 bg-gray-200">
-            <div className={`h-1 rounded-r-full transition-all duration-500 ${timePercent <= 15 ? 'bg-red-500' : timePercent <= 40 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${timePercent}%` }} />
+          <div className="w-full h-0.5 bg-gray-200">
+            <div className={`h-0.5 rounded-r-full transition-all duration-500 ${timePercent <= 15 ? 'bg-red-500' : timePercent <= 40 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${timePercent}%` }} />
           </div>
         )}
       </div>
@@ -695,6 +742,20 @@ export default function Simulacion_Review() {
                       <p className="font-semibold text-gray-900 mb-3 sm:mb-4 text-[15px] sm:text-lg">
                         <MathText text={p.enunciado || p.pregunta || `Pregunta ${idx+1}`} />
                       </p>
+                      
+                      {/* ✅ Imagen de la pregunta si existe */}
+                      {(p.imagen || p.image) && (
+                        <div className="mb-3 sm:mb-4">
+                          <img
+                            src={p.imagen || p.image}
+                            alt="Imagen de la pregunta"
+                            className="max-w-full h-auto rounded-lg border border-gray-200 object-contain max-h-64 sm:max-h-80"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
                       
                       {/* Pregunta de respuesta corta */}
                       {p.tipo === 'respuesta_corta' && (
@@ -743,13 +804,28 @@ export default function Simulacion_Review() {
                               <button key={op.id} onClick={() => handleSelect(p.id, op.id)} aria-pressed={checked}
                                 className={`group text-left border rounded-lg p-3 sm:p-3.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 ${checked ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-200' : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'}`}
                               >
-                                <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-3 w-full">
                                   <span aria-hidden="true" className={`inline-flex flex-none shrink-0 grow-0 h-5 w-5 min-w-[20px] min-h-[20px] items-center justify-center rounded-full border-2 transition-colors duration-200 ${checked ? 'border-indigo-600 bg-indigo-600' : 'border-gray-400 bg-white group-hover:border-indigo-500'}`}>
                                     {checked && <CheckIcon />}
                                   </span>
-                                  <span className="text-[14px] sm:text-sm text-gray-800 leading-[1.35] break-words">
-                                    <MathText text={op.texto || op.opcion || `Opción ${op.id}`} />
-                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    {/* ✅ Imagen de la opción si existe */}
+                                    {(op.imagen || op.image) && (
+                                      <div className="mb-2">
+                                        <img
+                                          src={op.imagen || op.image}
+                                          alt="Imagen de la opción"
+                                          className="max-w-full h-auto rounded-lg border border-gray-200 object-contain max-h-32 sm:max-h-40"
+                                          onError={(e) => {
+                                            e.target.style.display = 'none';
+                                          }}
+                                        />
+                                      </div>
+                                    )}
+                                    <span className="text-[14px] sm:text-sm text-gray-800 leading-[1.35] break-words">
+                                      <MathText text={op.texto || op.opcion || `Opción ${op.id}`} />
+                                    </span>
+                                  </div>
                                 </div>
                               </button>
                             );

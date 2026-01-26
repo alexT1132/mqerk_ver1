@@ -57,7 +57,8 @@ import {
   Hourglass, // Icono para estado pendiente
   LineChart, // Icono para gráficas
   GraduationCap as School, // Icono para Núcleo UNAM / IPN
-  Anchor     // Icono para Militar, Naval y Náutica Mercante
+  Anchor,     // Icono para Militar, Naval y Náutica Mercante
+  RefreshCw   // Icono para refrescar
 } from 'lucide-react';
 import UnifiedCard from '../common/UnifiedCard.jsx';
 
@@ -704,6 +705,19 @@ export function Simulaciones_Alumno_comp() {
           totalPreguntas: Number(q.total_preguntas || 0)
         };
       });
+      
+      console.log('[DEBUG Simulaciones_Alumno_comp - setSimulaciones]', {
+        totalMapped: mapped.length,
+        mappedSims: mapped.map(s => ({
+          id: s.id,
+          nombre: s.nombre,
+          totalIntentos: s.totalIntentos,
+          mejorPuntaje: s.mejorPuntaje,
+          score: s.score,
+          completado: s.completado
+        }))
+      });
+      
       setSimulaciones(mapped);
 
       // Cargar respuestas pendientes para simulaciones completadas
@@ -789,17 +803,55 @@ export function Simulaciones_Alumno_comp() {
   // Helpers de presentación: intentos totales y mejor puntaje por simulación
   const getTotalAttempts = (simulacionId) => {
     const item = simulaciones.find(s => s.id === simulacionId);
-    if (item && typeof item.totalIntentos === 'number') return item.totalIntentos;
+    if (item && typeof item.totalIntentos === 'number') {
+      console.log('[DEBUG Simulaciones - getTotalAttempts]', {
+        simulacionId,
+        simulacionNombre: item.nombre,
+        totalIntentos: item.totalIntentos,
+        desdeItem: true
+      });
+      return item.totalIntentos;
+    }
     const intentos = historialCache[simulacionId] || [];
-    return Array.isArray(intentos) ? intentos.length : 0;
+    const result = Array.isArray(intentos) ? intentos.length : 0;
+    console.log('[DEBUG Simulaciones - getTotalAttempts]', {
+      simulacionId,
+      totalIntentos: result,
+      desdeCache: true,
+      cacheLength: intentos.length,
+      totalSimulaciones: simulaciones.length
+    });
+    return result;
   };
 
   const getBestScore = (simulacionId) => {
     const item = simulaciones.find(s => s.id === simulacionId);
-    if (item && item.bestScore != null) return item.bestScore;
+    if (!item) {
+      console.log('[DEBUG Simulaciones - getBestScore] Item no encontrado:', simulacionId);
+      return 0;
+    }
+    if (item && item.bestScore != null) {
+      console.log('[DEBUG Simulaciones - getBestScore]', {
+        simulacionId,
+        simulacionNombre: item.nombre,
+        bestScore: item.bestScore,
+        desdeItem: true
+      });
+      return item.bestScore;
+    }
     const intentos = historialCache[simulacionId] || [];
-    if (!Array.isArray(intentos) || intentos.length === 0) return 0;
-    return intentos.reduce((m, i) => (typeof i.puntaje === 'number' && i.puntaje > m) ? i.puntaje : m, 0);
+    if (!Array.isArray(intentos) || intentos.length === 0) {
+      console.log('[DEBUG Simulaciones - getBestScore] Sin intentos en cache:', simulacionId);
+      return 0;
+    }
+    const result = intentos.reduce((m, i) => (typeof i.puntaje === 'number' && i.puntaje > m) ? i.puntaje : m, 0);
+    console.log('[DEBUG Simulaciones - getBestScore]', {
+      simulacionId,
+      result,
+      desdeCache: true,
+      intentosLength: intentos.length
+    });
+    return result;
   };
 
   // Escuchar eventos de WebSocket para actualizar lista en tiempo real cuando se crea/publica/borra una simulación
@@ -879,6 +931,67 @@ export function Simulaciones_Alumno_comp() {
       if (reloadTimeout) clearTimeout(reloadTimeout);
     };
   }, [currentLevel, selectedTipo, selectedModulo, estudianteId, loadSimulaciones]);
+
+  // Escuchar notificación desde la pestaña de simulación al finalizar
+  useEffect(() => {
+    const onMessage = (e) => {
+      try {
+        if (!e?.data || e.origin !== window.location.origin) return;
+        if (e.data.type === 'SIM_FINISHED') {
+          console.log('[DEBUG Simulaciones - Mensaje recibido]', {
+            tipo: e.data.type,
+            simId: e.data.simId,
+            sesionId: e.data.sesionId
+          });
+          showNotification('¡Simulación terminada!', 'Se registraron tus respuestas. Actualizando…', 'success');
+          // Recargar simulaciones para reflejar estado/completado
+          if (currentLevel === 'simulaciones') {
+            const scope = selectedTipo === 'generales'
+              ? { type: 'generales' }
+              : (selectedModulo
+                ? { type: 'modulo', moduloId: selectedModulo.id }
+                : { type: 'generales' });
+            console.log('[DEBUG Simulaciones - Recargando con scope]', scope);
+            loadSimulaciones(scope);
+          }
+          // Opcional: traer foco a esta pestaña
+          try { window.focus(); } catch { }
+        }
+      } catch { /* ignore */ }
+    };
+    
+    // También escuchar eventos de localStorage como fallback (para cuando no hay window.opener)
+    const checkLocalStorage = () => {
+      try {
+        const simFinished = localStorage.getItem('sim_finished_refresh');
+        if (simFinished) {
+          const data = JSON.parse(simFinished);
+          console.log('[DEBUG Simulaciones - localStorage sim_finished]', data);
+          localStorage.removeItem('sim_finished_refresh');
+          showNotification('¡Simulación terminada!', 'Se registraron tus respuestas. Actualizando…', 'success');
+          if (currentLevel === 'simulaciones') {
+            const scope = selectedTipo === 'generales'
+              ? { type: 'generales' }
+              : (selectedModulo
+                ? { type: 'modulo', moduloId: selectedModulo.id }
+                : { type: 'generales' });
+            console.log('[DEBUG Simulaciones - Recargando desde localStorage con scope]', scope);
+            loadSimulaciones(scope);
+          }
+        }
+      } catch {}
+    };
+    
+    // Verificar localStorage periódicamente como fallback
+    const interval = setInterval(checkLocalStorage, 2000);
+    checkLocalStorage(); // Verificar inmediatamente
+    
+    window.addEventListener('message', onMessage);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      clearInterval(interval);
+    };
+  }, [currentLevel, selectedTipo, selectedModulo, loadSimulaciones]);
 
   // Efecto para calcular el puntaje total
   useEffect(() => {
@@ -1053,6 +1166,14 @@ export function Simulaciones_Alumno_comp() {
   // Funciones para manejar modal de gráficas
   const handleVerGraficas = async (simulacion) => {
     if (!simulacion) return;
+    
+    // Validar que haya al menos 3 intentos para un análisis preciso
+    const totalAttempts = getTotalAttempts(simulacion.id);
+    if (totalAttempts < 3) {
+      showNotification('Análisis no disponible', `Se requieren al menos 3 intentos para generar un análisis preciso. Actualmente tienes ${totalAttempts} intento${totalAttempts !== 1 ? 's' : ''}.`, 'warning');
+      return;
+    }
+    
     setSelectedSimulacionGraficas(simulacion);
     // Cargar historial antes de abrir el modal para evitar estado "sin datos"
     try { await fetchHistorial(simulacion); } catch { }
@@ -1560,9 +1681,24 @@ export function Simulaciones_Alumno_comp() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                <Target className="w-4 h-4 mr-1.5 text-violet-600" />
-                <span className="font-semibold">{filteredSimulaciones.length} simulaciones disponibles</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                  <Target className="w-4 h-4 mr-1.5 text-violet-600" />
+                  <span className="font-semibold">{filteredSimulaciones.length} simulaciones disponibles</span>
+                </div>
+                <button
+                  onClick={() => {
+                    const scope = selectedTipo === 'generales' 
+                      ? { type: 'generales' } 
+                      : { type: 'modulo', moduloId: selectedModulo?.id };
+                    loadSimulaciones(scope);
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:scale-95 rounded-lg transition-all"
+                  title="Refrescar lista"
+                  aria-label="Refrescar lista"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -1650,15 +1786,15 @@ export function Simulaciones_Alumno_comp() {
             <table className="min-w-full">
               <thead>
                 <tr className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
-                  <th className="px-2 sm:px-3 py-2.5 sm:py-3 text-left text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">No.</th>
-                  <th className="px-2 sm:px-3 py-2.5 sm:py-3 text-left text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Simulación</th>
-                  <th className="px-2 sm:px-3 py-2.5 sm:py-3 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Fecha límite</th>
-                  <th className="px-2 sm:px-3 py-2.5 sm:py-3 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Ejecutar</th>
-                  <th className="px-2 sm:px-3 py-2.5 sm:py-3 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Entregado</th>
-                  <th className="px-2 sm:px-3 py-2.5 sm:py-3 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Volver a intentar</th>
-                  <th className="px-2 sm:px-3 py-2.5 sm:py-3 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Historial</th>
-                  <th className="px-2 sm:px-3 py-2.5 sm:py-3 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Gráficas</th>
-                  <th className="px-2 sm:px-3 py-2.5 sm:py-3 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider last:border-r-0">Puntaje</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-left text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">No.</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-left text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Simulación</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Fecha límite</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Ejecutar</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Entregado</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Volver a intentar</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Historial</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Gráficas</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider last:border-r-0">Puntaje</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200/90">
@@ -1774,12 +1910,17 @@ export function Simulaciones_Alumno_comp() {
                           <span className="text-gray-400 text-[10px] sm:text-[11px]">-</span>
                         )}
                       </td>
-                      <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
+                      <td className="px-2 sm:px-2.5 py-1.5 sm:py-2 text-center border-r border-slate-200/80 last:border-r-0">
                         {simulacion.completado && getTotalAttempts(simulacion.id) > 0 ? (
                           <button
                             onClick={() => handleVerGraficas(simulacion)}
-                            className="inline-flex items-center px-2 py-1 text-[9px] sm:text-[10px] font-extrabold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 rounded-lg border border-indigo-200 transition-all active:scale-95 touch-manipulation shadow-sm"
-                            title="Ver análisis gráfico"
+                            className={`inline-flex items-center px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] font-extrabold rounded-lg border transition-all active:scale-95 touch-manipulation shadow-sm ${
+                              getTotalAttempts(simulacion.id) >= 3 
+                                ? 'text-indigo-700 bg-indigo-100 hover:bg-indigo-200 border-indigo-200' 
+                                : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-60'
+                            }`}
+                            title={getTotalAttempts(simulacion.id) >= 3 ? 'Ver análisis gráfico' : `Se requieren al menos 3 intentos para el análisis. Actualmente tienes ${getTotalAttempts(simulacion.id)}.`}
+                            disabled={getTotalAttempts(simulacion.id) < 3}
                           >
                             <LineChart className="w-3 h-3 mr-0.5" />
                             Análisis
@@ -1826,7 +1967,7 @@ export function Simulaciones_Alumno_comp() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="10" className="px-2 sm:px-3 py-4 text-center text-xs sm:text-sm text-gray-500 font-medium">
+                    <td colSpan="10" className="px-2 sm:px-2.5 py-3 sm:py-4 text-center text-[10px] sm:text-[11px] text-gray-500 font-medium">
                       No hay simulaciones para el mes seleccionado.
                     </td>
                   </tr>
@@ -1955,13 +2096,15 @@ export function Simulaciones_Alumno_comp() {
                             <FileText className="w-4 h-4" />
                             Historial
                           </button>
-                          <button
-                            onClick={() => handleVerGraficas(simulacion)}
-                            className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 text-xs font-extrabold bg-purple-50 text-purple-700 hover:bg-purple-100 border-2 border-purple-200 transition-all active:scale-95 touch-manipulation shadow-sm"
-                          >
-                            <LineChart className="w-4 h-4" />
-                            Gráfico
-                          </button>
+                          {getTotalAttempts(simulacion.id) >= 3 && (
+                            <button
+                              onClick={() => handleVerGraficas(simulacion)}
+                              className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 text-xs font-extrabold bg-purple-50 text-purple-700 hover:bg-purple-100 border-2 border-purple-200 transition-all active:scale-95 touch-manipulation shadow-sm"
+                            >
+                              <LineChart className="w-4 h-4" />
+                              Gráfico
+                            </button>
+                          )}
                         </div>
                       )}
                     </>

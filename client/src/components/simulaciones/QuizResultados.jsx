@@ -1,5 +1,104 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getQuizIntentoReview } from '../../api/quizzes';
+import InlineMath from '../Asesor/simGen/InlineMath.jsx';
+
+// Componente para renderizar texto con fórmulas LaTeX (igual que en Quizz_Review.jsx)
+function MathText({ text = "" }) {
+  if (!text) return null;
+
+  const sanitizeHtmlLite = (html) => {
+    if (!html) return '';
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
+    const nodesToRemove = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (!allowedTags.includes(node.tagName.toLowerCase())) {
+        nodesToRemove.push(node);
+      }
+    }
+    nodesToRemove.forEach(n => {
+      const parent = n.parentNode;
+      while (n.firstChild) {
+        parent.insertBefore(n.firstChild, n);
+      }
+      parent.removeChild(n);
+    });
+    return div.innerHTML;
+  };
+
+  let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
+  
+  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
+  const latexMatches = [];
+  let placeholderIndex = 0;
+  
+  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
+    latexMatches.push(match);
+    placeholderIndex++;
+    return placeholder;
+  });
+  
+  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  
+  latexMatches.forEach((match, idx) => {
+    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
+  });
+
+  const re = /\$([^$]+?)\$/g;
+  const parts = [];
+  let lastIndex = 0;
+  let m;
+  let matchFound = false;
+
+  re.lastIndex = 0;
+
+  while ((m = re.exec(processedText)) !== null) {
+    matchFound = true;
+    if (m.index > lastIndex) {
+      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
+    }
+    const formula = m[1].trim();
+    if (formula) {
+      parts.push({ type: 'math', content: formula });
+    }
+    lastIndex = m.index + m[0].length;
+  }
+  
+  if (lastIndex < processedText.length) {
+    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
+  }
+
+  if (!matchFound || parts.length === 0) {
+    return (
+      <span 
+        className="whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
+      />
+    );
+  }
+
+  return (
+    <span className="whitespace-pre-wrap">
+      {parts.map((part, idx) =>
+        part.type === 'math' ? (
+          <span key={`math-${idx}`} className="inline-block">
+            <InlineMath math={part.content} />
+          </span>
+        ) : (
+          <span 
+            key={`text-${idx}`}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
+          />
+        )
+      )}
+    </span>
+  );
+}
 
 // Modal para mostrar resultados por intento, con detalle por pregunta
 export default function QuizResultados({ open, onClose, quiz, estudianteId }) {
@@ -74,7 +173,9 @@ export default function QuizResultados({ open, onClose, quiz, estudianteId }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-sm text-gray-500">Pregunta {p.orden ?? (idx + 1)}</div>
-            <div className="font-medium text-gray-900">{p.enunciado}</div>
+            <div className="font-medium text-gray-900">
+              <MathText text={p.enunciado || p.pregunta || `Pregunta ${idx + 1}`} />
+            </div>
           </div>
           <span className={`text-xs px-2 py-1 rounded-md ${isCorrect ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
             {isCorrect ? 'Correcta' : 'Incorrecta'}
@@ -104,7 +205,7 @@ export default function QuizResultados({ open, onClose, quiz, estudianteId }) {
         </ul>
         {p.valor_texto && (
           <div className="mt-2 text-sm text-gray-700">
-            Respuesta escrita: <span className="font-medium">{p.valor_texto}</span>
+            Respuesta escrita: <span className="font-medium"><MathText text={p.valor_texto} /></span>
           </div>
         )}
         {p.tiempo_ms ? (

@@ -60,25 +60,56 @@ function MathText({ text = "", onFormulaClick }) {
   if (!text) return null;
 
   // ✅ Función para sanitizar HTML (similar a RichTextEditor)
+  // NOTA: El Markdown ya se procesa antes de llamar a esta función, así que puede contener <strong>, <b>, etc.
   const sanitizeHtmlLite = (html) => {
     if (!html) return '';
+    // Crear un elemento temporal para sanitizar
     const div = document.createElement('div');
-    div.textContent = html;
-    const safe = div.innerHTML;
-    // Permitir etiquetas básicas de formato
-    return safe
-      .replace(/&lt;u&gt;/g, '<u>')
-      .replace(/&lt;\/u&gt;/g, '</u>')
-      .replace(/&lt;br\s*\/?&gt;/gi, '<br />')
-      .replace(/&lt;strong&gt;/g, '<strong>')
-      .replace(/&lt;\/strong&gt;/g, '</strong>')
-      .replace(/&lt;em&gt;/g, '<em>')
-      .replace(/&lt;\/em&gt;/g, '</em>')
-      .replace(/&lt;b&gt;/g, '<b>')
-      .replace(/&lt;\/b&gt;/g, '</b>')
-      .replace(/&lt;i&gt;/g, '<i>')
-      .replace(/&lt;\/i&gt;/g, '</i>');
+    // Usar innerHTML para preservar las etiquetas HTML válidas que ya procesamos (como <strong>)
+    div.innerHTML = html;
+    // Lista blanca de etiquetas permitidas
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    // Recorrer todos los nodos y eliminar etiquetas no permitidas
+    const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
+    const nodesToRemove = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (!allowedTags.includes(node.tagName.toLowerCase())) {
+        nodesToRemove.push(node);
+      }
+    }
+    nodesToRemove.forEach(n => {
+      const parent = n.parentNode;
+      while (n.firstChild) {
+        parent.insertBefore(n.firstChild, n);
+      }
+      parent.removeChild(n);
+    });
+    return div.innerHTML;
   };
+
+  // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
+  // Pero proteger las fórmulas LaTeX para no procesarlas
+  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
+  const latexMatches = [];
+  let processedText = text;
+  let placeholderIndex = 0;
+  
+  // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
+  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
+    latexMatches.push(match);
+    placeholderIndex++;
+    return placeholder;
+  });
+  
+  // Procesar Markdown: **texto** -> <strong>texto</strong>
+  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  
+  // Restaurar fórmulas LaTeX
+  latexMatches.forEach((match, idx) => {
+    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
+  });
 
   // ✅ Usar regex simple y robusto: busca $...$ de forma no-greedy
   // Esto funciona bien para la mayoría de casos, incluyendo fórmulas complejas
@@ -91,10 +122,10 @@ function MathText({ text = "", onFormulaClick }) {
   // Resetear el regex para evitar problemas con múltiples llamadas
   re.lastIndex = 0;
 
-  while ((m = re.exec(text)) !== null) {
+  while ((m = re.exec(processedText)) !== null) {
     matchFound = true;
     if (m.index > lastIndex) {
-      parts.push({ type: 'text', content: text.slice(lastIndex, m.index) });
+      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
     }
     // Limpiar espacios en blanco al inicio y final de la fórmula
     const formula = m[1].trim();
@@ -110,16 +141,16 @@ function MathText({ text = "", onFormulaClick }) {
     lastIndex = m.index + m[0].length;
   }
   
-  if (lastIndex < text.length) {
-    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  if (lastIndex < processedText.length) {
+    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
   }
 
-  // Si no se encontraron fórmulas, devolver el texto con HTML procesado
+  // Si no se encontraron fórmulas, devolver el texto con HTML procesado (ya con Markdown convertido)
   if (!matchFound || parts.length === 0) {
     return (
       <span 
         className="whitespace-pre-wrap"
-        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(text) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
       />
     );
   }
@@ -1033,7 +1064,7 @@ export default function EspanolFormBuilder() {
                     {q.points} pt{q.points > 1 ? "s" : ""}
                   </div>
 
-                  <div className="font-medium text-slate-900">
+                  <div className="text-slate-900">
                     {q.text ? <MathText text={q.text} /> : <em className="text-slate-400">Sin consigna</em>}
                   </div>
 

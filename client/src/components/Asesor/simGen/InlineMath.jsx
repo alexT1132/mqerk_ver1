@@ -14,6 +14,9 @@ export default function InlineMath({ math, children, display = false }) {
   // Remover delimitadores $ si están presentes (ya que react-katex los agrega automáticamente)
   cleanFormula = cleanFormula.replace(/^\$+|\$+$/g, '').trim();
 
+  // ✅ CRÍTICO: Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
+  cleanFormula = cleanFormula.replace(/×/g, '\\times').replace(/÷/g, '\\div');
+
   // Normalizar saltos de línea / HTML breaks que rompen KaTeX (común en editores ricos)
   cleanFormula = cleanFormula
     .replace(/<br\s*\/?>/gi, ' ')

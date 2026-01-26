@@ -462,14 +462,14 @@ export default function HistorialModal({ open, item, historial, onClose }) {
             </div>
             <button
               onClick={handleAnalyzePerformance}
-              disabled={safeHist.intentos.length < 2}
+              disabled={safeHist.intentos.length < 3}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm sm:text-[15px] font-semibold text-white shadow-md hover:shadow-lg bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-500/70 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed mb-2"
             >
               <Sparkles className="w-4 h-4" />
               Generar Análisis de Rendimiento
             </button>
-            {safeHist.intentos.length < 2 && (
-              <p className="text-xs sm:text-sm text-gray-500 italic mt-2">Realiza al menos 2 intentos para que la IA pueda analizar tu progreso y errores recurrentes.</p>
+            {safeHist.intentos.length < 3 && (
+              <p className="text-xs sm:text-sm text-gray-500 italic mt-2">Realiza al menos 3 intentos para que la IA pueda analizar tu progreso y errores recurrentes con mayor precisión.</p>
             )}
             <div className="h-[env(safe-area-inset-bottom,8px)]"></div>
           </div>

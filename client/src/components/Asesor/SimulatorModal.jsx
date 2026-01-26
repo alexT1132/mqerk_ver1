@@ -22,6 +22,8 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
     publico: false, // Borrador por defecto (no publicado)
     horas: 0,
     minutos: 0,
+    intentosMode: 'unlimited', // 'unlimited' | 'limited'
+    maxIntentos: 3,
     grupos: [],
     // ✅ CRÍTICO: Preservar areaId y areaTitle cuando se genera con IA
     areaId: null,
@@ -81,6 +83,8 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
           publico: initialForm.publico ?? (mode === 'edit' ? false : true),
           horas: Number(initialForm.horas || 0),
           minutos: Number(initialForm.minutos || 0),
+          intentosMode: initialForm.intentosMode || 'unlimited',
+          maxIntentos: Number(initialForm.maxIntentos ?? 3),
           grupos: gruposInicial,
           // ✅ CRÍTICO: Preservar areaId y areaTitle del initialForm (viene de iaPrefill cuando se genera con IA)
           areaId: initialForm.areaId !== undefined ? initialForm.areaId : null,
@@ -100,7 +104,7 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
       // foco inicial
       setTimeout(() => firstFocusable.current?.focus(), 50);
     } else {
-      // Reset cuando se cierra
+        // Reset cuando se cierra
       setForm({
         titulo: "",
         instrucciones: "",
@@ -110,6 +114,8 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
         publico: false,
         horas: 0,
         minutos: 0,
+        intentosMode: 'unlimited',
+        maxIntentos: 3,
         grupos: [],
         areaId: null,
         areaTitle: null
@@ -134,10 +140,13 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
 
   // Validaciones para crear simulador
   const totalMinutes = Math.max(0, Math.trunc(Number(form.horas || 0)) * 60) + Math.max(0, Math.trunc(Number(form.minutos || 0)));
+  // ✅ CRÍTICO: Si no se especifica tiempo, usar 30 minutos por defecto
+  const finalMinutes = totalMinutes > 0 ? totalMinutes : 30;
   const hasFecha = form.fechaLimite && form.fechaLimite.trim() !== '';
   const fechaValida = hasFecha ? (new Date(form.fechaLimite + 'T00:00:00') >= new Date(new Date().setHours(0, 0, 0, 0))) : false;
   const hasGrupos = Array.isArray(form.grupos) && form.grupos.length > 0;
-  const hasTiempo = totalMinutes > 0;
+  // ✅ Siempre hay tiempo (30 min por defecto), así que hasTiempo siempre es true
+  const hasTiempo = true;
 
   const canCreate = form.nombre.trim().length >= 3 && hasFecha && fechaValida && hasGrupos && hasTiempo;
 
@@ -219,10 +228,6 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
       showError('Debes seleccionar al menos un grupo.');
       return;
     }
-    if (totalMinutes <= 0) {
-      showError('Debes especificar una duración mayor a 0 (horas o minutos).');
-      return;
-    }
 
     if (!canCreate) return;
     setLoading(true);
@@ -250,6 +255,12 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
           }
         }
       }
+      // Normalizar tiempo (convertir minutos >= 60 a horas) - igual que QuiztModal
+      const normH = Math.max(0, parseInt(form.horas ?? 0, 10) || 0);
+      const normMraw = Math.max(0, parseInt(form.minutos ?? 0, 10) || 0);
+      const addH = Math.floor(normMraw / 60);
+      const normM = normMraw % 60;
+      
       // ✅ Asegurar que título y nombre estén sincronizados antes de enviar
       // ✅ IMPORTANTE: Preservar la descripción del form (que puede venir de iaPrefill)
       // ✅ CRÍTICO: Preservar areaId y areaTitle del form (vienen de iaPrefill cuando se genera con IA)
@@ -258,23 +269,13 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
         nombre: nombreFinal, // Usar el nombre final validado (con fallback a initialForm si viene de IA)
         titulo: tituloFinalizado, // Usar el título final validado (con fallback a initialForm si viene de IA)
         descripcion: descripcionFinal || '', // ✅ Preservar descripción (con fallback a initialForm si viene de IA)
+        horas: normH + addH,
+        minutos: normM,
         grupos: gruposFinal,
         // ✅ CRÍTICO: Incluir areaId y areaTitle en el finalForm para que handleCreate los use
         areaId: form.areaId !== undefined ? form.areaId : null,
         areaTitle: form.areaTitle !== undefined ? form.areaTitle : null
       };
-      
-      // ✅ Log detallado para debugging (siempre mostrar, incluso si es null)
-      console.log('[SimulatorModal] Enviando finalForm a handleCreate:', {
-        areaId: finalForm.areaId,
-        areaTitle: finalForm.areaTitle,
-        titulo: finalForm.titulo,
-        nombre: finalForm.nombre,
-        formAreaId: form.areaId,
-        formAreaTitle: form.areaTitle,
-        tieneAreaId: finalForm.areaId !== null && finalForm.areaId !== undefined,
-        modo: mode
-      });
       if (mode === 'edit') {
         await onUpdate?.(finalForm);
       } else {
@@ -616,12 +617,56 @@ function StepTwo({ form, setForm, gruposAsesor = [], gruposLoading = false, hasG
         <input
           type="number"
           min="0"
-          value={form.minutos}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, minutos: Number(e.target.value) }))
-          }
+          max={599}
+          value={Math.max(0, Number(form.minutos || 0))}
+          onChange={(e) => setForm((f) => ({ ...f, minutos: Math.max(0, Number(e.target.value || 0)) }))}
+          onBlur={(e) => {
+            const hr = Math.max(0, parseInt(form.horas || 0, 10) || 0);
+            const mr = Math.max(0, parseInt(e.target.value || 0, 10) || 0);
+            const addH = Math.floor(mr / 60);
+            const nm = mr % 60;
+            setForm((f) => ({ ...f, horas: hr + addH, minutos: nm }));
+          }}
           className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-200 transition-all"
         />
+        <p className="mt-1 text-[11px] leading-snug text-slate-500">Si ingresas 60 o más minutos, se sumarán a las horas automáticamente.</p>
+      </div>
+
+      {/* Intentos permitidos */}
+      <div className="sm:col-span-2">
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+          <Users className="h-3.5 w-3.5 text-violet-600" />
+          Intentos permitidos
+        </label>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700 whitespace-nowrap">
+            <input
+              type="radio"
+              name="intentosMode"
+              checked={form.intentosMode === 'unlimited'}
+              onChange={() => setForm((f) => ({ ...f, intentosMode: 'unlimited' }))}
+            />
+            Sin límite
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700 whitespace-nowrap">
+            <input
+              type="radio"
+              name="intentosMode"
+              checked={form.intentosMode === 'limited'}
+              onChange={() => setForm((f) => ({ ...f, intentosMode: 'limited' }))}
+            />
+            Límite:
+          </label>
+          <input
+            type="number"
+            min={1}
+            value={form.maxIntentos}
+            disabled={form.intentosMode !== 'limited'}
+            onChange={(e) => setForm((f) => ({ ...f, maxIntentos: Math.max(1, Number(e.target.value || 1)) }))}
+            className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm disabled:bg-slate-100 disabled:opacity-50 disabled:pointer-events-none"
+          />
+        </div>
+        <p className="mt-1 text-xs leading-snug text-slate-500">Si eliges "Sin límite", el alumno podrá intentar hasta la fecha límite.</p>
       </div>
 
       {/* Selección de grupos */}

@@ -405,22 +405,71 @@ export function Actividades_Alumno_comp() {
     } catch { /* ignore */ }
   }, [currentLevel, selectedType, selectedArea, selectedModulo, location.pathname]);
 
-  // Escuchar notificación desde la pestaña del quiz al finalizar
+  // Escuchar notificación desde la pestaña del quiz/simulación al finalizar
   useEffect(() => {
     const onMessage = (e) => {
       try {
         if (!e?.data || e.origin !== window.location.origin) return;
-        if (e.data.type === 'QUIZ_FINISHED') {
-          showNotification('¡Quiz terminado!', 'Se registraron tus respuestas. Actualizando…', 'success');
+        if (e.data.type === 'QUIZ_FINISHED' || e.data.type === 'SIM_FINISHED') {
+          const tipo = e.data.type === 'QUIZ_FINISHED' ? 'quiz' : 'simulación';
+          console.log('[DEBUG Actividades_Alumno_comp - Mensaje recibido]', {
+            tipo: e.data.type,
+            quizId: e.data.quizId,
+            simId: e.data.simId,
+            sesionId: e.data.sesionId
+          });
+          showNotification(`¡${tipo === 'quiz' ? 'Quiz' : 'Simulación'} terminado!`, 'Se registraron tus respuestas. Actualizando…', 'success');
           // Traer de nuevo el listado para reflejar estado/completado
-          setRefreshKey((k) => k + 1);
+          // Usar un pequeño delay para asegurar que el backend haya procesado la finalización
+          setTimeout(() => {
+            console.log('[DEBUG Actividades_Alumno_comp - Refrescando datos]');
+            setRefreshKey((k) => k + 1);
+          }, 500);
           // Opcional: traer foco a esta pestaña
           try { window.focus(); } catch { }
         }
       } catch { /* ignore */ }
     };
+    
+    // También escuchar eventos de localStorage como fallback (para cuando no hay window.opener)
+    const checkLocalStorage = () => {
+      try {
+        const quizFinished = localStorage.getItem('quiz_finished_refresh');
+        const simFinished = localStorage.getItem('sim_finished_refresh');
+        if (quizFinished) {
+          const data = JSON.parse(quizFinished);
+          console.log('[DEBUG Actividades_Alumno_comp - localStorage quiz_finished]', data);
+          localStorage.removeItem('quiz_finished_refresh');
+          showNotification('¡Quiz terminado!', 'Se registraron tus respuestas. Actualizando…', 'success');
+          // Usar un pequeño delay para asegurar que el backend haya procesado
+          setTimeout(() => {
+            console.log('[DEBUG Actividades_Alumno_comp - Refrescando datos desde localStorage (quiz)]');
+            setRefreshKey((k) => k + 1);
+          }, 500);
+        }
+        if (simFinished) {
+          const data = JSON.parse(simFinished);
+          console.log('[DEBUG Actividades_Alumno_comp - localStorage sim_finished]', data);
+          localStorage.removeItem('sim_finished_refresh');
+          showNotification('¡Simulación terminada!', 'Se registraron tus respuestas. Actualizando…', 'success');
+          // Usar un pequeño delay para asegurar que el backend haya procesado
+          setTimeout(() => {
+            console.log('[DEBUG Actividades_Alumno_comp - Refrescando datos desde localStorage (sim)]');
+            setRefreshKey((k) => k + 1);
+          }, 500);
+        }
+      } catch {}
+    };
+    
+    // Verificar localStorage periódicamente como fallback
+    const interval = setInterval(checkLocalStorage, 2000);
+    checkLocalStorage(); // Verificar inmediatamente
+    
     window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      clearInterval(interval);
+    };
   }, []);
 
   // Cuando el listado está listo y hay un historial pendiente, abrirlo
@@ -617,7 +666,11 @@ export function Actividades_Alumno_comp() {
     const fetchData = async () => {
       // Nota: Para quizzes podemos cargar catálogo aun sin estudianteId.
       // Por eso solo exigimos tipo y área seleccionados.
-      if (!selectedType || !selectedArea) return;
+      if (!selectedType || !selectedArea) {
+        console.log('[DEBUG Actividades_Alumno_comp - fetchData] No se ejecuta:', { selectedType, selectedArea });
+        return;
+      }
+      console.log('[DEBUG Actividades_Alumno_comp - fetchData] Iniciando carga:', { selectedType, selectedArea: selectedArea.id, estudianteId });
       setLoading(true); setError('');
       try {
         if (selectedType === 'actividades') {
@@ -701,9 +754,39 @@ export function Actividades_Alumno_comp() {
           const resumenRows = resResumen.status === 'fulfilled' ? (resResumen.value?.data?.data || resResumen.value?.data || []) : [];
           const catalogRows = resCatalog.status === 'fulfilled' ? (resCatalog.value?.data?.data || resCatalog.value?.data || []) : [];
           console.debug('[Quizzes] Resumen recibido:', resumenRows.length, 'catálogo recibido:', catalogRows.length);
+          console.log('[DEBUG Actividades_Alumno_comp - Resumen del backend]', {
+            estudianteId,
+            resResumenStatus: resResumen.status,
+            resResumenValue: resResumen.status === 'fulfilled' ? resResumen.value : null,
+            resumenRows: resumenRows.map(r => ({
+              id: r.id,
+              titulo: r.titulo,
+              id_area: r.id_area,
+              total_intentos: r.total_intentos,
+              oficial_puntaje: r.oficial_puntaje,
+              ultimo_puntaje: r.ultimo_puntaje,
+              mejor_puntaje: r.mejor_puntaje
+            })),
+            catalogRows: catalogRows.map(c => ({
+              id: c.id,
+              titulo: c.titulo,
+              id_area: c.id_area
+            }))
+          });
 
           // Índice de resumen por id quiz para mergear métricas del alumno
-          const resumenById = resumenRows.reduce((acc, q) => { acc[q.id] = q; return acc; }, {});
+          const resumenById = resumenRows.reduce((acc, q) => { 
+            if (q && q.id) {
+              acc[q.id] = q; 
+            }
+            return acc; 
+          }, {});
+          console.log('[DEBUG Actividades_Alumno_comp - resumenById]', {
+            totalResumenRows: resumenRows.length,
+            resumenByIdKeys: Object.keys(resumenById),
+            resumenById: resumenById,
+            resumenRowsCompleto: resumenRows
+          });
 
           // Fuente base: si hay catálogo, usarlo; si no, usar el resumen directamente
           let baseRows = catalogRows.length ? catalogRows : resumenRows;
@@ -785,9 +868,38 @@ export function Actividades_Alumno_comp() {
           console.debug('[Quizzes] Filas después de filtrar por área:', rows.length);
 
           // Eliminar datos mock: si no hay filas, se mostrará tabla vacía o estado vacío.
+          console.log('[DEBUG Actividades_Alumno_comp - Antes de mapear]', {
+            totalRows: rows.length,
+            resumenByIdKeys: Object.keys(resumenById),
+            resumenById: resumenById,
+            rowsIds: rows.map(r => r.id),
+            resumenRowsIds: resumenRows.map(r => r.id)
+          });
           const mapped = rows.map(q => {
+            // Usar resumen si existe, sino usar datos del catálogo
             const r = resumenById[q.id] || q; // r contiene métricas si existen
-            const total_intentos = Number(r.total_intentos || 0);
+            // Si no hay resumen, los total_intentos serán 0 (normal si no hay intentos)
+            const total_intentos = Number(r.total_intentos ?? r.total_intentos ?? 0);
+            console.log('[DEBUG Actividades_Alumno_comp - Mapeando quiz]', {
+              quizId: q.id,
+              quizTitulo: q.titulo,
+              tieneResumen: !!resumenById[q.id],
+              resumenData: resumenById[q.id] ? {
+                id: resumenById[q.id].id,
+                total_intentos: resumenById[q.id].total_intentos,
+                oficial_puntaje: resumenById[q.id].oficial_puntaje,
+                ultimo_puntaje: resumenById[q.id].ultimo_puntaje,
+                mejor_puntaje: resumenById[q.id].mejor_puntaje
+              } : null,
+              usandoResumen: resumenById[q.id] ? 'resumenById' : 'q (catálogo)',
+              datosR: r ? {
+                total_intentos: r.total_intentos,
+                oficial_puntaje: r.oficial_puntaje,
+                ultimo_puntaje: r.ultimo_puntaje,
+                mejor_puntaje: r.mejor_puntaje
+              } : null,
+              total_intentos_calculado: total_intentos
+            });
             // Regla: el primer intento es el oficial para calificación
             const oficial_puntaje = (r.oficial_puntaje != null ? Number(r.oficial_puntaje) : null);
             const ultimo_puntaje = (r.ultimo_puntaje != null ? Number(r.ultimo_puntaje) : null);
@@ -804,10 +916,10 @@ export function Actividades_Alumno_comp() {
             const estadoQuiz = (total_intentos >= max_intentos_value)
               ? 'completado'
               : (within ? 'disponible' : 'vencido');
-            return {
+            const mappedQuiz = {
               id: q.id,
               nombre: q.titulo,
-              descripcion: q.descripcion || '',
+              descripcion: q.descripcion || q.instrucciones || '',
               fechaEntrega: fecha_limite,
               fechaSubida: null,
               archivo: null,
@@ -836,11 +948,101 @@ export function Actividades_Alumno_comp() {
               mejorPuntaje: mejor_puntaje,
               plantilla: null
             };
+            
+            console.log('[DEBUG Actividades_Alumno_comp - Mapeo Quiz]', {
+              quizId: q.id,
+              quizTitulo: q.titulo,
+              resumenData: r,
+              total_intentos,
+              oficial_puntaje,
+              ultimo_puntaje,
+              mejor_puntaje,
+              mappedQuiz
+            });
+            
+            return mappedQuiz;
+          });
+          
+          // Si el resumen está vacío pero hay quizzes en el catálogo, intentar cargar intentos directamente
+          if (resumenRows.length === 0 && catalogRows.length > 0 && estudianteId && rows.length > 0) {
+            console.log('[DEBUG Actividades_Alumno_comp] Resumen vacío, cargando intentos directamente para quizzes del catálogo');
+            try {
+              // Cargar intentos para cada quiz del catálogo que esté en rows
+              const intentosPromises = rows.map(async (q) => {
+                try {
+                  const resp = await listIntentosQuizEstudiante(q.id, estudianteId);
+                  const intentos = resp?.data?.data || resp?.data || [];
+                  if (intentos.length > 0) {
+                    const total_intentos = intentos.length;
+                    const mejor_puntaje = Math.max(...intentos.map(i => Number(i.puntaje || 0)));
+                    const ultimo_puntaje = intentos[intentos.length - 1]?.puntaje || null;
+                    const oficial_puntaje = intentos.find(i => i.intent_number === 1)?.puntaje || ultimo_puntaje;
+                    return {
+                      quizId: q.id,
+                      total_intentos,
+                      mejor_puntaje,
+                      ultimo_puntaje,
+                      oficial_puntaje,
+                      intentos
+                    };
+                  }
+                  return null;
+                } catch (e) {
+                  console.warn('[DEBUG] Error cargando intentos para quiz', q.id, e);
+                  return null;
+                }
+              });
+              
+              const intentosData = await Promise.all(intentosPromises);
+              const intentosByQuizId = {};
+              intentosData.forEach(data => {
+                if (data) {
+                  intentosByQuizId[data.quizId] = data;
+                }
+              });
+              
+              console.log('[DEBUG Actividades_Alumno_comp] Intentos cargados directamente:', intentosByQuizId);
+              
+              // Actualizar mapped con los datos de intentos cargados
+              mapped.forEach(quiz => {
+                const intentosData = intentosByQuizId[quiz.id];
+                if (intentosData) {
+                  quiz.totalIntentos = intentosData.total_intentos;
+                  quiz.mejorPuntaje = intentosData.mejor_puntaje;
+                  quiz.score = intentosData.oficial_puntaje || intentosData.ultimo_puntaje;
+                  quiz.intentos = intentosData.intentos;
+                  quiz.entregada = intentosData.total_intentos > 0;
+                }
+              });
+            } catch (e) {
+              console.error('[DEBUG] Error cargando intentos directamente:', e);
+            }
+          }
+          
+          console.log('[DEBUG Actividades_Alumno_comp - setActividades]', {
+            tipo: selectedType,
+            totalMapped: mapped.length,
+            mappedQuizzes: mapped.map(q => ({
+              id: q.id,
+              nombre: q.nombre,
+              totalIntentos: q.totalIntentos,
+              mejorPuntaje: q.mejorPuntaje,
+              score: q.score,
+              entregada: q.entregada,
+              estado: q.estado
+            })),
+            resumenByIdKeys: Object.keys(resumenById),
+            resumenByIdValues: Object.values(resumenById).map(r => ({
+              id: r.id,
+              total_intentos: r.total_intentos,
+              oficial_puntaje: r.oficial_puntaje,
+              mejor_puntaje: r.mejor_puntaje
+            }))
           });
           setActividades(mapped);
         }
       } catch (e) {
-        console.error(e);
+        console.error('[ERROR Actividades_Alumno_comp]', e);
         setError('Error cargando datos');
         if (retryCount < MAX_RETRIES) {
           setRetryCount(c => c + 1);
@@ -1649,6 +1851,176 @@ export function Actividades_Alumno_comp() {
     const returnTo = buildReturnTo();
     navigate(`/alumno/actividades/quiz/${quizId}/resultados`, { state: { quiz, returnTo } });
   };
+
+  // Función para acceder a análisis con IA de un quiz
+  const handleVerAnalisis = async (quizId) => {
+    const quiz = actividades.find(q => q.id === quizId);
+    if (!quiz || !estudianteId) {
+      showNotification('Error', 'No se encontró el quiz o el estudiante.', 'warning');
+      return;
+    }
+
+    // Cargar intentos si no están disponibles
+    let historial = getQuizHistorial(quizId);
+    if (!historial || historial.intentos.length === 0) {
+      try {
+        const resp = await listIntentosQuizEstudiante(quiz.id, estudianteId);
+        const lista = resp?.data?.data || resp?.data || [];
+        if (Array.isArray(lista) && lista.length > 0) {
+          const intentos = lista.map((it, idx) => {
+            const sec = Number(it.tiempo_segundos ?? it.tiempo_empleado ?? it.duration_sec ?? 0);
+            return {
+              id: it.id || idx + 1,
+              intent_number: it.intent_number || it.numero || it.version || (lista.length - idx),
+              numero: it.intent_number || it.numero || it.version || (lista.length - idx),
+              fecha: it.created_at || it.fecha || it.updated_at || new Date().toISOString(),
+              puntaje: Number(it.puntaje ?? it.score ?? it.calificacion ?? 0),
+              tiempoEmpleado: sec,
+              tiempo_segundos: sec,
+            };
+          });
+          const totalIntentos = intentos.length;
+          const mejorPuntaje = intentos.reduce((m, x) => Math.max(m, Number(x.puntaje || 0)), 0);
+          const promedio = totalIntentos ? (intentos.reduce((s, x) => s + Number(x.puntaje || 0), 0) / totalIntentos) : 0;
+          const promedioTiempo = intentos.length ? (intentos.reduce((s, x) => s + Number(x.tiempoEmpleado || 0), 0) / intentos.length) : 0;
+          
+          // Actualizar el estado del quiz con los intentos
+          setActividades(prev => prev.map(q => q.id === quiz.id ? {
+            ...q,
+            intentos,
+            totalIntentos,
+            mejorPuntaje: mejorPuntaje || q.mejorPuntaje || 0,
+            score: intentos[totalIntentos - 1]?.puntaje ?? q.score ?? null,
+            promedio
+          } : q));
+          
+          historial = { intentos, totalIntentos, mejorPuntaje, promedio, promedioTiempo };
+        }
+      } catch (e) {
+        console.warn('No se pudo cargar historial de intentos para análisis:', e);
+      }
+    }
+    
+    if (!historial || historial.intentos.length === 0) {
+      navigate('/alumno/analisis-ia', {
+        state: {
+          analysisText: '',
+          itemName: quiz.nombre || '',
+          analysisMeta: null,
+          isLoading: false,
+          error: "No hay suficientes datos para un análisis.",
+          itemId: quiz.id,
+          estudianteId: estudianteId,
+          tipo: 'quiz'
+        }
+      });
+      return;
+    }
+
+    // Validar que haya al menos 3 intentos para un análisis preciso
+    if (historial.intentos.length < 3) {
+      showNotification('Análisis no disponible', `Se requieren al menos 3 intentos para generar un análisis preciso. Actualmente tienes ${historial.intentos.length} intento${historial.intentos.length !== 1 ? 's' : ''}.`, 'warning');
+      return;
+    }
+
+    // Navegar a la página con loading
+    navigate('/alumno/analisis-ia', {
+      state: {
+        analysisText: '',
+        itemName: quiz.nombre || '',
+        analysisMeta: null,
+        isLoading: true,
+        error: null,
+        itemId: quiz.id,
+        estudianteId: estudianteId,
+        tipo: 'quiz'
+      }
+    });
+
+    try {
+      // Importar función de análisis
+      const { generarAnalisisConGemini } = await import('../../service/geminiService');
+      const { getQuizIntentoReview } = await import('../../api/quizzes');
+
+      // Ordenar cronológicamente (más antiguo -> más reciente) para análisis
+      const ordered = Array.isArray(historial.intentos)
+        ? [...historial.intentos].sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+        : [];
+
+      // Cálculos adicionales
+      const scores = ordered.map(i => i.puntaje);
+      const fechas = ordered.map(i => i.fecha);
+      const durationsArr = ordered
+        .map(i => {
+          if (typeof i.tiempo_segundos === 'number') return i.tiempo_segundos;
+          if (typeof i.tiempoEmpleado === 'number') return i.tiempoEmpleado * 60; // convertir minutos a segundos
+          return null;
+        })
+        .filter(v => v != null);
+
+      // Obtener detalle del último intento
+      let detalleUltimoIntento = null;
+      const intentoSel = historial.intentos.length;
+      if (quiz.id && estudianteId && intentoSel) {
+        try {
+          const resp = await getQuizIntentoReview(quiz.id, estudianteId, intentoSel);
+          detalleUltimoIntento = resp?.data?.data || resp?.data || null;
+        } catch (e) {
+          console.warn('No se pudo obtener el detalle del intento para análisis IA:', e);
+        }
+      }
+
+      // Preparar datos para análisis
+      const preguntas = Array.isArray(detalleUltimoIntento?.preguntas) ? detalleUltimoIntento.preguntas : [];
+      const meta = {
+        tipo: 'quiz',
+        itemId: quiz.id,
+        itemNombre: quiz.nombre,
+        totalIntentos: historial.intentos.length,
+        mejorPuntaje: historial.mejorPuntaje,
+        promedioPuntaje: historial.promedio,
+        ultimoPuntaje: scores.length > 0 ? scores[scores.length - 1] : null,
+        mejoraDesdePrimero: (scores.length > 1) ? (scores[scores.length - 1] - scores[0]) : 0,
+        promedioDuracion: durationsArr.length ? (durationsArr.reduce((a, b) => a + b, 0) / durationsArr.length) : null,
+        totalPreguntas: preguntas.length,
+        correctas: preguntas.filter(p => !!p.correcta).length,
+        incorrectas: preguntas.length - preguntas.filter(p => !!p.correcta).length
+      };
+
+      // Generar análisis con IA
+      const result = await generarAnalisisConGemini(historial, meta, detalleUltimoIntento);
+
+      // Navegar con el resultado
+      navigate('/alumno/analisis-ia', {
+        replace: true,
+        state: {
+          analysisText: result || '',
+          itemName: quiz.nombre || '',
+          analysisMeta: meta,
+          isLoading: false,
+          error: null,
+          itemId: quiz.id,
+          estudianteId: estudianteId,
+          tipo: 'quiz'
+        }
+      });
+    } catch (e) {
+      console.error('Error generando análisis:', e);
+      navigate('/alumno/analisis-ia', {
+        replace: true,
+        state: {
+          analysisText: '',
+          itemName: quiz.nombre || '',
+          analysisMeta: null,
+          isLoading: false,
+          error: 'No se pudo generar el análisis. Por favor, intenta más tarde.',
+          itemId: quiz.id,
+          estudianteId: estudianteId,
+          tipo: 'quiz'
+        }
+      });
+    }
+  };
   // Cierre del modal de resultados
   const closeResultadosModal = () => {
     setShowResultadosModal(false);
@@ -1867,45 +2239,57 @@ export function Actividades_Alumno_comp() {
   };
 
   // Funciones para el modal de historial de quizzes
-  const handleVerHistorial = (quiz) => {
+  const handleVerHistorial = async (quiz) => {
+    if (!quiz || !quiz.id || !estudianteId) {
+      showNotification('Error', 'No se encontró el quiz o el estudiante.', 'warning');
+      return;
+    }
+    
     setSelectedQuizHistorial(quiz);
-    setShowHistorialModal(true);
-    // Intentar cargar intentos reales desde el backend si hay estudiante
-    if (!quiz || !quiz.id || !estudianteId) return;
-    (async () => {
-      try {
-        const resp = await listIntentosQuizEstudiante(quiz.id, estudianteId);
-        const lista = resp?.data?.data || resp?.data || [];
-        if (Array.isArray(lista)) {
-          const intentos = lista.map((it, idx) => {
-            const sec = Number(it.tiempo_segundos ?? it.tiempo_empleado ?? it.duration_sec ?? 0);
-            return {
-              id: it.id || idx + 1,
-              intent_number: it.intent_number || it.numero || it.version || (lista.length - idx), // Usar intent_number del backend
-              numero: it.intent_number || it.numero || it.version || (lista.length - idx),
-              fecha: it.created_at || it.fecha || it.updated_at || new Date().toISOString(),
-              puntaje: Number(it.puntaje ?? it.score ?? it.calificacion ?? 0),
-              // Normalizamos a segundos y preservamos ambos nombres para compatibilidad
-              tiempoEmpleado: sec,
-              tiempo_segundos: sec,
-            };
-          });
-          const totalIntentos = intentos.length;
-          const mejorPuntaje = intentos.reduce((m, x) => Math.max(m, Number(x.puntaje || 0)), 0);
-          const promedio = totalIntentos ? (intentos.reduce((s, x) => s + Number(x.puntaje || 0), 0) / totalIntentos) : 0;
-          setActividades(prev => prev.map(q => q.id === quiz.id ? {
-            ...q,
-            intentos,
-            totalIntentos,
-            mejorPuntaje: mejorPuntaje || q.mejorPuntaje || 0,
-            score: intentos[totalIntentos - 1]?.puntaje ?? q.score ?? null,
-            promedio
-          } : q));
-        }
-      } catch (e) {
-        console.warn('No se pudo cargar historial de intentos del backend', e);
+    
+    // Cargar intentos reales desde el backend ANTES de abrir el modal
+    try {
+      const resp = await listIntentosQuizEstudiante(quiz.id, estudianteId);
+      const lista = resp?.data?.data || resp?.data || [];
+      if (Array.isArray(lista)) {
+        const intentos = lista.map((it, idx) => {
+          const sec = Number(it.tiempo_segundos ?? it.tiempo_empleado ?? it.duration_sec ?? 0);
+          return {
+            id: it.id || idx + 1,
+            intent_number: it.intent_number || it.numero || it.version || (lista.length - idx), // Usar intent_number del backend
+            numero: it.intent_number || it.numero || it.version || (lista.length - idx),
+            fecha: it.created_at || it.fecha || it.updated_at || new Date().toISOString(),
+            puntaje: Number(it.puntaje ?? it.score ?? it.calificacion ?? 0),
+            // Normalizamos a segundos y preservamos ambos nombres para compatibilidad
+            tiempoEmpleado: sec,
+            tiempo_segundos: sec,
+          };
+        });
+        const totalIntentos = intentos.length;
+        const mejorPuntaje = intentos.reduce((m, x) => Math.max(m, Number(x.puntaje || 0)), 0);
+        const promedio = totalIntentos ? (intentos.reduce((s, x) => s + Number(x.puntaje || 0), 0) / totalIntentos) : 0;
+        
+        // Actualizar el estado con los intentos cargados
+        setActividades(prev => prev.map(q => q.id === quiz.id ? {
+          ...q,
+          intentos,
+          totalIntentos,
+          mejorPuntaje: mejorPuntaje || q.mejorPuntaje || 0,
+          score: intentos[totalIntentos - 1]?.puntaje ?? q.score ?? null,
+          promedio
+        } : q));
+        
+        // Abrir el modal DESPUÉS de actualizar los datos
+        setShowHistorialModal(true);
+      } else {
+        // Si no hay datos, abrir el modal de todas formas (mostrará "Sin intentos")
+        setShowHistorialModal(true);
       }
-    })();
+    } catch (e) {
+      console.warn('No se pudo cargar historial de intentos del backend', e);
+      // Abrir el modal de todas formas para mostrar el error o estado vacío
+      setShowHistorialModal(true);
+    }
   };
 
   const closeHistorialModal = () => {
@@ -1927,12 +2311,30 @@ export function Actividades_Alumno_comp() {
 
   const getTotalAttempts = (quizId) => {
     const quiz = actividades.find(q => q.id === quizId);
-    return quiz ? quiz.totalIntentos || 0 : 0;
+    if (!quiz) {
+      console.log('[DEBUG getTotalAttempts] Quiz no encontrado:', quizId, 'Total actividades:', actividades.length);
+      return 0;
+    }
+    // Asegurar que totalIntentos sea un número válido
+    const attempts = Number(quiz.totalIntentos);
+    const result = Number.isFinite(attempts) && attempts >= 0 ? attempts : 0;
+    console.log('[DEBUG getTotalAttempts]', {
+      quizId,
+      quizNombre: quiz.nombre,
+      totalIntentos: quiz.totalIntentos,
+      attempts,
+      result,
+      quizCompleto: quiz
+    });
+    return result;
   };
 
   const getBestScore = (itemId) => {
     const item = actividades.find(q => q.id === itemId);
-    if (!item) return 0;
+    if (!item) {
+      console.log('[DEBUG getBestScore] Item no encontrado:', itemId);
+      return 0;
+    }
     if (selectedType === 'actividades') {
       if (item.score === null || item.score === undefined) {
         // Si está marcada como revisada pero score null, mostrar 0 (o placeholder) y no 'En revisión'
@@ -1941,7 +2343,21 @@ export function Actividades_Alumno_comp() {
       }
       return item.score;
     }
-    return item.mejorPuntaje || 0;
+    // Para quizzes: devolver mejorPuntaje o score, asegurando que sea un número
+    const score = item.mejorPuntaje ?? item.score ?? 0;
+    // Asegurar que sea un número válido
+    const numScore = Number(score);
+    const result = Number.isFinite(numScore) ? numScore : 0;
+    console.log('[DEBUG getBestScore]', {
+      itemId,
+      itemNombre: item.nombre,
+      mejorPuntaje: item.mejorPuntaje,
+      score: item.score,
+      numScore,
+      result,
+      itemCompleto: item
+    });
+    return result;
   };
 
   // Efecto para cargar archivos de la entrega cuando se abre el modal (no hooks dentro de render condicional)
@@ -2756,6 +3172,7 @@ export function Actividades_Alumno_comp() {
           loading={loading}
           error={error}
           isMobile={isMobile}
+          onRefresh={() => setRefreshKey(k => k + 1)}
           selectedMonth={selectedMonth}
           isDropdownOpen={isDropdownOpen}
           setIsDropdownOpen={setIsDropdownOpen}
@@ -2779,6 +3196,7 @@ export function Actividades_Alumno_comp() {
           pagedQuizzes={pagedQuizzes}
           loading={loading}
           error={error}
+          onRefresh={() => setRefreshKey(k => k + 1)}
           isMobile={isMobile}
           selectedMonth={selectedMonth}
           isDropdownOpen={isDropdownOpen}
@@ -2801,6 +3219,7 @@ export function Actividades_Alumno_comp() {
           handleIniciarSimulacion={handleIniciarSimulacion}
           handleVisualizarResultados={handleVisualizarResultados}
           handleVerHistorial={handleVerHistorial}
+          handleVerAnalisis={handleVerAnalisis}
           getBestScore={getBestScore}
           canRetry={canRetry}
           pendingAnswers={pendingAnswers}

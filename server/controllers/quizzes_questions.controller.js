@@ -16,13 +16,40 @@ export const listPreguntasQuiz = async (req, res) => {
     const safe = [];
     for (const p of preguntas) {
       const opciones = await QQ.listOpcionesPregunta(p.id);
+      // ✅ CRÍTICO: Extraer imagen de la pregunta si existe (puede venir como p.imagen, p.image, o en metadata_json)
+      let preguntaImagen = null;
+      if (p.imagen) {
+        preguntaImagen = p.imagen;
+      } else if (p.image) {
+        preguntaImagen = p.image;
+      } else if (p.metadata_json) {
+        try {
+          const metadata = JSON.parse(p.metadata_json);
+          preguntaImagen = metadata.imagen || metadata.image || null;
+        } catch {}
+      }
       safe.push({
         id: p.id,
         orden: p.orden,
         enunciado: p.enunciado,
         tipo: p.tipo,
         puntos: p.puntos,
-        opciones: opciones.map(o => ({ id: o.id, texto: o.texto })) // ocultamos es_correcta
+        imagen: preguntaImagen, // ✅ Incluir imagen de la pregunta
+        opciones: opciones.map(o => {
+          // ✅ CRÍTICO: Extraer imagen de la opción si existe
+          let opcionImagen = null;
+          if (o.imagen) {
+            opcionImagen = o.imagen;
+          } else if (o.image) {
+            opcionImagen = o.image;
+          } else if (o.metadata_json) {
+            try {
+              const metadata = JSON.parse(o.metadata_json);
+              opcionImagen = metadata.imagen || metadata.image || null;
+            } catch {}
+          }
+          return { id: o.id, texto: o.texto, imagen: opcionImagen }; // ✅ Incluir imagen de la opción
+        })
       });
     }
     res.json({ data: safe });
@@ -47,7 +74,34 @@ export const getQuizFull = async (req, res) => {
     const out = [];
     for (const p of preguntas) {
       const opciones = await QQ.listOpcionesPregunta(p.id);
-      out.push({ ...p, opciones });
+      // ✅ CRÍTICO: Extraer imagen de la pregunta si existe (puede venir como p.imagen, p.image, o en metadata_json)
+      let preguntaImagen = null;
+      if (p.imagen) {
+        preguntaImagen = p.imagen;
+      } else if (p.image) {
+        preguntaImagen = p.image;
+      } else if (p.metadata_json) {
+        try {
+          const metadata = JSON.parse(p.metadata_json);
+          preguntaImagen = metadata.imagen || metadata.image || null;
+        } catch {}
+      }
+      // ✅ CRÍTICO: Extraer imagen de cada opción si existe
+      const opcionesConImagen = opciones.map(o => {
+        let opcionImagen = null;
+        if (o.imagen) {
+          opcionImagen = o.imagen;
+        } else if (o.image) {
+          opcionImagen = o.image;
+        } else if (o.metadata_json) {
+          try {
+            const metadata = JSON.parse(o.metadata_json);
+            opcionImagen = metadata.imagen || metadata.image || null;
+          } catch {}
+        }
+        return { ...o, imagen: opcionImagen };
+      });
+      out.push({ ...p, imagen: preguntaImagen, opciones: opcionesConImagen });
     }
     return res.json({ data: { quiz, preguntas: out } });
   } catch (e) {
@@ -237,7 +291,34 @@ export const getReviewQuizIntento = async (req, res) => {
     const preguntasOut = [];
     for (const p of preguntas) {
       const opciones = await QQ.listOpcionesPregunta(p.id);
-      preguntasOut.push({ ...p, opciones });
+      // ✅ CRÍTICO: Extraer imagen de la pregunta si existe (puede venir como p.imagen, p.image, o en metadata_json)
+      let preguntaImagen = null;
+      if (p.imagen) {
+        preguntaImagen = p.imagen;
+      } else if (p.image) {
+        preguntaImagen = p.image;
+      } else if (p.metadata_json) {
+        try {
+          const metadata = JSON.parse(p.metadata_json);
+          preguntaImagen = metadata.imagen || metadata.image || null;
+        } catch {}
+      }
+      // ✅ CRÍTICO: Extraer imagen de cada opción si existe
+      const opcionesConImagen = opciones.map(o => {
+        let opcionImagen = null;
+        if (o.imagen) {
+          opcionImagen = o.imagen;
+        } else if (o.image) {
+          opcionImagen = o.image;
+        } else if (o.metadata_json) {
+          try {
+            const metadata = JSON.parse(o.metadata_json);
+            opcionImagen = metadata.imagen || metadata.image || null;
+          } catch {}
+        }
+        return { ...o, imagen: opcionImagen };
+      });
+      preguntasOut.push({ ...p, imagen: preguntaImagen, opciones: opcionesConImagen });
     }
 
     // Respuestas de la sesión

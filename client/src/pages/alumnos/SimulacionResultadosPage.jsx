@@ -3,6 +3,105 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getSimulacion, listIntentosSimulacionEstudiante, getSimulacionIntentoReview } from '../../api/simulaciones';
 import { ArrowLeft, Trophy, Clock, CheckCircle2, XCircle, Circle, Filter, Calendar, FileText } from 'lucide-react';
+import InlineMath from '../../components/Asesor/simGen/InlineMath.jsx';
+
+// Componente para renderizar texto con fórmulas LaTeX (igual que en Quizz_Review.jsx)
+function MathText({ text = "" }) {
+  if (!text) return null;
+
+  const sanitizeHtmlLite = (html) => {
+    if (!html) return '';
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
+    const nodesToRemove = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (!allowedTags.includes(node.tagName.toLowerCase())) {
+        nodesToRemove.push(node);
+      }
+    }
+    nodesToRemove.forEach(n => {
+      const parent = n.parentNode;
+      while (n.firstChild) {
+        parent.insertBefore(n.firstChild, n);
+      }
+      parent.removeChild(n);
+    });
+    return div.innerHTML;
+  };
+
+  let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
+  
+  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
+  const latexMatches = [];
+  let placeholderIndex = 0;
+  
+  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
+    latexMatches.push(match);
+    placeholderIndex++;
+    return placeholder;
+  });
+  
+  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  
+  latexMatches.forEach((match, idx) => {
+    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
+  });
+
+  const re = /\$([^$]+?)\$/g;
+  const parts = [];
+  let lastIndex = 0;
+  let m;
+  let matchFound = false;
+
+  re.lastIndex = 0;
+
+  while ((m = re.exec(processedText)) !== null) {
+    matchFound = true;
+    if (m.index > lastIndex) {
+      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
+    }
+    const formula = m[1].trim();
+    if (formula) {
+      parts.push({ type: 'math', content: formula });
+    }
+    lastIndex = m.index + m[0].length;
+  }
+  
+  if (lastIndex < processedText.length) {
+    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
+  }
+
+  if (!matchFound || parts.length === 0) {
+    return (
+      <span 
+        className="whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
+      />
+    );
+  }
+
+  return (
+    <span className="whitespace-pre-wrap">
+      {parts.map((part, idx) =>
+        part.type === 'math' ? (
+          <span key={`math-${idx}`} className="inline-block">
+            <InlineMath math={part.content} />
+          </span>
+        ) : (
+          <span 
+            key={`text-${idx}`}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
+          />
+        )
+      )}
+    </span>
+  );
+}
 
 const RETURN_STORAGE_KEY = 'sim_return_to';
 const NO_REVIEW_STORAGE_PREFIX = 'sim_review_missing';
@@ -79,12 +178,22 @@ export default function SimulacionResultadosPage() {
 				}).sort((a, b) => a.numero - b.numero);
 				setIntentos(intentosMapeados);
 
+				// ✅ CRÍTICO: Solo establecer intentoSel si realmente no hay uno seleccionado
+				// NO resetear si el usuario ya seleccionó uno manualmente
 				if (intentosMapeados.length) {
 					const numbers = intentosMapeados.map(i => i.numero);
-					const candidate = preselectedAttempt && numbers.includes(preselectedAttempt)
-						? preselectedAttempt
-						: numbers[numbers.length - 1];
-					setIntentoSel(candidate);
+					// Solo establecer si realmente no hay uno seleccionado o si el seleccionado no existe
+					setIntentoSel(prev => {
+						if (prev && numbers.includes(prev)) {
+							// El intento seleccionado existe, mantenerlo
+							return prev;
+						}
+						// No hay uno seleccionado o el seleccionado no existe, establecer uno nuevo
+						const candidate = preselectedAttempt && numbers.includes(preselectedAttempt)
+							? preselectedAttempt
+							: numbers[numbers.length - 1];
+						return candidate;
+					});
 				} else {
 					setIntentoSel(null);
 				}
@@ -126,8 +235,11 @@ export default function SimulacionResultadosPage() {
 			return;
 		}
 
+		// ✅ CRÍTICO: Solo establecer intentoSel automáticamente si realmente no hay uno seleccionado
+		// NO resetear si el usuario ya seleccionó uno manualmente
 		if (!intentoSel) {
 			if (attemptNumbersDesc.length) {
+				// Solo establecer el último intento si realmente no hay uno seleccionado
 				setIntentoSel(attemptNumbersDesc[0]);
 			} else {
 				setReview(null);
@@ -135,6 +247,13 @@ export default function SimulacionResultadosPage() {
 				setReviewHint(null);
 				setLoadingReview(false);
 			}
+			return;
+		}
+		
+		// ✅ CRÍTICO: Validar que el intento seleccionado existe en la lista de intentos disponibles
+		// Si el usuario cambió a un intento que no existe, no hacer nada (mantener el seleccionado)
+		if (!attemptNumbersDesc.includes(intentoSel)) {
+			// El intento seleccionado no existe, pero no resetearlo - dejar que el usuario lo cambie manualmente
 			return;
 		}
 
@@ -245,9 +364,7 @@ export default function SimulacionResultadosPage() {
 						setLoadingReview(false);
 						const hintType = preferred.attemptNumber === requestedAttempt ? 'summary-only' : 'summary-fallback';
 						setReviewHint({ type: hintType, from: requestedAttempt, to: preferred.attemptNumber });
-						if (preferred.attemptNumber && preferred.attemptNumber !== requestedAttempt) {
-							setIntentoSel(preferred.attemptNumber);
-						}
+						// ✅ CRÍTICO: NO cambiar intentoSel automáticamente - dejar que el usuario lo cambie manualmente
 						storeNoReviewFlag('summary');
 						clearRefreshNonce();
 						return;
@@ -267,15 +384,25 @@ export default function SimulacionResultadosPage() {
 		};
 	}, [simId, estudianteId, intentoSel, intentos, refreshNonce, noReviewKey]);
 
+	// ✅ CRÍTICO: Leer intento de la URL solo cuando cambia location.search (navegación inicial)
+	// NO incluir intentoSel en las dependencias para evitar loops cuando el usuario cambia el intento manualmente
 	useEffect(() => {
 		if (!intentos.length) return;
 		const params = new URLSearchParams(location.search || '');
 		const intentoParam = Number(params.get('intento'));
 		const intentoFromUrl = Number.isFinite(intentoParam) && intentoParam > 0 ? intentoParam : null;
-		if (intentoFromUrl && intentos.some(i => i.numero === intentoFromUrl) && intentoFromUrl !== intentoSel) {
-			setIntentoSel(intentoFromUrl);
+		// Solo establecer desde la URL si realmente viene en la URL y es diferente del actual
+		// Esto permite que el usuario cambie el intento manualmente sin que se resetee
+		if (intentoFromUrl && intentos.some(i => i.numero === intentoFromUrl)) {
+			setIntentoSel(prev => {
+				// Solo cambiar si realmente es diferente y viene de la URL (navegación inicial)
+				if (prev !== intentoFromUrl) {
+					return intentoFromUrl;
+				}
+				return prev; // Mantener el valor actual si el usuario ya lo cambió manualmente
+			});
 		}
-	}, [location.search, intentos, intentoSel]);
+	}, [location.search, intentos]); // ✅ Removido intentoSel de las dependencias
 
 	const totalIntentos = intentos.length || Number(simulacion?.totalIntentos ?? simulacion?.total_intentos ?? 0);
 	const mejorPuntaje = intentos.length
@@ -398,7 +525,9 @@ export default function SimulacionResultadosPage() {
 							<div className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
 								Pregunta {p.orden ?? (idx + 1)}
 							</div>
-							<div className="mt-0.5 text-gray-900 font-semibold leading-6 text-sm sm:text-base">{p.enunciado}</div>
+							<div className="mt-0.5 text-gray-900 font-semibold leading-6 text-sm sm:text-base">
+								<MathText text={p.enunciado || p.pregunta || `Pregunta ${idx + 1}`} />
+							</div>
 						</div>
 						<span className={`text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border ${isCorrect ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
 							{isCorrect ? 'Correcta' : 'Incorrecta'}
@@ -450,8 +579,8 @@ export default function SimulacionResultadosPage() {
 					</ul>
 					{p.valor_texto && (
 						<div className="text-[11px] sm:text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-md">
-							<span className="font-medium text-gray-700">Respuesta escrita:</span>{' '}
-							<span className="text-gray-800">{p.valor_texto}</span>
+						<span className="font-medium text-gray-700">Respuesta escrita:</span>{' '}
+						<span className="text-gray-800"><MathText text={p.valor_texto} /></span>
 						</div>
 					)}
 				</div>

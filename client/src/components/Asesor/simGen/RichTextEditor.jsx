@@ -154,7 +154,36 @@ export default function RichTextEditor({
     // Detectar si hay fórmulas LaTeX
     const hasMath = value && /\$[^$]+\$/.test(value);
 
+    // ✅ Función para procesar Markdown básico (convertir **texto** a <strong>texto</strong>)
+    const processMarkdown = (text) => {
+        if (!text) return '';
+        // Proteger las fórmulas LaTeX antes de procesar Markdown
+        const latexPlaceholder = '___LATEX_PLACEHOLDER___';
+        const latexMatches = [];
+        let processedText = text;
+        let placeholderIndex = 0;
+        
+        // Reemplazar fórmulas LaTeX con placeholders
+        processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+            const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
+            latexMatches.push(match);
+            placeholderIndex++;
+            return placeholder;
+        });
+        
+        // Procesar Markdown: **texto** -> <strong>texto</strong>
+        processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+        
+        // Restaurar fórmulas LaTeX
+        latexMatches.forEach((match, idx) => {
+            processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
+        });
+        
+        return processedText;
+    };
+
     // Sanitizador ligero: permite tags básicos de formato y elimina scripts/handlers.
+    // NOTA: El Markdown ya se procesa antes de llamar a esta función, así que puede contener <strong>, <b>, etc.
     // Nota: esto es para el contenido que escribe el asesor; evitamos XSS obvio.
     const sanitizeHtmlLite = (html) => {
         const s = String(html || '');
@@ -184,62 +213,92 @@ export default function RichTextEditor({
     const renderTextWithFormulas = () => {
         if (!value) return null;
 
-        // ✅ Usar regex simple y robusto: busca $...$ de forma no-greedy
+        // ✅ Primero encontrar todas las fórmulas LaTeX en el texto original para preservar índices
         const re = /\$([^$]+?)\$/g;
-        const parts = [];
-        let lastIndex = 0;
-        let matchIndex = 0;
+        const latexRanges = [];
         let match;
-        
-        // Resetear el regex para evitar problemas con múltiples llamadas
         re.lastIndex = 0;
         
         while ((match = re.exec(value)) !== null) {
-            // Texto antes de la fórmula
-            if (match.index > lastIndex) {
-                const rawHtml = value.substring(lastIndex, match.index);
+            latexRanges.push({
+                start: match.index,
+                end: match.index + match[0].length,
+                fullMatch: match[0],
+                formula: match[1].trim()
+            });
+        }
+
+        // ✅ Procesar Markdown en el texto, pero proteger las fórmulas LaTeX
+        const latexPlaceholder = '___LATEX_PLACEHOLDER___';
+        let processedText = value;
+        const placeholderMap = new Map();
+        
+        // Reemplazar fórmulas LaTeX con placeholders (en orden inverso para preservar índices)
+        for (let i = latexRanges.length - 1; i >= 0; i--) {
+            const range = latexRanges[i];
+            const placeholder = `${latexPlaceholder}${i}___`;
+            placeholderMap.set(placeholder, range);
+            processedText = processedText.slice(0, range.start) + placeholder + processedText.slice(range.end);
+        }
+        
+        // Procesar Markdown: **texto** -> <strong>texto</strong>
+        processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+        
+        // Restaurar fórmulas LaTeX
+        placeholderMap.forEach((range, placeholder) => {
+            processedText = processedText.replace(placeholder, range.fullMatch);
+        });
+
+        // ✅ Ahora renderizar usando los rangos originales y el texto procesado
+        const parts = [];
+        let matchIndex = 0;
+        let lastIndex = 0;
+        
+        // Procesar cada rango de fórmula y el texto entre ellas
+        for (let i = 0; i < latexRanges.length; i++) {
+            const range = latexRanges[i];
+            
+            // Texto antes de esta fórmula (ya con Markdown procesado)
+            if (range.start > lastIndex) {
+                // Extraer el texto del original y procesar Markdown
+                const textBefore = value.substring(lastIndex, range.start);
+                const textWithMarkdown = processMarkdown(textBefore);
                 parts.push(
                     <span
                         key={`text-${matchIndex}`}
                         className="whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(rawHtml) }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(textWithMarkdown) }}
                     />
                 );
                 matchIndex++;
             }
             
-            // Fórmula encontrada
-            const formulaLatex = match[1].trim();
-            if (formulaLatex) {
-                const fullMatch = match[0];
-                const start = match.index;
-                const end = match.index + fullMatch.length;
-                
-                parts.push(
-                    <FormulaChip
-                        key={`formula-${matchIndex}`}
-                        latex={formulaLatex}
-                        onEdit={() => handleFormulaClick({ formula: formulaLatex, fullMatch, start, end })}
-                        onDelete={() => {
-                            const newText = value.slice(0, start) + value.slice(end);
-                            onChange(newText);
-                        }}
-                    />
-                );
-                matchIndex++;
-            }
+            // Fórmula
+            parts.push(
+                <FormulaChip
+                    key={`formula-${matchIndex}`}
+                    latex={range.formula}
+                    onEdit={() => handleFormulaClick({ formula: range.formula, fullMatch: range.fullMatch, start: range.start, end: range.end })}
+                    onDelete={() => {
+                        const newText = value.slice(0, range.start) + value.slice(range.end);
+                        onChange(newText);
+                    }}
+                />
+            );
+            matchIndex++;
             
-            lastIndex = match.index + match[0].length;
+            lastIndex = range.end;
         }
         
-        // Texto restante después de la última fórmula
+        // Texto restante después de la última fórmula (ya con Markdown procesado)
         if (lastIndex < value.length) {
-            const rawHtml = value.substring(lastIndex);
+            const textAfter = value.substring(lastIndex);
+            const textWithMarkdown = processMarkdown(textAfter);
             parts.push(
                 <span
                     key={`text-${matchIndex}`}
                     className="whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(rawHtml) }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(textWithMarkdown) }}
                 />
             );
         }
@@ -300,10 +359,10 @@ export default function RichTextEditor({
                     <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></div>
                     <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Vista previa renderizada</p>
                 </div>
-                <div className="text-base font-medium text-slate-900 bg-white/70 rounded-xl p-4 border border-violet-200/50 min-h-[50px] leading-relaxed">
+                <div className="text-base text-slate-900 bg-white/70 rounded-xl p-4 border border-violet-200/50 min-h-[50px] leading-relaxed">
                     {value
                         ? (hasMath ? renderTextWithFormulas() : (
-                            <span className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(value) }} />
+                            <span className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processMarkdown(value)) }} />
                         ))
                         : <span className="text-slate-400">{placeholder}</span>}
                 </div>

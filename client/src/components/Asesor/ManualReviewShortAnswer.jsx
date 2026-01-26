@@ -10,6 +10,8 @@ export default function ManualReviewShortAnswer({
     pregunta,
     respuestaEsperada,
     tipo = 'simulacion', // 'simulacion' o 'quiz'
+    preguntaRenderizada = null, // Opcional: componente React renderizado para la pregunta
+    respuestaEsperadaRenderizada = null, // Opcional: componente React renderizado para la respuesta esperada
     onReviewComplete
 }) {
     const [reviewing, setReviewing] = useState(false);
@@ -115,10 +117,10 @@ export default function ManualReviewShortAnswer({
         <div className={`rounded-lg border-2 p-4 ${requiereRevision ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'}`}>
             {/* Pregunta y respuestas */}
             <div className="space-y-2 mb-3">
-                <p className="font-semibold text-gray-900">{pregunta}</p>
+                <p className="font-semibold text-gray-900">{preguntaRenderizada || pregunta}</p>
                 <div className="text-sm space-y-1">
                     <p className="text-gray-600">
-                        <span className="font-medium">Esperada:</span> {respuestaEsperada}
+                        <span className="font-medium">Esperada:</span> {respuestaEsperadaRenderizada || respuestaEsperada}
                     </p>
                     <p className="text-gray-900">
                         <span className="font-medium">Estudiante:</span> {respuesta.valor_texto || respuesta.texto_libre || '(Sin respuesta)'}
