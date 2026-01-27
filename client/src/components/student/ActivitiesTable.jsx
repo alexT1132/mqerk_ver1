@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
     Upload,
     Eye,
@@ -77,6 +78,86 @@ export function ActivitiesTable({
         // Limpiar listener al desmontar
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    // Ref y estado para posicionamiento inteligente del dropdown
+    const monthButtonRef = useRef(null);
+    const [dropdownStyle, setDropdownStyle] = useState({});
+
+    // Calcular posición inteligente del dropdown
+    const calculateDropdownPosition = useCallback(() => {
+        if (!monthButtonRef.current) return null;
+        const rect = monthButtonRef.current.getBoundingClientRect();
+        const viewportH = window.innerHeight;
+        const viewportW = window.innerWidth;
+        const margin = 8;
+        const gap = 4;
+        const desiredHeight = 280;
+        const minHeight = 120;
+        
+        const spaceBelow = viewportH - rect.bottom - margin;
+        const spaceAbove = rect.top - margin;
+        
+        const shouldShowAbove = spaceBelow < 250 && spaceAbove > spaceBelow;
+        
+        const maxHeight = shouldShowAbove 
+            ? Math.max(minHeight, Math.min(desiredHeight, spaceAbove - gap))
+            : Math.max(minHeight, Math.min(desiredHeight, spaceBelow - gap));
+        
+        let left = rect.left;
+        const dropdownWidth = rect.width;
+        if (left + dropdownWidth > viewportW - margin) {
+            left = viewportW - dropdownWidth - margin;
+        }
+        if (left < margin) {
+            left = margin;
+        }
+        
+        return {
+            position: 'fixed',
+            top: shouldShowAbove 
+                ? `${Math.max(margin, rect.top - maxHeight - gap)}px`
+                : `${rect.bottom + gap}px`,
+            left: `${left}px`,
+            width: `${dropdownWidth}px`,
+            maxHeight: `${maxHeight}px`,
+            zIndex: 9999,
+        };
+    }, []);
+
+    // Calcular posición cuando se abre el dropdown y bloquear scroll del body
+    useEffect(() => {
+        if (isDropdownOpen) {
+            // Bloquear scroll del body para evitar que aparezca la barra de scroll principal
+            const prevOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            
+            // Calcular posición ANTES de mostrar el dropdown para evitar parpadeo
+            const style = calculateDropdownPosition();
+            if (style) {
+                setDropdownStyle(style);
+            }
+            
+            const handleResize = () => {
+                const newStyle = calculateDropdownPosition();
+                if (newStyle) setDropdownStyle(newStyle);
+            };
+            const handleScroll = () => {
+                const newStyle = calculateDropdownPosition();
+                if (newStyle) setDropdownStyle(newStyle);
+            };
+            
+            window.addEventListener('resize', handleResize);
+            window.addEventListener('scroll', handleScroll, true);
+            return () => {
+                // Restaurar scroll del body
+                document.body.style.overflow = prevOverflow;
+                window.removeEventListener('resize', handleResize);
+                window.removeEventListener('scroll', handleScroll, true);
+            };
+        } else {
+            setDropdownStyle({});
+        }
+    }, [isDropdownOpen, calculateDropdownPosition]);
 
     return (
         <>
@@ -172,25 +253,36 @@ export function ActivitiesTable({
                             </button>
                         </div>
                     </div>
-                    {isMobile ? (
-                        <div className="relative w-full">
-                            <button
-                                type="button"
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                className="flex items-center justify-between w-full px-3 sm:px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                aria-haspopup="listbox"
-                                aria-expanded={isDropdownOpen}
-                            >
-                                <span className="truncate">{getSelectedMonthName()}</span>
-                                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                            {isDropdownOpen && (
-                                <div className="absolute z-[80] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-2xl max-h-72 overflow-y-auto">
+                    {/* Selector con posicionamiento inteligente */}
+                    <div className="relative w-full md:w-auto">
+                        <button
+                            ref={monthButtonRef}
+                            type="button"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            className="flex items-center justify-between w-full md:w-64 px-3 sm:px-4 py-2.5 text-left bg-white border-2 border-gray-300 rounded-xl hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95 transition-all touch-manipulation shadow-sm text-sm sm:text-base"
+                            aria-haspopup="listbox"
+                            aria-expanded={isDropdownOpen}
+                        >
+                            <span className="truncate pr-2 font-semibold">{getSelectedMonthName()}</span>
+                            <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isDropdownOpen && Object.keys(dropdownStyle).length > 0 && createPortal(
+                            <>
+                                {/* Overlay para cerrar al hacer click fuera */}
+                                <div 
+                                    className="fixed inset-0 z-[9998] bg-transparent"
+                                    onClick={() => setIsDropdownOpen(false)}
+                                />
+                                <div 
+                                    style={dropdownStyle}
+                                    className="bg-white border-2 border-gray-300 rounded-xl shadow-2xl overflow-y-auto"
+                                >
                                     <div className="py-1">
                                         <button
                                             type="button"
                                             onClick={() => { handleMonthSelect('all'); setIsDropdownOpen(false); }}
-                                            className={`block w-full px-4 py-3 text-left text-base hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                                            className={`block w-full px-3 sm:px-4 py-2.5 sm:py-3 text-left hover:bg-gray-100 font-medium text-sm sm:text-base transition-colors ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
                                             role="option"
                                             aria-selected={selectedMonth === 'all'}
                                         >
@@ -201,7 +293,7 @@ export function ActivitiesTable({
                                                 key={index}
                                                 type="button"
                                                 onClick={() => { handleMonthSelect(index.toString()); setIsDropdownOpen(false); }}
-                                                className={`block w-full px-4 py-3 text-left text-base hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                                                className={`block w-full px-3 sm:px-4 py-2.5 sm:py-3 text-left hover:bg-gray-100 font-medium text-sm sm:text-base transition-colors ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
                                                 role="option"
                                                 aria-selected={selectedMonth === index.toString()}
                                             >
@@ -210,47 +302,10 @@ export function ActivitiesTable({
                                         ))}
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="relative">
-                            <button
-                                type="button"
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                className="flex items-center justify-between w-56 sm:w-64 px-3 sm:px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                aria-haspopup="listbox"
-                                aria-expanded={isDropdownOpen}
-                            >
-                                <span>{getSelectedMonthName()}</span>
-                                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                            {isDropdownOpen && (
-                                <div className="absolute z-[70] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-auto">
-                                    <div className="py-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => { handleMonthSelect('all'); setIsDropdownOpen(false); }}
-                                            className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                                        >
-                                            Todos los meses
-                                        </button>
-                                        {months.map((month, index) => (
-                                            <button
-                                                key={index}
-                                                type="button"
-                                                onClick={() => { handleMonthSelect(index.toString()); setIsDropdownOpen(false); }}
-                                                className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                                                role="option"
-                                                aria-selected={selectedMonth === index.toString()}
-                                            >
-                                                {month}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                            </>,
+                            document.body
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -645,3 +700,4 @@ export function ActivitiesTable({
     );
 }
 
+export default ActivitiesTable;

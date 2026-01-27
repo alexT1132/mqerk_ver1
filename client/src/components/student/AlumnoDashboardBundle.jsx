@@ -109,8 +109,9 @@ function StudentAwareLayout() {
   // Redirección por bloqueo global de acceso (solo desde la portada, no desde secciones internas)
   const shouldRedirectToWelcome = !hasContentAccess && isAlumnoLanding;
 
-  // BACKEND: El botón de logout se muestra cuando NO hay sidebar
-  const showLogoutButton = !shouldShowSidebar;
+  // BACKEND: El botón de logout se muestra cuando NO hay sidebar Y NO se está en quiz/simulación
+  //const showLogoutButton = !shouldShowSidebar;
+  const showLogoutButton = !shouldShowSidebar && !isSimRoute && !isQuizRoute;
 
   // BACKEND: Función para manejar el logout
   const handleLogout = () => {

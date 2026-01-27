@@ -297,7 +297,7 @@ export default function HistorialModal({ open, item, historial, onClose }) {
         promedioTiempoPregunta: promedioTiempoPregunta != null ? Math.round(promedioTiempoPregunta / 1000) : null,
         erroresRecurrentes: recurrentList,
       };
-      
+
       navigate('/alumno/analisis-ia', {
         replace: true,
         state: {
@@ -334,18 +334,24 @@ export default function HistorialModal({ open, item, historial, onClose }) {
 
   return (
     <>
+
+      {/* inicio de la modal de historial */}
       <div
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 pt-8 sm:pt-12 md:pt-16 pb-safe ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-300 overscroll-contain overflow-hidden`}
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-1 sm:p-4 pt-4 sm:pt-6 md:pt-8 pb-safe
+           ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-300 overscroll-contain overflow-hidden`}
+
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
         <div className="historial-modal compact-desktop no-scrollbar relative bg-white/98 rounded-2xl shadow-2xl ring-1 ring-black/5 w-full max-w-[92vw] md:max-w-[35rem] lg:max-w-[40rem] xl:max-w-[42rem] max-h-[calc(100vh-10rem)] overflow-hidden flex flex-col transform translate-y-6 sm:translate-y-8 md:translate-x-8 lg:translate-x-0">
-          <div className="hm-header sticky top-0 z-10 bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-3 sm:p-4 flex-shrink-0 shadow-sm">
+
+          <div className="hm-header sticky top-0 z-10 bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-1 sm:pt-1 flex-shrink-0 shadow-sm">
+
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <h2 id="modal-title" className="text-lg sm:text-xl font-bold truncate">Historial de Intentos</h2>
-                <p className="text-indigo-100 mt-1 text-sm truncate">{item.nombre}</p>
+                <h2 id="modal-title" className="text-lg sm:text-xl font-bold truncate  text-center">Historial de Intentos</h2>
+                <p className="text-indigo-100 mt-1 text-sm truncate ">  {item.nombre}</p>
               </div>
               <button
                 ref={closeButtonRef}
@@ -450,32 +456,34 @@ export default function HistorialModal({ open, item, historial, onClose }) {
               )}
             </div>
 
-            {/* ...existing code... removed inline CTA section; CTA now in footer */}
+
           </div>
 
           {/* Footer fijo con CTA elegante */}
-          <div className="hm-footer relative flex-shrink-0 bg-white/95 supports-[backdrop-filter]:backdrop-blur border-t border-gray-200 px-3 sm:px-4 pt-3 pb-3 sm:pb-4 pb-safe">
+          <div className="hm-footer relative flex-shrink-0 bg-white/95 supports-[backdrop-filter]:backdrop-blur border-t border-gray-200 px-3 sm:px-4 pt-1 pb-3 sm:pb-3 pb-safe">
             <div className="pointer-events-none absolute -top-3 left-0 right-0 h-3 bg-gradient-to-t from-transparent to-black/5"></div>
             <div className="flex items-center gap-2 mb-2">
               <Lightbulb className="w-5 h-5 text-purple-600" />
               <h3 className="text-sm sm:text-base font-semibold text-gray-900">Análisis con IA</h3>
             </div>
+
             <button
               onClick={handleAnalyzePerformance}
               disabled={safeHist.intentos.length < 3}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm sm:text-[15px] font-semibold text-white shadow-md hover:shadow-lg bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-500/70 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed mb-2"
+              className="mx-auto flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs sm:text-sm font-semibold text-white shadow-md hover:shadow transition-shadow bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-500/70 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed mb-2 max-w-sm"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-3.5 h-3.5" />
               Generar Análisis de Rendimiento
             </button>
+
             {safeHist.intentos.length < 3 && (
-              <p className="text-xs sm:text-sm text-gray-500 italic mt-2">Realiza al menos 3 intentos para que la IA pueda analizar tu progreso y errores recurrentes con mayor precisión.</p>
+              <p className="text-[10px] sm:text-[11px] text-green-600 italic mt-2">Realiza al menos 3 intentos para que la IA pueda analizar tu progreso y errores recurrentes con mayor precisión.</p>
             )}
             <div className="h-[env(safe-area-inset-bottom,8px)]"></div>
           </div>
         </div>
       </div>
-
+      {/* fin de la modal de historial */}
 
       <style>{`
         @keyframes scale-in {

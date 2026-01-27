@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { getMisEstudiantes } from "../../api/asesores.js";
 
 export default function SimulatorModal({ open, onClose, onCreate, areaTitle, areaId, initialForm = null, onFormChange = null }) {

@@ -372,12 +372,27 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nombre(s)
                 </label>
-                <input
-                  type="text"
-                  defaultValue={datos1?.nombres}
-                  {...register("nombres")}
-                  className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-[#53289f]"
-                  required
+                <Controller
+                  control={control}
+                  name="nombres"
+                  defaultValue={datos1?.nombres || ""}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange, onBlur, ref } }) => (
+                    <input
+                      type="text"
+                      ref={ref}
+                      value={value || ""}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        onChange(e.target.value);
+                      }}
+                      onBlur={onBlur}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-[#53289f]"
+                      required
+                      autoComplete="off"
+                    />
+                  )}
                 />
               </div>
               {/* Apellidos */}
@@ -385,12 +400,27 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Apellidos
                 </label>
-                <input
-                  type="text"
-                  defaultValue={datos1?.apellidos}
-                  {...register("apellidos")}
-                  className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-[#53289f]"
-                  required
+                <Controller
+                  control={control}
+                  name="apellidos"
+                  defaultValue={datos1?.apellidos || ""}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange, onBlur, ref } }) => (
+                    <input
+                      type="text"
+                      ref={ref}
+                      value={value || ""}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        onChange(e.target.value);
+                      }}
+                      onBlur={onBlur}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:ring-[#53289f]"
+                      required
+                      autoComplete="off"
+                    />
+                  )}
                 />
               </div>
               {/* Correo */}
@@ -1377,23 +1407,27 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
               // ===== Validaciones previas (seguros) =====
               const v = getValues();
               const errs = [];
-              // Consentimiento obligatorio
-              if (v.consentimiento_datos !== "y")
+              // Consentimiento obligatorio - ÚNICO que bloquea
+              const warnings = [];
+              if (v.consentimiento_datos !== "y") {
                 errs.push("Debes autorizar el uso de datos para continuar.");
-              // Firma mínima
-              if (!v.firma || v.firma.trim().length < 3)
-                errs.push("Firma (nombre completo) requerida (mínimo 3 caracteres).");
+                setPreValidateError(errs.join("\n"));
+                return;
+              }
+              // Firma opcional - ya no es requerida
+              // if (!v.firma || v.firma.trim().length < 3)
+              //   errs.push("Firma (nombre completo) requerida (mínimo 3 caracteres).");
               // RFC opcional: solo validar si está completo (>=13)
               if (v.rfc) {
                 const rfc = v.rfc.toUpperCase().trim();
                 const rfcRegex = /^([A-ZÑ&]{3,4})\d{6}([A-Z0-9]{3})$/;
                 if (rfc.length >= 13 && !rfcRegex.test(rfc)) {
-                  errs.push("RFC con formato inválido.");
+                  warnings.push("RFC con formato inválido. Se guardará sin RFC.");
                 }
               }
               // CURP si se ingresó, asegurar que no haya error previo
               if (v.curp && curpError) {
-                errs.push("Corrige el CURP antes de continuar.");
+                warnings.push("CURP con error. Se guardará sin CURP.");
               }
               // Mínimo 1 área de especialización
               const areaKeys = [
@@ -1406,35 +1440,33 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                 "Negocios y administración",
               ];
               if (!areaKeys.some((k) => v[k]))
-                errs.push("Selecciona al menos un área de especialización.");
+                warnings.push("No se seleccionó área de especialización. Se guardará sin áreas.");
               // Mínimo una fuente y una motivación (recomendado)
               const fuenteKeys = Object.keys(v).filter(
                 (k) => k.startsWith("fuente_") && v[k]
               );
               if (fuenteKeys.length === 0)
-                errs.push(
-                  "Selecciona al menos una fuente de cómo conociste la plataforma."
-                );
+                warnings.push("No se seleccionó fuente. Se guardará sin fuente.");
               const motivoKeys = Object.keys(v).filter(
                 (k) => k.startsWith("motivo_") && v[k]
               );
               if (motivoKeys.length === 0)
-                errs.push("Selecciona al menos una motivación.");
+                warnings.push("No se seleccionó motivación. Se guardará sin motivación.");
               // Tamaño de archivos (<=5MB c/u)
               const maxMB = 5;
               const overs = Object.entries(filesRef.current).filter(
                 ([_, file]) => file && file.size > maxMB * 1024 * 1024
               );
               if (overs.length) {
-                errs.push(
-                  `Archivo(s) exceden ${maxMB}MB: ${overs
+                warnings.push(
+                  `Archivo(s) exceden ${maxMB}MB y no se subirán: ${overs
                     .map((o) => o[0])
                     .join(", ")}`
                 );
               }
-              if (errs.length) {
-                setPreValidateError(errs.join("\n"));
-                return;
+              // Mostrar advertencias pero continuar
+              if (warnings.length > 0) {
+                setPreValidateError("Advertencias:\n" + warnings.join("\n") + "\n\nSe guardarán los datos disponibles.");
               } else {
                 setPreValidateError("");
               }
@@ -1442,27 +1474,43 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
               try {
                 setSavingPerfil(true);
                 // areaKeys ya definido arriba
-                const areas = areaKeys.filter((k) => v[k]);
+                const areas = areaKeys.filter((k) => v[k]) || [];
                 const fuentes = Object.entries(v)
                   .filter(([k, val]) => k.startsWith("fuente_") && val === true)
-                  .map(([k]) => k.replace("fuente_", ""));
+                  .map(([k]) => k.replace("fuente_", "")) || [];
                 const motivaciones = Object.entries(v)
                   .filter(([k, val]) => k.startsWith("motivo_") && val === true)
-                  .map(([k]) => k.replace("motivo_", ""));
+                  .map(([k]) => k.replace("motivo_", "")) || [];
+                
+                // Validar RFC antes de incluirlo
+                let rfcValue = null;
+                if (v.rfc) {
+                  const rfc = v.rfc.toUpperCase().trim();
+                  const rfcRegex = /^([A-ZÑ&]{3,4})\d{6}([A-Z0-9]{3})$/;
+                  if (rfc.length >= 13 && rfcRegex.test(rfc)) {
+                    rfcValue = rfc;
+                  }
+                }
+                
+                // Validar CURP antes de incluirlo (solo si no hay error)
+                let curpValue = null;
+                let entidadCurpValue = null;
+                if (v.curp && !curpError) {
+                  curpValue = v.curp.toUpperCase().trim();
+                  entidadCurpValue = v.entidad_curp || null;
+                }
+                
                 const payload = {
-                  direccion: v.direccion,
-                  municipio: v.municipio,
-                  nacimiento: v.nacimiento,
-                  nacionalidad: v.nacionalidad,
-                  genero: v.genero,
-                  // Si el RFC no está completo (menos de 13), no lo enviamos para no bloquear
-                  rfc: (v.rfc && v.rfc.toUpperCase().trim().length >= 13)
-                    ? v.rfc.toUpperCase().trim()
-                    : null,
-                  nivel_estudios: v.estudios,
-                  institucion: v.institucion,
+                  direccion: v.direccion || "",
+                  municipio: v.municipio || "",
+                  nacimiento: v.nacimiento || "",
+                  nacionalidad: v.nacionalidad || "",
+                  genero: v.genero || "",
+                  rfc: rfcValue,
+                  nivel_estudios: v.estudios || "",
+                  institucion: v.institucion || "",
                   titulo_academico: v.titulo === "si" ? 1 : 0,
-                  anio_graduacion: Number(v.graduacion),
+                  anio_graduacion: v.graduacion ? Number(v.graduacion) : null,
                   experiencia_rango: v.experiencia || "",
                   areas_especializacion: areas,
                   empresa: v.empresa || "",
@@ -1481,9 +1529,9 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                   consentimiento_datos: v.consentimiento_datos === "y" ? 1 : 0,
                   firma_texto: v.firma || "",
                   fuente_conociste: fuentes,
-                  motivaciones,
-                  curp: v.curp || null,
-                  entidad_curp: v.entidad_curp || null,
+                  motivaciones: motivaciones,
+                  curp: curpValue,
+                  entidad_curp: entidadCurpValue,
                 };
                 const perfilRes = await fetch(buildApiUrl(`/asesores/perfil/${preregistroId}`), {
                   method: 'POST',
@@ -1495,31 +1543,55 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                   throw new Error(b.message || "Error guardando perfil");
                 }
                 const fd = new FormData();
+                const maxMB = 5;
+                // Solo subir archivos que no excedan el tamaño máximo
                 Object.entries(filesRef.current).forEach(([k, f]) => {
-                  if (f) fd.append(k, f);
+                  if (f && f.size <= maxMB * 1024 * 1024) {
+                    fd.append(k, f);
+                  }
                 });
+                // Intentar subir archivos, pero no bloquear si falla
                 if (Array.from(fd.keys()).length) {
-                  const upRes = await fetch(buildApiUrl(`/asesores/perfil/${preregistroId}/upload`), { method: 'POST', body: fd });
-                  if (!upRes.ok) {
-                    const ub = await upRes.json().catch(() => ({}));
-                    throw new Error(ub.message || "Error subiendo documentos");
+                  try {
+                    const upRes = await fetch(buildApiUrl(`/asesores/perfil/${preregistroId}/upload`), { method: 'POST', body: fd });
+                    if (!upRes.ok) {
+                      const ub = await upRes.json().catch(() => ({}));
+                      warnings.push(`Algunos archivos no se pudieron subir: ${ub.message || "Error desconocido"}`);
+                      if (warnings.length > 0) {
+                        setPreValidateError("Advertencias:\n" + warnings.join("\n") + "\n\nLos datos principales se guardaron correctamente.");
+                      }
+                    }
+                  } catch (uploadErr) {
+                    warnings.push(`Error al subir archivos: ${uploadErr.message}`);
+                    if (warnings.length > 0) {
+                      setPreValidateError("Advertencias:\n" + warnings.join("\n") + "\n\nLos datos principales se guardaron correctamente.");
+                    }
                   }
                 }
               } catch (err) {
-                setFinalError(err.message);
-                return;
+                // Si falla el guardado del perfil, no intentar finalizar
+                console.error("Error guardando perfil:", err);
+                setFinalError(`Error al guardar los datos: ${err.message}. Por favor, revisa los datos e intenta de nuevo.`);
+                setSavingPerfil(false);
+                return; // No continuar si no se guardó el perfil
               } finally {
                 setSavingPerfil(false);
               }
+              
+              // Solo intentar finalizar si el perfil se guardó correctamente
               try {
                 setFinalizing(true);
                 const res = await fetch(buildApiUrl(`/asesores/finalizar/${preregistroId}`), { method: 'POST' });
                 const body = await res.json().catch(() => ({}));
                 if (!res.ok) {
-                  setFinalError(body.message || "Error finalizando");
+                  // Si falla la finalización, mostrar error pero los datos ya están guardados
+                  const errorMsg = body.message || "Error finalizando";
+                  setFinalError(`Los datos se guardaron correctamente en la base de datos, pero hubo un problema al finalizar: ${errorMsg}. Puedes intentar finalizar de nuevo más tarde.`);
                 } else if (body.ok && body.credenciales) {
                   setCreds(body.credenciales);
                   setShowCredsModal(true);
+                  setFinalError(null); // Limpiar errores si todo salió bien
+                  setPreValidateError(""); // Limpiar advertencias
                 } else if (body.ok && !body.credenciales) {
                   // Ya finalizado previamente
                   setFinalError(
@@ -1532,7 +1604,8 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                   );
                 }
               } catch (err) {
-                setFinalError(err.message);
+                // Error al finalizar, pero los datos ya se guardaron en la BD
+                setFinalError(`Los datos se guardaron correctamente en la base de datos, pero hubo un error al finalizar: ${err.message}. Puedes intentar finalizar de nuevo más tarde.`);
               } finally {
                 setFinalizing(false);
               }
@@ -1681,7 +1754,7 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
               <div className={`flex flex-col gap-2 mt-4`}>
                 <h2 className={`text-center`}>
                   Firma digital o nombre completo como confirmación de la
-                  veracidad de los datos proporcionados.
+                  veracidad de los datos proporcionados (opcional).
                 </h2>
                 <SignatureField
                   value={getValues("firma")}
@@ -1691,7 +1764,7 @@ export const FormularioAsesor = ({ debugBypass = false }) => {
                     filesRef.current["firma_imagen"] = file || null;
                   }}
                 />
-                <p className="text-xs text-gray-500 text-center">Puedes escribir tu nombre o dibujar tu firma. Mínimo 3 caracteres si escribes.</p>
+                <p className="text-xs text-gray-500 text-center">Puedes escribir tu nombre o dibujar tu firma (opcional).</p>
               </div>
 
               {!creds && (

@@ -31,7 +31,7 @@ class MqerkCommander:
     def __init__(self, root):
         self.root = root
         self.root.title(APP_TITLE)
-        self.root.geometry("950x650") # Ligeramente más alto para nuevas funciones
+        self.root.geometry("950x700") # Ajustado para más espacio vertical
         self.root.configure(bg=COL_BG)
         
         self.local_ip = self.get_local_ip()
@@ -168,12 +168,16 @@ class MqerkCommander:
         btn_dir = ttk.Button(container, text="📂 Carpeta", command=lambda: os.startfile(os.getcwd()))
         btn_dir.grid(row=4, column=2, sticky="ew", padx=2)
 
-        # --- SECCION 3: MANTENIMIENTO ---
-        lbl3 = ttk.Label(container, text="MANTENIMIENTO", foreground=COL_ACCENT, background=COL_SURFACE, font=("Segoe UI", 10, "bold"))
+        # --- SECCION 3: MANTENIMIENTO & SEGURIDAD ---
+        lbl3 = ttk.Label(container, text="SEGURIDAD & MANTENIMIENTO", foreground=COL_ACCENT, background=COL_SURFACE, font=("Segoe UI", 10, "bold"))
         lbl3.grid(row=5, column=0, sticky="w", pady=(20, 10))
 
         btn_bak = ttk.Button(container, text="💾 Backup Rápido", command=self.backup_project)
         btn_bak.grid(row=6, column=0, sticky="ew", padx=2)
+
+        # --- BOTÓN AUTO-PROTECT INTEGRADO ---
+        btn_sec = ttk.Button(container, text="🛡️ AUTO-PROTECT", command=self.auto_protect_secrets, style="Info.TButton")
+        btn_sec.grid(row=6, column=1, sticky="ew", padx=2)
 
         btn_hard = ttk.Button(container, text="☢️ Hard Reset", command=self.hard_reset, style="Danger.TButton")
         btn_hard.grid(row=6, column=2, sticky="ew", padx=2)
@@ -252,7 +256,7 @@ class MqerkCommander:
         ttk.Button(f_conf, text="🔐 .env Server", command=lambda: self.edit_file_ui("server", ".env")).grid(row=0, column=0, sticky="ew", padx=2, pady=2)
         ttk.Button(f_conf, text="🔐 .env Client", command=lambda: self.edit_file_ui("client", ".env")).grid(row=0, column=1, sticky="ew", padx=2, pady=2)
         
-        # Fila package.json (NUEVO)
+        # Fila package.json
         ttk.Button(f_conf, text="📋 JSON Server", command=lambda: self.edit_file_ui("server", "package.json")).grid(row=1, column=0, sticky="ew", padx=2, pady=2)
         ttk.Button(f_conf, text="📋 JSON Client", command=lambda: self.edit_file_ui("client", "package.json")).grid(row=1, column=1, sticky="ew", padx=2, pady=2)
         
@@ -270,20 +274,13 @@ class MqerkCommander:
                     is_open = (result == 0)
                     sock.close()
                     
-                    # Actualizar UI (Thread safe via after si fuera necesario, aqui directo es seguro pq es simple)
-                    color = COL_SUCCESS if is_open else COL_DANGER if result != 0 else COL_OFF
-                    # Si está cerrado (no connect), es rojo/gris. Si escucha, es verde.
-                    # connect_ex devuelve 0 si tiene éxito (está escuchando/ocupado)
-                    
                     final_col = COL_SUCCESS if is_open else COL_OFF
                     self.indicators[port]["canvas"].itemconfig(self.indicators[port]["id"], fill=final_col)
                 except:
                     pass
             
-            # Re-agendar en 5000ms (5 seg)
             self.root.after(5000, check)
         
-        # Arrancar primera vez
         self.root.after(1000, check)
 
     def clear_console(self):
@@ -509,6 +506,109 @@ class MqerkCommander:
         if messagebox.askyesno("⚠️", "Borrar node_modules?"):
             self.stop_services()
             self.run_bg(f'rmdir /s /q "{SERVER_DIR}\\node_modules" & del "{SERVER_DIR}\\package-lock.json" & rmdir /s /q "{CLIENT_DIR}\\node_modules" & del "{CLIENT_DIR}\\package-lock.json" & cd "{SERVER_DIR}" & npm install & cd ..\\"{CLIENT_DIR}" & npm install')
+
+    # ================= PROTOCOLOS DE SEGURIDAD (AUTO-PROTECT) =================
+    def auto_protect_secrets(self):
+        """
+        Escanea archivos sensibles, crea copias .example censuradas,
+        los añade al .gitignore y los saca del index de Git.
+        """
+        self.set_busy(True)
+        self.log("🛡️ Iniciando Protocolo de Seguridad...", "cmd")
+        
+        # Lista de archivos sensibles conocidos (rutas relativas)
+        targets = [
+            {"path": "client/src/components/tools/nexus_config.json", "type": "json"},
+            {"path": "client/src/components/tools/nexus_settings.json", "type": "json"},
+            {"path": "server/.env", "type": "env"},
+            {"path": "client/.env", "type": "env"}
+        ]
+
+        protected_count = 0
+
+        for t in targets:
+            full_path = os.path.abspath(t["path"])
+            
+            if os.path.exists(full_path):
+                self.log(f"🔒 Procesando: {t['path']}")
+                
+                # 1. Crear versión EXAMPLE (Censurada)
+                if t["type"] == "json":
+                    self.create_safe_json_example(full_path)
+                elif t["type"] == "env":
+                    self.create_safe_env_example(full_path)
+                
+                # 2. Agregar al .gitignore (si no existe)
+                self.append_to_gitignore(t["path"])
+
+                # 3. Remover de Git (Cached) para evitar el error de Push Protection
+                self.run_bg(f"git rm --cached {t['path']}")
+                
+                protected_count += 1
+            
+        self.root.after(1000, lambda: self.log(f"✅ {protected_count} archivos protegidos y sanitizados.", "success"))
+        self.set_busy(False)
+
+    def create_safe_json_example(self, filepath):
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            # Función recursiva para limpiar valores
+            def clean_dict(d):
+                for k, v in d.items():
+                    if isinstance(v, dict):
+                        clean_dict(v)
+                    elif isinstance(v, str) and len(v) > 0:
+                        # Si la clave parece sensible o tiene valor largo, censurar
+                        if any(x in k.lower() for x in ['key', 'secret', 'token', 'password', 'id']):
+                            d[k] = "YOUR_SECRET_HERE"
+            
+            clean_dict(data)
+            
+            # Guardar como .example.json
+            example_path = filepath.replace('.json', '.example.json')
+            with open(example_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+            self.log(f"   -> Generado: {os.path.basename(example_path)}")
+        except Exception as e:
+            self.log(f"Error JSON {filepath}: {e}", "error")
+
+    def create_safe_env_example(self, filepath):
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            safe_lines = []
+            for line in lines:
+                if '=' in line and not line.strip().startswith('#'):
+                    key, val = line.split('=', 1)
+                    safe_lines.append(f"{key}=YOUR_VALUE_HERE\n")
+                else:
+                    safe_lines.append(line)
+            
+            example_path = filepath + ".example"
+            with open(example_path, 'w', encoding='utf-8') as f:
+                f.writelines(safe_lines)
+            self.log(f"   -> Generado: {os.path.basename(example_path)}")
+        except Exception as e:
+            self.log(f"Error ENV {filepath}: {e}", "error")
+
+    def append_to_gitignore(self, relative_path):
+        git_ignore_path = ".gitignore"
+        # Normalizar path para gitignore (siempre forward slash)
+        entry = relative_path.replace("\\", "/")
+        
+        if not os.path.exists(git_ignore_path):
+            with open(git_ignore_path, "w") as f: f.write("")
+            
+        with open(git_ignore_path, "r") as f:
+            content = f.read()
+            
+        if entry not in content:
+            with open(git_ignore_path, "a") as f:
+                f.write(f"\n{entry}")
+            self.log(f"   -> Añadido a .gitignore")
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -2,7 +2,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import MQerkLogo from "../../assets/MQerK_logo.png";
-import { Logos } from "../common/IndexComp"; // Asegúrate de que la ruta a IndexComp.jsx sea correcta
+import { Logos } from "../common/IndexComp"; 
 import { useStudent } from "../../context/StudentContext";
 import { buildStaticUrl, getApiOrigin } from "../../utils/url";
 import { useStudentNotifications } from "../../context/StudentNotificationContext";
@@ -67,7 +67,7 @@ export function Header_Alumno_comp({
     setIsNotificationsOpen(!isNotificationsOpen);
   };
 
-  // (Search removed)
+
 
   // Función para obtener las iniciales del alumno
   const getInitials = (name) => {

@@ -14,8 +14,11 @@ const MODELOS_DISPONIBLES = [
 
 // --- NUEVA CONFIGURACIÓN: RESPALDO GROQ ---
 // Asegúrate de que tu backend tenga esta ruta configurada para manejar peticiones a Groq
-const GROQ_PROXY_ENDPOINT = '/api/ai/groq/generate'; 
+const GROQ_PROXY_ENDPOINT = '/api/ai/groq/generate';
 const GROQ_MODEL = 'llama3-70b-8192'; // Modelo potente y rápido, buena alternativa a Gemini Pro
+
+// Detectar si se debe usar solo Groq (sin intentar Gemini primero)
+const USE_GROQ_ONLY = import.meta?.env?.VITE_USE_GROQ_FOR_ANALYSIS === 'true';
 
 // La IA siempre está "configurada" porque el proxy maneja la API key
 export function isQuizIAConfigured() {
@@ -96,7 +99,7 @@ export async function analyzeQuizPerformance(params) {
     .normalize('NFD').replace(/\p{Diacritic}/gu, '')
     .toLowerCase();
   const truncate = (s, n) => (String(s).length > n ? String(s).slice(0, n - 1).trimEnd() + '…' : String(s));
-  
+
   const pickMicroTip = (enun) => {
     const t = normalize(enun);
     // Gramática específica: queísmo / dequeísmo
@@ -677,53 +680,57 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
   let geminiSuccess = false; // Flag para controlar si necesitamos ir a Groq
 
   // =================================================================================
-  // 1. INTENTO CON GEMINI (Estrategia Principal)
+  // 1. INTENTO CON GEMINI (Estrategia Principal) - SOLO SI NO ESTÁ CONFIGURADO GROQ ONLY
   // =================================================================================
-  try {
-    let modelosAProbar = [];
-    if (QUIZ_AI_MODEL_CONFIGURED) {
-      modelosAProbar = [QUIZ_AI_MODEL_CONFIGURED, ...MODELOS_DISPONIBLES.filter(m => m !== QUIZ_AI_MODEL_CONFIGURED)];
-    } else {
-      modelosAProbar = MODELOS_DISPONIBLES;
-    }
-
-    let res = null;
-    let modeloUsado = null;
-
-    console.log('🔍 Iniciando análisis de quiz con IA (usando proxy backend)...');
-
-    // Intentar cada modelo hasta encontrar uno que funcione
-    for (const modelo of modelosAProbar) {
-      try {
-        const payload = buildPayloadForModel(modelo);
-
-        console.log(`📡 Probando modelo: ${modelo} (vía proxy ${PROXY_ENDPOINT})`);
-
-        res = await fetch(PROXY_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ ...payload, purpose: 'analisis' }), // Usa GEMINI_API_KEY_ANALISIS
-        });
-
-        if (res.ok) {
-          json = await res.json();
-          text = extractTextFromGemini(json);
-          if (text) {
-            modeloUsado = modelo;
-            geminiSuccess = true;
-            console.log(`✅ Análisis generado exitosamente con ${modeloUsado} (vía proxy)`);
-            break; // Éxito con Gemini, salir del loop
-          }
-        } else {
-          console.warn(`⚠️ Gemini ${modelo} no respondió OK: ${res.status}`);
-        }
-      } catch (err) {
-        console.warn(`⚠️ Error de red al probar modelo ${modelo}:`, err.message);
+  if (!USE_GROQ_ONLY) {
+    try {
+      let modelosAProbar = [];
+      if (QUIZ_AI_MODEL_CONFIGURED) {
+        modelosAProbar = [QUIZ_AI_MODEL_CONFIGURED, ...MODELOS_DISPONIBLES.filter(m => m !== QUIZ_AI_MODEL_CONFIGURED)];
+      } else {
+        modelosAProbar = MODELOS_DISPONIBLES;
       }
+
+      let res = null;
+      let modeloUsado = null;
+
+      console.log('🔍 Iniciando análisis de quiz con IA (usando proxy backend)...');
+
+      // Intentar cada modelo hasta encontrar uno que funcione
+      for (const modelo of modelosAProbar) {
+        try {
+          const payload = buildPayloadForModel(modelo);
+
+          console.log(`📡 Probando modelo: ${modelo} (vía proxy ${PROXY_ENDPOINT})`);
+
+          res = await fetch(PROXY_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ ...payload, purpose: 'analisis' }), // Usa GEMINI_API_KEY_ANALISIS
+          });
+
+          if (res.ok) {
+            json = await res.json();
+            text = extractTextFromGemini(json);
+            if (text) {
+              modeloUsado = modelo;
+              geminiSuccess = true;
+              console.log(`✅ Análisis generado exitosamente con ${modeloUsado} (vía proxy)`);
+              break; // Éxito con Gemini, salir del loop
+            }
+          } else {
+            console.warn(`⚠️ Gemini ${modelo} no respondió OK: ${res.status}`);
+          }
+        } catch (err) {
+          console.warn(`⚠️ Error de red al probar modelo ${modelo}:`, err.message);
+        }
+      }
+    } catch (err) {
+      console.warn('Fallo general en bloque Gemini:', err);
     }
-  } catch (err) {
-    console.warn('Fallo general en bloque Gemini:', err);
+  } else {
+    console.log('⚙️ Configurado para usar solo Groq. Saltando intento con Gemini.');
   }
 
   // =================================================================================
@@ -731,7 +738,7 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
   // =================================================================================
   if (!geminiSuccess) {
     console.log('🔄 Gemini falló o no devolvió texto. Activando respaldo de GROQ...');
-    
+
     try {
       // Groq usa formato OpenAI (messages), no el formato de Google (contents)
       const groqPayload = {
@@ -755,9 +762,9 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
         const jsonGroq = await resGroq.json();
         text = extractTextFromGroq(jsonGroq);
         if (text) {
-             console.log('✅ Respaldo Groq respondió exitosamente.');
+          console.log('✅ Respaldo Groq respondió exitosamente.');
         } else {
-             console.warn('⚠️ Groq respondió OK pero sin contenido de texto.');
+          console.warn('⚠️ Groq respondió OK pero sin contenido de texto.');
         }
       } else {
         console.warn(`❌ Groq falló con status: ${resGroq.status}`);
@@ -781,7 +788,7 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
   // =================================================================================
   // 4. POST-PROCESAMIENTO (Común para cualquier IA que haya respondido)
   // =================================================================================
-  
+
   // Fallback: si la IA omitió la sección de ejemplos y tenemos datos, la agregamos de forma determinística
   const shouldAppendExamples = Array.isArray(incorrectasLista) && incorrectasLista.length > 0;
   const norm = normalize(text);
@@ -842,7 +849,7 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
     const secGuia = buildSecResourceGuide(params);
     out = insertBeforeHeading(out, 'Conclusión breve', secGuia);
   }
-  
+
   // Marca la fuente según quién respondió
   const sourceTag = geminiSuccess ? 'GEMINI' : 'GROQ';
   return out + `\n\n<<<AI_SOURCE:${sourceTag}>>>`;

@@ -430,7 +430,7 @@ export function Actividades_Alumno_comp() {
         }
       } catch { /* ignore */ }
     };
-    
+
     // También escuchar eventos de localStorage como fallback (para cuando no hay window.opener)
     const checkLocalStorage = () => {
       try {
@@ -438,7 +438,7 @@ export function Actividades_Alumno_comp() {
         const simFinished = localStorage.getItem('sim_finished_refresh');
         if (quizFinished) {
           const data = JSON.parse(quizFinished);
-          console.log('[DEBUG Actividades_Alumno_comp - localStorage quiz_finished]', data);
+          // console.log('[DEBUG Actividades_Alumno_comp - localStorage quiz_finished]', data);
           localStorage.removeItem('quiz_finished_refresh');
           showNotification('¡Quiz terminado!', 'Se registraron tus respuestas. Actualizando…', 'success');
           // Usar un pequeño delay para asegurar que el backend haya procesado
@@ -458,13 +458,13 @@ export function Actividades_Alumno_comp() {
             setRefreshKey((k) => k + 1);
           }, 500);
         }
-      } catch {}
+      } catch { }
     };
-    
+
     // Verificar localStorage periódicamente como fallback
     const interval = setInterval(checkLocalStorage, 2000);
     checkLocalStorage(); // Verificar inmediatamente
-    
+
     window.addEventListener('message', onMessage);
     return () => {
       window.removeEventListener('message', onMessage);
@@ -479,8 +479,21 @@ export function Actividades_Alumno_comp() {
     if (quiz) {
       setPendingOpenHistorialQuizId(null);
       handleVerHistorial(quiz);
+
+      // Limpiar los parámetros de la URL para evitar que se reabra al refrescar
+      try {
+        const params = new URLSearchParams(location.search || '');
+        if (params.has('historial') || params.has('quizId')) {
+          params.delete('historial');
+          params.delete('quizId');
+          const newSearch = params.toString();
+          navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ''}`, { replace: true });
+        }
+      } catch (e) {
+        console.warn('No se pudo limpiar parámetros de URL:', e);
+      }
     }
-  }, [pendingOpenHistorialQuizId, actividades]);
+  }, [pendingOpenHistorialQuizId, actividades, location.search, location.pathname, navigate]);
   // UI: Reintentos y fallback
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 2;
@@ -775,11 +788,11 @@ export function Actividades_Alumno_comp() {
           });
 
           // Índice de resumen por id quiz para mergear métricas del alumno
-          const resumenById = resumenRows.reduce((acc, q) => { 
+          const resumenById = resumenRows.reduce((acc, q) => {
             if (q && q.id) {
-              acc[q.id] = q; 
+              acc[q.id] = q;
             }
-            return acc; 
+            return acc;
           }, {});
           console.log('[DEBUG Actividades_Alumno_comp - resumenById]', {
             totalResumenRows: resumenRows.length,
@@ -948,7 +961,7 @@ export function Actividades_Alumno_comp() {
               mejorPuntaje: mejor_puntaje,
               plantilla: null
             };
-            
+
             console.log('[DEBUG Actividades_Alumno_comp - Mapeo Quiz]', {
               quizId: q.id,
               quizTitulo: q.titulo,
@@ -959,10 +972,10 @@ export function Actividades_Alumno_comp() {
               mejor_puntaje,
               mappedQuiz
             });
-            
+
             return mappedQuiz;
           });
-          
+
           // Si el resumen está vacío pero hay quizzes en el catálogo, intentar cargar intentos directamente
           if (resumenRows.length === 0 && catalogRows.length > 0 && estudianteId && rows.length > 0) {
             console.log('[DEBUG Actividades_Alumno_comp] Resumen vacío, cargando intentos directamente para quizzes del catálogo');
@@ -992,7 +1005,7 @@ export function Actividades_Alumno_comp() {
                   return null;
                 }
               });
-              
+
               const intentosData = await Promise.all(intentosPromises);
               const intentosByQuizId = {};
               intentosData.forEach(data => {
@@ -1000,9 +1013,9 @@ export function Actividades_Alumno_comp() {
                   intentosByQuizId[data.quizId] = data;
                 }
               });
-              
+
               console.log('[DEBUG Actividades_Alumno_comp] Intentos cargados directamente:', intentosByQuizId);
-              
+
               // Actualizar mapped con los datos de intentos cargados
               mapped.forEach(quiz => {
                 const intentosData = intentosByQuizId[quiz.id];
@@ -1018,7 +1031,7 @@ export function Actividades_Alumno_comp() {
               console.error('[DEBUG] Error cargando intentos directamente:', e);
             }
           }
-          
+
           console.log('[DEBUG Actividades_Alumno_comp - setActividades]', {
             tipo: selectedType,
             totalMapped: mapped.length,
@@ -1127,7 +1140,7 @@ export function Actividades_Alumno_comp() {
         };
         // Limitar concurrencia básica
         for (const act of missing) { // pequeño retardo para no saturar
-           
+
           await fetchOne(act);
         }
       } finally { gradeEnrichmentRef.current = false; }
@@ -1146,7 +1159,7 @@ export function Actividades_Alumno_comp() {
       if (pending.length === 0) return;
       try {
         const mod = await import('../../api/actividades');
-        for (const act of pending) {  
+        for (const act of pending) {
           try {
             const resp = await mod.listEntregasActividad(act.id);
             const list = Array.isArray(resp.data?.data) ? resp.data.data : [];
@@ -1237,61 +1250,6 @@ export function Actividades_Alumno_comp() {
   };
 
 
-
-  // //--- SOLUCIÓN DEFINITIVA DE NAVEGACIÓN ---
-  // useEffect(() => {
-  //   const params = new URLSearchParams(location.search);
-  //   const typeFromUrl = params.get('type');
-  //   const areaIdFromUrl = params.get('areaId');
-
-  //   // CASO 1: La URL tiene parámetros, pero el componente no está mostrando la tabla.
-  //   // Esto pasa cuando vienes de "Volver" o cargas la URL directamente.
-  //   if (typeFromUrl && areaIdFromUrl && currentLevel !== 'table') {
-  //     // Esperamos a que los datos del catálogo estén listos antes de hacer nada.
-  //     if (areasData.length > 0 || modulosEspecificos.length > 0) {
-  //       const areaId = Number(areaIdFromUrl);
-  //       const area = areasData.find(a => a.id === areaId);
-  //       if (area) {
-  //         setSelectedArea(area);
-  //         setSelectedType(typeFromUrl);
-  //         setCurrentLevel('table'); // Forzamos la vista de tabla
-  //       }
-  //     }
-  //     return; // Evita que se ejecute más lógica
-  //   }
-
-  //   // CASO 2: El estado interno dice que debemos estar en una tabla (ej. hiciste clic en "Quizzes").
-  //   // Nos aseguramos de que la URL lo refleje.
-  //   if (currentLevel === 'table' && selectedType && selectedArea) {
-  //     const expectedSearch = `?type=${selectedType}&areaId=${selectedArea.id}`;
-  //     if (location.search !== expectedSearch) {
-  //       navigate(location.pathname + expectedSearch, { replace: true });
-  //     }
-  //     return;
-  //   }
-
-  //   // CASO 3: El estado interno es el principal ("areas") pero la URL aún tiene parámetros.
-  //   // Limpiamos la URL para que coincida con la vista.
-  //   if (currentLevel === 'areas' && location.search) {
-  //     navigate(location.pathname, { replace: true });
-  //   }
-  // }, [
-  //   location.search,
-  //   currentLevel,
-  //   selectedType,
-  //   selectedArea,
-  //   areasData,
-  //   modulosEspecificos,
-  //   navigate
-  // ]);
-
-  // Nota: Se eliminó un segundo efecto de deep-linking redundante que forzaba
-  // volver a 'areas' cuando no había parámetros en la URL. Ese efecto
-  // interfería con la navegación interna (por ejemplo, al seleccionar un área
-  // o un módulo, que no actualiza inmediatamente la URL) y "rebotaba" la vista
-  // impidiendo avanzar a botones/tabla. Conservamos únicamente el efecto de
-  // deep-linking declarado más arriba, que ya sincroniza correctamente el
-  // estado con la URL cuando es necesario.
   // Función para mostrar notificaciones modales
   const showNotification = (title, message, type = 'success') => {
     setNotificationContent({ title, message, type });
@@ -1533,7 +1491,7 @@ export function Actividades_Alumno_comp() {
                   }));
                 }
               } catch (e) {
-                console.warn('No se pudo obtener respuestas pendientes para quiz', quiz.id, e);
+                // console.warn('No se pudo obtener respuestas pendientes para quiz', quiz.id, e);
               }
             }
           });
@@ -1883,7 +1841,7 @@ export function Actividades_Alumno_comp() {
           const mejorPuntaje = intentos.reduce((m, x) => Math.max(m, Number(x.puntaje || 0)), 0);
           const promedio = totalIntentos ? (intentos.reduce((s, x) => s + Number(x.puntaje || 0), 0) / totalIntentos) : 0;
           const promedioTiempo = intentos.length ? (intentos.reduce((s, x) => s + Number(x.tiempoEmpleado || 0), 0) / intentos.length) : 0;
-          
+
           // Actualizar el estado del quiz con los intentos
           setActividades(prev => prev.map(q => q.id === quiz.id ? {
             ...q,
@@ -1893,14 +1851,14 @@ export function Actividades_Alumno_comp() {
             score: intentos[totalIntentos - 1]?.puntaje ?? q.score ?? null,
             promedio
           } : q));
-          
+
           historial = { intentos, totalIntentos, mejorPuntaje, promedio, promedioTiempo };
         }
       } catch (e) {
         console.warn('No se pudo cargar historial de intentos para análisis:', e);
       }
     }
-    
+
     if (!historial || historial.intentos.length === 0) {
       navigate('/alumno/analisis-ia', {
         state: {
@@ -1938,8 +1896,8 @@ export function Actividades_Alumno_comp() {
     });
 
     try {
-      // Importar función de análisis
-      const { generarAnalisisConGemini } = await import('../../service/geminiService');
+      // Importar función de análisis del servicio correcto
+      const { analyzeQuizPerformance } = await import('../../service/quizAnalysisService');
       const { getQuizIntentoReview } = await import('../../api/quizzes');
 
       // Ordenar cronológicamente (más antiguo -> más reciente) para análisis
@@ -1953,42 +1911,179 @@ export function Actividades_Alumno_comp() {
       const durationsArr = ordered
         .map(i => {
           if (typeof i.tiempo_segundos === 'number') return i.tiempo_segundos;
-          if (typeof i.tiempoEmpleado === 'number') return i.tiempoEmpleado * 60; // convertir minutos a segundos
+          if (typeof i.tiempoEmpleado === 'number') return i.tiempoEmpleado;
           return null;
         })
         .filter(v => v != null);
 
-      // Obtener detalle del último intento
-      let detalleUltimoIntento = null;
-      const intentoSel = historial.intentos.length;
-      if (quiz.id && estudianteId && intentoSel) {
-        try {
-          const resp = await getQuizIntentoReview(quiz.id, estudianteId, intentoSel);
-          detalleUltimoIntento = resp?.data?.data || resp?.data || null;
-        } catch (e) {
-          console.warn('No se pudo obtener el detalle del intento para análisis IA:', e);
-        }
+      const promedioDuracion = durationsArr.length ? (durationsArr.reduce((a, b) => a + b, 0) / durationsArr.length) : null;
+      const mejorDuracion = durationsArr.length ? Math.min(...durationsArr) : null;
+      const peorDuracion = durationsArr.length ? Math.max(...durationsArr) : null;
+      const ultimoPuntaje = scores.length > 0 ? scores[scores.length - 1] : null;
+      const mejoraDesdePrimero = (scores.length > 1) ? (scores[scores.length - 1] - scores[0]) : 0;
+
+      // Métricas del intento oficial (siempre el primero cronológico)
+      const oficialPuntaje = scores.length ? scores[0] : null;
+      const oficialFecha = fechas.length ? fechas[0] : null;
+      const oficialDuracion = durationsArr.length ? durationsArr[0] : null;
+
+      // Pendiente de tendencia (regresión lineal simple)
+      let pendienteTendencia = null;
+      if (scores.length > 1) {
+        const n = scores.length;
+        const x = Array.from({ length: n }, (_, i) => i + 1);
+        const sumX = x.reduce((a, b) => a + b, 0);
+        const sumY = scores.reduce((a, b) => a + b, 0);
+        const sumXY = x.reduce((acc, xi, i) => acc + xi * scores[i], 0);
+        const sumX2 = x.reduce((acc, xi) => acc + xi * xi, 0);
+        pendienteTendencia = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
       }
 
-      // Preparar datos para análisis
+      // Desviación estándar
+      let desviacionPuntaje = null;
+      if (scores.length > 1) {
+        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+        desviacionPuntaje = Math.sqrt(scores.reduce((acc, v) => acc + Math.pow(v - avg, 2), 0) / (scores.length - 1));
+      }
+
+      // Obtener detalle del último intento y errores recurrentes
+      let detalleUltimoIntento = null;
+      const MAX_REVIEWS = Math.min(5, ordered.length);
+      const recurrentMap = new Map();
+
+      try {
+        const intentoSel = historial.intentos.length;
+        if (quiz.id && estudianteId && intentoSel) {
+          const resp = await getQuizIntentoReview(quiz.id, estudianteId, intentoSel);
+          detalleUltimoIntento = resp?.data?.data || resp?.data || null;
+
+          const indices = [];
+          for (let k = Math.max(1, intentoSel - MAX_REVIEWS + 1); k <= intentoSel; k++) indices.push(k);
+          for (const k of indices) {
+            try {
+              const r = (k === intentoSel) ? { data: { data: detalleUltimoIntento } } : await getQuizIntentoReview(quiz.id, estudianteId, k);
+              const det = r?.data?.data || r?.data || null;
+              if (!det || !Array.isArray(det.preguntas)) continue;
+              for (const p of det.preguntas) {
+                if (p && !p.correcta) {
+                  const base = String(p.enunciado || '').replace(/\s+/g, ' ').trim();
+                  if (!base) continue;
+                  const key = base.toLowerCase().slice(0, 200);
+                  const prev = recurrentMap.get(key) || { count: 0, sample: base };
+                  prev.count += 1;
+                  if (!prev.sample) prev.sample = base;
+                  recurrentMap.set(key, prev);
+                }
+              }
+            } catch (e) {
+              console.warn('No se pudo obtener intento', k, e);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('No se pudo obtener el detalle del intento para análisis IA:', e);
+      }
+
+      // Derivar métricas por pregunta del último intento
       const preguntas = Array.isArray(detalleUltimoIntento?.preguntas) ? detalleUltimoIntento.preguntas : [];
-      const meta = {
-        tipo: 'quiz',
-        itemId: quiz.id,
-        itemNombre: quiz.nombre,
-        totalIntentos: historial.intentos.length,
+      const totalPreguntasIntento = preguntas.length || null;
+      const correctasIntento = preguntas.filter(p => !!p.correcta).length || null;
+      const incorrectasIntento = (totalPreguntasIntento != null ? totalPreguntasIntento - correctasIntento : null);
+      const omitidasIntento = preguntas.filter(p => !p.correcta && (!p.seleccionadas || p.seleccionadas.length === 0) && !p.valor_texto).length || null;
+      let incorrectasLista = preguntas.filter(p => !p.correcta).map(p => p.enunciado).slice(0, 12);
+
+      const incorrectasDetalle = preguntas.filter(p => !p.correcta).map(p => {
+        const optMap = new Map((p.opciones || []).map(o => [o.id, o.texto]));
+        const seleccion = (Array.isArray(p.seleccionadas) ? p.seleccionadas : []).map(id => optMap.get(id)).filter(Boolean);
+        const correctas = (p.opciones || []).filter(o => Number(o.es_correcta) === 1).map(o => o.texto);
+        return { enunciado: p.enunciado, seleccion, correctas, tipo: p.tipo };
+      }).slice(0, 10);
+
+      const tiemposMs = preguntas.map(p => p.tiempo_ms || 0).filter(v => Number(v) > 0);
+      const resumenIntento = detalleUltimoIntento?.resumen || null;
+      const totalTiempoIntento = (tiemposMs.length > 0)
+        ? tiemposMs.reduce((a, b) => a + b, 0)
+        : (resumenIntento?.tiempo_segundos ? Number(resumenIntento.tiempo_segundos) * 1000 : null);
+      const promedioTiempoPregunta = (tiemposMs.length > 0 && totalPreguntasIntento)
+        ? (totalTiempoIntento / tiemposMs.length)
+        : (totalTiempoIntento != null && totalPreguntasIntento ? (totalTiempoIntento / totalPreguntasIntento) : null);
+
+      const previoPuntaje = scores.length > 1 ? scores[scores.length - 2] : null;
+      const deltaUltimoVsAnterior = (ultimoPuntaje != null && previoPuntaje != null) ? (ultimoPuntaje - previoPuntaje) : null;
+      const deltaUltimoVsOficial = (ultimoPuntaje != null && oficialPuntaje != null) ? (ultimoPuntaje - oficialPuntaje) : null;
+      const deltaMejorVsOficial = (historial?.mejorPuntaje != null && oficialPuntaje != null) ? (historial.mejorPuntaje - oficialPuntaje) : null;
+      const practiceCount = Math.max(0, (historial?.totalIntentos || scores.length) - 1);
+
+      const recurrentList = Array.from(recurrentMap.values())
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5)
+        .map(x => ({ enunciado: x.sample, veces: x.count }));
+
+      const metaPayload = {
+        itemName: quiz?.nombre,
+        alumnoNombre: estudianteNombre || null,
+        totalIntentos: historial.totalIntentos,
         mejorPuntaje: historial.mejorPuntaje,
-        promedioPuntaje: historial.promedio,
-        ultimoPuntaje: scores.length > 0 ? scores[scores.length - 1] : null,
-        mejoraDesdePrimero: (scores.length > 1) ? (scores[scores.length - 1] - scores[0]) : 0,
-        promedioDuracion: durationsArr.length ? (durationsArr.reduce((a, b) => a + b, 0) / durationsArr.length) : null,
-        totalPreguntas: preguntas.length,
-        correctas: preguntas.filter(p => !!p.correcta).length,
-        incorrectas: preguntas.length - preguntas.filter(p => !!p.correcta).length
+        promedio: historial.promedio,
+        scores,
+        fechas,
+        duraciones: durationsArr,
+        ultimoPuntaje,
+        previoPuntaje,
+        deltaUltimoVsAnterior,
+        deltaUltimoVsOficial,
+        deltaMejorVsOficial,
+        practiceCount,
+        erroresRecurrentes: recurrentList,
+        mejoraDesdePrimero,
+        pendienteTendencia,
+        desviacionPuntaje,
+        promedioDuracion,
+        mejorDuracion,
+        peorDuracion,
+        intentoNumero: detalleUltimoIntento?.intento ?? ordered.length,
+        totalPreguntasIntento,
+        correctasIntento,
+        incorrectasIntento,
+        omitidasIntento,
+        incorrectasLista,
+        incorrectasDetalle,
+        promedioTiempoPregunta,
+        totalTiempoIntento,
+        oficialPuntaje,
+        oficialFecha,
+        oficialDuracion,
       };
 
-      // Generar análisis con IA
-      const result = await generarAnalisisConGemini(historial, meta, detalleUltimoIntento);
+      const result = await analyzeQuizPerformance(metaPayload);
+
+      const meta = {
+        itemName: quiz?.nombre || '',
+        alumnoNombre: estudianteNombre || null,
+        totalIntentos: historial.totalIntentos || 0,
+        mejorPuntaje: historial.mejorPuntaje || 0,
+        promedio: Math.round(historial.promedio || 0),
+        ultimoPuntaje: ultimoPuntaje ?? null,
+        oficialPuntaje: oficialPuntaje ?? null,
+        previoPuntaje: previoPuntaje ?? null,
+        deltaUltimoVsAnterior: deltaUltimoVsAnterior,
+        deltaUltimoVsOficial: deltaUltimoVsOficial,
+        deltaMejorVsOficial: deltaMejorVsOficial,
+        practiceCount,
+        pendienteTendencia: (typeof pendienteTendencia === 'number') ? Number(pendienteTendencia) : null,
+        desviacionPuntaje: (typeof desviacionPuntaje === 'number') ? Number(desviacionPuntaje) : null,
+        promedioDuracion: promedioDuracion != null ? Math.round(promedioDuracion) : null,
+        mejorDuracion: mejorDuracion != null ? Math.round(mejorDuracion) : null,
+        peorDuracion: peorDuracion != null ? Math.round(peorDuracion) : null,
+        intentoNumero: metaPayload.intentoNumero || null,
+        totalPreguntasIntento: totalPreguntasIntento || null,
+        correctasIntento: correctasIntento || 0,
+        incorrectasIntento: incorrectasIntento || 0,
+        omitidasIntento: omitidasIntento || 0,
+        totalTiempoIntento: totalTiempoIntento != null ? Math.round(totalTiempoIntento / 1000) : null,
+        promedioTiempoPregunta: promedioTiempoPregunta != null ? Math.round(promedioTiempoPregunta / 1000) : null,
+        erroresRecurrentes: recurrentList,
+      };
 
       // Navegar con el resultado
       navigate('/alumno/analisis-ia', {
@@ -2139,12 +2234,13 @@ export function Actividades_Alumno_comp() {
     // Estilo igual al contenedor de notificaciones (gradiente, ícono y botón primario)
     const colorGradient = 'from-blue-500 to-indigo-600';
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => { try { if (preOpenedTabRef.current && !preOpenedTabRef.current.closed && preOpenedTabRef.current.location.href === 'about:blank') { preOpenedTabRef.current.close(); } } catch { } setStartModal({ open: false, quizId: null, seconds: 5 }); }}>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 pt-23"
+        onClick={() => { try { if (preOpenedTabRef.current && !preOpenedTabRef.current.closed && preOpenedTabRef.current.location.href === 'about:blank') { preOpenedTabRef.current.close(); } } catch { } setStartModal({ open: false, quizId: null, seconds: 5 }); }}>
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
           {/* Header estilo notificación */}
           <div className={`bg-gradient-to-r ${colorGradient} text-white p-6 text-center`}>
             <Brain className="w-12 h-12 text-white/90 mx-auto mb-2" />
-            <h2 className="text-xl font-bold">Iniciando Quiz</h2>
+            <h2 className="text-xl font-bold">Iniciando Quiz...</h2>
           </div>
           {/* Contenido */}
           <div className="p-6 text-center space-y-5">
@@ -2244,9 +2340,9 @@ export function Actividades_Alumno_comp() {
       showNotification('Error', 'No se encontró el quiz o el estudiante.', 'warning');
       return;
     }
-    
+
     setSelectedQuizHistorial(quiz);
-    
+
     // Cargar intentos reales desde el backend ANTES de abrir el modal
     try {
       const resp = await listIntentosQuizEstudiante(quiz.id, estudianteId);
@@ -2268,7 +2364,7 @@ export function Actividades_Alumno_comp() {
         const totalIntentos = intentos.length;
         const mejorPuntaje = intentos.reduce((m, x) => Math.max(m, Number(x.puntaje || 0)), 0);
         const promedio = totalIntentos ? (intentos.reduce((s, x) => s + Number(x.puntaje || 0), 0) / totalIntentos) : 0;
-        
+
         // Actualizar el estado con los intentos cargados
         setActividades(prev => prev.map(q => q.id === quiz.id ? {
           ...q,
@@ -2278,7 +2374,7 @@ export function Actividades_Alumno_comp() {
           score: intentos[totalIntentos - 1]?.puntaje ?? q.score ?? null,
           promedio
         } : q));
-        
+
         // Abrir el modal DESPUÉS de actualizar los datos
         setShowHistorialModal(true);
       } else {
@@ -3157,8 +3253,6 @@ export function Actividades_Alumno_comp() {
     </div>
   );
 
-  // Función para renderizar tabla de actividades (versión unificada single-submission)
-
   // Función principal de renderizado
   return (
     <div className="min-h-screen bg-white">
@@ -3223,6 +3317,7 @@ export function Actividades_Alumno_comp() {
           getBestScore={getBestScore}
           canRetry={canRetry}
           pendingAnswers={pendingAnswers}
+          launchingQuizId={startModal.open ? startModal.quizId : null}
         />
       ))}
 

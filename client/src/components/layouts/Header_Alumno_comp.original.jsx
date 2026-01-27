@@ -259,7 +259,7 @@ export function Header_Alumno_comp({
           </nav>
   ) : (
           <div className="flex items-center text-white/95 select-none">
-            <span className="text-xl md:text-2xl lg:text-3xl font-extrabold tracking-wide drop-shadow-sm">MQERKACADEMY</span>
+            <span className="text-xl md:text-2xl lg:text-3xl font-extrabold tracking-wide drop-shadow-sm">MQERKACADEMY...</span>
           </div>
         )}
       </div>

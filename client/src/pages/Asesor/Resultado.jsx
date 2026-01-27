@@ -300,7 +300,7 @@ export function Resultado() {
     }
 
     const text = [
-      `Hola, mi nombre es ${name}. Realicé la evaluación laboral para postularme como docente/asesor(a) en MqerkAcademy.`,
+      `Hola, mi nombre es ${name}. Realicé la evaluación laboral para postularme como docente/asesor(a) en MQerKAcademy.`,
       summary,
       ask,
       'Quedo atento(a) a su respuesta. Muchas gracias.'
@@ -493,7 +493,7 @@ export function Resultado() {
                 <div className="border rounded-md overflow-hidden xl:col-span-2">
                   <div className="px-4 py-3 bg-red-50 text-red-800 text-sm">
                     <div className="font-semibold mb-1">Apoyo recomendado</div>
-                    <p>Detectamos indicadores que sugieren que podrías beneficiarte de apoyo adicional. En MqerkAcademy podemos ayudarte.</p>
+                    <p>Detectamos indicadores que sugieren que podrías beneficiarte de apoyo adicional. En MQerKAcademy podemos ayudarte.</p>
                     <p className="mt-1">Contáctanos: <a href={whatsUrl} target="_blank" rel="noreferrer" className="underline font-medium">WhatsApp/Tel: 287-151-5760</a></p>
                   </div>
                 </div>

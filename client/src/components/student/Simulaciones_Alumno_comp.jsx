@@ -5,7 +5,8 @@
 // 3. Tabla de simulaciones disponibles con funcionalidad completa
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudent } from '../../context/StudentContext'; // Importar el hook
 import {
@@ -98,6 +99,8 @@ export function Simulaciones_Alumno_comp() {
   // (Debug removido) const [simsDebug, setSimsDebug] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const monthButtonRef = useRef(null);
+  const [dropdownStyle, setDropdownStyle] = useState({});
 
   // Estados para efectos visuales
   const [showConfetti, setShowConfetti] = useState(false);
@@ -1142,6 +1145,93 @@ export function Simulaciones_Alumno_comp() {
     return months[parseInt(selectedMonth)];
   };
 
+  // Calcular posición inteligente del dropdown
+  const calculateDropdownPosition = useCallback(() => {
+    if (!monthButtonRef.current) return null;
+    
+    const rect = monthButtonRef.current.getBoundingClientRect();
+    const viewportH = window.innerHeight;
+    const viewportW = window.innerWidth;
+    const margin = 8;
+    const gap = 4;
+    const desiredHeight = 300;
+    const minHeight = 120;
+    
+    // Calcular espacio disponible
+    const spaceBelow = viewportH - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+    
+    // Decidir si mostrar arriba o abajo
+    // Mostrar arriba si hay menos de 250px abajo Y hay más espacio arriba
+    const shouldShowAbove = spaceBelow < 250 && spaceAbove > spaceBelow;
+    
+    // Calcular altura máxima disponible
+    const maxHeight = shouldShowAbove 
+      ? Math.max(minHeight, Math.min(desiredHeight, spaceAbove - gap))
+      : Math.max(minHeight, Math.min(desiredHeight, spaceBelow - gap));
+    
+    // Calcular posición horizontal (asegurar que no se salga de la pantalla)
+    let left = rect.left;
+    const dropdownWidth = rect.width;
+    if (left + dropdownWidth > viewportW - margin) {
+      left = viewportW - dropdownWidth - margin;
+    }
+    if (left < margin) {
+      left = margin;
+    }
+    
+    // Calcular posición vertical
+    const top = shouldShowAbove 
+      ? `${Math.max(margin, rect.top - maxHeight - gap)}px`
+      : `${rect.bottom + gap}px`;
+    
+    return {
+      position: 'fixed',
+      top,
+      left: `${left}px`,
+      width: `${dropdownWidth}px`,
+      maxHeight: `${maxHeight}px`,
+      zIndex: 9999,
+    };
+  }, []);
+
+  // Calcular posición cuando se abre el dropdown y bloquear scroll del body
+  useEffect(() => {
+    if (isDropdownOpen) {
+      // Bloquear scroll del body para evitar que aparezca la barra de scroll principal
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      
+      // Calcular posición ANTES de mostrar el dropdown para evitar parpadeo
+      const style = calculateDropdownPosition();
+      if (style) {
+        setDropdownStyle(style);
+      }
+      
+      const handleResize = () => {
+        const newStyle = calculateDropdownPosition();
+        if (newStyle) setDropdownStyle(newStyle);
+      };
+      const handleScroll = () => {
+        const newStyle = calculateDropdownPosition();
+        if (newStyle) setDropdownStyle(newStyle);
+      };
+      
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', handleScroll, true);
+      
+      return () => {
+        // Restaurar scroll del body
+        document.body.style.overflow = prevOverflow;
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('scroll', handleScroll, true);
+      };
+    } else {
+      // Limpiar estilo cuando se cierra
+      setDropdownStyle({});
+    }
+  }, [isDropdownOpen, calculateDropdownPosition]);
+
   const handleMonthSelect = (monthValue) => {
     setSelectedMonth(monthValue);
     setIsDropdownOpen(false);
@@ -1745,36 +1835,48 @@ export function Simulaciones_Alumno_comp() {
             {/* Debug removido */}
             <div className="flex items-center gap-2 order-3 md:order-2" />
 
-            {/* Selector de mes */}
+            {/* Selector de mes - Posicionamiento inteligente */}
             <div className="relative w-full md:w-auto">
               <button
+                ref={monthButtonRef}
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center justify-between w-full md:w-64 px-3 sm:px-4 py-2 text-left bg-white border-2 border-gray-300 rounded-xl hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 active:scale-95 transition-all touch-manipulation shadow-sm"
+                className="flex items-center justify-between w-full md:w-64 px-3 sm:px-4 py-2.5 text-left bg-white border-2 border-gray-300 rounded-xl hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 active:scale-95 transition-all touch-manipulation shadow-sm text-sm sm:text-base"
               >
-                <span className="font-semibold">{getSelectedMonthName()}</span>
-                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                <span className="font-semibold truncate pr-2">{getSelectedMonthName()}</span>
+                <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {isDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border-2 border-gray-300 rounded-xl shadow-xl">
-                  <div className="py-1">
-                    <button
-                      onClick={() => handleMonthSelect('all')}
-                      className={`block w-full px-4 py-2.5 text-left hover:bg-gray-100 font-medium ${selectedMonth === 'all' ? 'bg-violet-50 text-violet-700' : 'text-gray-700'}`}
-                    >
-                      Todos los meses
-                    </button>
-                    {months.map((month, index) => (
+              {isDropdownOpen && Object.keys(dropdownStyle).length > 0 && createPortal(
+                <>
+                  {/* Overlay para cerrar al hacer click fuera */}
+                  <div 
+                    className="fixed inset-0 z-[9998] bg-transparent"
+                    onClick={() => setIsDropdownOpen(false)}
+                  />
+                  <div 
+                    style={dropdownStyle}
+                    className="bg-white border-2 border-gray-300 rounded-xl shadow-2xl overflow-y-auto"
+                  >
+                    <div className="py-1">
                       <button
-                        key={index}
-                        onClick={() => handleMonthSelect(index.toString())}
-                        className={`block w-full px-4 py-2.5 text-left hover:bg-gray-100 font-medium ${selectedMonth === index.toString() ? 'bg-violet-50 text-violet-700' : 'text-gray-700'}`}
+                        onClick={() => handleMonthSelect('all')}
+                        className={`block w-full px-3 sm:px-4 py-2.5 sm:py-3 text-left hover:bg-gray-100 font-medium text-sm sm:text-base transition-colors ${selectedMonth === 'all' ? 'bg-violet-50 text-violet-700' : 'text-gray-700'}`}
                       >
-                        {month}
+                        Todos los meses
                       </button>
-                    ))}
+                      {months.map((month, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleMonthSelect(index.toString())}
+                          className={`block w-full px-3 sm:px-4 py-2.5 sm:py-3 text-left hover:bg-gray-100 font-medium text-sm sm:text-base transition-colors ${selectedMonth === index.toString() ? 'bg-violet-50 text-violet-700' : 'text-gray-700'}`}
+                        >
+                          {month}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                </>,
+                document.body
               )}
             </div>
           </div>
@@ -2143,7 +2245,7 @@ export function Simulaciones_Alumno_comp() {
     const historial = getSimulacionHistorial(selectedSimulacionHistorial.id);
 
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-3 md:p-4 pt-8 sm:pt-12 md:pt-16">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-3 md:p-4 pt-8 sm:pt-12 md:pt-10">
         <div
           className="bg-white rounded-lg shadow-xl w-full max-w-[92vw] md:max-w-[30rem] lg:max-w-[32rem] xl:max-w-[36rem] max-h-[calc(100vh-10rem)] overflow-hidden flex flex-col transform translate-y-6 sm:translate-y-8 md:translate-x-8 lg:translate-x-0"
           role="dialog"
@@ -2151,10 +2253,10 @@ export function Simulaciones_Alumno_comp() {
           aria-labelledby="historial-title"
         >
           {/* Header del modal */}
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 flex-shrink-0">
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-1 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <h2 id="historial-title" className="text-lg font-bold truncate">Historial de Intentos</h2>
+                <h2 id="historial-title" className="text-lg font-bold truncate text-center">Historial de Intentos</h2>
                 <p className="text-indigo-100 mt-0.5 text-sm truncate">{selectedSimulacionHistorial.nombre}</p>
               </div>
               <button
@@ -2276,10 +2378,10 @@ export function Simulaciones_Alumno_comp() {
           </div>
 
           {/* Footer del modal */}
-          <div className="bg-gray-50 px-4 py-3 flex justify-end flex-shrink-0 border-t border-gray-200">
+          <div className="bg-gray-50 px-5 py-3 flex justify-end flex-shrink-0 border-t border-gray-200">
             <button
               onClick={closeHistorialModal}
-              className="px-4 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm font-medium transition-colors"
+              className="px-4 py-1.5 bg-red-600 hover:bg-gray-700 text-white rounded-md text-sm font-medium transition-colors"
             >
               Cerrar
             </button>
@@ -2390,7 +2492,7 @@ export function Simulaciones_Alumno_comp() {
 
       {/* Modal lanzamiento simulación */}
       {launchModal.open && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm pt-23">
           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-fadeIn">
             <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 pt-8 pb-6 text-center">
               <Brain className="w-14 h-14 mx-auto mb-4" />

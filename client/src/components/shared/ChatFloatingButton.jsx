@@ -343,6 +343,18 @@ const ChatFloatingButton = () => {
 
     } catch (error) {
       console.error("Error loading chat:", error);
+      // Si el error es 400 (usuario sin id_estudiante), no mostrar error en consola
+      // Esto puede pasar en páginas donde el usuario no es estudiante (ej: preregistro asesor)
+      if (error?.response?.status === 400) {
+        const errorMsg = error?.response?.data?.error || '';
+        if (errorMsg.includes('Student record not linked') || errorMsg.includes('student_id required')) {
+          // Usuario no tiene id_estudiante - esto es normal en algunas páginas
+          setMessages([]);
+          setHasMore(false);
+          return;
+        }
+      }
+      // Para otros errores, mantener el comportamiento actual
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -378,6 +390,12 @@ const ChatFloatingButton = () => {
         setSupportStatus(supportOnline);
       }
     } catch (e) {
+      // Si el error es 400 (usuario sin id_estudiante), no mostrar error
+      if (e?.response?.status === 400) {
+        setAdvisorStatus(false);
+        setSupportStatus(false);
+        return;
+      }
       console.error("Error loading status:", e);
       setAdvisorStatus(false);
       setSupportStatus(false);
@@ -389,6 +407,14 @@ const ChatFloatingButton = () => {
       await axios.post('/chat/read');
       setUnreadCount(0);
     } catch (e) {
+      // Si el error es 400 (usuario sin id_estudiante), no mostrar error
+      if (e?.response?.status === 400) {
+        const errorMsg = e?.response?.data?.error || '';
+        if (errorMsg.includes('Student record not linked') || errorMsg.includes('student_id required')) {
+          // Usuario no tiene id_estudiante - esto es normal en algunas páginas
+          return;
+        }
+      }
       console.error("Error marking messages as read:", e);
     }
   }, [setUnreadCount]);
@@ -445,18 +471,34 @@ const ChatFloatingButton = () => {
 
   useEffect(() => {
     if (isAuthenticated && user?.role === 'estudiante') {
-      loadHistory(false); // false = carga inicial
-      loadStatus();
+      // Solo intentar cargar si el usuario tiene id_estudiante
+      // Si no lo tiene, el error 400 será manejado silenciosamente en loadHistory
+      loadHistory(false).catch(() => {
+        // Error ya manejado en loadHistory, no hacer nada
+      });
+      loadStatus().catch(() => {
+        // Error en status también se maneja silenciosamente
+      });
     }
   }, [isAuthenticated, user?.role, loadStatus]); // Quitamos loadHistory de deps para evitar loop
 
   useEffect(() => {
     let intervalId = null;
     if (isOpen && isAuthenticated && user?.role === 'estudiante') {
-      if (messages.length === 0) loadHistory(false); // Solo cargar si está vacío para no reiniciar scroll
+      if (messages.length === 0) {
+        loadHistory(false).catch(() => {
+          // Error ya manejado en loadHistory
+        });
+      }
       markRead();
-      loadStatus();
-      intervalId = setInterval(loadStatus, 30000);
+      loadStatus().catch(() => {
+        // Error ya manejado en loadStatus
+      });
+      intervalId = setInterval(() => {
+        loadStatus().catch(() => {
+          // Error ya manejado en loadStatus
+        });
+      }, 30000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);

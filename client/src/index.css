@@ -346,10 +346,10 @@ html, body, #root{
   html, body, #root { -ms-overflow-style: none; scrollbar-width: thin; }
   html::-webkit-scrollbar,
   body::-webkit-scrollbar,
-  #root::-webkit-scrollbar { display: block; width: 4px; height: 4px; background: transparent; }
+  #root::-webkit-scrollbar { display: block; width: 3px; height: 3px; background: transparent; }
   html::-webkit-scrollbar-thumb,
   body::-webkit-scrollbar-thumb,
-  #root::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #a855f7, #6366f1); border-radius: 10px; }
+  #root::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 2px; }
 }
 
 /* Barras de desplazamiento ocultas por defecto (se ve mejor) */
@@ -368,7 +368,10 @@ body::-webkit-scrollbar,
 
 /* Utilidad para reactivar barras cuando se necesite explícitamente */
 .with-scrollbars { -ms-overflow-style: auto; scrollbar-width: thin; }
-.with-scrollbars::-webkit-scrollbar { display: block; width: 6px; height: 6px; }
+.with-scrollbars::-webkit-scrollbar { display: block; width: 4px; height: 4px; }
+.with-scrollbars::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 2px; }
+.with-scrollbars::-webkit-scrollbar-thumb:hover { background: rgba(107, 114, 128, 0.6); }
+.with-scrollbars::-webkit-scrollbar-track { background: transparent; }
 
 /* Utilidad: ocultar scrollbars en contenedores específicos (p. ej. chat, listas) */
 .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -568,34 +571,34 @@ body > * {
 }
 
 /* ================= Scrollbar delgada y fina ================= */
-/* Estilos para barras de scroll más delgadas en todos los navegadores */
+/* Estilos para barras de scroll más delgadas y elegantes en todos los navegadores */
 /* NOTA: html, body, #root mantienen scrollbar oculta (ver líneas 353-365) */
 
 /* WebKit (Chrome, Safari, Edge) - Aplica a todos EXCEPTO html, body, #root */
 :not(html):not(body):not(#root)::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 :not(html):not(body):not(#root)::-webkit-scrollbar-track {
   background: transparent;
-  border-radius: 10px;
+  border-radius: 2px;
 }
 
 :not(html):not(body):not(#root)::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #a855f7, #6366f1);
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 2px;
+  transition: background 0.2s ease;
 }
 
 :not(html):not(body):not(#root)::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #9333ea, #4f46e5);
+  background: rgba(107, 114, 128, 0.6);
 }
 
 /* Firefox - Aplica a todos EXCEPTO html, body, #root */
 :not(html):not(body):not(#root) {
   scrollbar-width: thin;
-  scrollbar-color: #a855f7 #f3f4f6;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
 }
 
 /* ================= Ocultar scrollbar principal (html, body, #root) ================= */

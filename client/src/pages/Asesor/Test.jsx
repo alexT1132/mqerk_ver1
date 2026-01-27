@@ -956,7 +956,7 @@ export function Test() {
 
   return (
     <div>
-        <Navbar />
+        <NavLogin />
         {!datos1 && (
             <div className="min-h-screen flex flex-col items-center justify-center p-6 w-full">
                 <p className="mb-4 text-center text-gray-700">{loading ? 'Cargando tus datos...' : (error || 'Recuperando preregistro...')}</p>

@@ -414,3 +414,8 @@ Para soporte técnico:
 ---
 
 **MQerk Academy** - Transformando la educación con tecnología e inteligencia artificial 🚀
+
+
+otra cosa, yo tengo @client/src/components/student/ActivitiesTable.jsx  y Quizztablet, no se si d everdad se estan suanod no pero antes de usarlo quiero ver y poder asegurar que cada tiene todo lo que tiene el componte origial cada modificacion cada funcion etc
+
+de igual forma refactorizar la tabla de simulaciones

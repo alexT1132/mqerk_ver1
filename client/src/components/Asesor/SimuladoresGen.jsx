@@ -1971,12 +1971,12 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
             {/* Generación IA (depende del modo) */}
             {areaId ? (
-              <div className="flex items-center gap-2">
-                <label className="hidden sm:block text-xs text-slate-500">Preguntas</label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <label className="hidden sm:block text-xs text-slate-500 whitespace-nowrap">Preguntas</label>
                 <select
                   value={iaQuickCount}
                   onChange={(e) => setIaQuickCount(Number(e.target.value))}
-                  className="rounded-lg border border-emerald-200 bg-white px-2 py-2 text-sm text-emerald-700 hover:bg-emerald-50"
+                  className="rounded-lg border-2 border-emerald-200 bg-white px-3 py-2 text-sm sm:text-base text-emerald-700 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-all min-w-[80px] sm:min-w-[100px]"
                   disabled={loading}
                   aria-label="Cantidad de preguntas IA"
                 >
@@ -2276,7 +2276,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
       {/* Modal: elección de IA (para vista de área y simuladores generales) */}
       {iaChoiceOpen && (
-        <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-start justify-center px-4 pt-24 pb-6">
+        <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-center justify-center px-4 pt-24 pb-6">
           <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={() => { setIaChoiceOpen(false); setIaError(''); }} />
           <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 overflow-hidden">
             {/* Header */}
@@ -2478,7 +2478,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 <select
                   value={iaIdioma}
                   onChange={(e) => setIaIdioma(e.target.value)}
-                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
+                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2.5 text-sm sm:text-base font-semibold text-slate-700 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-200 transition-all"
                 >
                   <option value="auto">Auto (según área/tema)</option>
                   <option value="es">Español (es-MX)</option>

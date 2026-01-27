@@ -340,7 +340,11 @@ export default function SignatureField({
               placeholder={placeholder}
               value={value || ""}
               onChange={(e) => onChange?.(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              onKeyUp={(e) => e.stopPropagation()}
+              onInput={(e) => e.stopPropagation()}
               className="outline-none text-sm w-full"
+              autoComplete="off"
             />
           </div>
         </div>

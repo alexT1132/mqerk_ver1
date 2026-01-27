@@ -319,7 +319,7 @@ export default function QuizIAModal({
 
     return (
         <>
-        <div className="mqerk-quiz-ia-overlay fixed inset-0 z-[60] flex items-start justify-center px-4 pt-24 pb-6">
+        <div className="mqerk-quiz-ia-overlay fixed inset-0 z-[60] flex items-start justify-center px-4 pt-30 pb-6">
             <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={onClose} />
             <div className="mqerk-quiz-ia-dialog relative z-10 w-full max-w-xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
                 {/* Header */}
