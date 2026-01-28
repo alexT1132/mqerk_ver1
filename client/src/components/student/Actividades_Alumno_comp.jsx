@@ -15,7 +15,8 @@ import { AREAS_CATALOG_CACHE } from '../../utils/catalogCache';
 import { styleForArea } from '../common/areaStyles.jsx';
 import UnifiedCard from '../common/UnifiedCard.jsx';
 import { resumenActividadesEstudiante, crearOReemplazarEntrega, addArchivoEntrega, listArchivosEntrega, deleteArchivoEntrega } from '../../api/actividades';
-import { resumenQuizzesEstudiante, crearIntentoQuiz, listIntentosQuizEstudiante, listQuizzes } from '../../api/quizzes';
+import { resumenQuizzesEstudiante, crearIntentoQuiz, listIntentosQuizEstudiante, listQuizzes, getQuizIntentoReview } from '../../api/quizzes';
+import { analyzeQuizPerformance } from '../../service/quizAnalysisService';
 import { useAuth } from '../../context/AuthContext';
 import { useStudent } from '../../context/StudentContext'; // BACKEND: Control de acceso a módulos
 import { useStudentNotifications } from '../../context/StudentNotificationContext';
@@ -580,6 +581,14 @@ export function Actividades_Alumno_comp() {
   // Datos reales se cargarán desde la API según área y tipo seleccionado
   const { user, alumno } = useAuth() || {}; // usar alumno.id cuando exista
   const estudianteId = alumno?.id || user?.id_estudiante || user?.id || null;
+  const estudianteNombre = useMemo(() => {
+    try {
+      if (alumno?.nombre) return `${alumno.nombre} ${alumno.apellidos || ''}`.trim();
+      if (user?.name && user.name !== 'XXXX') return String(user.name);
+      if (user?.nombre) return `${user.nombre} ${user.apellidos || ''}`.trim();
+    } catch { }
+    return null;
+  }, [alumno, user]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -1768,6 +1777,21 @@ export function Actividades_Alumno_comp() {
   };
 
   // Funciones específicas para Quizzes
+
+  // Helper para obtener historial de un quiz (usado por HistorialModal y análisis)
+  const getQuizHistorial = (quizId) => {
+    const q = actividades.find(it => it.id === quizId);
+    if (!q) return null;
+    return {
+      intentos: q.intentos || [],
+      totalIntentos: q.totalIntentos || 0,
+      mejorPuntaje: q.mejorPuntaje || 0,
+      promedio: q.promedio || 0,
+      // añadir otras propiedades si son requeridas por HistorialModal
+      mejorPuntajeObj: null
+    };
+  };
+
   const handleIniciarSimulacion = (quizId) => {
     // Bloquear si ya hay una pestaña de este quiz abierta (heartbeat en localStorage)
     try {
@@ -1896,9 +1920,9 @@ export function Actividades_Alumno_comp() {
     });
 
     try {
-      // Importar función de análisis del servicio correcto
-      const { analyzeQuizPerformance } = await import('../../service/quizAnalysisService');
-      const { getQuizIntentoReview } = await import('../../api/quizzes');
+      // Importar función de análisis (ya importada estáticamente arriba)
+      // const { analyzeQuizPerformance } = await import('../../service/quizAnalysisService');
+      // const { getQuizIntentoReview } = await import('../../api/quizzes');
 
       // Ordenar cronológicamente (más antiguo -> más reciente) para análisis
       const ordered = Array.isArray(historial.intentos)
@@ -1992,12 +2016,103 @@ export function Actividades_Alumno_comp() {
       const omitidasIntento = preguntas.filter(p => !p.correcta && (!p.seleccionadas || p.seleccionadas.length === 0) && !p.valor_texto).length || null;
       let incorrectasLista = preguntas.filter(p => !p.correcta).map(p => p.enunciado).slice(0, 12);
 
-      const incorrectasDetalle = preguntas.filter(p => !p.correcta).map(p => {
-        const optMap = new Map((p.opciones || []).map(o => [o.id, o.texto]));
-        const seleccion = (Array.isArray(p.seleccionadas) ? p.seleccionadas : []).map(id => optMap.get(id)).filter(Boolean);
-        const correctas = (p.opciones || []).filter(o => Number(o.es_correcta) === 1).map(o => o.texto);
-        return { enunciado: p.enunciado, seleccion, correctas, tipo: p.tipo };
-      }).slice(0, 10);
+      // ✅ Construir incorrectasDetalle con HISTORIAL COMPLETO de TODOS los intentos
+      const preguntasHistorialMap = new Map(); // Key: preguntaId o enunciado, Value: historial completo
+
+      // Primero, recopilar TODAS las respuestas de TODOS los intentos
+      const indices = [];
+      const intentoSel = historial.intentos.length;
+      for (let k = Math.max(1, intentoSel - MAX_REVIEWS + 1); k <= intentoSel; k++) indices.push(k);
+
+      for (const k of indices) {
+        try {
+          const r = (k === intentoSel) ? { data: { data: detalleUltimoIntento } } : await getQuizIntentoReview(quiz.id, estudianteId, k);
+          const det = r?.data?.data || r?.data || null;
+          if (!det || !Array.isArray(det.preguntas)) continue;
+
+          for (const p of det.preguntas) {
+            const enunciado = String(p.enunciado || '').replace(/\s+/g, ' ').trim();
+            if (!enunciado) continue;
+
+            const key = p.preguntaId || enunciado.toLowerCase().slice(0, 200);
+
+            if (!preguntasHistorialMap.has(key)) {
+              const optMap = new Map((p.opciones || []).map(o => [o.id, o.texto]));
+              const correctas = (p.opciones || []).filter(o => Number(o.es_correcta) === 1).map(o => o.texto);
+
+              preguntasHistorialMap.set(key, {
+                preguntaId: p.preguntaId || key,
+                enunciado: enunciado,
+                tipo: p.tipo,
+                correctas: correctas,
+                opciones: p.opciones || [],
+                historialRespuestas: []
+              });
+            }
+
+            const preguntaData = preguntasHistorialMap.get(key);
+            const optMap = new Map((p.opciones || []).map(o => [o.id, o.texto]));
+            const seleccion = (Array.isArray(p.seleccionadas) ? p.seleccionadas : []).map(id => optMap.get(id)).filter(Boolean);
+
+            preguntaData.historialRespuestas.push({
+              intento: k,
+              correcta: !!p.correcta,
+              seleccion: seleccion,
+              tiempo_ms: p.tiempo_ms || 0
+            });
+          }
+        } catch (e) {
+          console.warn('No se pudo procesar intento', k, 'para historial completo:', e);
+        }
+      }
+
+      // Ahora analizar cada pregunta para determinar su categoría
+      const incorrectasDetalle = [];
+
+      for (const [key, preguntaData] of preguntasHistorialMap.entries()) {
+        const historial = preguntaData.historialRespuestas;
+        const totalIntentos = historial.length;
+        const vecesCorrecta = historial.filter(h => h.correcta).length;
+        const vecesIncorrecta = historial.filter(h => !h.correcta).length;
+
+        // Solo incluir preguntas que se fallaron al menos una vez
+        if (vecesIncorrecta === 0) continue;
+
+        // Determinar categoría
+        let esInconsistente = false;
+        let esReincidente = false;
+
+        if (vecesCorrecta > 0 && vecesIncorrecta > 0) {
+          // A veces acertó, a veces falló = CONOCIMIENTO INESTABLE
+          esInconsistente = true;
+        } else if (vecesIncorrecta > 1) {
+          // Falló en múltiples intentos = ERROR REINCIDENTE
+          esReincidente = true;
+        }
+
+        // Obtener la última respuesta incorrecta para el análisis
+        const ultimaIncorrecta = historial.slice().reverse().find(h => !h.correcta);
+
+        incorrectasDetalle.push({
+          preguntaId: preguntaData.preguntaId,
+          enunciado: preguntaData.enunciado,
+          tipo: preguntaData.tipo,
+          correctas: preguntaData.correctas,
+          seleccion: ultimaIncorrecta?.seleccion || [],
+          historialRespuestas: historial, // ✅ HISTORIAL COMPLETO
+          totalIntentos: totalIntentos,
+          vecesCorrecta: vecesCorrecta,
+          vecesIncorrecta: vecesIncorrecta,
+          esInconsistente: esInconsistente,
+          es_reincidente: esReincidente,
+          // Prioridad para ordenamiento (inconsistente = 3, reincidente = 2, único = 1)
+          prioridad: esInconsistente ? 3 : (esReincidente ? 2 : 1)
+        });
+      }
+
+      // Ordenar por prioridad (inconsistentes primero) y limitar a 10
+      incorrectasDetalle.sort((a, b) => b.prioridad - a.prioridad);
+      const incorrectasDetalleFinal = incorrectasDetalle.slice(0, 10);
 
       const tiemposMs = preguntas.map(p => p.tiempo_ms || 0).filter(v => Number(v) > 0);
       const resumenIntento = detalleUltimoIntento?.resumen || null;
@@ -2047,7 +2162,7 @@ export function Actividades_Alumno_comp() {
         incorrectasIntento,
         omitidasIntento,
         incorrectasLista,
-        incorrectasDetalle,
+        incorrectasDetalle: incorrectasDetalleFinal,
         promedioTiempoPregunta,
         totalTiempoIntento,
         oficialPuntaje,
@@ -2393,17 +2508,7 @@ export function Actividades_Alumno_comp() {
     setSelectedQuizHistorial(null);
   };
 
-  const getQuizHistorial = (quizId) => {
-    const quiz = actividades.find(q => q.id === quizId);
-    if (!quiz) return { intentos: [], totalIntentos: 0, mejorPuntaje: 0, promedio: 0, promedioTiempo: 0 };
 
-    const intentos = Array.isArray(quiz.intentos) ? quiz.intentos : [];
-    const totalIntentos = Number(quiz.totalIntentos || intentos.length || 0);
-    const mejorPuntaje = Number(quiz.mejorPuntaje || intentos.reduce((m, x) => Math.max(m, Number(x.puntaje || 0)), 0) || 0);
-    const promedio = totalIntentos ? (intentos.reduce((s, x) => s + Number(x.puntaje || 0), 0) / totalIntentos) : 0;
-    const promedioTiempo = intentos.length ? (intentos.reduce((s, x) => s + Number(x.tiempoEmpleado || 0), 0) / intentos.length) : 0;
-    return { intentos, totalIntentos, mejorPuntaje, promedio, promedioTiempo };
-  };
 
   const getTotalAttempts = (quizId) => {
     const quiz = actividades.find(q => q.id === quizId);

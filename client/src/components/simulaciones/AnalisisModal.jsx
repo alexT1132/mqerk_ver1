@@ -539,7 +539,7 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
           <div className="flex items-center min-w-0">
             <Sparkles className="w-6 h-6 mr-3 flex-shrink-0" />
             <div className="min-w-0">
-              <h2 id="analisis-modal-title" className="text-lg font-bold">Análisis con IA</h2>
+              <h2 id="analisis-modal-title" className="text-lg font-bold">Análisis con IA..</h2>
               <p className="text-sm text-indigo-100 truncate flex items-center gap-2">
                 <span className="truncate">{itemName}</span>
                 {analysisSource === 'GEMINI' && (<span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-400/20 text-emerald-100 border border-emerald-300/40">IA activa</span>)}

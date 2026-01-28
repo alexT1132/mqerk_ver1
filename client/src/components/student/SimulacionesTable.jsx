@@ -11,7 +11,9 @@ import {
   LineChart,
   RefreshCw,
   AlertTriangle,
-  Star
+  Star,
+  Table2,
+  LayoutGrid
 } from 'lucide-react';
 
 /**
@@ -52,6 +54,29 @@ export function SimulacionesTable({
   // Función de refresh
   onRefresh
 }) {
+  // Estado para controlar el modo de vista (tabla o tarjetas)
+  const [viewMode, setViewMode] = useState('table'); // 'table' o 'cards'
+
+  // Efecto para determinar vista inicial y manejar resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) { // lg breakpoint
+        setViewMode('table');
+      } else {
+        // En móvil/tablet inicia en cards si no se ha cambiado manualmente (podríamos guardar en localStorage, pero por ahora simple)
+        // La lógica actual forza table en lg, pero permite toggle en < lg
+        // Si queremos respetar elección en < lg, no hacemos nada aquí salvo el init.
+      }
+    };
+
+    // Al montar, si es pequeño, default a cards
+    if (window.innerWidth < 1024) {
+      setViewMode('cards');
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   // Ref y estado para posicionamiento inteligente del dropdown
   const monthButtonRef = useRef(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
@@ -212,6 +237,24 @@ export function SimulacionesTable({
                 <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-violet-600" />
                 <span>Filtrar simulaciones</span>
               </div>
+
+              {/* Toggle de vista - Solo visible en pantallas < lg */}
+              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 lg:hidden">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-1.5 rounded transition-all ${viewMode === 'table' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  title="Vista de tabla"
+                >
+                  <Table2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`p-1.5 rounded transition-all ${viewMode === 'cards' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  title="Vista de tarjetas"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+              </div>
               {/* Selector con posicionamiento inteligente */}
               <div className="relative w-full md:w-auto">
                 <button
@@ -267,410 +310,415 @@ export function SimulacionesTable({
             </div>
           </div>
 
-          {/* Vista de escritorio - Tabla de simulaciones - Mejorada */}
-          <div className="hidden lg:block bg-white rounded-xl sm:rounded-2xl border border-slate-200/90 border-b-0 shadow-xl overflow-hidden ring-2 ring-slate-100/90">
-            <div
-              className="overflow-x-auto simulaciones-table-scroll"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            >
-              <table className="min-w-full" style={{ minWidth: '1200px' }}>
-                <thead>
-                  <tr className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
-                    <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-left text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '50px' }}>No.</th>
-                    <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-left text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '250px' }}>Simulación</th>
-                    <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '120px' }}>Fecha límite</th>
-                    <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '120px' }}>Ejecutar</th>
-                    <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '100px' }}>Entregado</th>
-                    <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '140px' }}>Volver a intentar</th>
-                    <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '120px' }}>Historial</th>
-                    <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '120px' }}>Gráficas</th>
-                    <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider last:border-r-0" style={{ minWidth: '120px' }}>Puntaje</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200/90">
-                  {loading && (
-                    <tr>
-                      <td colSpan={9} className="px-2 sm:px-2.5 py-3 sm:py-4 text-center text-[10px] sm:text-[11px] text-gray-500 font-medium">Cargando simulaciones...</td>
+
+          {/* Renderizado Condicional: Tabla o Tarjetas */}
+          {/* Vista de Tabla */}
+          {viewMode === 'table' && (
+            <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200/90 border-b-0 shadow-xl overflow-hidden ring-2 ring-slate-100/90">
+              <div
+                className="overflow-x-auto simulaciones-table-scroll"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                <table className="min-w-full" style={{ minWidth: '1200px' }}>
+                  <thead>
+                    <tr className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
+                      <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-left text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '50px' }}>No.</th>
+                      <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-left text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '250px' }}>Simulación</th>
+                      <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '120px' }}>Fecha límite</th>
+                      <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '120px' }}>Ejecutar</th>
+                      <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '100px' }}>Entregado</th>
+                      <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '140px' }}>Volver a intentar</th>
+                      <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '120px' }}>Historial</th>
+                      <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '120px' }}>Gráficas</th>
+                      <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider last:border-r-0" style={{ minWidth: '120px' }}>Puntaje</th>
                     </tr>
-                  )}
-                  {!loading && error && (
-                    <tr>
-                      <td colSpan={9} className="px-2 sm:px-2.5 py-3 sm:py-4 text-center text-[10px] sm:text-[11px] text-red-600 font-semibold">{error}</td>
-                    </tr>
-                  )}
-                  {!loading && !error && filteredSimulaciones.length === 0 && (
-                    <tr>
-                      <td colSpan={9} className="px-2 sm:px-2.5 py-3 sm:py-4 text-center text-[10px] sm:text-[11px] text-gray-500 font-medium">
-                        No hay simulaciones para el mes seleccionado.
-                      </td>
-                    </tr>
-                  )}
-                  {!loading && !error && filteredSimulaciones.map((simulacion, index) => {
-                    const est = computeSimEstado(simulacion);
-                    const available = isSimulacionAvailable(simulacion);
-                    const attempts = getTotalAttempts(simulacion.id);
-                    const pending = pendingAnswers[simulacion.id];
-                    return (
-                      <tr key={simulacion.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-violet-50/30 transition-colors duration-200`}>
-                        <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-[11px] sm:text-xs font-extrabold text-gray-900">
-                          {index + 1}
-                        </td>
-                        <td className="px-2 sm:px-3 py-2">
-                          <div>
-                            <div className="text-xs sm:text-sm font-bold text-gray-900">
-                              {simulacion.nombre}
-                            </div>
-                            {simulacion.descripcion && (
-                              <div
-                                onClick={() => openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id })}
-                                className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 cursor-pointer group"
-                              >
-                                <p
-                                  style={{
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: isMobile ? 1 : 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden',
-                                    textAlign: 'justify',
-                                    wordBreak: 'break-word',
-                                    lineHeight: '1.2'
-                                  }}
-                                  className="group-hover:text-gray-700 transition-colors"
-                                >
-                                  {simulacion.descripcion}
-                                </p>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id }); }}
-                                  className="mt-0.5 text-[9px] sm:text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
-                                >
-                                  Ver descripción completa
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
-                          <div className="flex items-center justify-center">
-                            <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 text-violet-600" />
-                            <span className="text-[10px] sm:text-[11px] text-gray-900 font-semibold">
-                              {(() => {
-                                const d = normalizeDeadlineEndOfDay(simulacion.fechaEntrega);
-                                return d ? d.toLocaleDateString('es-ES') : 'Sin límite';
-                              })()}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
-                          {available ? (
-                            <button
-                              onClick={() => handleOpenLaunchModal(simulacion)}
-                              disabled={launchingSimId === simulacion.id}
-                              className={`relative px-2 sm:px-3 py-1.5 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide shadow-md transition-all duration-200 border border-red-600 hover:border-red-700 active:scale-95 touch-manipulation ${launchingSimId === simulacion.id ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg transform hover:scale-105'}`}
-                            >
-                              <span className="relative z-10 flex items-center justify-center">
-                                <span className="mr-1 text-xs">🚀</span>
-                                {launchingSimId === simulacion.id ? 'LANZANDO…' : 'START'}
-                              </span>
-                              <div className="absolute inset-0 bg-gradient-to-t from-red-700/20 to-transparent rounded-lg"></div>
-                            </button>
-                          ) : (
-                            <button
-                              disabled
-                              className="px-2 py-1 bg-gray-300 cursor-not-allowed text-gray-500 rounded-lg text-[10px] sm:text-[11px] font-bold"
-                            >
-                              {est === 'vencido' ? 'VENCIDO' : (Number(simulacion.totalPreguntas || 0) === 0 ? 'SIN PREGUNTAS' : 'NO DISPONIBLE')}
-                            </button>
-                          )}
-                        </td>
-                        <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
-                          {simulacion.completado ? (
-                            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 mx-auto" />
-                          ) : (
-                            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto" />
-                          )}
-                        </td>
-                        <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
-                          {simulacion.completado ? (
-                            <button
-                              onClick={() => handleOpenLaunchModal(simulacion)}
-                              disabled={launchingSimId === simulacion.id}
-                              className={`relative px-2 sm:px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide shadow-md transition-all duration-200 border border-red-600 hover:border-red-700 active:scale-95 touch-manipulation ${launchingSimId === simulacion.id ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg transform hover:scale-105'}`}
-                            >
-                              <span className="relative z-10 flex items-center justify-center">
-                                <span className="mr-0.5 text-xs">🔄</span>
-                                {launchingSimId === simulacion.id ? 'LANZANDO…' : 'REINTENTAR'}
-                              </span>
-                              <div className="absolute inset-0 bg-gradient-to-t from-red-600/20 to-transparent rounded-lg"></div>
-                            </button>
-                          ) : (
-                            <span className="text-gray-400 text-[10px] sm:text-[11px]">-</span>
-                          )}
-                        </td>
-                        <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
-                          {simulacion.completado && attempts > 0 ? (
-                            <button
-                              onClick={() => handleVerHistorial(simulacion)}
-                              className="inline-flex items-center gap-0.5 px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] font-extrabold text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg border border-blue-200 transition-all active:scale-95 touch-manipulation shadow-sm"
-                              title="Historial"
-                            >
-                              <FileText className="w-3 h-3" />
-                              <span>Historial</span>
-                              <span className="ml-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-white text-blue-700 text-[8px] font-extrabold border border-blue-200">{attempts}</span>
-                            </button>
-                          ) : (
-                            <span className="text-gray-400 text-[10px] sm:text-[11px]">-</span>
-                          )}
-                        </td>
-                        <td className="px-2 sm:px-2.5 py-1.5 sm:py-2 text-center border-r border-slate-200/80 last:border-r-0">
-                          {simulacion.completado && attempts > 0 ? (
-                            <button
-                              onClick={() => handleVerGraficas(simulacion)}
-                              className={`inline-flex items-center px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] font-extrabold rounded-lg border transition-all active:scale-95 touch-manipulation shadow-sm ${
-                                attempts >= 3
-                                  ? 'text-indigo-700 bg-indigo-100 hover:bg-indigo-200 border-indigo-200'
-                                  : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-60'
-                              }`}
-                              title={attempts >= 3 ? 'Ver análisis gráfico' : `Se requieren al menos 3 intentos para el análisis. Actualmente tienes ${attempts}.`}
-                              disabled={attempts < 3}
-                            >
-                              <LineChart className="w-3 h-3 mr-0.5" />
-                              Análisis
-                            </button>
-                          ) : (
-                            <span className="text-gray-400 text-[10px] sm:text-[11px]">-</span>
-                          )}
-                        </td>
-                        <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
-                          <div className="text-[11px] sm:text-xs text-gray-900 font-extrabold">
-                            {simulacion.completado ? (
-                              <div className="space-y-0.5">
-                                <div className="font-extrabold text-emerald-600 bg-gradient-to-r from-emerald-100 to-green-100 px-2 py-0.5 rounded-lg border border-emerald-200">
-                                  {getBestScore(simulacion.id)} %
-                                </div>
-                                {(() => {
-                                  // Mostrar "Parcial" solo si hay pendientes en el intento oficial
-                                  if (pending && pending.pending > 0) {
-                                    return (
-                                      <div className="text-[9px] sm:text-[10px] text-amber-600 font-medium flex items-center gap-1">
-                                        <span>⏳</span>
-                                        <span>Parcial ({pending.pending} pendiente{pending.pending !== 1 ? 's' : ''})</span>
-                                      </div>
-                                    );
-                                  }
-                                  // Mostrar "Mejor de X intentos" solo si no hay pendientes
-                                  if (attempts > 1) {
-                                    return (
-                                      <div className="text-[9px] sm:text-[10px] text-gray-500 font-medium">
-                                        Mejor de {attempts} intentos
-                                      </div>
-                                    );
-                                  }
-                                  return null;
-                                })()}
-                              </div>
-                            ) : (
-                              <span className="text-gray-400">0 %</span>
-                            )}
-                          </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-200/90">
+                    {loading && (
+                      <tr>
+                        <td colSpan={9} className="px-2 sm:px-2.5 py-3 sm:py-4 text-center text-[10px] sm:text-[11px] text-gray-500 font-medium">Cargando simulaciones...</td>
+                      </tr>
+                    )}
+                    {!loading && error && (
+                      <tr>
+                        <td colSpan={9} className="px-2 sm:px-2.5 py-3 sm:py-4 text-center text-[10px] sm:text-[11px] text-red-600 font-semibold">{error}</td>
+                      </tr>
+                    )}
+                    {!loading && !error && filteredSimulaciones.length === 0 && (
+                      <tr>
+                        <td colSpan={9} className="px-2 sm:px-2.5 py-3 sm:py-4 text-center text-[10px] sm:text-[11px] text-gray-500 font-medium">
+                          No hay simulaciones para el mes seleccionado.
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Vista móvil - Cards de simulaciones - Mejoradas */}
-          <div className="lg:hidden space-y-4 sm:space-y-5">
-            {loading && (
-              <div className="text-center py-8 text-gray-500 text-sm">Cargando simulaciones...</div>
-            )}
-            {!loading && error && (
-              <div className="text-center py-8 text-red-600 text-sm font-semibold">{error}</div>
-            )}
-            {!loading && !error && filteredSimulaciones.length === 0 && (
-              <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-gray-200/50 shadow-lg p-8 text-center">
-                <Target className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-2">
-                  No hay simulaciones disponibles
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600 font-medium">
-                  {selectedMonth !== 'all'
-                    ? `No se encontraron simulaciones para ${getSelectedMonthName()}.`
-                    : 'No hay simulaciones disponibles en este momento.'}
-                </p>
+                    )}
+                    {!loading && !error && filteredSimulaciones.map((simulacion, index) => {
+                      const est = computeSimEstado(simulacion);
+                      const available = isSimulacionAvailable(simulacion);
+                      const attempts = getTotalAttempts(simulacion.id);
+                      const pending = pendingAnswers[simulacion.id];
+                      return (
+                        <tr key={simulacion.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-violet-50/30 transition-colors duration-200`}>
+                          <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-[11px] sm:text-xs font-extrabold text-gray-900">
+                            {index + 1}
+                          </td>
+                          <td className="px-2 sm:px-3 py-2">
+                            <div>
+                              <div className="text-xs sm:text-sm font-bold text-gray-900">
+                                {simulacion.nombre}
+                              </div>
+                              {simulacion.descripcion && (
+                                <div
+                                  onClick={() => openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id })}
+                                  className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 cursor-pointer group"
+                                >
+                                  <p
+                                    style={{
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: isMobile ? 1 : 2,
+                                      WebkitBoxOrient: 'vertical',
+                                      overflow: 'hidden',
+                                      textAlign: 'justify',
+                                      wordBreak: 'break-word',
+                                      lineHeight: '1.2'
+                                    }}
+                                    className="group-hover:text-gray-700 transition-colors"
+                                  >
+                                    {simulacion.descripcion}
+                                  </p>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id }); }}
+                                    className="mt-0.5 text-[9px] sm:text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                                  >
+                                    Ver descripción completa
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
+                            <div className="flex items-center justify-center">
+                              <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 text-violet-600" />
+                              <span className="text-[10px] sm:text-[11px] text-gray-900 font-semibold">
+                                {(() => {
+                                  const d = normalizeDeadlineEndOfDay(simulacion.fechaEntrega);
+                                  return d ? d.toLocaleDateString('es-ES') : 'Sin límite';
+                                })()}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
+                            {available ? (
+                              <button
+                                onClick={() => handleOpenLaunchModal(simulacion)}
+                                disabled={launchingSimId === simulacion.id}
+                                className={`relative px-2 sm:px-3 py-1.5 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide shadow-md transition-all duration-200 border border-red-600 hover:border-red-700 active:scale-95 touch-manipulation ${launchingSimId === simulacion.id ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg transform hover:scale-105'}`}
+                              >
+                                <span className="relative z-10 flex items-center justify-center">
+                                  <span className="mr-1 text-xs">🚀</span>
+                                  {launchingSimId === simulacion.id ? 'LANZANDO…' : 'START'}
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-t from-red-700/20 to-transparent rounded-lg"></div>
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                className="px-2 py-1 bg-gray-300 cursor-not-allowed text-gray-500 rounded-lg text-[10px] sm:text-[11px] font-bold"
+                              >
+                                {est === 'vencido' ? 'VENCIDO' : (Number(simulacion.totalPreguntas || 0) === 0 ? 'SIN PREGUNTAS' : 'NO DISPONIBLE')}
+                              </button>
+                            )}
+                          </td>
+                          <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
+                            {simulacion.completado ? (
+                              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 mx-auto" />
+                            ) : (
+                              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto" />
+                            )}
+                          </td>
+                          <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
+                            {simulacion.completado ? (
+                              <button
+                                onClick={() => handleOpenLaunchModal(simulacion)}
+                                disabled={launchingSimId === simulacion.id}
+                                className={`relative px-2 sm:px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide shadow-md transition-all duration-200 border border-red-600 hover:border-red-700 active:scale-95 touch-manipulation ${launchingSimId === simulacion.id ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg transform hover:scale-105'}`}
+                              >
+                                <span className="relative z-10 flex items-center justify-center">
+                                  <span className="mr-0.5 text-xs">🔄</span>
+                                  {launchingSimId === simulacion.id ? 'LANZANDO…' : 'REINTENTAR'}
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-t from-red-600/20 to-transparent rounded-lg"></div>
+                              </button>
+                            ) : (
+                              <span className="text-gray-400 text-[10px] sm:text-[11px]">-</span>
+                            )}
+                          </td>
+                          <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
+                            {simulacion.completado && attempts > 0 ? (
+                              <button
+                                onClick={() => handleVerHistorial(simulacion)}
+                                className="inline-flex items-center gap-0.5 px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] font-extrabold text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg border border-blue-200 transition-all active:scale-95 touch-manipulation shadow-sm"
+                                title="Historial"
+                              >
+                                <FileText className="w-3 h-3" />
+                                <span>Historial</span>
+                                <span className="ml-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-white text-blue-700 text-[8px] font-extrabold border border-blue-200">{attempts}</span>
+                              </button>
+                            ) : (
+                              <span className="text-gray-400 text-[10px] sm:text-[11px]">-</span>
+                            )}
+                          </td>
+                          <td className="px-2 sm:px-2.5 py-1.5 sm:py-2 text-center border-r border-slate-200/80 last:border-r-0">
+                            {simulacion.completado && attempts > 0 ? (
+                              <button
+                                onClick={() => handleVerGraficas(simulacion)}
+                                className={`inline-flex items-center px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] font-extrabold rounded-lg border transition-all active:scale-95 touch-manipulation shadow-sm ${attempts >= 3
+                                    ? 'text-indigo-700 bg-indigo-100 hover:bg-indigo-200 border-indigo-200'
+                                    : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-60'
+                                  }`}
+                                title={attempts >= 3 ? 'Ver análisis gráfico' : `Se requieren al menos 3 intentos para el análisis. Actualmente tienes ${attempts}.`}
+                                disabled={attempts < 3}
+                              >
+                                <LineChart className="w-3 h-3 mr-0.5" />
+                                Análisis
+                              </button>
+                            ) : (
+                              <span className="text-gray-400 text-[10px] sm:text-[11px]">-</span>
+                            )}
+                          </td>
+                          <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
+                            <div className="text-[11px] sm:text-xs text-gray-900 font-extrabold">
+                              {simulacion.completado ? (
+                                <div className="space-y-0.5">
+                                  <div className="font-extrabold text-emerald-600 bg-gradient-to-r from-emerald-100 to-green-100 px-2 py-0.5 rounded-lg border border-emerald-200">
+                                    {getBestScore(simulacion.id)} %
+                                  </div>
+                                  {(() => {
+                                    // Mostrar "Parcial" solo si hay pendientes en el intento oficial
+                                    if (pending && pending.pending > 0) {
+                                      return (
+                                        <div className="text-[9px] sm:text-[10px] text-amber-600 font-medium flex items-center gap-1">
+                                          <span>⏳</span>
+                                          <span>Parcial ({pending.pending} pendiente{pending.pending !== 1 ? 's' : ''})</span>
+                                        </div>
+                                      );
+                                    }
+                                    // Mostrar "Mejor de X intentos" solo si no hay pendientes
+                                    if (attempts > 1) {
+                                      return (
+                                        <div className="text-[9px] sm:text-[10px] text-gray-500 font-medium">
+                                          Mejor de {attempts} intentos
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">0 %</span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            )}
-            {!loading && !error && filteredSimulaciones.map((simulacion, index) => {
-              const est = computeSimEstado(simulacion);
-              const available = isSimulacionAvailable(simulacion);
-              const attempts = getTotalAttempts(simulacion.id);
-              const pending = pendingAnswers[simulacion.id];
-              return (
-                <div
-                  key={simulacion.id}
-                  className="bg-white rounded-xl border-2 border-gray-200/50 shadow-lg p-4 hover:shadow-xl transition-all duration-300 ring-1 ring-gray-100/50"
-                >
-                  {/* Header: Título y Badge */}
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-2 flex-1">
-                      <span className="bg-violet-100 text-violet-700 font-bold text-xs px-2 py-1 rounded-lg border-2 border-violet-200">
-                        #{index + 1}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => { if (simulacion.descripcion) openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id }); }}
-                        className={`font-extrabold text-gray-900 text-sm leading-tight flex-1 text-left truncate ${simulacion.descripcion ? 'cursor-pointer hover:underline' : ''}`}
-                        title={simulacion.nombre}
-                      >
-                        {simulacion.nombre}
-                      </button>
-                    </div>
-                    <span className={`text-xs font-extrabold px-2 py-1 rounded-lg border-2 whitespace-nowrap ${est === 'completado' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                      est === 'disponible' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                        'bg-red-100 text-red-600 border-red-200'
-                      }`}>
-                      {est === 'completado' ? 'Completado' : est === 'disponible' ? 'Disponible' : 'Vencido'}
-                    </span>
-                  </div>
-                  {/* Descripción */}
-                  {simulacion.descripcion && (
-                    <div
-                      onClick={() => openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id })}
-                      className="text-xs text-gray-600 mb-3 leading-relaxed cursor-pointer group"
-                    >
-                      <p
-                        style={{
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          wordBreak: 'break-word',
-                          lineHeight: '1.3'
-                        }}
-                        className="group-hover:text-gray-700 transition-colors"
-                      >
-                        {simulacion.descripcion}
-                      </p>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id }); }}
-                        className="mt-0.5 text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
-                      >
-                        Ver descripción completa
-                      </button>
-                    </div>
-                  )}
-                  {/* Grid de información */}
-                  <div className="grid grid-cols-3 gap-2 text-xs mb-3 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-                    <div>
-                      <div className="text-gray-500 font-medium mb-0.5 flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-violet-600" />
-                        <span>Límite</span>
-                      </div>
-                      <div className="text-gray-900 font-bold text-[11px]">
-                        {simulacion.fechaEntrega ? (() => {
-                          const d = normalizeDeadlineEndOfDay(simulacion.fechaEntrega);
-                          return d ? d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : 'Sin límite';
-                        })() : 'Sin límite'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500 font-medium mb-0.5">Estado</div>
-                      <div className="text-gray-900 font-bold text-[11px]">
-                        {simulacion.completado ? '✓ Completado' : 'Pendiente'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500 font-medium mb-0.5">Intentos</div>
-                      <div className="text-gray-900 font-bold">{attempts}</div>
-                    </div>
-                  </div>
-                  {/* Puntaje con estrella */}
-                  <div className="flex items-center justify-center gap-1.5 mb-3 bg-gradient-to-r from-amber-50 to-yellow-50 p-2 rounded-lg border border-amber-200">
-                    <Star className="w-4 h-4 text-amber-500" fill="currentColor" />
-                    {simulacion.completado ? (
-                      <div className="flex flex-col items-center">
-                        <span className="font-extrabold text-emerald-600 text-sm">
-                          {getBestScore(simulacion.id)}%
+            </div>
+          )}
+
+          {/* Vista de Tarjetas */}
+          {viewMode === 'cards' && (
+            <div className="space-y-4 sm:space-y-5">
+              {loading && (
+                <div className="text-center py-8 text-gray-500 text-sm">Cargando simulaciones...</div>
+              )}
+              {!loading && error && (
+                <div className="text-center py-8 text-red-600 text-sm font-semibold">{error}</div>
+              )}
+              {!loading && !error && filteredSimulaciones.length === 0 && (
+                <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-gray-200/50 shadow-lg p-8 text-center">
+                  <Target className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-2">
+                    No hay simulaciones disponibles
+                  </h3>
+                  <p className="text-sm sm:text-base text-gray-600 font-medium">
+                    {selectedMonth !== 'all'
+                      ? `No se encontraron simulaciones para ${getSelectedMonthName()}.`
+                      : 'No hay simulaciones disponibles en este momento.'}
+                  </p>
+                </div>
+              )}
+              {!loading && !error && filteredSimulaciones.map((simulacion, index) => {
+                const est = computeSimEstado(simulacion);
+                const available = isSimulacionAvailable(simulacion);
+                const attempts = getTotalAttempts(simulacion.id);
+                const pending = pendingAnswers[simulacion.id];
+                return (
+                  <div
+                    key={simulacion.id}
+                    className="bg-white rounded-xl border-2 border-gray-200/50 shadow-lg p-4 hover:shadow-xl transition-all duration-300 ring-1 ring-gray-100/50"
+                  >
+                    {/* Header: Título y Badge */}
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="bg-violet-100 text-violet-700 font-bold text-xs px-2 py-1 rounded-lg border-2 border-violet-200">
+                          #{index + 1}
                         </span>
-                        {pending && pending.pending > 0 && (
-                          <span className="text-[10px] text-amber-600 font-medium flex items-center gap-0.5">
-                            <span>⏳</span>
-                            <span>Parcial ({pending.pending})</span>
-                          </span>
-                        )}
-                        {!pending && attempts > 1 && (
-                          <span className="text-[10px] text-gray-500 font-medium">
-                            Mejor de {attempts}
-                          </span>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => { if (simulacion.descripcion) openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id }); }}
+                          className={`font-extrabold text-gray-900 text-sm leading-tight flex-1 text-left truncate ${simulacion.descripcion ? 'cursor-pointer hover:underline' : ''}`}
+                          title={simulacion.nombre}
+                        >
+                          {simulacion.nombre}
+                        </button>
                       </div>
-                    ) : (
-                      <span className="text-gray-400 text-xs font-bold">Sin intentos</span>
-                    )}
-                  </div>
-                  {/* Botones de acción */}
-                  <div className="space-y-2">
-                    {available && !simulacion.completado && (
-                      <button
-                        onClick={() => handleOpenLaunchModal(simulacion)}
-                        disabled={launchingSimId === simulacion.id}
-                        className={`w-full rounded-xl py-2.5 px-3 text-sm font-extrabold text-white bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 shadow-lg transition-all flex items-center justify-center gap-2 border-2 border-red-600 active:scale-95 touch-manipulation hover:shadow-xl ${launchingSimId === simulacion.id ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      <span className={`text-xs font-extrabold px-2 py-1 rounded-lg border-2 whitespace-nowrap ${est === 'completado' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                        est === 'disponible' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                          'bg-red-100 text-red-600 border-red-200'
+                        }`}>
+                        {est === 'completado' ? 'Completado' : est === 'disponible' ? 'Disponible' : 'Vencido'}
+                      </span>
+                    </div>
+                    {/* Descripción */}
+                    {simulacion.descripcion && (
+                      <div
+                        onClick={() => openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id })}
+                        className="text-xs text-gray-600 mb-3 leading-relaxed cursor-pointer group"
                       >
-                        <span className="text-base">🚀</span>
-                        {launchingSimId === simulacion.id ? 'Lanzando...' : 'Ejecutar'}
-                      </button>
+                        <p
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            wordBreak: 'break-word',
+                            lineHeight: '1.3'
+                          }}
+                          className="group-hover:text-gray-700 transition-colors"
+                        >
+                          {simulacion.descripcion}
+                        </p>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id }); }}
+                          className="mt-0.5 text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                        >
+                          Ver descripción completa
+                        </button>
+                      </div>
                     )}
-                    {simulacion.completado && (
-                      <>
+                    {/* Grid de información */}
+                    <div className="grid grid-cols-3 gap-2 text-xs mb-3 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                      <div>
+                        <div className="text-gray-500 font-medium mb-0.5 flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-violet-600" />
+                          <span>Límite</span>
+                        </div>
+                        <div className="text-gray-900 font-bold text-[11px]">
+                          {simulacion.fechaEntrega ? (() => {
+                            const d = normalizeDeadlineEndOfDay(simulacion.fechaEntrega);
+                            return d ? d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : 'Sin límite';
+                          })() : 'Sin límite'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500 font-medium mb-0.5">Estado</div>
+                        <div className="text-gray-900 font-bold text-[11px]">
+                          {simulacion.completado ? '✓ Completado' : 'Pendiente'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500 font-medium mb-0.5">Intentos</div>
+                        <div className="text-gray-900 font-bold">{attempts}</div>
+                      </div>
+                    </div>
+                    {/* Puntaje con estrella */}
+                    <div className="flex items-center justify-center gap-1.5 mb-3 bg-gradient-to-r from-amber-50 to-yellow-50 p-2 rounded-lg border border-amber-200">
+                      <Star className="w-4 h-4 text-amber-500" fill="currentColor" />
+                      {simulacion.completado ? (
+                        <div className="flex flex-col items-center">
+                          <span className="font-extrabold text-emerald-600 text-sm">
+                            {getBestScore(simulacion.id)}%
+                          </span>
+                          {pending && pending.pending > 0 && (
+                            <span className="text-[10px] text-amber-600 font-medium flex items-center gap-0.5">
+                              <span>⏳</span>
+                              <span>Parcial ({pending.pending})</span>
+                            </span>
+                          )}
+                          {!pending && attempts > 1 && (
+                            <span className="text-[10px] text-gray-500 font-medium">
+                              Mejor de {attempts}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-xs font-bold">Sin intentos</span>
+                      )}
+                    </div>
+                    {/* Botones de acción */}
+                    <div className="space-y-2">
+                      {available && !simulacion.completado && (
                         <button
                           onClick={() => handleOpenLaunchModal(simulacion)}
                           disabled={launchingSimId === simulacion.id}
-                          className={`w-full rounded-xl py-2.5 px-3 text-sm font-extrabold text-white bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg transition-all flex items-center justify-center gap-2 border-2 border-red-600 active:scale-95 touch-manipulation hover:shadow-xl ${launchingSimId === simulacion.id ? 'opacity-60 cursor-not-allowed' : ''}`}
+                          className={`w-full rounded-xl py-2.5 px-3 text-sm font-extrabold text-white bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 shadow-lg transition-all flex items-center justify-center gap-2 border-2 border-red-600 active:scale-95 touch-manipulation hover:shadow-xl ${launchingSimId === simulacion.id ? 'opacity-60 cursor-not-allowed' : ''}`}
                         >
-                          <span className="text-base">🔄</span>
-                          {launchingSimId === simulacion.id ? 'Lanzando...' : 'Reintentar'}
+                          <span className="text-base">🚀</span>
+                          {launchingSimId === simulacion.id ? 'Lanzando...' : 'Ejecutar'}
                         </button>
-                        {attempts > 0 && (
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => handleVerHistorial(simulacion)}
-                              className="flex items-center justify-center gap-1 rounded-xl py-2 px-2 text-xs font-extrabold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-2 border-indigo-200 transition-all active:scale-95 touch-manipulation shadow-sm"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                              Historial
-                            </button>
-                            {attempts >= 3 && (
+                      )}
+                      {simulacion.completado && (
+                        <>
+                          <button
+                            onClick={() => handleOpenLaunchModal(simulacion)}
+                            disabled={launchingSimId === simulacion.id}
+                            className={`w-full rounded-xl py-2.5 px-3 text-sm font-extrabold text-white bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg transition-all flex items-center justify-center gap-2 border-2 border-red-600 active:scale-95 touch-manipulation hover:shadow-xl ${launchingSimId === simulacion.id ? 'opacity-60 cursor-not-allowed' : ''}`}
+                          >
+                            <span className="text-base">🔄</span>
+                            {launchingSimId === simulacion.id ? 'Lanzando...' : 'Reintentar'}
+                          </button>
+                          {attempts > 0 && (
+                            <div className="grid grid-cols-2 gap-2">
                               <button
-                                onClick={() => handleVerGraficas(simulacion)}
-                                className="flex items-center justify-center gap-1 rounded-xl py-2 px-2 text-xs font-extrabold bg-purple-50 text-purple-700 hover:bg-purple-100 border-2 border-purple-200 transition-all active:scale-95 touch-manipulation shadow-sm"
+                                onClick={() => handleVerHistorial(simulacion)}
+                                className="flex items-center justify-center gap-1 rounded-xl py-2 px-2 text-xs font-extrabold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-2 border-indigo-200 transition-all active:scale-95 touch-manipulation shadow-sm"
                               >
-                                <LineChart className="w-3.5 h-3.5" />
-                                Gráfico
+                                <FileText className="w-3.5 h-3.5" />
+                                Historial
                               </button>
-                            )}
-                          </div>
-                        )}
-                      </>
-                    )}
-                    {!available && !simulacion.completado && (
-                      <div className="w-full px-3 py-2 bg-gray-100 text-gray-600 rounded-xl text-center text-xs font-bold border-2 border-gray-200">
-                        {est === 'vencido' ? 'Simulación Vencida' : (Number(simulacion.totalPreguntas || 0) === 0 ? 'Sin preguntas configuradas' : 'No Disponible')}
-                      </div>
-                    )}
+                              {attempts >= 3 && (
+                                <button
+                                  onClick={() => handleVerGraficas(simulacion)}
+                                  className="flex items-center justify-center gap-1 rounded-xl py-2 px-2 text-xs font-extrabold bg-purple-50 text-purple-700 hover:bg-purple-100 border-2 border-purple-200 transition-all active:scale-95 touch-manipulation shadow-sm"
+                                >
+                                  <LineChart className="w-3.5 h-3.5" />
+                                  Gráfico
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {!available && !simulacion.completado && (
+                        <div className="w-full px-3 py-2 bg-gray-100 text-gray-600 rounded-xl text-center text-xs font-bold border-2 border-gray-200">
+                          {est === 'vencido' ? 'Simulación Vencida' : (Number(simulacion.totalPreguntas || 0) === 0 ? 'Sin preguntas configuradas' : 'No Disponible')}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
       <style>{`
         .simulaciones-table-scroll::-webkit-scrollbar { width: 0; height: 0; display: none !important; }
         .simulaciones-table-scroll { -ms-overflow-style: none !important; scrollbar-width: none !important; }
       `}</style>
-    </React.Fragment>
+    </React.Fragment >
   );
 }
 

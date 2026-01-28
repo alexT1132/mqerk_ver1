@@ -508,15 +508,17 @@ class MqerkCommander:
             self.run_bg(f'rmdir /s /q "{SERVER_DIR}\\node_modules" & del "{SERVER_DIR}\\package-lock.json" & rmdir /s /q "{CLIENT_DIR}\\node_modules" & del "{CLIENT_DIR}\\package-lock.json" & cd "{SERVER_DIR}" & npm install & cd ..\\"{CLIENT_DIR}" & npm install')
 
     # ================= PROTOCOLOS DE SEGURIDAD (AUTO-PROTECT) =================
+ # ================= PROTOCOLOS DE SEGURIDAD (NO DESTRUCTIVO) =================
     def auto_protect_secrets(self):
         """
-        Escanea archivos sensibles, crea copias .example censuradas,
-        los añade al .gitignore y los saca del index de Git.
+        1. Crea copias .example.json (censuradas) para subir a Git.
+        2. Agrega los archivos REALES al .gitignore.
+        3. Saca los archivos REALES del radar de Git (sin borrarlos del disco).
         """
         self.set_busy(True)
-        self.log("🛡️ Iniciando Protocolo de Seguridad...", "cmd")
+        self.log("🛡️ Iniciando Protección Inteligente (Modo Seguro)...", "cmd")
         
-        # Lista de archivos sensibles conocidos (rutas relativas)
+        # Archivos que contienen secretos y queremos proteger
         targets = [
             {"path": "client/src/components/tools/nexus_config.json", "type": "json"},
             {"path": "client/src/components/tools/nexus_settings.json", "type": "json"},
@@ -530,51 +532,58 @@ class MqerkCommander:
             full_path = os.path.abspath(t["path"])
             
             if os.path.exists(full_path):
-                self.log(f"🔒 Procesando: {t['path']}")
+                self.log(f"🔒 Asegurando: {t['path']}")
                 
-                # 1. Crear versión EXAMPLE (Censurada)
+                # PASO 1: Generar el archivo .example (Copia segura)
+                # OJO: Esto NO modifica tu archivo original, solo crea uno nuevo al lado.
                 if t["type"] == "json":
                     self.create_safe_json_example(full_path)
                 elif t["type"] == "env":
                     self.create_safe_env_example(full_path)
                 
-                # 2. Agregar al .gitignore (si no existe)
+                # PASO 2: Decirle a Git que ignore el archivo REAL
                 self.append_to_gitignore(t["path"])
 
-                # 3. Remover de Git (Cached) para evitar el error de Push Protection
-                self.run_bg(f"git rm --cached {t['path']}")
+                # PASO 3: Sacar el archivo real del index de Git (¡CRUCIAL!)
+                # "git rm --cached" borra el archivo de Git pero LO DEJA en tu disco.
+                # El "|| ver>nul" evita errores si el archivo no estaba trackeado antes.
+                self.run_bg(f"git rm --cached {t['path']} || ver>nul")
                 
                 protected_count += 1
             
-        self.root.after(1000, lambda: self.log(f"✅ {protected_count} archivos protegidos y sanitizados.", "success"))
+        # Mensaje final
+        self.root.after(1500, lambda: self.log(f"✅ {protected_count} archivos protegidos. Tu entorno local sigue funcionando.", "success"))
+        self.root.after(1500, lambda: messagebox.showinfo("Auto-Protect", "🛡️ ¡Protección Lista!\n\n1. Tus claves REALES siguen en tu carpeta (tu app funciona).\n2. Git ahora ignorará esos archivos.\n3. Se crearon archivos '.example' seguros.\n\nAHORA: Haz un nuevo Commit y Push."))
         self.set_busy(False)
 
     def create_safe_json_example(self, filepath):
+        """Lee el original, censura datos en memoria y guarda COPIA .example"""
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
-            # Función recursiva para limpiar valores
+            # Limpieza recursiva (solo en memoria)
             def clean_dict(d):
                 for k, v in d.items():
                     if isinstance(v, dict):
                         clean_dict(v)
                     elif isinstance(v, str) and len(v) > 0:
-                        # Si la clave parece sensible o tiene valor largo, censurar
-                        if any(x in k.lower() for x in ['key', 'secret', 'token', 'password', 'id']):
+                        # Si detecta palabras clave de seguridad, reemplaza el valor
+                        if any(x in k.lower() for x in ['key', 'secret', 'token', 'pass', 'id']):
                             d[k] = "YOUR_SECRET_HERE"
             
             clean_dict(data)
             
-            # Guardar como .example.json
+            # Guardar SOLO en el archivo .example (NO en el original)
             example_path = filepath.replace('.json', '.example.json')
             with open(example_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2)
-            self.log(f"   -> Generado: {os.path.basename(example_path)}")
+            self.log(f"   -> Creado/Actualizado: {os.path.basename(example_path)}")
         except Exception as e:
             self.log(f"Error JSON {filepath}: {e}", "error")
 
     def create_safe_env_example(self, filepath):
+        """Lee el .env original y crea un .env.example censurado"""
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
@@ -590,26 +599,28 @@ class MqerkCommander:
             example_path = filepath + ".example"
             with open(example_path, 'w', encoding='utf-8') as f:
                 f.writelines(safe_lines)
-            self.log(f"   -> Generado: {os.path.basename(example_path)}")
+            self.log(f"   -> Creado/Actualizado: {os.path.basename(example_path)}")
         except Exception as e:
             self.log(f"Error ENV {filepath}: {e}", "error")
 
     def append_to_gitignore(self, relative_path):
+        """Agrega el archivo real al .gitignore para que Git no lo vuelva a ver"""
         git_ignore_path = ".gitignore"
-        # Normalizar path para gitignore (siempre forward slash)
-        entry = relative_path.replace("\\", "/")
+        entry = relative_path.replace("\\", "/") # Formato unix para git
         
+        # Crear si no existe
         if not os.path.exists(git_ignore_path):
             with open(git_ignore_path, "w") as f: f.write("")
             
         with open(git_ignore_path, "r") as f:
             content = f.read()
             
+        # Solo agregar si no está ya
         if entry not in content:
             with open(git_ignore_path, "a") as f:
                 f.write(f"\n{entry}")
-            self.log(f"   -> Añadido a .gitignore")
-
+            self.log(f"   -> Ocultado en .gitignore: {entry}")
+            
 if __name__ == "__main__":
     root = tk.Tk()
     app = MqerkCommander(root)

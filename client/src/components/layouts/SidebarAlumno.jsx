@@ -1,4 +1,5 @@
 import React from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useStudent } from "../../context/StudentContext.jsx";
 import { DesktopSidebarBase } from "./SidebarBase.jsx";
 
@@ -22,6 +23,7 @@ const LogoAsistencia = (<svg xmlns={xmlns} height={height} viewBox="0 0 24 24" w
 const LogoConfigAlumno = (<svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>);
 const LogoCerrarSesionAlumno = (<svg xmlns={xmlns} height={height} viewBox="0 0 24 24" width={width} fill="none" stroke={svgColorLogout} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="17 16 22 12 17 8" /><line x1="22" y1="12" x2="10" y2="12" /></svg>);
 
+// Menú principal de alumno
 // Menú principal de alumno
 const alumnoMenuItems = [
   { label: "Inicio", path: "/alumno/", icon: LogoInicio, sectionKey: "inicio" },
@@ -72,10 +74,18 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen }) {
 // Componente Sidebar Mobile para alumno
 export function SideBarSm_Alumno_comp({ isMenuOpen, closeMenu }) {
   const { activeSection, setActiveSectionHandler } = useStudent();
+  const location = useLocation();
 
   const handleSectionChange = (sectionKey) => {
     setActiveSectionHandler(sectionKey);
     closeMenu();
+  };
+
+  // Determinar si un item está activo basándose en la ruta
+  const isItemActive = (item) => {
+    if (item.path === '/alumno/' && location.pathname === '/alumno/') return true;
+    if (item.path !== '/alumno/' && location.pathname.startsWith(item.path)) return true;
+    return false;
   };
 
   // Para móvil, usamos un overlay y sidebar simple
@@ -92,7 +102,7 @@ export function SideBarSm_Alumno_comp({ isMenuOpen, closeMenu }) {
               WebkitBackdropFilter: 'blur(8px)'
             }}
           ></div>
-          <aside className={`sm:hidden fixed top-[80px] left-0 w-56 h-[calc(100vh-80px)] bg-white/95 backdrop-blur-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out overflow-hidden flex flex-col
+          <aside className={`sm:hidden fixed top-[80px] left-0 w-64 h-[calc(100vh-80px)] bg-white/95 backdrop-blur-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out overflow-hidden flex flex-col
               ${isMenuOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-90'}`}
             style={{
               backdropFilter: 'blur(20px)',
@@ -102,55 +112,54 @@ export function SideBarSm_Alumno_comp({ isMenuOpen, closeMenu }) {
               <div className="flex-1 min-h-0 overflow-y-auto overflow-x-visible no-scrollbar px-0 py-3">
                 {[...alumnoMenuItems, ...alumnoBottomItems.filter(i => i.path !== '/alumno/logout')].map((item) => (
                   <div key={item.path} className="w-full mb-1 px-3">
-                    <a
-                      href={item.path}
+                    <Link
+                      to={item.path}
                       onClick={(e) => {
+                        // NO prevenir default para permitir navegación SPA con Link
                         if (item.sectionKey) {
-                          e.preventDefault();
                           handleSectionChange(item.sectionKey);
-                        } else {
-                          closeMenu();
                         }
+                        closeMenu();
                       }}
                       className={`flex items-center justify-start pl-4 pr-3 gap-3 py-3 rounded-2xl w-full border-none transition-all duration-300
-                        ${activeSection === item.sectionKey ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md' : 'text-gray-600 bg-transparent active:bg-indigo-50'}`}
+                        ${isItemActive(item) ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md' : 'text-gray-600 bg-transparent active:bg-indigo-50'}`}
                     >
                       <div className="flex-shrink-0">
                         {React.cloneElement(item.icon, {
-                          stroke: activeSection === item.sectionKey ? "#ffffff" : "#3818c3",
+                          stroke: isItemActive(item) ? "#ffffff" : "#3818c3",
                           fill: "none",
                           className: "w-6 h-6",
                           strokeWidth: 2,
                         })}
                       </div>
-                      <span className="text-[15px] leading-none font-medium ml-1 truncate">
+                      <span className="text-[15px] leading-tight font-medium ml-1 truncate">
                         {item.label}
                       </span>
-                    </a>
+                    </Link>
                   </div>
                 ))}
               </div>
               <div className="flex-shrink-0 px-3 pt-2 pb-4 border-t border-gray-200/60 bg-white/50">
                 {alumnoBottomItems.filter(i => i.path === '/alumno/logout').map((item) => (
                   <div key={item.path} className="w-full mb-1">
-                    <a
-                      href={item.path}
+                    <Link
+                      to={item.path}
                       onClick={() => closeMenu()}
                       className={`flex items-center justify-start pl-4 pr-3 gap-3 py-3 rounded-2xl w-full border-none transition-all duration-300
-                        ${activeSection === item.sectionKey ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md' : item.path === '/alumno/logout' ? 'text-red-500 bg-transparent active:bg-red-50' : 'text-gray-600 bg-transparent active:bg-indigo-50'}`}
+                        ${isItemActive(item) ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md' : item.path === '/alumno/logout' ? 'text-red-500 bg-transparent active:bg-red-50' : 'text-gray-600 bg-transparent active:bg-indigo-50'}`}
                     >
                       <div className="flex-shrink-0">
                         {React.cloneElement(item.icon, {
-                          stroke: item.path === '/alumno/logout' ? "#EA3323" : (activeSection === item.sectionKey ? "#ffffff" : "#3818c3"),
+                          stroke: item.path === '/alumno/logout' ? "#EA3323" : (isItemActive(item) ? "#ffffff" : "#3818c3"),
                           fill: "none",
                           className: "w-6 h-6",
                           strokeWidth: 2,
                         })}
                       </div>
-                      <span className={`text-[15px] leading-none font-medium ml-1 truncate ${item.path === '/alumno/logout' ? 'text-red-500' : ''}`}>
+                      <span className={`text-[15px] leading-tight font-medium ml-1 truncate ${item.path === '/alumno/logout' ? 'text-red-500' : ''}`}>
                         {item.label}
                       </span>
-                    </a>
+                    </Link>
                   </div>
                 ))}
               </div>

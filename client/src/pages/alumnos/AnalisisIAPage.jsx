@@ -14,7 +14,7 @@ export default function AnalisisIAPage() {
   const navigate = useNavigate();
   const { user } = useAuth() || {};
   const userRole = user?.rol || user?.role || 'estudiante';
-  
+
   // Obtener datos del estado de navegación
   const {
     analysisText,
@@ -33,7 +33,7 @@ export default function AnalisisIAPage() {
   const [itemNameState, setItemNameState] = useState(itemName || '');
   const [headings, setHeadings] = useState([]);
   const [justHighlightedId, setJustHighlightedId] = useState(null);
-  const [aiUsage, setAiUsage] = useState({ count: 0, limit: 5, remaining: 5 });
+  const [aiUsage, setAiUsage] = useState({ quizCount: 0, simuladorCount: 0, quizLimit: 5, simuladorLimit: 5 });
   const contentRef = useRef(null);
 
   // Si no hay datos en el state, redirigir a la página anterior
@@ -59,6 +59,41 @@ export default function AnalisisIAPage() {
       }
     }
   }, [location.state]);
+
+  // Cargar contador de uso de IA desde localStorage
+  useEffect(() => {
+    const loadAiUsage = () => {
+      try {
+        const stored = localStorage.getItem(AI_USAGE_KEY);
+        if (stored) {
+          const data = JSON.parse(stored);
+          const today = new Date().toDateString();
+
+          // Si es el mismo día, usar el conteo guardado
+          if (data.date === today) {
+            setAiUsage({
+              quizCount: data.quizCount || 0,
+              simuladorCount: data.simuladorCount || 0,
+              quizLimit: 5,
+              simuladorLimit: 5
+            });
+          } else {
+            // Nuevo día, resetear
+            setAiUsage({
+              quizCount: 0,
+              simuladorCount: 0,
+              quizLimit: 5,
+              simuladorLimit: 5
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error al cargar contador de IA:', err);
+      }
+    };
+
+    loadAiUsage();
+  }, []);
 
   // Helpers para tracking de uso de IA
   const AI_USAGE_KEY = 'ai_analysis_usage';
@@ -126,7 +161,7 @@ export default function AnalisisIAPage() {
     .replace(/>\s?/g, '')
     .replace(/\s+/g, ' ')
     .trim();
-  
+
   const slugify = (s) => String(s || '')
     .normalize('NFD').replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
@@ -179,16 +214,28 @@ export default function AnalisisIAPage() {
   };
 
   // Extraer headings para navegación
+  // Extraer headings para navegación
   useEffect(() => {
     if (!cleanedAnalysisText) { setHeadings([]); return; }
     try {
       const lines = String(cleanedAnalysisText).split(/\r?\n/);
       const hs = [];
       for (const line of lines) {
-        const m3 = line.match(/^###\s+(.+)/);
-        if (m3) {
-          const text = stripMd(m3[1]);
-          hs.push({ id: slugify(text), text });
+        // Capturar h2 (##) o h3 (###)
+        const mHeadline = line.match(/^(#{2,3})\s+(.+)/);
+        if (mHeadline) {
+          const rawText = stripMd(mHeadline[2]);
+          const isReincidente = rawText.includes('REINCIDENTE') || rawText.includes('@FLAG');
+          // Limpieza idéntica al renderizado
+          const displayText = rawText.replace(/@FLAG_?REINCIDENCIA/g, '').replace(/⚠️ ERROR REINCIDENTE/g, '').replace(/⚠️/g, '').replace(/[@⚠️]/g, '').trim();
+
+          if (displayText) {
+            hs.push({
+              id: slugify(displayText),
+              text: displayText,
+              isReincidente
+            });
+          }
         }
       }
       setHeadings(hs);
@@ -418,75 +465,143 @@ export default function AnalisisIAPage() {
         return 'práctica: Baja';
       })();
       return (
-        <div className="bg-slate-50/60 rounded-xl animate-fade-in w-full">
+        <>
           {Boolean(analysisMetaState) && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-5 text-[11px] sm:text-xs text-slate-700">
-              <div className="bg-white border border-slate-200/80 rounded-lg sm:rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 shadow-sm">
-                <div className="font-semibold text-slate-900 mb-0.5">Intentos</div>
-                <div className="leading-snug">{meta.totalIntentos ?? 'N/D'} • mejor {meta.mejorPuntaje ?? 'N/D'}% • prom {meta.promedio ?? 'N/D'}%</div>
-              </div>
-              <div className="bg-white border border-slate-200/80 rounded-lg sm:rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 shadow-sm">
-                <div className="font-semibold text-slate-900 mb-0.5">Progreso</div>
-                <div className="leading-snug">
-                  último {meta.ultimoPuntaje ?? 'N/D'}%
-                  <span className={`ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold ${dLastPrev == null ? 'bg-slate-100 text-slate-500' : dLastPrev > 0 ? 'bg-emerald-100 text-emerald-700' : dLastPrev < 0 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}>
-                    {dLastPrev != null ? (dLastPrev >= 0 ? '+' : '') + dLastPrev : 'N/D'} vs ant
-                  </span>
+            <div className="p-4 sm:p-5 mb-6">
+              {/* Tarjeta principal de calificación */}
+              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-6 mb-4 text-white shadow-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium opacity-90 mb-1">Último intento</div>
+                    <div className="text-5xl font-bold">{meta.ultimoPuntaje ?? 'N/D'}%</div>
+                    {dLastPrev != null && (
+                      <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${dLastPrev > 0 ? 'bg-emerald-400/30 text-emerald-100' : dLastPrev < 0 ? 'bg-red-400/30 text-red-100' : 'bg-white/20 text-white'}`}>
+                        {dLastPrev >= 0 ? '↑' : '↓'} {Math.abs(dLastPrev)} pts vs anterior
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm opacity-90">Mejor puntaje</div>
+                    <div className="text-3xl font-bold">{meta.mejorPuntaje ?? 'N/D'}%</div>
+                    <div className="text-xs opacity-75 mt-1">{meta.totalIntentos ?? 0} intentos</div>
+                  </div>
                 </div>
               </div>
-              <div className="bg-white border border-slate-200/80 rounded-lg sm:rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 shadow-sm">
-                <div className="font-semibold text-slate-900 mb-0.5">Oficial</div>
-                <div className="leading-snug">
-                  Δ último <span className={`font-semibold ${dLastOff == null ? 'text-slate-500' : dLastOff > 0 ? 'text-emerald-700' : dLastOff < 0 ? 'text-red-700' : 'text-slate-700'}`}>{dLastOff != null ? (dLastOff >= 0 ? '+' : '') + dLastOff : 'N/D'}</span> pts • Δ mejor <span className={`font-semibold ${dBestOff == null ? 'text-slate-500' : dBestOff > 0 ? 'text-emerald-700' : dBestOff < 0 ? 'text-red-700' : 'text-slate-700'}`}>{dBestOff != null ? (dBestOff >= 0 ? '+' : '') + dBestOff : 'N/D'}</span> pts
+
+            </div>
+          )}
+          {
+            headings && headings.length > 0 && (
+              <div className="mb-5 px-4 sm:px-5">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Ir a sección</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+                  {headings.map(h => (
+                    <button
+                      key={h.id}
+                      onClick={() => scrollToId(h.id)}
+                      className={`px-4 py-2.5 sm:py-3 rounded-xl text-left text-xs sm:text-sm font-medium border transition-all duration-200 whitespace-normal ${justHighlightedId === h.id ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200/50' : 'bg-white hover:bg-indigo-50 hover:border-indigo-200 text-slate-700 border-slate-200/90 shadow-sm'}`}
+                    >
+                      {h.text}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div className="bg-white border border-slate-200/80 rounded-lg sm:rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 shadow-sm">
-                <div className="font-semibold text-slate-900 mb-0.5">Señales</div>
-                <div className="leading-snug">{trendLabel} • {effLabel}</div>
-              </div>
-            </div>
-          )}
-          {headings && headings.length > 0 && (
-            <div className="mb-5 sm:mb-6">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Ir a sección</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                {headings.map(h => (
-                  <button
-                    key={h.id}
-                    onClick={() => scrollToId(h.id)}
-                    className={`px-4 py-2.5 sm:py-3 rounded-xl text-left text-xs sm:text-sm font-medium border transition-all duration-200 whitespace-normal ${justHighlightedId === h.id ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200/50' : 'bg-white hover:bg-indigo-50 hover:border-indigo-200 text-slate-700 border-slate-200/90 shadow-sm'}`}
-                  >
-                    {h.text}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+            )
+          }
           <div
             ref={contentRef}
-            className="markdown-body text-sm sm:text-base text-slate-800 pt-1"
+            className="w-full"
           >
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                a: ({ node, ...props }) => (
-                  <a {...props} target="_blank" rel="noopener noreferrer" />
+                h1: ({ node, ...props }) => (
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 mt-8 mb-6 break-words tracking-tight border-b-2 border-slate-100 pb-4" {...props} />
                 ),
-                h3: ({ node, children, ...rest }) => {
-                  try {
-                    const raw = Array.isArray(children) ? children.map((c) => (typeof c === 'string' ? c : '')).join(' ') : String(children || '');
-                    const id = slugify(stripMd(raw));
-                    return <h3 id={id} {...rest}>{children}</h3>;
-                  } catch {
-                    return <h3 {...rest}>{children}</h3>;
+                h2: ({ node, children, ...props }) => {
+                  const raw = Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : String(children || '');
+                  const cleanText = raw.replace(/[@⚠️]/g, '').trim();
+                  const id = slugify(cleanText);
+                  return (
+                    <div className="mt-10 mb-5 pt-4">
+                      <h2 id={id} className="text-lg sm:text-xl md:text-2xl font-bold text-indigo-900 bg-indigo-50 border-l-4 border-indigo-500 py-3 px-4 rounded-r-lg flex items-center gap-3 break-words shadow-sm" {...props}>
+                        {children}
+                      </h2>
+                    </div>
+                  );
+                },
+                h3: ({ node, children, ...props }) => {
+                  const raw = Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : String(children || '');
+                  const isInestable = raw.includes('CONOCIMIENTO INESTABLE') || raw.includes('INESTABLE');
+                  const isReincidente = raw.includes('REINCIDENTE') || raw.includes('@FLAG');
+                  const displayText = raw
+                    .replace(/@FLAG_?REINCIDENCIA/g, '')
+                    .replace(/🚨 CONOCIMIENTO INESTABLE/g, '')
+                    .replace(/⚠️ ERROR REINCIDENTE/g, '')
+                    .replace(/[🚨⚠️@]/g, '')
+                    .trim();
+                  const id = slugify(displayText);
+
+                  // Conocimiento inestable (MÁS CRÍTICO)
+                  if (isInestable) {
+                    return (
+                      <div className="mt-8 mb-4">
+                        <h3 id={id} className="text-base sm:text-lg md:text-xl font-bold text-red-900 bg-gradient-to-r from-red-100 to-red-50 border-l-4 border-red-600 py-4 px-4 rounded-r-lg flex flex-wrap items-center gap-2 break-words shadow-md scroll-mt-24" {...props}>
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black bg-red-600 text-white uppercase tracking-wider shadow-sm flex-shrink-0 animate-pulse">
+                            🚨 CONOCIMIENTO INESTABLE
+                          </span>
+                          <span>{displayText}</span>
+                        </h3>
+                      </div>
+                    );
                   }
-                }
+
+                  // Error reincidente (ALTA PRIORIDAD)
+                  if (isReincidente) {
+                    return (
+                      <div className="mt-8 mb-4">
+                        <h3 id={id} className="text-base sm:text-lg md:text-xl font-bold text-orange-800 bg-orange-50 border-l-4 border-orange-500 py-3 px-4 rounded-r-lg flex flex-wrap items-center gap-2 break-words shadow-sm scroll-mt-24" {...props}>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-white text-orange-600 border border-orange-100 uppercase tracking-wider shadow-sm flex-shrink-0">
+                            <AlertTriangle className="w-3 h-3 mr-1" /> Reincidente
+                          </span>
+                          <span>{displayText}</span>
+                        </h3>
+                      </div>
+                    );
+                  }
+
+                  // Error normal
+                  return (
+                    <h3 id={id} className="text-base sm:text-lg md:text-xl font-bold text-slate-800 mt-6 mb-3 flex items-center gap-2 break-words scroll-mt-20 border-b border-slate-100 pb-2" {...props}>
+                      <span className="text-indigo-400 text-xl leading-none select-none">•</span>
+                      {displayText}
+                    </h3>
+                  );
+                },
+                p: ({ node, ...props }) => <p className="text-sm sm:text-base text-slate-700 leading-relaxed mb-4 break-words" {...props} />,
+                ul: ({ node, ...props }) => <ul className="list-disc list-outside ml-4 sm:ml-6 mb-4 space-y-1 text-slate-700 text-sm sm:text-base" {...props} />,
+                ol: ({ node, ...props }) => <ol className="list-decimal list-outside ml-4 sm:ml-6 mb-4 space-y-1 text-slate-700 text-sm sm:text-base" {...props} />,
+                li: ({ node, ...props }) => <li className="pl-1 mb-1 break-words" {...props} />,
+                blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-indigo-500 pl-3 sm:pl-4 py-2 my-4 sm:my-6 bg-slate-50 text-slate-700 italic rounded-r shadow-sm text-sm sm:text-base" {...props} />,
+                code: ({ node, inline, ...props }) => (
+                  inline
+                    ? <code className="bg-slate-100 text-pink-600 px-1 py-0.5 rounded text-xs sm:text-sm font-mono border border-slate-200 break-all" {...props} />
+                    : <pre className="bg-slate-900 text-slate-50 p-3 sm:p-4 rounded-lg overflow-x-auto my-4 sm:my-6 text-xs sm:text-sm font-mono leading-relaxed shadow-lg w-full max-w-full"><code {...props} /></pre>
+                ),
+                table: ({ node, ...props }) => <div className="overflow-x-auto w-full block my-6 rounded-lg border border-slate-200 shadow-sm"><table className="min-w-full divide-y divide-slate-200" {...props} /></div>,
+                thead: ({ node, ...props }) => <thead className="bg-slate-50" {...props} />,
+                tbody: ({ node, ...props }) => <tbody className="bg-white divide-y divide-slate-200" {...props} />,
+                tr: ({ node, ...props }) => <tr className="" {...props} />,
+                th: ({ node, ...props }) => <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" {...props} />,
+                td: ({ node, ...props }) => <td className="px-4 py-3 text-sm text-slate-700 whitespace-normal min-w-[120px]" {...props} />,
+                hr: ({ node, ...props }) => <span className="hidden" aria-hidden="true" {...props} />,
+                strong: ({ node, ...props }) => <strong className="font-bold text-slate-900 bg-indigo-50/80 px-0.5 rounded" {...props} />,
               }}
             >
               {cleanedAnalysisText}
             </ReactMarkdown>
           </div>
-        </div>
+        </>
       );
     }
     return (
@@ -499,212 +614,100 @@ export default function AnalisisIAPage() {
   const canExport = !!cleanedAnalysisText && !isLoading && !error;
 
   return (
-    <div className="flex flex-col w-full min-h-full pt-14 sm:pt-16">
+    <div className="flex flex-col w-full min-h-full pt-14 sm:pt-16 bg-slate-50">
       {/* Barra de página: sticky debajo del header principal */}
-      <header className="sticky z-20 flex-shrink-0 w-full bg-white/97 backdrop-blur-md border-b border-slate-200/80 shadow-sm" style={{ top: '3.5rem' }}>
-        <div className="w-full mx-auto px-4 sm:px-5 md:px-6 lg:px-8 py-3.5 sm:py-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-nowrap sm:items-center sm:justify-between">
-            {/* Izq: volver + título + meta en una línea compacta en desktop; apilado en móvil */}
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+      <header className="sticky z-20 flex-shrink-0 w-full bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm" style={{ top: '3.5rem' }}>
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
               <button
                 onClick={() => navigate(-1)}
-                className="p-2 -ml-1 sm:ml-0 hover:bg-slate-100 active:bg-slate-200 rounded-lg transition-colors flex-shrink-0 text-slate-600"
+                className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
                 aria-label="Volver"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Sparkles className="w-5 h-5 sm:w-5 sm:h-5 text-indigo-500 flex-shrink-0" />
-                  <h1 className="text-base sm:text-lg font-bold text-slate-800 truncate">Análisis con IA</h1>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-5 h-5 text-indigo-600" />
+                  <h1 className="text-lg font-bold text-slate-900 truncate">Análisis con IA</h1>
                   {analysisSource === 'GEMINI' && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-700 border border-emerald-200/80">IA activa</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">GEMINI PRO</span>
+                  )}
+                  {analysisSource === 'GROQ' && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">GROQ LLAMA</span>
                   )}
                   {analysisSource === 'FALLBACK' && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700 border border-amber-200/80">Analizador local</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">ANÁLISIS LOCAL</span>
                   )}
                 </div>
-                <p className="text-xs sm:text-sm text-slate-500 truncate mt-0.5">{itemNameState || 'Evaluación'}</p>
-                <div className="mt-1.5 sm:mt-1 flex items-center gap-2">
-                  <span className={`text-[11px] sm:text-xs font-medium ${aiUsage.remaining <= 1 ? 'text-red-600' : aiUsage.remaining <= 2 ? 'text-amber-600' : 'text-slate-500'}`}>
-                    Análisis hoy: {aiUsage.remaining}/{aiUsage.limit}
-                  </span>
-                </div>
+                <p className="text-sm text-slate-500 truncate">{itemNameState || 'Evaluación'}</p>
               </div>
             </div>
-            {/* Der: acciones — siempre en una fila, scroll horizontal en móvil si hace falta */}
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 overflow-x-auto no-scrollbar py-1 sm:py-0">
-              {canExport && (
-                <>
-                  {headings?.some(h => h.text.toLowerCase().startsWith('errores recurrentes')) && (
-                    <button
-                      onClick={() => scrollToId(headings.find(h => h.text.toLowerCase().startsWith('errores recurrentes')).id)}
-                      className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-                      title="Ir a Errores recurrentes"
-                    >
-                      <Flag className="w-3.5 h-3.5" />
-                      Errores recurrentes
-                    </button>
-                  )}
-                  <button onClick={handleCopy} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors" title="Copiar"><ClipboardCopy className="w-4 h-4 sm:w-5 sm:h-5" /></button>
-                  <button onClick={handleDownload} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors" title="Descargar"><Download className="w-4 h-4 sm:w-5 sm:h-5" /></button>
-                  <button onClick={handlePrintPdf} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors" title="Imprimir"><Printer className="w-4 h-4 sm:w-5 sm:h-5" /></button>
-                  <button onClick={handleShareWhatsapp} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors" title="Compartir"><Share2 className="w-4 h-4 sm:w-5 sm:h-5" /></button>
-                </>
-              )}
+
+            {/* Contador de uso */}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+              <Sparkles className="w-4 h-4 text-indigo-600" />
+              <div className="text-xs">
+                <span className="font-semibold text-slate-700">
+                  {aiUsage.quizLimit - aiUsage.quizCount} quizzes
+                </span>
+                <span className="text-slate-400 mx-1">+</span>
+                <span className="font-semibold text-slate-700">
+                  {aiUsage.simuladorLimit - aiUsage.simuladorCount} simuladores
+                </span>
+              </div>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+            {canExport && (
+              <>
+                {headings?.some(h => h.text.toLowerCase().includes('reincidente')) && (
+                  <button
+                    onClick={() => {
+                      const h = headings.find(h => h.text.toLowerCase().includes('reincidente'));
+                      if (h) scrollToId(h.id);
+                    }}
+                    className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-700 bg-red-100/80 hover:bg-red-200 rounded-lg transition-colors border border-red-200"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Ver errores graves
+                  </button>
+                )}
+                <div className="h-6 w-px bg-slate-300 mx-1 hidden sm:block"></div>
+                <button onClick={handleCopy} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 rounded-lg transition-colors" title="Copiar"><ClipboardCopy className="w-5 h-5" /></button>
+                <button onClick={handleDownload} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 rounded-lg transition-colors" title="Descargar MD"><Download className="w-5 h-5" /></button>
+                <button onClick={handlePrintPdf} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 rounded-lg transition-colors" title="Imprimir PDF"><Printer className="w-5 h-5" /></button>
+                <button onClick={handleShareWhatsapp} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-emerald-600 rounded-lg transition-colors" title="WhatsApp"><Share2 className="w-5 h-5" /></button>
+              </>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Contenido: ancho completo del área útil, máx. 6xl para legibilidad */}
-      <div className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-5 md:px-6 lg:px-8 py-4 sm:py-5 md:py-6">
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-md border border-slate-200/60 p-4 sm:p-5 md:p-6 lg:p-8 w-full">
+
+      <div className="flex-1 w-full max-w-[99%] mx-auto px-1 sm:px-2 md:px-3 lg:px-4 py-4 sm:py-6">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 md:p-8 w-full min-h-[calc(100vh-14rem)] overflow-hidden">
           {renderContent()}
         </div>
       </div>
 
-      {/* Footer discreto */}
-      <footer className="flex-shrink-0 w-full border-t border-slate-200/80 bg-slate-50/80">
-        <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-5 md:px-6 lg:px-8 py-3 sm:py-4">
-          <p className="text-[11px] sm:text-xs text-slate-500 text-center">
-            {analysisSource === 'GEMINI' && 'Fuente: IA (Gemini) – contenido orientativo'}
-            {analysisSource === 'FALLBACK' && 'Fuente: Analizador local – contenido orientativo'}
-            {(!analysisSource) && 'Generado – contenido orientativo'}
-          </p>
-        </div>
-      </footer>
-
       <style>{`
         @keyframes fade-in {
-          from { opacity: 0; transform: translateY(-10px); }
+          from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out forwards;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-
-        /* AJUSTE 2: Estilos mejorados para Markdown - IGUALES A LA MODAL ORIGINAL
-         - Se han añadido estilos más detallados para los elementos comunes de Markdown.
-         - Se mejora la legibilidad con espaciado, tamaños de fuente y pesos adecuados.
-        */
-        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
-            font-weight: 700;
-            margin-top: 1.25em;
-            margin-bottom: 0.5em;
-            color: #374151;
-        }
-        .markdown-body h2 {
-            font-size: 1.2em;
-            padding-bottom: 0.3em;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .markdown-body h3 {
-            font-size: 1.1em;
-        }
-        .markdown-body p { 
-            margin-bottom: 0.75rem; 
-            line-height: 1.6;
-        }
-        .markdown-body p:last-child {
-            margin-bottom: 0;
-        }
-        .markdown-body ul, .markdown-body ol {
-          padding-left: 1.5rem;
-          margin: 1rem 0;
-          list-style-position: inside;
-        }
-        .markdown-body ul {
-          list-style-type: disc;
-        }
-        .markdown-body ol {
-          list-style-type: decimal;
-        }
-        .markdown-body li {
-          margin-bottom: 0.5rem;
-          padding-left: 0.2em;
-        }
-        .markdown-body strong {
-          font-weight: 700;
-          color: #6d28d9;
-          background: #ede9fe;
-          padding: 0 2px;
-          border-radius: 2px;
-        }
-        .markdown-body em { 
-            font-style: italic; 
-        }
-        .markdown-body a {
-          color: #4f46e5;
-          text-decoration: underline;
-          text-underline-offset: 2px;
-        }
-        .markdown-body a:hover {
-          color: #4338ca;
-        }
-        .markdown-body code {
-          background-color: #f3f4f6;
-          padding: 0.2em 0.4em;
-          border-radius: 3px;
-          font-size: 85%;
-          font-family: 'Courier New', monospace;
-        }
-        .markdown-body pre {
-          background-color: #f3f4f6;
-          padding: 1rem;
-          border-radius: 6px;
-          overflow-x: auto;
-          margin: 1rem 0;
-        }
-        .markdown-body pre code {
-          background-color: transparent;
-          padding: 0;
-        }
-        .markdown-body blockquote {
-          border-left: 4px solid #e5e7eb;
-          padding-left: 1rem;
-          margin: 1rem 0;
-          color: #6b7280;
-          font-style: italic;
-        }
-        .markdown-body table {
-          border-collapse: collapse;
-          width: 100%;
-          margin: 1rem 0;
-        }
-        .markdown-body th, .markdown-body td {
-          border: 1px solid #e5e7eb;
-          padding: 0.5rem;
-          text-align: left;
-        }
-        .markdown-body th {
-          background-color: #f9fafb;
-          font-weight: 600;
-        }
-        .markdown-body hr {
-          border: none;
-          border-top: 1px solid #e5e7eb;
-          margin: 1.5rem 0;
-        }
-        /* Pulse highlight when jumping to a section */
+        .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .pulse-highlight { 
-          box-shadow: 0 0 0 0 rgba(79,70,229,0.6); 
-          animation: pulse 1.2s ease-out 1; 
-          border-radius: 6px; 
+          animation: pulse-ring 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
         }
-        @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(79,70,229,0.6); background: rgba(99,102,241,0.08); }
-          70% { box-shadow: 0 0 0 12px rgba(79,70,229,0); background: rgba(99,102,241,0.04); }
-          100% { box-shadow: 0 0 0 0 rgba(79,70,229,0); background: transparent; }
+        @keyframes pulse-ring {
+          0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); background-color: rgba(79, 70, 229, 0.1); }
+          70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); background-color: rgba(79, 70, 229, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); background-color: transparent; }
         }
       `}</style>
-    </div>
+    </div >
   );
 }
