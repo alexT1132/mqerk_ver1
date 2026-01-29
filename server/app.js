@@ -36,6 +36,8 @@ import DocumentosRoutes from "./routes/documentos.routes.js";
 import LoggerRoutes from "./routes/logger.routes.js";
 import GradingRoutes from "./routes/grading.routes.js";
 import ChatRoutes from "./routes/chat.routes.js";
+import cursosRoutes from './routes/cursos.routes.js';
+import previewRoutes from './routes/preview.routes.js';
 
 const app = express();
 
@@ -43,10 +45,14 @@ const app = express();
 
 const allowAllCors = process.env.ALLOW_ALL_CORS === 'true' || process.env.NODE_ENV !== 'production';
 const allowedOrigins = new Set([
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://192.168.0.14:5173',
-  'http://192.168.0.16:5173',
+  'http://localhost:5002',
+  'http://127.0.0.1:5002',
+  'http://192.168.0.14:5002',
+  'http://192.168.0.16:5002',
+  'http://localhost:5001',
+  'http://127.0.0.1:5001',
+  'http://192.168.0.14:5001',
+  'http://192.168.0.16:5001',
 ]);
 
 // CORS primero para que también afecte a archivos estáticos (PDFs, etc.) y evite fallos intermitentes en iframes
@@ -85,6 +91,7 @@ app.use('/uploads/asesores', express.static('uploads/asesores'));
 app.use('/uploads/recursos-educativos', express.static('uploads/recursos-educativos'));
 app.use('/uploads/documentos', express.static('uploads/documentos'));
 app.use('/uploads/chat', express.static('uploads/chat'));
+app.use('/uploads/cursos', express.static('uploads/cursos'));
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
@@ -135,6 +142,8 @@ app.use("/api/documentos", DocumentosRoutes);
 app.use("/api", LoggerRoutes);
 app.use("/api/grading", GradingRoutes);
 app.use("/api", ChatRoutes);
+app.use('/api', cursosRoutes);
+app.use('/api', previewRoutes);
 
 // Middleware de manejo de errores global (debe ir al final, después de todas las rutas)
 app.use((err, req, res, next) => {
