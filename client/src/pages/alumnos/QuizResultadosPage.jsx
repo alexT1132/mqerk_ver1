@@ -3,6 +3,105 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getQuiz, listIntentosQuizEstudiante, getQuizIntentoReview } from '../../api/quizzes';
 import { ArrowLeft, Trophy, Clock, CheckCircle2, XCircle, Circle, Filter } from 'lucide-react';
+import InlineMath from '../../components/Asesor/simGen/InlineMath.jsx';
+
+// Componente para renderizar texto con fórmulas LaTeX (igual que en Quizz_Review.jsx)
+function MathText({ text = "" }) {
+  if (!text) return null;
+
+  const sanitizeHtmlLite = (html) => {
+    if (!html) return '';
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
+    const nodesToRemove = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (!allowedTags.includes(node.tagName.toLowerCase())) {
+        nodesToRemove.push(node);
+      }
+    }
+    nodesToRemove.forEach(n => {
+      const parent = n.parentNode;
+      while (n.firstChild) {
+        parent.insertBefore(n.firstChild, n);
+      }
+      parent.removeChild(n);
+    });
+    return div.innerHTML;
+  };
+
+  let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
+  
+  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
+  const latexMatches = [];
+  let placeholderIndex = 0;
+  
+  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
+    latexMatches.push(match);
+    placeholderIndex++;
+    return placeholder;
+  });
+  
+  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  
+  latexMatches.forEach((match, idx) => {
+    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
+  });
+
+  const re = /\$([^$]+?)\$/g;
+  const parts = [];
+  let lastIndex = 0;
+  let m;
+  let matchFound = false;
+
+  re.lastIndex = 0;
+
+  while ((m = re.exec(processedText)) !== null) {
+    matchFound = true;
+    if (m.index > lastIndex) {
+      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
+    }
+    const formula = m[1].trim();
+    if (formula) {
+      parts.push({ type: 'math', content: formula });
+    }
+    lastIndex = m.index + m[0].length;
+  }
+  
+  if (lastIndex < processedText.length) {
+    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
+  }
+
+  if (!matchFound || parts.length === 0) {
+    return (
+      <span 
+        className="whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
+      />
+    );
+  }
+
+  return (
+    <span className="whitespace-pre-wrap">
+      {parts.map((part, idx) =>
+        part.type === 'math' ? (
+          <span key={`math-${idx}`} className="inline-block">
+            <InlineMath math={part.content} />
+          </span>
+        ) : (
+          <span 
+            key={`text-${idx}`}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
+          />
+        )
+      )}
+    </span>
+  );
+}
 
 // CÓDIGO CORREGIDO Y COMPLETO PARA LA PÁGINA DE RESULTADOS DEL QUIZ
 export default function QuizResultadosPage() {
@@ -55,14 +154,59 @@ export default function QuizResultadosPage() {
           tiempoEmpleado: Number(it.tiempo_segundos ?? it.duration_sec ?? 0),
         }));
         setIntentos(intentosMapeados);
-        // Por defecto, seleccionar el último intento para mostrar sus detalles.
+        // ✅ CRÍTICO: Solo establecer intentoSel si realmente no hay uno seleccionado
+        // NO resetear si el usuario ya seleccionó uno manualmente
         if (intentosMapeados.length > 0) {
-          setIntentoSel(intentosMapeados[intentosMapeados.length - 1].numero);
+          const numbers = intentosMapeados.map(i => i.numero);
+          setIntentoSel(prev => {
+            if (prev && numbers.includes(prev)) {
+              // El intento seleccionado existe, mantenerlo
+              return prev;
+            }
+            // No hay uno seleccionado, establecer el último
+            return intentosMapeados[intentosMapeados.length - 1].numero;
+          });
         }
       })
       .catch(() => setMetaError('No se pudo cargar la información del quiz.'))
       .finally(() => setLoadingMeta(false));
   }, [quizId, estudianteId]);
+
+  // ✅ CRÍTICO: Leer intento de la URL solo cuando cambia location.search (navegación inicial)
+  useEffect(() => {
+    if (!estudianteId || !quizId) return;
+    const params = new URLSearchParams(location.search || '');
+    const intentoParam = Number(params.get('intento'));
+    const intentoFromUrl = Number.isFinite(intentoParam) && intentoParam > 0 ? intentoParam : null;
+    // Solo establecer desde la URL si realmente viene en la URL y es válido
+    if (intentoFromUrl && intentos.some(i => i.numero === intentoFromUrl)) {
+      setIntentoSel(prev => {
+        // Solo cambiar si realmente es diferente y viene de la URL (navegación inicial)
+        if (prev !== intentoFromUrl) {
+          return intentoFromUrl;
+        }
+        return prev; // Mantener el valor actual si el usuario ya lo cambió manualmente
+      });
+    }
+  }, [location.search, intentos, estudianteId, quizId]);
+
+  // ✅ CRÍTICO: Leer intento de la URL solo cuando cambia location.search (navegación inicial)
+  useEffect(() => {
+    if (!estudianteId || !quizId) return;
+    const params = new URLSearchParams(location.search || '');
+    const intentoParam = Number(params.get('intento'));
+    const intentoFromUrl = Number.isFinite(intentoParam) && intentoParam > 0 ? intentoParam : null;
+    // Solo establecer desde la URL si realmente viene en la URL y es válido
+    if (intentoFromUrl && intentos.some(i => i.numero === intentoFromUrl)) {
+      setIntentoSel(prev => {
+        // Solo cambiar si realmente es diferente y viene de la URL (navegación inicial)
+        if (prev !== intentoFromUrl) {
+          return intentoFromUrl;
+        }
+        return prev; // Mantener el valor actual si el usuario ya lo cambió manualmente
+      });
+    }
+  }, [location.search, intentos, estudianteId, quizId]);
 
   useEffect(() => {
     if (!estudianteId || !quizId || !intentoSel) {
@@ -151,7 +295,9 @@ export default function QuizResultadosPage() {
           <div className="flex items-start justify-between gap-3 sm:gap-4">
             <div className="min-w-0">
               <div className="text-[11px] sm:text-xs font-medium text-gray-500">Pregunta {p.orden ?? (idx + 1)}</div>
-              <div className="mt-0.5 text-gray-900 font-semibold leading-6 text-sm sm:text-base">{p.enunciado}</div>
+              <div className="mt-0.5 text-gray-900 font-semibold leading-6 text-sm sm:text-base">
+                <MathText text={p.enunciado || p.pregunta || `Pregunta ${idx + 1}`} />
+              </div>
             </div>
             <span className={`text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border ${isCorrect ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
               {isCorrect ? 'Correcta' : 'Incorrecta'}
@@ -208,7 +354,7 @@ export default function QuizResultadosPage() {
           {p.valor_texto && (
             <div className="text-[11px] sm:text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-md">
               <span className="font-medium text-gray-700">Respuesta escrita:</span>{' '}
-              <span className="text-gray-800">{p.valor_texto}</span>
+              <span className="text-gray-800"><MathText text={p.valor_texto} /></span>
             </div>
           )}
         </div>

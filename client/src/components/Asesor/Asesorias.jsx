@@ -591,8 +591,9 @@ export default function DashboardAsesorias() {
 
       {/* Modal Marcar como Realizada */}
       {showMarcarRealizada && sel && (
-        <div className="fixed inset-0 z-[9999] bg-black/40 p-3 sm:p-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
+        <div className="fixed inset-0 z-[9999] overflow-y-auto p-4 sm:p-6 flex flex-col items-center justify-center bg-black/40">
+          <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-center py-4 w-full">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-y-auto max-h-[calc(100vh-3rem)]">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-base font-semibold text-gray-900">Marcar Sesión como Realizada</h3>
               <button 
@@ -644,6 +645,7 @@ export default function DashboardAsesorias() {
               </div>
             </form>
           </div>
+          </div>
         </div>
       )}
 
@@ -686,8 +688,9 @@ export default function DashboardAsesorias() {
 
       {/* Modal Reprogramar */}
       {showReprogramar && sel && (
-        <div className="fixed inset-0 z-[9999] bg-black/40 p-3 sm:p-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
+        <div className="fixed inset-0 z-[9999] overflow-y-auto p-4 sm:p-6 flex flex-col items-center justify-center bg-black/40">
+          <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-center py-4 w-full">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl max-h-[calc(100vh-3rem)] overflow-y-auto">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-base font-semibold text-gray-900">Reprogramar Sesión</h3>
               <button 
@@ -747,6 +750,7 @@ export default function DashboardAsesorias() {
                 </button>
               </div>
             </form>
+          </div>
           </div>
         </div>
       )}

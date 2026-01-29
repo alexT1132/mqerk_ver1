@@ -53,7 +53,7 @@ export default function SolicitudesModal({
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchRequests(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [open, status, areaId, areaType]);
+  useEffect(() => { fetchRequests();   }, [open, status, areaId, areaType]);
 
   const approve = async (id) => {
     try {

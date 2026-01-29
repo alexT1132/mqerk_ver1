@@ -1,6 +1,6 @@
 import { Layout } from './Layout.jsx'; // El Layout general y flexible
 import { Header_Alumno_comp } from './Header_Alumno_comp.jsx'; // El Header de alumno con barra de búsqueda
-import { SideBarDesktop_Alumno_comp, SideBarSm_Alumno_comp } from './SideBar_Alumno_Comp.jsx'; // Los SideBars de alumno (plegable y móvil)
+import { SideBarDesktop_Alumno_comp, SideBarSm_Alumno_comp } from './SidebarAlumno.jsx'; // Los SideBars de alumno (plegable y móvil) - migrados al componente base
 
 /**
  * Componente de Layout específico para Dashboards de Alumno.

@@ -1,3 +1,7 @@
+// Este componente QuizIAModal es un modal de React que permite al usuario configurar y generar un cuestionario 
+// (quiz) usando inteligencia artificial. Está diseñado para integrarse en una aplicación educativa o de evaluación, 
+// y ofrece una interfaz amigable para personalizar cómo se generan las preguntas.
+
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     Sparkles,
@@ -5,7 +9,9 @@ import {
     CheckCircle2,
     AlertTriangle,
     Loader2,
-    Brain
+    Brain,
+    ChevronDown,
+    ChevronUp
 } from "lucide-react";
 import { generarPreguntasIA, getCooldownRemainingMs } from "../../../service/simuladoresAI";
 
@@ -28,8 +34,8 @@ export default function QuizIAModal({
     const [iaChoiceMode, setIaChoiceMode] = useState('general'); // 'general' | 'temas'
     const [iaChoiceTopics, setIaChoiceTopics] = useState(initialTopic || '');
     const [iaNivel, setIaNivel] = useState('intermedio');
+    const [iaIdioma, setIaIdioma] = useState('auto'); // auto | es | en | mix
     const [iaError, setIaError] = useState('');
-    const [showSummary, setShowSummary] = useState(false);
     const [iaLoading, setIaLoading] = useState(false);
     const [cooldownMs, setCooldownMs] = useState(0);
 
@@ -47,6 +53,21 @@ export default function QuizIAModal({
     const [iaTopP, setIaTopP] = useState('');
     const [iaTopK, setIaTopK] = useState('');
     const [iaMaxTokens, setIaMaxTokens] = useState('');
+
+    // Lock page scroll while modal is open (avoid browser scrollbar)
+    useEffect(() => {
+        const prevOverflow = document.body.style.overflow;
+        const prevPaddingRight = document.body.style.paddingRight;
+        document.body.style.overflow = 'hidden';
+        try {
+            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+            if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+        } catch { }
+        return () => {
+            document.body.style.overflow = prevOverflow;
+            document.body.style.paddingRight = prevPaddingRight;
+        };
+    }, []);
 
     // Cooldown effect
     useEffect(() => {
@@ -94,12 +115,12 @@ export default function QuizIAModal({
                 setIaCountCorta(newCorta);
             }
         }
-    }, [iaQuickCount]); // Only run when iaQuickCount changes from outside or selection
+    }, [iaQuickCount]);
 
     // Templates
     const temasPlantillas = useMemo(() => {
         const areaLower = (areaTitle || '').toLowerCase();
-        if (areaLower.includes('espapañol') || areaLower.includes('redacción')) {
+        if (areaLower.includes('español') || areaLower.includes('redacción')) {
             return ['sinónimos y antónimos', 'ortografía', 'lectura comprensiva', 'acentuación', 'gramática'];
         } else if (areaLower.includes('matemática') || areaLower.includes('pensamiento')) {
             return ['ecuaciones y sistemas', 'geometría', 'fracciones', 'funciones', 'razonamiento numérico'];
@@ -158,6 +179,7 @@ export default function QuizIAModal({
                 cantidad,
                 area: areaTitle || undefined,
                 nivel: iaNivel,
+                idioma: iaIdioma,
                 distribucion,
                 temperature: iaTemperature,
                 ...(iaTopP !== '' && { topP: Number(iaTopP) }),
@@ -170,6 +192,23 @@ export default function QuizIAModal({
                 opts.temas = temasList;
             } else {
                 opts.modo = 'general';
+            }
+
+            // ✅ Validación: Detectar múltiples temas y comparar con cantidad de preguntas
+            const numTemas = iaChoiceMode === 'temas' && temasList.length ? temasList.length : 0;
+            
+            // ✅ Advertencia si hay más temas que preguntas
+            if (numTemas > cantidad) {
+                const temasTexto = temasList.join(', ');
+                const advertencia = `⚠️ Advertencia: Has especificado ${numTemas} tema${numTemas > 1 ? 's' : ''} (${temasTexto}), ` +
+                    `pero solo se generarán ${cantidad} pregunta${cantidad > 1 ? 's' : ''}. ` +
+                    `Algunos temas no tendrán preguntas. ¿Deseas continuar de todas formas?`;
+                
+                const continuar = window.confirm(advertencia);
+                if (!continuar) {
+                    setIaLoading(false);
+                    return;
+                }
             }
 
             const preguntasIA = await generarPreguntasIA({ ...opts, purpose: 'quizzes' });
@@ -250,12 +289,41 @@ export default function QuizIAModal({
         }
     };
 
+    // Compact utility functions for UI consistency
+    const ButtonGroup = ({ children, className = "" }) => (
+        <div className={`flex gap-2 ${className}`}>{children}</div>
+    );
+
+    const CounterControl = ({ label, value, onDecrement, onIncrement, max }) => (
+        <div className="flex items-center justify-between text-xs">
+            <span className="text-slate-600 w-32">{label}</span>
+            <div className="flex items-center gap-2">
+                <button 
+                    onClick={onDecrement}
+                    disabled={value <= 0}
+                    className="w-6 h-6 flex items-center justify-center rounded border bg-white hover:bg-slate-100 disabled:opacity-40"
+                >
+                    -
+                </button>
+                <span className="w-8 text-center font-semibold">{value}</span>
+                <button 
+                    onClick={onIncrement}
+                    disabled={value >= max}
+                    className="w-6 h-6 flex items-center justify-center rounded border bg-white hover:bg-slate-100 disabled:opacity-40"
+                >
+                    +
+                </button>
+            </div>
+        </div>
+    );
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <>
+        <div className="mqerk-quiz-ia-overlay fixed inset-0 z-[60] flex items-start justify-center px-4 pt-30 pb-6">
             <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={onClose} />
-            <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <div className="mqerk-quiz-ia-dialog relative z-10 w-full max-w-xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
                 {/* Header */}
-                <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
+                <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
                     <div className="flex items-center gap-2.5">
                         <div className="rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 p-1.5 shadow-md">
                             <Sparkles className="h-4 w-4 text-white" />
@@ -270,15 +338,20 @@ export default function QuizIAModal({
                     </div>
                 </div>
 
-                <div className="px-4 py-3 space-y-3 max-h-[60vh] overflow-y-auto">
+                {/* Body con scroll */}
+                <div className="mqerk-hide-scrollbar flex-1 min-h-0 px-4 py-3 space-y-3 overflow-y-auto">
                     {/* Mode Selection */}
                     <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-2">Tipo de generación</label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <ButtonGroup>
                             <button
                                 type="button"
                                 onClick={() => setIaChoiceMode('general')}
-                                className={`relative text-left rounded-lg border-2 p-2.5 transition-all ${iaChoiceMode === 'general' ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
+                                className={`relative text-left rounded-lg border-2 p-2.5 transition-all flex-1 ${
+                                    iaChoiceMode === 'general' 
+                                        ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200' 
+                                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                }`}
                             >
                                 {iaChoiceMode === 'general' && (
                                     <div className="absolute top-1.5 right-1.5">
@@ -293,7 +366,11 @@ export default function QuizIAModal({
                             <button
                                 type="button"
                                 onClick={() => setIaChoiceMode('temas')}
-                                className={`relative text-left rounded-lg border-2 p-2.5 transition-all ${iaChoiceMode === 'temas' ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
+                                className={`relative text-left rounded-lg border-2 p-2.5 transition-all flex-1 ${
+                                    iaChoiceMode === 'temas' 
+                                        ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200' 
+                                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                }`}
                             >
                                 {iaChoiceMode === 'temas' && (
                                     <div className="absolute top-1.5 right-1.5">
@@ -305,7 +382,7 @@ export default function QuizIAModal({
                                 <div className="text-sm font-semibold text-slate-800 mb-0.5">Por temas específicos</div>
                                 <div className="text-xs text-slate-600 leading-snug">Enfocado en temas concretos</div>
                             </button>
-                        </div>
+                        </ButtonGroup>
                     </div>
 
                     {/* Topics Input */}
@@ -340,7 +417,7 @@ export default function QuizIAModal({
                     {/* Nivel */}
                     <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nivel de dificultad</label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <ButtonGroup>
                             {[
                                 { id: 'básico', label: 'Básico', color: 'blue' },
                                 { id: 'intermedio', label: 'Intermedio', color: 'emerald' },
@@ -350,15 +427,34 @@ export default function QuizIAModal({
                                     key={lvl.id}
                                     type="button"
                                     onClick={() => setIaNivel(lvl.id)}
-                                    className={`px-2 py-2 rounded-lg border-2 text-xs font-medium capitalize transition-all ${iaNivel === lvl.id
-                                        ? `bg-${lvl.color}-50 border-${lvl.color}-400 text-${lvl.color}-700 ring-1 ring-${lvl.color}-200`
-                                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-                                        }`}
+                                    className={`px-2 py-2 rounded-lg border-2 text-xs font-medium capitalize transition-all flex-1 ${
+                                        iaNivel === lvl.id
+                                            ? `bg-${lvl.color}-50 border-${lvl.color}-400 text-${lvl.color}-700 ring-1 ring-${lvl.color}-200`
+                                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                                    }`}
                                 >
                                     {lvl.label}
                                 </button>
                             ))}
-                        </div>
+                        </ButtonGroup>
+                    </div>
+
+                    {/* Idioma */}
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Idioma de salida</label>
+                        <select
+                            value={iaIdioma}
+                            onChange={(e) => setIaIdioma(e.target.value)}
+                            className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                        >
+                            <option value="auto">Auto (según área/tema)</option>
+                            <option value="es">Español (es-MX)</option>
+                            <option value="en">Inglés (en-US)</option>
+                            <option value="mix">Mixto (mitad ES, mitad EN)</option>
+                        </select>
+                        <p className="mt-1 text-[10px] text-slate-500 leading-snug">
+                            Tip: si quieres practicar inglés, usa “Inglés” o “Mixto”. Si mezclas materias, deja “Auto” o “Español”.
+                        </p>
                     </div>
 
                     {/* Cantidad & Distribución */}
@@ -375,30 +471,27 @@ export default function QuizIAModal({
                         </div>
 
                         <div className="bg-slate-50 p-3 rounded-lg space-y-2 border border-slate-200">
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-slate-600 w-32">Opción Múltiple</span>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => setIaCountMultiple(Math.max(0, iaCountMultiple - 1))} className="w-6 h-6 flex items-center justify-center rounded border bg-white hover:bg-slate-100">-</button>
-                                    <span className="w-8 text-center font-semibold">{iaCountMultiple}</span>
-                                    <button onClick={() => setIaCountMultiple(Math.min(MAX_IA, iaCountMultiple + 1))} className="w-6 h-6 flex items-center justify-center rounded border bg-white hover:bg-slate-100">+</button>
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-slate-600 w-32">Verdadero/Falso</span>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => setIaCountVerdaderoFalso(Math.max(0, iaCountVerdaderoFalso - 1))} className="w-6 h-6 flex items-center justify-center rounded border bg-white hover:bg-slate-100">-</button>
-                                    <span className="w-8 text-center font-semibold">{iaCountVerdaderoFalso}</span>
-                                    <button onClick={() => setIaCountVerdaderoFalso(Math.min(MAX_IA, iaCountVerdaderoFalso + 1))} className="w-6 h-6 flex items-center justify-center rounded border bg-white hover:bg-slate-100">+</button>
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-slate-600 w-32">Respuesta Corta</span>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => setIaCountCorta(Math.max(0, iaCountCorta - 1))} className="w-6 h-6 flex items-center justify-center rounded border bg-white hover:bg-slate-100">-</button>
-                                    <span className="w-8 text-center font-semibold">{iaCountCorta}</span>
-                                    <button onClick={() => setIaCountCorta(Math.min(MAX_IA, iaCountCorta + 1))} className="w-6 h-6 flex items-center justify-center rounded border bg-white hover:bg-slate-100">+</button>
-                                </div>
-                            </div>
+                            <CounterControl 
+                                label="Opción Múltiple"
+                                value={iaCountMultiple}
+                                onDecrement={() => setIaCountMultiple(Math.max(0, iaCountMultiple - 1))}
+                                onIncrement={() => setIaCountMultiple(Math.min(MAX_IA, iaCountMultiple + 1))}
+                                max={MAX_IA}
+                            />
+                            <CounterControl 
+                                label="Verdadero/Falso"
+                                value={iaCountVerdaderoFalso}
+                                onDecrement={() => setIaCountVerdaderoFalso(Math.max(0, iaCountVerdaderoFalso - 1))}
+                                onIncrement={() => setIaCountVerdaderoFalso(Math.min(MAX_IA, iaCountVerdaderoFalso + 1))}
+                                max={MAX_IA}
+                            />
+                            <CounterControl 
+                                label="Respuesta Corta"
+                                value={iaCountCorta}
+                                onDecrement={() => setIaCountCorta(Math.max(0, iaCountCorta - 1))}
+                                onIncrement={() => setIaCountCorta(Math.min(MAX_IA, iaCountCorta + 1))}
+                                max={MAX_IA}
+                            />
                             <div className="pt-2 border-t border-slate-200 flex justify-between text-xs font-bold text-emerald-700">
                                 <span>Total</span>
                                 <span>{iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} preguntas</span>
@@ -417,7 +510,13 @@ export default function QuizIAModal({
                                 <Brain className="h-3.5 w-3.5" />
                                 <span>Parámetros avanzados de IA</span>
                             </div>
-                            <span>{iaShowAdvanced ? '▼' : '▶'}</span>
+                            <div className="flex items-center gap-1">
+                                {iaShowAdvanced ? (
+                                    <ChevronUp className="h-3.5 w-3.5" />
+                                ) : (
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                )}
+                            </div>
                         </button>
                         {iaShowAdvanced && (
                             <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-3 animate-in slide-in-from-top-2">
@@ -427,13 +526,63 @@ export default function QuizIAModal({
                                         <span className="text-slate-500">{iaTemperature}</span>
                                     </div>
                                     <input
-                                        type="range" min="0" max="1" step="0.1"
-                                        value={iaTemperature} onChange={e => setIaTemperature(Number(e.target.value))}
+                                        type="range" 
+                                        min="0" 
+                                        max="1" 
+                                        step="0.1"
+                                        value={iaTemperature} 
+                                        onChange={e => setIaTemperature(Number(e.target.value))}
                                         className="w-full accent-emerald-500"
                                     />
                                     <div className="flex justify-between text-[10px] text-slate-500 mt-1">
                                         <span>Preciso</span>
                                         <span>Creativo</span>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                                    <div>
+                                        <label className="block font-semibold text-slate-700 mb-1">Top‑P</label>
+                                        <input
+                                            type="number"
+                                            inputMode="decimal"
+                                            min="0"
+                                            max="1"
+                                            step="0.05"
+                                            value={iaTopP}
+                                            onChange={(e) => setIaTopP(e.target.value)}
+                                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                                            placeholder="(vacío)"
+                                        />
+                                        <p className="mt-1 text-[10px] text-slate-500">0–1 (vacío = default)</p>
+                                    </div>
+                                    <div>
+                                        <label className="block font-semibold text-slate-700 mb-1">Top‑K</label>
+                                        <input
+                                            type="number"
+                                            inputMode="numeric"
+                                            min="1"
+                                            step="1"
+                                            value={iaTopK}
+                                            onChange={(e) => setIaTopK(e.target.value)}
+                                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                                            placeholder="(vacío)"
+                                        />
+                                        <p className="mt-1 text-[10px] text-slate-500">Entero (vacío = default)</p>
+                                    </div>
+                                    <div>
+                                        <label className="block font-semibold text-slate-700 mb-1">Max tokens</label>
+                                        <input
+                                            type="number"
+                                            inputMode="numeric"
+                                            min="64"
+                                            step="64"
+                                            value={iaMaxTokens}
+                                            onChange={(e) => setIaMaxTokens(e.target.value)}
+                                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                                            placeholder="(vacío)"
+                                        />
+                                        <p className="mt-1 text-[10px] text-slate-500">Más alto = respuestas más largas</p>
                                     </div>
                                 </div>
                             </div>
@@ -449,8 +598,8 @@ export default function QuizIAModal({
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+                {/* Footer - siempre visible */}
+                <div className="flex-shrink-0 p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
                     <div className="text-xs text-slate-500 flex items-center gap-2">
                         {cooldownMs > 0 && (
                             <span className="inline-flex items-center gap-1 text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
@@ -488,5 +637,33 @@ export default function QuizIAModal({
                 </div>
             </div>
         </div>
+
+        {/* CSS local: ocultar barra de scroll manteniendo scroll */}
+        <style>{`
+          .mqerk-hide-scrollbar {
+            -ms-overflow-style: none; /* IE/Edge legacy */
+            scrollbar-width: none; /* Firefox */
+            scrollbar-color: transparent transparent; /* Firefox */
+          }
+          .mqerk-hide-scrollbar::-webkit-scrollbar {
+            width: 0 !important;
+            height: 0 !important;
+            display: none !important;
+          }
+          .mqerk-hide-scrollbar::-webkit-scrollbar-thumb {
+            background: transparent !important;
+          }
+          .mqerk-hide-scrollbar::-webkit-scrollbar-track {
+            background: transparent !important;
+          }
+
+          /* Pantallas con poca altura: modal más compacto */
+          @media (max-height: 720px) {
+            .mqerk-quiz-ia-dialog {
+              max-height: 70vh;
+            }
+          }
+        `}</style>
+        </>
     );
 }

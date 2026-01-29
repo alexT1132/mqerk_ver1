@@ -902,7 +902,7 @@ function ValidacionPagos_Admin_comp() {
     <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
       { /* Util para construir nombre de descarga */}
       { /* NOTA: se define como función local, no como nodo React */}
-      { /* eslint-disable-next-line no-unused-vars */}
+      {  }
       {(() => {
         const tipoMap = {
           'contrato-local-preview': 'Contrato',
@@ -912,10 +912,10 @@ function ValidacionPagos_Admin_comp() {
         };
         // Adjuntar a una ref local en closure accessible por handlers via inline const
         // Guardamos en un objeto en scope del render
-        // eslint-disable-next-line react-hooks/rules-of-hooks
+         
       })()}
       {/* Helper local para nombre de archivo (no se renderiza nada) */}
-      { /* eslint-disable-next-line no-unused-vars */}
+      {  }
       {(() => { /* noop placeholder to keep consistent structure */ })()}
       {(showLoadingScreen || isLoading) && (
         <LoadingOverlay message={showLoadingScreen ? "Cargando contratos.." : "Cargando..."} />

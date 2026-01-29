@@ -522,7 +522,7 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4 pt-safe pb-safe overflow-hidden"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4 pt-8 sm:pt-12 md:pt-16 pb-safe overflow-hidden"
       role="dialog"
       aria-modal="true"
       aria-labelledby="analisis-modal-title"
@@ -533,13 +533,13 @@ export default function AnalisisModal({ open, onClose, isLoading, analysisText, 
         - El encabezado y el pie de página tienen `flex-shrink-0` para mantener su tamaño.
         - El div del contenido (`overflow-y-auto`) crecerá para llenar el espacio y mostrará una barra de scroll cuando sea necesario.
       */}
-      <div className="analisis-modal no-scrollbar bg-white/98 rounded-2xl shadow-2xl ring-1 ring-black/5 w-full max-w-[92vw] md:max-w-[30rem] lg:max-w-[32rem] xl:max-w-[36rem] h-[72vh] sm:h-[68vh] md:h-[62vh] lg:h-[58vh] max-h-[720px] overflow-hidden flex flex-col transform translate-y-6 sm:translate-y-8 md:translate-x-8 lg:translate-x-0">
+      <div className="analisis-modal no-scrollbar bg-white/98 rounded-2xl shadow-2xl ring-1 ring-black/5 w-full max-w-[92vw] md:max-w-[30rem] lg:max-w-[32rem] xl:max-w-[36rem] max-h-[calc(100vh-8rem)] overflow-hidden flex flex-col transform translate-y-6 sm:translate-y-8 md:translate-x-8 lg:translate-x-0">
         {/* Encabezado del Modal */}
         <div className="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-3 sm:p-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center min-w-0">
             <Sparkles className="w-6 h-6 mr-3 flex-shrink-0" />
             <div className="min-w-0">
-              <h2 id="analisis-modal-title" className="text-lg font-bold">Análisis con IA</h2>
+              <h2 id="analisis-modal-title" className="text-lg font-bold">Análisis con IA..</h2>
               <p className="text-sm text-indigo-100 truncate flex items-center gap-2">
                 <span className="truncate">{itemName}</span>
                 {analysisSource === 'GEMINI' && (<span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-400/20 text-emerald-100 border border-emerald-300/40">IA activa</span>)}

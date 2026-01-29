@@ -27,7 +27,7 @@ function PaymentModal({ isOpen, onClose, paymentDetails }) {
         .payment-modal-content::-webkit-scrollbar-thumb { background-color: transparent; }
         .payment-modal-content { scrollbar-width: none; }
       `}} />
-      <div className="bg-white rounded-md sm:rounded-2xl lg:rounded-3xl shadow-2xl p-1 sm:p-4 lg:p-6 w-full max-w-[95vw] sm:max-w-sm lg:max-w-md max-h-[60vh] sm:max-h-[85vh] lg:max-h-[500px] overflow-y-auto border border-gray-100 flex-shrink-0 my-auto payment-modal-content">
+      <div className="bg-white rounded-md sm:rounded-2xl lg:rounded-3xl shadow-2xl p-1 sm:p-4 lg:p-6 w-full max-w-[95vw] sm:max-w-sm lg:max-w-md max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto border border-gray-100 flex-shrink-0 my-auto payment-modal-content">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-md sm:rounded-xl lg:rounded-2xl p-2 sm:p-3 lg:p-5 mb-2 sm:mb-4 lg:mb-6 -mx-2 sm:-mx-4 lg:-mx-6 -mt-2 sm:-mt-4 lg:-mt-6">
           <h2 className="text-base sm:text-lg lg:text-xl font-bold text-white text-center">Pago pendiente</h2>

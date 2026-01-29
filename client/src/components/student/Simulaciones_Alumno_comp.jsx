@@ -5,7 +5,8 @@
 // 3. Tabla de simulaciones disponibles con funcionalidad completa
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudent } from '../../context/StudentContext'; // Importar el hook
 import {
@@ -57,7 +58,8 @@ import {
   Hourglass, // Icono para estado pendiente
   LineChart, // Icono para gráficas
   GraduationCap as School, // Icono para Núcleo UNAM / IPN
-  Anchor     // Icono para Militar, Naval y Náutica Mercante
+  Anchor,     // Icono para Militar, Naval y Náutica Mercante
+  RefreshCw   // Icono para refrescar
 } from 'lucide-react';
 import UnifiedCard from '../common/UnifiedCard.jsx';
 
@@ -97,6 +99,8 @@ export function Simulaciones_Alumno_comp() {
   // (Debug removido) const [simsDebug, setSimsDebug] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const monthButtonRef = useRef(null);
+  const [dropdownStyle, setDropdownStyle] = useState({});
 
   // Estados para efectos visuales
   const [showConfetti, setShowConfetti] = useState(false);
@@ -416,7 +420,7 @@ export function Simulaciones_Alumno_comp() {
   const isSimulacionAvailable = (simulacion) => {
     const now = new Date();
     const fechaEntrega = normalizeDeadlineEndOfDay(simulacion.fechaEntrega);
-    const withinDate = (!!fechaEntrega ? now <= fechaEntrega : true);
+    const withinDate = (fechaEntrega ? now <= fechaEntrega : true);
     const hasQuestions = Number(simulacion.totalPreguntas || 0) > 0;
     return withinDate && hasQuestions && computeSimEstado(simulacion) === 'disponible';
   };
@@ -704,6 +708,19 @@ export function Simulaciones_Alumno_comp() {
           totalPreguntas: Number(q.total_preguntas || 0)
         };
       });
+      
+      console.log('[DEBUG Simulaciones_Alumno_comp - setSimulaciones]', {
+        totalMapped: mapped.length,
+        mappedSims: mapped.map(s => ({
+          id: s.id,
+          nombre: s.nombre,
+          totalIntentos: s.totalIntentos,
+          mejorPuntaje: s.mejorPuntaje,
+          score: s.score,
+          completado: s.completado
+        }))
+      });
+      
       setSimulaciones(mapped);
 
       // Cargar respuestas pendientes para simulaciones completadas
@@ -789,17 +806,55 @@ export function Simulaciones_Alumno_comp() {
   // Helpers de presentación: intentos totales y mejor puntaje por simulación
   const getTotalAttempts = (simulacionId) => {
     const item = simulaciones.find(s => s.id === simulacionId);
-    if (item && typeof item.totalIntentos === 'number') return item.totalIntentos;
+    if (item && typeof item.totalIntentos === 'number') {
+      console.log('[DEBUG Simulaciones - getTotalAttempts]', {
+        simulacionId,
+        simulacionNombre: item.nombre,
+        totalIntentos: item.totalIntentos,
+        desdeItem: true
+      });
+      return item.totalIntentos;
+    }
     const intentos = historialCache[simulacionId] || [];
-    return Array.isArray(intentos) ? intentos.length : 0;
+    const result = Array.isArray(intentos) ? intentos.length : 0;
+    console.log('[DEBUG Simulaciones - getTotalAttempts]', {
+      simulacionId,
+      totalIntentos: result,
+      desdeCache: true,
+      cacheLength: intentos.length,
+      totalSimulaciones: simulaciones.length
+    });
+    return result;
   };
 
   const getBestScore = (simulacionId) => {
     const item = simulaciones.find(s => s.id === simulacionId);
-    if (item && item.bestScore != null) return item.bestScore;
+    if (!item) {
+      console.log('[DEBUG Simulaciones - getBestScore] Item no encontrado:', simulacionId);
+      return 0;
+    }
+    if (item && item.bestScore != null) {
+      console.log('[DEBUG Simulaciones - getBestScore]', {
+        simulacionId,
+        simulacionNombre: item.nombre,
+        bestScore: item.bestScore,
+        desdeItem: true
+      });
+      return item.bestScore;
+    }
     const intentos = historialCache[simulacionId] || [];
-    if (!Array.isArray(intentos) || intentos.length === 0) return 0;
-    return intentos.reduce((m, i) => (typeof i.puntaje === 'number' && i.puntaje > m) ? i.puntaje : m, 0);
+    if (!Array.isArray(intentos) || intentos.length === 0) {
+      console.log('[DEBUG Simulaciones - getBestScore] Sin intentos en cache:', simulacionId);
+      return 0;
+    }
+    const result = intentos.reduce((m, i) => (typeof i.puntaje === 'number' && i.puntaje > m) ? i.puntaje : m, 0);
+    console.log('[DEBUG Simulaciones - getBestScore]', {
+      simulacionId,
+      result,
+      desdeCache: true,
+      intentosLength: intentos.length
+    });
+    return result;
   };
 
   // Escuchar eventos de WebSocket para actualizar lista en tiempo real cuando se crea/publica/borra una simulación
@@ -879,6 +934,67 @@ export function Simulaciones_Alumno_comp() {
       if (reloadTimeout) clearTimeout(reloadTimeout);
     };
   }, [currentLevel, selectedTipo, selectedModulo, estudianteId, loadSimulaciones]);
+
+  // Escuchar notificación desde la pestaña de simulación al finalizar
+  useEffect(() => {
+    const onMessage = (e) => {
+      try {
+        if (!e?.data || e.origin !== window.location.origin) return;
+        if (e.data.type === 'SIM_FINISHED') {
+          console.log('[DEBUG Simulaciones - Mensaje recibido]', {
+            tipo: e.data.type,
+            simId: e.data.simId,
+            sesionId: e.data.sesionId
+          });
+          showNotification('¡Simulación terminada!', 'Se registraron tus respuestas. Actualizando…', 'success');
+          // Recargar simulaciones para reflejar estado/completado
+          if (currentLevel === 'simulaciones') {
+            const scope = selectedTipo === 'generales'
+              ? { type: 'generales' }
+              : (selectedModulo
+                ? { type: 'modulo', moduloId: selectedModulo.id }
+                : { type: 'generales' });
+            console.log('[DEBUG Simulaciones - Recargando con scope]', scope);
+            loadSimulaciones(scope);
+          }
+          // Opcional: traer foco a esta pestaña
+          try { window.focus(); } catch { }
+        }
+      } catch { /* ignore */ }
+    };
+    
+    // También escuchar eventos de localStorage como fallback (para cuando no hay window.opener)
+    const checkLocalStorage = () => {
+      try {
+        const simFinished = localStorage.getItem('sim_finished_refresh');
+        if (simFinished) {
+          const data = JSON.parse(simFinished);
+          console.log('[DEBUG Simulaciones - localStorage sim_finished]', data);
+          localStorage.removeItem('sim_finished_refresh');
+          showNotification('¡Simulación terminada!', 'Se registraron tus respuestas. Actualizando…', 'success');
+          if (currentLevel === 'simulaciones') {
+            const scope = selectedTipo === 'generales'
+              ? { type: 'generales' }
+              : (selectedModulo
+                ? { type: 'modulo', moduloId: selectedModulo.id }
+                : { type: 'generales' });
+            console.log('[DEBUG Simulaciones - Recargando desde localStorage con scope]', scope);
+            loadSimulaciones(scope);
+          }
+        }
+      } catch {}
+    };
+    
+    // Verificar localStorage periódicamente como fallback
+    const interval = setInterval(checkLocalStorage, 2000);
+    checkLocalStorage(); // Verificar inmediatamente
+    
+    window.addEventListener('message', onMessage);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      clearInterval(interval);
+    };
+  }, [currentLevel, selectedTipo, selectedModulo, loadSimulaciones]);
 
   // Efecto para calcular el puntaje total
   useEffect(() => {
@@ -1029,6 +1145,93 @@ export function Simulaciones_Alumno_comp() {
     return months[parseInt(selectedMonth)];
   };
 
+  // Calcular posición inteligente del dropdown
+  const calculateDropdownPosition = useCallback(() => {
+    if (!monthButtonRef.current) return null;
+    
+    const rect = monthButtonRef.current.getBoundingClientRect();
+    const viewportH = window.innerHeight;
+    const viewportW = window.innerWidth;
+    const margin = 8;
+    const gap = 4;
+    const desiredHeight = 300;
+    const minHeight = 120;
+    
+    // Calcular espacio disponible
+    const spaceBelow = viewportH - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+    
+    // Decidir si mostrar arriba o abajo
+    // Mostrar arriba si hay menos de 250px abajo Y hay más espacio arriba
+    const shouldShowAbove = spaceBelow < 250 && spaceAbove > spaceBelow;
+    
+    // Calcular altura máxima disponible
+    const maxHeight = shouldShowAbove 
+      ? Math.max(minHeight, Math.min(desiredHeight, spaceAbove - gap))
+      : Math.max(minHeight, Math.min(desiredHeight, spaceBelow - gap));
+    
+    // Calcular posición horizontal (asegurar que no se salga de la pantalla)
+    let left = rect.left;
+    const dropdownWidth = rect.width;
+    if (left + dropdownWidth > viewportW - margin) {
+      left = viewportW - dropdownWidth - margin;
+    }
+    if (left < margin) {
+      left = margin;
+    }
+    
+    // Calcular posición vertical
+    const top = shouldShowAbove 
+      ? `${Math.max(margin, rect.top - maxHeight - gap)}px`
+      : `${rect.bottom + gap}px`;
+    
+    return {
+      position: 'fixed',
+      top,
+      left: `${left}px`,
+      width: `${dropdownWidth}px`,
+      maxHeight: `${maxHeight}px`,
+      zIndex: 9999,
+    };
+  }, []);
+
+  // Calcular posición cuando se abre el dropdown y bloquear scroll del body
+  useEffect(() => {
+    if (isDropdownOpen) {
+      // Bloquear scroll del body para evitar que aparezca la barra de scroll principal
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      
+      // Calcular posición ANTES de mostrar el dropdown para evitar parpadeo
+      const style = calculateDropdownPosition();
+      if (style) {
+        setDropdownStyle(style);
+      }
+      
+      const handleResize = () => {
+        const newStyle = calculateDropdownPosition();
+        if (newStyle) setDropdownStyle(newStyle);
+      };
+      const handleScroll = () => {
+        const newStyle = calculateDropdownPosition();
+        if (newStyle) setDropdownStyle(newStyle);
+      };
+      
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', handleScroll, true);
+      
+      return () => {
+        // Restaurar scroll del body
+        document.body.style.overflow = prevOverflow;
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('scroll', handleScroll, true);
+      };
+    } else {
+      // Limpiar estilo cuando se cierra
+      setDropdownStyle({});
+    }
+  }, [isDropdownOpen, calculateDropdownPosition]);
+
   const handleMonthSelect = (monthValue) => {
     setSelectedMonth(monthValue);
     setIsDropdownOpen(false);
@@ -1053,6 +1256,14 @@ export function Simulaciones_Alumno_comp() {
   // Funciones para manejar modal de gráficas
   const handleVerGraficas = async (simulacion) => {
     if (!simulacion) return;
+    
+    // Validar que haya al menos 3 intentos para un análisis preciso
+    const totalAttempts = getTotalAttempts(simulacion.id);
+    if (totalAttempts < 3) {
+      showNotification('Análisis no disponible', `Se requieren al menos 3 intentos para generar un análisis preciso. Actualmente tienes ${totalAttempts} intento${totalAttempts !== 1 ? 's' : ''}.`, 'warning');
+      return;
+    }
+    
     setSelectedSimulacionGraficas(simulacion);
     // Cargar historial antes de abrir el modal para evitar estado "sin datos"
     try { await fetchHistorial(simulacion); } catch { }
@@ -1332,7 +1543,7 @@ export function Simulaciones_Alumno_comp() {
     if (!showSesionModal || !activeSesion) return null;
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="bg-white w-full max-w-3xl rounded-xl shadow-xl flex flex-col max-h-[90vh]">
+        <div className="bg-white w-full max-w-3xl rounded-xl shadow-xl flex flex-col max-h-[calc(100vh-2rem)]">
           <div className="flex items-center justify-between px-6 py-4 border-b">
             <h3 className="text-lg font-semibold">Simulación: {activeSesion.nombre}</h3>
             <button onClick={handleCancelarSesion} className="text-gray-500 hover:text-gray-700">✕</button>
@@ -1542,27 +1753,42 @@ export function Simulaciones_Alumno_comp() {
         <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8 mt-4 sm:mt-6 md:mt-8">
           <div className="px-4 sm:px-6 py-5 sm:py-8">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="relative flex items-center justify-center">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <button
                   onClick={handleGoBack}
-                  className="absolute left-0 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 active:scale-95 rounded-xl transition-all touch-manipulation"
+                  className="flex-shrink-0 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 active:scale-95 rounded-xl transition-all touch-manipulation"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div className="text-center px-2">
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 mb-2 break-words">
+                <div className="min-w-0">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 mb-2 break-words text-left">
                     {selectedTipo === 'generales' ? 'Simulaciones Generales' :
                       selectedModulo ? selectedModulo.titulo : 'Simulaciones'}
                   </h1>
-                  <p className="text-sm sm:text-base text-gray-600 font-medium">
+                  <p className="text-sm sm:text-base text-gray-600 font-medium text-left">
                     {selectedTipo === 'generales' ? 'Exámenes generales de ingreso universitario' :
                       selectedModulo ? selectedModulo.descripcion : 'Simulaciones especializadas'}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                <Target className="w-4 h-4 mr-1.5 text-violet-600" />
-                <span className="font-semibold">{filteredSimulaciones.length} simulaciones disponibles</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                  <Target className="w-4 h-4 mr-1.5 text-violet-600" />
+                  <span className="font-semibold">{filteredSimulaciones.length} simulaciones disponibles</span>
+                </div>
+                <button
+                  onClick={() => {
+                    const scope = selectedTipo === 'generales' 
+                      ? { type: 'generales' } 
+                      : { type: 'modulo', moduloId: selectedModulo?.id };
+                    loadSimulaciones(scope);
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:scale-95 rounded-lg transition-all"
+                  title="Refrescar lista"
+                  aria-label="Refrescar lista"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -1609,77 +1835,71 @@ export function Simulaciones_Alumno_comp() {
             {/* Debug removido */}
             <div className="flex items-center gap-2 order-3 md:order-2" />
 
-            {/* Selector de mes */}
+            {/* Selector de mes - Posicionamiento inteligente */}
             <div className="relative w-full md:w-auto">
               <button
+                ref={monthButtonRef}
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center justify-between w-full md:w-64 px-3 sm:px-4 py-2 text-left bg-white border-2 border-gray-300 rounded-xl hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 active:scale-95 transition-all touch-manipulation shadow-sm"
+                className="flex items-center justify-between w-full md:w-64 px-3 sm:px-4 py-2.5 text-left bg-white border-2 border-gray-300 rounded-xl hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 active:scale-95 transition-all touch-manipulation shadow-sm text-sm sm:text-base"
               >
-                <span className="font-semibold">{getSelectedMonthName()}</span>
-                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                <span className="font-semibold truncate pr-2">{getSelectedMonthName()}</span>
+                <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {isDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border-2 border-gray-300 rounded-xl shadow-xl">
-                  <div className="py-1">
-                    <button
-                      onClick={() => handleMonthSelect('all')}
-                      className={`block w-full px-4 py-2.5 text-left hover:bg-gray-100 font-medium ${selectedMonth === 'all' ? 'bg-violet-50 text-violet-700' : 'text-gray-700'}`}
-                    >
-                      Todos los meses
-                    </button>
-                    {months.map((month, index) => (
+              {isDropdownOpen && Object.keys(dropdownStyle).length > 0 && createPortal(
+                <>
+                  {/* Overlay para cerrar al hacer click fuera */}
+                  <div 
+                    className="fixed inset-0 z-[9998] bg-transparent"
+                    onClick={() => setIsDropdownOpen(false)}
+                  />
+                  <div 
+                    style={dropdownStyle}
+                    className="bg-white border-2 border-gray-300 rounded-xl shadow-2xl overflow-y-auto"
+                  >
+                    <div className="py-1">
                       <button
-                        key={index}
-                        onClick={() => handleMonthSelect(index.toString())}
-                        className={`block w-full px-4 py-2.5 text-left hover:bg-gray-100 font-medium ${selectedMonth === index.toString() ? 'bg-violet-50 text-violet-700' : 'text-gray-700'}`}
+                        onClick={() => handleMonthSelect('all')}
+                        className={`block w-full px-3 sm:px-4 py-2.5 sm:py-3 text-left hover:bg-gray-100 font-medium text-sm sm:text-base transition-colors ${selectedMonth === 'all' ? 'bg-violet-50 text-violet-700' : 'text-gray-700'}`}
                       >
-                        {month}
+                        Todos los meses
                       </button>
-                    ))}
+                      {months.map((month, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleMonthSelect(index.toString())}
+                          className={`block w-full px-3 sm:px-4 py-2.5 sm:py-3 text-left hover:bg-gray-100 font-medium text-sm sm:text-base transition-colors ${selectedMonth === index.toString() ? 'bg-violet-50 text-violet-700' : 'text-gray-700'}`}
+                        >
+                          {month}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                </>,
+                document.body
               )}
             </div>
           </div>
         </div>
 
         {/* Vista de escritorio - Tabla de simulaciones - Mejorada */}
-        <div className="hidden lg:block bg-white rounded-xl sm:rounded-2xl border-2 border-gray-200/50 shadow-lg overflow-hidden ring-2 ring-gray-100/50">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200/50">
-              <thead className="bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500">
-                <tr>
-                  <th className="px-2 sm:px-3 py-2 text-left text-[10px] sm:text-[11px] font-extrabold text-white uppercase tracking-wider">
-                    No.
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 text-left text-[10px] sm:text-[11px] font-extrabold text-white uppercase tracking-wider">
-                    Simulación
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 text-center text-[10px] sm:text-[11px] font-extrabold text-white uppercase tracking-wider">
-                    Fecha límite
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 text-center text-[10px] sm:text-[11px] font-extrabold text-white uppercase tracking-wider">
-                    Ejecutar
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 text-center text-[10px] sm:text-[11px] font-extrabold text-white uppercase tracking-wider">
-                    Entregado
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 text-center text-[10px] sm:text-[11px] font-extrabold text-white uppercase tracking-wider">
-                    Volver a intentar
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 text-center text-[10px] sm:text-[11px] font-extrabold text-white uppercase tracking-wider">
-                    Historial
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 text-center text-[10px] sm:text-[11px] font-extrabold text-white uppercase tracking-wider">
-                    Gráficas
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 text-center text-[10px] sm:text-[11px] font-extrabold text-white uppercase tracking-wider">
-                    Puntaje
-                  </th>
+        <div className="hidden lg:block bg-white rounded-xl sm:rounded-2xl border border-slate-200/90 border-b-0 shadow-xl overflow-hidden ring-2 ring-slate-100/90">
+          <div className="overflow-x-auto simulaciones-table-scroll" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <table className="min-w-full">
+              <thead>
+                <tr className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-left text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">No.</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-left text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Simulación</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Fecha límite</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Ejecutar</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Entregado</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Volver a intentar</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Historial</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0">Gráficas</th>
+                  <th className="px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wider last:border-r-0">Puntaje</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200/50">
+              <tbody className="bg-white divide-y divide-slate-200/90">
                 {filteredSimulaciones.length > 0 ? (
                   filteredSimulaciones.map((simulacion, index) => (
                     <tr key={simulacion.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-violet-50/30 transition-colors duration-200`}>
@@ -1720,7 +1940,7 @@ export function Simulaciones_Alumno_comp() {
                           )}
                         </div>
                       </td>
-                      <td className="px-2 sm:px-3 py-2 text-center">
+                      <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
                         <div className="flex items-center justify-center">
                           <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 text-violet-600" />
                           <span className="text-[10px] sm:text-[11px] text-gray-900 font-semibold">
@@ -1731,7 +1951,7 @@ export function Simulaciones_Alumno_comp() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-2 sm:px-3 py-2 text-center">
+                      <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
                         {isSimulacionAvailable(simulacion) ? (
                           <button
                             onClick={() => handleOpenLaunchModal(simulacion)}
@@ -1753,14 +1973,14 @@ export function Simulaciones_Alumno_comp() {
                           </button>
                         )}
                       </td>
-                      <td className="px-2 sm:px-3 py-2 text-center">
+                      <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
                         {simulacion.completado ? (
                           <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 mx-auto" />
                         ) : (
                           <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto" />
                         )}
                       </td>
-                      <td className="px-2 sm:px-3 py-2 text-center">
+                      <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
                         {simulacion.completado ? (
                           <button
                             onClick={() => handleOpenLaunchModal(simulacion)}
@@ -1777,7 +1997,7 @@ export function Simulaciones_Alumno_comp() {
                           <span className="text-gray-400 text-[10px] sm:text-[11px]">-</span>
                         )}
                       </td>
-                      <td className="px-2 sm:px-3 py-2 text-center">
+                      <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
                         {simulacion.completado && getTotalAttempts(simulacion.id) > 0 ? (
                           <button
                             onClick={() => handleVerHistorial(simulacion)}
@@ -1792,12 +2012,17 @@ export function Simulaciones_Alumno_comp() {
                           <span className="text-gray-400 text-[10px] sm:text-[11px]">-</span>
                         )}
                       </td>
-                      <td className="px-2 sm:px-3 py-2 text-center">
+                      <td className="px-2 sm:px-2.5 py-1.5 sm:py-2 text-center border-r border-slate-200/80 last:border-r-0">
                         {simulacion.completado && getTotalAttempts(simulacion.id) > 0 ? (
                           <button
                             onClick={() => handleVerGraficas(simulacion)}
-                            className="inline-flex items-center px-2 py-1 text-[9px] sm:text-[10px] font-extrabold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 rounded-lg border border-indigo-200 transition-all active:scale-95 touch-manipulation shadow-sm"
-                            title="Ver análisis gráfico"
+                            className={`inline-flex items-center px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] font-extrabold rounded-lg border transition-all active:scale-95 touch-manipulation shadow-sm ${
+                              getTotalAttempts(simulacion.id) >= 3 
+                                ? 'text-indigo-700 bg-indigo-100 hover:bg-indigo-200 border-indigo-200' 
+                                : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-60'
+                            }`}
+                            title={getTotalAttempts(simulacion.id) >= 3 ? 'Ver análisis gráfico' : `Se requieren al menos 3 intentos para el análisis. Actualmente tienes ${getTotalAttempts(simulacion.id)}.`}
+                            disabled={getTotalAttempts(simulacion.id) < 3}
                           >
                             <LineChart className="w-3 h-3 mr-0.5" />
                             Análisis
@@ -1806,7 +2031,7 @@ export function Simulaciones_Alumno_comp() {
                           <span className="text-gray-400 text-[10px] sm:text-[11px]">-</span>
                         )}
                       </td>
-                      <td className="px-2 sm:px-3 py-2 text-center">
+                      <td className="px-2 sm:px-3 py-2 text-center border-r border-slate-200/80 last:border-r-0">
                         <div className="text-[11px] sm:text-xs text-gray-900 font-extrabold">
                           {simulacion.completado ? (
                             <div className="space-y-0.5">
@@ -1844,7 +2069,7 @@ export function Simulaciones_Alumno_comp() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="10" className="px-2 sm:px-3 py-4 text-center text-xs sm:text-sm text-gray-500 font-medium">
+                    <td colSpan="10" className="px-2 sm:px-2.5 py-3 sm:py-4 text-center text-[10px] sm:text-[11px] text-gray-500 font-medium">
                       No hay simulaciones para el mes seleccionado.
                     </td>
                   </tr>
@@ -1973,13 +2198,15 @@ export function Simulaciones_Alumno_comp() {
                             <FileText className="w-4 h-4" />
                             Historial
                           </button>
-                          <button
-                            onClick={() => handleVerGraficas(simulacion)}
-                            className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 text-xs font-extrabold bg-purple-50 text-purple-700 hover:bg-purple-100 border-2 border-purple-200 transition-all active:scale-95 touch-manipulation shadow-sm"
-                          >
-                            <LineChart className="w-4 h-4" />
-                            Gráfico
-                          </button>
+                          {getTotalAttempts(simulacion.id) >= 3 && (
+                            <button
+                              onClick={() => handleVerGraficas(simulacion)}
+                              className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 text-xs font-extrabold bg-purple-50 text-purple-700 hover:bg-purple-100 border-2 border-purple-200 transition-all active:scale-95 touch-manipulation shadow-sm"
+                            >
+                              <LineChart className="w-4 h-4" />
+                              Gráfico
+                            </button>
+                          )}
                         </div>
                       )}
                     </>
@@ -2018,18 +2245,18 @@ export function Simulaciones_Alumno_comp() {
     const historial = getSimulacionHistorial(selectedSimulacionHistorial.id);
 
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-3 md:p-4">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-3 md:p-4 pt-8 sm:pt-12 md:pt-10">
         <div
-          className="bg-white rounded-lg shadow-xl w-full max-w-[92vw] md:max-w-[30rem] lg:max-w-[32rem] xl:max-w-[36rem] h-[72vh] sm:h-[68vh] md:h-[62vh] lg:h-[58vh] max-h-[720px] overflow-hidden flex flex-col transform translate-y-6 sm:translate-y-8 md:translate-x-8 lg:translate-x-0"
+          className="bg-white rounded-lg shadow-xl w-full max-w-[92vw] md:max-w-[30rem] lg:max-w-[32rem] xl:max-w-[36rem] max-h-[calc(100vh-10rem)] overflow-hidden flex flex-col transform translate-y-6 sm:translate-y-8 md:translate-x-8 lg:translate-x-0"
           role="dialog"
           aria-modal="true"
           aria-labelledby="historial-title"
         >
           {/* Header del modal */}
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 flex-shrink-0">
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-1 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <h2 id="historial-title" className="text-lg font-bold truncate">Historial de Intentos</h2>
+                <h2 id="historial-title" className="text-lg font-bold truncate text-center">Historial de Intentos</h2>
                 <p className="text-indigo-100 mt-0.5 text-sm truncate">{selectedSimulacionHistorial.nombre}</p>
               </div>
               <button
@@ -2151,10 +2378,10 @@ export function Simulaciones_Alumno_comp() {
           </div>
 
           {/* Footer del modal */}
-          <div className="bg-gray-50 px-4 py-3 flex justify-end flex-shrink-0 border-t border-gray-200">
+          <div className="bg-gray-50 px-5 py-3 flex justify-end flex-shrink-0 border-t border-gray-200">
             <button
               onClick={closeHistorialModal}
-              className="px-4 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm font-medium transition-colors"
+              className="px-4 py-1.5 bg-red-600 hover:bg-gray-700 text-white rounded-md text-sm font-medium transition-colors"
             >
               Cerrar
             </button>
@@ -2265,7 +2492,7 @@ export function Simulaciones_Alumno_comp() {
 
       {/* Modal lanzamiento simulación */}
       {launchModal.open && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm pt-23">
           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-fadeIn">
             <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 pt-8 pb-6 text-center">
               <Brain className="w-14 h-14 mx-auto mb-4" />
@@ -2288,7 +2515,7 @@ export function Simulaciones_Alumno_comp() {
       {longTextModal.open && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 px-2 sm:px-3 lg:px-4 py-4 sm:py-6" onClick={closeLongText}>
           <div
-            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden"
+            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
             {/* Header fijo */}
@@ -2315,6 +2542,10 @@ export function Simulaciones_Alumno_comp() {
           </div>
         </div>
       )}
+      <style>{`
+.simulaciones-table-scroll::-webkit-scrollbar { width: 0; height: 0; display: none !important; }
+.simulaciones-table-scroll { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+      `}</style>
     </div>
   );
 }

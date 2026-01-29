@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import ParticlesBackground from "../../components/ParticlesBackground.jsx";
+import ParticlesBackground from "../../components/common/ParticlesBackground.jsx";
 
 function Register() {
     const { signup, isVerde, errors } = useAuth();

@@ -15,12 +15,16 @@ import {
   ArrowLeft,
   AlertTriangle,
   X,
+  Brain,
+  ChevronDown,
+  ChevronUp,
   Loader2,
   UploadCloud
 } from "lucide-react";
 import SimuladorModalGen from "./SimulatorModal";
 import AnalizadorFallosRepetidos from "./AnalizadorFallosRepetidos";
 import ManualReviewShortAnswer from "./ManualReviewShortAnswer";
+import ReviewModal from "./ReviewModal";
 import { generarPreguntasIA, getCooldownRemainingMs } from "../../service/simuladoresAI";
 import { listSimulaciones, deleteSimulacion, createSimulacion, updateSimulacion, getSimulacion, getSimulacionFull, estudiantesEstadoSimulacion, getSimulacionIntentoReview } from "../../api/simulaciones";
 import InlineMath from "./simGen/InlineMath.jsx";
@@ -32,8 +36,59 @@ import InlineMath from "./simGen/InlineMath.jsx";
 function MathText({ text = "" }) {
   if (!text) return null;
 
-  // Regex mejorado para capturar fórmulas LaTeX: $...$ (no greedy para evitar capturar múltiples fórmulas)
-  // También maneja fórmulas con caracteres especiales como \frac, \le, etc.
+  // ✅ Función para sanitizar HTML (similar a RichTextEditor)
+  // NOTA: El Markdown ya se procesa antes de llamar a esta función, así que puede contener <strong>, <b>, etc.
+  const sanitizeHtmlLite = (html) => {
+    if (!html) return '';
+    // Crear un elemento temporal para sanitizar
+    const div = document.createElement('div');
+    // Usar innerHTML para preservar las etiquetas HTML válidas que ya procesamos (como <strong>)
+    div.innerHTML = html;
+    // Lista blanca de etiquetas permitidas
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    // Recorrer todos los nodos y eliminar etiquetas no permitidas
+    const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
+    const nodesToRemove = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (!allowedTags.includes(node.tagName.toLowerCase())) {
+        nodesToRemove.push(node);
+      }
+    }
+    nodesToRemove.forEach(n => {
+      const parent = n.parentNode;
+      while (n.firstChild) {
+        parent.insertBefore(n.firstChild, n);
+      }
+      parent.removeChild(n);
+    });
+    return div.innerHTML;
+  };
+
+  // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
+  // Pero proteger las fórmulas LaTeX para no procesarlas
+  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
+  const latexMatches = [];
+  let processedText = text;
+  let placeholderIndex = 0;
+  
+  // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
+  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
+    latexMatches.push(match);
+    placeholderIndex++;
+    return placeholder;
+  });
+  
+  // Procesar Markdown: **texto** -> <strong>texto</strong>
+  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  
+  // Restaurar fórmulas LaTeX
+  latexMatches.forEach((match, idx) => {
+    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
+  });
+
+  // ✅ Usar regex simple y robusto: busca $...$ de forma no-greedy
   const re = /\$([^$]+?)\$/g;
   const parts = [];
   let lastIndex = 0;
@@ -43,40 +98,43 @@ function MathText({ text = "" }) {
   // Resetear el regex para evitar problemas con múltiples llamadas
   re.lastIndex = 0;
 
-  while ((m = re.exec(text)) !== null) {
+  while ((m = re.exec(processedText)) !== null) {
     matchFound = true;
     if (m.index > lastIndex) {
-      parts.push({ type: 'text', content: text.slice(lastIndex, m.index) });
+      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
     }
     // Limpiar espacios en blanco al inicio y final de la fórmula
     const formula = m[1].trim();
     if (formula) {
       parts.push({ type: 'math', content: formula });
-      
-      // Log en desarrollo para debugging
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[MathText] Fórmula detectada:', formula);
-      }
     }
     lastIndex = m.index + m[0].length;
   }
   
-  if (lastIndex < text.length) {
-    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  if (lastIndex < processedText.length) {
+    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
   }
 
-  // Si no se encontraron fórmulas, devolver el texto tal cual
+  // Si no se encontraron fórmulas, devolver el texto con HTML procesado (ya con Markdown convertido)
   if (!matchFound || parts.length === 0) {
-    return <span>{text}</span>;
+    return (
+      <span 
+        className="whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
+      />
+    );
   }
 
   return (
-    <span>
+    <span className="whitespace-pre-wrap">
       {parts.map((part, idx) =>
         part.type === 'math' ? (
           <InlineMath key={`math-${idx}`} math={part.content} />
         ) : (
-          <span key={`text-${idx}`}>{part.content}</span>
+          <span 
+            key={`text-${idx}`}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
+          />
         )
       )}
     </span>
@@ -106,11 +164,16 @@ function MobileRow({ item, onView, onEdit, onDelete, onPublish, onResultados }) 
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-100">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-slate-900">
             {item.name}
           </h3>
-          <p className="text-sm text-slate-500">{item.type}</p>
+          {item.instrucciones && item.instrucciones.trim() && (
+            <p className="mt-1 text-xs text-slate-500 line-clamp-2">
+              {item.instrucciones}
+            </p>
+          )}
+          <p className="text-sm text-slate-500 mt-1">{item.type}</p>
         </div>
         {item.status === "Publicado" ? (
           <Badge type="success">Publicado</Badge>
@@ -284,9 +347,10 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   const [iaChoiceMode, setIaChoiceMode] = useState('general'); // 'general' | 'temas'
   const [iaChoiceTopics, setIaChoiceTopics] = useState(''); // coma-separado
   const [iaNivel, setIaNivel] = useState('intermedio'); // 'básico' | 'intermedio' | 'avanzado'
+  const [iaIdioma, setIaIdioma] = useState('auto'); // auto | es | en | mix
   const [iaError, setIaError] = useState('');
   const [showSummary, setShowSummary] = useState(false);
-  const [successModal, setSuccessModal] = useState({ open: false, message: '', count: 0 });
+  const [successModal, setSuccessModal] = useState({ open: false, message: '', count: 0, willRedirect: false });
   // Distribución personalizada de tipos de preguntas
   const [iaCountMultiple, setIaCountMultiple] = useState(3);
   const [iaCountVerdaderoFalso, setIaCountVerdaderoFalso] = useState(1);
@@ -300,6 +364,21 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   const [iaTopP, setIaTopP] = useState('');
   const [iaTopK, setIaTopK] = useState('');
   const [iaMaxTokens, setIaMaxTokens] = useState('');
+  // Lock page scroll while IA modal is open (avoid browser scrollbar)
+  useEffect(() => {
+    if (!iaChoiceOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+    document.body.style.overflow = 'hidden';
+    try {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+    } catch { }
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
+    };
+  }, [iaChoiceOpen]);
   // Vista previa
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -356,28 +435,9 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       // Si no se envía id_area, el backend devuelve TODOS los simuladores (de todas las áreas)
       const params = areaId ? { ...baseParams, id_area: areaId } : { ...baseParams, id_area: 0 };
       
-      console.log('[SimuladoresGen] load - llamando a listSimulaciones con params:', {
-        areaId,
-        params,
-        esVistaGeneral: !areaId
-      });
-      
       const res = await listSimulaciones(params);
       let rows = res.data?.data || res.data || [];
       if (!Array.isArray(rows)) rows = [];
-      
-      console.log('[SimuladoresGen] load - respuesta del backend:', {
-        totalRows: rows.length,
-        rows: rows.map(r => ({
-          id: r.id,
-          titulo: r.titulo,
-          id_area: r.id_area,
-          tipoIdArea: typeof r.id_area,
-          esNull: r.id_area === null,
-          esUndefined: r.id_area === undefined,
-          esCero: Number(r.id_area) === 0
-        }))
-      });
       // ✅ IMPORTANTE: NO hacer fallback sin filtro de área
       // Si estamos en vista general y no hay resultados, está bien (no hay simuladores generales)
       // Si estamos en área específica y no hay resultados, está bien (no hay simuladores en esa área)
@@ -445,99 +505,76 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           }
         }
       }
+      
       // Filtro fuerte por área en cliente (si areaId -> solo de esa área; si no -> solo generales sin área)
       const filtered = Array.isArray(rows) ? rows.filter(r => {
         if (areaId) {
-          const rid = Number(r?.id_area ?? 0);
-          const matches = Number(areaId) === rid;
-          // ✅ Log para debugging cuando hay areaId
-          if (process.env.NODE_ENV === 'development' && !matches && rid > 0) {
-            console.log('[SimuladoresGen] load - simulador filtrado (área diferente):', {
-              id: r.id,
-              titulo: r.titulo,
-              id_area: r.id_area,
-              rid,
-              areaIdEsperado: areaId,
-              coincide: matches
-            });
-          }
+          // Para área específica: debe coincidir exactamente
+          const rid = r?.id_area;
+          const ridNum = rid !== null && rid !== undefined ? Number(rid) : null;
+          const areaIdNum = Number(areaId);
+          const matches = ridNum !== null && ridNum === areaIdNum;
+          
           return matches;
         }
-        // generales: id_area nulo / 0 / undefined
-        // ✅ CRÍTICO: Verificar explícitamente null, undefined y 0
+        // generales: id_area nulo / 0 / undefined / string "0"
+        // ✅ CRÍTICO: Verificar explícitamente null, undefined, 0 numérico y string "0"
         const ridGeneral = r?.id_area;
-        const isGeneral = ridGeneral === null || ridGeneral === undefined || Number(ridGeneral) === 0;
+        const isNull = ridGeneral === null;
+        const isUndefined = ridGeneral === undefined;
+        const isZero = Number(ridGeneral) === 0;
+        const isStringZero = String(ridGeneral) === '0';
+        const isGeneral = isNull || isUndefined || isZero || isStringZero;
+        
+        
         return isGeneral;
       }) : [];
-
-      // ✅ Log para debugging (tanto para áreas específicas como generales)
-      if (process.env.NODE_ENV === 'development') {
-        if (areaId) {
-          console.log('[SimuladoresGen] load - filtrado por área específica:', {
-            areaId,
-            totalRows: Array.isArray(rows) ? rows.length : 0,
-            filteredCount: filtered.length,
-            filteredIds: filtered.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area }))
-          });
-        } else {
-          const rowsConIdArea = rows.filter(r => {
-            const rid = r?.id_area;
-            return rid !== null && rid !== undefined && Number(rid) !== 0;
-          });
-          const rowsGenerales = rows.filter(r => {
-            const rid = r?.id_area;
-            return rid === null || rid === undefined || Number(rid) === 0;
-          });
-          
-          console.log('[SimuladoresGen] load - filtrado por generales:', {
-            areaId: null,
-            totalRows: Array.isArray(rows) ? rows.length : 0,
-            filteredCount: filtered.length,
-            filteredIds: filtered.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area })),
-            rowsConIdArea: rowsConIdArea.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area, tipoIdArea: typeof r.id_area })),
-            rowsGenerales: rowsGenerales.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area, tipoIdArea: typeof r.id_area })),
-            todosLosRows: rows.map(r => ({ id: r.id, titulo: r.titulo, id_area: r.id_area, tipoIdArea: typeof r.id_area, esNull: r.id_area === null, esUndefined: r.id_area === undefined, esCero: Number(r.id_area) === 0 }))
+      
+      setDebugInfo({ fetched: filtered.length, raw: Array.isArray(rows) ? rows.length : -1 });
+      
+      const mapped = filtered.map(r => {
+        // ✅ CRÍTICO: Usar múltiples fallbacks para el nombre/título
+        const nombreFinal = r.titulo || r.nombre || r.name || `Simulador ${r.id}` || 'Sin título';
+        
+        // ✅ Verificar que el nombre no esté vacío
+        if (!nombreFinal || nombreFinal.trim() === '') {
+          console.warn('[SimuladoresGen] ⚠️ Simulador sin título/nombre:', {
+            id: r.id,
+            titulo: r.titulo,
+            nombre: r.nombre,
+            name: r.name,
+            todosLosCampos: Object.keys(r || {})
           });
         }
-      }
-
-      setDebugInfo({ fetched: filtered.length, raw: Array.isArray(rows) ? rows.length : -1 });
-      const mapped = filtered.map(r => ({
-        id: r.id,
-        name: r.titulo,
-        type: areaId ? (areaTitle || `Área ${r.id_area}`) : "General",
-        questions: Number(r.total_preguntas || 0),
-        attempts: Number(r.total_intentos_global || 0),
-        status: r.publico ? "Publicado" : "Borrador",
-        updatedAt: r.updated_at ? new Date(r.updated_at).toLocaleDateString('es-MX') : ""
-      }));
-      
-      // ✅ Log para debugging después de mapear (tanto para áreas como generales)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[SimuladoresGen] load - items mapeados para la lista:', {
-          areaId: areaId || null,
-          areaTitle: areaTitle || null,
-          totalItems: mapped.length,
-          items: mapped.map(item => ({
-            id: item.id,
-            name: item.name,
-            type: item.type,
-            status: item.status,
-            questions: item.questions,
-            id_area: filtered.find(r => r.id === item.id)?.id_area
-          }))
-        });
-      }
+        
+        // ✅ CRÍTICO: Obtener instrucciones/descripción con múltiples fallbacks
+        const instruccionesFinal = r.descripcion || r.instrucciones || r.instructions || '';
+        
+        // ✅ Log si no hay instrucciones para debugging
+        if (!instruccionesFinal || instruccionesFinal.trim() === '') {
+          console.warn('[SimuladoresGen] ⚠️ Simulador sin instrucciones/descripción:', {
+            id: r.id,
+            titulo: r.titulo,
+            descripcion: r.descripcion,
+            instrucciones: r.instrucciones,
+            instructions: r.instructions,
+            todosLosCampos: Object.keys(r || {})
+          });
+        }
+        
+        return {
+          id: r.id,
+          name: nombreFinal,
+          instrucciones: instruccionesFinal,
+          type: areaId ? (areaTitle || `Área ${r.id_area}`) : "General",
+          questions: Number(r.total_preguntas || r.preguntas || 0),
+          attempts: Number(r.total_intentos_global || r.intentos || 0),
+          status: r.publico ? "Publicado" : "Borrador",
+          updatedAt: r.updated_at ? new Date(r.updated_at).toLocaleDateString('es-MX') : ""
+        };
+      });
       
       setItems(mapped);
-      
-      // ✅ Log adicional para verificar que el estado se actualizó
-      if (process.env.NODE_ENV === 'development' && mapped.length > 0) {
-        console.log('[SimuladoresGen] ✅ Estado actualizado con items:', {
-          cantidad: mapped.length,
-          primerItem: mapped[0]
-        });
-      }
     } catch (e) { console.error(e); setError(e?.response?.data?.message || "No se pudieron cargar simulaciones"); }
     finally { setLoading(false); }
   }, [areaId, areaTitle]);
@@ -645,23 +682,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       return okStatus && okSearch;
     });
     
-    // ✅ Log para debugging de viewItems
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[SimuladoresGen] viewItems - filtrado:', {
-        totalItems: items.length,
-        search: s || '(vacío)',
-        statusFilter,
-        filteredCount: filtered.length,
-        itemsOriginales: items.map(it => ({ id: it.id, name: it.name, status: it.status })),
-        itemsFiltrados: filtered.map(it => ({ id: it.id, name: it.name, status: it.status })),
-        razonFiltrado: items.length > 0 && filtered.length === 0 ? {
-          primerItem: items[0],
-          pasaStatus: statusFilter === 'all' ? true : items[0].status === statusFilter,
-          pasaSearch: s ? String(items[0].name || '').toLowerCase().includes(s) : true
-        } : null
-      });
-    }
-    
     return filtered;
   }, [items, statusFilter, search]);
 
@@ -722,14 +742,35 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     }
     
     try {
-      // Cargar los datos completos del simulador
-      const { data } = await getSimulacion(item.id);
-      const simData = data?.data || data || {};
+      // Cargar los datos completos del simulador (usar getSimulacionFull para obtener todos los campos)
+      const { data: fullData } = await getSimulacionFull(item.id).catch(async () => {
+        // Fallback a getSimulacion si getSimulacionFull falla
+        const { data } = await getSimulacion(item.id);
+        return { data };
+      });
+      
+      const simData = fullData?.data?.simulacion || fullData?.data || fullData || {};
+      
+      // Log completo de lo que viene del backend para debugging
+      console.log('[SimuladoresGen] handleEdit - Datos RAW del backend:', {
+        simDataCompleto: simData,
+        fecha_limite: simData.fecha_limite,
+        grupos: simData.grupos,
+        descripcion: simData.descripcion,
+        instrucciones: simData.instrucciones,
+        time_limit_min: simData.time_limit_min
+      });
       
       // Mapear los datos del simulador al formato del initialForm
-      const gruposArray = simData.grupos 
-        ? (typeof simData.grupos === 'string' ? simData.grupos.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(simData.grupos) ? simData.grupos : []))
-        : [];
+      // Grupos: puede venir como string separado por comas, array, o null
+      let gruposArray = [];
+      if (simData.grupos) {
+        if (typeof simData.grupos === 'string') {
+          gruposArray = simData.grupos.split(',').map(s => s.trim()).filter(Boolean);
+        } else if (Array.isArray(simData.grupos)) {
+          gruposArray = simData.grupos;
+        }
+      }
       
       // Calcular horas y minutos desde time_limit_min
       const timeLimitMin = Number(simData.time_limit_min || 0);
@@ -738,15 +779,16 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       
       // Formatear fecha_limite para el input type="date" (YYYY-MM-DD)
       let fechaLimiteFormatted = '';
-      if (simData.fecha_limite) {
+      const fechaLimiteRaw = simData.fecha_limite || simData.fechaLimite;
+      if (fechaLimiteRaw) {
         try {
           // Si viene como string de MySQL (YYYY-MM-DD o YYYY-MM-DD HH:mm:ss)
-          const fecha = new Date(simData.fecha_limite);
+          const fecha = new Date(fechaLimiteRaw);
           if (!isNaN(fecha.getTime())) {
             fechaLimiteFormatted = fecha.toISOString().split('T')[0]; // YYYY-MM-DD
           }
         } catch (e) {
-          console.warn('[SimuladoresGen] Error al formatear fecha_limite:', e);
+          console.warn('[SimuladoresGen] Error al formatear fecha_limite:', e, 'Valor recibido:', fechaLimiteRaw);
         }
       }
       
@@ -756,28 +798,32 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         // Datos del simulador completo
         titulo: simData.titulo || simData.nombre || item.name || '',
         nombre: simData.nombre || simData.titulo || item.name || '',
-        instrucciones: simData.instrucciones || simData.descripcion || '',
-        descripcion: simData.descripcion || simData.instrucciones || '',
-        fechaLimite: fechaLimiteFormatted || simData.fechaLimite || '',
-        publico: simData.publico !== undefined ? Boolean(simData.publico) : (simData.status === 'Publicado'),
+        // ✅ CRÍTICO: Buscar instrucciones/descripción en múltiples lugares
+        instrucciones: simData.instrucciones || simData.descripcion || item.instrucciones || item.descripcion || '',
+        descripcion: simData.descripcion || simData.instrucciones || item.descripcion || item.instrucciones || '',
+        fechaLimite: fechaLimiteFormatted, // ✅ Usar solo el formateado (no fallback a simData.fechaLimite que puede no existir)
+        publico: simData.publico !== undefined ? Boolean(simData.publico) : (simData.status === 'Publicado' || item.status === 'Publicado'),
         horas: horas,
         minutos: minutos,
-        grupos: gruposArray,
+        grupos: gruposArray, // ✅ Ya procesado como array
         areaId: simData.id_area !== undefined && simData.id_area !== null ? Number(simData.id_area) : null,
-        areaTitle: simData.materia || simData.titulo_area || null
+        areaTitle: simData.materia || simData.titulo_area || simData.areaTitle || null
       };
       
-      console.log('[SimuladoresGen] handleEdit - Datos cargados para editar:', {
+      console.log('[SimuladoresGen] handleEdit - Datos procesados para editar:', {
         id: item.id,
         titulo: editData.titulo,
         nombre: editData.nombre,
         instrucciones: editData.instrucciones,
         descripcion: editData.descripcion,
         fechaLimite: editData.fechaLimite,
+        fechaLimiteRaw,
         horas: editData.horas,
         minutos: editData.minutos,
         grupos: editData.grupos,
-        areaId: editData.areaId
+        gruposCount: editData.grupos.length,
+        areaId: editData.areaId,
+        timeLimitMin
       });
       
       setEditing(editData);
@@ -901,24 +947,25 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     // ✅ CRÍTICO: También buscar en iaPrefill si no hay descripción en el form
     // Esto es especialmente importante cuando se crea con IA, ya que la descripción viene en iaPrefill
     const descripcionDelIaPrefill = iaPrefill?.descripcion || iaPrefill?.instrucciones || '';
-    const descripcionFinal = (form.descripcion || form.instrucciones || descripcionDelIaPrefill || '').trim();
+    // ✅ CRÍTICO: No hacer .trim() aquí porque puede eliminar espacios válidos
+    // Usar el valor directamente y solo hacer trim al final si es necesario
+    const descripcionFinal = form.descripcion || form.instrucciones || descripcionDelIaPrefill || '';
     
-    // ✅ Log para debugging
+    // ✅ Log crítico solo si la descripción está vacía
     if (!descripcionFinal || descripcionFinal.length === 0) {
-      console.warn('[SimuladoresGen] ⚠️ DESCRIPCIÓN VACÍA al crear simulador:', {
-        formDescripcion: form.descripcion,
-        formInstrucciones: form.instrucciones,
-        iaPrefillDescripcion: iaPrefill?.descripcion,
-        iaPrefillInstrucciones: iaPrefill?.instrucciones,
-        descripcionFinal
+      console.warn('[SimuladoresGen] ⚠️ DESCRIPCIÓN VACÍA al crear:', {
+        formDescripcion: form.descripcion?.substring(0, 50),
+        iaPrefillDescripcion: iaPrefill?.descripcion?.substring(0, 50)
       });
     }
     const payload = {
       titulo: tituloFinal, // ✅ Usar título validado (no puede estar vacío)
-      descripcion: descripcionFinal || null, // ✅ Usar descripción del form (generada por IA) o instrucciones como fallback
+      // ✅ CRÍTICO: Siempre enviar descripcion como string (incluso si está vacío) para forzar que se guarde
+      // Si está vacío, enviar string vacío en lugar de null
+      descripcion: descripcionFinal !== null && descripcionFinal !== undefined ? String(descripcionFinal) : '',
       fecha_limite: form.fechaLimite || null,
-      // No fijar tiempo por defecto; el asesor lo define explícitamente
-      time_limit_min: (Number(form.horas || 0) * 60 + Number(form.minutos || 0)),
+      // ✅ Calcular tiempo límite igual que en Quiz.jsx
+      time_limit_min: Number(form.horas || 0) * 60 + Number(form.minutos || 0),
       publico: false, // Crear como borrador para que pueda editarlo antes de publicar (cuando tiene preguntas IA)
       activo: true, // ✅ IMPORTANTE: Siempre crear como activo para que aparezca en la lista del asesor
       grupos: form.grupos ? String(form.grupos).split(',').map(s => s.trim()).filter(Boolean) : null,
@@ -929,17 +976,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         : null
     };
     
-    // Log del payload para debugging
-    console.log('[SimuladoresGen] Payload de creación:', {
-      titulo: payload.titulo,
-      id_area: payload.id_area,
-      currentAreaId: currentAreaId,
-      currentAreaTitle: currentAreaTitle,
-      tienePreguntasIA: iaPreguntas && Array.isArray(iaPreguntas) && iaPreguntas.length > 0,
-      desdeIaPrefill: hasIaPrefill,
-      iaPrefillAreaId: iaPrefill?.areaId,
-      iaPrefillAreaTitle: iaPrefill?.areaTitle
-    });
     try {
       const hasIaQuestions = iaPreguntas && Array.isArray(iaPreguntas) && iaPreguntas.length > 0;
       // Si tenemos un banco IA pendiente, crear con preguntas incluidas
@@ -947,22 +983,10 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         ? { ...payload, preguntas: iaPreguntas }
         : { ...payload, publico: !!form.publico }; // Solo usar form.publico si no tiene preguntas IA
 
-      console.log('[SimuladoresGen] Enviando al backend:', {
-        id_area: withQuestions.id_area,
-        titulo: withQuestions.titulo,
-        descripcion: withQuestions.descripcion,
-        cantidadPreguntas: withQuestions.preguntas?.length || 0,
-        tienePreguntas: hasIaQuestions,
-        payloadCompleto: {
-          titulo: payload.titulo,
-          descripcion: payload.descripcion,
-          id_area: payload.id_area,
-          fecha_limite: payload.fecha_limite,
-          time_limit_min: payload.time_limit_min,
-          publico: payload.publico,
-          activo: payload.activo,
-          grupos: payload.grupos
-        }
+      // ✅ Log crítico: verificar descripción antes de enviar
+      console.log('[SimuladoresGen] Enviando al backend - descripcion:', {
+        descripcion: withQuestions.descripcion?.substring(0, 100),
+        descripcionLength: withQuestions.descripcion?.length || 0
       });
 
       const res = await createSimulacion(withQuestions);
@@ -999,17 +1023,13 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           const fullRes = await getSimulacionFull(s.id);
           const simuladorCompleto = fullRes?.data?.data || fullRes?.data;
           
-          console.log('[SimuladoresGen] Verificación post-creación:', {
-            id: simuladorVerificado?.id,
-            titulo: simuladorVerificado?.titulo,
-            descripcion: simuladorVerificado?.descripcion,
-            id_area: simuladorVerificado?.id_area,
-            id_areaEsperado: currentAreaId,
-            coincide: simuladorVerificado?.id_area === currentAreaId,
-            preguntasGuardadas: simuladorCompleto?.preguntas?.length || 0,
-            preguntasEsperadas: iaPreguntas?.length || 0,
-            todasLasPropiedades: Object.keys(simuladorVerificado || {})
-          });
+          // ✅ Log crítico: solo si descripción no se guardó
+          if (!simuladorVerificado?.descripcion || simuladorVerificado.descripcion.length === 0) {
+            console.warn('[SimuladoresGen] ⚠️ Descripción NO se guardó después de crear:', {
+              id: simuladorVerificado?.id,
+              descripcionEnviada: payload.descripcion?.substring(0, 50)
+            });
+          }
           
           if (simuladorVerificado) {
             const idAreaGuardado = simuladorVerificado.id_area;
@@ -1027,11 +1047,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 payloadEnviado: withQuestions.id_area
               });
               alert(`⚠️ Advertencia: El simulador se creó pero el área no se guardó correctamente.\n\nEsperado: ${esperadoNum || 'null'} (${currentAreaTitle || 'General'})\nGuardado: ${guardadoNum || 'null'}\n\nPor favor, verifica en la lista y edita el simulador si es necesario.`);
-            } else {
-              console.log('[SimuladoresGen] ✅ id_area se guardó correctamente:', {
-                id_area: guardadoNum,
-                areaTitle: currentAreaTitle
-              });
             }
           }
         } catch (verifyError) {
@@ -1059,14 +1074,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       // ✅ CRÍTICO: Usar el título del simulador guardado, con fallback a nombre si titulo está vacío
       const tituloFinal = s.titulo || s.nombre || payload.titulo || 'Sin título';
       
-      console.log('[SimuladoresGen] Creando newItem - título:', {
-        titulo: s.titulo,
-        nombre: s.nombre,
-        payloadTitulo: payload.titulo,
-        tituloFinal,
-        tieneTitulo: !!s.titulo,
-        tieneNombre: !!s.nombre
-      });
       
       const newItem = {
         id: s.id,
@@ -1087,14 +1094,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       const coincideConVista = (isGeneralView && isGeneralSaved) || 
                                (!isGeneralView && !isGeneralSaved && Number(areaId) === idAreaGuardado);
       
-      console.log('[SimuladoresGen] Verificando coincideConVista:', {
-        areaId,
-        idAreaGuardado,
-        isGeneralView,
-        isGeneralSaved,
-        coincideConVista,
-        simuladorId: s.id
-      });
       
       setOpen(false);
       // Limpiar estado IA temporal
@@ -1112,17 +1111,24 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         setSuccessModal({
           open: true,
           message: `Simulador creado exitosamente con ${iaPreguntas.length} pregunta(s)${currentAreaId ? ` en el área ${currentAreaTitle || ''}` : ''}`,
-          count: iaPreguntas.length
+          count: iaPreguntas.length,
+          willRedirect: true
         });
-        // Cerrar automáticamente después de 4 segundos
+        // ✅ Volver a redirigir al editor, pero SIN marcarlo como temporal ni usar new=1
+        // (eso evita el bug donde se borraba / “se perdía” el contenido generado con IA).
+        const navState = currentAreaId
+          ? { simId: s.id, areaId: currentAreaId, areaTitle: currentAreaTitle }
+          : { simId: s.id };
         setTimeout(() => {
-          setSuccessModal(prev => ({ ...prev, open: false }));
-        }, 4000);
-        // NO navegar, quedarse en la lista para que pueda verlo y editarlo/publicarlo
+          navigate(`/asesor/quizt/builder?simId=${s.id}`, { state: navState });
+        }, 1200);
         return;
       } else {
         // Si no tiene preguntas IA, navegar inmediatamente al builder para agregarlas
-        const navState = currentAreaId ? { simId: s.id, areaId: currentAreaId, areaTitle: currentAreaTitle } : { simId: s.id };
+        // Marcar como "temporal" para que el builder pueda eliminarlo si el usuario cancela
+        const navState = currentAreaId
+          ? { simId: s.id, areaId: currentAreaId, areaTitle: currentAreaTitle, tempCreated: true }
+          : { simId: s.id, tempCreated: true };
         navigate(`/asesor/quizt/builder?simId=${s.id}&new=1`, { state: navState });
       }
     } catch (e) { 
@@ -1142,71 +1148,149 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       const simData = currentSim?.data?.data || currentSim?.data || null;
       if (simData && (simData.id_area !== null && simData.id_area !== undefined)) {
         currentIdArea = Number(simData.id_area);
-        console.log('[SimuladoresGen] handleUpdate - id_area actual del simulador:', currentIdArea);
       }
     } catch (err) {
-      console.warn('[SimuladoresGen] No se pudo obtener id_area actual del simulador:', err);
+      // Silencioso
     }
     
-    // ✅ CRÍTICO: Preservar id_area:
-    // 1. Si el form tiene areaId (viene del modal con iaPrefill preservado) → usarlo
-    // 2. Si estamos en vista de área específica (areaId del componente) → usarlo
-    // 3. Si no, preservar el id_area actual del simulador (no cambiarlo)
+    // ✅ CRÍTICO: Preservar id_area
     let finalIdArea = null;
     if (form && (form.areaId !== undefined && form.areaId !== null)) {
       finalIdArea = Number(form.areaId);
-      console.log('[SimuladoresGen] handleUpdate - usando areaId del form:', finalIdArea);
     } else if (areaId && areaId !== null && areaId !== undefined) {
       finalIdArea = Number(areaId);
-      console.log('[SimuladoresGen] handleUpdate - usando areaId del componente:', finalIdArea);
     } else if (currentIdArea !== null && currentIdArea !== undefined) {
       finalIdArea = currentIdArea;
-      console.log('[SimuladoresGen] handleUpdate - preservando id_area actual:', finalIdArea);
     } else {
       finalIdArea = null;
-      console.log('[SimuladoresGen] handleUpdate - estableciendo id_area como null (general)');
     }
     
-    // ✅ IMPORTANTE: El form usa "instrucciones" como descripción (ya que el modal mapea descripcion->instrucciones)
-    const descripcionFinal = (form.descripcion || form.instrucciones || '').trim();
+    // ✅ CRÍTICO: El form usa "instrucciones" como descripción (ya que el modal mapea descripcion->instrucciones)
+    // IMPORTANTE: No hacer .trim() aquí porque puede eliminar espacios válidos, y siempre enviar el valor aunque esté vacío
+    const descripcionFinal = form.descripcion || form.instrucciones || '';
+    
+    // ✅ Log para debugging
     
     // ✅ IMPORTANTE: Validar título antes de enviarlo (no enviar si está vacío para preservar el existente)
     const tituloDelForm = (form.nombre || form.titulo || '').trim();
     const tituloParaEnviar = tituloDelForm && tituloDelForm.length >= 3 ? tituloDelForm : undefined;
     
+    // ✅ CRÍTICO: Normalizar grupos - el backend espera JSON válido o NULL
+    // El campo grupos tiene un CHECK constraint que requiere JSON válido: CHECK (json_valid(`grupos`))
+    let gruposFinal = null;
+    if (form.grupos) {
+      if (Array.isArray(form.grupos) && form.grupos.length > 0) {
+        // Si es array, convertir a JSON string
+        gruposFinal = JSON.stringify(form.grupos);
+      } else if (typeof form.grupos === 'string' && form.grupos.trim()) {
+        // Si es string, puede ser:
+        // 1. JSON string ya válido (ej: '["V1","M1"]')
+        // 2. String separado por comas (ej: 'V1,M1')
+        try {
+          // Intentar parsear como JSON primero
+          JSON.parse(form.grupos);
+          // Si se puede parsear, es JSON válido, usarlo tal cual
+          gruposFinal = form.grupos;
+        } catch {
+          // Si no es JSON, asumir que es string separado por comas y convertir a JSON array
+          const gruposNormalizados = form.grupos.split(',').map(s => s.trim()).filter(Boolean);
+          gruposFinal = gruposNormalizados.length > 0 ? JSON.stringify(gruposNormalizados) : null;
+        }
+      }
+    }
+    // ✅ Asegurar que si gruposFinal es string vacío, se convierta a null
+    if (gruposFinal === '' || gruposFinal === undefined) {
+      gruposFinal = null;
+    }
+    
+    // ✅ CRÍTICO: Normalizar fecha_limite - debe ser null si está vacío, o una fecha válida en formato ISO
+    let fechaLimiteFinal = null;
+    if (form.fechaLimite) {
+      const fechaStr = String(form.fechaLimite).trim();
+      if (fechaStr && fechaStr !== '') {
+        try {
+          // Intentar parsear la fecha y convertirla a formato ISO (YYYY-MM-DD)
+          const fecha = new Date(fechaStr);
+          if (!isNaN(fecha.getTime())) {
+            // Formato ISO para MySQL: YYYY-MM-DD
+            fechaLimiteFinal = fecha.toISOString().split('T')[0];
+          } else {
+            console.warn('[SimuladoresGen] handleUpdate - fecha inválida, usando null:', fechaStr);
+          }
+        } catch (err) {
+          console.warn('[SimuladoresGen] handleUpdate - error al parsear fecha, usando null:', err);
+        }
+      }
+    }
+    
     const payload = {
       ...(tituloParaEnviar !== undefined ? { titulo: tituloParaEnviar } : {}), // Solo incluir si es válido
-      descripcion: descripcionFinal || null, // ✅ Usar instrucciones del form (puede contener descripción generada por IA)
-      fecha_limite: form.fechaLimite || null,
-      time_limit_min: Number(form.horas || 0) * 60 + Number(form.minutos || 0),
+      // ✅ CRÍTICO: Siempre incluir descripcion, incluso si está vacío (usar string vacío en lugar de null para forzar actualización)
+      descripcion: descripcionFinal !== null && descripcionFinal !== undefined ? String(descripcionFinal) : '',
+      fecha_limite: fechaLimiteFinal, // ✅ CRÍTICO: null si está vacío, o fecha en formato YYYY-MM-DD
+      time_limit_min: (() => {
+        const horas = Number(form.horas || 0);
+        const minutos = Number(form.minutos || 0);
+        const totalMin = horas * 60 + minutos;
+        // Solo usar 30 minutos por defecto si realmente no se especificó tiempo (ambos son 0)
+        return totalMin > 0 ? totalMin : 30;
+      })(),
       publico: !!form.publico,
       activo: true, // ✅ IMPORTANTE: Siempre mantener activo al actualizar
-      grupos: form.grupos ? String(form.grupos).split(',').map(s => s.trim()).filter(Boolean) : null,
+      grupos: gruposFinal, // ✅ Ya normalizado como string separado por comas o null
       // ✅ CRÍTICO: Incluir id_area siempre para preservarlo (null para generales, número para áreas específicas)
       id_area: (finalIdArea !== null && finalIdArea !== undefined && Number(finalIdArea) > 0) 
         ? Number(finalIdArea) 
         : null
     };
     
-    console.log('[SimuladoresGen] handleUpdate - payload final:', {
-      id_area: payload.id_area,
-      titulo: payload.titulo,
-      publico: payload.publico
-    });
+    // ✅ Log crítico: solo si descripción está vacía
+    if (!payload.descripcion || payload.descripcion.length === 0) {
+      console.warn('[SimuladoresGen] handleUpdate - ⚠️ Descripción vacía en payload');
+    }
     
     try {
       const res = await updateSimulacion(editing.id, payload);
       const s = res.data?.data || res.data;
-      setItems(prev => prev.map(x => x.id === editing.id ? ({
-        id: s.id, name: s.titulo, type: (s.id_area && Number(s.id_area) > 0) ? (areaTitle || `Área ${s.id_area}`) : 'General',
-        questions: Number(x.questions || 0), attempts: Number(x.attempts || 0), status: s.publico ? 'Publicado' : 'Borrador', updatedAt: s.updated_at ? new Date(s.updated_at).toLocaleDateString('es-MX') : ''
-      }) : x));
+      
+      // ✅ CRÍTICO: Usar el valor del payload directamente (más confiable que la respuesta del backend)
+      const instruccionesActualizadas = payload.descripcion || s?.descripcion || s?.instrucciones || '';
+      
+      // ✅ Log crítico: solo si hay problema
+      if (!instruccionesActualizadas || instruccionesActualizadas.length === 0) {
+        console.warn('[SimuladoresGen] handleUpdate - ⚠️ Descripción vacía después de actualizar');
+      }
+      
+      // ✅ Actualizar el estado inmediatamente con los datos del payload (más confiable)
+      setItems(prev => prev.map(x => {
+        if (x.id === editing.id) {
+          const itemActualizado = {
+            id: s?.id || editing.id, 
+            name: s?.titulo || x.name, 
+            instrucciones: instruccionesActualizadas, // ✅ CRÍTICO: Usar las instrucciones del payload
+            type: (s?.id_area && Number(s.id_area) > 0) ? (areaTitle || `Área ${s.id_area}`) : 'General',
+            questions: Number(x.questions || 0), 
+            attempts: Number(x.attempts || 0), 
+            status: s?.publico ? 'Publicado' : 'Borrador', 
+            updatedAt: s?.updated_at ? new Date(s.updated_at).toLocaleDateString('es-MX') : x.updatedAt
+          };
+          return itemActualizado;
+        }
+        return x;
+      }));
       
       setEditing(null);
       setOpen(false);
+      
+      // ✅ Recargar la lista inmediatamente para sincronizar con el backend
+      // El estado ya se actualizó arriba con el valor del payload, pero recargamos para asegurar consistencia
+      await load();
     } catch (e) { 
-      console.error(e); 
-      alert('No se pudo guardar'); 
+      console.error('[SimuladoresGen] handleUpdate - Error completo:', e);
+      console.error('[SimuladoresGen] handleUpdate - Response data:', e?.response?.data);
+      console.error('[SimuladoresGen] handleUpdate - Response status:', e?.response?.status);
+      const errorMessage = e?.response?.data?.message || e?.message || 'No se pudo guardar';
+      alert(`Error al guardar: ${errorMessage}`);
     }
   };
 
@@ -1306,7 +1390,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
         try {
           // ✅ CRÍTICO: Al publicar, preservar TODOS los datos importantes del simulador
-          // Incluir título, descripción e id_area para evitar que se borren
+          // Incluir título, descripción, id_area y time_limit_min para evitar que se borren
           const publishPayload = {
             publico: true,
             activo: true
@@ -1327,10 +1411,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           // ✅ Preservar id_area
           if (currentIdArea !== null && currentIdArea !== undefined && Number(currentIdArea) > 0) {
             publishPayload.id_area = Number(currentIdArea);
-            console.log('[SimuladoresGen] handlePublish - preservando id_area:', publishPayload.id_area);
           } else {
             publishPayload.id_area = null;
-            console.log('[SimuladoresGen] handlePublish - estableciendo id_area como null (general)');
           }
           
           await updateSimulacion(item.id, publishPayload);
@@ -1406,12 +1488,32 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         tf: iaCountVerdaderoFalso,
         short: iaCountCorta
       };
+      // ✅ Validación: Detectar múltiples materias en el tema (separadas por comas)
+      const temaConComas = tema.includes(',');
+      const materiasDelTema = temaConComas ? tema.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const numMaterias = materiasDelTema.length >= 2 ? materiasDelTema.length : 0;
+      
+      // ✅ Advertencia si hay más materias que preguntas
+      if (numMaterias > cantidad) {
+        const materiasTexto = materiasDelTema.join(', ');
+        const advertencia = `⚠️ Advertencia: Has especificado ${numMaterias} materia${numMaterias > 1 ? 's' : ''} (${materiasTexto}), ` +
+          `pero solo se generarán ${cantidad} pregunta${cantidad > 1 ? 's' : ''}. ` +
+          `Algunas materias no tendrán preguntas. ¿Deseas continuar de todas formas?`;
+        
+        const continuar = window.confirm(advertencia);
+        if (!continuar) {
+          setLoading(false);
+          return;
+        }
+      }
+      
       // Preparar parámetros avanzados de IA
       const aiParams = {
         tema: tema.trim(), // ✅ Asegurar que el tema tenga un valor válido
         cantidad,
         area: areaId ? (areaTitle || undefined) : undefined,
         nivel: iaNivel || 'intermedio',
+        idioma: iaIdioma,
         distribucion,
         temperature: iaTemperature,
         ...(iaTopP !== '' && { topP: Number(iaTopP) }),
@@ -1619,6 +1721,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         cantidad,
         area: areaId ? (areaTitle || undefined) : undefined,
         nivel: iaNivel,
+        idioma: iaIdioma,
         distribucion,
         temperature: iaTemperature,
         ...(iaTopP !== '' && { topP: Number(iaTopP) }),
@@ -1626,6 +1729,31 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         ...(iaMaxTokens !== '' && { maxOutputTokens: Number(iaMaxTokens) })
       };
       const temasList = String(temasText || '').split(',').map(s => s.trim()).filter(Boolean);
+      
+      // ✅ Validación: Detectar múltiples materias en el tema (separadas por comas)
+      const temaConComas = tema.includes(',');
+      const materiasDelTema = temaConComas ? tema.split(',').map(s => s.trim()).filter(Boolean) : [];
+      // En modo 'temas', usar temasList; en modo 'general' con comas en tema, usar materiasDelTema
+      const numMaterias = modo === 'temas' && temasList.length 
+        ? temasList.length 
+        : (materiasDelTema.length >= 2 ? materiasDelTema.length : 0);
+      
+      // ✅ Advertencia si hay más materias que preguntas
+      if (numMaterias > cantidad) {
+        const materiasTexto = modo === 'temas' && temasList.length 
+          ? temasList.join(', ') 
+          : (materiasDelTema.length >= 2 ? materiasDelTema.join(', ') : '');
+        const advertencia = `⚠️ Advertencia: Has especificado ${numMaterias} materia${numMaterias > 1 ? 's' : ''} (${materiasTexto}), ` +
+          `pero solo se generarán ${cantidad} pregunta${cantidad > 1 ? 's' : ''}. ` +
+          `Algunas materias no tendrán preguntas. ¿Deseas continuar de todas formas?`;
+        
+        const continuar = window.confirm(advertencia);
+        if (!continuar) {
+          setLoading(false);
+          return;
+        }
+      }
+      
       if (modo === 'temas' && temasList.length) {
         opts.modo = 'temas';
         opts.temas = temasList;
@@ -1843,12 +1971,12 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
             {/* Generación IA (depende del modo) */}
             {areaId ? (
-              <div className="flex items-center gap-2">
-                <label className="hidden sm:block text-xs text-slate-500">Preguntas</label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <label className="hidden sm:block text-xs text-slate-500 whitespace-nowrap">Preguntas</label>
                 <select
                   value={iaQuickCount}
                   onChange={(e) => setIaQuickCount(Number(e.target.value))}
-                  className="rounded-lg border border-emerald-200 bg-white px-2 py-2 text-sm text-emerald-700 hover:bg-emerald-50"
+                  className="rounded-lg border-2 border-emerald-200 bg-white px-3 py-2 text-sm sm:text-base text-emerald-700 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-all min-w-[80px] sm:min-w-[100px]"
                   disabled={loading}
                   aria-label="Cantidad de preguntas IA"
                 >
@@ -1915,7 +2043,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-500">Cargando…</div>
       )}
       <div className="grid gap-3 md:hidden">
-        {process.env.NODE_ENV === 'development' && console.log('[SimuladoresGen] Renderizando móvil - viewItems.length:', viewItems.length, 'items:', viewItems.map(i => ({ id: i.id, name: i.name })))}
         {viewItems.map((item) => (
           <MobileRow
             key={item.id}
@@ -1984,15 +2111,21 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               </thead>
 
               <tbody className="divide-y divide-slate-200 bg-white">
-                {process.env.NODE_ENV === 'development' && console.log('[SimuladoresGen] Renderizando tabla - viewItems.length:', viewItems.length, 'items:', viewItems.map(i => ({ id: i.id, name: i.name })))}
                 {viewItems.map((item, idx) => (
                   <tr
                     key={item.id}
                     className={(idx % 2 === 0 ? "bg-white" : "bg-slate-50/50") + " hover:bg-violet-50/30 transition-colors duration-150"}
                   >
                     <td className="sticky left-0 z-10 bg-inherit px-6 py-4 border-r border-slate-200">
-                      <div className="max-w-xs truncate font-semibold text-slate-900">
-                        {item.name}
+                      <div className="max-w-xs">
+                        <div className="font-semibold text-slate-900 truncate">
+                          {item.name}
+                        </div>
+                        {item.instrucciones && item.instrucciones.trim() && (
+                          <div className="mt-1 text-xs text-slate-500 line-clamp-2">
+                            {item.instrucciones}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-700 font-medium">{item.type}</td>
@@ -2098,19 +2231,37 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         onCreate={handleCreate}
         onUpdate={handleUpdate}
         mode={editing ? 'edit' : 'create'}
-        initialForm={editing ? {
-          titulo: editing.titulo || editing.nombre || editing.name || '',
-          nombre: editing.nombre || editing.titulo || editing.name || '',
-          instrucciones: editing.instrucciones || editing.descripcion || '',
-          descripcion: editing.descripcion || editing.instrucciones || '',
-          fechaLimite: editing.fechaLimite || editing.fecha_limite || '',
-          publico: editing.publico ?? (editing.status === 'Publicado'),
-          horas: editing.horas ?? 0,
-          minutos: editing.minutos ?? 0,
-          grupos: editing.grupos || [],
-          areaId: editing.areaId !== undefined ? editing.areaId : null,
-          areaTitle: editing.areaTitle || null
-        } : (iaPrefill || null)}
+        initialForm={editing ? (() => {
+          const formData = {
+            titulo: editing.titulo || editing.nombre || editing.name || '',
+            nombre: editing.nombre || editing.titulo || editing.name || '',
+            instrucciones: editing.instrucciones || editing.descripcion || '',
+            descripcion: editing.descripcion || editing.instrucciones || '',
+            fechaLimite: editing.fechaLimite || editing.fecha_limite || '',
+            publico: editing.publico ?? (editing.status === 'Publicado'),
+            horas: editing.horas ?? 0,
+            minutos: editing.minutos ?? 0,
+            grupos: Array.isArray(editing.grupos) ? editing.grupos : (editing.grupos ? [editing.grupos] : []),
+            areaId: editing.areaId !== undefined ? editing.areaId : null,
+            areaTitle: editing.areaTitle || null
+          };
+          // Log para debugging
+          console.log('[SimuladoresGen] initialForm para modal (modo edición):', {
+            id: editing.id,
+            titulo: formData.titulo,
+            nombre: formData.nombre,
+            instrucciones: formData.instrucciones,
+            descripcion: formData.descripcion,
+            fechaLimite: formData.fechaLimite,
+            horas: formData.horas,
+            minutos: formData.minutos,
+            grupos: formData.grupos,
+            gruposCount: formData.grupos.length,
+            editingGrupos: editing.grupos,
+            editingFechaLimite: editing.fechaLimite
+          });
+          return formData;
+        })() : (iaPrefill || null)}
         onEditQuestions={editing ? () => {
           // Navegar al builder después de guardar
           const finalIdArea = editing.areaId !== undefined && editing.areaId !== null ? Number(editing.areaId) : (areaId || null);
@@ -2125,11 +2276,11 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
       {/* Modal: elección de IA (para vista de área y simuladores generales) */}
       {iaChoiceOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-center justify-center px-4 pt-24 pb-6">
           <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={() => { setIaChoiceOpen(false); setIaError(''); }} />
-          <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-slate-200">
+          <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 overflow-hidden">
             {/* Header */}
-            <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
+            <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
               <div className="flex items-center gap-2.5">
                 <div className="rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 p-1.5 shadow-md">
                   <Sparkles className="h-4 w-4 text-white" />
@@ -2148,7 +2299,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               </div>
             </div>
 
-            <div className="px-4 py-3 space-y-3 max-h-[60vh] overflow-y-auto">
+            {/* Body con scroll */}
+            <div className="mqerk-hide-scrollbar flex-1 min-h-0 px-4 py-3 space-y-3 overflow-y-auto">
               {/* Opciones de modo */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-2">Tipo de generación</label>
@@ -2320,6 +2472,24 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 </div>
               </div>
 
+              {/* Selector de idioma */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Idioma de salida</label>
+                <select
+                  value={iaIdioma}
+                  onChange={(e) => setIaIdioma(e.target.value)}
+                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2.5 text-sm sm:text-base font-semibold text-slate-700 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-200 transition-all"
+                >
+                  <option value="auto">Auto (según área/tema)</option>
+                  <option value="es">Español (es-MX)</option>
+                  <option value="en">Inglés (en-US)</option>
+                  <option value="mix">Mixto (mitad ES, mitad EN)</option>
+                </select>
+                <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">
+                  Consejo: si mezclas materias (ej. “matemáticas, español, inglés…”), usa “Español” o “Auto”. Para practicar inglés, elige “Inglés” o “Mixto”.
+                </p>
+              </div>
+
               {/* Distribución de tipos de preguntas */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -2460,97 +2630,88 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 <button
                   type="button"
                   onClick={() => setIaShowAdvanced(!iaShowAdvanced)}
-                  className="w-full flex items-center justify-between text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors"
+                  className="w-full flex items-center justify-between text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 p-2 rounded-lg border border-slate-200 transition-colors"
                 >
-                  <span>⚙️ Parámetros avanzados de IA</span>
-                  <span className="text-slate-500">{iaShowAdvanced ? '▼' : '▶'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <Brain className="h-3.5 w-3.5" />
+                    <span>Parámetros avanzados de IA</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {iaShowAdvanced ? (
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    )}
+                  </div>
                 </button>
 
                 {iaShowAdvanced && (
-                  <div className="mt-3 p-3 rounded-lg border-2 border-slate-200 bg-slate-50 space-y-3">
-                    {/* Temperature */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Temperature <span className="text-slate-500 font-normal">(0.0 - 1.0)</span>
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          min="0"
-                          max="1"
-                          step="0.1"
-                          value={iaTemperature}
-                          onChange={(e) => {
-                            const val = Math.max(0, Math.min(1, Number(e.target.value) || 0.6));
-                            setIaTemperature(val);
-                          }}
-                          className="flex-1 rounded-lg border-2 border-slate-200 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                        />
-                        <span className="text-[10px] text-slate-500 w-32">
-                          {iaTemperature < 0.3 ? 'Muy determinista' : iaTemperature < 0.7 ? 'Balanceado' : 'Más creativo'}
-                        </span>
+                  <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-3 animate-in slide-in-from-top-2">
+                    {/* Temperatura / Creatividad */}
+                    <div className="text-xs">
+                      <div className="flex justify-between mb-1">
+                        <label className="font-semibold text-slate-700">Creatividad (Temperatura)</label>
+                        <span className="text-slate-500">{Number(iaTemperature).toFixed(1)}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={iaTemperature}
+                        onChange={e => setIaTemperature(Number(e.target.value))}
+                        className="w-full accent-emerald-500"
+                      />
+                      <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                        <span>Preciso</span>
+                        <span>Creativo</span>
                       </div>
                     </div>
 
-                    {/* Top-P */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Top-P <span className="text-slate-500 font-normal">(0.0 - 1.0, opcional)</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value={iaTopP}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? '' : Math.max(0, Math.min(1, Number(e.target.value) || 0));
-                          setIaTopP(val === '' ? '' : String(val));
-                        }}
-                        placeholder="Auto (no configurado)"
-                        className="w-full rounded-lg border-2 border-slate-200 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <p className="text-[10px] text-slate-500 mt-1">Controla diversidad de tokens. Déjalo vacío para usar el valor por defecto.</p>
-                    </div>
-
-                    {/* Top-K */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Top-K <span className="text-slate-500 font-normal">(entero, opcional)</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={iaTopK}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? '' : Math.max(1, Number(e.target.value) || 1);
-                          setIaTopK(val === '' ? '' : String(val));
-                        }}
-                        placeholder="Auto (no configurado)"
-                        className="w-full rounded-lg border-2 border-slate-200 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <p className="text-[10px] text-slate-500 mt-1">Limita tokens candidatos. Déjalo vacío para usar el valor por defecto.</p>
-                    </div>
-
-                    {/* Max Output Tokens */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Max Output Tokens <span className="text-slate-500 font-normal">(opcional)</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="100"
-                        step="100"
-                        value={iaMaxTokens}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? '' : Math.max(100, Number(e.target.value) || 1200);
-                          setIaMaxTokens(val === '' ? '' : String(val));
-                        }}
-                        placeholder="Auto (calculado según cantidad)"
-                        className="w-full rounded-lg border-2 border-slate-200 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <p className="text-[10px] text-slate-500 mt-1">Máximo de tokens en la respuesta. Se calcula automáticamente si no se especifica.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Top‑P</label>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          value={iaTopP}
+                          onChange={(e) => setIaTopP(e.target.value)}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                          placeholder="(vacío)"
+                        />
+                        <p className="mt-1 text-[10px] text-slate-500">0–1 (vacío = default)</p>
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Top‑K</label>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min="1"
+                          step="1"
+                          value={iaTopK}
+                          onChange={(e) => setIaTopK(e.target.value)}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                          placeholder="(vacío)"
+                        />
+                        <p className="mt-1 text-[10px] text-slate-500">Entero (vacío = default)</p>
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Max tokens</label>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min="64"
+                          step="64"
+                          value={iaMaxTokens}
+                          onChange={(e) => setIaMaxTokens(e.target.value)}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                          placeholder="(vacío)"
+                        />
+                        <p className="mt-1 text-[10px] text-slate-500">Más alto = respuestas más largas</p>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -2614,6 +2775,12 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                       <span className="capitalize">{iaNivel}</span>
                     </div>
                     <div className="flex items-center gap-2">
+                      <span className="font-medium">Idioma:</span>
+                      <span>
+                        {iaIdioma === 'auto' ? 'Auto' : iaIdioma === 'es' ? 'Español' : iaIdioma === 'en' ? 'Inglés' : 'Mixto'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <span className="font-medium">Cantidad:</span>
                       <span>{iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''} ({iaCountMultiple} múltiple, {iaCountVerdaderoFalso} V/F, {iaCountCorta} corta)</span>
                     </div>
@@ -2642,8 +2809,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               </div>
             </div>
 
-            {/* Footer con botones */}
-            <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-t border-slate-200 bg-slate-50">
+            {/* Footer con botones - siempre visible */}
+            <div className="flex-shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 border-t border-slate-200 bg-slate-50">
               <div className="text-[11px] text-slate-500 flex items-center gap-2">
                 {cooldownMs > 0 && (
                   <span className="inline-flex items-center gap-1 text-amber-600">
@@ -2686,6 +2853,33 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 </button>
               </div>
             </div>
+
+            {/* CSS local: ocultar barra de scroll manteniendo scroll */}
+            <style>{`
+              .mqerk-hide-scrollbar {
+                -ms-overflow-style: none; /* IE/Edge legacy */
+                scrollbar-width: none; /* Firefox */
+                scrollbar-color: transparent transparent; /* Firefox */
+              }
+              .mqerk-hide-scrollbar::-webkit-scrollbar {
+                width: 0 !important;
+                height: 0 !important;
+                display: none !important;
+              }
+              .mqerk-hide-scrollbar::-webkit-scrollbar-thumb {
+                background: transparent !important;
+              }
+              .mqerk-hide-scrollbar::-webkit-scrollbar-track {
+                background: transparent !important;
+              }
+
+              /* Pantallas con poca altura: modal más compacto */
+              @media (max-height: 720px) {
+                .mqerk-sim-ia-dialog {
+                  max-height: 70vh;
+                }
+              }
+            `}</style>
           </div>
         </div>
       )}
@@ -2889,192 +3083,19 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         </div>
       )}
 
-      {/* Review modal */}
-      {reviewOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 px-0.5 mt-16">
-          <div className="w-full max-w-4xl rounded-lg bg-white shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between border-b px-2 py-1.5">
-              <div className="flex items-center gap-3">
-                <h3 className="text-base font-semibold text-slate-900">
-                  {reviewHeader.simulacion?.titulo || 'Simulación'} • {reviewHeader.estudiante?.nombre || 'Alumno'}
-                </h3>
-                {reviewHeader.estudiante?.totalIntentos > 1 && (
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs text-slate-600 font-medium">Intento:</label>
-                    <select
-                      value={selectedIntentoReview}
-                      onChange={(e) => handleChangeIntentoReview(Number(e.target.value))}
-                      className="text-xs border border-slate-300 rounded-md px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      {Array.from({ length: reviewHeader.estudiante.totalIntentos }, (_, i) => i + 1).map(num => (
-                        <option key={num} value={num}>
-                          {num === 1 ? `Intento ${num} (Oficial)` : `Intento ${num} (Práctica)`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-              <button onClick={() => setReviewOpen(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
-            </div>
-            <div className="max-h-[70vh] overflow-y-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {reviewLoading ? (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Cargando…</div>
-              ) : reviewData && Array.isArray(reviewData.preguntas) ? (
-                <div className="space-y-4">
-                  {/* Analizador de fallos repetidos */}
-                  {reviewHeader.estudiante?.totalIntentos >= 2 && (
-                    <AnalizadorFallosRepetidos
-                      tipo="simulacion"
-                      id={resultsSimMeta?.id}
-                      idEstudiante={reviewHeader.estudiante?.id}
-                      totalIntentos={reviewHeader.estudiante?.totalIntentos}
-                    />
-                  )}
-                  
-                  {/* Separar preguntas por tipo */}
-                  {(() => {
-                    const preguntasOpcionMultiple = reviewData.preguntas.filter(p => p.tipo === 'opcion_multiple' || p.tipo === 'verdadero_falso' || p.tipo === 'multi_respuesta');
-                    const respuestasCortas = reviewData.preguntas.filter(p => p.tipo === 'respuesta_corta');
-                    
-                    return (
-                      <>
-                        {/* Preguntas de opción múltiple */}
-                        {preguntasOpcionMultiple.length > 0 && (
-                          <div className="space-y-2.5">
-                            {preguntasOpcionMultiple.map((p, idx) => {
-                              const sel = new Set(p.seleccionadas || []);
-                              const corr = !!p.correcta;
-                              return (
-                                <div key={p.id || idx} className="rounded border border-slate-200 p-2">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="text-sm font-medium text-slate-900">{p.orden || (idx + 1)}. <MathText text={p.enunciado || ''} /></div>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${corr ? 'bg-green-50 text-green-700 border-green-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{corr ? 'Correcta' : 'Incorrecta'}</span>
-                                  </div>
-                                  <ul className="mt-1.5 space-y-1">
-                                    {(p.opciones || []).map((o) => {
-                                      const isSel = sel.has(o.id);
-                                      const isOk = o.es_correcta === 1;
-                                      const base = 'text-xs rounded-lg border px-3 py-1.5 flex items-center justify-between';
-                                      // Colores según el estado: seleccionada y correcta (verde), seleccionada e incorrecta (rojo), solo correcta (verde claro), ninguna (gris)
-                                      const cl = isSel && isOk ? 'bg-emerald-50 border-emerald-300' : isSel && !isOk ? 'bg-rose-50 border-rose-300' : !isSel && isOk ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200';
-                                      return (
-                                        <li key={o.id} className={`${base} ${cl}`}>
-                                          <span><MathText text={o.texto || ''} /></span>
-                                          <div className="flex items-center gap-2">
-                                            {isSel && <span className="text-[10px] font-bold text-slate-700">✓ Seleccionada</span>}
-                                            {isOk && <span className="text-[10px] font-bold text-green-700">Correcta</span>}
-                                          </div>
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {/* Sección de Respuestas Cortas para Revisión Manual */}
-                        {respuestasCortas.length > 0 && (
-                          <div className="mt-6 pt-6 border-t border-gray-200">
-                            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                              <span>📝</span>
-                              <span>Respuestas Cortas para Revisión</span>
-                              {respuestasCortas.filter(p => {
-                                // Verificar si requiere revisión (baja confianza o estado manual_review)
-                                const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
-                                return requiereRevision;
-                              }).length > 0 && (
-                                <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full">
-                                  {respuestasCortas.filter(p => {
-                                    const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
-                                    return requiereRevision;
-                                  }).length} requieren revisión
-                                </span>
-                              )}
-                            </h4>
-                            
-                            <div className="space-y-4">
-                              {respuestasCortas.map((pregunta) => {
-                                // Obtener respuesta esperada (opción correcta)
-                                const respuestaEsperada = pregunta.opciones?.find(o => o.es_correcta === 1)?.texto;
-                                
-                                if (!respuestaEsperada) return null;
-                                
-                                // Construir objeto respuesta para el componente
-                                // Usar los datos disponibles en la pregunta y mapear a la estructura esperada
-                                // Para simulaciones: correcta se determina desde calificacion_confianza cuando es manual (100 = correcta, 0 = incorrecta)
-                                const correctaValue = pregunta.calificacion_metodo === 'manual' && pregunta.calificacion_confianza != null
-                                  ? (pregunta.calificacion_confianza === 100 ? 1 : 0)
-                                  : (pregunta.correcta ? 1 : 0);
-                                
-                                // Validar que tenemos id_respuesta antes de crear el componente
-                                // Si no hay id_respuesta, no podemos hacer revisión manual
-                                if (!pregunta.id_respuesta) {
-                                  console.warn('[SimuladoresGen] Respuesta corta sin id_respuesta:', {
-                                    pregunta_id: pregunta.id,
-                                    valor_texto: pregunta.valor_texto,
-                                    calificacion_status: pregunta.calificacion_status
-                                  });
-                                  // Mostrar mensaje de que la respuesta aún no está disponible para revisión
-                                  return (
-                                    <div key={pregunta.id} className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                      <p className="text-sm text-yellow-800">
-                                        ⚠️ Esta respuesta aún no está disponible para revisión manual. 
-                                        La respuesta se está procesando automáticamente.
-                                      </p>
-                                    </div>
-                                  );
-                                }
-                                
-                                const respuestaObj = {
-                                  id: pregunta.id_respuesta, // DEBE ser el ID de la respuesta, no de la pregunta
-                                  valor_texto: pregunta.valor_texto || null,
-                                  texto_libre: pregunta.valor_texto || null,
-                                  correcta: correctaValue,
-                                  calificacion_status: pregunta.calificacion_status || 'pending',
-                                  calificacion_metodo: pregunta.calificacion_metodo || null,
-                                  calificacion_confianza: pregunta.calificacion_confianza != null ? Number(pregunta.calificacion_confianza) : null,
-                                  revisada_por: pregunta.revisada_por || null,
-                                  notas_revision: pregunta.notas_revision || null
-                                };
-                                
-                                return (
-                                  <ManualReviewShortAnswer
-                                    key={pregunta.id}
-                                    respuesta={respuestaObj}
-                                    pregunta={pregunta.enunciado}
-                                    respuestaEsperada={respuestaEsperada}
-                                    tipo="simulacion"
-                                    onReviewComplete={(updatedData) => {
-                                      // Recargar datos del intento actualmente seleccionado
-                                      if (resultsSimMeta?.id && reviewHeader.estudiante?.id) {
-                                        getSimulacionIntentoReview(resultsSimMeta.id, reviewHeader.estudiante.id, selectedIntentoReview)
-                                          .then(({ data }) => setReviewData(data?.data || null))
-                                          .catch(err => console.error('Error al recargar datos:', err));
-                                      }
-                                    }}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              ) : (
-                <div className="text-slate-600 text-sm">No se pudo cargar el detalle del intento.</div>
-              )}
-            </div>
-            <div className="flex justify-end gap-2 border-t px-2 py-1.5">
-              <button onClick={() => setReviewOpen(false)} className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Cerrar</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Review modal - Usando componente reutilizable */}
+      <ReviewModal
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        tipo="simulacion"
+        idEvaluacion={resultsSimMeta?.id}
+        estudiante={reviewHeader.estudiante ? {
+          id: reviewHeader.estudiante.id,
+          nombre: reviewHeader.estudiante.nombre,
+          totalIntentos: reviewHeader.estudiante.totalIntentos
+        } : null}
+        titulo={reviewHeader.simulacion?.titulo}
+      />
 
       {/* Modal de confirmación genérico */}
       {confirmModal.open && (
@@ -3096,6 +3117,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         <SuccessModal
           message={successModal.message}
           count={successModal.count}
+          willRedirect={successModal.willRedirect}
           onClose={() => setSuccessModal(prev => ({ ...prev, open: false }))}
         />
       )}
@@ -3104,7 +3126,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 }
 
 // Componente de modal de éxito estético
-function SuccessModal({ message, count = 0, onClose }) {
+function SuccessModal({ message, count = 0, willRedirect = false, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none">
       <div className="relative w-full max-w-md pointer-events-auto animate-in fade-in zoom-in duration-300">
@@ -3123,7 +3145,7 @@ function SuccessModal({ message, count = 0, onClose }) {
           {/* Contenido */}
           <div className="px-6 py-5 text-center">
             <p className="text-lg font-semibold text-slate-900 mb-2">{message}</p>
-            {count > 0 && (
+            {willRedirect && (
               <p className="text-sm text-slate-600">
                 Serás redirigido al editor en unos momentos...
               </p>

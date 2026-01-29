@@ -29,23 +29,13 @@ function readCookie(name) {
 instance.interceptors.request.use(
         (config) => {
                 try {
-                        // 1) Si ya viene Authorization, respetarlo
+                        // Si ya viene Authorization, respetarlo.
                         if (!config.headers.Authorization && !config.headers.authorization) {
-                                let bearer = localStorage.getItem('token'); // fallback legacy
-                                if (!bearer && typeof document !== 'undefined') {
-                                        const path = (typeof window !== 'undefined' && window.location && window.location.pathname) ? window.location.pathname : '';
-                                        // Prioridad por contexto de ruta para entornos multi-rol
-                                        let order = ['access_token', 'token_admin', 'token_asesor', 'token_estudiante', 'token'];
-                                        if (path.startsWith('/asesor')) order = ['token_asesor', 'token_admin', 'access_token', 'token_estudiante', 'token'];
-                                        else if (path.startsWith('/alumno')) order = ['token_estudiante', 'access_token', 'token_asesor', 'token_admin', 'token'];
-                                        else if (path.startsWith('/admin') || path.startsWith('/administrativo')) order = ['token_admin', 'access_token', 'token_asesor', 'token_estudiante', 'token'];
-                                        for (const name of order) {
-                                                const v = readCookie(name);
-                                                if (v) { bearer = v; break; }
-                                        }
-                                }
-                                if (bearer) {
-                                        config.headers.Authorization = `Bearer ${bearer}`;
+                                // Preferimos cookies httpOnly (withCredentials: true) para multi-rol.
+                                // Solo usamos localStorage como fallback legacy.
+                                const bearer = localStorage.getItem('token');
+                                if (bearer && typeof bearer === 'string' && bearer.trim()) {
+                                        config.headers.Authorization = `Bearer ${bearer.trim()}`;
                                 }
                         }
                 } catch { }

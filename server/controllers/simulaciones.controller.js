@@ -437,13 +437,41 @@ export const getReviewSimulacionIntento = async (req, res) => {
         }
       }
 
+      // ✅ CRÍTICO: Extraer imagen de la pregunta si existe
+      let preguntaImagen = null;
+      if (p.imagen) {
+        preguntaImagen = p.imagen;
+      } else if (p.image) {
+        preguntaImagen = p.image;
+      } else if (p.metadata_json) {
+        try {
+          const metadata = JSON.parse(p.metadata_json);
+          preguntaImagen = metadata.imagen || metadata.image || null;
+        } catch {}
+      }
+      
       const preguntaObj = {
         id: p.id,
         orden: p.orden,
         enunciado: p.enunciado,
         tipo: p.tipo,
         puntos: p.puntos,
-        opciones: (p.opciones || []).map(o => ({ id: o.id, texto: o.texto, es_correcta: o.es_correcta })),
+        imagen: preguntaImagen, // ✅ Incluir imagen de la pregunta
+        opciones: (p.opciones || []).map(o => {
+          // ✅ CRÍTICO: Extraer imagen de la opción si existe
+          let opcionImagen = null;
+          if (o.imagen) {
+            opcionImagen = o.imagen;
+          } else if (o.image) {
+            opcionImagen = o.image;
+          } else if (o.metadata_json) {
+            try {
+              const metadata = JSON.parse(o.metadata_json);
+              opcionImagen = metadata.imagen || metadata.image || null;
+            } catch {}
+          }
+          return { id: o.id, texto: o.texto, es_correcta: o.es_correcta, imagen: opcionImagen }; // ✅ Incluir imagen de la opción
+        }),
         seleccionadas,
         valor_texto,
         correcta,
@@ -544,23 +572,7 @@ export const createSimulacion = async (req, res) => {
     // ✅ IMPORTANTE: Validar que el título no esté vacío (trim para eliminar espacios)
     const tituloTrimmed = titulo ? String(titulo).trim() : '';
     
-    // ✅ Log detallado para debugging
-    console.log('[createSimulacion] Validación de título:', {
-      tituloRecibido: titulo,
-      tituloTipo: typeof titulo,
-      tituloTrimmed,
-      tituloTrimmedLength: tituloTrimmed.length,
-      tituloVacio: !tituloTrimmed,
-      tituloMenorA3: tituloTrimmed.length < 3,
-      bodyCompleto: req.body
-    });
-    
     if (!tituloTrimmed || tituloTrimmed.length < 3) {
-      console.error('[createSimulacion] ❌ ERROR: Título inválido rechazado:', {
-        tituloRecibido: titulo,
-        tituloTrimmed,
-        tituloTrimmedLength: tituloTrimmed.length
-      });
       return res.status(400).json({ message: 'El título del simulador es requerido y debe tener al menos 3 caracteres' });
     }
     
@@ -584,30 +596,27 @@ export const createSimulacion = async (req, res) => {
       }
     }
     
-    // Log para debugging
-    console.log('[createSimulacion] Recibido:', {
-      titulo: tituloTrimmed,
-      descripcion: descripcion ? String(descripcion).trim().substring(0, 50) : null,
-      id_areaRecibido: id_area,
-      id_areaFinal: idAreaFinal,
-      tipoIdArea: typeof id_area,
-      tienePreguntas: Array.isArray(preguntas) && preguntas.length > 0,
-      cantidadPreguntas: Array.isArray(preguntas) ? preguntas.length : 0,
-      fecha_limite: fecha_limite,
-      time_limit_min: time_limit_min,
-      publico: publico,
-      activo: activoValue,
-      grupos: gruposVal
-    });
 
-    // ✅ IMPORTANTE: Usar título validado (trimmed) y asegurar descripción
-    const descripcionFinal = descripcion ? String(descripcion).trim() : null;
+    // ✅ CRÍTICO: Usar título validado (trimmed) y asegurar descripción
+    // IMPORTANTE: NO hacer trim de descripcion porque puede eliminar contenido válido
+    // Solo convertir a string si no es null/undefined, pero mantener el valor original
+    let descripcionFinal = null;
+    if (descripcion !== null && descripcion !== undefined) {
+      // Convertir a string pero NO hacer trim (puede tener espacios válidos al inicio/final)
+      descripcionFinal = String(descripcion);
+      // Solo convertir a null si después de convertir a string está completamente vacío
+      if (descripcionFinal.length === 0) {
+        descripcionFinal = null;
+      }
+    }
+    
+    // ✅ Igual que en quizzes.controller.js: guardar time_limit_min tal cual viene
     const created = await Sims.createSimulacion({ 
       titulo: tituloTrimmed, // Usar título validado
-      descripcion: descripcionFinal || null, 
+      descripcion: descripcionFinal, // ✅ Mantener string vacío si viene vacío, null solo si no se proporciona 
       id_area: idAreaFinal, // ✅ Usar id_area normalizado
       fecha_limite, 
-      time_limit_min, 
+      time_limit_min: time_limit_min || null, // ✅ Igual que quizzes: guardar tal cual viene
       publico, 
       activo: activoValue, 
       creado_por, 
@@ -616,10 +625,6 @@ export const createSimulacion = async (req, res) => {
     if (Array.isArray(preguntas) && preguntas.length) {
       try { 
         await Sims.replacePreguntas(created.id, preguntas);
-        console.log('[createSimulacion] Preguntas guardadas exitosamente:', {
-          simulacionId: created.id,
-          cantidadPreguntas: preguntas.length
-        });
       } catch (e) { 
         console.error('createSimulacion: replacePreguntas ERROR', e?.message || e);
         console.error('Stack:', e?.stack);
@@ -627,26 +632,6 @@ export const createSimulacion = async (req, res) => {
     }
     const fresh = await Sims.getSimulacionById(created.id);
     
-    // ✅ Log para verificar qué se guardó
-    console.log('[createSimulacion] Simulador guardado en BD:', {
-      id: fresh?.id,
-      titulo: fresh?.titulo,
-      tituloTipo: typeof fresh?.titulo,
-      tituloVacio: !fresh?.titulo || String(fresh?.titulo).trim() === '',
-      tituloLength: fresh?.titulo ? String(fresh?.titulo).length : 0,
-      descripcion: fresh?.descripcion ? String(fresh.descripcion).substring(0, 50) : null,
-      descripcionTipo: typeof fresh?.descripcion,
-      descripcionVacia: !fresh?.descripcion || String(fresh?.descripcion).trim() === '',
-      descripcionLength: fresh?.descripcion ? String(fresh?.descripcion).length : 0,
-      id_area: fresh?.id_area,
-      publico: fresh?.publico,
-      activo: fresh?.activo,
-      // Comparar con lo que se envió
-      tituloEnviado: tituloTrimmed,
-      descripcionEnviada: descripcionFinal ? String(descripcionFinal).substring(0, 50) : null,
-      tituloCoincide: fresh?.titulo === tituloTrimmed,
-      todosLosCampos: Object.keys(fresh || {})
-    });
 
     // ✅ SOLO notificar a estudiantes si la simulación está PUBLICADA (publico = 1)
     // No enviar notificaciones si está en borrador
@@ -670,7 +655,7 @@ export const createSimulacion = async (req, res) => {
               AND sd.id IS NULL
           `, gruposNormalizados);
           rows = gruposRows;
-          console.log(`[createSimulacion] Notificando a ${rows.length} estudiantes activos de grupos ${JSON.stringify(gruposVal)}`);
+          // Notificando a estudiantes de grupos
         }
         // Si NO hay grupos pero hay área, notificar a todos los estudiantes con acceso a esa área
         else if (fresh?.id_area) {
@@ -688,7 +673,7 @@ export const createSimulacion = async (req, res) => {
             rows = areaRows;
             console.log(`[createSimulacion] Notificando a ${rows.length} estudiantes activos con acceso al área ${fresh.id_area}`);
           } catch (areaErr) {
-            console.error('[createSimulacion] Error al obtener estudiantes por área:', areaErr);
+            // Error al obtener estudiantes por área
           }
         }
         // Si es general (sin grupos ni área), notificar a todos los estudiantes activos
@@ -705,7 +690,7 @@ export const createSimulacion = async (req, res) => {
             rows = allRows;
             console.log(`[createSimulacion] Notificando a ${rows.length} estudiantes activos (simulación general)`);
           } catch (allErr) {
-            console.error('[createSimulacion] Error al obtener todos los estudiantes:', allErr);
+            // Error al obtener todos los estudiantes
           }
         }
         
@@ -727,12 +712,12 @@ export const createSimulacion = async (req, res) => {
           rows.forEach((r, idx) => {
             broadcastStudent(r.id, { type: 'notification', payload: { kind: 'assignment', simulacion_id: fresh.id, title: 'Nueva simulación', message: fresh.titulo, notif_id: idMap[idx] } });
           });
-          console.log(`[createSimulacion] Notificaciones enviadas a ${rows.length} estudiantes (simulación publicada)`);
+          // Notificaciones enviadas
         } else {
           console.log('[createSimulacion] Simulación publicada pero no se encontraron estudiantes para notificar');
         }
       } else if (!isPublished) {
-        console.log('[createSimulacion] Simulación creada como borrador, no se enviaron notificaciones');
+        // Simulación creada como borrador
       }
     } catch (e) { console.error('notif createSimulacion', e); }
 
@@ -770,17 +755,14 @@ export const updateSimulacion = async (req, res) => {
       const tituloTrimmed = titulo ? String(titulo).trim() : '';
       if (!tituloTrimmed || tituloTrimmed.length < 3) {
         // Si el título está vacío o es muy corto, usar el título existente (no actualizar)
-        console.warn('[updateSimulacion] Título inválido recibido, preservando título existente:', {
-          tituloRecibido: titulo,
-          tituloExistente: existing.titulo,
-          simulacionId: id
-        });
+        // Título inválido recibido, preservando título existente
         tituloFinal = undefined; // No incluir en la actualización
       } else {
         tituloFinal = tituloTrimmed;
       }
     }
 
+    // ✅ Igual que en quizzes: actualizar time_limit_min si viene en el payload
     const updated = await Sims.updateSimulacionMeta(id, { titulo: tituloFinal, descripcion, id_area, fecha_limite, time_limit_min, publico, activo, grupos });
     if (Array.isArray(preguntas)) {
       await Sims.replacePreguntas(id, preguntas);
@@ -827,7 +809,7 @@ export const updateSimulacion = async (req, res) => {
                 AND sd.id IS NULL
             `, [existing.id_area]);
             rows = areaRows;
-            console.log(`[updateSimulacion] Notificando a ${rows.length} estudiantes activos con acceso al área ${existing.id_area}`);
+            // Notificando a estudiantes del área
           } catch (areaErr) {
             console.error('[updateSimulacion] Error al obtener estudiantes por área:', areaErr);
           }
@@ -844,7 +826,7 @@ export const updateSimulacion = async (req, res) => {
               LIMIT 500
             `);
             rows = allRows;
-            console.log(`[updateSimulacion] Notificando a ${rows.length} estudiantes activos (simulación general)`);
+            // Notificando a estudiantes (simulación general)
           } catch (allErr) {
             console.error('[updateSimulacion] Error al obtener todos los estudiantes:', allErr);
           }
@@ -868,9 +850,9 @@ export const updateSimulacion = async (req, res) => {
           rows.forEach((r, idx) => {
             broadcastStudent(r.id, { type: 'notification', payload: { kind: 'assignment', simulacion_id: Number(id), title: 'Nueva simulación', message: titulo || existing.titulo, notif_id: idMap[idx] } });
           });
-          console.log(`[updateSimulacion] Notificaciones enviadas a ${rows.length} estudiantes (simulación publicada)`);
+          // Notificaciones enviadas
         } else {
-          console.log('[updateSimulacion] Simulación publicada pero no se encontraron estudiantes para notificar');
+          // Simulación publicada pero no se encontraron estudiantes
         }
       }
     } catch (e) { console.error('notif updateSimulacion', e); }

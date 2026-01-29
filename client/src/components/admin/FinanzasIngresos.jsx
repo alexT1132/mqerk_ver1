@@ -975,7 +975,7 @@ export default function FinanzasIngresos() {
 
       {/* Modal Gráfica */}
       {showChart && (
-  <div className="fixed inset-0 z-[9999] overflow-y-auto p-4 pt-[92px] sm:pt-[112px] pb-8 bg-black/40">
+  <div className="fixed inset-0 z-[9999] overflow-y-auto p-4 pt-12 sm:pt-16 md:pt-20 pb-8 bg-black/40">
           <div className="bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden mx-auto my-6 sm:my-8">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <div>
@@ -1023,7 +1023,7 @@ export default function FinanzasIngresos() {
 
       {/* Modal Marcar Asistencia */}
       {asistOpen && asistRow && (
-  <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-[92px] sm:pt-[112px] pb-6 bg-black/40">
+  <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-12 sm:pt-16 md:pt-20 pb-6 bg-black/40">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden mx-auto my-6 sm:my-8">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-base font-semibold text-gray-900">Marcar asistencia</h3>
@@ -1072,8 +1072,8 @@ export default function FinanzasIngresos() {
       )}
       {/* Modal Editar Ingreso */}
       {editOpen && editData && (
-  <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-[92px] sm:pt-[112px] pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[90dvh] mx-auto my-6 sm:my-8">
+  <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-12 sm:pt-16 md:pt-20 pb-6 bg-black/40">
+          <div className="bg-white w-full max-w-[95vw] sm:max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[calc(100vh-14rem)] mx-auto">
             <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
               <h3 className="text-base font-semibold text-gray-900">Editar ingreso</h3>
               <button onClick={closeEdit} className="text-gray-500 hover:text-gray-700">✕</button>
@@ -1143,14 +1143,14 @@ export default function FinanzasIngresos() {
 
       {/* Modal Nuevo Ingreso */}
       {showModal && (
-  <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-[92px] sm:pt-[112px] pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[90dvh] mx-auto my-6 sm:my-8">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+  <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-20 sm:pt-24 md:pt-28 pb-6 bg-black/40">
+          <div className="bg-white w-full max-w-md rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-300 overflow-hidden max-h-[calc(100vh-8rem)] flex flex-col mx-auto">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 flex-shrink-0">
               <h3 className="text-base font-semibold text-gray-900">Nuevo ingreso</h3>
               <button onClick={closeModal} className="text-gray-500 hover:text-gray-700">✕</button>
             </div>
-            <form onSubmit={onSubmit} className="flex-1 flex flex-col">
-              <div className="px-4 sm:px-5 py-4 overflow-y-auto overscroll-contain">
+            <form onSubmit={onSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="px-4 sm:px-5 py-4 overflow-y-auto overscroll-contain flex-1 min-h-0 no-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Alumno</label>
@@ -1265,8 +1265,8 @@ export default function FinanzasIngresos() {
 
       {/* Modal de Confirmación de Asesorías */}
       {showConfirmacionModal && (
-        <div className="fixed inset-0 z-[10000] bg-black/40 p-3 sm:p-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-[10000] bg-black/40 p-3 sm:p-4 pt-12 sm:pt-16 md:pt-20 flex items-center justify-center">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden max-h-[calc(100vh-14rem)] flex flex-col">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Confirmar Asesorías Realizadas</h3>

@@ -1243,7 +1243,7 @@ const Feedback_Alumno_Comp = () => {
             if (e.target === e.currentTarget) closeViewTaskModal();
           }}
         >
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-4xl 2xl:max-w-5xl max-h-[85vh] sm:max-h-[75vh] transform transition-all duration-300 scale-100 border-2 border-violet-200/50 ring-2 ring-violet-100/50 flex flex-col overflow-hidden">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-4xl 2xl:max-w-5xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] transform transition-all duration-300 scale-100 border-2 border-violet-200/50 ring-2 ring-violet-100/50 flex flex-col overflow-hidden">
             {/* Header con gradiente */}
             <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 shadow-lg">
               <div className="flex-1 min-w-0 pr-2">

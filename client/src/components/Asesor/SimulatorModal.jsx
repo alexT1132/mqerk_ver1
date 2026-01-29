@@ -22,6 +22,8 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
     publico: false, // Borrador por defecto (no publicado)
     horas: 0,
     minutos: 0,
+    intentosMode: 'unlimited', // 'unlimited' | 'limited'
+    maxIntentos: 3,
     grupos: [],
     // ✅ CRÍTICO: Preservar areaId y areaTitle cuando se genera con IA
     areaId: null,
@@ -48,7 +50,20 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
     }
   }, [open, gruposAsesor.length]);
 
-  // Reset cuando se abra/cierre
+  // Reset cuando se abra/cierre o cuando cambie initialForm (importante para modo edición)
+  // Usar un string serializado de initialForm para detectar cambios de contenido, no solo de referencia
+  const initialFormKey = initialForm ? JSON.stringify({
+    titulo: initialForm.titulo,
+    nombre: initialForm.nombre,
+    instrucciones: initialForm.instrucciones,
+    descripcion: initialForm.descripcion,
+    fechaLimite: initialForm.fechaLimite,
+    horas: initialForm.horas,
+    minutos: initialForm.minutos,
+    grupos: initialForm.grupos,
+    areaId: initialForm.areaId
+  }) : '';
+  
   useEffect(() => {
     if (open) {
       setStep(1);
@@ -57,36 +72,56 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
         const gruposInicial = initialForm.grupos
           ? (Array.isArray(initialForm.grupos) ? initialForm.grupos : String(initialForm.grupos).split(',').map(s => s.trim()).filter(Boolean))
           : [];
-        setForm({
+        
+        const newForm = {
           titulo: initialForm.titulo || initialForm.nombre || "",
-          instrucciones: initialForm.instrucciones || initialForm.descripcion || "", // Instrucciones para el usuario
+          // ✅ CRÍTICO: Priorizar descripcion sobre instrucciones para preservar la descripción generada por IA
           descripcion: initialForm.descripcion || initialForm.instrucciones || "", // ✅ Preservar descripción generada por IA
+          instrucciones: initialForm.instrucciones || initialForm.descripcion || "", // Instrucciones para el usuario (fallback)
           nombre: initialForm.nombre || initialForm.titulo || "",
-          fechaLimite: initialForm.fechaLimite || "",
-          publico: initialForm.publico ?? true,
+          fechaLimite: initialForm.fechaLimite || initialForm.fecha_limite || "",
+          publico: initialForm.publico ?? (mode === 'edit' ? false : true),
           horas: Number(initialForm.horas || 0),
           minutos: Number(initialForm.minutos || 0),
+          intentosMode: initialForm.intentosMode || 'unlimited',
+          maxIntentos: Number(initialForm.maxIntentos ?? 3),
           grupos: gruposInicial,
           // ✅ CRÍTICO: Preservar areaId y areaTitle del initialForm (viene de iaPrefill cuando se genera con IA)
           areaId: initialForm.areaId !== undefined ? initialForm.areaId : null,
           areaTitle: initialForm.areaTitle !== undefined ? initialForm.areaTitle : null
-        });
+        };
         
-        // Log para debugging
-        if (initialForm.areaId !== undefined || initialForm.areaTitle !== undefined) {
-          console.log('[SimulatorModal] initialForm con área preservada:', {
-            areaId: initialForm.areaId,
-            areaTitle: initialForm.areaTitle
-          });
+        // ✅ Log crítico: solo si no hay descripción cuando viene de IA
+        if ((initialForm.descripcion || initialForm.instrucciones) && (!newForm.descripcion || newForm.descripcion.length === 0)) {
+          console.warn('[SimulatorModal] ⚠️ Descripción de IA no se cargó correctamente');
         }
+        
+        setForm(newForm);
       } else {
         // Reset grupos al abrir sin initialForm
         setForm((prev) => ({ ...prev, grupos: [] }));
       }
       // foco inicial
       setTimeout(() => firstFocusable.current?.focus(), 50);
+    } else {
+        // Reset cuando se cierra
+      setForm({
+        titulo: "",
+        instrucciones: "",
+        descripcion: "",
+        nombre: "",
+        fechaLimite: "",
+        publico: false,
+        horas: 0,
+        minutos: 0,
+        intentosMode: 'unlimited',
+        maxIntentos: 3,
+        grupos: [],
+        areaId: null,
+        areaTitle: null
+      });
     }
-  }, [open, initialForm]);
+  }, [open, initialFormKey, mode]); // ✅ Usar initialFormKey en lugar de initialForm para detectar cambios de contenido
 
   // Cerrar con ESC
   useEffect(() => {
@@ -105,10 +140,13 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
 
   // Validaciones para crear simulador
   const totalMinutes = Math.max(0, Math.trunc(Number(form.horas || 0)) * 60) + Math.max(0, Math.trunc(Number(form.minutos || 0)));
+  // ✅ CRÍTICO: Si no se especifica tiempo, usar 30 minutos por defecto
+  const finalMinutes = totalMinutes > 0 ? totalMinutes : 30;
   const hasFecha = form.fechaLimite && form.fechaLimite.trim() !== '';
   const fechaValida = hasFecha ? (new Date(form.fechaLimite + 'T00:00:00') >= new Date(new Date().setHours(0, 0, 0, 0))) : false;
   const hasGrupos = Array.isArray(form.grupos) && form.grupos.length > 0;
-  const hasTiempo = totalMinutes > 0;
+  // ✅ Siempre hay tiempo (30 min por defecto), así que hasTiempo siempre es true
+  const hasTiempo = true;
 
   const canCreate = form.nombre.trim().length >= 3 && hasFecha && fechaValida && hasGrupos && hasTiempo;
 
@@ -138,13 +176,15 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
     const tituloFinalizado = (form.titulo?.trim() || form.nombre?.trim() || tituloDelInitialForm?.trim() || tituloFinal).trim();
     
     // ✅ CRÍTICO: Si la descripción está vacía pero viene de IA, usar la de IA
-    // Prioridad: 1) form.descripcion, 2) form.instrucciones, 3) initialForm.descripcion, 4) initialForm.instrucciones
+    // Prioridad: 1) form.descripcion (si tiene contenido), 2) form.instrucciones (si tiene contenido), 3) initialForm.descripcion, 4) initialForm.instrucciones
+    // IMPORTANTE: Verificar explícitamente si form.descripcion tiene contenido, no solo si es truthy
+    const formDescripcion = form.descripcion?.trim() || '';
+    const formInstrucciones = form.instrucciones?.trim() || '';
     const descripcionFinal = (
-      form.descripcion?.trim() || 
-      form.instrucciones?.trim() || 
-      descripcionDelInitialForm?.trim() || 
-      ''
-    ).trim();
+      (formDescripcion && formDescripcion.length > 0 ? formDescripcion : null) || 
+      (formInstrucciones && formInstrucciones.length > 0 ? formInstrucciones : null) || 
+      (descripcionDelInitialForm?.trim() || '')
+    );
     
     // ✅ Log para debugging si la descripción está vacía
     if (!descripcionFinal || descripcionFinal.length === 0) {
@@ -188,18 +228,39 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
       showError('Debes seleccionar al menos un grupo.');
       return;
     }
-    if (totalMinutes <= 0) {
-      showError('Debes especificar una duración mayor a 0 (horas o minutos).');
-      return;
-    }
 
     if (!canCreate) return;
     setLoading(true);
     try {
-      // Normalizar grupos: convertir array a string separado por comas para el backend
-      const gruposFinal = Array.isArray(form.grupos) && form.grupos.length > 0
-        ? form.grupos.join(',')
-        : '';
+      // ✅ CRÍTICO: Normalizar grupos - el backend espera JSON válido o null
+      // El campo grupos tiene un CHECK constraint que requiere JSON válido: CHECK (json_valid(`grupos`))
+      let gruposFinal = null;
+      if (form.grupos) {
+        if (Array.isArray(form.grupos) && form.grupos.length > 0) {
+          // Si es array, convertir a JSON string
+          gruposFinal = JSON.stringify(form.grupos);
+        } else if (typeof form.grupos === 'string' && form.grupos.trim()) {
+          // Si es string, puede ser:
+          // 1. JSON string ya válido (ej: '["V1","M1"]')
+          // 2. String separado por comas (ej: 'V1,M1')
+          try {
+            // Intentar parsear como JSON primero
+            JSON.parse(form.grupos);
+            // Si se puede parsear, es JSON válido, usarlo tal cual
+            gruposFinal = form.grupos;
+          } catch {
+            // Si no es JSON, asumir que es string separado por comas y convertir a JSON array
+            const gruposNormalizados = form.grupos.split(',').map(s => s.trim()).filter(Boolean);
+            gruposFinal = gruposNormalizados.length > 0 ? JSON.stringify(gruposNormalizados) : null;
+          }
+        }
+      }
+      // Normalizar tiempo (convertir minutos >= 60 a horas) - igual que QuiztModal
+      const normH = Math.max(0, parseInt(form.horas ?? 0, 10) || 0);
+      const normMraw = Math.max(0, parseInt(form.minutos ?? 0, 10) || 0);
+      const addH = Math.floor(normMraw / 60);
+      const normM = normMraw % 60;
+      
       // ✅ Asegurar que título y nombre estén sincronizados antes de enviar
       // ✅ IMPORTANTE: Preservar la descripción del form (que puede venir de iaPrefill)
       // ✅ CRÍTICO: Preservar areaId y areaTitle del form (vienen de iaPrefill cuando se genera con IA)
@@ -208,23 +269,13 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
         nombre: nombreFinal, // Usar el nombre final validado (con fallback a initialForm si viene de IA)
         titulo: tituloFinalizado, // Usar el título final validado (con fallback a initialForm si viene de IA)
         descripcion: descripcionFinal || '', // ✅ Preservar descripción (con fallback a initialForm si viene de IA)
+        horas: normH + addH,
+        minutos: normM,
         grupos: gruposFinal,
         // ✅ CRÍTICO: Incluir areaId y areaTitle en el finalForm para que handleCreate los use
         areaId: form.areaId !== undefined ? form.areaId : null,
         areaTitle: form.areaTitle !== undefined ? form.areaTitle : null
       };
-      
-      // ✅ Log detallado para debugging (siempre mostrar, incluso si es null)
-      console.log('[SimulatorModal] Enviando finalForm a handleCreate:', {
-        areaId: finalForm.areaId,
-        areaTitle: finalForm.areaTitle,
-        titulo: finalForm.titulo,
-        nombre: finalForm.nombre,
-        formAreaId: form.areaId,
-        formAreaTitle: form.areaTitle,
-        tieneAreaId: finalForm.areaId !== null && finalForm.areaId !== undefined,
-        modo: mode
-      });
       if (mode === 'edit') {
         await onUpdate?.(finalForm);
       } else {
@@ -241,20 +292,20 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
+      className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6"
       aria-modal="true"
       role="dialog"
       aria-labelledby="sim-modal-title"
       onMouseDown={(e) => {
-        // clic fuera cierra
-        if (e.target === e.currentTarget) onClose?.();
+        if (!e.target.closest("[data-modal]")) onClose?.();
       }}
     >
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-
-      {/* Content */}
-      <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm -z-10" aria-hidden="true" />
+      <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-center py-2">
+        <div
+          data-modal
+          className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 max-h-[calc(100vh-3rem)] overflow-hidden flex flex-col"
+        >
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -296,8 +347,8 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
           </div>
         )}
 
-        {/* Body */}
-        <div className="px-4 py-3 sm:px-5 sm:py-4 overflow-y-auto flex-1">
+        {/* Body: min-h-0 para que haga scroll en pantallas bajas */}
+        <div className="flex-1 min-h-0 px-4 py-3 sm:px-5 sm:py-4 overflow-y-auto">
           {step === 1 ? (
             <StepOne form={form} setForm={setForm} />
           ) : (
@@ -329,15 +380,6 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all"
-            >
-              <X className="h-4 w-4" />
-              Cancelar
-            </button>
-            
             {step === 1 ? (
               <button
                 disabled={!canNext}
@@ -397,6 +439,7 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
@@ -574,12 +617,56 @@ function StepTwo({ form, setForm, gruposAsesor = [], gruposLoading = false, hasG
         <input
           type="number"
           min="0"
-          value={form.minutos}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, minutos: Number(e.target.value) }))
-          }
+          max={599}
+          value={Math.max(0, Number(form.minutos || 0))}
+          onChange={(e) => setForm((f) => ({ ...f, minutos: Math.max(0, Number(e.target.value || 0)) }))}
+          onBlur={(e) => {
+            const hr = Math.max(0, parseInt(form.horas || 0, 10) || 0);
+            const mr = Math.max(0, parseInt(e.target.value || 0, 10) || 0);
+            const addH = Math.floor(mr / 60);
+            const nm = mr % 60;
+            setForm((f) => ({ ...f, horas: hr + addH, minutos: nm }));
+          }}
           className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-200 transition-all"
         />
+        <p className="mt-1 text-[11px] leading-snug text-slate-500">Si ingresas 60 o más minutos, se sumarán a las horas automáticamente.</p>
+      </div>
+
+      {/* Intentos permitidos */}
+      <div className="sm:col-span-2">
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+          <Users className="h-3.5 w-3.5 text-violet-600" />
+          Intentos permitidos
+        </label>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700 whitespace-nowrap">
+            <input
+              type="radio"
+              name="intentosMode"
+              checked={form.intentosMode === 'unlimited'}
+              onChange={() => setForm((f) => ({ ...f, intentosMode: 'unlimited' }))}
+            />
+            Sin límite
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700 whitespace-nowrap">
+            <input
+              type="radio"
+              name="intentosMode"
+              checked={form.intentosMode === 'limited'}
+              onChange={() => setForm((f) => ({ ...f, intentosMode: 'limited' }))}
+            />
+            Límite:
+          </label>
+          <input
+            type="number"
+            min={1}
+            value={form.maxIntentos}
+            disabled={form.intentosMode !== 'limited'}
+            onChange={(e) => setForm((f) => ({ ...f, maxIntentos: Math.max(1, Number(e.target.value || 1)) }))}
+            className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm disabled:bg-slate-100 disabled:opacity-50 disabled:pointer-events-none"
+          />
+        </div>
+        <p className="mt-1 text-xs leading-snug text-slate-500">Si eliges "Sin límite", el alumno podrá intentar hasta la fecha límite.</p>
       </div>
 
       {/* Selección de grupos */}

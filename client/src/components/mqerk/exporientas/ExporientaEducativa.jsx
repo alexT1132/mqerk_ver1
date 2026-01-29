@@ -11,7 +11,7 @@ import Quinto from "../../../assets/mqerk/veranotx/05.webp";
 import Sexto from "../../../assets/mqerk/veranotx/06.webp";
 import Septimo from "../../../assets/mqerk/veranotx/07.webp";
 import { Link } from "react-router-dom";
-import Footer from "../../footer";
+import Footer from "../../../components/layout/footer";
 
 function Exporientas() {
   const [currentIndex, setCurrentIndex] = useState(0);

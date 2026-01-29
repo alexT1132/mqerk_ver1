@@ -12,7 +12,7 @@ import Once from "../../assets/mqerk/about/11.webp";
 import Doce from "../../assets/mqerk/about/12.webp";
 import Trece from "../../assets/mqerk/about/13.webp";
 import { IoIosRocket } from "react-icons/io";
-import Footer from "../../components/footer";
+import Footer from "../../components/layout/footer";
 
 function About() {
   return (

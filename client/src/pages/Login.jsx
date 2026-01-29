@@ -1,5 +1,5 @@
-import NavLogin from "../components/NavLogin";
-import LoginBody from "../components/Login";
+import NavLogin from "../components/common/auth/NavLogin";
+import LoginBody from "../components/common/auth/Login";
 
 function Login() {
   return (

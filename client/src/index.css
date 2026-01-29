@@ -80,6 +80,280 @@
   }
 }
 
+/* --------------------------------------------------------------------------------- */
+
+.modelo {
+  background-image: url('./assets/mqerk/modelo.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.Masesor1 {
+  background-image: url('./assets/mqerk/Asesores/5.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.Masesor2 {
+  background-image: url('./assets/mqerk/Asesores/7.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.Masesor3 {
+  background-image: url('./assets/mqerk/Asesores/6.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.Masesor4 {
+  background-image: url('./assets/mqerk/Asesores/9.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.Masesor5 {
+  background-image: url('./assets/mqerk/Asesores/8.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* -------------------------------------------------------------------------- */
+
+.fancy-button {
+  position: relative;
+  color: white;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.button-text {
+  position: relative;
+  z-index: 2;
+}
+
+.border-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.border-rect {
+  fill: none;
+  stroke: white;
+  stroke-width: 2;
+  stroke-dasharray: 276;
+  stroke-dashoffset: 276;
+  animation: draw-reverse 4s ease-in-out infinite alternate;
+  rx: 15;
+  ry: 20;
+}
+
+.preview_fondo{
+  background-image: url('./assets/mqerk/preview_fondo1.png');
+  background-size: cover;         /* La imagen cubre todo el div */
+    background-position: center;    /* Centrada */
+    background-repeat: no-repeat;   /* No se repite */
+}
+
+.header-plan{
+  background-image: url('./assets/mqerk/preview/header.png');
+  background-size: cover;         /* La imagen cubre todo el div */
+  background-position: center;    /* Centrada */
+  background-repeat: no-repeat;   /* No se repite */
+}
+
+.about{
+  background-image: url('./assets/mqerk/about/6.jpg');
+  background-size: cover;         /* La imagen cubre todo el div */
+  background-position: center;    /* Centrada */
+  background-repeat: no-repeat;   /* No se repite */
+}
+
+/* ================== Scrollbar visibility (mobile) ================== */
+/* Utilidad: ocultar barras de desplazamiento sin deshabilitar el scroll */
+.no-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+.no-scrollbar::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+
+/* Ocultar scrollbars del contenedor principal en móviles para ahorrar espacio */
+@media (max-width: 640px) {
+  html, body, #root { -ms-overflow-style: none; scrollbar-width: thin; }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  #root::-webkit-scrollbar { display: block; width: 3px; height: 3px; background: transparent; }
+  html::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb,
+  #root::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 2px; }
+}
+
+/* Barras de desplazamiento ocultas por defecto (se ve mejor) */
+html, body, #root { 
+  -ms-overflow-style: none; 
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar { 
+  display: none; 
+  width: 0; 
+  height: 0; 
+  background: transparent; 
+}
+
+/* Utilidad para reactivar barras cuando se necesite explícitamente */
+.with-scrollbars { -ms-overflow-style: auto; scrollbar-width: thin; }
+.with-scrollbars::-webkit-scrollbar { display: block; width: 4px; height: 4px; }
+.with-scrollbars::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 2px; }
+.with-scrollbars::-webkit-scrollbar-thumb:hover { background: rgba(107, 114, 128, 0.6); }
+.with-scrollbars::-webkit-scrollbar-track { background: transparent; }
+
+/* Utilidad: ocultar scrollbars en contenedores específicos (p. ej. chat, listas) */
+.custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.custom-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+@keyframes draw-reverse {
+  0% {
+    stroke-dashoffset: 276;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media screen and (max-width: 1150px){
+  .ancho{
+    grid-template-columns: repeat(2, 1fr);
+    gap: 60px;
+  }
+}
+
+@media screen and (max-width: 1050px){
+  .sep{
+    gap: 50px;
+  }
+  .distancia{
+    gap: 5px;
+  }
+  .cursos{
+    right: 472px;
+  }
+  .experiencias{
+    right: 350px;
+  }
+  .recursos{
+    right: 212px;
+  }
+  .sep-mq{
+    font-size: 10px;
+  }
+}
+
+@media screen and (max-width: 980px){
+  .distancia{
+    gap: 20px;
+  }
+  .apartados{
+    font-size: 13px;
+  }
+  .btn-register{
+    font-size: 12px;
+    width: 100px;
+  }
+  .cursos{
+    right: 420px;
+  }
+  .experiencias{
+    right: 305px;
+  }
+  .recursos{
+    right: 175px;
+  }
+  .mqerk-dis{
+    gap: 1px;
+  }
+  .desaparecer{
+    display: none;
+  }
+  .login{
+    width: 80px;
+  }
+  .cursos-mqerk{
+    right: 375px;
+  }
+  .eventos-mqerk{
+    right: 270px;
+  }
+  .blog-mqerk{
+    right: 300px;
+  }
+  .blog-mqerk{
+    right: 150px;
+  }
+}
+
+@media screen and (max-width: 860px){
+  .cursos-mqerk{
+    right: 250px;
+  }
+  .eventos-mqerk{
+    right: 255px;
+  }
+}
+
+@media screen and (max-width: 850px){
+  .experiencias{
+    right: 280px;
+  }
+  .recursos{
+    right: 150px;
+  }
+}
+
+@media screen and (max-width: 835px){
+  .cursos{
+    right: 400px;
+  }
+  .experiencias{
+    right: 300px;
+  }
+  .experiencias{
+    right: 270px;
+  }
+  .recursos{
+    right: 130px;
+  }
+}
+
+@media screen and (max-width: 820px){
+  .distancia{
+    gap: 2px;
+  }
+  .apartados{
+    font-size: 12px;
+  }
+  .btn-register{
+    font-size: 12px;
+    width: 90px;
+  }
+  .cursos{
+    right: 330px;
+  }
+  .experiencias{
+    right: 235px;
+  }
+}
+
 @media screen and (max-width: 767px){
   .pasarela-img.left {
     display: none;
@@ -122,97 +396,50 @@
   opacity: 1;
 }
 
-/* Imágenes laterales más pequeñas */
-.foto-izquierda-talleres,
-.foto-derecha-talleres {
-  width: 280px;
-  height: 180px;
-  z-index: 1;
-  opacity: 0.7;
-  transform: scale(0.9);
+/* ================= Scrollbar delgada y fina ================= */
+/* Estilos para barras de scroll más delgadas y elegantes en todos los navegadores */
+/* NOTA: html, body, #root mantienen scrollbar oculta (ver líneas 353-365) */
+
+/* WebKit (Chrome, Safari, Edge) - Aplica a todos EXCEPTO html, body, #root */
+:not(html):not(body):not(#root)::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
 }
 
-/* Imagen central más grande y encima */
-.foto-central-talleres {
-  width: 360px;
-  height: 240px;
-  z-index: 2;
-  opacity: 1;
-  transform: scale(1.1);
+:not(html):not(body):not(#root)::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 2px;
 }
 
-/* Posiciones */
-.foto-izquierda-talleres {
-  transform: translateX(-350px) scale(0.9);
+:not(html):not(body):not(#root)::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 2px;
+  transition: background 0.2s ease;
 }
 
-.foto-derecha-talleres {
-  transform: translateX(350px) scale(0.9);
+:not(html):not(body):not(#root)::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.6);
 }
 
-.foto-central-talleres {
-  transform: translateX(0px) scale(1.8);
+/* Firefox - Aplica a todos EXCEPTO html, body, #root */
+:not(html):not(body):not(#root) {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
 }
 
-/* RESPONSIVE PARA TABLETS */
-@media screen and (max-width: 930px) {
-  .foto-izquierda-talleres {
-    transform: translateX(-300px) scale(0.9);
-  }
-  .foto-derecha-talleres {
-    transform: translateX(300px) scale(0.9);
-  }
-  .foto-central-talleres {
-    transform: translateX(0px) scale(1.5);
-  }
+/* ================= Ocultar scrollbar principal (html, body, #root) ================= */
+/* Estas reglas tienen prioridad para asegurar que la barra principal esté oculta */
+html, body, #root {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
-
-@media screen and (max-width: 855px) {
-  .foto-izquierda-talleres {
-    transform: translateX(-280px) scale(0.7);
-  }
-  .foto-derecha-talleres {
-    transform: translateX(280px) scale(0.7);
-  }
-  .foto-central-talleres {
-    transform: translateX(0px) scale(1.2);
-  }
-}
-
-/* RESPONSIVE PARA MÓVILES */
-@media screen and (max-width: 767px) {
-  .contenedor-carrusel-talleres {
-    height: auto;
-    padding: 20px 0;
-  }
-
-  .galeria-carrusel-talleres {
-    width: 100%;
-    height: auto;
-  }
-
-  /* Ocultar imágenes laterales en móviles */
-  .foto-izquierda-talleres,
-  .foto-derecha-talleres {
-    display: none;
-  }
-
-  /* Imagen central ocupa el ancho disponible */
-  .foto-central-talleres {
-    position: relative;
-    width: 100%;
-    max-width: 400px;
-    height: auto;
-    transform: translateX(0px) scale(1.0);
-    margin: 0 auto;
-  }
-}
-
-/* RESPONSIVE PARA MÓVILES PEQUEÑOS */
-@media screen and (max-width: 480px) {
-  .foto-central-talleres {
-    max-width: 320px;
-  }
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
 /* Animación de fade-in con escala */

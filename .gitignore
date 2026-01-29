@@ -21,7 +21,7 @@ dist-ssr/
 build/
 coverage/
 
-# Server uploads and generated files
+# Server uploads y archivos generados
 server/uploads/
 server/comprobantes/
 server/public/
@@ -29,16 +29,16 @@ server/contratos/
 server/tokens/
 
 # Environment
-# .env
-# **/.env
-# *.local
-# *.env.*
-# # Archivos de ejemplo con claves expuestas (no subir al repositorio)
-# env.txt
-# ENV.txt
-# **/env.txt
+.env
+**/.env
+*.local
+*.env.*
+# Archivos de ejemplo con claves expuestas 
+env.txt
+ENV.txt
+**/env.txt
 
-# Editor directories and files
+# Editores
 .vscode/*
 !.vscode/extensions.json
 .idea/
@@ -51,3 +51,34 @@ server/tokens/
 # OS
 ehthumbs.db
 Icon?
+desktop.ini
+
+# Project-specific directories
+_logs/
+-p/
+.roo/
+
+# Configuration files with secrets
+server/config.js
+*.config.local
+
+# Cache and temporary files
+.cache/
+*.cache
+*.pid
+*.seed
+*.tmp
+*.temp
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Docker (optional)
+docker-compose.override.yml
+
+# utilidades
+pdf_coor.py
+start.bat

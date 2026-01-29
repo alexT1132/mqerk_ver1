@@ -16,14 +16,121 @@ import {
   UploadCloud
 } from "lucide-react";
 import QuiztModal from "./QuiztModal";
+import SimulatorModal from "./SimulatorModal"; // ✅ Para edición (tiene soporte para onUpdate y onEditQuestions)
 import AnalizadorFallosRepetidos from "./AnalizadorFallosRepetidos";
 import QuizIAModal from "./simGen/QuizIAModal";
 import ManualReviewShortAnswer from "./ManualReviewShortAnswer";
+import ReviewModal from "./ReviewModal";
 import { getCooldownRemainingMs } from "../../service/simuladoresAI";
 import { logInfo, logError, logDebug } from "../../utils/logger";
 import { listQuizzes, deleteQuiz as apiDeleteQuiz, getQuizFull, getQuizEstudiantesEstado, getQuizIntentoReview, updateQuiz } from "../../api/quizzes";
 import { getAreasCatalog } from "../../api/areas";
+import InlineMath from "./simGen/InlineMath";
 
+// Componente para renderizar texto con fórmulas LaTeX (igual que en Quizz_Review.jsx)
+function MathText({ text = "" }) {
+  if (!text) return null;
+
+  const sanitizeHtmlLite = (html) => {
+    if (!html) return '';
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
+    const nodesToRemove = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (!allowedTags.includes(node.tagName.toLowerCase())) {
+        nodesToRemove.push(node);
+      }
+    }
+    nodesToRemove.forEach(n => {
+      const parent = n.parentNode;
+      while (n.firstChild) {
+        parent.insertBefore(n.firstChild, n);
+      }
+      parent.removeChild(n);
+    });
+    return div.innerHTML;
+  };
+
+  // ✅ Normalizar saltos de línea y espacios primero
+  let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  
+  // ✅ Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
+  // Esto debe hacerse ANTES de proteger las fórmulas
+  processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
+  
+  // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
+  // Pero proteger las fórmulas LaTeX para no procesarlas
+  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
+  const latexMatches = [];
+  let placeholderIndex = 0;
+  
+  // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
+  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
+    latexMatches.push(match);
+    placeholderIndex++;
+    return placeholder;
+  });
+  
+  // Procesar Markdown: **texto** -> <strong>texto</strong>
+  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  
+  // Restaurar fórmulas LaTeX
+  latexMatches.forEach((match, idx) => {
+    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
+  });
+
+  const re = /\$([^$]+?)\$/g;
+  const parts = [];
+  let lastIndex = 0;
+  let m;
+  let matchFound = false;
+
+  re.lastIndex = 0;
+
+  while ((m = re.exec(processedText)) !== null) {
+    matchFound = true;
+    if (m.index > lastIndex) {
+      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
+    }
+    const formula = m[1].trim();
+    if (formula) {
+      parts.push({ type: 'math', content: formula });
+    }
+    lastIndex = m.index + m[0].length;
+  }
+  
+  if (lastIndex < processedText.length) {
+    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
+  }
+
+  if (!matchFound || parts.length === 0) {
+    return (
+      <span 
+        className="whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
+      />
+    );
+  }
+
+  return (
+    <span className="whitespace-pre-wrap">
+      {parts.map((part, idx) =>
+        part.type === 'math' ? (
+          <InlineMath key={`math-${idx}`} math={part.content} />
+        ) : (
+          <span 
+            key={`text-${idx}`}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
+          />
+        )
+      )}
+    </span>
+  );
+}
 
 /* ------------------- helpers ------------------- */
 
@@ -44,6 +151,7 @@ function Badge({ children, type = "default" }) {
     </span>
   );
 }
+
 
 /* Formatea nombre de asesor a partir de username o email */
 function formatAsesorName(raw) {
@@ -74,10 +182,16 @@ function MobileRow({ item, onView, onEdit, onDelete, onPublish }) {
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-100">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-slate-900">
             {item.name}
           </h3>
+          {/* ✅ Mostrar instrucciones debajo del nombre (igual que en simuladores) */}
+          {item.instrucciones && item.instrucciones.trim() && (
+            <p className="mt-1 text-xs text-slate-500 line-clamp-2">
+              {item.instrucciones}
+            </p>
+          )}
         </div>
         {item.status === "Publicado" ? (
           <Badge type="success">Publicado</Badge>
@@ -174,7 +288,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
   const [iaQuestions, setIaQuestions] = useState(null);
   // Modal de elección IA (general vs por temas)
   const [iaChoiceOpen, setIaChoiceOpen] = useState(false);
-  const [successModal, setSuccessModal] = useState({ open: false, message: '', count: 0 });
+  const [successModal, setSuccessModal] = useState({ open: false, message: '', count: 0, willRedirect: false });
 
   // En esta vista trabajamos por área; ocultar filtro por materia para simplificar UX
   const SHOW_AREA_FILTER = false;
@@ -193,6 +307,8 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
 
   const [data, setData] = useState([]);
   const prevPathnameRef = useRef(location.pathname); // Para detectar cuando se regresa del builder
+  const [editing, setEditing] = useState(null); // ✅ Estado para el quiz que se está editando
+  const [editModalOpen, setEditModalOpen] = useState(false); // ✅ Estado para el modal de edición
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewQuiz, setPreviewQuiz] = useState(null);
@@ -282,10 +398,13 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
         const vd = r.visible_desde ? new Date(r.visible_desde) : null;
         const vh = r.visible_hasta ? new Date(r.visible_hasta) : null;
         const publicado = (r.publicado === 1 || r.publicado === true) && r.activo && (!vd || vd <= now) && (!vh || vh >= now);
+        // ✅ CRÍTICO: Obtener instrucciones/descripción con múltiples fallbacks (igual que en simuladores)
+        const instruccionesFinal = r.descripcion || r.instrucciones || r.instructions || '';
         return {
           id: r.id,
           name: r.titulo || r.nombre || `Quiz ${r.id}`,
           type: r.materia || "Áreas generales",
+          instrucciones: instruccionesFinal, // ✅ Agregar instrucciones al objeto mapeado
           questions: r.total_preguntas ?? r.questions_count ?? '—',
           attempts: r.max_intentos ?? '∞',
           status: publicado ? "Publicado" : "Borrador",
@@ -345,19 +464,129 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const { data } = await getQuizFull(item.id);
       setPreviewQuiz(data?.data || null);
     } catch (e) {
-      // eslint-disable-next-line no-alert
+       
       alert(e?.response?.data?.message || 'No se pudo cargar la vista previa');
       setPreviewOpen(false);
     } finally {
       setPreviewLoading(false);
     }
   };
-  // Edición: redirigir a builder nuevo (a futuro cargaría preguntas existentes)
-  const handleEdit = (item) => {
-    // Pasar quizId también por querystring para sobrevivir refresh/nueva pestaña
-    navigate(`/asesor/quizt/builder?id=${encodeURIComponent(item.id)}`,
-      { state: { quizId: item.id, title: areaTitle }, replace: true }
-    );
+  // ✅ Edición: cargar datos completos del quiz y abrir modal de edición (igual que en simuladores)
+  const handleEdit = async (item) => {
+    if (!item || !item.id) {
+      alert('Error: No se puede editar un quiz sin ID');
+      return;
+    }
+    
+    try {
+      // Cargar los datos completos del quiz
+      const { data: fullData } = await getQuizFull(item.id);
+      const quizData = fullData?.data?.quiz || fullData?.data || fullData || {};
+      
+      // Calcular horas y minutos desde time_limit_min
+      const timeLimitMin = Number(quizData.time_limit_min || 0);
+      const horas = Math.floor(timeLimitMin / 60);
+      const minutos = timeLimitMin % 60;
+      
+      // Formatear fecha_limite para el input type="date" (YYYY-MM-DD)
+      let fechaLimiteFormatted = '';
+      const fechaLimiteRaw = quizData.fecha_limite || quizData.fechaLimite;
+      if (fechaLimiteRaw) {
+        try {
+          const fecha = new Date(fechaLimiteRaw);
+          if (!isNaN(fecha.getTime())) {
+            fechaLimiteFormatted = fecha.toISOString().split('T')[0]; // YYYY-MM-DD
+          }
+        } catch (e) {
+          console.warn('[Quiz] Error al formatear fecha_limite:', e);
+        }
+      }
+      
+      // Determinar intentosMode y maxIntentos
+      const maxIntentos = quizData.max_intentos;
+      const intentosMode = maxIntentos && maxIntentos > 0 ? 'limited' : 'unlimited';
+      
+      // Preparar el objeto de edición con todos los datos
+      const editData = {
+        ...item,
+        // Datos del quiz completo
+        titulo: quizData.titulo || quizData.nombre || item.name || '',
+        nombre: quizData.nombre || quizData.titulo || item.name || '',
+        // ✅ CRÍTICO: Buscar instrucciones/descripción en múltiples lugares
+        instrucciones: quizData.descripcion || quizData.instrucciones || item.instrucciones || item.descripcion || '',
+        descripcion: quizData.descripcion || quizData.instrucciones || item.descripcion || item.instrucciones || '',
+        fechaLimite: fechaLimiteFormatted,
+        publico: quizData.publico !== undefined ? Boolean(quizData.publico) : (quizData.status === 'Publicado' || item.status === 'Publicado'),
+        horas: horas,
+        minutos: minutos,
+        intentosMode: intentosMode,
+        maxIntentos: maxIntentos && maxIntentos > 0 ? Number(maxIntentos) : 3,
+        grupos: [], // Los grupos se cargarán desde el backend si es necesario
+        areaId: quizData.id_area !== undefined && quizData.id_area !== null ? Number(quizData.id_area) : null,
+        areaTitle: quizData.materia || areaTitle || null
+      };
+      
+      setEditing(editData);
+      setEditModalOpen(true);
+    } catch (e) {
+      console.error('[Quiz] Error al cargar datos para editar:', e);
+      alert(e?.response?.data?.message || 'No se pudo cargar el quiz para editar');
+    }
+  };
+  
+  // ✅ Función para actualizar el quiz (igual que handleUpdate en simuladores)
+  const handleUpdate = async (form) => {
+    if (!editing || !editing.id) {
+      alert('Error: No hay quiz seleccionado para actualizar');
+      return;
+    }
+    
+    try {
+      // ✅ CRÍTICO: El form usa "instrucciones" como descripción (ya que el modal mapea descripcion->instrucciones)
+      const descripcionFinal = form.descripcion || form.instrucciones || '';
+      
+      // Formatear fecha_limite
+      let fechaLimiteFinal = null;
+      if (form.fechaLimite && form.fechaLimite.trim() !== '') {
+        fechaLimiteFinal = form.fechaLimite; // Ya viene en formato YYYY-MM-DD
+      }
+      
+      const payload = {
+        titulo: form.nombre || form.titulo,
+        // ✅ CRÍTICO: Siempre incluir descripcion, incluso si está vacío (usar string vacío en lugar de null para forzar actualización)
+        descripcion: descripcionFinal !== null && descripcionFinal !== undefined ? String(descripcionFinal) : '',
+        fecha_limite: fechaLimiteFinal,
+        time_limit_min: Number(form.horas || 0) * 60 + Number(form.minutos || 0),
+        publico: !!form.publico,
+        ...(form.intentosMode === 'limited' ? { max_intentos: Math.max(1, Number(form.maxIntentos || 1)) } : { max_intentos: null }),
+      };
+      
+      await updateQuiz(editing.id, payload);
+      
+      // Actualizar el item en la lista local
+      setData(prev => prev.map(q => {
+        if (q.id === editing.id) {
+          const instruccionesActualizadas = payload.descripcion || '';
+          return {
+            ...q,
+            name: payload.titulo || q.name,
+            instrucciones: instruccionesActualizadas,
+            status: payload.publico ? 'Publicado' : 'Borrador',
+            attempts: payload.max_intentos && payload.max_intentos > 0 ? payload.max_intentos : '∞',
+          };
+        }
+        return q;
+      }));
+      
+      setEditModalOpen(false);
+      setEditing(null);
+      
+      // Recargar para asegurar que los datos estén actualizados
+      await loadQuizzes();
+    } catch (e) {
+      console.error('[Quiz] Error al actualizar:', e);
+      alert(e?.response?.data?.message || 'No se pudo actualizar el quiz');
+    }
   };
   // Resultados por estudiantes (primer intento oficial)
   const handleResultados = async (item) => {
@@ -370,7 +599,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const rows = Array.isArray(data?.data) ? data.data : [];
       setResultsRows(rows);
     } catch (e) {
-      // eslint-disable-next-line no-alert
+       
       alert(e?.response?.data?.message || 'No se pudo cargar el estado de estudiantes');
       setResultsOpen(false);
     } finally {
@@ -396,7 +625,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const { data } = await getQuizIntentoReview(resultsQuizMeta.id, row.id_estudiante, 1);
       setReviewData(data?.data || null);
     } catch (e) {
-      // eslint-disable-next-line no-alert
+       
       alert(e?.response?.data?.message || 'No se pudo cargar el detalle del intento');
       setReviewOpen(false);
     } finally {
@@ -413,7 +642,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const { data } = await getQuizIntentoReview(resultsQuizMeta.id, reviewHeader.estudiante.id, intentoNum);
       setReviewData(data?.data || null);
     } catch (e) {
-      // eslint-disable-next-line no-alert
+       
       alert(e?.response?.data?.message || 'No se pudo cargar el detalle del intento');
     } finally {
       setReviewLoading(false);
@@ -707,8 +936,16 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                     className="bg-white hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200"
                   >
                     <td className="sticky left-0 z-10 bg-inherit hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 px-6 py-5 w-[22rem] border-r-2 border-slate-200">
-                      <div className="truncate font-bold text-slate-900 text-sm">
-                        {item.name}
+                      <div className="max-w-xs">
+                        <div className="font-semibold text-slate-900 truncate">
+                          {item.name}
+                        </div>
+                        {/* ✅ Mostrar instrucciones debajo del nombre (igual que en simuladores) */}
+                        {item.instrucciones && item.instrucciones.trim() && (
+                          <div className="mt-1 text-xs text-slate-500 line-clamp-2">
+                            {item.instrucciones}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-5 text-center text-slate-700 whitespace-nowrap font-bold">
@@ -845,21 +1082,23 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                         <div className="mb-0.5 text-xs text-slate-500">
                           {idx + 1}. {p.tipo === 'opcion_multiple' ? 'Opción múltiple' : p.tipo === 'verdadero_falso' ? 'Verdadero/Falso' : 'Respuesta corta'} • {p.puntos || 1} pt{(p.puntos || 1) > 1 ? 's' : ''}
                         </div>
-                        <div className="font-medium text-slate-900 mb-0.5 text-sm">{p.enunciado}</div>
+                        <div className="font-medium text-slate-900 mb-0.5 text-sm">
+                          <MathText text={p.enunciado || ''} />
+                        </div>
                         {p.tipo === 'opcion_multiple' && (
                           <ul className="mt-0.5 space-y-1">
                             {p.opciones?.map((o) => (
                               <li key={o.id} className={`rounded border px-1.5 py-1 text-xs ${o.es_correcta ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
-                                {o.texto || '—'}
+                                <MathText text={o.texto || '—'} />
                               </li>
                             ))}
                           </ul>
                         )}
                         {p.tipo === 'verdadero_falso' && (
-                          <p className="mt-0.5 text-xs text-slate-700">Correcta: <strong>{p.opciones?.find(x => x.es_correcta)?.texto || '—'}</strong></p>
+                          <p className="mt-0.5 text-xs text-slate-700">Correcta: <strong><MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} /></strong></p>
                         )}
                         {p.tipo === 'respuesta_corta' && (
-                          <p className="mt-0.5 text-xs text-slate-700">Respuesta esperada: <strong>{p.opciones?.find(x => x.es_correcta)?.texto || '—'}</strong></p>
+                          <p className="mt-0.5 text-xs text-slate-700">Respuesta esperada: <strong><MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} /></strong></p>
                         )}
                       </li>
                     ))}
@@ -1015,187 +1254,19 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
         </div>
       )}
 
-      {/* Review modal */}
-      {reviewOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 px-0.5 mt-16">
-          <div className="w-full max-w-4xl rounded-lg bg-white shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between border-b px-2 py-1.5">
-              <div className="flex items-center gap-3">
-                <h3 className="text-base font-semibold text-slate-900">
-                  {reviewHeader.quiz?.titulo || 'Quiz'} • {reviewHeader.estudiante?.nombre || 'Alumno'}
-                </h3>
-                {reviewHeader.estudiante?.totalIntentos > 1 && (
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs text-slate-600 font-medium">Intento:</label>
-                    <select
-                      value={selectedIntentoReview}
-                      onChange={(e) => handleChangeIntentoReview(Number(e.target.value))}
-                      className="text-xs border border-slate-300 rounded-md px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      {Array.from({ length: reviewHeader.estudiante.totalIntentos }, (_, i) => i + 1).map(num => (
-                        <option key={num} value={num}>
-                          {num === 1 ? `Intento ${num} (Oficial)` : `Intento ${num} (Práctica)`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-              <button onClick={() => setReviewOpen(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
-            </div>
-            <div className="max-h-[70vh] overflow-y-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {reviewLoading ? (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Cargando…</div>
-              ) : reviewData && Array.isArray(reviewData.preguntas) ? (
-                <div className="space-y-4">
-                  {/* Analizador de fallos repetidos */}
-                  {reviewHeader.estudiante?.totalIntentos >= 2 && (
-                    <AnalizadorFallosRepetidos
-                      tipo="quiz"
-                      id={resultsQuizMeta?.id}
-                      idEstudiante={reviewHeader.estudiante?.id}
-                      totalIntentos={reviewHeader.estudiante?.totalIntentos}
-                    />
-                  )}
-                  
-                  {/* Separar preguntas por tipo */}
-                  {(() => {
-                    const preguntasOpcionMultiple = reviewData.preguntas.filter(p => p.tipo === 'opcion_multiple' || p.tipo === 'verdadero_falso' || p.tipo === 'multi_respuesta');
-                    const respuestasCortas = reviewData.preguntas.filter(p => p.tipo === 'respuesta_corta');
-                    
-                    return (
-                      <>
-                        {/* Preguntas de opción múltiple */}
-                        {preguntasOpcionMultiple.length > 0 && (
-                          <div className="space-y-2.5">
-                            {preguntasOpcionMultiple.map((p, idx) => {
-                              const sel = new Set(p.seleccionadas || []);
-                              const corr = !!p.correcta;
-                              return (
-                                <div key={p.id || idx} className="rounded border border-slate-200 p-2">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="text-sm font-medium text-slate-900">{p.orden || (idx + 1)}. {p.enunciado}</div>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${corr ? 'bg-green-50 text-green-700 border-green-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{corr ? 'Correcta' : 'Incorrecta'}</span>
-                                  </div>
-                                  <ul className="mt-1.5 space-y-1">
-                                    {(p.opciones || []).map((o) => {
-                                      const isSel = sel.has(o.id);
-                                      const isOk = o.es_correcta === 1;
-                                      const base = 'text-xs rounded-lg border px-3 py-1.5 flex items-center justify-between';
-                                      // Colores según el estado: seleccionada y correcta (verde), seleccionada e incorrecta (rojo), solo correcta (verde claro), ninguna (gris)
-                                      const cl = isSel && isOk ? 'bg-emerald-50 border-emerald-300' : isSel && !isOk ? 'bg-rose-50 border-rose-300' : !isSel && isOk ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200';
-                                      return (
-                                        <li key={o.id} className={`${base} ${cl}`}>
-                                          <span>{o.texto}</span>
-                                          <div className="flex items-center gap-2">
-                                            {isSel && <span className="text-[10px] font-bold text-slate-700">✓ Seleccionada</span>}
-                                            {isOk && <span className="text-[10px] font-bold text-green-700">Correcta</span>}
-                                          </div>
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {/* Sección de Respuestas Cortas para Revisión Manual */}
-                        {respuestasCortas.length > 0 && (
-                          <div className="mt-6 pt-6 border-t border-gray-200">
-                            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                              <span>📝</span>
-                              <span>Respuestas Cortas para Revisión</span>
-                              {respuestasCortas.filter(p => {
-                                // Verificar si requiere revisión (baja confianza o estado manual_review)
-                                const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
-                                return requiereRevision;
-                              }).length > 0 && (
-                                <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full">
-                                  {respuestasCortas.filter(p => {
-                                    const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
-                                    return requiereRevision;
-                                  }).length} requieren revisión
-                                </span>
-                              )}
-                            </h4>
-                            
-                            <div className="space-y-4">
-                              {respuestasCortas.map((pregunta) => {
-                                // Obtener respuesta esperada (opción correcta)
-                                const respuestaEsperada = pregunta.opciones?.find(o => o.es_correcta === 1)?.texto;
-                                
-                                if (!respuestaEsperada) return null;
-                                
-                                // Construir objeto respuesta para el componente
-                                // Usar los datos disponibles en la pregunta y mapear a la estructura esperada
-                                // Validar que tenemos id_respuesta antes de crear el componente
-                                // Si no hay id_respuesta, no podemos hacer revisión manual
-                                if (!pregunta.id_respuesta) {
-                                  console.warn('[Quiz] Respuesta corta sin id_respuesta:', {
-                                    pregunta_id: pregunta.id,
-                                    valor_texto: pregunta.valor_texto,
-                                    calificacion_status: pregunta.calificacion_status
-                                  });
-                                  // Mostrar mensaje de que la respuesta aún no está disponible para revisión
-                                  return (
-                                    <div key={pregunta.id} className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                      <p className="text-sm text-yellow-800">
-                                        ⚠️ Esta respuesta aún no está disponible para revisión manual. 
-                                        La respuesta se está procesando automáticamente.
-                                      </p>
-                                    </div>
-                                  );
-                                }
-                                
-                                const respuestaObj = {
-                                  id: pregunta.id_respuesta, // DEBE ser el ID de la respuesta, no de la pregunta
-                                  valor_texto: pregunta.valor_texto || null,
-                                  texto_libre: pregunta.valor_texto || null,
-                                  correcta: pregunta.correcta ? 1 : 0,
-                                  calificacion_status: pregunta.calificacion_status || 'pending',
-                                  calificacion_metodo: pregunta.calificacion_metodo || null,
-                                  calificacion_confianza: pregunta.calificacion_confianza || null,
-                                  revisada_por: pregunta.revisada_por || null,
-                                  notas_revision: pregunta.notas_revision || null
-                                };
-                                
-                                return (
-                                  <ManualReviewShortAnswer
-                                    key={pregunta.id}
-                                    respuesta={respuestaObj}
-                                    pregunta={pregunta.enunciado}
-                                    respuestaEsperada={respuestaEsperada}
-                                    tipo="quiz"
-                                    onReviewComplete={(updatedData) => {
-                                      // Recargar datos del intento actualmente seleccionado
-                                      if (resultsQuizMeta?.id && reviewHeader.estudiante?.id) {
-                                        getQuizIntentoReview(resultsQuizMeta.id, reviewHeader.estudiante.id, selectedIntentoReview)
-                                          .then(({ data }) => setReviewData(data?.data || null))
-                                          .catch(err => console.error('Error al recargar datos:', err));
-                                      }
-                                    }}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              ) : (
-                <div className="text-slate-600 text-sm">No hay detalles disponibles para el intento 1.</div>
-              )}
-            </div>
-            <div className="flex justify-end gap-2 border-t px-2 py-1.5">
-              <button onClick={() => setReviewOpen(false)} className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Cerrar</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Review modal - Usando componente reutilizable */}
+      <ReviewModal
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        tipo="quiz"
+        idEvaluacion={resultsQuizMeta?.id}
+        estudiante={reviewHeader.estudiante ? {
+          id: reviewHeader.estudiante.id,
+          nombre: reviewHeader.estudiante.nombre,
+          totalIntentos: reviewHeader.estudiante.totalIntentos
+        } : null}
+        titulo={reviewHeader.quiz?.titulo}
+      />
       <QuiztModal
         open={open}
         onClose={() => { setOpen(false); setIaDraft(null); setIaQuestions(null); }}
@@ -1316,12 +1387,16 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                 setSuccessModal({
                   open: true,
                   message: `Quiz creado exitosamente con ${iaQuestions.length} pregunta(s)`,
-                  count: iaQuestions.length
+                  count: iaQuestions.length,
+                  willRedirect: true
                 });
-                // Cerrar automáticamente después de 4 segundos
-                setTimeout(() => setSuccessModal(prev => ({ ...prev, open: false })), 4000);
-
-                // NO navegar al builder, quedarse en la lista
+                // ✅ Volver a redirigir al editor, sin flags “temporales”.
+                setTimeout(() => {
+                  navigate(
+                    `/asesor/quizt/builder?id=${encodeURIComponent(created.id)}`,
+                    { state: { quizId: created.id, areaId: currentAreaId, areaTitle: currentAreaTitle } }
+                  );
+                }, 1200);
                 return;
               } else {
                 logError('Quiz.jsx', 'ERROR: No se recibió ID del quiz creado', { respuesta: res?.data });
@@ -1349,11 +1424,48 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
         }}
       />
 
+      {/* ✅ Modal de edición (igual que en simuladores) */}
+      <SimulatorModal
+        open={editModalOpen}
+        onClose={() => { setEditModalOpen(false); setEditing(null); }}
+        onUpdate={handleUpdate}
+        mode={editing ? 'edit' : 'create'}
+        initialForm={editing ? (() => {
+          const formData = {
+            titulo: editing.titulo || editing.nombre || editing.name || '',
+            nombre: editing.nombre || editing.titulo || editing.name || '',
+            instrucciones: editing.instrucciones || editing.descripcion || '',
+            descripcion: editing.descripcion || editing.instrucciones || '',
+            fechaLimite: editing.fechaLimite || editing.fecha_limite || '',
+            publico: editing.publico ?? (editing.status === 'Publicado'),
+            horas: editing.horas ?? 0,
+            minutos: editing.minutos ?? 0,
+            intentosMode: editing.intentosMode || 'unlimited',
+            maxIntentos: editing.maxIntentos ?? 3,
+            grupos: Array.isArray(editing.grupos) ? editing.grupos : (editing.grupos ? [editing.grupos] : []),
+            areaId: editing.areaId !== undefined ? editing.areaId : null,
+            areaTitle: editing.areaTitle || areaTitle || null
+          };
+          return formData;
+        })() : null}
+        onEditQuestions={editing ? () => {
+          // Navegar al builder después de guardar
+          const finalIdArea = editing.areaId !== undefined && editing.areaId !== null ? Number(editing.areaId) : (selectedAreaId || null);
+          const navState = finalIdArea ? { 
+            quizId: editing.id, 
+            areaId: finalIdArea, 
+            areaTitle: editing.areaTitle || areaTitle 
+          } : { quizId: editing.id };
+          navigate(`/asesor/quizt/builder?id=${editing.id}`, { state: navState });
+        } : null}
+      />
+
       {/* Modal de éxito */}
       {successModal.open && (
         <SuccessModal
           message={successModal.message}
           count={successModal.count}
+          willRedirect={successModal.willRedirect}
           onClose={() => setSuccessModal(prev => ({ ...prev, open: false }))}
         />
       )}
@@ -1449,7 +1561,7 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, type = 
 }
 
 // Componente de modal de éxito estético
-function SuccessModal({ message, count = 0, onClose }) {
+function SuccessModal({ message, count = 0, willRedirect = false, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none">
       <div className="relative w-full max-w-md pointer-events-auto animate-in fade-in zoom-in duration-300">
@@ -1468,11 +1580,15 @@ function SuccessModal({ message, count = 0, onClose }) {
           {/* Contenido */}
           <div className="px-6 py-5 text-center">
             <p className="text-lg font-semibold text-slate-900 mb-2">{message}</p>
-            {count > 0 && (
+            {willRedirect ? (
+              <p className="text-sm text-slate-600">
+                Serás redirigido al editor en unos momentos...
+              </p>
+            ) : count > 0 ? (
               <p className="text-sm text-slate-600">
                 Puedes editarlo haciendo clic en el botón "Editar" en la lista.
               </p>
-            )}
+            ) : null}
           </div>
 
           {/* Barra de progreso temporal */}

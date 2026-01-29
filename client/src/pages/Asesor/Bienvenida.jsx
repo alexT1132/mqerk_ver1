@@ -1,4 +1,4 @@
-import Navbar from "../../components/NavLogin.jsx";
+import NavLogin from "../../components/common/auth/NavLogin.jsx";
 import { useNavigate } from "react-router-dom";
 import { usePreventPageReload } from "../../NoReload.jsx";
 import { useAsesor } from "../../context/AsesorContext.jsx";

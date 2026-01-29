@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import InlineMath from './InlineMath.jsx';
+import { MathLiveInput } from './MathLiveInput.jsx';
 import axios from "../../../api/axios.js";
 
 /* ------------------------------- Modal base ------------------------------ */
 export function Modal({ open, onClose, title, children, footer }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" style={{ paddingTop: '8vh', paddingBottom: '2vh' }}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-40 pb-6">
       <div className="w-full max-w-4xl rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 h-[85vh] max-h-[85vh] flex flex-col overflow-hidden border-2 border-violet-200/50">
         <div className="flex items-center justify-between border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -621,6 +622,35 @@ function parseFormula(formula) {
       c: quadEqMatch[5]
     };
   }
+
+  // Límite: \lim_{x \to \infty} (opcionalmente seguido de expresión)
+  // Ej: \lim_{x \to \infty} \frac{1}{x}
+  const limitMatch = clean.match(
+    /^\\lim_\{([a-zA-Z]+)\s*\\(?:to|rightarrow)\s*([^}]+)\}\s*(.*)?$/
+  );
+  if (limitMatch) {
+    const expr = (limitMatch[3] || '').trim();
+    return {
+      type: 'limit',
+      variable: limitMatch[1] || 'x',
+      to: (limitMatch[2] || '\\infty').trim(),
+      expression: expr
+    };
+  }
+
+  // Regla de la cadena (forma común)
+  // Ej: \frac{dy}{dx} = \frac{dy}{du} \frac{du}{dx}
+  const chainRulePattern =
+    /^\\frac\{d([a-zA-Z]+)\}\{d([a-zA-Z]+)\}\s*=\s*\\frac\{d\1\}\{d([a-zA-Z]+)\}\s*(?:\\cdot\s*)?\\frac\{d\3\}\{d\2\}$/;
+  const chainRuleMatch = clean.match(chainRulePattern);
+  if (chainRuleMatch) {
+    return {
+      type: 'chainRule',
+      y: chainRuleMatch[1],
+      x: chainRuleMatch[2],
+      u: chainRuleMatch[3]
+    };
+  }
   
   // Patrones comunes para detectar
   // x^2 o x^{2}
@@ -773,6 +803,20 @@ function buildFormula(components) {
     case 'integralDef':
       const diffDef = components.differential || 'x';
       return `\\int_{${components.lower || 'a'}}^{${components.upper || 'b'}} ${components.function || 'f(x)'} \\, d${diffDef}`;
+
+    case 'limit': {
+      const v = (components.variable || 'x').trim() || 'x';
+      const to = (components.to || '\\infty').trim() || '\\infty';
+      const expr = (components.expression || '').trim();
+      return expr ? `\\lim_{${v} \\to ${to}} ${expr}` : `\\lim_{${v} \\to ${to}}`;
+    }
+
+    case 'chainRule': {
+      const y = (components.y || 'y').trim() || 'y';
+      const x = (components.x || 'x').trim() || 'x';
+      const u = (components.u || 'u').trim() || 'u';
+      return `\\frac{d${y}}{d${x}} = \\frac{d${y}}{d${u}} \\frac{d${u}}{d${x}}`;
+    }
     
     default:
       return '';
@@ -834,7 +878,7 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
   const currentFormula = useAdvanced ? advancedFormula : (components ? buildFormula(components) : '');
 
   return (
-    <div className="fixed inset-0 z-[60] grid place-items-center bg-black/50 backdrop-blur-sm px-4">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-40 pb-6">
       <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl flex flex-col h-[70vh] max-h-[70vh] overflow-hidden border border-slate-200/50">
         <div className="border-b border-slate-200 bg-gradient-to-r from-violet-50/50 to-indigo-50/50 p-5 flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center justify-between">
@@ -1181,6 +1225,100 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
                 </>
               )}
 
+              {components.type === 'limit' && (
+                <>
+                  <div className="rounded-xl border-2 border-violet-300 bg-gradient-to-r from-violet-50 to-indigo-50 p-4 mb-4 shadow-sm">
+                    <p className="text-xs font-bold text-violet-700 mb-1.5 uppercase tracking-wide">Límite</p>
+                    <p className="text-xs text-slate-600">Edita la variable y hacia dónde tiende (y opcionalmente la expresión)</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">
+                        Variable <span className="text-rose-500 font-bold">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={components.variable}
+                        onChange={(e) => updateComponent('variable', e.target.value)}
+                        placeholder="Ej: x"
+                        className="w-full rounded-xl border-2 border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 bg-white hover:border-violet-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">
+                        Tiende a <span className="text-rose-500 font-bold">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={components.to}
+                        onChange={(e) => updateComponent('to', e.target.value)}
+                        placeholder="Ej: \\infty, 0, a"
+                        className="w-full rounded-xl border-2 border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 bg-white hover:border-violet-400 font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                      Expresión (opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={components.expression}
+                      onChange={(e) => updateComponent('expression', e.target.value)}
+                      placeholder="Ej: \\frac{1}{x}"
+                      className="w-full rounded-xl border-2 border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 bg-white hover:border-violet-400 font-mono"
+                    />
+                  </div>
+                </>
+              )}
+
+              {components.type === 'chainRule' && (
+                <>
+                  <div className="rounded-xl border-2 border-violet-300 bg-gradient-to-r from-violet-50 to-indigo-50 p-4 mb-4 shadow-sm">
+                    <p className="text-xs font-bold text-violet-700 mb-1.5 uppercase tracking-wide">Regla de la cadena</p>
+                    <p className="text-xs text-slate-600">Edita las variables de derivación: \(y\), \(u\) y \(x\)</p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">
+                        y <span className="text-rose-500 font-bold">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={components.y}
+                        onChange={(e) => updateComponent('y', e.target.value)}
+                        placeholder="Ej: y"
+                        className="w-full rounded-xl border-2 border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 bg-white hover:border-violet-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">
+                        u <span className="text-rose-500 font-bold">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={components.u}
+                        onChange={(e) => updateComponent('u', e.target.value)}
+                        placeholder="Ej: u"
+                        className="w-full rounded-xl border-2 border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 bg-white hover:border-violet-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">
+                        x <span className="text-rose-500 font-bold">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={components.x}
+                        onChange={(e) => updateComponent('x', e.target.value)}
+                        placeholder="Ej: x"
+                        className="w-full rounded-xl border-2 border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 bg-white hover:border-violet-400"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
               {/* Botón para cambiar a modo avanzado */}
               <div className="pt-4 border-t border-slate-200">
                 <button
@@ -1205,7 +1343,7 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <label className="block text-sm font-bold text-slate-700">
-                  Código LaTeX <span className="text-rose-500 font-bold">*</span>
+                  Editor visual (MathLive) <span className="text-rose-500 font-bold">*</span>
                 </label>
                 <button
                   type="button"
@@ -1224,16 +1362,37 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
                   <span>Modo visual</span>
                 </button>
               </div>
-              <textarea
+              <MathLiveInput
                 value={advancedFormula}
-                onChange={(e) => {
-                  setAdvancedFormula(e.target.value);
+                onChange={(next) => {
+                  setAdvancedFormula(next);
                   setError('');
                 }}
-                placeholder="Ingresa el código LaTeX"
-                className="w-full rounded-xl border-2 border-slate-300 px-4 py-3 text-sm font-mono focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 bg-white hover:border-violet-400 resize-y min-h-[120px] shadow-sm"
-                rows={5}
+                className="shadow-sm hover:shadow-md transition-shadow"
+                placeholder="Escribe tu fórmula aquí…"
               />
+
+              <details className="mt-3 group">
+                <summary className="cursor-pointer select-none text-xs font-bold text-slate-500 hover:text-violet-700 transition-colors flex items-center gap-2">
+                  <span className="inline-block transition-transform group-open:rotate-90">▶</span>
+                  Ver/editar código LaTeX (texto)
+                </summary>
+                <div className="mt-2">
+                  <textarea
+                    value={advancedFormula}
+                    onChange={(e) => {
+                      setAdvancedFormula(e.target.value);
+                      setError('');
+                    }}
+                    placeholder="LaTeX (opcional)"
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-3 text-sm font-mono focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 bg-white hover:border-violet-300 resize-y min-h-[90px]"
+                    rows={4}
+                  />
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Esto es opcional (para usuarios avanzados). MathLive siempre guarda LaTeX internamente.
+                  </p>
+                </div>
+              </details>
             </div>
           )}
 
@@ -1303,7 +1462,7 @@ export function PlaceholderModal({ open, onClose, formula, onConfirm }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] grid place-items-center bg-black/50 backdrop-blur-sm px-4">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-40 pb-6">
       <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 border-2 border-violet-200/50 h-[600px] max-h-[600px] flex flex-col overflow-hidden">
         <div className="border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 rounded-t-3xl flex-shrink-0">
           <div className="flex items-center gap-3 mb-2">
@@ -1537,6 +1696,8 @@ function getFormulaName(formula) {
 export default function MathPalette({ open, onClose, onPick, initialFormula }) {
   const [tab, setTab] = useState("Básico");
   const [selectedFormula, setSelectedFormula] = useState(null);
+  // Fórmula editable universal: sirve tanto para “desde cero” como para “plantilla”
+  const [editableFormula, setEditableFormula] = useState('');
   const [placeholderModal, setPlaceholderModal] = useState({ open: false, formula: '' });
   const [formulasFromDB, setFormulasFromDB] = useState(null);
   const [loadingFormulas, setLoadingFormulas] = useState(false);
@@ -1583,9 +1744,11 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
         }
         setTab(foundTab);
         setSelectedFormula(initialFormula);
+        setEditableFormula(initialFormula);
       } else {
         setTab("Básico");
         setSelectedFormula(null);
+        setEditableFormula('');
       }
       setPlaceholderModal({ open: false, formula: '' });
       setSearchQuery('');
@@ -1605,18 +1768,22 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
   const handleFormulaClick = (formula) => {
     // Solo mostrar la fórmula seleccionada en la vista previa (no insertar aún)
     setSelectedFormula(formula);
+    setEditableFormula(formula);
   };
 
   const handleInsertFormula = () => {
-    if (!selectedFormula) return;
+    const formulaToUse = (editableFormula || selectedFormula || '').trim();
+    if (!formulaToUse) return;
     
     // Verificar si la fórmula tiene placeholders
-    if (selectedFormula.includes('\\square')) {
-      setPlaceholderModal({ open: true, formula: selectedFormula });
+    if (formulaToUse.includes('\\square')) {
+      // Para placeholders mantenemos el flujo existente
+      setPlaceholderModal({ open: true, formula: formulaToUse });
     } else {
       // Insertar directamente si no tiene placeholders
-      onPick(`$${selectedFormula}$`);
+      onPick(`$${formulaToUse}$`);
       setSelectedFormula(null);
+      setEditableFormula('');
     }
   };
 
@@ -1624,6 +1791,7 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
     onPick(`$${completedFormula}$`);
     setPlaceholderModal({ open: false, formula: '' });
     setSelectedFormula(null);
+    setEditableFormula('');
   };
 
   if (!open) return null;
@@ -1655,6 +1823,52 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
               </svg>
             </button>
           )}
+        </div>
+
+        {/* Campo en blanco (opción 1): Editor visual universal */}
+        <div className="rounded-3xl border-2 border-violet-200 bg-gradient-to-br from-violet-50/70 via-indigo-50/40 to-white p-5 shadow-md ring-2 ring-violet-100/50">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <p className="text-xs font-extrabold text-violet-700 uppercase tracking-widest">
+                Editor visual (MathLive)
+              </p>
+              <p className="mt-1 text-xs text-slate-600 font-medium">
+                Escribe desde cero o carga una plantilla de abajo para ajustarla aquí.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditableFormula('');
+                  setSelectedFormula(null);
+                }}
+                className="rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95"
+              >
+                Limpiar
+              </button>
+              <button
+                type="button"
+                onClick={handleInsertFormula}
+                disabled={!String(editableFormula || '').trim()}
+                className="rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 py-2 text-xs font-extrabold text-white shadow-lg shadow-violet-300/50 transition-all hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Insertar lo escrito
+              </button>
+            </div>
+          </div>
+          <MathLiveInput
+            value={editableFormula}
+            onChange={(v) => {
+              setEditableFormula(v);
+              // si el usuario edita manualmente, dejamos la selección como “contexto” pero ya no depende de ella
+            }}
+            className="bg-white/70 rounded-2xl"
+            placeholder="Ej: \\frac{1}{2}gt^2, \\int_0^1 x^2\\,dx, F=ma ..."
+          />
+          <div className="mt-3 text-[11px] text-slate-500">
+            **Opción 2 (plantillas):** baja y elige una fórmula; se cargará aquí para editarla.
+          </div>
         </div>
 
         {/* Tabs de categorías - mejor diseño */}
@@ -1699,16 +1913,31 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
                   <p className="text-xs font-bold text-violet-700 uppercase tracking-wider">Fórmula seleccionada</p>
                 </div>
                 <div className="text-3xl font-medium text-slate-900 mb-3 flex items-center justify-center min-h-[60px] bg-white/60 rounded-xl p-4 border border-violet-200/50">
-                  <InlineMath math={selectedFormula} />
+                  <InlineMath math={editableFormula || selectedFormula} />
                 </div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="flex-1 bg-white/80 px-3 py-2 rounded-lg border border-slate-200">
                     <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wide mb-1">Código LaTeX</p>
                     <p className="text-xs text-slate-700 font-mono break-all">
-                      {selectedFormula}
+                      {editableFormula || selectedFormula}
                     </p>
                   </div>
                 </div>
+
+                {/* Editor visual para ajustar plantillas sin escribir LaTeX */}
+                {!selectedFormula.includes('\\square') && (
+                  <div className="mt-3">
+                    <p className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest mb-2">
+                      Editor visual (MathLive) — también se carga arriba
+                    </p>
+                    <MathLiveInput
+                      value={editableFormula}
+                      onChange={setEditableFormula}
+                      className="bg-white/70 rounded-xl"
+                      placeholder="Ajusta la fórmula aquí…"
+                    />
+                  </div>
+                )}
                 {selectedFormula.includes('\\square') && (
                   <div className="mt-3 flex items-center gap-2 rounded-lg bg-amber-100/80 border border-amber-300/50 px-3 py-2">
                     <span className="text-base">⚙</span>
@@ -1722,7 +1951,10 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
                 </p>
               </div>
               <button
-                onClick={() => setSelectedFormula(null)}
+                onClick={() => {
+                  setSelectedFormula(null);
+                  setEditableFormula('');
+                }}
                 className="ml-3 rounded-xl p-2 text-slate-400 hover:bg-white hover:text-slate-700 transition-all hover:scale-110 active:scale-95 border border-slate-200 hover:border-slate-300"
                 title="Cerrar vista previa"
               >

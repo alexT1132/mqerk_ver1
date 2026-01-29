@@ -5,7 +5,7 @@
 cd /d "%~dp0"
 setlocal enabledelayedexpansion
 chcp 65001 >nul
-title MQERK - FREEDOM EDITION v17.0
+title MQERK - FREEDOM EDITION v17.3 (ANTI-CRASH)
 color 0B
 
 :: --- CONFIGURACIÓN ---
@@ -36,10 +36,16 @@ for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr "IPv4" ^| findstr /v "12
 set "LOCAL_IP=!LOCAL_IP: =!"
 
 :: Estado Git
-for /f "delims=" %%i in ('git rev-parse --abbrev-ref HEAD 2^>nul') do set GIT_BRANCH=%%i
-if not defined GIT_BRANCH set GIT_BRANCH=SIN GIT
-git diff --quiet >nul 2>&1
-if %errorlevel% neq 0 (set "GIT_STATUS=⚠️ Cambios sin guardar") else (set "GIT_STATUS=✅ Todo limpio")
+set "GIT_BRANCH="
+for /f "delims=" %%i in ('git rev-parse --abbrev-ref HEAD 2^>nul') do set "GIT_BRANCH=%%i"
+
+if not defined GIT_BRANCH (
+    set "GIT_BRANCH=SIN GIT"
+    set "GIT_STATUS=❓ Sin repositorio"
+) else (
+    git diff --quiet >nul 2>&1
+    if !errorlevel! neq 0 (set "GIT_STATUS=⚠️ Cambios sin guardar") else (set "GIT_STATUS=✅ Todo limpio")
+)
 
 :: Estado Logs
 if "%LOG_MODE%"=="ON" (set "LOG_ICON=🔴 GRABANDO") else (set "LOG_ICON=⚪ OFF")
@@ -47,7 +53,7 @@ if "%LOG_MODE%"=="ON" (set "LOG_ICON=🔴 GRABANDO") else (set "LOG_ICON=⚪ OFF
 cls
 echo.
 echo  ███╗   ███╗ ██████╗ ███████╗██████╗ ██╗  ██╗ COMMAND CENTER
-echo  ████╗ ████║██╔═══██╗██╔════╝██╔══██╗██║ ██╔╝ v17.0 FREEDOM
+echo  ████╗ ████║██╔═══██╗██╔════╝██╔══██╗██║ ██╔╝ v17.3 STABLE
 echo  ██╔████╔██║██║   ██║█████╗  ██████╔╝█████╔╝ 
 echo  ██║╚██╔╝██║██║▄▄ ██║██╔══╝  ██╔══██╗██╔═██╗ 
 echo  ██║ ╚═╝ ██║╚██████╔╝███████╗██║  ██║██║  ██╗
@@ -55,7 +61,7 @@ echo  ╚═╝     ╚═╝ ╚══▀▀═╝ ╚══════╝╚�
 echo ══════════════════════════════════════════════════════════════════
 echo  📊 DASHBOARD:
 echo  📡 IP Local:   !LOCAL_IP!      (Accesible en misma Wi-Fi)
-echo  🐙 Git Rama:   !GIT_BRANCH!          (!GIT_STATUS!)
+echo  🐙 Git Rama:   !GIT_BRANCH!           (!GIT_STATUS!)
 echo  📼 Caja Negra: !LOG_ICON!        (Logs Persistentes)
 echo ══════════════════════════════════════════════════════════════════
 echo.
@@ -202,89 +208,135 @@ pause
 goto MAIN_MENU
 
 :: ==========================================
-:: SECCIÓN 3: GIT MASTER (LIBERTAD TOTAL)
+:: SECCIÓN 3: GIT MASTER (FIXED V3)
 :: ==========================================
 :GIT_BRANCH_MANAGER
 cls
 echo [ GESTOR DE RAMAS ]
 echo.
 echo --- RAMAS LOCALES ---
-git branch
+git branch 2>nul
 echo.
 echo --- RAMAS REMOTAS ---
 git branch -r 2>nul
 echo.
-echo [1] Cambiar Rama (Checkout) 
-echo [2] Crear Rama Nueva
-echo [V] Volver
+echo  [1] 🔀 Cambiar Rama (Checkout) 
+echo  [2] ✨ Crear Rama Nueva
+echo  [3] 🔥 Eliminar Rama (Local o Remota)
+echo  [V] Volver
 set /p o="> "
-if "%o%"=="1" (
+
+if "%o%"=="1" goto GIT_OPT_CHECKOUT
+if "%o%"=="2" goto GIT_OPT_NEW
+if "%o%"=="3" goto GIT_OPT_DELETE_MENU
+goto MAIN_MENU
+
+:GIT_OPT_CHECKOUT
+echo.
+echo Escribe el nombre exacto de la rama a donde quieres ir.
+set /p b="> Nombre: "
+if "!b!"=="" goto GIT_BRANCH_MANAGER
+:: Anti-URL check
+echo !b! | findstr /R "http:// https:// git@" >nul
+if !errorlevel! equ 0 ( echo [X] Error: Ingresaste una URL. & pause & goto GIT_BRANCH_MANAGER )
+
+git checkout !b! 2>&1
+if !errorlevel! neq 0 (
     echo.
-    set /p b="> Nombre de la rama (solo el nombre, ej: main, master, dev): "
-    if "!b!"=="" (
-        echo [X] No se ingreso nombre de rama.
-    ) else (
-        echo !b! | findstr /R "http:// https:// git@" >nul
-        if !errorlevel! equ 0 (
-            echo [X] ERROR: Has ingresado una URL. Debes ingresar solo el NOMBRE de la rama.
-            echo     Ejemplos validos: main, master, dev, feature/nueva-funcion
-            echo     El nombre de la rama aparece en la lista de arriba (sin "origin/").
-        ) else (
-            echo [*] Cambiando a rama: !b!
-            git checkout !b! 2>&1
-            if !errorlevel! neq 0 (
-                echo [X] Error al cambiar de rama. Verifica que la rama existe.
-                echo     Si es una rama remota, usa: git checkout -b !b! origin/!b!
-            ) else (
-                echo [+] Cambio exitoso.
-            )
-        )
-    )
-)
-if "%o%"=="2" (
-    echo.
-    set /p b="> Nombre de la nueva rama: "
-    if "!b!"=="" (
-        echo [X] No se ingreso nombre de rama.
-    ) else (
-        echo [*] Creando nueva rama: !b!
-        git checkout -b !b! 2>&1
-        if !errorlevel! neq 0 (
-            echo [X] Error al crear la rama. Verifica que el nombre sea valido.
-        ) else (
-            echo [+] Rama creada y activada.
-        )
+    echo [X] Local no encontrada. Buscando en remoto...
+    git checkout -b !b! origin/!b! 2>&1
+    if !errorlevel! neq 0 (
+        REM Intento con el nombre raro del remoto
+        for /f %%r in ('git remote') do set "RR=%%r"
+        git checkout -b !b! !RR!/!b! 2>&1
     )
 )
 pause
-goto MAIN_MENU
+goto GIT_BRANCH_MANAGER
+
+:GIT_OPT_NEW
+echo.
+set /p b="> Nombre nueva rama: "
+if "!b!"=="" goto GIT_BRANCH_MANAGER
+git checkout -b !b! 2>&1
+pause
+goto GIT_BRANCH_MANAGER
+
+:GIT_OPT_DELETE_MENU
+echo.
+echo ⚠️  MODO DESTRUCTOR ⚠️
+echo  [L] Borrar rama LOCAL (Tu PC)
+echo  [R] Borrar rama REMOTA (Nube / GitHub)
+set /p type="> Opcion (L/R): "
+
+if /i "%type%"=="L" goto DELETE_LOCAL_ACT
+if /i "%type%"=="R" goto DELETE_REMOTE_ACT
+goto GIT_BRANCH_MANAGER
+
+:DELETE_LOCAL_ACT
+echo.
+echo Escribe el nombre de la rama LOCAL a borrar (ej: main):
+set /p b="> Nombre: "
+if "!b!"=="" goto GIT_BRANCH_MANAGER
+echo Borrando rama local !b!...
+git branch -D !b!
+if !errorlevel! neq 0 echo [X] Error. Quizas estas parado en esa rama.
+pause
+goto GIT_BRANCH_MANAGER
+
+:DELETE_REMOTE_ACT
+echo.
+echo --- RAMAS REMOTAS DISPONIBLES ---
+git branch -r
+echo.
+echo Escribe el nombre de la rama a borrar.
+echo SOLO el nombre final (Ej: si dice 'alexT1132/feature', escribe 'feature').
+echo.
+set /p b="> Nombre rama: "
+if "!b!"=="" goto GIT_BRANCH_MANAGER
+
+:: Detectar nombre del remoto automaticamente (ej: origin o alexT1132)
+set "MY_REMOTE=origin"
+for /f %%r in ('git remote') do set "MY_REMOTE=%%r"
+
+echo.
+echo ☢️  Intentando borrar '!b!' en remoto '!MY_REMOTE!'...
+pause
+
+git push !MY_REMOTE! --delete !b!
+if !errorlevel! neq 0 (
+    echo.
+    echo ❌ FALLO EL BORRADO.
+    echo Asegurate de escribir bien el nombre (sin 'origin/' ni 'alexT1132/').
+) else (
+    echo ✅ Rama borrada del servidor.
+)
+pause
+goto GIT_BRANCH_MANAGER
+
 
 :GIT_PUSH
 cls
 echo 📤 SUBIDA A GIT (PUSH)
 echo Destino actual:
-git remote get-url origin 2>nul
-if %errorlevel% neq 0 echo (No hay repositorio remoto configurado. Usa opcion 18.)
+git remote get-url origin 2>nul || echo (Sin remoto configurado)
 echo.
-git status -s
+git status -s 2>nul
 echo.
 set /p msg="> Mensaje del commit: "
 if "%msg%"=="" set msg=Update %date%
 
 echo [Git] Add...
-git add .
+git add . 2>nul
 echo [Git] Commit...
-git commit -m "%msg%"
+git commit -m "%msg%" 2>nul
 echo [Git] Push...
 git push -u origin HEAD
-if %errorlevel% neq 0 (
+if !errorlevel! neq 0 (
     echo.
-    echo ❌ FALLO EL PUSH.
-    echo Posibles causas:
-    echo 1. No has configurado el remoto (Usa opcion 18).
-    echo 2. Necesitas hacer Pull antes.
-) else (
-    echo ✅ Exito.
+    echo [!] Fallo push a 'origin'. Probando remoto alternativo...
+    for /f %%r in ('git remote') do set "RR=%%r"
+    git push -u !RR! HEAD
 )
 pause
 goto MAIN_MENU
@@ -300,7 +352,6 @@ if exist ".git" (
     echo  ✅ Git esta inicializado.
     echo  🌍 URL Remota:
     git remote get-url origin 2>nul
-    if %errorlevel% neq 0 echo     (No configurada aun)
 ) else (
     echo  ❌ Git NO esta inicializado en esta carpeta.
 )
@@ -318,18 +369,17 @@ goto MAIN_MENU
 :GIT_INIT_FLOW
 echo.
 echo --- INICIALIZANDO NUEVO PROYECTO ---
-git init
+git init 2>nul
 echo.
 echo Pega la URL de tu repositorio (GitHub/GitLab):
-echo (Ej: https://github.com/usuario/mi-proyecto.git)
 set /p repo_url="> URL: "
-git remote add origin %repo_url%
-git branch -M main
+git remote add origin %repo_url% 2>nul
+git branch -M main 2>nul
 echo.
 echo Haciendo primer Push...
-git add .
-git commit -m "First commit via MQERK Script"
-git push -u origin main
+git add . 2>nul
+git commit -m "Initial commit" 2>nul
+git push -u origin main 2>nul
 pause
 goto MAIN_MENU
 
@@ -337,27 +387,31 @@ goto MAIN_MENU
 echo.
 echo --- CAMBIANDO DESTINO ---
 echo URL Actual:
-git remote get-url origin
+git remote get-url origin 2>nul
 echo.
 echo Pega la NUEVA URL del repositorio:
 set /p new_url="> Nueva URL: "
-git remote set-url origin %new_url%
+git remote set-url origin %new_url% 2>nul
 echo.
-echo ✅ URL actualizada. Ahora 'Push' subira a este nuevo repo.
+echo ✅ URL actualizada.
 pause
 goto MAIN_MENU
 
 :GIT_PULL
-git pull & pause & goto MAIN_MENU
+git pull 2>nul
+if !errorlevel! neq 0 (
+    for /f %%r in ('git remote') do git pull %%r HEAD
+)
+pause & goto MAIN_MENU
 
 :TIME_MACHINE
 cls
 color 5E
 echo 🕒 TIME MACHINE
-git log --oneline -n 5
+git log --oneline -n 5 2>nul
 set /p c="> ID Commit (o V): "
 if /i "%c%"=="V" ( color 0B & goto MAIN_MENU )
-git reset --hard %c%
+git reset --hard %c% 2>nul
 color 0B & pause & goto MAIN_MENU
 
 :: ==========================================
@@ -382,12 +436,14 @@ start "TUNNEL" cmd /k "npx localtunnel --port %CLIENT_PORT%"
 goto MAIN_MENU
 
 :GENERATE_TOKEN
-powershell -Command "[Convert]::ToBase64String((1..48|%%{ [byte](Get-Random -Max 256) }))" & pause & goto MAIN_MENU
+powershell -Command "[Convert]::ToBase64String((1..48|%%{ [byte](Get-Random -Max 256) }))"
+pause & goto MAIN_MENU
 
 :BACKUP_PROJECT
 for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set datetime=%%I
 set "TS=%datetime:~0,8%_%datetime:~8,4%"
-robocopy . "_backups\Backup_%TS%" /MIR /XD node_modules .git dist build _backups /XF *.log /NJH /NJS /NDL /NC /NS
+robocopy . "_backups\Backup_%TS%" /MIR /XD node_modules .git dist build _backups /XF *.log /NJH /NJS /NDL /NC /NS 2>nul
+echo Backup completo en _backups.
 pause & goto MAIN_MENU
 
 :HARD_RESET
@@ -401,8 +457,8 @@ if exist "%~dp0%SERVER_DIR%\node_modules" rmdir /s /q "%~dp0%SERVER_DIR%\node_mo
 if exist "%~dp0%SERVER_DIR%\package-lock.json" del "%~dp0%SERVER_DIR%\package-lock.json"
 if exist "%~dp0%CLIENT_DIR%\node_modules" rmdir /s /q "%~dp0%CLIENT_DIR%\node_modules"
 if exist "%~dp0%CLIENT_DIR%\package-lock.json" del "%~dp0%CLIENT_DIR%\package-lock.json"
-cd /d "%~dp0%SERVER_DIR%" & call npm install
-cd /d "%~dp0%CLIENT_DIR%" & call npm install
+cd /d "%~dp0%SERVER_DIR%" & call npm install 2>nul
+cd /d "%~dp0%CLIENT_DIR%" & call npm install 2>nul
 cd /d "%~dp0"
 color 0B & pause & goto MAIN_MENU
 
@@ -417,8 +473,8 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr :%CLIENT_PORT% ^| findstr LIS
 goto :eof
 
 :CHECK_DEPS
-if not exist "%~dp0%SERVER_DIR%\node_modules" ( cd /d "%~dp0%SERVER_DIR%" & call npm install & cd /d "%~dp0" )
-if not exist "%~dp0%CLIENT_DIR%\node_modules" ( cd /d "%~dp0%CLIENT_DIR%" & call npm install & cd /d "%~dp0" )
+if not exist "%~dp0%SERVER_DIR%\node_modules" ( cd /d "%~dp0%SERVER_DIR%" & call npm install 2>nul & cd /d "%~dp0" )
+if not exist "%~dp0%CLIENT_DIR%\node_modules" ( cd /d "%~dp0%CLIENT_DIR%" & call npm install 2>nul & cd /d "%~dp0" )
 goto :eof
 
 :END

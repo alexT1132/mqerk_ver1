@@ -87,7 +87,7 @@ function HeaderSim({ title, subtitle, total, onBack }) {
   );
 }
 
-function CardAct({ item, onOpenSolicitudes, badgeCount, to }) {
+function CardAct({ item, onOpenSolicitudes, badgeCount, to, state }) {
   // Unificar estilo con CardSim: mismo contenedor, ícono, tipografía y acciones
   const { title, desc } = item;
   const gradient = item?.gradient || item?.color || "from-violet-500 to-fuchsia-600";
@@ -123,7 +123,8 @@ function CardAct({ item, onOpenSolicitudes, badgeCount, to }) {
           Solicitudes
         </button>
         <Link 
-          to={to} 
+          to={to}
+          state={state}
           className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl group"
         >
           <span>Acceder</span>
@@ -147,7 +148,7 @@ function CardAct({ item, onOpenSolicitudes, badgeCount, to }) {
   );
 }
 
-function CardSim({ item, onOpenSolicitudes, badgeCount, to }) {
+function CardSim({ item, onOpenSolicitudes, badgeCount, to, state }) {
   // Aseguramos mismos estilos entre páginas: si no hay gradient, intentamos derivarlo de `color`
   const { title, desc, icon: Icon } = item;
   const gradient = item?.gradient || item?.color || "from-violet-500 to-fuchsia-600";
@@ -183,7 +184,8 @@ function CardSim({ item, onOpenSolicitudes, badgeCount, to }) {
           Solicitudes
         </button>
         <Link 
-          to={to} 
+          to={to}
+          state={state}
           className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl group"
         >
           <span>Acceder</span>
@@ -311,7 +313,22 @@ export default function ModulosEspecificos({
         const name = _getAreaKey(item);
         return { pathname: '/asesor/simuladores/area', search: `?area=${encodeURIComponent(name)}` };
       }
-    return { pathname: '/asesor/actividades/modulo', state: { title: item.title } };
+    return { pathname: '/asesor/actividades/modulo', state: { title: _getAreaKey(item) || item.title } };
+  };
+
+  // React Router v6: `state` NO va dentro de `to`, se pasa como prop separado.
+  // Normalizamos para soportar objetos legacy { pathname, search, state }.
+  const normalizeToState = (link) => {
+    if (typeof link === "string") return { to: link, state: undefined };
+    if (!link || typeof link !== "object") return { to: "/", state: undefined };
+    if ("to" in link) {
+      // Por si alguien ya regresa { to, state } en el futuro
+      const { to, state } = link;
+      return { to: to || "/", state };
+    }
+    // Legacy: { pathname, search, hash, state }
+    const { state, ...to } = link;
+    return { to, state };
   };
 
   return (
@@ -332,13 +349,14 @@ export default function ModulosEspecificos({
       <div className="mx-auto mt-6 sm:mt-8 max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className={variant === 'sim' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6'}>
           {items.map((item, i) => {
-            const to = _buildAccessLink(item);
+            const link = _buildAccessLink(item);
+            const { to, state } = normalizeToState(link);
             const badgeCount = getBadgeCount(item);
             const onOpen = () => openAreaSolicitudes(item);
             return variant === 'sim' ? (
-              <CardSim key={i} item={item} to={to} badgeCount={badgeCount} onOpenSolicitudes={onOpen} />
+              <CardSim key={i} item={item} to={to} state={state} badgeCount={badgeCount} onOpenSolicitudes={onOpen} />
             ) : (
-              <CardAct key={i} item={item} to={to} badgeCount={badgeCount} onOpenSolicitudes={onOpen} />
+              <CardAct key={i} item={item} to={to} state={state} badgeCount={badgeCount} onOpenSolicitudes={onOpen} />
             );
           })}
         </div>

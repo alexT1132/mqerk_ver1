@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import NavLogin from '../components/NavLogin.jsx';
-import ParticlesBackground from '../components/ParticlesBackground.jsx';
+import NavLogin from '../components/common/auth/NavLogin.jsx';
+import ParticlesBackground from '../components/common/ParticlesBackground.jsx';
 import axios from '../api/axios.js';
 
 export default function ForgotPassword() {

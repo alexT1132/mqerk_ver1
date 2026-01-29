@@ -8,6 +8,9 @@ const HMR_PORT = process.env.VITE_HMR_PORT ? Number(process.env.VITE_HMR_PORT) :
 const HMR_PROTOCOL = process.env.VITE_HMR_PROTOCOL || undefined;
 const HMR_CLIENT_PORT = process.env.VITE_HMR_CLIENT_PORT ? Number(process.env.VITE_HMR_CLIENT_PORT) : undefined;
 
+// Target del backend para el proxy (permite usar IP local en lugar de localhost)
+const API_TARGET = process.env.VITE_API_TARGET || 'http://localhost:1002';
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -33,37 +36,38 @@ export default defineConfig({
       }
     } : {}),
     // Proxy para evitar que fetch('/api/...') devuelva index.html del dev server (causando '<!doctype' en JSON)
+    // Usa VITE_API_TARGET para especificar la IP del backend en red local (ej: VITE_API_TARGET=http://192.168.1.50:1002)
     proxy: {
       '/api': {
-        target: 'http://localhost:1002',
+        target: API_TARGET,
         changeOrigin: true,
         secure: false,
       },
       // Proxy de WebSocket de notificaciones hacia el backend
       '/ws': {
-        target: 'http://localhost:1002',
+        target: API_TARGET,
         changeOrigin: true,
         secure: false,
         ws: true
       },
       // Permitir abrir PDFs y otros archivos servidos por Express (evita 404 del dev server de Vite)
       '/public': {
-        target: 'http://localhost:1002',
+        target: API_TARGET,
         changeOrigin: true,
         secure: false,
       },
       '/comprobantes': {
-        target: 'http://localhost:1002',
+        target: API_TARGET,
         changeOrigin: true,
         secure: false,
       },
       '/contratos': {
-        target: 'http://localhost:1002',
+        target: API_TARGET,
         changeOrigin: true,
         secure: false,
       },
       '/uploads': {
-        target: 'http://localhost:1002',
+        target: API_TARGET,
         changeOrigin: true,
         secure: false,
       }

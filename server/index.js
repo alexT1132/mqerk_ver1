@@ -9,6 +9,7 @@ import { setupWebSocket } from './ws.js';
 import { ensureEstatusColumn } from './models/estudiantes.model.js';
 import { ensureEEAUTable } from './models/eeau.model.js';
 import { ensureChatTable } from './models/chat.model.js';
+import { ensureAdminAsesorChatTable } from './models/admin_asesor_chat.model.js';
 import { schedulePlantillasJob } from './jobs/plantillasAuto.js';
 
 const PORT = Number(process.env.PORT) || 1002;
@@ -32,6 +33,9 @@ Promise.all([
 	}),
 	ensureChatTable().catch((err) => {
 		console.error('[DB] Error asegurando tabla chat:', err?.message || err);
+	}),
+	ensureAdminAsesorChatTable().catch((err) => {
+		console.error('[DB] Error asegurando tabla admin_asesor_messages:', err?.message || err);
 	})
 ]).catch(() => { });
 setupWebSocket(server);

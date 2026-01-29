@@ -11,7 +11,7 @@ import Ocho from "../../../assets/mqerk/talleres/8.webp";
 import Nueve from "../../../assets/mqerk/talleres/9.webp";
 import Diez from "../../../assets/mqerk/talleres/10.webp";
 import { Link } from "react-router-dom";
-import Footer from "../../footer";
+import Footer from "../../../components/layout/footer";
 
 function Talleres() {
   return (

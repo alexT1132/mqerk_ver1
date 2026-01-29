@@ -162,6 +162,7 @@ const ChatAdmin = () => {
             const list = Array.isArray(res.data?.data) ? res.data.data : [];
             const processed = list.map(s => ({
                 id: s.id,
+                usuario_id: s.usuario_id || null,
                 name: `${s.nombres || s.nombre || ""} ${s.apellidos || ""}`.trim(),
                 avatar: s.foto ? buildStaticUrl(s.foto) : "",
                 grupo: s.grupo || "",
@@ -199,8 +200,17 @@ const ChatAdmin = () => {
         async function loadChat(isBackground = false) {
             if (!isBackground) setLoadingChat(true);
             try {
-                const res = await axios.get(`/chat/support/history?student_id=${selectedStudent.id}`);
-                const newMessages = Array.isArray(res.data.data) ? [...res.data.data] : [];
+                let newMessages = [];
+                if (selectedStudent.tipo === 'asesor') {
+                    const asesorUserId = Number(selectedStudent.usuario_id);
+                    if (asesorUserId) {
+                        const res = await axios.get('/chat/admin-asesor/history', { params: { asesor_user_id: asesorUserId } });
+                        newMessages = Array.isArray(res.data?.data) ? [...res.data.data] : [];
+                    }
+                } else {
+                    const res = await axios.get(`/chat/support/history?student_id=${selectedStudent.id}`);
+                    newMessages = Array.isArray(res.data.data) ? [...res.data.data] : [];
+                }
 
                 setMessages(prev => {
                     if (isBackground && prev.length === newMessages.length &&
@@ -218,8 +228,10 @@ const ChatAdmin = () => {
                     setTimeout(() => scrollToBottom(false), 100);
                 }
 
-                await axios.post('/chat/support/read', { student_id: selectedStudent.id });
-                window.dispatchEvent(new CustomEvent('admin-chat-update'));
+                if (selectedStudent.tipo !== 'asesor') {
+                    await axios.post('/chat/support/read', { student_id: selectedStudent.id });
+                    window.dispatchEvent(new CustomEvent('admin-chat-update'));
+                }
             } catch (error) {
                 console.error("Error loading chat:", error);
             } finally {
@@ -243,6 +255,40 @@ const ChatAdmin = () => {
     useEffect(() => {
         const handler = (e) => {
             const data = e.detail;
+
+            if (data?.type === 'admin_asesor_message' && data.data) {
+                const msg = data.data;
+                if (selectedStudent?.tipo === 'asesor') {
+                    const asesorUserId = Number(selectedStudent.usuario_id);
+                    if (asesorUserId && Number(msg.asesor_user_id) === asesorUserId) {
+                        setMessages(prev => {
+                            if (prev.some(m => m.id === msg.id)) return prev;
+                            const optimIdx = prev.findIndex(m =>
+                                String(m.id).startsWith('opt-') &&
+                                m.sender_role === msg.sender_role &&
+                                String(m.message || '').trim() === String(msg.message || '').trim() &&
+                                Math.abs(new Date(m.created_at) - new Date(msg.created_at)) < 20000
+                            );
+                            if (optimIdx !== -1) {
+                                const next = [...prev];
+                                next[optimIdx] = msg;
+                                return next;
+                            }
+                            return [...prev, msg];
+                        });
+                        setTimeout(scrollToBottom, 100);
+
+                        // Sonido/alerta solo si lo envía el asesor y no estamos viendo el chat visible
+                        const isFromAsesor = String(msg.sender_role || '').toLowerCase() === 'asesor';
+                        if (isFromAsesor && document.hidden) {
+                            playNotificationSoundRef();
+                            startTitleNotificationRef(1);
+                        }
+                    }
+                }
+                return;
+            }
+
             if (data?.type === 'chat_message' && data.data && data.data.category === 'support') {
                 const msg = data.data;
 
@@ -422,6 +468,39 @@ const ChatAdmin = () => {
         const messageType = fileToSend ? (fileToSend.type.startsWith('image/') ? 'image' : 'file') : 'text';
 
         try {
+            // === Admin -> Asesor (solo texto por ahora) ===
+            if (selectedStudent.tipo === 'asesor') {
+                const asesorUserId = Number(selectedStudent.usuario_id);
+                if (!asesorUserId) {
+                    toast.error('Este asesor no tiene usuario asignado aún (no se puede chatear).');
+                    return;
+                }
+                const content = String(msgText || '').trim();
+                if (!content) return;
+
+                const optimMsg = {
+                    id: tempId,
+                    asesor_user_id: asesorUserId,
+                    sender_user_id: user?.id,
+                    sender_role: 'admin',
+                    message: content,
+                    created_at: new Date().toISOString()
+                };
+
+                setMessages(prev => [...prev, optimMsg]);
+                setNewMessage('');
+                setSelectedFile(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                setTimeout(scrollToBottom, 50);
+
+                const res = await axios.post('/chat/admin-asesor/send', { asesor_user_id: asesorUserId, message: content });
+                const saved = res.data?.message;
+                if (saved?.id) {
+                    setMessages(prev => prev.map(m => (String(m.id) === String(tempId) ? saved : m)));
+                }
+                return;
+            }
+
             const formData = new FormData();
             formData.append('student_id', selectedStudent.id);
             formData.append('message', msgText || '');
@@ -549,14 +628,15 @@ const ChatAdmin = () => {
                         ) : (
                             <div className="divide-y divide-slate-100/60">
                                 {filteredStudents.map(s => {
-                                    const unreadCount = unreadCounts[s.id] || 0;
-                                    const isSelected = selectedStudent?.id === s.id;
+                                    const itemKey = `${s.tipo || 'estudiante'}-${s.id}`;
+                                    const unreadCount = (s.tipo === 'estudiante') ? (unreadCounts[s.id] || 0) : 0;
+                                    const isSelected = (selectedStudent?.id === s.id) && (selectedStudent?.tipo === s.tipo);
                                     const studentId = Number(s.id);
-                                    const isOnline = onlineStudents.has(studentId);
+                                    const isOnline = (s.tipo === 'estudiante') ? onlineStudents.has(studentId) : false;
 
                                     return (
                                         <button
-                                            key={s.id}
+                                            key={itemKey}
                                             onClick={() => setSelectedStudent(s)}
                                             className={`w-full p-3 sm:p-4 min-h-[72px] flex items-center gap-3 transition-all duration-200 text-left relative group
                                             ${isSelected ? 'bg-white border-l-4 border-indigo-600 shadow-sm' : 'hover:bg-white border-l-4 border-transparent'}
@@ -660,7 +740,9 @@ const ChatAdmin = () => {
                                         <p className="text-slate-500 font-medium text-sm mt-3">Comienza la conversación</p>
                                     </div>
                                 ) : (
-                                    messages.map((msg, idx) => {
+                                    [...messages]
+                                        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                                        .map((msg, idx) => {
                                         const isMe = msg.sender_role === 'admin';
                                         const isEstudiante = msg.sender_role === 'estudiante';
                                         const isAsesor = msg.sender_role === 'asesor';

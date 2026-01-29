@@ -1,5 +1,34 @@
-import { saveMessage, getHistory, markAsRead } from '../models/chat.model.js';
+import { saveMessage, getHistory, markAsRead, getLastHoursNotice } from '../models/chat.model.js';
 import { broadcastStudent, broadcastAdmins, getOnlineStudents, getOnlineUsers } from '../ws.js';
+
+const CHAT_TIMEZONE = process.env.CHAT_TIMEZONE || 'America/Mexico_City';
+const HOURS_NOTICE_DEBOUNCE_MS = Number(process.env.CHAT_HOURS_NOTICE_DEBOUNCE_MS || 30 * 60 * 1000); // 30 min
+
+function getZonedNow(timeZone = CHAT_TIMEZONE) {
+    try {
+        // Best-effort: convert "now" to the given timezone using locale string
+        return new Date(new Date().toLocaleString('en-US', { timeZone }));
+    } catch {
+        return new Date();
+    }
+}
+
+function getAfterHoursAutoReply(zonedNow) {
+    const day = zonedNow.getDay(); // 0=Domingo, 6=Sábado
+    const hour = zonedNow.getHours();
+
+    // Sábado/Domingo: siempre
+    if (day === 0 || day === 6) {
+        return 'Los días de atención son de Lunes a Viernes 9:00 AM - 6:00 PM.';
+    }
+
+    // Lunes a Viernes después de 7:00 PM
+    if (hour >= 19) {
+        return 'El horario de atención es de Lunes a Viernes 9:00 AM - 6:00 PM, gracias por su comprensión.';
+    }
+
+    return null;
+}
 
 export const sendMessage = async (req, res) => {
     try {
@@ -67,7 +96,7 @@ export const sendMessage = async (req, res) => {
             file_path 
         });
 
-        // 2. Emitir WebSocket
+        // 2. Emitir WebSocket (mensaje original)
         const payload = {
             type: 'chat_message',
             data: savedMsg
@@ -81,6 +110,30 @@ export const sendMessage = async (req, res) => {
             broadcastAdmins(payload);
             // Opcional: confirmar al estudiante por socket también si se quiere consistencia realtime
             broadcastStudent(studentIdNum, payload);
+
+            // Auto-respuesta por horario (para chat admin y asesor)
+            const categorySafe = category || 'general';
+            const autoText = getAfterHoursAutoReply(getZonedNow());
+            if (autoText) {
+                const last = await getLastHoursNotice(studentIdNum, categorySafe).catch(() => null);
+                const lastAt = last?.created_at ? new Date(last.created_at).getTime() : 0;
+                const tooSoon = lastAt && (Date.now() - lastAt) < HOURS_NOTICE_DEBOUNCE_MS;
+
+                if (!tooSoon) {
+                    const notice = await saveMessage({
+                        student_id: studentIdNum,
+                        sender_role: 'sistema',
+                        message: autoText,
+                        type: 'text',
+                        category: categorySafe,
+                        file_path: null
+                    });
+
+                    const noticePayload = { type: 'chat_message', data: notice };
+                    broadcastStudent(studentIdNum, noticePayload);
+                    broadcastAdmins(noticePayload);
+                }
+            }
         } else {
             // Admin envía -> notificar al estudiante
             broadcastStudent(studentIdNum, payload);
@@ -353,6 +406,7 @@ export const getSupportStudents = async (req, res) => {
             -- Primero obtener asesores desde asesor_perfiles (tienen usuario_id asignado)
             SELECT 
                 perf.id, 
+                perf.usuario_id as usuario_id,
                 COALESCE(ap.nombres, '') COLLATE utf8mb4_unicode_ci as nombre, 
                 COALESCE(ap.apellidos, '') COLLATE utf8mb4_unicode_ci as apellidos, 
                 COALESCE(perf.doc_fotografia, '/default-avatar.png') COLLATE utf8mb4_unicode_ci as foto,
@@ -367,6 +421,7 @@ export const getSupportStudents = async (req, res) => {
             -- Asesores desde preregistros que aún no tienen usuario asignado pero están completos
             SELECT 
                 ap.id, 
+                NULL as usuario_id,
                 ap.nombres COLLATE utf8mb4_unicode_ci as nombre, 
                 ap.apellidos COLLATE utf8mb4_unicode_ci as apellidos, 
                 COALESCE(perf.doc_fotografia, '/default-avatar.png') COLLATE utf8mb4_unicode_ci as foto,
@@ -382,6 +437,7 @@ export const getSupportStudents = async (req, res) => {
             -- Estudiantes que NO son asesores (verificar que no tengan perfil de asesor)
             SELECT 
                 e.id, 
+                u.id as usuario_id,
                 e.nombre COLLATE utf8mb4_unicode_ci as nombre, 
                 e.apellidos COLLATE utf8mb4_unicode_ci as apellidos, 
                 e.foto COLLATE utf8mb4_unicode_ci as foto, 

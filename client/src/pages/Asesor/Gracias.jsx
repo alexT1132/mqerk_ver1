@@ -1,4 +1,4 @@
-import NavLogin from "../../components/NavLogin";
+import NavLogin from "../../components/common/auth/NavLogin";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function GraciasAsesor(){

@@ -701,8 +701,8 @@ export default function FinanzasPagosAsesores(){
       )}
       {/* Modal presupuesto insuficiente */}
       {budgetWarn.open && budgetWarn.info && (()=>{ const info = budgetWarn.info; const fmt = (n)=> Number(n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN'}); return (
-        <div className="fixed inset-0 z-[11000] bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden">
+        <div className="fixed inset-0 z-[11000] bg-black/40 flex items-center justify-center p-4 pt-8 sm:pt-12 md:pt-16">
+          <div className="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden max-h-[calc(100vh-14rem)] flex flex-col">
             <div className="px-5 py-4 border-b flex items-center justify-between bg-amber-50/60">
               <h3 className="text-base font-semibold text-amber-800">Presupuesto insuficiente</h3>
               <button onClick={()=> setBudgetWarn({ open:false, info:null, payload:null, editId:null, original:null })} className="text-amber-600 hover:text-amber-800">✕</button>

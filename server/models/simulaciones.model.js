@@ -43,18 +43,16 @@ export const listSimulaciones = async ({ id_area, visible = true, soloPublicas =
 
   const [rows] = await db.query(sql, params);
 
-  // ✅ DEBUG: Log temporal para depurar
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[listSimulaciones MODEL] Resultados:', {
-      totalRows: rows.length,
-      sampleRows: rows.slice(0, 3).map(r => ({
-        id: r.id,
-        titulo: r.titulo,
-        publico: r.publico,
-        activo: r.activo,
-        id_area: r.id_area
-      }))
-    });
+  // ✅ Log crítico: solo si hay simuladores sin descripción
+  if (process.env.NODE_ENV !== 'production' && rows.length > 0) {
+    const sinDescripcion = rows.filter(r => !r.descripcion || r.descripcion.length === 0);
+    if (sinDescripcion.length > 0) {
+      console.warn('[listSimulaciones MODEL] ⚠️ Simuladores sin descripción:', {
+        total: rows.length,
+        sinDescripcion: sinDescripcion.length,
+        ids: sinDescripcion.map(r => r.id)
+      });
+    }
   }
 
   return rows;
@@ -74,7 +72,36 @@ export const getSimulacionFull = async (id) => {
   const [opcs] = await db.query('SELECT * FROM simulaciones_preguntas_opciones WHERE id_pregunta IN (?) ORDER BY id ASC', [ids]);
   const byPreg = new Map();
   for (const o of opcs) { const arr = byPreg.get(o.id_pregunta) || []; arr.push(o); byPreg.set(o.id_pregunta, arr); }
-  const preguntas = pregs.map(p => ({ ...p, opciones: byPreg.get(p.id) || [] }));
+  const preguntas = pregs.map(p => {
+    // ✅ CRÍTICO: Extraer imagen de la pregunta si existe (puede venir como p.imagen, p.image, o en metadata_json)
+    let preguntaImagen = null;
+    if (p.imagen) {
+      preguntaImagen = p.imagen;
+    } else if (p.image) {
+      preguntaImagen = p.image;
+    } else if (p.metadata_json) {
+      try {
+        const metadata = JSON.parse(p.metadata_json);
+        preguntaImagen = metadata.imagen || metadata.image || null;
+      } catch {}
+    }
+    // ✅ CRÍTICO: Extraer imagen de cada opción si existe
+    const opciones = (byPreg.get(p.id) || []).map(o => {
+      let opcionImagen = null;
+      if (o.imagen) {
+        opcionImagen = o.imagen;
+      } else if (o.image) {
+        opcionImagen = o.image;
+      } else if (o.metadata_json) {
+        try {
+          const metadata = JSON.parse(o.metadata_json);
+          opcionImagen = metadata.imagen || metadata.image || null;
+        } catch {}
+      }
+      return { ...o, imagen: opcionImagen };
+    });
+    return { ...p, imagen: preguntaImagen, opciones };
+  });
   return { ...sim, preguntas };
 };
 
@@ -102,10 +129,16 @@ export const createSimulacion = async ({ titulo, descripcion, id_area = null, fe
   // Guardar grupos como JSON string si es objeto/array
   let gruposVal = grupos;
   try { if (gruposVal && typeof gruposVal !== 'string') gruposVal = JSON.stringify(gruposVal); } catch { gruposVal = null; }
+  // ✅ CRÍTICO: Si descripcion es string vacío, mantenerlo como string vacío (no convertir a null)
+  // Esto permite que se guarde la descripción incluso si está vacía inicialmente
+  const descripcionVal = descripcion !== null && descripcion !== undefined ? String(descripcion) : null;
+  
+  // ✅ Igual que en quizzes: guardar time_limit_min tal cual viene (sin validación compleja)
   const [res] = await db.query(
     'INSERT INTO simulaciones (titulo, descripcion, id_area, fecha_limite, time_limit_min, publico, activo, creado_por, grupos) VALUES (?,?,?,?,?,?,?,?,?)',
-    [titulo, descripcion || null, id_area || null, fecha_limite || null, time_limit_min || null, publico ? 1 : 0, activo ? 1 : 0, creado_por || null, gruposVal || null]
+    [titulo, descripcionVal, id_area || null, fecha_limite || null, time_limit_min || null, publico ? 1 : 0, activo ? 1 : 0, creado_por || null, gruposVal || null]
   );
+  
   return getSimulacionById(res.insertId);
 };
 
@@ -177,20 +210,44 @@ export const deleteSimulacion = async (id) => {
   }
 };
 
-export const createPregunta = async ({ id_simulacion, orden = null, enunciado, tipo = 'opcion_multiple', puntos = 1, activa = 1 }) => {
+export const createPregunta = async ({ id_simulacion, orden = null, enunciado, tipo = 'opcion_multiple', puntos = 1, activa = 1, imagen = null }) => {
+  // Insertar pregunta primero
   const [res] = await db.query(
     'INSERT INTO simulaciones_preguntas (id_simulacion, orden, enunciado, tipo, puntos, activa) VALUES (?,?,?,?,?,?)',
     [id_simulacion, orden, enunciado, tipo, puntos, activa ? 1 : 0]
   );
+  
+  // ✅ CRÍTICO: Guardar imagen en metadata_json si existe (después de insertar)
+  if (imagen) {
+    try {
+      const metadataJson = JSON.stringify({ imagen: imagen });
+      await db.query('UPDATE simulaciones_preguntas SET metadata_json = ? WHERE id = ?', [metadataJson, res.insertId]);
+    } catch (e) {
+      // Si metadata_json no existe, ignorar (tabla antigua)
+    }
+  }
+  
   const [rows] = await db.query('SELECT * FROM simulaciones_preguntas WHERE id = ?', [res.insertId]);
   return rows[0];
 };
 
-export const createOpcion = async ({ id_pregunta, texto, es_correcta = 0, orden = null }) => {
+export const createOpcion = async ({ id_pregunta, texto, es_correcta = 0, orden = null, imagen = null }) => {
+  // Insertar opción primero
   const [res] = await db.query(
     'INSERT INTO simulaciones_preguntas_opciones (id_pregunta, texto, es_correcta, orden) VALUES (?,?,?,?)',
     [id_pregunta, texto, es_correcta ? 1 : 0, orden]
   );
+  
+  // ✅ CRÍTICO: Guardar imagen en metadata_json si existe (después de insertar)
+  if (imagen) {
+    try {
+      const metadataJson = JSON.stringify({ imagen: imagen });
+      await db.query('UPDATE simulaciones_preguntas_opciones SET metadata_json = ? WHERE id = ?', [metadataJson, res.insertId]);
+    } catch (e) {
+      // Si metadata_json no existe, ignorar (tabla antigua)
+    }
+  }
+  
   const [rows] = await db.query('SELECT * FROM simulaciones_preguntas_opciones WHERE id = ?', [res.insertId]);
   return rows[0];
 };
@@ -208,18 +265,29 @@ export const replacePreguntas = async (id_simulacion, preguntas = []) => {
   if (!Array.isArray(preguntas) || !preguntas.length) return;
   let orden = 1;
   for (const q of preguntas) {
+    // ✅ CRÍTICO: Extraer imagen de la pregunta si existe
+    const preguntaImagen = q.image || q.imagen || null;
     const row = await createPregunta({
       id_simulacion,
       orden: q.orden ?? orden,
       enunciado: q.text || q.enunciado || '',
       tipo: q.tipo || (q.type === 'tf' ? 'verdadero_falso' : (q.type === 'short' ? 'respuesta_corta' : (q.type === 'multi' ? 'multi_respuesta' : 'opcion_multiple'))),
       puntos: q.puntos || q.points || 1,
-      activa: q.activa != null ? q.activa : 1
+      activa: q.activa != null ? q.activa : 1,
+      imagen: preguntaImagen
     });
     if (Array.isArray(q.opciones) && q.opciones.length) {
       let o = 1;
       for (const opt of q.opciones) {
-        await createOpcion({ id_pregunta: row.id, texto: opt.texto || opt.text || '', es_correcta: !!(opt.es_correcta || opt.correct), orden: opt.orden ?? o++ });
+        // ✅ CRÍTICO: Extraer imagen de la opción si existe
+        const opcionImagen = opt.image || opt.imagen || null;
+        await createOpcion({ 
+          id_pregunta: row.id, 
+          texto: opt.texto || opt.text || '', 
+          es_correcta: !!(opt.es_correcta || opt.correct), 
+          orden: opt.orden ?? o++,
+          imagen: opcionImagen
+        });
       }
     } else if (q.type === 'tf') {
       await createOpcion({ id_pregunta: row.id, texto: 'Verdadero', es_correcta: q.answer === 'true', orden: 1 });
@@ -453,7 +521,36 @@ export const listPreguntas = async (id_simulacion, { includeInactive = false } =
   const [opcs] = await db.query('SELECT * FROM simulaciones_preguntas_opciones WHERE id_pregunta IN (?) ORDER BY id ASC', [ids]);
   const byPreg = new Map();
   for (const o of opcs) { const arr = byPreg.get(o.id_pregunta) || []; arr.push(o); byPreg.set(o.id_pregunta, arr); }
-  return pregs.map(p => ({ ...p, opciones: byPreg.get(p.id) || [] }));
+  return pregs.map(p => {
+    // ✅ CRÍTICO: Extraer imagen de la pregunta si existe (puede venir como p.imagen, p.image, o en metadata_json)
+    let preguntaImagen = null;
+    if (p.imagen) {
+      preguntaImagen = p.imagen;
+    } else if (p.image) {
+      preguntaImagen = p.image;
+    } else if (p.metadata_json) {
+      try {
+        const metadata = JSON.parse(p.metadata_json);
+        preguntaImagen = metadata.imagen || metadata.image || null;
+      } catch {}
+    }
+    // ✅ CRÍTICO: Extraer imagen de cada opción si existe
+    const opciones = (byPreg.get(p.id) || []).map(o => {
+      let opcionImagen = null;
+      if (o.imagen) {
+        opcionImagen = o.imagen;
+      } else if (o.image) {
+        opcionImagen = o.image;
+      } else if (o.metadata_json) {
+        try {
+          const metadata = JSON.parse(o.metadata_json);
+          opcionImagen = metadata.imagen || metadata.image || null;
+        } catch {}
+      }
+      return { ...o, imagen: opcionImagen };
+    });
+    return { ...p, imagen: preguntaImagen, opciones };
+  });
 };
 
 // Analítica detallada por estudiante: preguntas + intentos + respuestas por intento

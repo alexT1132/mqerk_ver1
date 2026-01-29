@@ -354,7 +354,7 @@ export default function Recursos_Alumno_comp() {
         {/* Modal de preview - Compacto y optimizado */}
         {preview && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setPreview(null)}>
-            <div className="bg-white rounded-none sm:rounded-2xl w-full h-full sm:h-auto sm:max-w-xl sm:max-h-[80vh] sm:mt-12 shadow-2xl flex flex-col border-0 sm:border-2 border-slate-200 ring-0 sm:ring-2 ring-violet-100 animate-in zoom-in-95 duration-200 relative overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-none sm:rounded-2xl w-full h-full sm:h-auto sm:max-w-xl sm:max-h-[calc(100vh-4rem)] sm:mt-8 shadow-2xl flex flex-col border-0 sm:border-2 border-slate-200 ring-0 sm:ring-2 ring-violet-100 animate-in zoom-in-95 duration-200 relative overflow-hidden" onClick={e => e.stopPropagation()} style={{ marginLeft: 'clamp(80px, 5vw, 100px)' }}>
               {/* Botón de cerrar adicional - Solo visible en móvil */}
               <button
                 onClick={(e) => { e.stopPropagation(); setPreview(null); }}
@@ -490,7 +490,7 @@ export default function Recursos_Alumno_comp() {
                   <div className="flex flex-col items-center">
                     <iframe
                       src={buildFileUrl(preview)}
-                      className="w-full h-full min-h-[300px] sm:min-h-[400px] max-h-[50vh] sm:max-h-[60vh] rounded-lg border-2 border-slate-200"
+                      className="w-full h-full min-h-[200px] sm:min-h-[250px] max-h-[calc(100vh-20rem)] sm:max-h-[calc(100vh-18rem)] rounded-lg border-2 border-slate-200"
                       title={preview.title}
                     />
                     <div className="mt-3 text-center">
@@ -519,16 +519,16 @@ export default function Recursos_Alumno_comp() {
                   <video
                     src={buildFileUrl(preview)}
                     controls
-                    className="w-full max-h-[50vh] sm:max-h-[60vh] rounded-lg border-2 border-slate-200"
+                    className="w-full max-h-[calc(100vh-20rem)] sm:max-h-[calc(100vh-18rem)] rounded-lg border-2 border-slate-200"
                   >
                     Tu navegador no soporta la reproducción de video.
                   </video>
                 ) : preview.file_type_display === 'IMAGE' ? (
-                  <div className="flex items-center justify-center max-h-[50vh] sm:max-h-[60vh] overflow-auto">
+                  <div className="flex items-center justify-center max-h-[calc(100vh-20rem)] sm:max-h-[calc(100vh-18rem)] overflow-auto">
                     <img
                       src={buildFileUrl(preview)}
                       alt={preview.title}
-                      className="max-w-full max-h-[50vh] sm:max-h-[60vh] object-contain rounded-lg border-2 border-slate-200 shadow-lg"
+                      className="max-w-full max-h-[calc(100vh-20rem)] sm:max-h-[calc(100vh-18rem)] object-contain rounded-lg border-2 border-slate-200 shadow-lg"
                       onError={(e) => {
                         const path = preview.file_path;
                         if (!path) return;

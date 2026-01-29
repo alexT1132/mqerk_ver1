@@ -12,7 +12,7 @@ import Septimo from "../../../assets/mqerk/veranotx/07.webp";
 import { Link } from "react-router-dom";
 import CincoImg from "../../../assets/mqerk/talleres/5.webp";
 import SeisImg from "../../../assets/mqerk/talleres/6.webp";
-import Footer from "../../footer";
+import Footer from "../../../components/layout/footer";
 
 function Talleres() {
   const [currentIndex, setCurrentIndex] = useState(0);

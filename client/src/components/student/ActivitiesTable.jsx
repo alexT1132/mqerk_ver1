@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
     Upload,
     Eye,
@@ -14,7 +15,8 @@ import {
     MessageSquareText,
     Table2,
     LayoutGrid,
-    Star
+    Star,
+    RefreshCw
 } from 'lucide-react';
 
 /**
@@ -50,7 +52,10 @@ export function ActivitiesTable({
     handleDownload,
     openUploadModal,
     openViewModal,
-    openNotasModal
+    openNotasModal,
+    
+    // Función de refresh
+    onRefresh
 }) {
     // Estado para controlar el modo de vista (tabla o tarjetas)
     const [viewMode, setViewMode] = useState('table'); // 'table' o 'cards'
@@ -74,7 +79,88 @@ export function ActivitiesTable({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // Ref y estado para posicionamiento inteligente del dropdown
+    const monthButtonRef = useRef(null);
+    const [dropdownStyle, setDropdownStyle] = useState({});
+
+    // Calcular posición inteligente del dropdown
+    const calculateDropdownPosition = useCallback(() => {
+        if (!monthButtonRef.current) return null;
+        const rect = monthButtonRef.current.getBoundingClientRect();
+        const viewportH = window.innerHeight;
+        const viewportW = window.innerWidth;
+        const margin = 8;
+        const gap = 4;
+        const desiredHeight = 280;
+        const minHeight = 120;
+        
+        const spaceBelow = viewportH - rect.bottom - margin;
+        const spaceAbove = rect.top - margin;
+        
+        const shouldShowAbove = spaceBelow < 250 && spaceAbove > spaceBelow;
+        
+        const maxHeight = shouldShowAbove 
+            ? Math.max(minHeight, Math.min(desiredHeight, spaceAbove - gap))
+            : Math.max(minHeight, Math.min(desiredHeight, spaceBelow - gap));
+        
+        let left = rect.left;
+        const dropdownWidth = rect.width;
+        if (left + dropdownWidth > viewportW - margin) {
+            left = viewportW - dropdownWidth - margin;
+        }
+        if (left < margin) {
+            left = margin;
+        }
+        
+        return {
+            position: 'fixed',
+            top: shouldShowAbove 
+                ? `${Math.max(margin, rect.top - maxHeight - gap)}px`
+                : `${rect.bottom + gap}px`,
+            left: `${left}px`,
+            width: `${dropdownWidth}px`,
+            maxHeight: `${maxHeight}px`,
+            zIndex: 9999,
+        };
+    }, []);
+
+    // Calcular posición cuando se abre el dropdown y bloquear scroll del body
+    useEffect(() => {
+        if (isDropdownOpen) {
+            // Bloquear scroll del body para evitar que aparezca la barra de scroll principal
+            const prevOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            
+            // Calcular posición ANTES de mostrar el dropdown para evitar parpadeo
+            const style = calculateDropdownPosition();
+            if (style) {
+                setDropdownStyle(style);
+            }
+            
+            const handleResize = () => {
+                const newStyle = calculateDropdownPosition();
+                if (newStyle) setDropdownStyle(newStyle);
+            };
+            const handleScroll = () => {
+                const newStyle = calculateDropdownPosition();
+                if (newStyle) setDropdownStyle(newStyle);
+            };
+            
+            window.addEventListener('resize', handleResize);
+            window.addEventListener('scroll', handleScroll, true);
+            return () => {
+                // Restaurar scroll del body
+                document.body.style.overflow = prevOverflow;
+                window.removeEventListener('resize', handleResize);
+                window.removeEventListener('scroll', handleScroll, true);
+            };
+        } else {
+            setDropdownStyle({});
+        }
+    }, [isDropdownOpen, calculateDropdownPosition]);
+
     return (
+        <>
         <div className="px-0 sm:px-3 md:px-4 lg:px-6 py-6">
             {/* Header */}
             <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
@@ -92,9 +178,21 @@ export function ActivitiesTable({
                                 <p className="text-sm sm:text-base text-gray-600 font-medium">{selectedArea?.titulo}</p>
                             </div>
                         </div>
-                        <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                            <Target className="w-4 h-4 mr-1.5 text-violet-600" />
-                            <span className="font-semibold">{filteredActividades.length} actividades disponibles</span>
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                <Target className="w-4 h-4 mr-1.5 text-violet-600" />
+                                <span className="font-semibold">{filteredActividades.length} actividades disponibles</span>
+                            </div>
+                            {onRefresh && (
+                                <button
+                                    onClick={onRefresh}
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:scale-95 rounded-lg transition-all"
+                                    title="Refrescar lista"
+                                    aria-label="Refrescar lista"
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -155,25 +253,36 @@ export function ActivitiesTable({
                             </button>
                         </div>
                     </div>
-                    {isMobile ? (
-                        <div className="relative w-full">
-                            <button
-                                type="button"
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                className="flex items-center justify-between w-full px-3 sm:px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                aria-haspopup="listbox"
-                                aria-expanded={isDropdownOpen}
-                            >
-                                <span className="truncate">{getSelectedMonthName()}</span>
-                                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                            {isDropdownOpen && (
-                                <div className="absolute z-[80] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-2xl max-h-72 overflow-y-auto">
+                    {/* Selector con posicionamiento inteligente */}
+                    <div className="relative w-full md:w-auto">
+                        <button
+                            ref={monthButtonRef}
+                            type="button"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            className="flex items-center justify-between w-full md:w-64 px-3 sm:px-4 py-2.5 text-left bg-white border-2 border-gray-300 rounded-xl hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95 transition-all touch-manipulation shadow-sm text-sm sm:text-base"
+                            aria-haspopup="listbox"
+                            aria-expanded={isDropdownOpen}
+                        >
+                            <span className="truncate pr-2 font-semibold">{getSelectedMonthName()}</span>
+                            <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isDropdownOpen && Object.keys(dropdownStyle).length > 0 && createPortal(
+                            <>
+                                {/* Overlay para cerrar al hacer click fuera */}
+                                <div 
+                                    className="fixed inset-0 z-[9998] bg-transparent"
+                                    onClick={() => setIsDropdownOpen(false)}
+                                />
+                                <div 
+                                    style={dropdownStyle}
+                                    className="bg-white border-2 border-gray-300 rounded-xl shadow-2xl overflow-y-auto"
+                                >
                                     <div className="py-1">
                                         <button
                                             type="button"
                                             onClick={() => { handleMonthSelect('all'); setIsDropdownOpen(false); }}
-                                            className={`block w-full px-4 py-3 text-left text-base hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                                            className={`block w-full px-3 sm:px-4 py-2.5 sm:py-3 text-left hover:bg-gray-100 font-medium text-sm sm:text-base transition-colors ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
                                             role="option"
                                             aria-selected={selectedMonth === 'all'}
                                         >
@@ -184,7 +293,7 @@ export function ActivitiesTable({
                                                 key={index}
                                                 type="button"
                                                 onClick={() => { handleMonthSelect(index.toString()); setIsDropdownOpen(false); }}
-                                                className={`block w-full px-4 py-3 text-left text-base hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                                                className={`block w-full px-3 sm:px-4 py-2.5 sm:py-3 text-left hover:bg-gray-100 font-medium text-sm sm:text-base transition-colors ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
                                                 role="option"
                                                 aria-selected={selectedMonth === index.toString()}
                                             >
@@ -193,47 +302,10 @@ export function ActivitiesTable({
                                         ))}
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="relative">
-                            <button
-                                type="button"
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                className="flex items-center justify-between w-56 sm:w-64 px-3 sm:px-4 py-2 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                aria-haspopup="listbox"
-                                aria-expanded={isDropdownOpen}
-                            >
-                                <span>{getSelectedMonthName()}</span>
-                                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                            {isDropdownOpen && (
-                                <div className="absolute z-[70] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-auto">
-                                    <div className="py-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => { handleMonthSelect('all'); setIsDropdownOpen(false); }}
-                                            className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                                        >
-                                            Todos los meses
-                                        </button>
-                                        {months.map((month, index) => (
-                                            <button
-                                                key={index}
-                                                type="button"
-                                                onClick={() => { handleMonthSelect(index.toString()); setIsDropdownOpen(false); }}
-                                                className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${selectedMonth === index.toString() ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                                                role="option"
-                                                aria-selected={selectedMonth === index.toString()}
-                                            >
-                                                {month}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                            </>,
+                            document.body
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -410,22 +482,25 @@ export function ActivitiesTable({
                 </div>
             ) : (
                 /* Vista de tabla */
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden border-2 border-gray-200/50 ring-2 ring-gray-100/50">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1250px' }}>
-                            <thead className="bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500">
-                                <tr>
-                                    <th className="px-4 sm:px-4 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '70px' }}>No.</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '320px' }}>Actividad</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '160px' }}>Recursos</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '150px' }}>Fecha Límite</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '160px' }}>Subir / Editar</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '130px' }}>Entregado</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '140px' }}>Visualizar</th>
-                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-extrabold text-white uppercase tracking-widest" style={{ minWidth: '150px' }}>Calificación</th>
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-slate-200/90 border-b-0 ring-2 ring-slate-100/90">
+                    <div
+                        className="overflow-x-auto activities-table-scroll"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                        <table className="min-w-full" style={{ minWidth: '1250px' }}>
+                            <thead>
+                                <tr className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
+                                    <th className="px-4 sm:px-4 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '70px' }}>No.</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '320px' }}>Actividad</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '160px' }}>Recursos</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '150px' }}>Fecha Límite</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '160px' }}>Subir / Editar</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '130px' }}>Entregado</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-white/30 last:border-r-0" style={{ minWidth: '140px' }}>Visualizar</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider last:border-r-0" style={{ minWidth: '150px' }}>Calificación</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200/50">
+                            <tbody className="bg-white divide-y divide-slate-200/90">
                                 {loading && (
                                     <tr>
                                         <td colSpan={8} className="px-4 sm:px-6 py-6 sm:py-8 text-center text-sm sm:text-base text-gray-500 font-medium">Cargando actividades...</td>
@@ -453,9 +528,9 @@ export function ActivitiesTable({
                                         (actividad.estado !== 'revisada' || tienePermisoEditar);
 
                                     return (
-                                        <tr key={actividad.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-violet-50/30 transition-colors duration-200`}>
-                                            <td className="px-4 sm:px-4 py-3 sm:py-4 text-sm text-gray-700 font-extrabold">{index + 1}</td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4">
+                                        <tr key={actividad.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} hover:bg-violet-50/40 transition-colors duration-200`}>
+                                            <td className="px-4 sm:px-4 py-3 sm:py-4 text-sm text-gray-700 font-extrabold border-r border-slate-200/80 last:border-r-0">{index + 1}</td>
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 border-r border-slate-200/80 last:border-r-0">
                                                 <div>
                                                     <button
                                                         type="button"
@@ -494,7 +569,7 @@ export function ActivitiesTable({
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                 {actividad.recursos && actividad.recursos.length > 0 && (
                                                     <button
                                                         onClick={() => openResourcesModal(actividad)}
@@ -515,7 +590,7 @@ export function ActivitiesTable({
                                                     <span className="text-xs text-gray-400">-</span>
                                                 )}
                                             </td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                 <div className="text-xs sm:text-sm text-gray-900 font-semibold">{new Date(actividad.fechaEntrega).toLocaleDateString('es-ES')}</div>
                                                 {actividad.fecha_limite_original && actividad.fechaEntrega &&
                                                     new Date(actividad.fechaEntrega).getTime() > new Date(actividad.fecha_limite_original).getTime() && (
@@ -523,7 +598,7 @@ export function ActivitiesTable({
                                                     )}
                                                 <div className={`text-[10px] sm:text-xs font-bold ${vencida ? 'text-red-600' : 'text-green-600'}`}>{vencida ? 'Vencida' : 'A tiempo'}</div>
                                             </td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                 {!actividad.entregada ? (
                                                     <button
                                                         onClick={() => openUploadModal(actividad)}
@@ -552,14 +627,14 @@ export function ActivitiesTable({
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                 {actividad.entregada ? (
                                                     <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
                                                 ) : (
                                                     <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
                                                 )}
                                             </td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap border-r border-slate-200/80 last:border-r-0">
                                                 <button
                                                     onClick={() => openViewModal(actividad)}
                                                     disabled={!actividad.entregada}
@@ -569,7 +644,7 @@ export function ActivitiesTable({
                                                     <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                                                 </button>
                                             </td>
-                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm">
+                                            <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm border-r border-slate-200/80 last:border-r-0">
                                                 {actividad.entregada ? (
                                                     actividad.estado === 'revisada' ? (
                                                         <span className="font-extrabold text-gray-900 inline-flex items-center gap-2">
@@ -617,6 +692,12 @@ export function ActivitiesTable({
                 </div>
             )}
         </div>
+        <style>{`
+.activities-table-scroll::-webkit-scrollbar { width: 0; height: 0; display: none !important; }
+.activities-table-scroll { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+        `}</style>
+        </>
     );
 }
 
+export default ActivitiesTable;

@@ -374,11 +374,11 @@ export default function FinanzasHome() {
       {/* Selector de subopciones Egresos */}
       {showEgresosMenu && (
         <div
-          className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm bg-slate-900/50"
+          className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-4 pt-20 sm:pt-24 md:pt-28 backdrop-blur-sm bg-slate-900/50"
           onClick={(e) => { if (e.target === e.currentTarget) setShowEgresosMenu(false); }}
         >
-          <div className="bg-white w-full max-w-md rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-300 overflow-hidden">
-            <div className="px-5 sm:px-6 py-4 border-b-2 border-slate-200 flex items-center justify-between">
+          <div className="bg-white w-full max-w-md rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-300 overflow-hidden max-h-[calc(100vh-8rem)] flex flex-col">
+            <div className="px-5 sm:px-6 py-4 border-b-2 border-slate-200 flex items-center justify-between flex-shrink-0">
               <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">Egresos</h3>
               <button onClick={() => setShowEgresosMenu(false)} className="text-slate-500 hover:text-slate-700 p-1 hover:bg-slate-100 rounded-lg transition-colors">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -386,7 +386,7 @@ export default function FinanzasHome() {
                 </svg>
               </button>
             </div>
-            <div className="p-5 sm:p-6 grid grid-cols-1 gap-3">
+            <div className="p-5 sm:p-6 grid grid-cols-1 gap-3 overflow-y-auto flex-1 min-h-0 no-scrollbar">
               <Link
                 to="/administrativo/finanzas/egresos/fijos"
                 className="group rounded-xl bg-gradient-to-br from-rose-50 to-white border-2 border-rose-200 hover:border-rose-300 hover:shadow-lg transition-all p-4 flex items-center justify-between"

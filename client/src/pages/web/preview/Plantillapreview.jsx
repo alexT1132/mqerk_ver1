@@ -1,7 +1,7 @@
 import { useLocation, useParams, Navigate } from 'react-router-dom';
 import NavLogin from "../../../components/mqerk/Navbar";
 import PreviewPlantila from "../../../components/mqerk/PreviewCurso";
-import Footer from "../../../components/footer";
+import Footer from "../../../components/layout/footer";
 
 function CursoDetalle() {
   const location = useLocation();

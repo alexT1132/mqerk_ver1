@@ -9,7 +9,7 @@ import fetch from 'node-fetch';
  * Priorizamos las versiones "versatile" (70B) e "instant" (8B).
  */
 const GROQ_MODELS = {
-  // El modelo "Premium" (Gratis por ahora) - Nivel GPT-4
+ 
   'llama-3.3-70b': 'llama-3.3-70b-versatile', 
   'llama-3.3-70b-versatile': 'llama-3.3-70b-versatile',
   

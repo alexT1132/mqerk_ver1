@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import Footer from "./components/footer";
+import Footer from "./components/layout/footer";
 import Navbar from "./components/mqerk/Navbar";
 import HeroVideo from "./components/mqerk/HeroVideo";
 import Nuestroscursos from "./components/mqerk/Cursos";
@@ -8,7 +8,7 @@ import Trayectoria, { DEMO_ITEMS } from "./components/mqerk/Trayectoria";
 import Modelo from "./components/mqerk/Modelo";
 import Video from "./assets/mqerk/video.mp4";
 import NuestrosAsesores from "./components/mqerk/AsesoresWeb";
-import FloatingWhatsapp from "./components/FloatingWhatsapp";
+import FloatingWhatsapp from "./components/common/FloatingWhatsapp";
 import Uno1 from "./assets/1.webp";
 import Dos2 from "./assets/2.webp";
 import Tres3 from "./assets/3.webp";

@@ -10,7 +10,7 @@ import Ocho from "../../../assets/mqerk/online/8.webp";
 import Nueve from "../../../assets/mqerk/online/9.webp";
 import Diez from "../../../assets/mqerk/online/10.webp";
 import { Link } from 'react-router-dom'
-import Footer from "../../footer";
+import Footer from "../../../components/layout/footer";
 
 function Talleres() {
   return (

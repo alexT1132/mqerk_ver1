@@ -57,19 +57,103 @@ const newQuestion = (type = "multiple") => ({
 /* ----------------------- Renderiza LaTeX con KaTeX ----------------------- */
 /** Renderiza texto plano mezclado con fórmulas delimitadas por $...$ y respeta saltos de línea */
 function MathText({ text = "", onFormulaClick }) {
-  const re = /\$(.+?)\$/g;
+  if (!text) return null;
+
+  // ✅ Función para sanitizar HTML (similar a RichTextEditor)
+  // NOTA: El Markdown ya se procesa antes de llamar a esta función, así que puede contener <strong>, <b>, etc.
+  const sanitizeHtmlLite = (html) => {
+    if (!html) return '';
+    // Crear un elemento temporal para sanitizar
+    const div = document.createElement('div');
+    // Usar innerHTML para preservar las etiquetas HTML válidas que ya procesamos (como <strong>)
+    div.innerHTML = html;
+    // Lista blanca de etiquetas permitidas
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    // Recorrer todos los nodos y eliminar etiquetas no permitidas
+    const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
+    const nodesToRemove = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (!allowedTags.includes(node.tagName.toLowerCase())) {
+        nodesToRemove.push(node);
+      }
+    }
+    nodesToRemove.forEach(n => {
+      const parent = n.parentNode;
+      while (n.firstChild) {
+        parent.insertBefore(n.firstChild, n);
+      }
+      parent.removeChild(n);
+    });
+    return div.innerHTML;
+  };
+
+  // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
+  // Pero proteger las fórmulas LaTeX para no procesarlas
+  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
+  const latexMatches = [];
+  let processedText = text;
+  let placeholderIndex = 0;
+  
+  // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
+  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
+    latexMatches.push(match);
+    placeholderIndex++;
+    return placeholder;
+  });
+  
+  // Procesar Markdown: **texto** -> <strong>texto</strong>
+  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  
+  // Restaurar fórmulas LaTeX
+  latexMatches.forEach((match, idx) => {
+    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
+  });
+
+  // ✅ Usar regex simple y robusto: busca $...$ de forma no-greedy
+  // Esto funciona bien para la mayoría de casos, incluyendo fórmulas complejas
+  const re = /\$([^$]+?)\$/g;
   const parts = [];
   let lastIndex = 0;
   let m;
+  let matchFound = false;
 
-  while ((m = re.exec(text)) !== null) {
+  // Resetear el regex para evitar problemas con múltiples llamadas
+  re.lastIndex = 0;
+
+  while ((m = re.exec(processedText)) !== null) {
+    matchFound = true;
     if (m.index > lastIndex) {
-      parts.push({ t: text.slice(lastIndex, m.index) });
+      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
     }
-    parts.push({ m: m[1], full: m[0], start: m.index, end: m.index + m[0].length });
+    // Limpiar espacios en blanco al inicio y final de la fórmula
+    const formula = m[1].trim();
+    if (formula) {
+      parts.push({ 
+        type: 'math', 
+        content: formula,
+        full: m[0],
+        start: m.index,
+        end: m.index + m[0].length
+      });
+    }
     lastIndex = m.index + m[0].length;
   }
-  if (lastIndex < text.length) parts.push({ t: text.slice(lastIndex) });
+  
+  if (lastIndex < processedText.length) {
+    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
+  }
+
+  // Si no se encontraron fórmulas, devolver el texto con HTML procesado (ya con Markdown convertido)
+  if (!matchFound || parts.length === 0) {
+    return (
+      <span 
+        className="whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
+      />
+    );
+  }
 
   const handleFormulaClick = (formula, fullMatch, start, end) => {
     if (onFormulaClick) {
@@ -77,150 +161,27 @@ function MathText({ text = "", onFormulaClick }) {
     }
   };
 
-  // Dividir el texto en líneas para manejar saltos de línea y viñetas
-  const renderLine = (lineParts, lineIndex) => {
-    // Detectar si la línea es una viñeta (empieza con -, *, •, o números seguidos de punto)
-    const bulletPattern = /^(\s*)([-*•]\s+|(\d+\.)\s+)(.*)/;
-
-    let lineText = lineParts.map(p => p.t || '').join('');
-    const match = lineText.match(bulletPattern);
-
-    if (match) {
-      const indent = match[1];
-      const bullet = match[2] || match[3];
-      const content = match[4];
-
-      // Procesar el contenido después de la viñeta
-      const contentParts = [];
-      let contentIdx = 0;
-      const contentRe = /\$(.+?)\$/g;
-      let contentM;
-
-      while ((contentM = contentRe.exec(content)) !== null) {
-        if (contentM.index > contentIdx) {
-          contentParts.push({ t: content.slice(contentIdx, contentM.index) });
-        }
-        contentParts.push({ m: contentM[1], full: contentM[0] });
-        contentIdx = contentM.index + contentM[0].length;
-      }
-      if (contentIdx < content.length) {
-        contentParts.push({ t: content.slice(contentIdx) });
-      }
-
-      return (
-        <div key={lineIndex} className="flex items-start gap-2 py-0.5 leading-relaxed">
-          <span className="text-slate-600 font-bold mt-0.5 flex-shrink-0">{bullet.replace(/\d+\./, (m) => m + ' ')}</span>
-          <span className="flex-1" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
-            {contentParts.map((p, i) =>
-              p.m ? (
-                <span
-                  key={i}
-                  onClick={() => {
-                    // Buscar el part correspondiente en lineParts para obtener los índices correctos
-                    const partWithIndices = contentParts.find(part => part === p);
-                    if (partWithIndices && partWithIndices.start !== undefined && partWithIndices.end !== undefined) {
-                      handleFormulaClick(p.m, p.full, partWithIndices.start, partWithIndices.end);
-                    } else {
-                      handleFormulaClick(p.m, p.full, 0, 0);
-                    }
-                  }}
-                  className={onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors inline-block" : "inline-block"}
-                  title={onFormulaClick ? "Clic para editar esta fórmula" : ""}
-                >
-                  <InlineMath math={p.m} />
-                </span>
-              ) : (
-                <span key={i} className="whitespace-pre-wrap inline">{p.t || ' '}</span>
-              )
-            )}
-          </span>
-        </div>
-      );
-    }
-
-    // Línea normal con fórmulas
-    return (
-      <div key={lineIndex} className="py-0.5 leading-relaxed">
-        {lineParts.map((p, i) =>
-          p.m ? (
-            <span
-              key={i}
-              onClick={() => onFormulaClick && handleFormulaClick(p.m, p.full, p.start, p.end)}
-              className={onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors inline-block" : "inline-block"}
-              title={onFormulaClick ? "Clic para editar esta fórmula" : ""}
-            >
-              <InlineMath math={p.m} />
-            </span>
-          ) : (
-            <span key={i} className="whitespace-pre-wrap inline">{p.t || ' '}</span>
-          )
-        )}
-      </div>
-    );
-  };
-
-  // Dividir en líneas y procesar cada una
-  const lines = text.split('\n');
-  let globalOffset = 0; // Offset acumulado para calcular índices globales
-
-  const processedLines = lines.map((line, lineIndex) => {
-    // Procesar fórmulas en esta línea
-    const lineParts = [];
-    let lineLastIndex = 0;
-    const lineRe = /\$(.+?)\$/g;
-    let lineM;
-
-    // Calcular el offset global para esta línea
-    // Sumar las longitudes de todas las líneas anteriores + 1 por cada salto de línea
-    const lineOffset = globalOffset;
-
-    while ((lineM = lineRe.exec(line)) !== null) {
-      if (lineM.index > lineLastIndex) {
-        lineParts.push({
-          t: line.slice(lineLastIndex, lineM.index),
-          start: lineOffset + lineLastIndex,
-          end: lineOffset + lineM.index
-        });
-      }
-      // Calcular índices globales: offset de línea + posición en línea
-      const globalStart = lineOffset + lineM.index;
-      const globalEnd = lineOffset + lineM.index + lineM[0].length;
-
-      lineParts.push({
-        m: lineM[1],
-        full: lineM[0],
-        start: globalStart,
-        end: globalEnd
-      });
-      lineLastIndex = lineM.index + lineM[0].length;
-    }
-    if (lineLastIndex < line.length) {
-      lineParts.push({
-        t: line.slice(lineLastIndex),
-        start: lineOffset + lineLastIndex,
-        end: lineOffset + line.length
-      });
-    }
-
-    if (lineParts.length === 0) {
-      lineParts.push({
-        t: line,
-        start: lineOffset,
-        end: lineOffset + line.length
-      });
-    }
-
-    // Actualizar el offset global para la siguiente línea
-    // Sumar la longitud de esta línea + 1 por el salto de línea
-    globalOffset += line.length + 1;
-
-    return renderLine(lineParts, lineIndex);
-  });
-
+  // Renderizar las partes encontradas, procesando HTML en las partes de texto
   return (
-    <div className="whitespace-pre-wrap leading-relaxed" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
-      {processedLines}
-    </div>
+    <span className="whitespace-pre-wrap">
+      {parts.map((part, idx) =>
+        part.type === 'math' ? (
+          <span
+            key={`math-${idx}`}
+            onClick={() => onFormulaClick && handleFormulaClick(part.content, part.full, part.start, part.end)}
+            className={onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors inline-block" : "inline-block"}
+            title={onFormulaClick ? "Clic para editar esta fórmula" : ""}
+          >
+            <InlineMath math={part.content} />
+          </span>
+        ) : (
+          <span 
+            key={`text-${idx}`}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
+          />
+        )
+      )}
+    </span>
   );
 }
 
@@ -307,95 +268,15 @@ function insertAtCursor(textarea, insert, setValue) {
 }
 
 /* -------------------------- Componente de Opción ------------------------- */
-function OptionRow({ option, optionIndex = 0, optionLabel = 'a', onChange, onRemove }) {
-  const inputRef = useRef(null);
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [aiModalOpen, setAiModalOpen] = useState(false);
-  const [showRawText, setShowRawText] = useState(false);
-  const [editingFormula, setEditingFormula] = useState(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-
-  const handlePick = (latexWithDelimiters) => {
-    if (editingFormula) {
-      // Reemplazar la fórmula existente
-      const { start, end } = editingFormula;
-      const currentText = option.text;
-      const newText = currentText.slice(0, start) + latexWithDelimiters + currentText.slice(end);
-      onChange({ ...option, text: newText });
-      setEditingFormula(null);
-    } else {
-      // Insertar nueva fórmula en el cursor
-      insertAtCursor(inputRef.current, latexWithDelimiters, (next) =>
-        onChange({ ...option, text: next })
-      );
-    }
-    setPaletteOpen(false);
-  };
-
-  const handleAIInsert = (latexWithDelimiters) => {
-    // Insertar nueva fórmula generada por IA en el cursor
-    insertAtCursor(inputRef.current, latexWithDelimiters, (next) =>
-      onChange({ ...option, text: next })
-    );
-  };
-
-  const handleFormulaClick = ({ formula, fullMatch, start, end }) => {
-    setEditingFormula({ formula, fullMatch, start, end });
-    setEditModalOpen(true);
-  };
-
-  const handleSaveEditedFormula = (newFormula) => {
-    if (editingFormula) {
-      const { fullMatch, start, end } = editingFormula;
-      const currentText = option.text;
-
-      // Asegurar que newFormula tenga delimitadores (viene del modal con delimitadores)
-      const formulaToInsert = newFormula.startsWith('$') ? newFormula : `$${newFormula}$`;
-
-      // Usar el índice si está disponible, sino buscar el fullMatch en el texto
-      let newText;
-      if (start !== undefined && end !== undefined && start >= 0 && end > start) {
-        // Verificar que los índices correspondan al fullMatch
-        const matchAtPosition = currentText.slice(start, end);
-        if (matchAtPosition === fullMatch) {
-          // Los índices son correctos, usar reemplazo por índices
-          newText = currentText.slice(0, start) + formulaToInsert + currentText.slice(end);
-        } else {
-          // Los índices no son correctos, buscar el fullMatch en el texto
-          const index = currentText.indexOf(fullMatch);
-          if (index !== -1) {
-            newText = currentText.slice(0, index) + formulaToInsert + currentText.slice(index + fullMatch.length);
-          } else {
-            // Fallback: reemplazar solo la primera ocurrencia
-            newText = currentText.replace(fullMatch, formulaToInsert);
-          }
-        }
-      } else {
-        // Buscar el fullMatch en el texto y reemplazarlo
-        const index = currentText.indexOf(fullMatch);
-        if (index !== -1) {
-          newText = currentText.slice(0, index) + formulaToInsert + currentText.slice(index + fullMatch.length);
-        } else {
-          // Fallback: reemplazar solo la primera ocurrencia
-          newText = currentText.replace(fullMatch, formulaToInsert);
-        }
-      }
-
-      onChange({ ...option, text: newText });
-      setEditingFormula(null);
-    }
-  };
-
-  // Detectar si hay fórmulas LaTeX
-  const hasMath = option.text && /\$[^$]+\$/.test(option.text);
-
+function OptionRow({ option, optionLabel = 'a', onChange, onRemove }) {
   return (
-    <div className={`flex flex-col gap-4 rounded-xl border-2 p-5 transition-all duration-200 ${option.correct
-      ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 shadow-lg ring-2 ring-emerald-200/50'
-      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
-      }`}>
+    <div
+      className={`flex flex-col gap-4 rounded-xl border-2 p-5 transition-all duration-200 ${option.correct
+        ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 shadow-lg ring-2 ring-emerald-200/50'
+        : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+        }`}
+    >
       <div className="flex items-start gap-3">
-        {/* Etiqueta de opción (a, b, c, ...) */}
         <div className="flex-shrink-0 mt-1">
           <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg font-bold text-sm border-2 ${option.correct
             ? 'border-emerald-500 bg-emerald-100 text-emerald-700'
@@ -405,7 +286,6 @@ function OptionRow({ option, optionIndex = 0, optionLabel = 'a', onChange, onRem
           </span>
         </div>
 
-        {/* marcar correcta - mejor diseño */}
         <label className="mt-1 cursor-pointer">
           <input
             type="checkbox"
@@ -417,97 +297,14 @@ function OptionRow({ option, optionIndex = 0, optionLabel = 'a', onChange, onRem
         </label>
 
         <div className="flex-1">
-          {/* Textarea siempre visible para poder seguir editando */}
-          <div className="relative">
-            <textarea
-              ref={inputRef}
-              rows={2}
-              value={option.text}
-              onChange={(e) => onChange({ ...option, text: e.target.value })}
-              placeholder="Escribe el texto de la opción… Puedes usar fórmulas matemáticas. Usa Enter para saltos de línea."
-              className={`w-full rounded-xl border-2 px-4 py-3 pr-28 text-sm font-medium transition-all duration-200 resize-y
-                         focus:outline-none focus:ring-4 font-mono leading-relaxed ${option.correct
-                  ? 'border-emerald-300 bg-white focus:border-emerald-500 focus:ring-emerald-200/50 hover:border-emerald-400'
-                  : 'border-slate-300 bg-white focus:border-violet-500 focus:ring-violet-200/50 hover:border-violet-400'
-                }`}
-              style={{ whiteSpace: 'pre-wrap' }}
-            />
-            <div className={`absolute right-3 top-1/2 -translate-y-1/2 flex gap-2 ${option.correct ? '' : ''
-              }`}>
-              {/* Botón IA (generar fórmula con IA) */}
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setAiModalOpen(true); }}
-                className={`grid h-9 w-9 place-items-center rounded-xl border-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-110 active:scale-95 ${option.correct
-                  ? 'border-indigo-300 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-500'
-                  : 'border-indigo-300 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-500'
-                  }`}
-                title="Generar fórmula con IA"
-                aria-label="Generar fórmula con IA"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              {/* Botón calculadora (abre paleta) */}
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setPaletteOpen(true); }}
-                className={`grid h-9 w-9 place-items-center rounded-xl border-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-110 active:scale-95 ${option.correct
-                  ? 'border-emerald-300 bg-gradient-to-br from-emerald-50 to-green-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-500'
-                  : 'border-violet-300 bg-gradient-to-br from-violet-50 to-indigo-50 text-violet-700 hover:bg-violet-100 hover:border-violet-500'
-                  }`}
-                title="Insertar fórmula matemática"
-                aria-label="Insertar fórmula"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <rect x="4" y="3" width="16" height="18" rx="2" />
-                  <path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Vista previa renderizada siempre visible y destacada */}
-          {hasMath && option.text && (
-            <div className={`mt-3 rounded-xl border-2 p-4 shadow-sm ${option.correct
-              ? 'border-emerald-300 bg-gradient-to-br from-emerald-50 to-green-50'
-              : 'border-violet-300 bg-gradient-to-br from-violet-50 to-indigo-50'
-              }`}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className={`w-1.5 h-1.5 rounded-full ${option.correct ? 'bg-emerald-500' : 'bg-violet-500'} animate-pulse`}></div>
-                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Vista previa renderizada</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setShowRawText(!showRawText); }}
-                  className="text-xs text-violet-600 hover:text-violet-700 font-bold transition-colors px-2 py-1 rounded-lg hover:bg-white/60"
-                >
-                  {showRawText ? '👁️ Ocultar código' : '📝 Ver código LaTeX'}
-                </button>
-              </div>
-              <div className="text-sm font-medium text-slate-900 bg-white/60 rounded-lg p-3 border border-slate-200/50 min-h-[40px] leading-relaxed">
-                <MathText text={option.text} onFormulaClick={handleFormulaClick} />
-              </div>
-              {showRawText && (
-                <div className="mt-3 pt-3 border-t border-slate-200">
-                  <p className="text-xs text-slate-600 font-mono bg-white/80 px-3 py-2 rounded-lg border border-slate-200 break-all">
-                    {option.text}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!option.text && (
-            <div className="mt-2">
-              <MathExamplesHint />
-            </div>
-          )}
+          <RichTextEditor
+            value={option.text}
+            onChange={(newText) => onChange({ ...option, text: newText })}
+            placeholder="Escribe el texto de la opción… Puedes insertar fórmulas con los botones."
+            className="mb-0"
+          />
         </div>
 
-        {/* eliminar opción */}
         <button
           onClick={onRemove}
           className="self-start rounded-xl border-2 border-rose-300 bg-rose-50 px-3 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-100 hover:border-rose-400 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm"
@@ -519,40 +316,10 @@ function OptionRow({ option, optionIndex = 0, optionLabel = 'a', onChange, onRem
         </button>
       </div>
 
-      {/* Imagen para la opción */}
       <ImagePicker
         value={option.image}
         onChange={(img) => onChange({ ...option, image: img })}
         label="Imagen de la opción (opcional)"
-      />
-
-      {/* Modal IA para generar fórmulas */}
-      <AIFormulaModal
-        open={aiModalOpen}
-        onClose={() => setAiModalOpen(false)}
-        onInsert={handleAIInsert}
-      />
-
-      {/* Paleta LaTeX */}
-      <MathPalette
-        open={paletteOpen}
-        onClose={() => {
-          setPaletteOpen(false);
-          setEditingFormula(null);
-        }}
-        onPick={handlePick}
-        initialFormula={editingFormula?.formula}
-      />
-
-      {/* Modal de edición de fórmula */}
-      <FormulaEditModal
-        open={editModalOpen}
-        onClose={() => {
-          setEditModalOpen(false);
-          setEditingFormula(null);
-        }}
-        formula={editingFormula ? `$${editingFormula.formula}$` : ''}
-        onSave={handleSaveEditedFormula}
       />
     </div>
   );
@@ -983,18 +750,38 @@ export default function EspanolFormBuilder() {
         max_intentos: draft?.intentosMode === 'limited' ? Number(draft?.maxIntentos || 1) : null,
         shuffle_questions: true,
         time_limit_min: totalMin > 0 ? totalMin : null,
-        preguntas: questions.map(q => ({
-          type: q.type,
-          text: q.text,
-          points: q.points,
-          options: q.options,
-          answer: q.answer
-        }))
+        preguntas: questions.map(q => {
+          const preguntaBase = {
+            type: q.type,
+            text: q.text,
+            points: q.points,
+            answer: q.answer
+          };
+          
+          // ✅ Incluir imagen de la pregunta si existe
+          if (q.image) {
+            preguntaBase.image = q.image.preview || q.image.url || null;
+          }
+          
+          // ✅ Incluir opciones con sus imágenes
+          if (q.type === 'multiple' && q.options) {
+            preguntaBase.options = q.options.map(o => {
+              const opcionBase = { text: o.text, correct: o.correct };
+              // ✅ Incluir imagen de la opción si existe
+              if (o.image) {
+                opcionBase.image = o.image.preview || o.image.url || null;
+              }
+              return opcionBase;
+            });
+          }
+          
+          return preguntaBase;
+        })
       };
       await createQuiz(body);
       await showAlert("Borrador guardado exitosamente.", 'Borrador guardado', 'success');
-      // Navegar de vuelta a la lista de quizzes (reemplazar en historial para que el botón atrás no regrese aquí)
-      navigate('/asesor/quizt', { replace: true });
+      // Navegar de vuelta a la lista de quizzes - NO usar replace para preservar historial
+      navigate('/asesor/quizt');
     } catch (e) {
       await showAlert(e?.response?.data?.message || 'No se pudo guardar el borrador', 'Error', 'error');
     }
@@ -1085,18 +872,38 @@ export default function EspanolFormBuilder() {
         max_intentos: draft?.intentosMode === 'limited' ? Number(draft?.maxIntentos || 1) : null,
         shuffle_questions: true,
         time_limit_min: totalMin > 0 ? totalMin : null,
-        preguntas: questions.map(q => ({
-          type: q.type,
-          text: q.text,
-          points: q.points,
-          options: q.options,
-          answer: q.answer
-        }))
+        preguntas: questions.map(q => {
+          const preguntaBase = {
+            type: q.type,
+            text: q.text,
+            points: q.points,
+            answer: q.answer
+          };
+          
+          // ✅ Incluir imagen de la pregunta si existe
+          if (q.image) {
+            preguntaBase.image = q.image.preview || q.image.url || null;
+          }
+          
+          // ✅ Incluir opciones con sus imágenes
+          if (q.type === 'multiple' && q.options) {
+            preguntaBase.options = q.options.map(o => {
+              const opcionBase = { text: o.text, correct: o.correct };
+              // ✅ Incluir imagen de la opción si existe
+              if (o.image) {
+                opcionBase.image = o.image.preview || o.image.url || null;
+              }
+              return opcionBase;
+            });
+          }
+          
+          return preguntaBase;
+        })
       };
 
       const { data } = await createQuiz(body);
       await showAlert('Quizt creado exitosamente', 'Éxito', 'success');
-      navigate('/asesor/quizt', { replace: true });
+      navigate('/asesor/quizt');
     } catch (e) {
       await showAlert(e?.response?.data?.message || 'No se pudo crear el quiz', 'Error', 'error');
     }
@@ -1147,7 +954,7 @@ export default function EspanolFormBuilder() {
                 <button
                   onClick={() => {
                     if (window.confirm('¿Estás seguro de que deseas cancelar? Se perderán los cambios no guardados.')) {
-                      navigate('/asesor/quizt', { replace: true });
+                      navigate('/asesor/quizt');
                     }
                   }}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-rose-300 bg-white px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-50 hover:border-rose-400 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
@@ -1257,7 +1064,7 @@ export default function EspanolFormBuilder() {
                     {q.points} pt{q.points > 1 ? "s" : ""}
                   </div>
 
-                  <div className="font-medium text-slate-900">
+                  <div className="text-slate-900">
                     {q.text ? <MathText text={q.text} /> : <em className="text-slate-400">Sin consigna</em>}
                   </div>
 

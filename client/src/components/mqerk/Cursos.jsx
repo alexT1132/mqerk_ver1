@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from "./Navbar"; 
-import Footer from "../footer"; 
+import Footer from "../../components/layout/footer"; 
 import { useCursos } from "../../context/CursosContext";
 import { usePreview } from "../../context/PreviewContext"; // Importar PreviewContext
 

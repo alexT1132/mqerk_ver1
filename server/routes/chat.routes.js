@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { sendMessage, getChatHistory, markRead, getChatStatus, getUnreadCount, getSupportStudents, getSupportHistory, sendSupportMessage, markSupportRead, getSupportUnreadCount, getStudentsOnlineStatus } from "../controllers/chat.controller.js";
+import { getAdminAsesorChatHistory, sendAdminAsesorChatMessage } from "../controllers/admin_asesor_chat.controller.js";
 import { authREquired } from "../middlewares/validateToken.js";
 import { chatUpload } from "../middlewares/chatMulter.js";
 
@@ -18,5 +19,9 @@ router.get("/chat/support/history", authREquired, getSupportHistory);
 router.post("/chat/support/send", authREquired, chatUpload.single('file'), sendSupportMessage);
 router.post("/chat/support/read", authREquired, markSupportRead);
 router.get("/chat/support/unread", authREquired, getSupportUnreadCount);
+
+// Chat Admin <-> Asesor (directo)
+router.get("/chat/admin-asesor/history", authREquired, getAdminAsesorChatHistory);
+router.post("/chat/admin-asesor/send", authREquired, sendAdminAsesorChatMessage);
 
 export default router;

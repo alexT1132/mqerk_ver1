@@ -14,8 +14,11 @@ const MODELOS_DISPONIBLES = [
 
 // --- NUEVA CONFIGURACIÓN: RESPALDO GROQ ---
 // Asegúrate de que tu backend tenga esta ruta configurada para manejar peticiones a Groq
-const GROQ_PROXY_ENDPOINT = '/api/ai/groq/generate'; 
+const GROQ_PROXY_ENDPOINT = '/api/ai/groq/generate';
 const GROQ_MODEL = 'llama3-70b-8192'; // Modelo potente y rápido, buena alternativa a Gemini Pro
+
+// Detectar si se debe usar solo Groq (sin intentar Gemini primero)
+const USE_GROQ_ONLY = import.meta?.env?.VITE_USE_GROQ_FOR_ANALYSIS === 'true';
 
 // La IA siempre está "configurada" porque el proxy maneja la API key
 export function isQuizIAConfigured() {
@@ -96,7 +99,7 @@ export async function analyzeQuizPerformance(params) {
     .normalize('NFD').replace(/\p{Diacritic}/gu, '')
     .toLowerCase();
   const truncate = (s, n) => (String(s).length > n ? String(s).slice(0, n - 1).trimEnd() + '…' : String(s));
-  
+
   const pickMicroTip = (enun) => {
     const t = normalize(enun);
     // Gramática específica: queísmo / dequeísmo
@@ -298,41 +301,28 @@ export async function analyzeQuizPerformance(params) {
       const totalT = (typeof p?.totalTiempoIntento !== 'undefined' && p?.totalTiempoIntento != null)
         ? Math.round(p.totalTiempoIntento / 1000) : null;
 
-      const secResumen = `### Resumen general\n\n` +
-        `- Has realizado ${totalIntentos} intento(s) en "${name}".\n` +
-        `- Mejor puntaje: ${mejor}%. Promedio: ${promedio}%. Último: ${ultimo}%.`;
 
-      const secTendencia = `\n\n### Tendencia y variabilidad\n\n` +
-        `- Secuencia de puntajes: ${scores.join(', ') || 'N/D'}.\n` +
-        `- Pendiente de tendencia: ${pendiente}. Variabilidad (DE): ${desviacion}.\n` +
-        `- Interpreta si la pendiente es positiva (mejora), negativa (descenso) o cercana a 0 (estable).`;
-
-      const secEquilibrio = `\n\n### Equilibrio puntaje-tiempo\n\n` +
-        `- Tiempo prom. por intento (s): ${promDur ?? 'N/D'}; mejor: ${mejorDur ?? 'N/D'}; peor: ${peorDur ?? 'N/D'}.\n` +
-        `- Último intento: ${totalT ?? 'N/D'}s total; ${avgQ ?? 'N/D'}s por pregunta.`;
-
-      const secAnalisisErrores = `\n\n### Análisis de errores\n\n` +
-        `- Revisa si tus fallos son conceptuales (falta de estudio) o de atención.\n` +
-        `- Identifica si te equivocas en preguntas largas o cortas.\n` +
-        `- Verifica si cambiaste respuestas correctas por incorrectas.`;
-
-      const secProgreso = buildSecProgresoOficial(p);
-      const secRecurrentes = buildRecurringSection(p?.erroresRecurrentes);
-      const secRecsTecnicas = `\n\n### Recomendaciones técnicas\n\n` +
-        `- Aplica la técnica Feynman: explica el concepto en voz alta.\n` +
-        `- Usa la técnica Pomodoro para sesiones de estudio enfocadas.\n` +
-        `- Realiza mapas mentales para conectar conceptos relacionados.`;
-
-      const secConclusion = `\n\n### Conclusión breve\n\n` +
-        `Vas construyendo base. Con un enfoque técnico y análisis de errores, ` +
-        `tu rendimiento mejorará. Mantén la constancia.`;
 
       const intro = buildHumanIntro(p);
+
+      // Resumen muy breve (sin secciones genéricas)
+      const secResumen = `\n\n### Resultado del intento\n\n` +
+        `- Calificación: ${ultimo}%\n` +
+        `- Correctas: ${corr || 0} / ${totPreg || 0}\n` +
+        `- Incorrectas: ${inc || 0}\n` +
+        `- Total de intentos: ${totalIntentos}\n` +
+        `- Mejor puntaje: ${mejor}%`;
+
       const explic = buildExplainSection(p?.incorrectasDetalle);
-      const ejemplos = buildExamplesSection(p?.incorrectasLista);
+      const secRecurrentes = buildRecurringSection(p?.erroresRecurrentes);
       const secGuia = buildSecResourceGuide(p);
-      // Orden: Intro humano → Resumen → Tendencia → Progreso → Equilibrio → Análisis Errores → Explicación → Recurrentes → Recs Técnicas → Guía → Conclusión → Ejemplos
-      return [intro, secResumen, secTendencia, secProgreso, secEquilibrio, secAnalisisErrores, explic, secRecurrentes, secRecsTecnicas, secGuia, secConclusion, ejemplos, '\n\n<<<AI_SOURCE:FALLBACK>>>'].join('');
+
+      const secConclusion = `\n\n### Próximos pasos\n\n` +
+        `Enfócate en dominar los temas donde fallaste. Usa los recursos sugeridos y practica con ejercicios similares. ` +
+        `La constancia es clave para mejorar.`;
+
+      // Orden simplificado: Intro → Resumen → Explicación → Recurrentes → Guía → Conclusión (SIN tendencia, equilibrio ni progreso)
+      return [intro, secResumen, explic, secRecurrentes, secGuia, secConclusion, '\n\n<<<AI_SOURCE:FALLBACK>>>'].join('');
     } catch (e) {
       console.warn('No se pudo construir análisis local de fallback:', e);
       return '### Análisis\n\nNo se pudo obtener la respuesta de la IA. Revisa tu conexión e intenta nuevamente.';
@@ -527,7 +517,7 @@ export async function analyzeQuizPerformance(params) {
     let out = String(md || '');
     // Solo añadimos si faltan, para evitar duplicados
     if (!hasHeadingLoose(out, 'Resumen general')) out += buildSecResumen(p);
-    if (!hasHeadingLoose(out, 'Tendencia y variabilidad')) out += buildSecTendencia(p);
+    // if (!hasHeadingLoose(out, 'Tendencia y variabilidad')) out += buildSecTendencia(p);
     if (!hasHeadingLoose(out, 'Equilibrio puntaje-tiempo')) out += buildSecEquilibrio(p);
     if (!hasHeadingLoose(out, 'Análisis de errores')) out += buildSecAnalisisErrores(p);
     if (!hasHeadingLoose(out, 'Recomendaciones técnicas')) out += buildSecRecsTecnicas(p);
@@ -547,8 +537,19 @@ export async function analyzeQuizPerformance(params) {
     return before + sectionMd + '\n' + after;
   };
 
-  // CORRECCIÓN: El systemPrompt ahora se enfoca únicamente en el ROL y TONO de la IA.
-  const systemPrompt = `Actúa como un tutor experto, analítico y técnico. Tu tono debe ser profesional pero motivador. Tu objetivo es proporcionar un diagnóstico preciso y accionable para mejorar el rendimiento académico. Responde siempre en español.`;
+  // NUEVO: El systemPrompt se enfoca en análisis profundo de errores específicos
+  const systemPrompt = `Eres un tutor académico experto enfocado en corrección de errores y aprendizaje efectivo.
+  
+  Tu análisis debe ser:
+  1. ENFOCADO EN ERRORES: Dedica el 80% del análisis a explicar detalladamente cada pregunta que el alumno falló.
+  2. PASO A PASO: Para cada error, proporciona una explicación completa de cómo resolverlo, con ejemplos concretos.
+  3. PRÁCTICO Y ACCIONABLE: Indica exactamente qué estudiar, cómo practicar y cómo usar IA (ChatGPT/Gemini) para reforzar el aprendizaje.
+  4. DETECTAR PATRONES: Identifica si hay errores recurrentes y explica por qué ocurren.
+  
+  IMPORTANTE: 
+  - NO incluyas secciones genéricas sobre "tendencia" o "variabilidad" a menos que sean críticas para entender el patrón de errores.
+  - Enfócate en lo que el alumno necesita HACER para mejorar, no en estadísticas abstractas.
+  - Sé directo pero constructivo. El objetivo es que el alumno entienda sus errores y sepa exactamente cómo corregirlos.`;
 
   // Limitar longitud de listas para evitar respuestas muy largas
   const capArray = (arr, n = 12) => (Array.isArray(arr) ? arr.slice(Math.max(0, arr.length - n)) : []);
@@ -561,96 +562,187 @@ export async function analyzeQuizPerformance(params) {
   }).join(' | ');
   const duracionesList = duracionesCapped.join(', ');
 
+  // Construir lista de preguntas incorrectas con flag de reincidencia
+  const listaIncorrectasPrompt = (Array.isArray(incorrectasDetalle) && incorrectasDetalle.length > 0) ?
+    incorrectasDetalle.slice(0, 10).map(item => {
+      // Verificar si este error es recurrente
+      const esRecurrente = Array.isArray(erroresRecurrentes) && erroresRecurrentes.some(r => {
+        const txtA = String(r.enunciado || '').toLowerCase().trim();
+        const txtB = String(item.enunciado || '').toLowerCase().trim();
+        return txtA.includes(txtB.substring(0, 20)) || txtB.includes(txtA.substring(0, 20));
+      });
+      return {
+        ...item,
+        es_reincidente: esRecurrente
+      };
+    }) : [];
+
   // El userQuery contiene todas las instrucciones específicas sobre la TAREA a realizar.
-  const userQuery = `Análisis de rendimiento para la evaluación: "${itemName || 'Quiz'}".
-Estudiante: ${alumnoNombre ? alumnoNombre : 'N/D'}.
+  const userQuery = `ANÁLISIS DETALLADO DE ERRORES para: "${itemName || 'Quiz'}".
+Estudiante: ${alumnoNombre ? alumnoNombre : 'Alumno'}.
 
-${Array.isArray(incorrectasDetalle) && incorrectasDetalle.length > 0 ? `
-═══════════════════════════════════════════════════════════════════════════════
-🚨 DATOS CRÍTICOS: PREGUNTAS ESPECÍFICAS DONDE EL ESTUDIANTE FALLÓ
-═══════════════════════════════════════════════════════════════════════════════
+RESULTADO DEL INTENTO ${intentoNumero || 1}:
+- Calificación: ${ultimoPuntaje}%
+- Correctas: ${correctasIntento || 0} / ${totalPreguntasIntento || 0}
+- Incorrectas: ${incorrectasIntento || 0}
+- Total de intentos realizados: ${totalIntentos || 1}
 
-**ESTOS SON DATOS REALES DEL EXAMEN. DEBES USARLOS OBLIGATORIAMENTE EN TU ANÁLISIS.**
+${listaIncorrectasPrompt.length > 0 ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔴 ANÁLISIS DETALLADO DE CADA ERROR (SECCIÓN PRINCIPAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-El estudiante falló en las siguientes preguntas específicas. Para CADA una de estas preguntas, DEBES:
-1. Mencionarla en la sección "Análisis de errores" con su enunciado o un resumen claro
-2. Decir QUÉ respondió el estudiante (de "seleccion")
-3. Decir cuál es la respuesta CORRECTA (de "correctas")
-4. Analizar POR QUÉ falló (error conceptual/procedimental/atención)
-5. Dar una recomendación ESPECÍFICA para esa pregunta
+⚠️ IMPORTANTE: Debes analizar TODAS las preguntas que el estudiante falló en CUALQUIER intento, no solo las del último intento.
 
-Datos de las preguntas incorrectas:
-${JSON.stringify(incorrectasDetalle.slice(0, 10), null, 2)}
+PRIORIDAD DE ANÁLISIS:
 
-**NO PUEDES IGNORAR ESTOS DATOS. El estudiante necesita saber QUÉ preguntas específicas le cuestan trabajo y CÓMO resolverlas.**
-═══════════════════════════════════════════════════════════════════════════════
+1. **MÁXIMA PRIORIDAD - Errores Inconsistentes (🚨 CONOCIMIENTO INESTABLE):**
+   Preguntas que a veces acertó y a veces falló en diferentes intentos.
+   Esto indica:
+   - Está adivinando (no domina el concepto)
+   - Tuvo suerte en algunos intentos
+   - Conocimiento superficial o inestable
+   
+   Ejemplo: Si en 4 intentos respondió: Correcta, Incorrecta, Correcta, Incorrecta
+   → NO domina el tema, solo está adivinando o tuvo suerte.
 
+2. **ALTA PRIORIDAD - Errores Reincidentes (⚠️ ERROR REINCIDENTE):**
+   Preguntas que falló en MÚLTIPLES intentos.
+   Esto indica desconocimiento persistente del concepto.
+
+3. **PRIORIDAD NORMAL - Errores Únicos:**
+   Preguntas que falló solo en un intento.
+   Pueden ser errores de atención o conceptos nuevos.
+
+Para CADA pregunta incorrecta, proporciona un análisis COMPLETO siguiendo este formato:
+
+### [Pregunta N] [Título descriptivo del tema] [MARCADOR DE PRIORIDAD]
+
+**Marcadores posibles:**
+- 🚨 CONOCIMIENTO INESTABLE (falló en algunos intentos, acertó en otros)
+- ⚠️ ERROR REINCIDENTE (falló en múltiples intentos)
+- (sin marcador para errores únicos)
+
+**Historial de respuestas en todos los intentos:**
+[Muestra cómo respondió en cada intento: Intento 1: Correcta, Intento 2: Incorrecta, etc.]
+
+**Tu respuesta (en el intento donde falló):** "[Opción que eligió]" (Incorrecta)
+
+**Respuesta correcta:** "[Opción correcta completa]"
+
+**¿Por qué fallaste?**
+[Explicación clara y directa del error conceptual. Si es CONOCIMIENTO INESTABLE, enfatiza que NO domina el tema aunque a veces acierte. Identifica si:
+- Confundió conceptos similares
+- No conocía la regla/fórmula
+- Error de lectura o interpretación
+- Aplicó mal un procedimiento
+- Está adivinando (si es inconsistente)]
+
+**Cómo resolverlo paso a paso:**
+1. [Primer paso específico con ejemplo]
+2. [Segundo paso específico con ejemplo]
+3. [Tercer paso específico con ejemplo]
+[Continúa hasta completar el proceso de resolución]
+
+**Ejemplo similar resuelto:**
+[Proporciona un ejemplo concreto similar a la pregunta, resuelto paso a paso para que el alumno vea la aplicación práctica]
+
+**Qué estudiar específicamente:**
+- [Concepto/tema específico 1]
+- [Concepto/tema específico 2]
+- [Práctica recomendada]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DATA DE PREGUNTAS INCORRECTAS (TODOS LOS INTENTOS):
+${JSON.stringify(listaIncorrectasPrompt, null, 2)}
+
+NOTA IMPORTANTE: 
+- Si "es_reincidente" es true, este error ya ocurrió en intentos anteriores. Marca con "⚠️ ERROR REINCIDENTE".
+- Si una pregunta se respondió correctamente en algunos intentos e incorrectamente en otros, marca con "🚨 CONOCIMIENTO INESTABLE" y enfatiza que NO domina el tema.
+- DEBES analizar TODAS las preguntas que aparecen en la data, no solo las del último intento.
+` : `
+¡Excelente! No hubo errores en este intento. 
+
+Calificación perfecta: ${ultimoPuntaje}%
+
+Sugerencias para seguir avanzando:
+- Practica con ejercicios más avanzados del mismo tema
+- Explora aplicaciones prácticas de estos conceptos
+- Ayuda a compañeros a entender estos temas (enseñar refuerza el aprendizaje)
+`}
+
+${listaIncorrectasPrompt.length > 0 ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📚 RECURSOS DE ESTUDIO Y PLAN DE RECUPERACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Basándote en los errores detectados, proporciona:
+
+**1. Recursos de estudio específicos** (mínimo 3):
+
+Para cada tema fallado:
+- **Tema:** [Nombre del tema/concepto específico]
+- **Qué buscar en Google/YouTube:** "[Query exacta de búsqueda]" 
+  Ejemplo: "reglas de acentuación diacrítica ejercicios resueltos pdf"
+- **Recursos recomendados:** 
+  - [Libro/manual específico]
+  - [Canal de YouTube o video específico]
+  - [Sitio web confiable: Khan Academy, Wikipedia, RAE, etc.]
+- **Ejercicios prácticos:** [Tipo de ejercicios que debe hacer]
+
+**2. Cómo usar IA para estudiar estos temas:**
+
+Proporciona 3-5 prompts ESPECÍFICOS que el alumno puede usar con ChatGPT o Gemini:
+
+📝 **Prompt 1 - Para entender el concepto:**
+"[Prompt exacto que puede copiar y pegar]"
+Ejemplo: "Explícame la diferencia entre 'haber' y 'a ver' con 10 ejemplos prácticos y ejercicios"
+
+📝 **Prompt 2 - Para practicar:**
+"[Prompt exacto que puede copiar y pegar]"
+Ejemplo: "Genera 15 ejercicios de acentuación diacrítica con sus respuestas, ordenados de fácil a difícil"
+
+📝 **Prompt 3 - Para verificar comprensión:**
+"[Prompt exacto que puede copiar y pegar]"
+Ejemplo: "Hazme un examen de 10 preguntas sobre [tema] y corrige mis respuestas explicando cada error"
+
+[Continúa con más prompts según los temas fallados]
+
+**3. Plan de estudio sugerido:**
+
+Día 1-2: [Actividades específicas]
+Día 3-4: [Actividades específicas]
+Día 5-7: [Actividades específicas]
 ` : ''}
-\nResumen de intentos:
-- Total de Intentos: ${Number(totalIntentos) || 0}
-- Mejor Puntaje: ${Number(mejorPuntaje) || 0}%
-- Promedio: ${Number(Math.round(Number(promedio) || 0))}%
-- Último Puntaje: ${Number(ultimoPuntaje ?? (scores.length ? scores[scores.length - 1] : 0))}%
-- Intentos de práctica (después del oficial): ${Number(practiceCount || 0)}
-- Delta último vs. anterior: ${typeof deltaUltimoVsAnterior === 'number' ? (deltaUltimoVsAnterior >= 0 ? '+' : '') + deltaUltimoVsAnterior : 'N/D'} pts
-- Delta último vs. oficial: ${typeof deltaUltimoVsOficial === 'number' ? (deltaUltimoVsOficial >= 0 ? '+' : '') + deltaUltimoVsOficial : 'N/D'} pts
-- Delta mejor vs. oficial: ${typeof deltaMejorVsOficial === 'number' ? (deltaMejorVsOficial >= 0 ? '+' : '') + deltaMejorVsOficial : 'N/D'} pts
-- Secuencia de puntajes (del más antiguo al más reciente): ${scoresList}
-- Fechas (orden cronológico): ${fechasList}
-- Duraciones en segundos (orden cronológico): ${duracionesList}
-\nImportante (regla académica): solo el PRIMER intento cuenta como calificación oficial; los demás son práctica. Datos del intento oficial:
-- Puntaje oficial (intento 1): ${typeof oficialPuntaje === 'number' ? oficialPuntaje : 'N/D'}%
-- Fecha oficial: ${oficialFecha ? new Date(oficialFecha).toLocaleString('es-ES') : 'N/D'}
-- Duración oficial (s): ${typeof oficialDuracion === 'number' ? Math.round(oficialDuracion) : 'N/D'}
-\nMétricas adicionales:
-- Mejora desde el primer intento: ${typeof mejoraDesdePrimero === 'number' ? mejoraDesdePrimero : 'N/D'} puntos
-- Tendencia (pendiente de la serie de puntajes): ${typeof pendienteTendencia === 'number' ? pendienteTendencia.toFixed(3) : 'N/D'}
-- Variabilidad (desviación estándar de puntajes): ${typeof desviacionPuntaje === 'number' ? desviacionPuntaje.toFixed(2) : 'N/D'}
-- Tiempo promedio por intento (s): ${typeof promedioDuracion === 'number' ? Math.round(promedioDuracion) : 'N/D'}
-- Mejor tiempo (s): ${typeof mejorDuracion === 'number' ? Math.round(mejorDuracion) : 'N/D'}
-- Peor tiempo (s): ${typeof peorDuracion === 'number' ? Math.round(peorDuracion) : 'N/D'}
-${(typeof intentoNumero !== 'undefined' || typeof totalPreguntasIntento !== 'undefined') ? `\nDetalle del último intento revisado:
-- Número de intento: ${typeof intentoNumero !== 'undefined' ? intentoNumero : 'N/D'}
-- Total de preguntas: ${typeof totalPreguntasIntento !== 'undefined' ? totalPreguntasIntento : 'N/D'}
-- Correctas: ${typeof correctasIntento !== 'undefined' ? correctasIntento : 'N/D'}
-- Incorrectas: ${typeof incorrectasIntento !== 'undefined' ? incorrectasIntento : 'N/D'}
-- Omitidas/sin respuesta: ${typeof omitidasIntento !== 'undefined' ? omitidasIntento : 'N/D'}
-- **VERIFICACIÓN DE CONSISTENCIA CRÍTICA:** El puntaje del último intento es ${typeof ultimoPuntaje !== 'undefined' && ultimoPuntaje != null ? ultimoPuntaje + '%' : 'N/D'}. Calcula el puntaje esperado: (correctas / totalPreguntas) * 100. Este debe coincidir aproximadamente con el puntaje reportado. **REGLAS:** (1) Si el puntaje es menor a 100%, DEBE haber preguntas incorrectas u omitidas. (2) Si correctas = totalPreguntas, entonces el puntaje DEBE ser 100%. (3) Si el puntaje es 80%, entonces correctas < totalPreguntas. (4) **NUNCA digas "todas las preguntas fueron correctas" si el puntaje es menor a 100% o si incorrectas > 0 o omitidas > 0.** (5) Si hay inconsistencias entre el puntaje y los datos de correctas/incorrectas, menciona la discrepancia en lugar de hacer afirmaciones contradictorias.
-- Tiempo total (s): ${typeof totalTiempoIntento !== 'undefined' && totalTiempoIntento != null ? Math.round(totalTiempoIntento / 1000) : 'N/D'}
-- Tiempo promedio por pregunta (s): ${typeof promedioTiempoPregunta !== 'undefined' && promedioTiempoPregunta != null ? Math.round(promedioTiempoPregunta / 1000) : 'N/D'}
-- Preguntas respondidas incorrectamente (muestra): ${(Array.isArray(incorrectasLista) && incorrectasLista.length) ? incorrectasLista.join(' | ') : 'N/D'}` : ''}
-\nInstrucciones: comienza con un saludo breve y humano (2–3 frases) dirigido al estudiante. Luego genera un análisis TÉCNICO, PEDAGÓGICO y PROFUNDO. Dado que el estudiante ha realizado al menos 2 intentos, céntrate en la COMPARACIÓN, el PROGRESO y la CONSISTENCIA.
-RESPETA la regla: el diagnóstico oficial es el intento 1; los demás son práctica.
 
-Debes incluir una sección titulada exactamente "Progreso respecto al oficial" con 3–5 bullets que reporten: intentos de práctica, deltas (último vs anterior, último vs oficial, mejor vs oficial) y un veredicto de utilidad (Alta/Media/Ligera/Neutral/Baja).
+${totalIntentos > 1 && (pendienteTendencia !== null || promedioTiempoPregunta) ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 OBSERVACIONES SOBRE TU PROGRESO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Si hay errores recurrentes, añade "Errores recurrentes y recursos" con 2–5 bullets: resume el enunciado, indica veces y da una pista TÉCNICA breve; sugiere 1–2 recursos abiertos.
+${pendienteTendencia !== null ? `**Tendencia de puntajes:** ${pendienteTendencia > 0.2 ? '📈 Mejorando (sigue así)' : pendienteTendencia < -0.2 ? '📉 Descendiendo (revisa tu estrategia de estudio)' : '➡️ Estable'}
+` : ''}
+${promedioTiempoPregunta ? `**Tiempo por pregunta:** ${Math.round(promedioTiempoPregunta / 1000)}s promedio ${Math.round(promedioTiempoPregunta / 1000) < 30 ? '(⚠️ Muy rápido - puede indicar respuestas al azar)' : Math.round(promedioTiempoPregunta / 1000) > 120 ? '(⚠️ Muy lento - puede indicar dudas conceptuales)' : '(✓ Ritmo adecuado)'}
+` : ''}
+` : ''}
 
-En explicaciones y ejemplos, evita consejos genéricos. Explica el PORQUÉ CONCEPTUAL o PROCEDIMENTAL específico (p. ej., error en despeje, confusión de fechas, mala interpretación de gráfica).
+INSTRUCCIONES CRÍTICAS:
+- El 80% del análisis debe ser sobre las preguntas incorrectas con explicaciones DETALLADAS
+- NO incluyas secciones genéricas como "Resumen general", "Tendencia y variabilidad", "Equilibrio puntaje-tiempo" a menos que sean CRÍTICAS para entender los errores
+- Cada pregunta incorrecta debe tener: explicación del error + pasos de resolución + ejemplo similar + recursos específicos
+- Los prompts de IA deben ser COPIABLES directamente (entre comillas)
+- Sé específico, práctico y accionable en cada recomendación
 
-Estructura la respuesta con estas secciones (usa encabezados markdown ###):
-- "Resumen general" (2–3 frases que resuman el progreso y las áreas clave a mejorar. Menciona específicamente cuántas preguntas falló y en qué temas o tipos de preguntas).
-- "Tendencia y variabilidad" (3–5 bullets. Analiza la consistencia: ¿es errático o estable? ¿Hay fatiga visible en los tiempos? ¿La mejora es sostenida o hay altibajos?).
-- "Progreso respecto al oficial" (3–5 bullets con veredicto de utilidad. Compara específicamente: ¿mejoró en las mismas preguntas donde falló inicialmente? ¿Qué tan útil fue la práctica? ¿Qué preguntas corrigió entre intentos?).
-- "Equilibrio puntaje-tiempo" (2–3 bullets. Analiza si el tiempo por pregunta indica dudas, respuestas al azar, o comprensión sólida. ¿Dedicó suficiente tiempo a las preguntas difíciles? ¿Hay relación entre tiempo invertido y acierto? ¿El tiempo mejoró entre intentos?).
-- "Análisis de errores" (MÍNIMO 5 bullets, puede ser más si hay varias preguntas incorrectas. **OBLIGATORIO:** Si hay datos de incorrectasDetalle al inicio de este prompt, DEBES mencionar CADA pregunta donde falló. Para CADA pregunta en incorrectasDetalle, crea un bullet DETALLADO que incluya: (1) **Enunciado completo** de la pregunta (copia el texto exacto), (2) **Qué respondió el estudiante** (del campo "seleccion" - menciona la opción exacta), (3) **Cuál es la respuesta correcta** (del campo "correctas" - menciona la opción exacta), (4) **Por qué falló específicamente** (error conceptual/procedimental/atención con explicación detallada del razonamiento incorrecto), (5) **Cómo resolverla correctamente paso a paso** (explica cada paso del proceso de solución como si fueras un tutor, incluyendo fórmulas, conceptos clave, y el razonamiento correcto), (6) **Tipo de pregunta y materia** (si está disponible en incorrectasDetalle). **NO uses frases genéricas. Da EJEMPLOS CONCRETOS con los enunciados reales de las preguntas. Sé PEDAGÓGICO: explica como si estuvieras enseñando a alguien que no entiende el tema.** Si no hay datos de incorrectasDetalle, entonces analiza el tipo de error basándote en los datos disponibles. **CRÍTICO:** Antes de escribir sobre el último intento, verifica: si el puntaje es 80% y hay 5 preguntas totales, entonces correctas = 4 e incorrectas/omitidas = 1. Si el puntaje es 100%, entonces correctas = totalPreguntas. **NUNCA digas "todas las preguntas fueron correctas" si el puntaje es menor a 100%. Si el último intento tiene errores, menciona cuántos hubo y analiza CADA uno con ejemplos específicos usando los datos de incorrectasDetalle.**
-- "Recomendaciones técnicas" (exactamente 3 bullets. Sugiere técnicas de estudio concretas como 'Técnica Feynman', 'Pomodoro', 'Mapas mentales', o ejercicios específicos para los temas fallados. Cada recomendación debe estar vinculada a las preguntas específicas donde falló. Por ejemplo: "Para mejorar en [tema de la pregunta X], aplica la técnica Feynman explicando el concepto en voz alta").
-- "Plan de estudio personalizado" (2–3 bullets. Basado en las preguntas específicas donde falló, sugiere un plan de estudio concreto: qué temas repasar primero, qué ejercicios hacer, cuánto tiempo dedicar a cada tema, y en qué orden estudiar. Sé específico y accionable: "Día 1-2: Repasa [tema de pregunta X] con [tipo de ejercicio]. Día 3-4: Practica [tema de pregunta Y]...").
-- "Conclusión breve" (2–3 frases motivadoras y realistas que reconozcan el progreso específico del estudiante y motiven a seguir mejorando en las áreas identificadas).
-
-Usa bullets, negritas y formato markdown para hacer el análisis más legible. Mantén la respuesta entre 400 y 600 palabras para dar más detalle técnico y pedagógico. Prioriza la calidad y utilidad sobre la brevedad.
-\n${Array.isArray(erroresRecurrentes) && erroresRecurrentes.length ? `Referencias de errores recurrentes detectados (no lo pegues literal, úsalo para redactar bullets con pistas y recursos):\n${JSON.stringify(erroresRecurrentes.slice(0, 5))}` : ''}
-\nIMPORTANTE: Si hay preguntas incorrectas (campo incorrectasLista con textos de enunciado O incorrectasDetalle con datos detallados), DEBES agregar al final una sección titulada exactamente "Ejemplos breves de preguntas con error" con 2–5 bullets (una por cada pregunta importante donde falló). En cada bullet, incluye: (1) Un resumen claro del enunciado o tema de la pregunta (≤ 110 caracteres), (2) Qué respondió incorrectamente (si está disponible), (3) Un micro‑consejo práctico específico y accionable para esa pregunta (una frase que diga QUÉ hacer, no solo qué evitar). **PRIORIZA usar incorrectasDetalle si está disponible porque tiene más información.** Si no hay preguntas incorrectas, omite esa sección. No omitas esta sección si incorrectasLista o incorrectasDetalle tienen elementos.
-
-**ESTILO Y TONO:**
-- Sé claro, directo y pedagógico. Explica como un tutor paciente que quiere que el estudiante entienda.
-- Usa ejemplos concretos y números específicos cuando sea posible (no digas "algunas preguntas", di "2 preguntas" o "3 de las 5 preguntas").
-- Reconoce el esfuerzo del estudiante pero sé honesto sobre las áreas de mejora.
-- Haz que el análisis sea accionable: el estudiante debe saber QUÉ hacer después de leerlo.
-- Evita jerga técnica innecesaria, pero no simplifiques demasiado conceptos importantes.
-- Usa formato markdown para hacer el texto más legible (negritas para conceptos clave, listas, separadores).
-- En las explicaciones paso a paso, usa un lenguaje claro: "Primero...", "Luego...", "Finalmente...".
-- Conecta las recomendaciones con las preguntas específicas donde falló. Menciona los temas por nombre cuando sea relevante.`;
+⚠️ MUY IMPORTANTE - ANÁLISIS COMPLETO:
+- Debes analizar TODAS las preguntas que el estudiante falló en CUALQUIER intento
+- Si solo tienes data del último intento, INFIERE y ANALIZA basándote en:
+  * Los errores recurrentes mencionados
+  * El historial de puntajes (si bajó/subió puede indicar nuevos errores o corrección de antiguos)
+  * El número total de intentos vs preguntas incorrectas actuales
+- PRIORIZA los errores inconsistentes (que a veces acertó y a veces falló) porque indican conocimiento inestable
+- Si una pregunta aparece en "errores recurrentes" pero no en el último intento, IGUAL debes analizarla porque indica que la acertó por suerte
+`;
 
   // Función para construir el payload según el modelo (los legacy no soportan systemInstruction)
   const buildPayloadForModel = (modelo) => {
@@ -675,55 +767,60 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
 
   let json, text;
   let geminiSuccess = false; // Flag para controlar si necesitamos ir a Groq
+  let groqSuccess = false; // Flag para saber si Groq respondió
 
   // =================================================================================
-  // 1. INTENTO CON GEMINI (Estrategia Principal)
+  // 1. INTENTO CON GEMINI (Estrategia Principal) - SOLO SI NO ESTÁ CONFIGURADO GROQ ONLY
   // =================================================================================
-  try {
-    let modelosAProbar = [];
-    if (QUIZ_AI_MODEL_CONFIGURED) {
-      modelosAProbar = [QUIZ_AI_MODEL_CONFIGURED, ...MODELOS_DISPONIBLES.filter(m => m !== QUIZ_AI_MODEL_CONFIGURED)];
-    } else {
-      modelosAProbar = MODELOS_DISPONIBLES;
-    }
-
-    let res = null;
-    let modeloUsado = null;
-
-    console.log('🔍 Iniciando análisis de quiz con IA (usando proxy backend)...');
-
-    // Intentar cada modelo hasta encontrar uno que funcione
-    for (const modelo of modelosAProbar) {
-      try {
-        const payload = buildPayloadForModel(modelo);
-
-        console.log(`📡 Probando modelo: ${modelo} (vía proxy ${PROXY_ENDPOINT})`);
-
-        res = await fetch(PROXY_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ ...payload, purpose: 'analisis' }), // Usa GEMINI_API_KEY_ANALISIS
-        });
-
-        if (res.ok) {
-          json = await res.json();
-          text = extractTextFromGemini(json);
-          if (text) {
-            modeloUsado = modelo;
-            geminiSuccess = true;
-            console.log(`✅ Análisis generado exitosamente con ${modeloUsado} (vía proxy)`);
-            break; // Éxito con Gemini, salir del loop
-          }
-        } else {
-          console.warn(`⚠️ Gemini ${modelo} no respondió OK: ${res.status}`);
-        }
-      } catch (err) {
-        console.warn(`⚠️ Error de red al probar modelo ${modelo}:`, err.message);
+  if (!USE_GROQ_ONLY) {
+    try {
+      let modelosAProbar = [];
+      if (QUIZ_AI_MODEL_CONFIGURED) {
+        modelosAProbar = [QUIZ_AI_MODEL_CONFIGURED, ...MODELOS_DISPONIBLES.filter(m => m !== QUIZ_AI_MODEL_CONFIGURED)];
+      } else {
+        modelosAProbar = MODELOS_DISPONIBLES;
       }
+
+      let res = null;
+      let modeloUsado = null;
+
+      console.log('🔍 Iniciando análisis de quiz con IA (usando proxy backend)...');
+
+      // Intentar cada modelo hasta encontrar uno que funcione
+      for (const modelo of modelosAProbar) {
+        try {
+          const payload = buildPayloadForModel(modelo);
+
+          console.log(`📡 Probando modelo: ${modelo} (vía proxy ${PROXY_ENDPOINT})`);
+
+          res = await fetch(PROXY_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ ...payload, purpose: 'analisis' }), // Usa GEMINI_API_KEY_ANALISIS
+          });
+
+          if (res.ok) {
+            json = await res.json();
+            text = extractTextFromGemini(json);
+            if (text) {
+              modeloUsado = modelo;
+              geminiSuccess = true;
+              console.log(`✅ Análisis generado exitosamente con ${modeloUsado} (vía proxy)`);
+              break; // Éxito con Gemini, salir del loop
+            }
+          } else {
+            console.warn(`⚠️ Gemini ${modelo} no respondió OK: ${res.status}`);
+          }
+        } catch (err) {
+          console.warn(`⚠️ Error de red al probar modelo ${modelo}:`, err.message);
+        }
+      }
+    } catch (err) {
+      console.warn('Fallo general en bloque Gemini:', err);
     }
-  } catch (err) {
-    console.warn('Fallo general en bloque Gemini:', err);
+  } else {
+    console.log('⚙️ Configurado para usar solo Groq. Saltando intento con Gemini.');
   }
 
   // =================================================================================
@@ -731,7 +828,7 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
   // =================================================================================
   if (!geminiSuccess) {
     console.log('🔄 Gemini falló o no devolvió texto. Activando respaldo de GROQ...');
-    
+
     try {
       // Groq usa formato OpenAI (messages), no el formato de Google (contents)
       const groqPayload = {
@@ -755,9 +852,10 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
         const jsonGroq = await resGroq.json();
         text = extractTextFromGroq(jsonGroq);
         if (text) {
-             console.log('✅ Respaldo Groq respondió exitosamente.');
+          groqSuccess = true;
+          console.log('✅ Respaldo Groq respondió exitosamente.');
         } else {
-             console.warn('⚠️ Groq respondió OK pero sin contenido de texto.');
+          console.warn('⚠️ Groq respondió OK pero sin contenido de texto.');
         }
       } else {
         console.warn(`❌ Groq falló con status: ${resGroq.status}`);
@@ -781,7 +879,7 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
   // =================================================================================
   // 4. POST-PROCESAMIENTO (Común para cualquier IA que haya respondido)
   // =================================================================================
-  
+
   // Fallback: si la IA omitió la sección de ejemplos y tenemos datos, la agregamos de forma determinística
   const shouldAppendExamples = Array.isArray(incorrectasLista) && incorrectasLista.length > 0;
   const norm = normalize(text);
@@ -801,17 +899,17 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
     out = buildHumanIntro(params) + '\n\n' + out;
   }
   // Si faltó la sección de progreso, agregarla (antes de Equilibrio o Tendencia)
-  if (!hasHeadingLoose(out, 'Progreso respecto al oficial')) {
-    const sec = buildSecProgresoOficial(params);
-    // Preferimos insertarla antes de "Equilibrio puntaje-tiempo"; si no existe, antes de "Tendencia y variabilidad"
-    if (hasHeadingLoose(out, 'Equilibrio puntaje-tiempo')) {
-      out = insertBeforeHeading(out, 'Equilibrio puntaje-tiempo', sec);
-    } else if (hasHeadingLoose(out, 'Tendencia y variabilidad')) {
-      out = insertBeforeHeading(out, 'Tendencia y variabilidad', sec);
-    } else {
-      out += sec;
-    }
-  }
+  // if (!hasHeadingLoose(out, 'Progreso respecto al oficial')) {
+  //   const sec = buildSecProgresoOficial(params);
+  //   // Preferimos insertarla antes de "Equilibrio puntaje-tiempo"; si no existe, antes de "Tendencia y variabilidad"
+  //   if (hasHeadingLoose(out, 'Equilibrio puntaje-tiempo')) {
+  //     out = insertBeforeHeading(out, 'Equilibrio puntaje-tiempo', sec);
+  //   } else if (hasHeadingLoose(out, 'Tendencia y variabilidad')) {
+  //     out = insertBeforeHeading(out, 'Tendencia y variabilidad', sec);
+  //   } else {
+  //     out += sec;
+  //   }
+  // }
   // Añadir explicación detallada si tenemos datos y la IA no la incluyó
   const hasExplain = normalize(out).includes('explicación de preguntas incorrectas');
   if (!hasExplain) {
@@ -842,8 +940,8 @@ Usa bullets, negritas y formato markdown para hacer el análisis más legible. M
     const secGuia = buildSecResourceGuide(params);
     out = insertBeforeHeading(out, 'Conclusión breve', secGuia);
   }
-  
+
   // Marca la fuente según quién respondió
-  const sourceTag = geminiSuccess ? 'GEMINI' : 'GROQ';
+  const sourceTag = geminiSuccess ? 'GEMINI' : groqSuccess ? 'GROQ' : 'FALLBACK';
   return out + `\n\n<<<AI_SOURCE:${sourceTag}>>>`;
 }
