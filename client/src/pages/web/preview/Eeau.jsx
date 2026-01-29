@@ -2,8 +2,12 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Navbar from "../../../components/mqerk/Navbar";
 import Footer from "../../../components/footer";
+<<<<<<< HEAD
 // TODO: Agregar imagen del curso cuando esté disponible
 import Curso2 from "../../../assets/mqerk/preview/curso1/3.png";
+=======
+import Curso2 from "../../../assets/mqerk/cursos/CURSO 1.webp";
+>>>>>>> 61f15123b192f06dd4b2755547f1d86c53ea5693
 
 // --- Ajusta este número (sin +, ni espacios). Ejemplo MX: 5215555555555
 const WHATSAPP_PHONE = "522871515760";

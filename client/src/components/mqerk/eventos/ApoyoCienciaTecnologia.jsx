@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import Navbar from '../../../components/mqerk/Navbar'
-import Uno from "../../../assets/mqerk/Fotos Estudiantes/25.png";
-import Dos from "../../../assets/mqerk/Fotos Estudiantes/26.png";
-import Primero from "../../../assets/mqerk/veranotx/01.png";
-import Segundo from "../../../assets/mqerk/veranotx/02.png";
-import Tercero from "../../../assets/mqerk/veranotx/03.png";
-import Cuarto from "../../../assets/mqerk/veranotx/04.png";
-import Quinto from "../../../assets/mqerk/veranotx/05.png";
-import Sexto from "../../../assets/mqerk/veranotx/06.png";
-import Septimo from "../../../assets/mqerk/veranotx/07.png";
+import Uno from "../../../assets/mqerk/Fotos Estudiantes/25.webp";
+import Dos from "../../../assets/mqerk/Fotos Estudiantes/26.webp";
+import Primero from "../../../assets/mqerk/veranotx/01.webp";
+import Segundo from "../../../assets/mqerk/veranotx/02.webp";
+import Tercero from "../../../assets/mqerk/veranotx/03.webp";
+import Cuarto from "../../../assets/mqerk/veranotx/04.webp";
+import Quinto from "../../../assets/mqerk/veranotx/05.webp";
+import Sexto from "../../../assets/mqerk/veranotx/06.webp";
+import Septimo from "../../../assets/mqerk/veranotx/07.webp";
 import { Link } from "react-router-dom";
-import CincoImg from "../../../assets/mqerk/talleres/5.png";
-import SeisImg from "../../../assets/mqerk/talleres/6.png";
+import CincoImg from "../../../assets/mqerk/talleres/5.webp";
+import SeisImg from "../../../assets/mqerk/talleres/6.webp";
 import Footer from "../../footer";
 
 function Talleres() {

@@ -1,7 +1,7 @@
 // src/components/Header_Alumno_comp.jsx
 import React, { useRef, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import MQerkLogo from "../../assets/MQerK_logo.png";
+import MQerkLogo from "../../assets/MQerK_logo.webp";
 import { Logos } from "../IndexComp"; // Asegúrate de que la ruta a IndexComp.jsx sea correcta
 import { useStudent } from "../../context/StudentContext";
 import { buildStaticUrl, getApiOrigin } from "../../utils/url";

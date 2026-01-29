@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import eeauImg from '../assets/mqerk/1.png';
+import eeauImg from '../assets/mqerk/1.webp';
 import { useAuth } from './AuthContext.jsx';
 import { computeOverdueState } from '../utils/payments.js';
 import * as AreaAccess from '../api/areaAccess.js';

@@ -151,7 +151,6 @@ export const generarAnalisisConGemini = async (datosAnalisis) => {
       console.warn('📦 Usando análisis desde cache');
       return { ...cache, desdeCache: true };
     }
-
     // Validar datos de entrada
     if (!datosAnalisis || !datosAnalisis.simulacion) {
       throw new Error('Datos de análisis inválidos - falta simulación');
@@ -443,7 +442,6 @@ ENFOQUE ESPECIALIZADO PARA ESTUDIANTE PRINCIPIANTE:
 • Proporcionar ejemplos concretos y simples
       `;
       break;
-
     case 'intermedio':
       especializacion = `
 ENFOQUE ESPECIALIZADO PARA ESTUDIANTE INTERMEDIO:
@@ -457,7 +455,6 @@ ENFOQUE ESPECIALIZADO PARA ESTUDIANTE INTERMEDIO:
 • Incluir técnicas de mejora continua
       `;
       break;
-
     case 'avanzado':
       especializacion = `
 ENFOQUE ESPECIALIZADO PARA ESTUDIANTE AVANZADO:
@@ -472,7 +469,6 @@ ENFOQUE ESPECIALIZADO PARA ESTUDIANTE AVANZADO:
       `;
       break;
   }
-
   return basePrompt + especializacion;
 };
 
@@ -487,17 +483,14 @@ export const detectarTipoEstudiante = (datos) => {
   const tp = Number(datos?.tiempoPromedio) || 0;
 
   const eficiencia = tp > 0 ? promedio / tp : 0;
-
   // Criterios para estudiante avanzado
   if (promedio >= 85 && eficiencia >= 2 && intentos <= 2) {
     return 'avanzado';
   }
-
   // Criterios para estudiante principiante
   if (promedio < 60 || intentos > 5 || eficiencia < 1) {
     return 'principiante';
   }
-
   // Por defecto, intermedio
   return 'intermedio';
 };
@@ -716,7 +709,6 @@ INSTRUCCIONES ADICIONALES:
 • Sugiere proyectos prácticos del área
 • Recomienda herramientas especializadas
 `;
-
   return basePrompt + especializacionArea;
 };
 
@@ -733,7 +725,6 @@ const obtenerMateriasDeArea = (area) => {
     'sociales': ['historia', 'geografía', 'civismo', 'sociología', 'antropología'],
     'ingles': ['inglés', 'english', 'idiomas', 'lengua extranjera']
   };
-
   return areasMap[area.toLowerCase()] || [];
 };
 
@@ -780,7 +771,6 @@ const obtenerCompetenciasDeArea = (area) => {
       'Competencia intercultural'
     ]
   };
-
   return competenciasMap[area.toLowerCase()] || ['Competencias generales del área'];
 };
 
@@ -827,7 +817,6 @@ const obtenerRecursosEspecializados = (area) => {
       'Libros graduados'
     ]
   };
-
   return recursosMap[area.toLowerCase()] || ['Recursos generales del área'];
 };
 
@@ -844,7 +833,6 @@ const obtenerEnfoqueEspecializadoArea = (area) => {
     'sociales': 'Desarrolla pensamiento crítico, conecta eventos históricos con actualidad, analiza diferentes perspectivas y practica la argumentación.',
     'ingles': 'Practica las 4 habilidades (hablar, escuchar, leer, escribir), sumérgete en el idioma y no temas cometer errores.'
   };
-
   return enfoquesMap[area.toLowerCase()] || 'Desarrolla competencias específicas del área con práctica constante y recursos especializados.';
 };
 
@@ -1272,7 +1260,6 @@ const validarEstructuraAnalisis = (analisis) => {
     puntuacionConfianza: calcularPuntuacionConfianza(analisis),
     recomendacionesPersonalizadas: generarRecomendacionesPersonalizadas(analisis)
   };
-
   return analisisCompleto;
 };
 
@@ -1335,7 +1322,6 @@ const calcularPuntuacionConfianza = (analisis) => {
  */
 const generarRecomendacionesPersonalizadas = (analisis) => {
   const recomendaciones = [];
-
   // Recomendaciones basadas en áreas de desarrollo
   if (analisis.areasDeDesarrollo && analisis.areasDeDesarrollo.length > 0) {
     recomendaciones.push({
@@ -1344,7 +1330,6 @@ const generarRecomendacionesPersonalizadas = (analisis) => {
       prioridad: 'Alta'
     });
   }
-
   // Recomendaciones basadas en fortalezas
   if (analisis.fortalezasDetalladas && analisis.fortalezasDetalladas.length > 0) {
     recomendaciones.push({
@@ -1353,7 +1338,6 @@ const generarRecomendacionesPersonalizadas = (analisis) => {
       prioridad: 'Media'
     });
   }
-
   return recomendaciones;
 };
 
@@ -1492,12 +1476,10 @@ export const verificarModelosDisponibles = async () => {
   try {
     const response = await fetch('/api/ai/gemini/models');
     const data = await response.json();
-
     if (data.models) {
       console.log('🔍 Modelos disponibles:', data.models.map(m => m.name));
       return data.models;
     }
-
     return [];
   } catch (error) {
     console.error('❌ Error verificando modelos:', error);
@@ -1526,7 +1508,6 @@ export const generarPreguntasSimulacionIA = async (opts) => {
 export const probarConexionGemini = async () => {
   try {
     console.log('🧪 Probando conexión con Gemini API...');
-
     const requestBody = {
       contents: [{
         parts: [{
@@ -1555,7 +1536,6 @@ export const probarConexionGemini = async () => {
     const data = await response.json();
     console.log('✅ Conexión exitosa con Gemini API');
     return { success: true, data };
-
   } catch (error) {
     console.error('❌ Error en prueba de conexión:', error);
     return { success: false, error: error.message };
@@ -1576,7 +1556,6 @@ const calcularTendenciaGeneral = (datos) => {
   const avg = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
   const promedioInicial = avg(primerosMitad);
   const promedioFinal = avg(segundaMitad.length ? segundaMitad : primerosMitad);
-
   if (promedioFinal > promedioInicial + 5) return 'Mejora significativa';
   if (promedioFinal > promedioInicial) return 'Mejora gradual';
   if (promedioFinal < promedioInicial - 5) return 'Declive preocupante';
@@ -1593,7 +1572,6 @@ const identificarPatronesAprendizaje = (datos) => {
   const materias = datos.materias || [];
   const materiasConsistentes = materias.filter(m => calcularConsistencia(m.puntajes || []) > 0.8);
   const materiasInconsistentes = materias.filter(m => calcularConsistencia(m.puntajes || []) < 0.6);
-
   if (materiasConsistentes.length > materiasInconsistentes.length) {
     return 'Aprendizaje consistente y estructurado';
   } else if (materiasInconsistentes.length > materiasConsistentes.length) {
@@ -1610,7 +1588,6 @@ const identificarPatronesAprendizaje = (datos) => {
 const evaluarNivelDificultad = (datos) => {
   const promedioGeneral = Number(datos?.promedio) || 0;
   const tiempoPromedio = Number(datos?.tiempoPromedio) || 0;
-
   if (promedioGeneral >= 85 && tiempoPromedio <= 30) return 'Nivel apropiado - Alta eficiencia';
   if (promedioGeneral >= 70 && tiempoPromedio <= 45) return 'Nivel adecuado - Eficiencia normal';
   if (promedioGeneral >= 60 && tiempoPromedio <= 60) return 'Nivel desafiante - Requiere más tiempo';
@@ -1805,7 +1782,6 @@ Responde SOLO con el JSON, sin texto adicional.
 export const generarAnalisisCompletoAvanzado = async (datosAnalisis, opciones = {}) => {
   try {
     console.log('🚀 Iniciando análisis completo avanzado');
-
     // Opciones por defecto
     const opcionesCompletas = {
       incluirAnalisisEspecializado: true,
@@ -1847,7 +1823,6 @@ export const generarAnalisisCompletoAvanzado = async (datosAnalisis, opciones = 
         console.warn('⚠️ Error en análisis por área:', error.message);
       }
     }
-
     // Combinar todos los análisis
     const analisisCompleto = combinarAnalisis(
       analisisPrincipal,
@@ -2008,7 +1983,6 @@ const combinarAnalisis = (principal, especializado, porArea, tipoEstudiante, dat
       ...(principal.recursosAdicionales || {}),
       recursosEspecializados: porArea?.recursosAdicionales || {}
     },
-
     // Recomendaciones personalizadas mejoradas
     recomendacionesPersonalizadas: [
       ...(principal.recomendacionesPersonalizadas || []),
@@ -2045,7 +2019,6 @@ const combinarAnalisis = (principal, especializado, porArea, tipoEstudiante, dat
 const calcularIndicadoresRendimiento = (datos) => {
   const promedios = datos.materias.map(m => m.promedio);
   const tiempos = datos.materias.map(m => m.tiempoPromedio || datos.tiempoPromedio);
-
   return {
     promedioGeneral: datos.promedio,
     desviacionEstandar: calcularDesviacionEstandar(promedios),
@@ -2065,7 +2038,6 @@ const calcularIndicadoresRendimiento = (datos) => {
  */
 const generarProximosPasos = (datos, tipoEstudiante) => {
   const pasos = [];
-
   // Paso 1: Enfoque en área más débil
   const lista = Array.isArray(datos?.materias) ? datos.materias : [];
   if (lista.length === 0) {
@@ -2090,7 +2062,6 @@ const generarProximosPasos = (datos, tipoEstudiante) => {
     plazo: '2 semanas',
     prioridad: 'Alta'
   });
-
   // Paso 2: Optimizar tiempo de estudio
   if ((Number(datos?.tiempoPromedio) || 0) > 60) {
     pasos.push({
@@ -2114,7 +2085,6 @@ const generarProximosPasos = (datos, tipoEstudiante) => {
     plazo: 'Continuo',
     prioridad: 'Baja'
   });
-
   return pasos;
 };
 
@@ -2151,7 +2121,6 @@ const calcularTendenciaAprendizaje = (materias) => {
     return Number(mejora) || 0;
   });
   const promedioTendencia = tendencias.reduce((a, b) => a + b, 0) / (tendencias.length || 1);
-
   if (promedioTendencia > 10) return 'Mejora significativa';
   if (promedioTendencia > 5) return 'Mejora gradual';
   if (promedioTendencia > -5) return 'Estable';

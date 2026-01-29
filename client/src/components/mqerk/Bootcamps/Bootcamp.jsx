@@ -1,7 +1,7 @@
 import React from 'react'
 import Navbar from '../../../components/mqerk/Navbar'
-import Uno from "../../../assets/mqerk/bootcamp/1.png";
-import Dos from "../../../assets/mqerk/bootcamp/2.png";
+import Uno from "../../../assets/mqerk/bootcamp/1.webp";
+import Dos from "../../../assets/mqerk/bootcamp/2.webp";
 import { Link } from "react-router-dom";
 import Footer from "../../footer";
 

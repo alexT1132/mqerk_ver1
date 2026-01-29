@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { XMarkIcon, ChevronDownIcon } from "@heroicons/react/24/outline"; // Asegúrate de tenerlos
-import Logo from "../assets/MQerK_logo.png";
+import Logo from "../assets/MQerK_logo.webp";
 
 export default function MobileMenu({ isOpen, onClose }) {
   if (!isOpen) return null;

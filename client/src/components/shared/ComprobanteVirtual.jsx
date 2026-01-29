@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useStudent } from '../../context/StudentContext.jsx';
-import mqerkLogo from '../../assets/mqerk/mqerk.png';
+import mqerkLogo from '../../assets/mqerk/mqerk.webp';
 
 
 // Iconos SVG

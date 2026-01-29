@@ -1,9 +1,9 @@
 import { useState } from "react";
-import Kelvin from "../../assets/mqerk/Asesores/5.png";
-import Ruth from "../../assets/mqerk/Asesores/6.png";
-import Emmanuel from "../../assets/mqerk/Asesores/7.png";
-import Cesar from "../../assets/mqerk/Asesores/8.png";
-import Alex from "../../assets/mqerk/Asesores/9.png";
+import Kelvin from "../../assets/mqerk/Asesores/5.webp";
+import Ruth from "../../assets/mqerk/Asesores/6.webp";
+import Emmanuel from "../../assets/mqerk/Asesores/7.webp";
+import Cesar from "../../assets/mqerk/Asesores/8.webp";
+import Alex from "../../assets/mqerk/Asesores/9.webp";
 
 const asesores = [
   { nombre: "Kelvin Ramírez", rol: "Asesor Cienytec", img: Kelvin },

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getMiPerfil, getNotifications, getUnreadCount, markNotificationRead, markAllNotificationsRead, deleteNotification } from "../../api/asesores.js";
 import { buildStaticUrl } from "../../utils/url.js";
-import logo from '../../assets/MQerK_logo.png';
+import logo from '../../assets/MQerK_logo.webp';
 
 export default function Topbar() {
   const navigate = useNavigate();

@@ -1,14 +1,14 @@
 import Navbar from '../../../components/mqerk/Navbar'
-import Uno from "../../../assets/mqerk/online/1.png";
-import Dos from "../../../assets/mqerk/online/2.png";
-import Tres from "../../../assets/mqerk/online/3.png";
-import Cuatro from "../../../assets/mqerk/online/4.png";
-import Cinco from "../../../assets/mqerk/online/5.png";
-import Seis from "../../../assets/mqerk/online/6.png";
-import Siete from "../../../assets/mqerk/online/7.png";
-import Ocho from "../../../assets/mqerk/online/8.png";
-import Nueve from "../../../assets/mqerk/online/9.png";
-import Diez from "../../../assets/mqerk/online/10.png";
+import Uno from "../../../assets/mqerk/online/1.webp";
+import Dos from "../../../assets/mqerk/online/2.webp";
+import Tres from "../../../assets/mqerk/online/3.webp";
+import Cuatro from "../../../assets/mqerk/online/4.webp";
+import Cinco from "../../../assets/mqerk/online/5.webp";
+import Seis from "../../../assets/mqerk/online/6.webp";
+import Siete from "../../../assets/mqerk/online/7.webp";
+import Ocho from "../../../assets/mqerk/online/8.webp";
+import Nueve from "../../../assets/mqerk/online/9.webp";
+import Diez from "../../../assets/mqerk/online/10.webp";
 import { Link } from 'react-router-dom'
 import Footer from "../../footer";
 

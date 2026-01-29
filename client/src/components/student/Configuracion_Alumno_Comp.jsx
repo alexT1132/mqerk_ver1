@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useStudent } from '../../context/StudentContext.jsx';
-
 import { buildStaticUrl, getApiOrigin } from '../../utils/url';
 import { getConfigRequest, upsertConfigRequest, changePasswordRequest, updateEstudianteRequest, updateFotoEstudianteRequest, softDeleteAlumnoRequest } from '../../api/estudiantes.js';
 import ConfirmModal from '../shared/ConfirmModal.jsx';

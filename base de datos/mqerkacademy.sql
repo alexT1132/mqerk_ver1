@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 12-01-2026 a las 19:41:54
+-- Tiempo de generación: 22-12-2025 a las 21:53:00
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -730,7 +730,11 @@ INSERT INTO `calendar_events` (`id`, `user_id`, `titulo`, `descripcion`, `fecha`
 CREATE TABLE `chat_messages` (
   `id` int(11) NOT NULL,
   `student_id` int(11) NOT NULL,
+<<<<<<< HEAD
   `sender_role` enum('estudiante','admin','asesor','sistema') NOT NULL,
+=======
+  `sender_role` enum('estudiante','admin','sistema') NOT NULL,
+>>>>>>> 61f15123b192f06dd4b2755547f1d86c53ea5693
   `message` text DEFAULT NULL,
   `type` enum('text','image','file') DEFAULT 'text',
   `category` enum('general','support','academic') DEFAULT 'general',
@@ -743,6 +747,7 @@ CREATE TABLE `chat_messages` (
 --
 
 INSERT INTO `chat_messages` (`id`, `student_id`, `sender_role`, `message`, `type`, `category`, `is_read`, `created_at`) VALUES
+<<<<<<< HEAD
 (1, 67, 'admin', '/uploads/chat/1766602768763-94087292-reporte2miguelangel.pdf', 'file', 'support', 1, '2025-12-24 18:59:28'),
 (2, 67, 'admin', '/uploads/chat/1766602808624-151098164-Capturadepantalla2025-12-19132408.png', 'image', 'support', 1, '2025-12-24 19:00:08'),
 (3, 67, 'estudiante', 'gracias', 'text', 'support', 1, '2025-12-24 19:00:39'),
@@ -762,6 +767,14 @@ INSERT INTO `chat_messages` (`id`, `student_id`, `sender_role`, `message`, `type
 (17, 67, 'asesor', '/uploads/chat/1766608020117-637610246-Capturadepantalla2025-12-19134718.png', 'image', 'general', 1, '2025-12-24 20:27:00'),
 (18, 67, 'asesor', '/uploads/chat/1766608157096-792383668-Capturadepantalla2025-12-19134718.png', 'image', 'general', 1, '2025-12-24 20:29:17'),
 (19, 67, 'asesor', 'mira yo te decia alho ais', 'text', 'general', 1, '2025-12-24 20:29:17');
+=======
+(1, 67, 'estudiante', 'hola', 'text', 'general', 0, '2025-12-22 20:26:53'),
+(2, 67, 'estudiante', 'holaaa', 'text', 'general', 0, '2025-12-22 20:26:59'),
+(3, 67, 'estudiante', 'hola', 'text', 'general', 0, '2025-12-22 20:27:29'),
+(4, 67, 'estudiante', 'hola', 'text', 'general', 0, '2025-12-22 20:33:53'),
+(5, 67, 'estudiante', 'HOLA', 'text', 'general', 0, '2025-12-22 20:38:57'),
+(6, 67, 'estudiante', 'sadfsa', 'text', 'general', 0, '2025-12-22 20:50:38');
+>>>>>>> 61f15123b192f06dd4b2755547f1d86c53ea5693
 
 -- --------------------------------------------------------
 
@@ -3086,6 +3099,7 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `usuario`, `contraseña`, `must_change`, `last_login_at`, `password_changed_at`, `failed_attempts`, `locked_until`, `role`, `id_estudiante`, `created_at`) VALUES
+<<<<<<< HEAD
 (3, 'miguel', '$2b$10$JkGqmotlDUI4Kuutn3ywoesTpA3izIF6QjlJUygfyizNoO9xJpJye', 1, '2025-12-25 16:20:52', NULL, 0, NULL, 'estudiante', 67, '2025-08-11 00:41:45'),
 (6, 'jesica_admin', '$2b$10$C9FZlnOw4.vJfjxh5E/H8OZu0S7g7ZF.dRiCopqNfz/8Hta1ta9VW', 1, '2025-12-25 16:09:36', NULL, 0, NULL, 'admin', NULL, '2025-08-11 04:00:37'),
 (8, 'jessica.mqerk', '$2b$10$/.53BvJ4Vuh6E910koGzqOOHU7m5kvsR2x8q8gE.4iN7tEem93Une', 1, NULL, NULL, 0, NULL, 'estudiante', 69, '2025-08-11 19:36:41'),
@@ -3094,6 +3108,15 @@ INSERT INTO `usuarios` (`id`, `usuario`, `contraseña`, `must_change`, `last_log
 (21, 'jair.asesor', '$2b$10$UjpfEXATomGY6ftdqu2niuLgNQ7sGLkd8Or/5EeQwsJW5d.ybdDp6', 0, '2025-12-25 16:11:23', '2025-10-13 12:59:25', 0, NULL, 'asesor', NULL, '2025-10-06 17:29:14'),
 (22, 'Eduardo_1', '$2b$10$KkhPtNqVnR4qJmSFWi1mL.YyregJKx7/f1C0Pt2iIhZMZSDxeX12e', 1, '2025-12-09 18:36:21', NULL, 0, NULL, 'estudiante', 74, '2025-12-10 00:36:12'),
 (24, 'haniel1', '$2b$10$VWtioJTqDMtc4DeBAz4O/uOesqFZLHyzWtSLq9Z.q/IQog1.94MLe', 1, '2025-12-25 11:15:19', NULL, 0, NULL, 'estudiante', 76, '2025-12-25 01:37:17');
+=======
+(3, 'miguel', '$2b$10$JkGqmotlDUI4Kuutn3ywoesTpA3izIF6QjlJUygfyizNoO9xJpJye', 1, '2025-12-22 14:38:36', NULL, 0, NULL, 'estudiante', 67, '2025-08-11 00:41:45'),
+(6, 'jesica_admin', '$2b$10$C9FZlnOw4.vJfjxh5E/H8OZu0S7g7ZF.dRiCopqNfz/8Hta1ta9VW', 1, '2025-12-22 14:28:01', NULL, 0, NULL, 'admin', NULL, '2025-08-11 04:00:37'),
+(8, 'jessica.mqerk', '$2b$10$/.53BvJ4Vuh6E910koGzqOOHU7m5kvsR2x8q8gE.4iN7tEem93Une', 1, NULL, NULL, 0, NULL, 'estudiante', 69, '2025-08-11 19:36:41'),
+(10, 'kelvincienytec', '$2b$10$A.Y8E73jINN6a0AWHDEId.lxAy6F4HBSz83NZhEvchCwAgGXfa7Oa', 1, '2025-10-06 11:03:12', NULL, 0, NULL, 'asesor', NULL, '2025-08-11 22:48:41'),
+(20, 'juan8', '$2b$10$WY5sxiP7FVP5q6MxJHcsFeKo5P8Aah.9HvfqfWYkQF.ULEeBPewdC', 1, NULL, NULL, 0, NULL, 'estudiante', 73, '2025-08-21 18:19:30'),
+(21, 'jair.asesor', '$2b$10$UjpfEXATomGY6ftdqu2niuLgNQ7sGLkd8Or/5EeQwsJW5d.ybdDp6', 0, '2025-12-22 14:46:15', '2025-10-13 12:59:25', 0, NULL, 'asesor', NULL, '2025-10-06 17:29:14'),
+(22, 'Eduardo_1', '$2b$10$KkhPtNqVnR4qJmSFWi1mL.YyregJKx7/f1C0Pt2iIhZMZSDxeX12e', 1, '2025-12-09 18:36:21', NULL, 0, NULL, 'estudiante', 74, '2025-12-10 00:36:12');
+>>>>>>> 61f15123b192f06dd4b2755547f1d86c53ea5693
 
 -- --------------------------------------------------------
 
@@ -3427,6 +3450,14 @@ ALTER TABLE `chat_messages`
   ADD KEY `idx_chat_student_created` (`student_id`,`created_at`),
   ADD KEY `idx_chat_unread` (`is_read`,`sender_role`),
   ADD KEY `idx_chat_student_category` (`student_id`,`category`,`created_at`);
+
+--
+-- Indices de la tabla `chat_messages`
+--
+ALTER TABLE `chat_messages`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_student` (`student_id`),
+  ADD KEY `idx_created` (`created_at`);
 
 --
 -- Indices de la tabla `comprobantes`
@@ -3916,7 +3947,11 @@ ALTER TABLE `calendar_events`
 -- AUTO_INCREMENT de la tabla `chat_messages`
 --
 ALTER TABLE `chat_messages`
+<<<<<<< HEAD
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+=======
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+>>>>>>> 61f15123b192f06dd4b2755547f1d86c53ea5693
 
 --
 -- AUTO_INCREMENT de la tabla `comprobantes`

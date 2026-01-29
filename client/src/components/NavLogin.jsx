@@ -1,4 +1,4 @@
-import Logo from "../assets/MQerK_logo.png";
+import Logo from "../assets/MQerK_logo.webp";
 import Guardianes from "../assets/guardianes.png";
 import { Link } from "react-router-dom";
 

@@ -1,5 +1,6 @@
 ========================================AJUSTES POR REALIZAR=================================
 
+<<<<<<< HEAD
 
 ###################################################### PANEL DEL ALUMNO ######################################################
 el chat no es responsivo en móviles, sobre todo en móviles con pantallas chicas como el IPhone SE, probar con otros taños y ajustar ese detalle
@@ -213,3 +214,10 @@ Cada rol tiene su propia versión de componentes con:
 4. **Contextos de Rol**: Usar contexto para determinar permisos y mostrar/ocultar elementos
 
 **Ejemplo**: Un único `SideBar` que reciba `menuItems` y `userRole` como props, en lugar de tres componentes separados.
+=======
+vamos poner otra opcion en finanzas llamda pago de Asesores, donde se podran registrar los pagos del asesor campos que tendra:
+nombre (sera un dropdown mostrando a los asesores disponibles ) servicio (curso o asesoria uan de esas dos opcines o poder poner otro). monto
+metodo de pago
+fecha de pago
+Nota
+>>>>>>> 61f15123b192f06dd4b2755547f1d86c53ea5693
