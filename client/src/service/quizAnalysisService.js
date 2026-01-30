@@ -83,6 +83,9 @@ export async function analyzeQuizPerformance(params) {
     oficialPuntaje,
     oficialFecha,
     oficialDuracion,
+    // ✅ NUEVO: Información de conocimiento inestable
+    preguntasInconsistentes,
+    materiasConDiagnostico,
   } = params || {};
 
   // Utilidades locales para generación de fallback (INTACTAS)
@@ -362,11 +365,14 @@ export async function analyzeQuizPerformance(params) {
     });
     let text = ensureLineBreaksBeforeHashes(md);
     const titles = [
-      'Resumen general',
-      'Tendencia y variabilidad',
+      // ❌ Secciones genéricas eliminadas:
+      // 'Resumen general',
+      // 'Tendencia y variabilidad',
+      // 'Equilibrio puntaje-tiempo',
+      // 'Análisis de errores',
+
+      // ✅ Secciones útiles que se mantienen:
       'Progreso respecto al oficial',
-      'Equilibrio puntaje-tiempo',
-      'Análisis de errores',
       'Guía para encontrar recursos',
       'Errores recurrentes y recursos',
       'Recomendaciones técnicas',
@@ -515,13 +521,15 @@ export async function analyzeQuizPerformance(params) {
 
   const ensureSections = (md, p) => {
     let out = String(md || '');
-    // Solo añadimos si faltan, para evitar duplicados
-    if (!hasHeadingLoose(out, 'Resumen general')) out += buildSecResumen(p);
-    // if (!hasHeadingLoose(out, 'Tendencia y variabilidad')) out += buildSecTendencia(p);
-    if (!hasHeadingLoose(out, 'Equilibrio puntaje-tiempo')) out += buildSecEquilibrio(p);
-    if (!hasHeadingLoose(out, 'Análisis de errores')) out += buildSecAnalisisErrores(p);
+    // ❌ ELIMINADO: Secciones genéricas poco útiles
+    // if (!hasHeadingLoose(out, 'Resumen general')) out += buildSecResumen(p);
+    // if (!hasHeadingLoose(out, 'Equilibrio puntaje-tiempo')) out += buildSecEquilibrio(p);
+    // if (!hasHeadingLoose(out, 'Análisis de errores')) out += buildSecAnalisisErrores(p);
+
+    // ✅ Solo agregar secciones realmente útiles si faltan
     if (!hasHeadingLoose(out, 'Recomendaciones técnicas')) out += buildSecRecsTecnicas(p);
     if (!hasHeadingLoose(out, 'Conclusión breve')) out += buildSecConclusion(p);
+
     // Normalizar títulos a markdown y espaciado
     out = normalizeHeadings(out);
     return out;
@@ -538,22 +546,83 @@ export async function analyzeQuizPerformance(params) {
   };
 
   // NUEVO: El systemPrompt se enfoca en análisis profundo de errores específicos
-  const systemPrompt = `Eres un tutor académico experto enfocado en corrección de errores y aprendizaje efectivo.
+  const systemPrompt = `Eres un tutor académico experto y amigable enfocado en corrección de errores y aprendizaje efectivo.
   
-  Tu análisis debe ser:
-  1. ENFOCADO EN ERRORES: Dedica el 80% del análisis a explicar detalladamente cada pregunta que el alumno falló.
-  2. PASO A PASO: Para cada error, proporciona una explicación completa de cómo resolverlo, con ejemplos concretos.
-  3. PRÁCTICO Y ACCIONABLE: Indica exactamente qué estudiar, cómo practicar y cómo usar IA (ChatGPT/Gemini) para reforzar el aprendizaje.
-  4. DETECTAR PATRONES: Identifica si hay errores recurrentes y explica por qué ocurren.
+  FORMATO DE SALUDO INICIAL:
+  - Saluda al estudiante usando SOLO su primer nombre de forma amigable
+  - Ejemplo: "¡Hola, Miguel Ángel! Me da gusto que hayas realizado [X] intentos en esta simulación."
+  - Sé cálido y motivador desde el inicio
+  - NO uses frases formales como "Basándonos en la información proporcionada" o "vamos a analizar"
   
-  IMPORTANTE: 
-  - NO incluyas secciones genéricas sobre "tendencia" o "variabilidad" a menos que sean críticas para entender el patrón de errores.
-  - Enfócate en lo que el alumno necesita HACER para mejorar, no en estadísticas abstractas.
-  - Sé directo pero constructivo. El objetivo es que el alumno entienda sus errores y sepa exactamente cómo corregirlos.`;
+  FORMATO DE PRESENTACIÓN DE ERRORES (TIPO EXAMEN):
+  Para CADA pregunta incorrecta, usa este formato EXACTO:
+  
+  ---
+  
+  ### Pregunta [N]: [Título descriptivo del tema] [MARCADOR]
+  
+  **Marcadores de prioridad:**
+  - 🔴 ERROR RECURRENTE (2+ intentos fallidos) - REQUIERE MÁXIMA ATENCIÓN
+  - 🚨 CONOCIMIENTO INESTABLE (a veces acierta, a veces falla)
+  - ⚠️ ERROR ÚNICO (solo falló una vez)
+  
+  **Enunciado de la pregunta:**
+  [Texto completo de la pregunta]
+  
+  ❌ **Tu respuesta:** "[Respuesta que eligió el estudiante]" (Incorrecta)
+  
+  ✅ **Respuesta correcta:** "[Respuesta correcta completa]"
+  
+  **¿Por qué está incorrecta tu respuesta?**
+  [Explicación clara y directa del error conceptual. Si es ERROR RECURRENTE (🔴), enfatiza que ha fallado esta pregunta múltiples veces y necesita dedicar tiempo extra a entender el concepto.]
+  
+  **Cómo resolverlo paso a paso:**
+  1. [Primer paso específico con ejemplo]
+  2. [Segundo paso específico con ejemplo]
+  3. [Tercer paso específico con ejemplo]
+  [Continúa hasta completar el proceso de resolución]
+  
+  **Ejemplo similar resuelto:**
+  [Proporciona un ejemplo concreto similar a la pregunta, resuelto paso a paso]
+  
+  **Qué estudiar específicamente:**
+  - [Concepto/tema específico 1]
+  - [Concepto/tema específico 2]
+  - [Práctica recomendada]
+  
+  ---
+  
+  PRIORIDAD DE ANÁLISIS:
+  1. **🔴 ERRORES RECURRENTES (MÁXIMA PRIORIDAD):**
+     - Preguntas falladas en 2 o más intentos
+     - Dedica MÁS ESPACIO y DETALLE a estas preguntas
+     - Explica por qué sigue fallando y cómo romper el patrón
+  
+  2. **🚨 CONOCIMIENTO INESTABLE:**
+     - Preguntas que a veces acierta y a veces falla
+     - Indica que está adivinando, no dominando el concepto
+  
+  3. **⚠️ ERRORES ÚNICOS:**
+     - Preguntas falladas solo una vez
+     - TAMBIÉN deben analizarse (puede haber adivinado después)
+     - Explicación más breve que los errores recurrentes
+  
+  REGLAS CRÍTICAS:
+  - ⚠️ **ANALIZA TODAS LAS PREGUNTAS FALLADAS**, incluso si solo falló 1 vez
+  - Razón: Si acertó después, pudo haber sido por adivinación, no por comprensión real
+  - Los errores recurrentes (🔴) reciben MÁS ESPACIO, pero los únicos (⚠️) también se explican
+  - El 80% del análisis debe ser sobre las preguntas incorrectas con explicaciones DETALLADAS
+  - Usa emojis y formato visual para hacer el análisis más atractivo
+  - NO incluyas secciones genéricas como "Resumen general" o "Tendencia y variabilidad"
+  - Sé específico, práctico y accionable en cada recomendación
+  - Mantén un tono amigable y motivador en todo momento`;
 
+
+  // ...existing code...
   // Limitar longitud de listas para evitar respuestas muy largas
   const capArray = (arr, n = 12) => (Array.isArray(arr) ? arr.slice(Math.max(0, arr.length - n)) : []);
   const scoresCapped = capArray(scores, 12);
+  // ...existing code...
   const fechasCapped = capArray(fechas, 12);
   const duracionesCapped = capArray(duraciones, 12);
   const scoresList = scoresCapped.join(', ');
@@ -562,18 +631,30 @@ export async function analyzeQuizPerformance(params) {
   }).join(' | ');
   const duracionesList = duracionesCapped.join(', ');
 
-  // Construir lista de preguntas incorrectas con flag de reincidencia
+  // Construir lista de preguntas incorrectas con flag de reincidencia y contador
   const listaIncorrectasPrompt = (Array.isArray(incorrectasDetalle) && incorrectasDetalle.length > 0) ?
     incorrectasDetalle.slice(0, 10).map(item => {
-      // Verificar si este error es recurrente
-      const esRecurrente = Array.isArray(erroresRecurrentes) && erroresRecurrentes.some(r => {
-        const txtA = String(r.enunciado || '').toLowerCase().trim();
-        const txtB = String(item.enunciado || '').toLowerCase().trim();
-        return txtA.includes(txtB.substring(0, 20)) || txtB.includes(txtA.substring(0, 20));
-      });
+      // Verificar si este error es recurrente y contar cuántas veces falló
+      let vecesFallada = 1;
+      let esRecurrente = false;
+
+      if (Array.isArray(erroresRecurrentes)) {
+        const errorMatch = erroresRecurrentes.find(r => {
+          const txtA = String(r.enunciado || '').toLowerCase().trim();
+          const txtB = String(item.enunciado || '').toLowerCase().trim();
+          return txtA.includes(txtB.substring(0, 20)) || txtB.includes(txtA.substring(0, 20));
+        });
+
+        if (errorMatch) {
+          esRecurrente = true;
+          vecesFallada = errorMatch.veces || 2; // Usar el contador de erroresRecurrentes
+        }
+      }
+
       return {
         ...item,
-        es_reincidente: esRecurrente
+        es_reincidente: esRecurrente,
+        veces_fallada: vecesFallada
       };
     }) : [];
 
@@ -587,83 +668,89 @@ RESULTADO DEL INTENTO ${intentoNumero || 1}:
 - Incorrectas: ${incorrectasIntento || 0}
 - Total de intentos realizados: ${totalIntentos || 1}
 
+
 ${listaIncorrectasPrompt.length > 0 ? `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔴 ANÁLISIS DETALLADO DE CADA ERROR (SECCIÓN PRINCIPAL)
+🔴 1. ANÁLISIS DETALLADO DE CADA ERROR (SECCIÓN PRINCIPAL)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ⚠️ IMPORTANTE: Debes analizar TODAS las preguntas que el estudiante falló en CUALQUIER intento, no solo las del último intento.
 
 PRIORIDAD DE ANÁLISIS:
 
-1. **MÁXIMA PRIORIDAD - Errores Inconsistentes (🚨 CONOCIMIENTO INESTABLE):**
+1. **🔴 ERRORES RECURRENTES (MÁXIMA PRIORIDAD):**
+   Preguntas que falló en 2 o más intentos.
+   - Dedica MÁS ESPACIO y DETALLE a estas preguntas
+   - Explica por qué sigue fallando la misma pregunta
+   - Proporciona estrategias específicas para romper el patrón de error
+
+2. **🚨 CONOCIMIENTO INESTABLE:**
    Preguntas que a veces acertó y a veces falló en diferentes intentos.
    Esto indica:
    - Está adivinando (no domina el concepto)
    - Tuvo suerte en algunos intentos
    - Conocimiento superficial o inestable
-   
-   Ejemplo: Si en 4 intentos respondió: Correcta, Incorrecta, Correcta, Incorrecta
-   → NO domina el tema, solo está adivinando o tuvo suerte.
 
-2. **ALTA PRIORIDAD - Errores Reincidentes (⚠️ ERROR REINCIDENTE):**
-   Preguntas que falló en MÚLTIPLES intentos.
-   Esto indica desconocimiento persistente del concepto.
-
-3. **PRIORIDAD NORMAL - Errores Únicos:**
+3. **⚠️ ERRORES ÚNICOS:**
    Preguntas que falló solo en un intento.
    Pueden ser errores de atención o conceptos nuevos.
 
-Para CADA pregunta incorrecta, proporciona un análisis COMPLETO siguiendo este formato:
+FORMATO EXACTO para CADA pregunta incorrecta:
 
-### [Pregunta N] [Título descriptivo del tema] [MARCADOR DE PRIORIDAD]
+---
 
-**Marcadores posibles:**
-- 🚨 CONOCIMIENTO INESTABLE (falló en algunos intentos, acertó en otros)
-- ⚠️ ERROR REINCIDENTE (falló en múltiples intentos)
-- (sin marcador para errores únicos)
+### Pregunta [N]: [Título descriptivo del tema] [MARCADOR]
 
-**Historial de respuestas en todos los intentos:**
-[Muestra cómo respondió en cada intento: Intento 1: Correcta, Intento 2: Incorrecta, etc.]
+**Enunciado de la pregunta:**
+[Texto completo de la pregunta]
 
-**Tu respuesta (en el intento donde falló):** "[Opción que eligió]" (Incorrecta)
+❌ **Tu respuesta:** "[Opción que eligió]" (Incorrecta)
 
-**Respuesta correcta:** "[Opción correcta completa]"
+✅ **Respuesta correcta:** "[Opción correcta completa]"
 
-**¿Por qué fallaste?**
-[Explicación clara y directa del error conceptual. Si es CONOCIMIENTO INESTABLE, enfatiza que NO domina el tema aunque a veces acierte. Identifica si:
-- Confundió conceptos similares
-- No conocía la regla/fórmula
-- Error de lectura o interpretación
-- Aplicó mal un procedimiento
-- Está adivinando (si es inconsistente)]
+**¿Por qué está incorrecta tu respuesta?**
+[Explicación clara y directa del error conceptual. Si es 🔴 ERROR RECURRENTE, enfatiza las veces falladas.]
+[Si es 🚨 CONOCIMIENTO INESTABLE, indica que a veces acierta y a veces falla (adivinanza).]
 
 **Cómo resolverlo paso a paso:**
 1. [Primer paso específico con ejemplo]
 2. [Segundo paso específico con ejemplo]
 3. [Tercer paso específico con ejemplo]
-[Continúa hasta completar el proceso de resolución]
 
 **Ejemplo similar resuelto:**
-[Proporciona un ejemplo concreto similar a la pregunta, resuelto paso a paso para que el alumno vea la aplicación práctica]
+[Ejemplo concreto similar resuelto paso a paso]
 
 **Qué estudiar específicamente:**
 - [Concepto/tema específico 1]
 - [Concepto/tema específico 2]
-- [Práctica recomendada]
+
+---
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧠 2. ANÁLISIS DE "ESTRATEGIA DE EXAMEN" (METACOGNICIÓN)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-DATA DE PREGUNTAS INCORRECTAS (TODOS LOS INTENTOS):
-${JSON.stringify(listaIncorrectasPrompt, null, 2)}
+Analiza el COMPORTAMIENTO del estudiante durante la prueba (más allá de los errores):
 
-NOTA IMPORTANTE: 
-- Si "es_reincidente" es true, este error ya ocurrió en intentos anteriores. Marca con "⚠️ ERROR REINCIDENTE".
-- Si una pregunta se respondió correctamente en algunos intentos e incorrectamente en otros, marca con "🚨 CONOCIMIENTO INESTABLE" y enfatiza que NO domina el tema.
-- DEBES analizar TODAS las preguntas que aparecen en la data, no solo las del último intento.
+**Datos de comportamiento:**
+- Tiempo promedio por pregunta: ${promedioTiempoPregunta ? Math.round(promedioTiempoPregunta / 1000) : 'N/D'} segundos
+- Tiempo total del intento: ${totalTiempoIntento ? Math.round(totalTiempoIntento / 1000) : 'N/D'} segundos
+
+**Tu diagnóstico (responde a esto):**
+1. **Gestión del Tiempo:**
+   - ¿Respondió muy rápido (posible impulsividad/adivinanza)? (< 30s por preg compleja)
+   - ¿Respondió muy lento (dudas conceptuales/bloqueo)? (> 3 min por preg)
+   - ¿Ritmo adecuado?
+
+2. **Patrones de Error:**
+   - ¿Hay fatiga? (Errores concentrados al final)
+   - ¿Hay ansiedad/precipitación? (Errores en preguntas fáciles)
+
+3. **Recomendación Estratégica:**
+   - Dame UN consejo táctico para su próximo intento (ej: "Lee las opciones antes del texto", "Usa descarte", "Revisa tus respuestas marcadas").
+
 ` : `
 ¡Excelente! No hubo errores en este intento. 
-
 Calificación perfecta: ${ultimoPuntaje}%
 
 Sugerencias para seguir avanzando:
@@ -709,11 +796,23 @@ Ejemplo: "Hazme un examen de 10 preguntas sobre [tema] y corrige mis respuestas 
 
 [Continúa con más prompts según los temas fallados]
 
-**3. Plan de estudio sugerido:**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 PLAN DE ESTUDIO SEMANAL ESTRUCTURADO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Día 1-2: [Actividades específicas]
-Día 3-4: [Actividades específicas]
-Día 5-7: [Actividades específicas]
+Genera un plan de acción concreto para la próxima semana usando una tabla Markdown.
+El plan debe basarse en los errores encontrados y dedicar más tiempo a los "ERRORES RECURRENTES".
+
+FORMATO DE TABLA REQUERIDO:
+
+| Día | Tema Prioritario | Actividad Específica (Qué hacer) | Tiempo | Meta del Día |
+|:---:|:---|:---|:---:|:---|
+| 📅 Lunes | [Tema más débil] | [Ej: Ver video sobre X y hacer 10 ejercicios] | 45 min | [Meta concreta] |
+| 📅 Martes | [Tema débil 2] | [Ej: Leer resumen de Y, crear mapa mental] | 30 min | [Meta concreta] |
+| 📅 Miércoles | [Repaso general] | [Ej: Volver a intentar la simulación del tema Z] | 60 min | [Superar X%] |
+| ... | ... | ... | ... | ... |
+
+(Añade 3 días de planificación enfocados en recuperación intensiva)
 ` : ''}
 
 ${totalIntentos > 1 && (pendienteTendencia !== null || promedioTiempoPregunta) ? `
@@ -748,7 +847,7 @@ INSTRUCCIONES CRÍTICAS:
   const buildPayloadForModel = (modelo) => {
     const isLegacyPro = modelo === 'gemini-pro';
     const finalUserQuery = isLegacyPro
-      ? `${systemPrompt}\n\n----------------\n\n${userQuery}`
+      ? `${systemPrompt} \n\n----------------\n\n${userQuery} `
       : userQuery;
 
     return {
@@ -810,10 +909,10 @@ INSTRUCCIONES CRÍTICAS:
               break; // Éxito con Gemini, salir del loop
             }
           } else {
-            console.warn(`⚠️ Gemini ${modelo} no respondió OK: ${res.status}`);
+            console.warn(`⚠️ Gemini ${modelo} no respondió OK: ${res.status} `);
           }
         } catch (err) {
-          console.warn(`⚠️ Error de red al probar modelo ${modelo}:`, err.message);
+          console.warn(`⚠️ Error de red al probar modelo ${modelo}: `, err.message);
         }
       }
     } catch (err) {
@@ -858,7 +957,7 @@ INSTRUCCIONES CRÍTICAS:
           console.warn('⚠️ Groq respondió OK pero sin contenido de texto.');
         }
       } else {
-        console.warn(`❌ Groq falló con status: ${resGroq.status}`);
+        console.warn(`❌ Groq falló con status: ${resGroq.status} `);
       }
     } catch (groqErr) {
       console.error('❌ Error crítico al intentar conectar con Groq:', groqErr);
@@ -945,3 +1044,157 @@ INSTRUCCIONES CRÍTICAS:
   const sourceTag = geminiSuccess ? 'GEMINI' : groqSuccess ? 'GROQ' : 'FALLBACK';
   return out + `\n\n<<<AI_SOURCE:${sourceTag}>>>`;
 }
+
+/**
+ * Función para realizar preguntas rápidas sobre el análisis (Chat Tutor)
+ */
+export async function askQuickTutor(context, question, studentName) {
+  const prompt = `
+Eres un tutor académico experto y amigable. El estudiante ${studentName || 'Alumno'} necesita ayuda para entender mejor su análisis de rendimiento.
+
+CONTEXTO DEL ANÁLISIS PREVIO:
+"""
+${context ? String(context).substring(0, 5000) : 'No hay contexto disponible.'}
+"""
+
+PREGUNTA DEL ESTUDIANTE:
+"${question}"
+
+INSTRUCCIONES:
+- Responde de forma directa, breve y motivadora.
+- Usa ejemplos concretos si pide explicación.
+- Si pide más detalles sobre un error, explica el concepto subyacente.
+- Mantén un tono pedagógico pero cercano.
+- Formato: Markdown ligero (negritas para énfasis).
+- Máximo 2 párrafos.
+`;
+
+  try {
+    const payload = {
+      model: QUIZ_AI_MODEL_CONFIGURED,
+      messages: [{ role: 'user', content: prompt }]
+    };
+
+    // Intentar con el proxy
+    try {
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+
+      const shouldUseGroq = import.meta?.env?.VITE_USE_GROQ_FOR_ANALYSIS === 'true';
+      const refinedEndpoint = shouldUseGroq ? GROQ_PROXY_ENDPOINT : PROXY_ENDPOINT;
+
+      const response = await fetch(refinedEndpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+
+      const data = await response.json();
+      return extractTextFromGemini(data) || extractTextFromGroq(data) || "No pude generar una respuesta en este momento.";
+
+    } catch (e) {
+      console.warn('Fallo llamada primary AI para chat, intentando backup...', e);
+      return "Lo siento, tuve un problema conectando con el tutor. Intenta de nuevo en un momento.";
+    }
+
+  } catch (error) {
+    console.error('Error en askQuickTutor:', error);
+    return "Ocurrió un error al procesar tu pregunta.";
+  }
+}
+
+/**
+ * Calcula métricas de estrategia de examen (Metacognición) basado en el desempeño por pregunta.
+ * Detecta patrones de impulsividad, bloqueos y fatiga.
+ * 
+ * @param {Array} questions - Lista de preguntas con metadatos de desempeño.
+ *                            Debe contener objetos con: { tiempo_ms, correcta, enunciado, [materia] }
+ * @returns {Object|null} - Objeto con impulsivas[], bloqueos[], fatiga{} o null si no hay datos suficientes.
+ */
+export const calculateExamStrategy = (questions) => {
+  if (!Array.isArray(questions) || !questions.length) return null;
+
+  const impulsivas = [];
+  const bloqueos = [];
+  let sumaTiempos = 0;
+  let countTiempos = 0;
+
+  // Calcular promedio para detectar bloqueos relativos
+  questions.forEach(q => {
+    const t = Number(q.tiempo_ms) || (Number(q.tiempo_segundos) * 1000) || 0;
+    if (t > 0) {
+      sumaTiempos += t;
+      countTiempos++;
+    }
+  });
+
+  const promedioMs = countTiempos > 0 ? sumaTiempos / countTiempos : 0;
+  // Umbral de bloqueo: > 2 minutos O > 3 veces el promedio (lo que sea mayor)
+  const umbralBloqueo = Math.max(120000, promedioMs * 3);
+  // Umbral de impulsividad: < 10 segundos
+  const umbralImpulsivo = 10000;
+
+  questions.forEach(q => {
+    const tiempo = Number(q.tiempo_ms) || (Number(q.tiempo_segundos) * 1000) || 0;
+    // Normalizar propiedad de correctitud (puede venir como 'correcta', 'es_correcta', etc)
+    const esCorrecta = !!(q.correcta || q.es_correcta || (q.calificacion && q.calificacion > 0));
+
+    // Detección de Impulsividad (Rápido + Error)
+    // Solo contamos impulsividad si se falló. Si acertó rápido, es fluidez.
+    if (!esCorrecta && tiempo > 0 && tiempo < umbralImpulsivo) {
+      impulsivas.push({
+        pregunta: q.enunciado || 'Pregunta sin texto',
+        tiempoSeg: Math.round(tiempo / 1000),
+        materia: q.materia || 'General'
+      });
+    }
+
+    // Detección de Bloqueos (Muy lento + Error/Correcta)
+    // Se considera bloqueo si tarda demasiado, independientemente del resultado,
+    // aunque un bloqueo con error es más grave.
+    if (tiempo > umbralBloqueo) {
+      bloqueos.push({
+        pregunta: q.enunciado || 'Pregunta sin texto',
+        tiempoSeg: Math.round(tiempo / 1000),
+        resultado: esCorrecta ? 'Correcta (pero lenta)' : 'Incorrecta',
+        materia: q.materia || 'General'
+      });
+    }
+  });
+
+  // Fatiga: Comparar primera mitad vs segunda mitad
+  let fatiga = null;
+  if (questions.length >= 10) {
+    const mitad = Math.floor(questions.length / 2);
+    const primeraMitad = questions.slice(0, mitad);
+    const segundaMitad = questions.slice(mitad);
+
+    const getIsCorrect = (q) => !!(q.correcta || q.es_correcta || (q.calificacion && q.calificacion > 0));
+
+    const tasa1 = primeraMitad.filter(getIsCorrect).length / primeraMitad.length;
+    const tasa2 = segundaMitad.filter(getIsCorrect).length / segundaMitad.length;
+
+    // Si el rendimiento cae más de un 20% en la segunda mitad
+    if (tasa1 > tasa2 + 0.2) {
+      fatiga = {
+        detectada: true,
+        caida: Math.round((tasa1 - tasa2) * 100),
+        mensaje: 'Tu rendimiento cae significativamente en la segunda mitad del examen.'
+      };
+    }
+  }
+
+  // Si no se detectó nada relevante, retornar estructura vacía pero válida para indicar que se analizó
+  return {
+    impulsivas,
+    bloqueos,
+    fatiga,
+    timestamp: new Date().toISOString(),
+    analizado: true
+  };
+};

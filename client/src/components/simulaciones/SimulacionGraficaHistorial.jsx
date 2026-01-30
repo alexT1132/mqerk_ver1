@@ -38,17 +38,23 @@ import {
   CheckCircle,
   TrendingDown,
   Users,
-  Star,
-  Sparkles,
-  Bot,
   Zap,
+  MessageCircle,
+  FileDown,
   RefreshCw,
-  MessageSquare,
+  Send,
   Loader2,
-  ExternalLink,
+  X,
+  Bot,
+  MessageSquare,
+  Sparkles,
+  Download,
+  Share2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Star
 } from 'lucide-react';
+
 
 // Importar servicios de IA
 import {
@@ -59,7 +65,7 @@ import {
 } from '../../service/geminiService.js';
 import api from '../../api/axios';
 // Análisis detallado tipo HistorialModal
-import { analyzeQuizPerformance } from '../../service/quizAnalysisService';
+import { analyzeQuizPerformance, askQuickTutor } from '../../service/quizAnalysisService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAuth } from '../../context/AuthContext';
@@ -129,6 +135,15 @@ function SimulacionGraficaHistorial({
   // Estado para tracking de uso de IA
   const [aiUsage, setAiUsage] = useState({ count: 0, limit: 5, remaining: 5 });
 
+  // Estado para Chat Tutor
+  const [showChat, setShowChat] = useState(false);
+  const [chatQuery, setChatQuery] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatResponse, setChatResponse] = useState(null);
+
+  // Estado para Metacognición (Estrategia de Examen)
+  const [estrategiaExamen, setEstrategiaExamen] = useState(null);
+
   // Obtener rol del usuario (ya tenemos user de useAuth arriba)
   const userRole = user?.rol || user?.role || 'estudiante';
 
@@ -139,38 +154,113 @@ function SimulacionGraficaHistorial({
   // Pero para análisis de simulaciones, limitamos a 5 para estudiantes
   const DAILY_LIMIT = userRole === 'asesor' || userRole === 'admin' ? 20 : 5;
 
-  const getUsageToday = () => {
+  // Funciones de exportación
+  const handleShareWhatsApp = () => {
+    if (!analysisText) return;
+    const mensaje = `*Mi Análisis de Simulación MQerk*\n\nHola, te comparto mi análisis de rendimiento:\n\n${analysisText.substring(0, 300)}...\n\nGenerado por MQerk Academy IA`;
+    const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleDownloadPDF = () => {
+    if (!analysisText) return;
+    // Crear una ventana nueva para imprimir con estilos
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Por favor permite las ventanas emergentes para descargar el PDF');
+      return;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Análisis de Rendimiento - MQerk Academy</title>
+        <style>
+          body { font-family: 'Helvetica', 'Arial', sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #6366f1; padding-bottom: 20px; }
+          .logo { font-size: 24px; font-weight: bold; color: #4f46e5; }
+          .meta { font-size: 14px; color: #666; margin-top: 5px; }
+          h1, h2, h3 { color: #1e1b4b; }
+          h1 { font-size: 22px; }
+          h2 { font-size: 18px; border-left: 4px solid #6366f1; padding-left: 10px; margin-top: 25px; }
+          h3 { font-size: 16px; font-weight: 600; }
+          ul, ol { padding-left: 20px; }
+          li { margin-bottom: 5px; }
+          .highlight { background-color: #eef2ff; padding: 15px; border-radius: 8px; border: 1px solid #c7d2fe; margin: 15px 0; }
+          table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+          th { background-color: #f3f4f6; text-align: left; padding: 8px; border: 1px solid #d1d5db; }
+          td { padding: 8px; border: 1px solid #d1d5db; }
+          blockquote { border-left: 4px solid #818cf8; background-color: #f5f3ff; margin: 10px 0; padding: 10px 15px; color: #4338ca; }
+          .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">MQerk Academy</div>
+          <h1>Análisis de Rendimiento Inteligente</h1>
+          <div class="meta">
+            Estudiante: ${estudianteNombre || 'Usuario'}<br>
+            Fecha: ${new Date().toLocaleDateString()}<br>
+            Simulación: ${simulacion?.titulo || 'General'}
+          </div>
+        </div>
+        <div class="content">
+          ${toMarkdownFriendly(analysisText).replace(/\n/g, '<br>').replace(/## (.*)/g, '<h2>$1</h2>').replace(/### (.*)/g, '3>$1</h3>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}
+        </div>
+        <div class="footer">
+          Generado automáticamente por MQerk Academy IA
+        </div>
+        <script>
+          window.onload = function() { window.print(); }
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
+  // ✅ SOLUCIÓN: Obtener uso desde base de datos (persistente)
+  const getUsageToday = async () => {
     try {
-      const data = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
-      const today = new Date().toISOString().split('T')[0];
-      if (data.date !== today) {
+      const studentId = idEstudiante || alumno?.id || user?.id;
+      if (!studentId) {
+        console.warn('⚠️ No se pudo obtener ID de estudiante para tracking de IA');
         return { count: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
       }
-      return {
-        count: data.count || 0,
-        limit: DAILY_LIMIT,
-        remaining: Math.max(0, DAILY_LIMIT - (data.count || 0))
-      };
-    } catch {
+
+      const response = await api.get(`/ai-usage/${studentId}/simulacion`);
+      console.log('✅ Uso de IA obtenido desde BD:', response.data.data);
+      return response.data.data;
+    } catch (error) {
+      console.error('❌ Error obteniendo uso de IA desde BD:', error);
+      // Fallback en caso de error
       return { count: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
     }
   };
 
-  const incrementUsage = () => {
+  const incrementUsage = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const data = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
-      if (data.date !== today) {
-        localStorage.setItem(AI_USAGE_KEY, JSON.stringify({ date: today, count: 1, limit: DAILY_LIMIT }));
-      } else {
-        data.count = (data.count || 0) + 1;
-        localStorage.setItem(AI_USAGE_KEY, JSON.stringify(data));
+      const studentId = idEstudiante || alumno?.id || user?.id;
+      if (!studentId) {
+        console.warn('⚠️ No se pudo obtener ID de estudiante para incrementar uso de IA');
+        return;
       }
-      const newUsage = getUsageToday();
+
+      const response = await api.post(`/ai-usage/${studentId}/simulacion/increment`);
+      const newUsage = response.data.data;
       setAiUsage(newUsage);
-      console.log('AI Usage incremented:', newUsage);
-    } catch (e) {
-      console.error('Error incrementando uso de IA:', e);
+      console.log('✅ Uso de IA incrementado en BD:', newUsage);
+    } catch (error) {
+      if (error.response?.status === 429) {
+        console.warn('⚠️ Límite diario de análisis alcanzado');
+        const currentUsage = error.response.data.data;
+        setAiUsage(currentUsage);
+      } else {
+        console.error('❌ Error incrementando uso de IA:', error);
+      }
     }
   };
 
@@ -187,8 +277,16 @@ function SimulacionGraficaHistorial({
       s = s.replace(/^(Resumen|Fortalezas|Debilidades|Plan de estudio|Recomendaciones|Análisis|Acciones|Objetivos|Sugerencias|Diagnóstico)\s*:\s*$/gmi, '### $1');
       // Si hay 'Titulo: contenido' en una sola línea, separarlo
       s = s.replace(/^(Resumen|Fortalezas|Debilidades|Plan de estudio|Recomendaciones|Análisis|Acciones|Objetivos|Sugerencias|Diagnóstico)\s*:\s*(.+)$/gmi, '### $1\n\n$2');
-      // Asegurar líneas en blanco entre párrafos
-      s = s.replace(/([^\n])\n(?!\n)([^\n])/g, '$1\n\n$2');
+
+      // Asegurar líneas en blanco entre párrafos PERO NO ROMPER TABLAS
+      // Si una línea NO contiene '|' y la siguiente tampoco, entonces sí aplicar doble salto.
+      // Esta regex es conservadora: solo aplica si no parece tabla.
+      // O mejor: simplemente eliminamos esa regla agresiva que rompe tablas y listas
+      // s = s.replace(/([^\n])\n(?!\n)([^\n])/g, '$1\n\n$2'); 
+
+      // Reemplazo más seguro: solo agregar nuevas líneas si no son items de lista, ni tablas, ni headers
+      s = s.replace(/^([^-\d#|].*)\n([^-\d#| \n].*)$/gm, '$1\n\n$2');
+
       return s;
     } catch {
       return txt;
@@ -202,61 +300,105 @@ function SimulacionGraficaHistorial({
     return () => clearTimeout(t);
   }, [cooldownIA]);
 
-  // Cargar uso de IA al abrir la página y cuando cambie el límite
+  // Cargar uso de IA desde base de datos al abrir la página
   useEffect(() => {
     if (isOpen) {
-      // Primero cargar desde localStorage (rápido)
-      const usage = getUsageToday();
-      setAiUsage(usage);
-      console.log('AI Usage loaded from localStorage:', usage);
-
-      // Luego sincronizar con el backend (más preciso)
-      const syncUsageFromBackend = async () => {
-        try {
-          const response = await fetch('/api/ai/quota/my-stats', {
-            credentials: 'include'
-          });
-          if (response.ok) {
-            const data = await response.json();
-            if (data.stats?.daily) {
-              // Para estudiantes, limitar a 5 análisis de simulaciones por día
-              // El backend puede tener 30 para otros usos, pero para análisis de simulaciones es 5
-              let displayLimit = data.stats.daily.limit;
-              let displayUsed = data.stats.daily.used;
-              let displayRemaining = data.stats.daily.remaining;
-              
-              if (userRole === 'estudiante') {
-                // Limitar a 5 para estudiantes en análisis de simulaciones
-                displayLimit = 5;
-                // Calcular cuántos análisis de simulaciones se han usado
-                // (asumiendo que todos los usos son de análisis de simulaciones por ahora)
-                if (displayUsed >= 5) {
-                  displayUsed = 5;
-                  displayRemaining = 0;
-                } else {
-                  displayRemaining = 5 - displayUsed;
-                }
-              }
-              
-              const backendUsage = {
-                count: displayUsed,
-                limit: displayLimit,
-                remaining: displayRemaining
-              };
-              setAiUsage(backendUsage);
-              console.log('AI Usage synced from backend:', backendUsage);
-            }
-          }
-        } catch (error) {
-          console.warn('Error syncing AI usage from backend, using localStorage:', error);
-          // Si falla, mantener el valor de localStorage
-        }
+      const loadUsage = async () => {
+        const usage = await getUsageToday();
+        setAiUsage(usage);
       };
-      syncUsageFromBackend();
+      loadUsage();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, DAILY_LIMIT]);
+  }, [isOpen, idEstudiante, alumno?.id, user?.id]);
 
+
+  // Función para calcular estrategia de examen (Metacognición)
+  const calcularEstrategia = (analitica) => {
+    if (!analitica?.intentos?.length || !analitica?.preguntas?.length) return null;
+
+    // Usar el último intento o el oficial (preferiblemente el último para feedback inmediato)
+    const intentosOrdenados = [...analitica.intentos].sort((a, b) => {
+      const fechaA = a?.intento?.fecha || a?.sesion?.finished_at || null;
+      const fechaB = b?.intento?.fecha || b?.sesion?.finished_at || null;
+      if (!fechaA) return 1; if (!fechaB) return -1;
+      return new Date(fechaA).getTime() - new Date(fechaB).getTime();
+    });
+    const intento = intentosOrdenados[intentosOrdenados.length - 1];
+    if (!intento || !intento.respuestas) return null;
+
+    const preguntasById = new Map(analitica.preguntas.map(p => [p.id, p]));
+    const respuestas = intento.respuestas;
+
+    const impulsivas = []; // Incorrectas < 12s
+    const bloqueos = [];   // Tiempo > 120s (o > 3x promedio)
+    let sumaTiempos = 0;
+    let countTiempos = 0;
+
+    // Primero calcular promedio de tiempo para detectar bloqueos relativos
+    respuestas.forEach(r => {
+      if (typeof r.tiempo_ms === 'number' && r.tiempo_ms > 0) {
+        sumaTiempos += r.tiempo_ms;
+        countTiempos++;
+      }
+    });
+    const promedioMs = countTiempos > 0 ? sumaTiempos / countTiempos : 0;
+    const umbralBloqueo = Math.max(120000, promedioMs * 3); // Mínimo 2 minutos o 3x promedio
+    const umbralImpulsivo = 10000; // 10 segundos
+
+    respuestas.forEach(r => {
+      const p = preguntasById.get(r.id_pregunta);
+      if (!p) return;
+
+      const tiempo = r.tiempo_ms || 0;
+      const esCorrecta = r.id_opcion ? (p.opciones || []).some(o => o.id === r.id_opcion && Number(o.es_correcta) === 1) : false;
+
+      // Detección de Impulsividad (Rápido + Error)
+      if (!esCorrecta && tiempo > 0 && tiempo < umbralImpulsivo) {
+        impulsivas.push({
+          pregunta: p.enunciado,
+          tiempoSeg: Math.round(tiempo / 1000),
+          materia: p.materia || 'General'
+        });
+      }
+
+      // Detección de Bloqueos (Muy lento + Error/Correcta, pero principalmente si afecta el ritmo)
+      // Si tarda mucho y falla, es un bloqueo negativo claro.
+      if (tiempo > umbralBloqueo) {
+        bloqueos.push({
+          pregunta: p.enunciado,
+          tiempoSeg: Math.round(tiempo / 1000),
+          resultado: esCorrecta ? 'Correcta (pero lenta)' : 'Incorrecta',
+          materia: p.materia || 'General'
+        });
+      }
+    });
+
+    // Fatiga: Comparar primera mitad vs segunda mitad
+    let fatiga = null;
+    if (respuestas.length >= 10) {
+      const mitad = Math.floor(respuestas.length / 2);
+      const primeraMitad = respuestas.slice(0, mitad);
+      const segundaMitad = respuestas.slice(mitad);
+
+      const calcAciertos = (arr) => arr.filter(r => {
+        const p = preguntasById.get(r.id_pregunta);
+        return p && r.id_opcion && p.opciones.some(o => o.id === r.id_opcion && Number(o.es_correcta) === 1);
+      }).length;
+
+      const tasa1 = calcAciertos(primeraMitad) / primeraMitad.length;
+      const tasa2 = calcAciertos(segundaMitad) / segundaMitad.length;
+
+      if (tasa1 > tasa2 + 0.2) { // Caída > 20%
+        fatiga = {
+          detectada: true,
+          caida: Math.round((tasa1 - tasa2) * 100),
+          mensaje: 'Tu rendimiento cae significativamente en la segunda mitad del examen.'
+        };
+      }
+    }
+
+    return { impulsivas, bloqueos, fatiga, timestamp: new Date().toISOString() };
+  };
 
   // Función para calcular métricas de efectividad comparando el análisis IA con reglas heurísticas locales
   const calcularMetricasIA = (analisis, materiasPromedios) => {
@@ -425,6 +567,165 @@ function SimulacionGraficaHistorial({
     return { materias: priorizadas, totalHoras, timestamp: new Date().toISOString() };
   };
 
+  // Función para identificar errores recurrentes (preguntas falladas múltiples veces)
+  const identificarErroresRecurrentes = (analitica) => {
+    if (!analitica?.intentos?.length || !analitica?.preguntas?.length) return [];
+
+    // Mapa de preguntas falladas por intento
+    const erroresPorPregunta = new Map();
+
+    analitica.intentos.forEach((intento, idx) => {
+      const respuestas = Array.isArray(intento.respuestas) ? intento.respuestas : [];
+      respuestas.forEach(r => {
+        const pregunta = analitica.preguntas.find(p => p.id === r.id_pregunta);
+        if (!pregunta) return;
+
+        const esCorrecta = r.id_opcion
+          ? (pregunta.opciones || []).some(o => o.id === r.id_opcion && Number(o.es_correcta) === 1)
+          : false;
+
+        if (!esCorrecta) {
+          const key = r.id_pregunta;
+          if (!erroresPorPregunta.has(key)) {
+            erroresPorPregunta.set(key, {
+              enunciado: pregunta.enunciado,
+              materia: pregunta.materia || pregunta.categoria || pregunta.area || null,
+              tipo: pregunta.tipo,
+              veces: 0,
+              intentos: [],
+              opciones: pregunta.opciones || []
+            });
+          }
+          const error = erroresPorPregunta.get(key);
+          error.veces++;
+          error.intentos.push(idx + 1);
+        }
+      });
+    });
+
+    // Retornar solo errores recurrentes (>=2 veces), ordenados por frecuencia
+    return Array.from(erroresPorPregunta.values())
+      .filter(e => e.veces >= 2)
+      .sort((a, b) => b.veces - a.veces);
+  };
+
+  // Función para analizar consistencia por pregunta (detectar conocimiento inestable)
+  const analizarConsistenciaPorPregunta = (analitica) => {
+    if (!analitica?.intentos?.length || !analitica?.preguntas?.length) return [];
+
+    const consistenciaPorPregunta = new Map();
+
+    analitica.intentos.forEach((intento, idx) => {
+      const respuestas = Array.isArray(intento.respuestas) ? intento.respuestas : [];
+      respuestas.forEach(r => {
+        const key = r.id_pregunta;
+        if (!consistenciaPorPregunta.has(key)) {
+          consistenciaPorPregunta.set(key, {
+            historial: [],
+            idPregunta: key
+          });
+        }
+
+        const pregunta = analitica.preguntas.find(p => p.id === key);
+        const esCorrecta = pregunta?.opciones?.some(
+          o => o.id === r.id_opcion && Number(o.es_correcta) === 1
+        ) || false;
+
+        consistenciaPorPregunta.get(key).historial.push({
+          intento: idx + 1,
+          correcta: esCorrecta
+        });
+      });
+    });
+
+    // Detectar patrones inconsistentes (a veces acierta, a veces falla)
+    const preguntasInconsistentes = [];
+    consistenciaPorPregunta.forEach((data, idPregunta) => {
+      const historial = data.historial;
+      const correctas = historial.filter(h => h.correcta).length;
+      const incorrectas = historial.filter(h => !h.correcta).length;
+
+      // Si tiene ambos resultados (correcta E incorrecta), es inconsistente
+      if (correctas > 0 && incorrectas > 0) {
+        const pregunta = analitica.preguntas.find(p => p.id === idPregunta);
+        if (pregunta) {
+          preguntasInconsistentes.push({
+            enunciado: pregunta.enunciado,
+            materia: pregunta.materia || pregunta.categoria || pregunta.area || null,
+            historial: historial.map(h => h.correcta ? '✓' : '✗').join(' → '),
+            historialDetallado: historial,
+            correctas,
+            incorrectas,
+            diagnostico: '🚨 CONOCIMIENTO INESTABLE: A veces acierta, a veces falla. Indica adivinación o dominio superficial.',
+            prioridad: 'CRÍTICA'
+          });
+        }
+      }
+    });
+
+    return preguntasInconsistentes.sort((a, b) => {
+      // Priorizar las que tienen más variación
+      const varA = Math.min(a.correctas, a.incorrectas);
+      const varB = Math.min(b.correctas, b.incorrectas);
+      return varB - varA;
+    });
+  };
+
+  // Función para detectar conocimiento inestable en materias (altibajos extremos)
+  const detectarConocimientoInestable = (materiasProm) => {
+    return materiasProm.map(m => {
+      const serie = Array.isArray(m.puntajes) ? m.puntajes : [];
+      if (serie.length < 3) {
+        return {
+          ...m,
+          esInestable: false,
+          esAdivinando: false,
+          desviacion: 0,
+          diagnostico: '📊 Datos insuficientes para análisis de estabilidad'
+        };
+      }
+
+      // Calcular desviación estándar
+      const promedio = serie.reduce((a, b) => a + b, 0) / serie.length;
+      const varianza = serie.reduce((a, b) => a + Math.pow(b - promedio, 2), 0) / serie.length;
+      const desviacion = Math.sqrt(varianza);
+
+      // Detectar patrón de altibajos (cambios bruscos entre intentos)
+      let altibajos = 0;
+      let sumaVariaciones = 0;
+      for (let i = 1; i < serie.length; i++) {
+        const cambio = Math.abs(serie[i] - serie[i - 1]);
+        sumaVariaciones += cambio;
+        if (cambio > 15) altibajos++; // Cambio brusco >15 puntos
+      }
+      const variacionPromedio = serie.length > 1 ? sumaVariaciones / (serie.length - 1) : 0;
+
+      // Criterios de detección
+      const esInestable = desviacion > 12; // Desviación >12 puntos indica inconsistencia
+      const esAdivinando = altibajos >= Math.ceil(serie.length / 2) || variacionPromedio > 18;
+
+      // Diagnóstico detallado
+      let diagnostico = '';
+      if (esAdivinando) {
+        diagnostico = '🚨 ADIVINANDO: Variaciones extremas entre intentos (ej: 50%→70%→50%). NO domina el contenido, solo tiene suerte ocasional.';
+      } else if (esInestable) {
+        diagnostico = '⚠️ CONOCIMIENTO INESTABLE: Resultados inconsistentes. Necesita reforzar fundamentos.';
+      } else {
+        diagnostico = '✓ CONOCIMIENTO ESTABLE: Rendimiento consistente.';
+      }
+
+      return {
+        ...m,
+        esInestable,
+        esAdivinando,
+        desviacion: Number(desviacion.toFixed(1)),
+        variacionPromedio: Number(variacionPromedio.toFixed(1)),
+        altibajos,
+        diagnostico
+      };
+    });
+  };
+
   useEffect(() => {
     const checkDevice = () => {
       const width = window.innerWidth;
@@ -457,7 +758,7 @@ function SimulacionGraficaHistorial({
     };
   }, []);
 
-  // Función para generar análisis con IA (optimizada con firma y lock)
+  // Función para generar análisis con IA (MIGRADO A quizAnalysisService para mejor análisis)
   const generarAnalisisIA = async () => {
     // Validar mínimo de datos significativos: requerir al menos MIN_INTENTOS_TENDENCIA intentos
     if (Array.isArray(historial?.intentos) && historial.intentos.length < MIN_INTENTOS_TENDENCIA) {
@@ -475,50 +776,32 @@ function SimulacionGraficaHistorial({
     }
     if (enProcesoRef.current) return; // prevenir doble click
 
-    // Construir firma de datos relevantes
-    let analitica = null; // hoisted para usar luego en datosParaAnalisis
-    try {
-      // 1) Enriquecer datos: obtener analítica detallada (preguntas, intentos, respuestas)
-      try {
-        const studentId = idEstudiante || historial?.id_estudiante || historial?.estudianteId || null;
-        if (studentId) {
-          const respDet = await api.get(`/simulaciones/${simulacion.id}/analitica/${studentId}`);
-          analitica = respDet?.data?.data || null;
-        }
-      } catch (e) {
-        console.warn('Analítica detallada no disponible; se continuará con datos agregados.', e?.response?.status || e?.message);
-      }
-      const firmaNueva = JSON.stringify({
-        intentos: historial.intentos.map(i => ({ p: i.puntaje || 0, t: i.tiempoEmpleado || 0 })).slice(-12),
-        totalIntentos: historial.intentos.length,
-        promedio: Number(promedioPuntaje.toFixed(2)),
-        materias: promediosPorMateria.map(m => ({ n: m.materia, pr: Number(m.promedio.toFixed(2)), ul: m.ultimoPuntaje, me: m.mejorPuntaje }))
-      });
-      if (firmaAnalisis && firmaAnalisis === firmaNueva && analisisIA) {
-        setMensajeNoCambio('No hubo cambios en los datos. Se reutiliza el último análisis.');
-        setMostrarAnalisisIA(true);
-        return;
-      }
-      setMensajeNoCambio(null);
-      setFirmaAnalisis(firmaNueva);
-    } catch (e) {
-      console.warn('No se pudo generar firma de análisis:', e);
-    }
-
     setCargandoIA(true);
     setErrorIA(null);
     enProcesoRef.current = true;
 
     try {
-      // Preparar datos para el análisis
-      // Identificar intento oficial (primer intento) y los de práctica (resto)
+      // 1) Enriquecer datos: obtener analítica detallada (preguntas, intentos, respuestas)
+      let analitica = null;
+      try {
+        const studentId = idEstudiante || historial?.id_estudiante || historial?.estudianteId || null;
+        if (studentId) {
+          const respDet = await api.get(`/simulaciones/${simulacion.id}/analitica/${studentId}`);
+          analitica = respDet?.data?.data || null;
+          console.log('📊 Analítica detallada cargada:', analitica ? 'Sí' : 'No');
+        }
+      } catch (e) {
+        console.warn('⚠️ Analítica detallada no disponible; se continuará con datos agregados.', e?.response?.status || e?.message);
+      }
+
+      // 2) Preparar datos para el análisis
+      // Ordenar intentos cronológicamente
       const intentosOrdenados = Array.isArray(historial.intentos)
         ? [...historial.intentos].sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
         : [];
       const intentoOficial = intentosOrdenados[0] || null;
-      const intentosPractica = intentosOrdenados.slice(1) || [];
 
-      // ✅ Generar incorrectasDetalle si tenemos analitica
+      // 3) Generar incorrectasDetalle con TODOS los errores (priorizar oficial + último)
       let incorrectasDetalle = [];
       if (analitica && Array.isArray(analitica.intentos) && analitica.intentos.length) {
         const preguntas = Array.isArray(analitica.preguntas) ? analitica.preguntas : [];
@@ -572,108 +855,134 @@ function SimulacionGraficaHistorial({
         processAttemptErrors(ultimoIntentoAnalitica, false);
       }
 
-      const datosParaAnalisis = {
-        simulacion: simulacion.nombre,
-        tipo: tipo,
-        categoria: categoria,
-        moduloId: moduloId,
-        intentos: historial.intentos.length,
-        promedio: promedioPuntaje,
-        tiempoPromedio: promedioTiempo,
-        mejorTiempo: mejorTiempo,
-        totalPreguntas: Number(simulacion.totalPreguntas || simulacion.total_preguntas || 0),
-        intentoOficial: intentoOficial ? { puntaje: Number(intentoOficial.puntaje) || 0, fecha: intentoOficial.fecha } : null,
-        intentosPractica: intentosPractica.map(i => ({ puntaje: Number(i.puntaje) || 0, fecha: i.fecha })),
-        alumnoNombre: estudianteNombre || null, // ✅ Agregar nombre del estudiante para el análisis de Gemini
-        incorrectasDetalle: incorrectasDetalle, // ✅ Agregar incorrectasDetalle para análisis detallado
-        materias: promediosPorMateria.map(m => ({
-          nombre: m.materia,
-          promedio: m.promedio,
-          tendencia: m.tendencia,
-          puntajes: m.puntajes,
-          mejorPuntaje: m.mejorPuntaje,
-          ultimoPuntaje: m.ultimoPuntaje,
-          tiempoPromedio: Math.floor(Math.random() * 20) + 10 // Simular tiempo por materia
-        })),
-        areasDebiles: areasDebiles.map(a => ({
-          nombre: a.materia,
-          promedio: a.promedio,
-          tipoProblema: a.promedio < 60 ? 'Conceptual' : 'Procedimental',
-          frecuenciaErrores: a.promedio < 60 ? 'Alta' : 'Media'
-        })),
-        // Adjuntar detalle si está disponible
-        detalle: analitica ? {
-          mismatch: !!analitica.mismatch,
-          preguntas: (analitica.preguntas || []).map(p => ({
-            id: p.id, orden: p.orden, tipo: p.tipo, puntos: p.puntos,
-            enunciado: p.enunciado,
-            opciones: Array.isArray(p.opciones) ? p.opciones.map(o => ({ id: o.id, texto: o.texto, es_correcta: !!o.es_correcta })) : []
-          })),
-          intentos: (analitica.intentos || []).map(it => ({
-            intentoId: it.intento?.id,
-            puntaje: Number(it.intento?.puntaje) || 0,
-            tiempoSegundos: Number(it.intento?.tiempo_segundos) || null,
-            total_preguntas: Number(it.intento?.total_preguntas) || null,
-            correctas: Number(it.intento?.correctas) || null,
-            sesion: { id: it.sesion?.id, elapsed_ms: it.sesion?.elapsed_ms, finished_at: it.sesion?.finished_at },
-            respuestas: (it.respuestas || []).map(r => ({ id_pregunta: r.id_pregunta, id_opcion: r.id_opcion, texto_libre: r.texto_libre, tiempo_ms: r.tiempo_ms }))
-          }))
-        } : null,
-        contextoEspecifico: {
-          tipoSimulacion: tipo,
-          moduloNombre: tipo === 'especificos' ? obtenerNombreModulo(moduloId) : null,
-          categoriaEspecifica: categoria,
-          nivelDificultad: calcularNivelDificultad(promedioPuntaje)
-        }
-      };
+      // 4) Identificar errores recurrentes
+      const erroresRecurrentes = identificarErroresRecurrentes(analitica);
+      console.log('🔄 Errores recurrentes detectados:', erroresRecurrentes.length);
 
-      // Llamar al servicio de IA con telemetría
-      const t0 = Date.now();
-      const analisis = await generarAnalisisConGemini(datosParaAnalisis);
-      setIaLatencyMs(Date.now() - t0);
-      setLastDatosAnalisis(datosParaAnalisis);
-      if (analisis.esFallbackLocal) {
-        setUltimoAvisoIA('Mostrando análisis heurístico local (límite de cuota 429).');
-        setCooldownIA(60); // enfriar 1 minuto
-      } else if (analisis.desdeCache) {
-        setUltimoAvisoIA('Mostrando análisis previo desde cache por límite de cuota.');
-        setCooldownIA(45);
-      } else if (analisis.aviso) {
-        setUltimoAvisoIA(analisis.aviso);
-      } else {
-        setUltimoAvisoIA(null);
+      // 5) Analizar consistencia por pregunta (conocimiento inestable)
+      const preguntasInconsistentes = analizarConsistenciaPorPregunta(analitica);
+      console.log('🚨 Preguntas con conocimiento inestable:', preguntasInconsistentes.length);
+
+      // 6) Detectar conocimiento inestable por materia
+      const materiasConDiagnostico = detectarConocimientoInestable(promediosPorMateria);
+      const materiasAdivinando = materiasConDiagnostico.filter(m => m.esAdivinando);
+      console.log('🎲 Materias donde está adivinando:', materiasAdivinando.map(m => m.materia).join(', '));
+
+      // 7) Preparar datos para analyzeQuizPerformance (quizAnalysisService)
+      const scores = intentosOrdenados.map(i => Number(i.puntaje) || 0);
+      const fechas = intentosOrdenados.map(i => i.fecha);
+      const duraciones = intentosOrdenados.map(i => {
+        const sec = getAttemptSeconds(i);
+        return sec > 0 ? sec : null;
+      }).filter(v => v != null);
+
+      const ultimoIntento = intentosOrdenados[intentosOrdenados.length - 1];
+      const ultimoPuntaje = Number(ultimoIntento?.puntaje) || 0;
+
+      // Calcular duraciones del intento oficial
+      let oficialDuracion = null;
+      if (analitica && Array.isArray(analitica.intentos) && analitica.intentos.length) {
+        const intentosAnaliticaOrdenados = [...analitica.intentos].sort((a, b) => {
+          const fechaA = a?.intento?.fecha || a?.sesion?.finished_at || null;
+          const fechaB = b?.intento?.fecha || b?.sesion?.finished_at || null;
+          if (!fechaA && !fechaB) return 0;
+          if (!fechaA) return 1;
+          if (!fechaB) return -1;
+          return new Date(fechaA).getTime() - new Date(fechaB).getTime();
+        });
+        const primero = intentosAnaliticaOrdenados[0];
+        if (typeof primero?.intento?.tiempo_segundos === 'number' && primero.intento.tiempo_segundos > 0) {
+          oficialDuracion = Math.round(primero.intento.tiempo_segundos);
+        } else if (typeof primero?.sesion?.elapsed_ms === 'number' && primero.sesion.elapsed_ms > 0) {
+          oficialDuracion = Math.round(primero.sesion.elapsed_ms / 1000);
+        }
       }
 
-      // Obtener recursos recomendados para áreas débiles
-      const recursosRecomendados = {};
-      areasDebiles.forEach(area => {
-        recursosRecomendados[area.materia] = obtenerRecursosRecomendados(area.materia);
+      // Métricas del último intento
+      let totalPreguntasIntento = null;
+      let correctasIntento = null;
+      let incorrectasIntento = null;
+      let omitidasIntento = null;
+      if (analitica && Array.isArray(analitica.intentos) && analitica.intentos.length) {
+        const ultimo = analitica.intentos[analitica.intentos.length - 1];
+        const resp = Array.isArray(ultimo?.respuestas) ? ultimo.respuestas : [];
+        const preguntas = Array.isArray(analitica.preguntas) ? analitica.preguntas : [];
+        const preguntasById = new Map(preguntas.map(p => [p.id, p]));
+
+        let corr = 0, inc = 0, omi = 0;
+        resp.forEach(r => {
+          const pq = preguntasById.get(r.id_pregunta);
+          if (!pq) return;
+          const esCorrecta = r.id_opcion ? (pq.opciones || []).some(o => o.id === r.id_opcion && Number(o.es_correcta) === 1) : false;
+          if (esCorrecta) corr++; else if (r.id_opcion) inc++; else omi++;
+        });
+
+        totalPreguntasIntento = preguntas.length || null;
+        correctasIntento = corr;
+        incorrectasIntento = inc;
+        omitidasIntento = omi;
+      }
+
+      // 8) Llamar al servicio de análisis avanzado (quizAnalysisService)
+      const t0 = Date.now();
+      const analisisTexto = await analyzeQuizPerformance({
+        itemName: simulacion.nombre,
+        alumnoNombre: estudianteNombre || null,
+        totalIntentos: intentosOrdenados.length,
+        mejorPuntaje: scores.length ? Math.max(...scores) : 0,
+        promedio: Math.round(promedioPuntaje || 0),
+        scores: scores,
+        fechas: fechas,
+        duraciones: duraciones,
+        ultimoPuntaje: ultimoPuntaje,
+        oficialPuntaje: intentoOficial ? (Number(intentoOficial.puntaje) || 0) : null,
+        oficialFecha: intentoOficial?.fecha || null,
+        oficialDuracion: oficialDuracion,
+        intentoNumero: intentosOrdenados.length,
+        totalPreguntasIntento: totalPreguntasIntento,
+        correctasIntento: correctasIntento,
+        incorrectasIntento: incorrectasIntento,
+        omitidasIntento: omitidasIntento,
+        incorrectasDetalle: incorrectasDetalle,
+        erroresRecurrentes: erroresRecurrentes,
+        // ✅ NUEVO: Agregar información de conocimiento inestable
+        preguntasInconsistentes: preguntasInconsistentes,
+        materiasConDiagnostico: materiasConDiagnostico,
       });
 
+      setIaLatencyMs(Date.now() - t0);
+      console.log(`✅ Análisis generado en ${Date.now() - t0}ms`);
+
+      // 9) Procesar respuesta (quizAnalysisService retorna texto Markdown directamente)
+      const analisis = {
+        resumen: analisisTexto,
+        esFallbackLocal: analisisTexto.includes('<<<AI_SOURCE:FALLBACK>>>'),
+        desdeCache: false,
+        timestamp: new Date().toISOString()
+      };
+
       setAnalisisIA(analisis);
-      setRecursos(recursosRecomendados);
       setMostrarAnalisisIA(true);
 
-      // ✅ INCREMENTAR USO INMEDIATAMENTE si es análisis de Gemini (no fallback)
+      // ✅ INCREMENTAR USO si es análisis de IA real
       if (!analisis.esFallbackLocal && !analisis.desdeCache) {
-        incrementUsage(); // Actualiza el contador en tiempo real
+        incrementUsage();
       }
 
-      // Calcular métricas de efectividad
-      const m = calcularMetricasIA(analisis, promediosPorMateria);
-      setMetricasIA(m);
-      const sug = generarSugerenciasPersonalizadas(analisis, promediosPorMateria);
-      setSugerenciasPersonalizadas(sug);
+      // 10) Calcular métricas adicionales (insights avanzados)
       const insights = calcularInsightsAvanzados(promediosPorMateria);
       setInsightsAvanzados(insights);
 
+      console.log('📊 Análisis completo:');
+      console.log('  - Errores recurrentes:', erroresRecurrentes.length);
+      console.log('  - Preguntas inconsistentes:', preguntasInconsistentes.length);
+      console.log('  - Materias adivinando:', materiasAdivinando.length);
+
     } catch (error) {
-      console.error('Error generando análisis IA:', error);
+      console.error('❌ Error generando análisis IA:', error);
       if (error.message && error.message.includes('Límite de peticiones')) {
-        setErrorIA('Límite de peticiones excedido. Se intentó fallback local.');
+        setErrorIA('Límite de peticiones excedido. Intenta nuevamente más tarde.');
         setCooldownIA(60);
-      } else if (error.message && error.message.includes('GEMINI_API_KEY')) {
-        setErrorIA('El servidor no tiene configurada la API de Gemini. Se usará análisis heurístico local.');
       } else {
         setErrorIA('Error al generar análisis. Por favor, intenta nuevamente.');
       }
@@ -706,7 +1015,7 @@ function SimulacionGraficaHistorial({
   // Verificación de datos: si no hay historial o está vacío, mostrar estado amigable en vez de cortar todo
   if (!historial || !Array.isArray(historial.intentos) || historial.intentos.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      <div className="min-h-screen bg-white overflow-x-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg">
           <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
@@ -1195,6 +1504,13 @@ function SimulacionGraficaHistorial({
       const oficialFecha = intentoOficial ? (intentoOficial.fecha || null) : null;
       // Duraciones por intento
       const analitica = await cargarAnaliticaDetallada();
+
+      // ✅ Calcular Estrategia de Examen (Metacognición) si hay analítica
+      if (analitica) {
+        const estrategia = calcularEstrategia(analitica);
+        setEstrategiaExamen(estrategia);
+      }
+
       let duraciones = [];
       if (analitica && Array.isArray(analitica.intentos) && analitica.intentos.length) {
         duraciones = analitica.intentos.map(it => {
@@ -1434,7 +1750,8 @@ function SimulacionGraficaHistorial({
 
   return (
     <div
-      className="min-h-screen bg-gray-50 overflow-x-hidden"
+      // TODO: Cambiar el color de fondo
+      className="min-h-screen bg-white overflow-x-hidden"
       style={{
         WebkitOverflowScrolling: 'touch',
         position: 'relative',
@@ -1443,8 +1760,8 @@ function SimulacionGraficaHistorial({
       }}
     >
       {/* Header simplificado sin gradiente, integrado al fondo */}
-      <div className="bg-transparent text-gray-900 border-b border-gray-200 relative z-20 px-2 sm:px-6 lg:px-10">
-        <div className="flex items-center justify-between py-3 sm:py-4">
+      <div className="bg-white text-gray-900 border-b border-gray-200 relative z-20 px-2 sm:px-6 lg:px-10 shadow-sm mt-4 sm:mt-6 rounded-t-2xl mx-1 sm:mx-6 lg:mx-10">
+        <div className="flex items-center justify-between py-5 sm:py-8">
           <div className="flex items-center space-x-2 sm:space-x-3 w-full">
             <button
               onClick={onClose}
@@ -1485,11 +1802,11 @@ function SimulacionGraficaHistorial({
         </div>
       </div>
       {/* Contenido principal */}
-      <div className="w-full px-1 sm:px-6 lg:px-10 pt-3 sm:pt-4 pb-6 sm:pb-8">
+      <div className="w-full px-1 sm:px-6 lg:px-10 pt-8 sm:pt-12 pb-6 sm:pb-8">
         {/* Estadísticas principales - Grid responsive optimizado */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6 lg:mb-8 -mx-2 sm:mx-0">
           {/* Intento Oficial */}
-          <div className="bg-white p-2 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-blue-200 hover:shadow-md transition-shadow col-span-2 md:col-span-1 mx-2 sm:mx-0">
+          <div className="bg-white p-3 sm:p-5 lg:p-6 rounded-2xl shadow-md border border-blue-100 ring-4 ring-blue-50/30 hover:shadow-xl transition-all duration-300 col-span-2 md:col-span-1 mx-2 sm:mx-0">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
                 <Award className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-blue-600" />
@@ -1505,40 +1822,40 @@ function SimulacionGraficaHistorial({
               </div>
             </div>
           </div>
-          <div className="bg-white p-2 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow mx-2 sm:mx-0">
+          <div className="bg-white p-3 sm:p-5 lg:p-6 rounded-2xl shadow-md border border-gray-100 ring-4 ring-gray-50/30 hover:shadow-xl transition-all duration-300 mx-2 sm:mx-0">
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg flex-shrink-0">
+              <div className="p-1.5 sm:p-2 bg-green-50 rounded-xl flex-shrink-0 ring-1 ring-green-100">
                 <Trophy className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-green-600" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-gray-600 truncate">Mejor Puntaje</p>
-                <p className="text-base sm:text-lg lg:text-xl font-bold text-green-600 leading-tight">
+                <p className="text-xs sm:text-sm font-semibold text-gray-500 truncate">Mejor Puntaje</p>
+                <p className="text-base sm:text-lg lg:text-xl font-black text-green-600 leading-tight">
                   {historial.mejorPuntaje || Math.max(...historial.intentos.map(i => i.puntaje || 0))}%
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-2 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow mx-2 sm:mx-0">
+          <div className="bg-white p-3 sm:p-5 lg:p-6 rounded-2xl shadow-md border border-gray-100 ring-4 ring-gray-50/30 hover:shadow-xl transition-all duration-300 mx-2 sm:mx-0">
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
+              <div className="p-1.5 sm:p-2 bg-blue-50 rounded-xl flex-shrink-0 ring-1 ring-blue-100">
                 <Target className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-blue-600" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-gray-600 truncate">Promedio</p>
-                <p className="text-base sm:text-lg lg:text-xl font-bold text-blue-600 leading-tight">{promedioPuntaje.toFixed(1)}%</p>
+                <p className="text-xs sm:text-sm font-semibold text-gray-500 truncate">Promedio</p>
+                <p className="text-base sm:text-lg lg:text-xl font-black text-blue-600 leading-tight">{promedioPuntaje.toFixed(1)}%</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-2 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow mx-2 sm:mx-0">
+          <div className="bg-white p-3 sm:p-5 lg:p-6 rounded-2xl shadow-md border border-gray-100 ring-4 ring-gray-50/30 hover:shadow-xl transition-all duration-300 mx-2 sm:mx-0">
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg flex-shrink-0">
+              <div className="p-1.5 sm:p-2 bg-purple-50 rounded-xl flex-shrink-0 ring-1 ring-purple-100">
                 <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-purple-600" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-gray-600 truncate">Mejor Tiempo</p>
-                <p className="text-base sm:text-lg lg:text-xl font-bold text-purple-600 leading-tight">{mejorTiempo}min</p>
+                <p className="text-xs sm:text-sm font-semibold text-gray-500 truncate">Mejor Tiempo</p>
+                <p className="text-base sm:text-lg lg:text-xl font-black text-purple-600 leading-tight">{mejorTiempo}min</p>
               </div>
             </div>
           </div>
@@ -1559,7 +1876,7 @@ function SimulacionGraficaHistorial({
         </div>
 
         {/* Análisis por Materias/Áreas */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-6 mb-6 sm:mb-8">
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 ring-1 ring-gray-200/50">
           <div className="flex items-center mb-4 sm:mb-6">
             <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 mr-2 flex-shrink-0" />
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">Análisis por Materias/Áreas</h3>
@@ -1567,7 +1884,7 @@ function SimulacionGraficaHistorial({
 
           <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
             {promediosPorMateria.map((materia, index) => (
-              <div key={index} className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
+              <div key={index} className="bg-white rounded-lg p-3 sm:p-4 border border-gray-100 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-2 min-w-0 flex-1">
                     <span className="text-base sm:text-lg flex-shrink-0">{materia.icon}</span>
@@ -1602,7 +1919,7 @@ function SimulacionGraficaHistorial({
           </div>
 
           {/* Gráfica de rendimiento por materias - Responsive */}
-          <div className="bg-gray-50 rounded-lg p-3 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-lg p-3 sm:p-4 overflow-hidden border border-gray-100">
             <h4 className="font-medium text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">Comparación de Rendimiento</h4>
             <div className="w-full overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
               <div className="min-w-[320px] sm:min-w-[420px]">
@@ -1739,6 +2056,15 @@ function SimulacionGraficaHistorial({
                 </>
               )}
             </button>
+            {/* Indicador IA en línea */}
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-green-50 rounded-lg border border-green-200 mr-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              <span className="text-xs font-medium text-green-700">IA en línea</span>
+            </div>
+
             {/* Indicador de uso de IA - Optimizado para móviles */}
             <div className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border-2 min-h-[44px] ml-auto ${aiUsage.remaining === 0 ? 'bg-red-50 border-red-300' :
               aiUsage.remaining <= 1 ? 'bg-yellow-50 border-yellow-300' :
@@ -1905,16 +2231,102 @@ function SimulacionGraficaHistorial({
                       ),
 
                       // Tablas
-                      table: (props) => <table {...props} className="w-full text-left border-collapse my-3" />,
-                      thead: (props) => <thead {...props} className="bg-gray-50" />,
-                      tbody: (props) => <tbody {...props} />,
-                      tr: (props) => <tr {...props} className="even:bg-gray-50/50" />,
-                      th: (props) => <th {...props} className="border border-gray-200 px-3 py-2 font-semibold text-gray-800" />,
-                      td: (props) => <td {...props} className="border border-gray-200 px-3 py-2" />,
+                      table: (props) => <table {...props} className="w-full text-left border-collapse my-4 rounded-lg overflow-hidden shadow-sm border border-indigo-100" />,
+                      thead: (props) => <thead {...props} className="bg-indigo-50" />,
+                      tbody: (props) => <tbody {...props} className="divide-y divide-indigo-50" />,
+                      tr: (props) => <tr {...props} className="hover:bg-indigo-50/30 transition-colors" />,
+                      th: (props) => <th {...props} className="px-4 py-3 font-semibold text-indigo-900 text-xs sm:text-sm uppercase tracking-wider" />,
+                      td: (props) => <td {...props} className="px-4 py-3 text-sm text-gray-700 whitespace-pre-wrap" />,
                     }}
                   >
                     {toMarkdownFriendly(analysisText)}
                   </ReactMarkdown>
+
+                  {/* Botones de acción / exportación */}
+                  <div className="mt-6 flex flex-wrap gap-3 pt-4 border-t border-gray-100 items-center justify-between">
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleShareWhatsApp}
+                        className="inline-flex items-center px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        WhatsApp
+                      </button>
+                      <button
+                        onClick={handleDownloadPDF}
+                        className="inline-flex items-center px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <FileDown className="w-4 h-4 mr-2" />
+                        PDF
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => setShowChat(!showChat)}
+                      className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      {showChat ? 'Ocultar Tutor' : 'Preguntar al Tutor'}
+                    </button>
+                  </div>
+
+                  {/* Sección Chat Tutor */}
+                  {showChat && (
+                    <div className="mt-6 bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-5 shadow-inner">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-semibold text-gray-800 text-sm flex items-center">
+                          <Bot className="w-4 h-4 mr-2 text-indigo-500" />
+                          Tutor IA - Preguntas Rápidas
+                        </h4>
+                        <button onClick={() => setShowChat(false)} className="text-gray-400 hover:text-gray-600">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {chatResponse && (
+                        <div className="mb-4 bg-white border border-indigo-100 rounded-lg p-4 shadow-sm text-sm text-gray-700">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{chatResponse}</ReactMarkdown>
+                          <div className="mt-2 text-[10px] text-gray-400 text-right">Generado por IA</div>
+                        </div>
+                      )}
+
+                      <div className="relative">
+                        <textarea
+                          value={chatQuery}
+                          onChange={(e) => setChatQuery(e.target.value)}
+                          placeholder="Ej: ¿Podrías explicarme mejor por qué fallé la pregunta de acentuación?"
+                          className="w-full text-sm rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 min-h-[80px] pr-12 resize-none py-3 px-4"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              if (!chatQuery.trim() || chatLoading) return;
+                              setChatLoading(true);
+                              setChatResponse(null);
+                              askQuickTutor(analysisText, chatQuery, estudianteNombre)
+                                .then(res => { setChatResponse(res); setChatLoading(false); })
+                                .catch(() => { setChatResponse('Error al conectar con el tutor.'); setChatLoading(false); });
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            if (!chatQuery.trim() || chatLoading) return;
+                            setChatLoading(true);
+                            setChatResponse(null);
+                            askQuickTutor(analysisText, chatQuery, estudianteNombre)
+                              .then(res => { setChatResponse(res); setChatLoading(false); })
+                              .catch(() => { setChatResponse('Error al conectar con el tutor.'); setChatLoading(false); });
+                          }}
+                          disabled={!chatQuery.trim() || chatLoading}
+                          className="absolute bottom-3 right-3 p-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                        >
+                          {chatLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      <p className="mt-2 text-[10px] text-gray-500 text-center">
+                        Puedes preguntar sobre conceptos específicos, pedir ejemplos extra o consejos de estudio.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1987,6 +2399,81 @@ function SimulacionGraficaHistorial({
                   )}
                 </div>
               </div>
+              {/* ✅ NUEVA SECCIÓN: Análisis de Estrategia de Examen (Metacognición) */}
+              {estrategiaExamen && (
+                <div className="bg-white border border-violet-200 rounded-lg p-4 sm:p-6 mb-6 shadow-sm ring-1 ring-violet-100">
+                  <div className="flex items-center mb-4">
+                    <Brain className="w-5 h-5 text-violet-600 mr-2" />
+                    <h3 className="text-base sm:text-lg font-semibold text-violet-900">
+                      Estrategia de Examen (Metacognición)
+                    </h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Análisis de tu comportamiento: cómo gestionas el tiempo y tomas decisiones bajo presión.
+                  </p>
+
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {/* Tarjeta Impulsividad */}
+                    {estrategiaExamen.impulsivas.length > 0 && (
+                      <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
+                        <div className="flex items-center gap-2 mb-2 text-orange-700 font-semibold">
+                          <Zap className="w-4 h-4" />
+                          <h4>Patrón Impulsivo</h4>
+                        </div>
+                        <p className="text-xs text-orange-800 mb-3">
+                          Respondiste <span className="font-bold">{estrategiaExamen.impulsivas.length} preguntas</span> incorrectas en menos de 10 segundos.
+                        </p>
+                        <div className="bg-white/60 rounded p-2 text-xs text-orange-900 mb-2">
+                          <strong>Estrategia sugerida:</strong> Lee el enunciado completo dos veces antes de ver las opciones. Oblígate a descartar 2 opciones antes de elegir.
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tarjeta Bloqueos */}
+                    {estrategiaExamen.bloqueos.length > 0 && (
+                      <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                        <div className="flex items-center gap-2 mb-2 text-slate-700 font-semibold">
+                          <Clock className="w-4 h-4" />
+                          <h4>Bloqueos / Pérdida de Tiempo</h4>
+                        </div>
+                        <p className="text-xs text-slate-800 mb-3">
+                          Te atascaste en <span className="font-bold">{estrategiaExamen.bloqueos.length} preguntas</span> por más de 2 minutos.
+                        </p>
+                        <div className="bg-white/60 rounded p-2 text-xs text-slate-900 mb-2">
+                          <strong>Estrategia sugerida:</strong> Si no sabes la respuesta en 90 segundos, marca una temporalmente y pasa a la siguiente. No sacrifiques tiempo de preguntas fáciles.
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tarjeta Fatiga */}
+                    {estrategiaExamen.fatiga?.detectada && (
+                      <div className="bg-red-50 rounded-xl p-4 border border-red-100">
+                        <div className="flex items-center gap-2 mb-2 text-red-700 font-semibold">
+                          <Activity className="w-4 h-4" />
+                          <h4>Fatiga Cognitiva</h4>
+                        </div>
+                        <p className="text-xs text-red-800 mb-3">
+                          {estrategiaExamen.fatiga.mensaje} (Caída del {estrategiaExamen.fatiga.caida}%)
+                        </p>
+                        <div className="bg-white/60 rounded p-2 text-xs text-red-900 mb-2">
+                          <strong>Estrategia sugerida:</strong> Practica simulacros más largos para construir resistencia mental. Haz una pausa mental de 10s cada 15 preguntas.
+                        </div>
+                      </div>
+                    )}
+                    {/* Fallback si está todo bien */}
+                    {!estrategiaExamen.impulsivas.length && !estrategiaExamen.bloqueos.length && !estrategiaExamen.fatiga?.detectada && (
+                      <div className="col-span-full bg-green-50 rounded-xl p-4 border border-green-100 flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <div>
+                          <h4 className="font-semibold text-green-800 text-sm">¡Buena Estrategia!</h4>
+                          <p className="text-xs text-green-700">Tu ritmo es constante y no detectamos patrones de impulsividad o bloqueos graves.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Sugerencias Personalizadas */}
               {sugerenciasPersonalizadas && (
                 <div className="bg-white border border-blue-200 rounded-lg p-4 sm:p-6">
@@ -2176,7 +2663,7 @@ function SimulacionGraficaHistorial({
                       <p className="text-sm font-semibold text-purple-700">{(metricasIA.puntajeGlobal * 100).toFixed(0)}%</p>
                       <p className="text-[10px] text-purple-600">F1 debilidades 60%, fortalezas 30%, cobertura 10%</p>
                     </div>
-                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <div className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
                       <p className="text-[10px] font-medium text-gray-700">Interpretación</p>
                       <p className="text-[10px] text-gray-600 leading-snug">Valores más altos indican mayor alineación del análisis IA con las reglas locales. Útil para monitorear calidad.</p>
                     </div>
@@ -2196,283 +2683,7 @@ function SimulacionGraficaHistorial({
                   </div>
                 </div>
               )}
-              {/* Resumen general */}
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-4 sm:p-6">
-                <div className="flex items-start space-x-3">
-                  <MessageSquare className="w-5 h-5 text-indigo-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-semibold text-indigo-900 text-sm sm:text-base mb-2">
-                      Resumen del Análisis
-                    </h4>
-                    <p className="text-indigo-800 text-xs sm:text-sm leading-relaxed" style={{ textAlign: 'justify' }}>
-                      {analisisIA.resumen}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Fortalezas */}
-              {analisisIA.fortalezas && analisisIA.fortalezas.length > 0 && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 sm:p-6">
-                  <h4 className="font-semibold text-green-900 text-sm sm:text-base mb-3 flex items-center">
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Fortalezas Identificadas
-                  </h4>
-                  <div className="space-y-3">
-                    {analisisIA.fortalezas.map((fortaleza, index) => (
-                      <div key={index} className="bg-white rounded-lg p-3 border border-green-200">
-                        <h5 className="font-medium text-green-800 text-sm mb-1">
-                          {fortaleza.materia}
-                        </h5>
-                        <p className="text-green-700 text-xs sm:text-sm">
-                          {fortaleza.comentario}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Áreas de mejora */}
-              {analisisIA.debilidades && analisisIA.debilidades.length > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 sm:p-6">
-                  <h4 className="font-semibold text-yellow-900 text-sm sm:text-base mb-3 flex items-center">
-                    <Lightbulb className="w-4 h-4 mr-2" />
-                    Áreas de Mejora
-                  </h4>
-                  <div className="space-y-4">
-                    {analisisIA.debilidades.map((debilidad, index) => (
-                      <div key={index} className="bg-white rounded-lg p-3 border border-yellow-200">
-                        <h5 className="font-medium text-yellow-800 text-sm mb-1">
-                          {debilidad.materia}
-                        </h5>
-                        <p className="text-yellow-700 text-xs sm:text-sm mb-2">
-                          {debilidad.comentario}
-                        </p>
-                        {debilidad.accionesEspecificas && (
-                          <div className="mt-2">
-                            <p className="text-xs font-medium text-yellow-800 mb-1">
-                              Acciones recomendadas:
-                            </p>
-                            <ul className="text-xs text-yellow-700 space-y-1 pl-4">
-                              {debilidad.accionesEspecificas.map((accion, i) => (
-                                <li key={i} className="list-disc">{accion}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Preguntas Problemáticas - NUEVA SECCIÓN */}
-              {analisisIA.preguntasProblematicas && analisisIA.preguntasProblematicas.length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 sm:p-6">
-                  <h4 className="font-semibold text-red-900 text-sm sm:text-base mb-3 flex items-center">
-                    <AlertTriangle className="w-4 h-4 mr-2" />
-                    Preguntas Donde Más Fallas
-                  </h4>
-                  <p className="text-xs text-red-700 mb-4">
-                    La IA analizó todas tus respuestas y identificó las preguntas donde más errores cometes. Enfócate en estas para mejorar.
-                  </p>
-                  <div className="space-y-4">
-                    {analisisIA.preguntasProblematicas.map((pregunta, index) => (
-                      <div key={index} className="bg-white rounded-lg p-3 border border-red-200">
-                        <div className="flex items-start justify-between mb-2">
-                          <h5 className="font-medium text-red-800 text-sm flex-1">
-                            Pregunta {pregunta.idPregunta || index + 1}
-                          </h5>
-                          <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
-                            Fallada {pregunta.vecesFallada || 'varias'} veces
-                          </span>
-                        </div>
-                        <p className="text-red-900 text-xs sm:text-sm mb-2 font-medium">
-                          {pregunta.enunciado}
-                        </p>
-                        {pregunta.respuestasIncorrectas && pregunta.respuestasIncorrectas.length > 0 && (
-                          <div className="mb-2">
-                            <p className="text-xs font-medium text-red-700 mb-1">Respuestas que diste (incorrectas):</p>
-                            <ul className="text-xs text-red-600 space-y-1 pl-4">
-                              {pregunta.respuestasIncorrectas.map((resp, i) => (
-                                <li key={i} className="list-disc">"{resp}"</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {pregunta.respuestaCorrecta && (
-                          <div className="mb-2">
-                            <p className="text-xs font-medium text-green-700 mb-1">Respuesta correcta:</p>
-                            <p className="text-xs text-green-800 pl-4">"{pregunta.respuestaCorrecta}"</p>
-                          </div>
-                        )}
-                        {pregunta.analisis && (
-                          <div className="mb-2">
-                            <p className="text-xs font-medium text-red-800 mb-1">Análisis:</p>
-                            <p className="text-xs text-red-700 pl-4">{pregunta.analisis}</p>
-                          </div>
-                        )}
-                        {pregunta.recomendacion && (
-                          <div className="mt-2 pt-2 border-t border-red-200">
-                            <p className="text-xs font-medium text-red-800 mb-1">💡 Recomendación:</p>
-                            <p className="text-xs text-red-700 pl-4">{pregunta.recomendacion}</p>
-                          </div>
-                        )}
-                        {pregunta.tipoError && (
-                          <span className="inline-block mt-2 text-[10px] px-2 py-0.5 bg-red-100 text-red-700 rounded">
-                            Tipo: {pregunta.tipoError}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Patrones de Errores - NUEVA SECCIÓN */}
-              {analisisIA.patronesErrores && Object.keys(analisisIA.patronesErrores).length > 0 && (
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 sm:p-6">
-                  <h4 className="font-semibold text-purple-900 text-sm sm:text-base mb-3 flex items-center">
-                    <Brain className="w-4 h-4 mr-2" />
-                    Patrones de Errores Identificados
-                  </h4>
-                  <div className="space-y-3">
-                    {analisisIA.patronesErrores.tipoPreguntaMasFallada && (
-                      <div className="bg-white rounded-lg p-3 border border-purple-200">
-                        <p className="text-xs font-medium text-purple-800 mb-1">Tipo de pregunta donde más fallas:</p>
-                        <p className="text-xs text-purple-700">{analisisIA.patronesErrores.tipoPreguntaMasFallada}</p>
-                      </div>
-                    )}
-                    {analisisIA.patronesErrores.materiaMasProblematica && (
-                      <div className="bg-white rounded-lg p-3 border border-purple-200">
-                        <p className="text-xs font-medium text-purple-800 mb-1">Materia más problemática:</p>
-                        <p className="text-xs text-purple-700">{analisisIA.patronesErrores.materiaMasProblematica}</p>
-                      </div>
-                    )}
-                    {analisisIA.patronesErrores.longitudPregunta && (
-                      <div className="bg-white rounded-lg p-3 border border-purple-200">
-                        <p className="text-xs font-medium text-purple-800 mb-1">Patrón de longitud:</p>
-                        <p className="text-xs text-purple-700">{analisisIA.patronesErrores.longitudPregunta}</p>
-                      </div>
-                    )}
-                    {analisisIA.patronesErrores.patronTemporal && (
-                      <div className="bg-white rounded-lg p-3 border border-purple-200">
-                        <p className="text-xs font-medium text-purple-800 mb-1">Evolución entre intentos:</p>
-                        <p className="text-xs text-purple-700">{analisisIA.patronesErrores.patronTemporal}</p>
-                      </div>
-                    )}
-                    {analisisIA.patronesErrores.erroresRecurrentes && analisisIA.patronesErrores.erroresRecurrentes.length > 0 && (
-                      <div className="bg-white rounded-lg p-3 border border-purple-200">
-                        <p className="text-xs font-medium text-purple-800 mb-2">Errores que se repiten:</p>
-                        <ul className="text-xs text-purple-700 space-y-1 pl-4">
-                          {analisisIA.patronesErrores.erroresRecurrentes.map((error, i) => (
-                            <li key={i} className="list-disc">{error}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Plan de estudio */}
-              {analisisIA.planEstudio && analisisIA.planEstudio.prioridad && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
-                  <h4 className="font-semibold text-blue-900 text-sm sm:text-base mb-3 flex items-center">
-                    <Target className="w-4 h-4 mr-2" />
-                    Plan de Estudio Personalizado
-                  </h4>
-                  <div className="space-y-3">
-                    {analisisIA.planEstudio.prioridad.map((item, index) => (
-                      <div key={index} className="bg-white rounded-lg p-3 border border-blue-200">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h5 className="font-medium text-blue-800 text-sm">
-                              {item.materia}
-                            </h5>
-                            <p className="text-blue-700 text-xs mt-1">
-                              <Clock className="w-3 h-3 inline mr-1" />
-                              {item.tiempo}
-                            </p>
-                            <p className="text-blue-600 text-xs mt-1">
-                              {item.enfoque}
-                            </p>
-                          </div>
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                            Prioridad {index + 1}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Recursos recomendados */}
-              {Object.keys(recursos).length > 0 && (
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 sm:p-6">
-                  <h4 className="font-semibold text-purple-900 text-sm sm:text-base mb-3 flex items-center">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    Recursos Recomendados
-                  </h4>
-                  <div className="space-y-4">
-                    {Object.entries(recursos).map(([materia, recursosMateria]) => (
-                      <div key={materia} className="bg-white rounded-lg p-3 border border-purple-200">
-                        <h5 className="font-medium text-purple-800 text-sm mb-2">
-                          {materia}
-                        </h5>
-                        <div className="space-y-2">
-                          {recursosMateria.map((recurso, index) => (
-                            <div key={index} className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
-                                  {recurso.tipo}
-                                </span>
-                                <span className="text-sm text-purple-700">
-                                  {recurso.nombre}
-                                </span>
-                              </div>
-                              {recurso.url !== '#' && (
-                                <a
-                                  href={recurso.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-purple-600 hover:text-purple-800"
-                                >
-                                  <ExternalLink className="w-3 h-3" />
-                                </a>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Mensaje inicial */}
-          {!analisisIA && !cargandoIA && !errorIA && (
-            <div className="text-center py-6 sm:py-8">
-              <Bot className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
-              <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
-                Análisis Inteligente con IA
-              </h4>
-              <p className="text-gray-600 text-sm sm:text-base mb-4 max-w-md mx-auto">
-                Obtén recomendaciones personalizadas basadas en tu rendimiento y patrones de aprendizaje
-              </p>
-              <button
-                onClick={generarAnalisisIA}
-                disabled={(historial?.intentos?.length || 0) < 2}
-                title={(historial?.intentos?.length || 0) < 2 ? 'Necesitas al menos 2 intentos para análisis IA' : ''}
-                className="inline-flex items-center justify-center w-full sm:w-auto space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg font-medium transition-colores text-sm sm:text-base disabled:cursor-not-allowed"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Generar Análisis</span>
-              </button>
+              {/* Sección de Segundo Análisis eliminada para unificación */}
             </div>
           )}
         </div>

@@ -27,6 +27,11 @@ COL_OFF = "#424242"       # Gris Apagado (Puerto cerrado)
 
 APP_TITLE = "MQERK COMMANDER v5.0 Ultimate"
 
+def get_npm_command():
+    """Devuelve 'npm.cmd' en Windows para evitar errores de política de PowerShell."""
+    import platform
+    return "npm.cmd" if platform.system() == "Windows" else "npm"
+
 class MqerkCommander:
     def __init__(self, root):
         self.root = root
@@ -312,13 +317,23 @@ class MqerkCommander:
             self.set_busy(True)
             self.log(cmd, "cmd")
             try:
-                p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, text=True)
+                p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, text=True, encoding='utf-8', errors='replace')
                 out, err = p.communicate()
                 if out: self.log(out.strip())
-                if err and "npm WARN" not in err: self.log(err.strip(), "error")
+                if err:
+                    # Detectar error de política de PowerShell (español/inglés)
+                    if "ejecución de scripts está deshabilitada" in err.lower() or "execution of scripts is disabled" in err.lower():
+                        self.log("❌ ERROR: PowerShell bloquea la ejecución de scripts", "error")
+                        self.log("💡 Solución: Usa 'npm.cmd' en lugar de 'npm'", "error")
+                        self.log("   O ejecuta en PowerShell como Admin:", "error")
+                        self.log("   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser", "error")
+                    elif "npm WARN" not in err:
+                        self.log(err.strip(), "error")
                 if "git" in cmd: self.root.after(500, self.check_git_status)
-            except Exception as e: self.log(str(e), "error")
-            finally: self.root.after(0, lambda: self.set_busy(False))
+            except Exception as e:
+                self.log(f"Excepción: {str(e)}", "error")
+            finally:
+                self.root.after(0, lambda: self.set_busy(False))
         threading.Thread(target=task, daemon=True).start()
 
     def run_git_cmd(self, args): self.run_bg(f"git {args}")
@@ -333,8 +348,11 @@ class MqerkCommander:
 
     # --- ACCIONES ---
     def start_services(self):
-        if os.path.exists(SERVER_DIR): os.system(f'start "SERVER" /D "{os.path.abspath(SERVER_DIR)}" cmd /k npm run dev -- --host')
-        if os.path.exists(CLIENT_DIR): os.system(f'start "CLIENT" /D "{os.path.abspath(CLIENT_DIR)}" cmd /k npm run dev -- --host')
+        npm_cmd = get_npm_command()  # <-- AGREGAR ESTA LÍNEA
+        if os.path.exists(SERVER_DIR):
+            os.system(f'start "SERVER" /D "{os.path.abspath(SERVER_DIR)}" cmd /k {npm_cmd} run dev -- --host')
+        if os.path.exists(CLIENT_DIR):
+            os.system(f'start "CLIENT" /D "{os.path.abspath(CLIENT_DIR)}" cmd /k {npm_cmd} run dev -- --host')
         self.log("Terminales lanzadas.", "success")
 
     def stop_services(self):
@@ -468,6 +486,7 @@ class MqerkCommander:
     def npm_install(self):
         pkg = simpledialog.askstring("NPM", "Paquete:")
         if not pkg: return
+        npm_cmd = get_npm_command()
         t = self.npm_target.get()
         cwd = SERVER_DIR if t == "server" else CLIENT_DIR
         self.run_bg(f"npm install {pkg}", cwd=os.path.abspath(cwd))
@@ -505,7 +524,12 @@ class MqerkCommander:
     def hard_reset(self):
         if messagebox.askyesno("⚠️", "Borrar node_modules?"):
             self.stop_services()
-            self.run_bg(f'rmdir /s /q "{SERVER_DIR}\\node_modules" & del "{SERVER_DIR}\\package-lock.json" & rmdir /s /q "{CLIENT_DIR}\\node_modules" & del "{CLIENT_DIR}\\package-lock.json" & cd "{SERVER_DIR}" & npm install & cd ..\\"{CLIENT_DIR}" & npm install')
+            npm_cmd = get_npm_command()  # <-- AGREGAR ESTA LÍNEA
+            self.run_bg(
+                f'rmdir /s /q "{SERVER_DIR}\\node_modules" 2>nul & del "{SERVER_DIR}\\package-lock.json" 2>nul & '
+                f'rmdir /s /q "{CLIENT_DIR}\\node_modules" 2>nul & del "{CLIENT_DIR}\\package-lock.json" 2>nul & '
+                f'cd "{SERVER_DIR}" & {npm_cmd} install & cd ..\\"{CLIENT_DIR}" & {npm_cmd} install'
+            )
 
     # ================= PROTOCOLOS DE SEGURIDAD (AUTO-PROTECT) =================
  # ================= PROTOCOLOS DE SEGURIDAD (NO DESTRUCTIVO) =================

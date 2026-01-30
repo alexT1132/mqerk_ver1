@@ -49,7 +49,7 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
   const categoryColors = {
     programacion: 'bg-red-500',
     preparacion: 'bg-red-500',
-    tecnologico: 'bg-blue-500', 
+    tecnologico: 'bg-blue-500',
     psicoeducativo: 'bg-purple-500',
     idiomas: 'bg-green-500',
     exactas: 'bg-orange-500',
@@ -83,18 +83,18 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
       h-auto max-h-[300px] sm:max-h-[320px] md:max-h-[340px] lg:max-h-[420px] xl:max-h-[460px] 2xl:max-h-[500px]
       mx-auto ${isCurrentCourse ? 'transform scale-[1.01]' : 'hover:scale-[1.01]'}`}>
       {/* BACKEND: Imagen del curso - debe venir como URL desde la API */}
-    <div className="relative w-full h-16 sm:h-18 md:h-20 lg:h-32 xl:h-36 2xl:h-40 bg-gray-200 flex-shrink-0">
+      <div className="relative w-full h-16 sm:h-18 md:h-20 lg:h-32 xl:h-36 2xl:h-40 bg-gray-200 flex-shrink-0">
         {(() => {
           // Validar que la imagen sea una URL válida antes de intentar cargarla
           const isValidImage = image && (
-            image.startsWith('http://') || 
-            image.startsWith('https://') || 
+            image.startsWith('http://') ||
+            image.startsWith('https://') ||
             image.startsWith('/') ||
             image.startsWith('data:')
           );
           const defaultImage = "https://placehold.co/400x250/e0e0e0/555555?text=Curso";
           const imageSrc = isValidImage ? image : defaultImage;
-          
+
           return (
             <img
               src={imageSrc}
@@ -158,7 +158,7 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
             onClick={() => onAction(course)}
             className={`relative w-full py-1.5 sm:py-2 md:py-2.5 lg:py-2.5 xl:py-3 2xl:py-3 rounded-lg sm:rounded-xl md:rounded-2xl font-bold text-xs sm:text-xs md:text-sm lg:text-sm xl:text-base 2xl:text-lg text-white shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-95 transition-all duration-300 overflow-hidden
               ${isDashboardButton
-                ? isCurrentCourse 
+                ? isCurrentCourse
                   ? 'bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 shadow-green-500/30 hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 ring-2 ring-green-300/50' // Estilo verde mejorado para curso actual
                   : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700' // Estilo normal para "IR AL DASHBOARD"
                 : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' // Estilo para "EMPIEZA TU TRANSFORMACIÓN"
@@ -175,9 +175,9 @@ function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
                 </svg>
               )}
               <span className="font-bold text-xs sm:text-xs md:text-sm lg:text-sm xl:text-base 2xl:text-lg leading-tight">
-                {isDashboardButton 
-                  ? isCurrentCourse 
-                    ? 'CURSO ACTUAL' 
+                {isDashboardButton
+                  ? isCurrentCourse
+                    ? 'CURSO ACTUAL'
                     : 'IR AL DASHBOARD'
                   : 'EMPIEZA TU TRANSFORMACIÓN'
                 }
@@ -235,7 +235,7 @@ async function fetchEnrolledCourses(studentId) {
     // });
     // const data = await response.json();
     // return data;
-    
+
     // Estructura temporal para desarrollo - eliminar cuando se conecte el backend
     return {
       enrolledCourses: [],
@@ -260,10 +260,10 @@ async function fetchEnrolledCourses(studentId) {
 function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
   // BACKEND: Estos datos vienen del contexto StudentContext (NO CourseContext)
   // Solo se usan los cursos matriculados del estudiante
-  const { 
-    enrolledCourses = [], 
-    currentCourse = null, 
-    selectCourse = () => {}
+  const {
+    enrolledCourses = [],
+    currentCourse = null,
+    selectCourse = () => { }
   } = useStudent() || {};
 
   // Fallback inmediato para resaltar el curso seleccionado incluso tras un refresh
@@ -276,18 +276,18 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
       return obj?.id || null;
     } catch { return null; }
   }, [currentCourse?.id]);
-  
+
   const navigate = useNavigate();
 
   // BACKEND: Filtrar cursos activos de los matriculados
   const activeCourses = enrolledCourses.filter(course => course?.isActive && course?.status === 'active');
-  
+
   // BACKEND: Ordenar cursos para mostrar el curso currentCourse primero
   const sortedActiveCourses = React.useMemo(() => {
     return [...activeCourses].sort((a, b) => {
       const aIsCurrent = currentCourseId === a.id;
       const bIsCurrent = currentCourseId === b.id;
-      
+
       if (aIsCurrent && !bIsCurrent) return -1;
       if (!aIsCurrent && bIsCurrent) return 1;
       return 0;
@@ -304,7 +304,7 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
 
   // Estado local para forzar re-render cuando cambia el curso
   const [selectedCourseId, setSelectedCourseId] = React.useState(currentCourseId);
-  
+
   // Sincronizar estado local con el contexto
   React.useEffect(() => {
     setSelectedCourseId(currentCourseId);
@@ -328,10 +328,10 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
         }
         console.log('✅ Curso seleccionado/cambiado:', course.title);
       }
-      
+
       // BACKEND: Aquí se debería hacer una llamada para actualizar el curso actual
       // Ejemplo: await updateCurrentCourse(course.id);
-      
+
       // Solo navegar al dashboard si no hay curso seleccionado actualmente
       // Si ya hay un curso, solo lo cambiamos sin redirigir
       if (!currentCourse) {
@@ -369,11 +369,12 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
   }
 
   return (
-    <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-3 sm:py-4 md:py-6 lg:py-8 font-inter text-gray-800">
+    <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 pt-9 pb-6 sm:py-4 md:py-6 lg:py-8 font-inter text-gray-800">
+
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12">
-        
+
         {/* Sección de Encabezado - Consistente con Dashboard */}
-        <div className="flex flex-col items-center md:flex-row md:items-start md:justify-between mb-6 pb-4 border-b-2 border-gradient-to-r from-blue-200 to-purple-200">
+        <div className="flex flex-col items-center md:flex-row md:items-start md:justify-between mb-8 pb-4 border-b-2 border-gradient-to-r from-blue-200 to-purple-200">
           <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl leading-tight tracking-tight text-center md:text-left font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 md:mb-0">
             MIS CURSOS ACTIVOS
           </h2>
@@ -429,12 +430,12 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.523 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.523 18.246 18 16.5 18s-3.332.477-4.5 1.253"></path>
                         </svg>
                       </div>
-                      
+
                       {/* Texto simple */}
                       <h3 className="text-xl md:text-2xl font-bold text-gray-700 mb-3">
                         No tienes cursos matriculados
                       </h3>
-                      
+
                       <p className="text-gray-500 mb-6">
                         Una vez que te matricules en un curso, aparecerá aquí para que puedas acceder fácilmente.
                       </p>
@@ -478,7 +479,7 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
               </button>
             </div>
           )}
-          
+
         </section>
       </div>
     </div>

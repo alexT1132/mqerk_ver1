@@ -632,10 +632,11 @@ const Feedback_Alumno_Comp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 lg:py-8 font-sans text-gray-800 flex flex-col items-center relative overflow-hidden">
+
+    <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 pt-9 pb-4 lg:py-8 font-sans text-gray-800 flex flex-col items-center relative overflow-hidden">
       {/* Título responsivo - Mejorado */}
-      <div className="w-full max-w-7xl mx-auto mb-6 sm:mb-8">
-        <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-extrabold mb-2 sm:mb-4 text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 drop-shadow-2xl text-center tracking-tight">
+      <div className="w-full max-w-7xl mx-auto mb-6 sm:mb-10 text-center lg:text-left">
+        <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-extrabold mb-2 sm:mb-4 text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 drop-shadow-2xl tracking-tight">
           FEEDBACK
         </h1>
       </div>
@@ -874,10 +875,10 @@ const Feedback_Alumno_Comp = () => {
                           onClick={() => openModal(task)}
                           disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
                           className={`flex items-center px-4 2xl:px-3 py-2 2xl:py-1.5 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 text-sm 2xl:text-xs font-extrabold border-2 touch-manipulation ${(!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
-                              ? 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
-                              : (task.isSubmitted
-                                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white focus:ring-violet-300 border-violet-700'
-                                : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white focus:ring-blue-300 border-blue-600')
+                            ? 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
+                            : (task.isSubmitted
+                              ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white focus:ring-violet-300 border-violet-700'
+                              : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white focus:ring-blue-300 border-blue-600')
                             }`}
                         >
                           <Upload className="w-4 h-4 mr-1.5" />
@@ -905,8 +906,8 @@ const Feedback_Alumno_Comp = () => {
                           onClick={() => openViewTaskModal(task)}
                           disabled={!task.submittedPdf}
                           className={`p-3 2xl:p-2.5 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 border-2 touch-manipulation ${task.submittedPdf
-                              ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white focus:ring-emerald-300 border-emerald-600'
-                              : 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
+                            ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white focus:ring-emerald-300 border-emerald-600'
+                            : 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
                             }`}
                         >
                           <Eye className="w-5 h-5" />
@@ -1061,8 +1062,8 @@ const Feedback_Alumno_Comp = () => {
                     onClick={() => openModal(task)}
                     disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
                     className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-xl shadow-md transition-all duration-200 text-xs font-extrabold gap-1 border-2 active:scale-95 touch-manipulation ${(!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
-                        ? 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
-                        : (task.isSubmitted ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white border-violet-700' : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-blue-600')
+                      ? 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
+                      : (task.isSubmitted ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white border-violet-700' : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-blue-600')
                       }`}
                     aria-label={task.isSubmitted ? 'Gestionar entrega' : 'Subir tarea'}
                     title={task.isSubmitted ? 'Gestionar entrega' : (monthlyCapReached ? 'Límite mensual' : 'Subir tarea')}
@@ -1076,8 +1077,8 @@ const Feedback_Alumno_Comp = () => {
                     onClick={() => openViewTaskModal(task)}
                     disabled={!task.submittedPdf}
                     className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-xl shadow-md transition-all duration-200 text-xs font-extrabold border-2 active:scale-95 touch-manipulation ${task.submittedPdf
-                        ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-emerald-600'
-                        : 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
+                      ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-emerald-600'
+                      : 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
                       }`}
                     aria-label="Ver tarea"
                     title={task.submittedPdf ? 'Ver' : 'Sin archivo'}
@@ -1238,12 +1239,10 @@ const Feedback_Alumno_Comp = () => {
       {/* Modal de visualización de tarea - Mejorado */}
       {showViewTaskModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 pt-16 sm:pt-20"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeViewTaskModal();
-          }}
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={closeViewTaskModal}
         >
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-4xl 2xl:max-w-5xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] transform transition-all duration-300 scale-100 border-2 border-violet-200/50 ring-2 ring-violet-100/50 flex flex-col overflow-hidden">
+          <div className="bg-white w-full h-full sm:w-auto sm:h-[75vh] sm:max-w-7xl sm:min-w-[800px] sm:rounded-2xl shadow-2xl flex flex-col border-0 sm:border-2 border-slate-200 ring-0 sm:ring-2 ring-violet-100 animate-in zoom-in-95 duration-200 relative overflow-hidden sm:translate-y-12" onClick={(e) => e.stopPropagation()}>
             {/* Header con gradiente */}
             <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 shadow-lg">
               <div className="flex-1 min-w-0 pr-2">
@@ -1262,30 +1261,21 @@ const Feedback_Alumno_Comp = () => {
             </div>
 
             {/* Contenido del PDF */}
-            <div className="flex-1 overflow-hidden flex flex-col p-3 sm:p-6 bg-gray-50">
+            <div className="flex-1 overflow-hidden flex flex-col bg-slate-100 relative w-full h-full">
               {viewingTaskPdf ? (
-                <>
-                  {/* Contenedor del PDF con mejor diseño */}
-                  <div className={`w-full bg-white rounded-lg overflow-hidden border-2 border-gray-200 shadow-inner relative flex flex-col ${(isMobile || isPdfIframeBlocked) ? 'flex-1 min-h-[400px] sm:min-h-[450px]' : 'h-[calc(75vh-200px)] sm:h-[calc(75vh-180px)]'}`}>
-                    {(isMobile || isPdfIframeBlocked) ? (
-                      <div className="w-full h-full flex-1 flex flex-col overflow-hidden">
-                        <PdfMobileViewer url={viewingTaskPdf} enableGestures={true} />
-                      </div>
-                    ) : (
-                      <iframe
-                        allowFullScreen
-                        key={viewingTaskPdf}
-                        src={viewingTaskPdf}
-                        title="Visor de PDF"
-                        className="w-full h-full border-none"
-                        onError={(e) => {
-                          e.currentTarget.outerHTML = '<div class=\'w-full h-full flex items-center justify-center text-sm text-red-500 bg-red-50 rounded\'>Error cargando PDF. Por favor, intenta abrirlo en una nueva pestaña.</div>';
-                        }}
-                      />
-                    )}
-                  </div>
-
-                </>
+                <div className="flex-1 relative w-full h-full flex flex-col">
+                  {isMobile ? (
+                    <div className="w-full h-full flex-1 flex flex-col overflow-hidden">
+                      <PdfMobileViewer url={viewingTaskPdf} enableGestures={true} />
+                    </div>
+                  ) : (
+                    <iframe
+                      src={viewingTaskPdf}
+                      className="w-full h-full"
+                      title="Visor de PDF"
+                    />
+                  )}
+                </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Download, Eye, Search, FileText, File, Video, Image, Archive, X, Loader2, GraduationCap, Link as LinkIcon, Presentation, FileType } from 'lucide-react';
+import { Download, Eye, Search, FileText, File, Video, Image, Archive, X, Loader2, GraduationCap, Link as LinkIcon, Presentation, FileType, ExternalLink } from 'lucide-react';
 import { listRecursosAsesor, downloadRecursoAsesor } from '../../api/recursos.js';
 import { buildStaticUrl } from '../../utils/url.js';
 
@@ -265,7 +265,7 @@ export default function Recursos_Alumno_comp() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
             {filtered.map(r => (
               <div
                 key={r.id}
@@ -319,8 +319,8 @@ export default function Recursos_Alumno_comp() {
                     className="flex-1 sm:flex-none px-4 sm:px-3 py-2.5 sm:py-2 rounded-lg sm:rounded-xl bg-violet-50 hover:bg-violet-100 active:bg-violet-200 text-violet-700 font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 sm:gap-1.5"
                     title="Vista previa"
                   >
-                    <Eye className="size-4 sm:size-4" />
-                    <span className="sm:hidden">Vista previa</span>
+                    <Eye className="size-5 sm:size-4" />
+                    <span className="hidden sm:inline">Vista previa</span>
                   </button>
                   <button
                     onClick={() => handleDownload(r.id, r.file_name, r.resource_type, r.link_url)}
@@ -329,13 +329,13 @@ export default function Recursos_Alumno_comp() {
                   >
                     {r.resource_type === 'link' ? (
                       <>
-                        <LinkIcon className="size-4 sm:size-4" />
-                        <span className="sm:hidden">Abrir</span>
+                        <LinkIcon className="size-5 sm:size-4" />
+                        <span className="hidden sm:inline">Abrir</span>
                       </>
                     ) : (
                       <>
-                        <Download className="size-4 sm:size-4" />
-                        <span className="sm:hidden">Descargar</span>
+                        <Download className="size-5 sm:size-4" />
+                        <span className="hidden sm:inline">Descargar</span>
                       </>
                     )}
                   </button>
@@ -351,223 +351,112 @@ export default function Recursos_Alumno_comp() {
           </div>
         )}
 
-        {/* Modal de preview - Compacto y optimizado */}
+        {/* Modal de preview - Full Screen en Móviles con Footer Unificado */}
         {preview && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setPreview(null)}>
-            <div className="bg-white rounded-none sm:rounded-2xl w-full h-full sm:h-auto sm:max-w-xl sm:max-h-[calc(100vh-4rem)] sm:mt-8 shadow-2xl flex flex-col border-0 sm:border-2 border-slate-200 ring-0 sm:ring-2 ring-violet-100 animate-in zoom-in-95 duration-200 relative overflow-hidden" onClick={e => e.stopPropagation()} style={{ marginLeft: 'clamp(80px, 5vw, 100px)' }}>
-              {/* Botón de cerrar adicional - Solo visible en móvil */}
-              <button
-                onClick={(e) => { e.stopPropagation(); setPreview(null); }}
-                className="fixed top-3 left-3 sm:hidden z-[9999] rounded-full bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white shadow-xl transition-all duration-200 flex items-center justify-center border-2 border-white"
-                aria-label="Cerrar modal"
-                title="Cerrar"
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  minWidth: '56px',
-                  minHeight: '56px',
-                  boxShadow: '0 4px 15px rgba(139, 92, 246, 0.6), 0 0 0 2px rgba(255, 255, 255, 0.9)'
-                }}
-              >
-                <X className="size-10 font-extrabold" strokeWidth={4} />
-              </button>
-              {/* Header del modal - Compacto */}
-              <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between shrink-0 shadow-md">
-                <div className="flex-1 min-w-0 pr-2">
-                  <h3 className="text-sm sm:text-base font-bold truncate">{preview.title}</h3>
-                  <p className="text-xs text-white/90 font-medium mt-0.5">
-                    {preview.file_type_display} {preview.file_size_mb ? `• ${preview.file_size_mb} MB` : preview.resource_type === 'link' ? '• Enlace externo' : ''}
-                  </p>
-                </div>
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setPreview(null)}>
+            <div className="bg-white w-full h-full sm:w-auto sm:h-[75vh] sm:max-w-7xl sm:min-w-[800px] sm:rounded-2xl shadow-2xl flex flex-col border-0 sm:border-2 border-slate-200 ring-0 sm:ring-2 ring-violet-100 animate-in zoom-in-95 duration-200 relative overflow-hidden sm:translate-y-12" onClick={e => e.stopPropagation()}>
 
-                {/* Botón de cerrar - Estilo transparente limpio */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); setPreview(null); }}
-                  className="p-2.5 sm:p-2 rounded-xl sm:rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 backdrop-blur-sm text-white transition-all duration-200 shrink-0 ml-2 shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center border border-white/20"
-                  aria-label="Cerrar"
-                  title="Cerrar"
-                  style={{
-                    minWidth: '44px',
-                    minHeight: '44px',
-                    width: '44px',
-                    height: '44px'
-                  }}
-                >
-                  <X className="size-6 sm:size-5 font-bold" strokeWidth={2.5} />
+              {/* Header - Minimalista */}
+              <div className="px-4 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shrink-0 shadow-md z-10 flex items-center justify-between">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold truncate">{preview.title}</h3>
+                  <p className="text-[10px] text-white/80">{preview.file_type_display}</p>
+                </div>
+                {/* Desktop Close Button - Hidden on mobile */}
+                <button onClick={() => setPreview(null)} className="hidden sm:block p-1 rounded-full hover:bg-white/20 transition-colors">
+                  <X className="size-5" />
                 </button>
               </div>
 
-              {/* Contenido del preview - Compacto */}
-              <div className="flex-1 overflow-y-auto px-0 sm:px-4 py-3 sm:py-4 bg-white">
-                {preview.resource_type === 'link' ? (
-                  isYouTubeUrl(preview.link_url) ? (
-                    <div className="w-full max-w-full flex flex-col items-center">
-                      {/* Contenedor del video con aspect ratio 16:9 */}
-                      <div className="relative w-full bg-black rounded-none sm:rounded-lg overflow-hidden" style={{ paddingBottom: '56.25%' }}>
+              {/* Contenido - Flex 1 para ocupar todo el espacio restante */}
+              <div className="flex-1 overflow-hidden bg-slate-100 relative flex flex-col w-full">
+                <div className="flex-1 relative w-full h-full flex flex-col justify-center overflow-auto">
+                  {preview.resource_type === 'link' ? (
+                    isYouTubeUrl(preview.link_url) ? (
+                      <div className="w-full h-full flex items-center justify-center bg-black">
                         <iframe
                           src={`https://www.youtube.com/embed/${getYouTubeVideoId(preview.link_url)}?rel=0&modestbranding=1&playsinline=1&enablejsapi=1`}
                           title={preview.title}
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           allowFullScreen
-                          referrerPolicy="strict-origin-when-cross-origin"
-                          sandbox="allow-same-origin allow-scripts allow-presentation allow-popups allow-popups-to-escape-sandbox"
-                          className="absolute top-0 left-0 w-full h-full border-0"
-                          style={{ width: '100%', height: '100%' }}
+                          className="w-full aspect-video max-h-full"
                         />
                       </div>
-                      {/* Mensaje de ayuda si el video no carga */}
-                      <div className="mt-2 px-3 sm:px-0 text-center">
-                        <p className="text-xs text-slate-500">
-                          ¿No se reproduce el video? Usa el botón "Ver en YouTube" abajo
-                        </p>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500">
+                        <LinkIcon className="size-16 mb-4 text-indigo-500" />
+                        <p className="text-lg font-bold text-slate-700 mb-2">{preview.title}</p>
+                        <a href={preview.link_url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline break-all">{preview.link_url}</a>
                       </div>
-                      {/* Botones de acción - Más compactos en móvil */}
-                      <div className="mt-2 sm:mt-4 px-3 sm:px-0 pb-2 sm:pb-0 flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center justify-center w-full sm:w-auto">
-                        {/* Botón para abrir en YouTube */}
-                        <a
-                          href={preview.link_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 w-full sm:w-auto"
-                        >
-                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                          </svg>
-                          <span>Ver en YouTube</span>
-                        </a>
-                        {/* Botón de descargar/abrir */}
-                        <button
-                          onClick={() => handleDownload(preview.id, preview.file_name, preview.resource_type, preview.link_url)}
-                          className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 w-full sm:w-auto"
-                        >
-                          {preview.resource_type === 'link' ? (
-                            <>
-                              <LinkIcon className="size-3.5 sm:size-4" />
-                              <span>Abrir enlace</span>
-                            </>
-                          ) : (
-                            <>
-                              <Download className="size-3.5 sm:size-4" />
-                              <span>Descargar</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                      {/* Botón de cerrar - Más pequeño y discreto en móvil */}
-                      <div className="mt-2 sm:hidden px-3 pb-2 flex justify-center">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setPreview(null); }}
-                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-gray-700 hover:bg-gray-800 active:bg-gray-900 text-white rounded-lg text-xs font-semibold transition-all duration-200 shadow-md active:scale-95"
-                          aria-label="Cerrar modal"
-                          title="Cerrar"
-                        >
-                          <X className="size-3.5" strokeWidth={2.5} />
-                          <span>CERRAR</span>
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-48 text-slate-500">
-                      <LinkIcon className="size-12 mb-3 text-indigo-500" />
-                      <p className="text-base font-medium mb-2">Enlace externo</p>
-                      <a
-                        href={preview.link_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-600 hover:text-indigo-800 underline break-all text-sm max-w-full px-4 text-center"
-                      >
-                        {preview.link_url}
-                      </a>
-                      <button
-                        onClick={() => window.open(preview.link_url, '_blank', 'noopener,noreferrer')}
-                        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                      >
-                        Abrir enlace
-                      </button>
-                    </div>
-                  )
-                ) : preview.file_type_display === 'PDF' ? (
-                  <div className="flex flex-col items-center">
+                    )
+                  ) : preview.file_type_display === 'PDF' ? (
                     <iframe
                       src={buildFileUrl(preview)}
-                      className="w-full h-full min-h-[200px] sm:min-h-[250px] max-h-[calc(100vh-20rem)] sm:max-h-[calc(100vh-18rem)] rounded-lg border-2 border-slate-200"
+                      className="w-full h-full"
                       title={preview.title}
                     />
-                    <div className="mt-3 text-center">
-                      <p className="text-xs text-slate-500 mb-2">
-                        ¿No se visualiza el PDF? Descárgalo o ábrelo en una nueva pestaña
-                      </p>
-                      <div className="flex gap-2 justify-center">
-                        <button
-                          onClick={() => handleDownload(preview.id, preview.file_name, preview.resource_type, preview.link_url)}
-                          className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold transition-colors"
-                        >
-                          Descargar PDF
-                        </button>
-                        <a
-                          href={buildFileUrl(preview)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition-colors"
-                        >
-                          Abrir en nueva pestaña
-                        </a>
-                      </div>
+                  ) : preview.file_type_display === 'VIDEO' ? (
+                    <div className="w-full h-full flex items-center justify-center bg-black">
+                      <video src={buildFileUrl(preview)} controls className="max-w-full max-h-full" />
                     </div>
-                  </div>
-                ) : preview.file_type_display === 'VIDEO' ? (
-                  <video
-                    src={buildFileUrl(preview)}
-                    controls
-                    className="w-full max-h-[calc(100vh-20rem)] sm:max-h-[calc(100vh-18rem)] rounded-lg border-2 border-slate-200"
-                  >
-                    Tu navegador no soporta la reproducción de video.
-                  </video>
-                ) : preview.file_type_display === 'IMAGE' ? (
-                  <div className="flex items-center justify-center max-h-[calc(100vh-20rem)] sm:max-h-[calc(100vh-18rem)] overflow-auto">
-                    <img
-                      src={buildFileUrl(preview)}
-                      alt={preview.title}
-                      className="max-w-full max-h-[calc(100vh-20rem)] sm:max-h-[calc(100vh-18rem)] object-contain rounded-lg border-2 border-slate-200 shadow-lg"
-                      onError={(e) => {
-                        const path = preview.file_path;
-                        if (!path) return;
-
-                        const normalizedPath = path.replace(/\\/g, '/');
-                        const fileNameMatch = normalizedPath.match(/([^\/]+)$/);
-                        const fileName = fileNameMatch ? fileNameMatch[1] : null;
-
-                        const variants = [
-                          fileName ? `/uploads/recursos-educativos/${fileName}` : null,
-                          normalizedPath.includes('recursos-educativos')
-                            ? `/uploads/recursos-educativos/${normalizedPath.split('recursos-educativos/').pop()}`
-                            : null,
-                          buildStaticUrl(normalizedPath),
-                          normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`,
-                        ].filter(Boolean);
-
-                        for (const variant of variants) {
-                          if (variant && variant !== e.target.src) {
-                            e.target.src = variant;
-                            break;
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-48 text-slate-500">
-                    <FileText className="size-12 mb-3" />
-                    <p className="text-base font-medium">Vista previa no disponible</p>
-                    <p className="text-sm">Descarga el archivo para verlo</p>
-                  </div>
-                )}
+                  ) : preview.file_type_display === 'IMAGE' ? (
+                    <div className="w-full h-full flex items-center justify-center bg-black/5 p-2">
+                      <img
+                        src={buildFileUrl(preview)}
+                        alt={preview.title}
+                        className="max-w-full max-h-full object-contain shadow-sm"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-slate-500">
+                      <FileText className="size-12 mb-3" />
+                      <p className="font-medium">Vista previa no disponible</p>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Footer Unificado - Iconos grandes + Botón Cerrar */}
+              <div className="p-2 sm:p-4 bg-white border-t border-slate-200 shrink-0 z-20 safe-area-bottom">
+                <div className="flex items-center justify-around sm:justify-end gap-6 sm:gap-4">
+
+                  {/* Actions: Link/YouTube */}
+                  {preview.resource_type === 'link' && (
+                    <a href={preview.link_url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 text-slate-600 hover:text-violet-600 active:scale-95 transition-transform" title="Abrir enlace">
+                      <div className="p-3 bg-violet-50 rounded-2xl ring-1 ring-violet-100"><LinkIcon className="size-6 text-violet-600" /></div>
+                      <span className="text-[10px] font-bold">Abrir</span>
+                    </a>
+                  )}
+
+                  {/* Actions: Download */}
+                  {(preview.file_type_display === 'PDF' || preview.file_type_display === 'IMAGE' || preview.file_type_display === 'VIDEO' || preview.file_type_display === 'DOC' || preview.file_type_display === 'PPT' || preview.file_type_display === 'XLS') && (
+                    <button onClick={() => handleDownload(preview.id, preview.file_name, preview.resource_type, preview.link_url)} className="flex flex-col items-center gap-1 text-slate-600 hover:text-emerald-600 active:scale-95 transition-transform" title="Descargar">
+                      <div className="p-3 bg-emerald-50 rounded-2xl ring-1 ring-emerald-100"><Download className="size-6 text-emerald-600" /></div>
+                      <span className="text-[10px] font-bold">Descargar</span>
+                    </button>
+                  )}
+
+                  {/* Actions: Open in New Tab */}
+                  {(preview.file_type_display === 'PDF' || preview.file_type_display === 'IMAGE' || preview.file_type_display === 'VIDEO') && (
+                    <a href={buildFileUrl(preview)} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 text-slate-600 hover:text-blue-600 active:scale-95 transition-transform" title="Abrir en nueva pestaña">
+                      <div className="p-3 bg-blue-50 rounded-2xl ring-1 ring-blue-100"><ExternalLink className="size-6 text-blue-600" /></div>
+                      <span className="text-[10px] font-bold">Abrir</span>
+                    </a>
+                  )}
+
+                  {/* Close Button - Main action on mobile */}
+                  <button onClick={() => setPreview(null)} className="flex flex-col items-center gap-1 text-slate-600 hover:text-red-600 active:scale-95 transition-transform">
+                    <div className="p-3 bg-slate-100 rounded-2xl ring-1 ring-slate-200"><X className="size-6 text-slate-700" /></div>
+                    <span className="text-[10px] font-bold">Cerrar</span>
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 }
-

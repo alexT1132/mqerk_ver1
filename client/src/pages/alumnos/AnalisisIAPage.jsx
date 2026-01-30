@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Sparkles, AlertTriangle, Share2, Printer, ClipboardCopy, Download, ArrowLeft, Flag } from 'lucide-react';
+import { Sparkles, AlertTriangle, Share2, Printer, ClipboardCopy, Download, ArrowLeft, Bot, MessageSquare, Send, X, Loader2, Brain, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
+import { askQuickTutor } from '../../service/quizAnalysisService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'https://esm.sh/remark-gfm';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../api/axios';
 
 /**
  * Página completa para mostrar el análisis de rendimiento generado por la IA de Gemini.
@@ -34,6 +36,13 @@ export default function AnalisisIAPage() {
   const [headings, setHeadings] = useState([]);
   const [justHighlightedId, setJustHighlightedId] = useState(null);
   const [aiUsage, setAiUsage] = useState({ quizCount: 0, simuladorCount: 0, quizLimit: 5, simuladorLimit: 5 });
+
+  // Chat Tutor State
+  const [showChat, setShowChat] = useState(false);
+  const [chatQuery, setChatQuery] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatResponse, setChatResponse] = useState(null);
+
   const contentRef = useRef(null);
 
   // Si no hay datos en el state, redirigir a la página anterior
@@ -60,81 +69,72 @@ export default function AnalisisIAPage() {
     }
   }, [location.state]);
 
-  // Cargar contador de uso de IA desde localStorage
+  // ✅ Cargar contador de uso de IA desde base de datos
   useEffect(() => {
-    const loadAiUsage = () => {
-      try {
-        const stored = localStorage.getItem(AI_USAGE_KEY);
-        if (stored) {
-          const data = JSON.parse(stored);
-          const today = new Date().toDateString();
-
-          // Si es el mismo día, usar el conteo guardado
-          if (data.date === today) {
-            setAiUsage({
-              quizCount: data.quizCount || 0,
-              simuladorCount: data.simuladorCount || 0,
-              quizLimit: 5,
-              simuladorLimit: 5
-            });
-          } else {
-            // Nuevo día, resetear
-            setAiUsage({
-              quizCount: 0,
-              simuladorCount: 0,
-              quizLimit: 5,
-              simuladorLimit: 5
-            });
-          }
-        }
-      } catch (err) {
-        console.error('Error al cargar contador de IA:', err);
-      }
+    const loadAiUsage = async () => {
+      const usage = await getUsageToday();
+      setAiUsage(prev => ({
+        ...prev,
+        quizCount: usage.count,
+        quizLimit: usage.limit
+      }));
     };
-
     loadAiUsage();
-  }, []);
+  }, [estudianteId, user?.id]);
 
   // Helpers para tracking de uso de IA
   const AI_USAGE_KEY = 'ai_analysis_usage';
   const DAILY_LIMIT = userRole === 'asesor' || userRole === 'admin' ? 20 : 5;
 
-  const getUsageToday = () => {
+  // ✅ SOLUCIÓN: Obtener uso desde base de datos (persistente)
+  const getUsageToday = async () => {
     try {
-      const data = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
-      const today = new Date().toISOString().split('T')[0];
-      if (data.date !== today) {
+      const studentId = estudianteId || user?.id;
+      if (!studentId) {
+        console.warn('⚠️ No se pudo obtener ID de estudiante para tracking de IA');
         return { count: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
       }
-      return {
-        count: data.count || 0,
-        limit: DAILY_LIMIT,
-        remaining: Math.max(0, DAILY_LIMIT - (data.count || 0))
-      };
-    } catch {
+
+      const response = await api.get(`/ai-usage/${studentId}/quiz`);
+      console.log('✅ Uso de IA obtenido desde BD (quiz):', response.data.data);
+      return response.data.data;
+    } catch (error) {
+      console.error('❌ Error obteniendo uso de IA desde BD:', error);
+      // Fallback en caso de error
       return { count: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
     }
   };
 
-  const incrementUsage = () => {
+  const incrementUsage = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const data = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
-      if (data.date !== today) {
-        localStorage.setItem(AI_USAGE_KEY, JSON.stringify({ date: today, count: 1, limit: DAILY_LIMIT }));
-      } else {
-        data.count = (data.count || 0) + 1;
-        localStorage.setItem(AI_USAGE_KEY, JSON.stringify(data));
+      const studentId = estudianteId || user?.id;
+      if (!studentId) {
+        console.warn('⚠️ No se pudo obtener ID de estudiante para incrementar uso de IA');
+        return;
       }
-      setAiUsage(getUsageToday());
-    } catch (e) {
-      console.error('Error incrementando uso de IA:', e);
+
+      const response = await api.post(`/ai-usage/${studentId}/quiz/increment`);
+      const newUsage = response.data.data;
+      setAiUsage(prev => ({
+        ...prev,
+        quizCount: newUsage.count,
+        quizLimit: newUsage.limit
+      }));
+      console.log('✅ Uso de IA incrementado en BD (quiz):', newUsage);
+    } catch (error) {
+      if (error.response?.status === 429) {
+        console.warn('⚠️ Límite diario de análisis alcanzado');
+        const currentUsage = error.response.data.data;
+        setAiUsage(prev => ({
+          ...prev,
+          quizCount: currentUsage.count,
+          quizLimit: currentUsage.limit
+        }));
+      } else {
+        console.error('❌ Error incrementando uso de IA:', error);
+      }
     }
   };
-
-  useEffect(() => {
-    setAiUsage(getUsageToday());
-  }, []);
 
   // Detectar fuente del análisis y limpiar marcadores ocultos (debe estar antes de los useEffect que lo usan)
   const sourceMatch = analysisTextState ? analysisTextState.match(/<<<AI_SOURCE:(\w+)>>>/) : null;
@@ -600,6 +600,185 @@ export default function AnalisisIAPage() {
             >
               {cleanedAnalysisText}
             </ReactMarkdown>
+          </div>
+
+          {/* Sección de Metacognición (Estrategia de Examen) */}
+          {analysisMetaState?.estrategia && (
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 mt-8">
+              <div className="flex items-center mb-6">
+                <Brain className="w-6 h-6 text-purple-600 mr-3 flex-shrink-0" />
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold text-slate-900">Análisis de Estrategia de Examen</h3>
+                  <p className="text-sm text-slate-500">Diagnóstico de tu comportamiento durante la prueba (Metacognición)</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* 1. Impulsividad */}
+                <div className={`p-4 rounded-xl border ${analysisMetaState.estrategia.impulsivas?.length > 0
+                  ? 'bg-orange-50 border-orange-200'
+                  : 'bg-green-50 border-green-200'
+                  }`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    {analysisMetaState.estrategia.impulsivas?.length > 0 ? (
+                      <AlertTriangle className="w-5 h-5 text-orange-600" />
+                    ) : (
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    )}
+                    <h4 className={`font-bold ${analysisMetaState.estrategia.impulsivas?.length > 0 ? 'text-orange-800' : 'text-green-800'
+                      }`}>Control de Impulsividad</h4>
+                  </div>
+
+                  {analysisMetaState.estrategia.impulsivas?.length > 0 ? (
+                    <>
+                      <p className="text-sm text-orange-700 mb-2">
+                        Detectamos <strong>{analysisMetaState.estrategia.impulsivas.length} respuestas impulsivas</strong> (respondidas incorrectamente en menos de 10s).
+                      </p>
+                      <ul className="text-xs text-orange-600 space-y-1 pl-4 list-disc">
+                        {analysisMetaState.estrategia.impulsivas.slice(0, 3).map((item, idx) => (
+                          <li key={idx} className="line-clamp-2">"{item.pregunta}" ({item.tiempoSeg}s)</li>
+                        ))}
+                      </ul>
+                      <p className="text-xs font-semibold text-orange-800 mt-2">💡 Consejo: Lee la pregunta completa antes de responder.</p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-green-700">
+                      ¡Excelente! No detectamos respuestas impulsivas. Te tomas el tiempo necesario para leer.
+                    </p>
+                  )}
+                </div>
+
+                {/* 2. Gestión del Tiempo (Bloqueos) */}
+                <div className={`p-4 rounded-xl border ${analysisMetaState.estrategia.bloqueos?.length > 0
+                  ? 'bg-yellow-50 border-yellow-200'
+                  : 'bg-blue-50 border-blue-200'
+                  }`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Clock className={`w-5 h-5 ${analysisMetaState.estrategia.bloqueos?.length > 0 ? 'text-yellow-600' : 'text-blue-600'
+                      }`} />
+                    <h4 className={`font-bold ${analysisMetaState.estrategia.bloqueos?.length > 0 ? 'text-yellow-800' : 'text-blue-800'
+                      }`}>Gestión del Tiempo</h4>
+                  </div>
+
+                  {analysisMetaState.estrategia.bloqueos?.length > 0 ? (
+                    <>
+                      <p className="text-sm text-yellow-700 mb-2">
+                        Detectamos <strong>{analysisMetaState.estrategia.bloqueos.length} bloqueos</strong> (tardaste más de 2min en una pregunta).
+                      </p>
+                      <ul className="text-xs text-yellow-600 space-y-1 pl-4 list-disc">
+                        {analysisMetaState.estrategia.bloqueos.slice(0, 3).map((item, idx) => (
+                          <li key={idx} className="line-clamp-2">"{item.pregunta}" ({Math.round(item.tiempoSeg / 60)}m {item.tiempoSeg % 60}s)</li>
+                        ))}
+                      </ul>
+                      <p className="text-xs font-semibold text-yellow-800 mt-2">💡 Consejo: Si te trabas, marca la pregunta y regresa después.</p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-blue-700">
+                      Buenos tiempos de respuesta. Mantuviste un ritmo fluido sin quedarte atascado.
+                    </p>
+                  )}
+                </div>
+
+                {/* 3. Resistencia Mental (Fatiga) */}
+                <div className={`p-4 rounded-xl border ${analysisMetaState.estrategia.fatiga?.detectada
+                  ? 'bg-red-50 border-red-200'
+                  : 'bg-indigo-50 border-indigo-200'
+                  }`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp className={`w-5 h-5 ${analysisMetaState.estrategia.fatiga?.detectada ? 'text-red-600' : 'text-indigo-600'
+                      }`} />
+                    <h4 className={`font-bold ${analysisMetaState.estrategia.fatiga?.detectada ? 'text-red-800' : 'text-indigo-800'
+                      }`}>Resistencia Mental</h4>
+                  </div>
+
+                  {analysisMetaState.estrategia.fatiga?.detectada ? (
+                    <>
+                      <p className="text-sm text-red-700 mb-2">
+                        ⚠️ <strong>Fatiga detectada</strong>. Tu rendimiento cayó un <strong>{analysisMetaState.estrategia.fatiga.caida}%</strong> en la segunda mitad del examen.
+                      </p>
+                      <p className="text-xs font-semibold text-red-800 mt-2">💡 Consejo: Practica simulaciones más largas para mejorar tu resistencia.</p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-indigo-700">
+                      Rendimiento sostenido. Mantuviste la concentración durante todo el examen. ¡Bien hecho!
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sección Chat Tutor */}
+          <div className="mt-8 border-t border-slate-200 pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                <Bot className="w-5 h-5 text-indigo-500" />
+                Tutor IA Personal
+              </h3>
+              <button
+                onClick={() => setShowChat(!showChat)}
+                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4" />
+                {showChat ? 'Ocultar Chat' : 'Preguntar al Tutor'}
+              </button>
+            </div>
+
+            {showChat && (
+              <div className="bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-xl p-4 sm:p-6 shadow-sm">
+                <p className="text-sm text-slate-600 mb-4">
+                  ¿Tienes dudas sobre tu análisis? Pregunta a tu tutor personal para obtener explicaciones detalladas, ejemplos extra o consejos específicos.
+                </p>
+
+                {chatResponse && (
+                  <div className="mb-4 bg-white border border-indigo-100 rounded-lg p-4 shadow-sm relative animate-fade-in">
+                    <div className="absolute top-0 right-0 p-2 opacity-10">
+                      <Sparkles className="w-12 h-12 text-indigo-500" />
+                    </div>
+                    <div className="prose prose-sm max-w-none text-slate-700">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{chatResponse}</ReactMarkdown>
+                    </div>
+                    <div className="mt-2 text-xs text-indigo-400 font-medium text-right flex items-center justify-end gap-1">
+                      <Bot className="w-3 h-3" /> Respuesta generada por IA
+                    </div>
+                  </div>
+                )}
+
+                <div className="relative">
+                  <textarea
+                    value={chatQuery}
+                    onChange={(e) => setChatQuery(e.target.value)}
+                    placeholder="Ejemplo: Explícame mejor por qué fallé la pregunta sobre acentuación..."
+                    className="w-full text-sm rounded-xl border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500 min-h-[100px] pr-12 resize-none py-3 px-4 shadow-sm"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (!chatQuery.trim() || chatLoading) return;
+                        setChatLoading(true);
+                        setChatResponse(null);
+                        askQuickTutor(cleanedAnalysisText, chatQuery, user?.nombre)
+                          .then(res => { setChatResponse(res); setChatLoading(false); })
+                          .catch(() => { setChatResponse('Error al conectar con el tutor.'); setChatLoading(false); });
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (!chatQuery.trim() || chatLoading) return;
+                      setChatLoading(true);
+                      setChatResponse(null);
+                      askQuickTutor(cleanedAnalysisText, chatQuery, user?.nombre)
+                        .then(res => { setChatResponse(res); setChatLoading(false); })
+                        .catch(() => { setChatResponse('Error al conectar con el tutor.'); setChatLoading(false); });
+                    }}
+                    disabled={!chatQuery.trim() || chatLoading}
+                    className="absolute bottom-3 right-3 p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg active:scale-95"
+                  >
+                    {chatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       );

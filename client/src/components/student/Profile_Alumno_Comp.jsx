@@ -270,7 +270,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
 
   return (
     <div className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm animate-in fade-in duration-500 overflow-y-auto">
-      <div className="min-h-screen flex items-end sm:items-center justify-center p-1 sm:p-2 md:p-3 pb-1 sm:pb-2 md:pb-3 pt-8 sm:pt-12 md:pt-16">
+   <div className="min-h-screen flex items-start justify-center p-1 sm:p-2 md:p-3 pb-1 sm:pb-2 md:pb-3 pt-30 sm:pt-12 md:pt-16">
         <div className="relative w-full max-w-sm mx-auto rounded-xl sm:rounded-2xl shadow-2xl border-2 border-gray-200/50 bg-white overflow-hidden animate-in zoom-in-95 duration-600 mb-0 sm:my-auto ring-4 ring-violet-100/50 max-h-[calc(100vh-3rem)] sm:max-h-[calc(100vh-5rem)] flex flex-col">
 
           {/* Header visual mejorado - Compacto */}

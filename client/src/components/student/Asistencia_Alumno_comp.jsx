@@ -42,37 +42,37 @@ const IconoSimulacion = () => (
  */
 function normalizeDateToYYYYMMDD(dateInput) {
   if (!dateInput) return null;
-  
+
   let dateStr = dateInput;
-  
+
   // Si es un Date object, convertir a string ISO
   if (dateInput instanceof Date) {
     dateStr = dateInput.toISOString();
   } else if (typeof dateInput !== 'string') {
     dateStr = String(dateInput);
   }
-  
+
   // Manejar formato extraño como "2025-11-18T06:00:00.000Z - 19:07"
   // Tomar solo la parte antes del guion si existe
   if (dateStr.includes(' - ')) {
     dateStr = dateStr.split(' - ')[0].trim();
   }
-  
+
   // Si contiene 'T', tomar solo la parte de la fecha
   if (dateStr.includes('T')) {
     dateStr = dateStr.split('T')[0];
   }
-  
+
   // Si es más largo que 10 caracteres, tomar solo los primeros 10 (YYYY-MM-DD)
   if (dateStr.length > 10) {
     dateStr = dateStr.substring(0, 10);
   }
-  
+
   // Validar que tenga el formato YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     return dateStr;
   }
-  
+
   // Si no tiene el formato correcto, intentar parsear como Date
   try {
     const date = new Date(dateInput);
@@ -85,7 +85,7 @@ function normalizeDateToYYYYMMDD(dateInput) {
   } catch (e) {
     console.warn('Error normalizando fecha:', dateInput, e);
   }
-  
+
   return null;
 }
 /**
@@ -95,7 +95,7 @@ function transformApiDataToAttendanceData(apiData) {
   if (!Array.isArray(apiData) || apiData.length === 0) {
     return [];
   }
-  
+
   // Agrupar por fecha
   const groupedByDate = {};
   apiData.forEach(item => {
@@ -106,13 +106,13 @@ function transformApiDataToAttendanceData(apiData) {
     }
     groupedByDate[fecha].push(item);
   });
-  
+
   // Convertir a formato esperado
   const result = Object.entries(groupedByDate).map(([fecha, items]) => {
     const date = new Date(fecha);
     const day = date.getDate();
     const dayName = date.toLocaleDateString('es-ES', { weekday: 'long' });
-    
+
     const activities = items.map(item => ({
       id: item.id,
       type: item.tipo, // clase, tarea, simulacion
@@ -122,10 +122,10 @@ function transformApiDataToAttendanceData(apiData) {
       status: item.asistio ? 'asistio' : 'falto',
       observaciones: item.observaciones || null
     }));
-    
+
     const attendedCount = activities.filter(a => a.attended).length;
     const attendanceRate = activities.length > 0 ? (attendedCount / activities.length) * 100 : 0;
-    
+
     return {
       date: fecha,
       day,
@@ -137,7 +137,7 @@ function transformApiDataToAttendanceData(apiData) {
       attended: attendedCount
     };
   });
-  
+
   // Ordenar por fecha (más reciente primero)
   return result.sort((a, b) => new Date(b.date) - new Date(a.date));
 }
@@ -153,13 +153,13 @@ function AttendanceStats({ resumenData, attendanceData }) {
     tarea: { total: 0, attended: 0 },
     simulacion: { total: 0, attended: 0 }
   };
-  
+
   if (resumenData) {
     // Usar datos del resumen de la API
     overallRate = resumenData.general?.porcentaje || 0;
     totalActivities = resumenData.general?.total || 0;
     attendedActivities = resumenData.general?.asistidas || 0;
-    
+
     // Mapear datos de porTipo
     if (resumenData.porTipo && Array.isArray(resumenData.porTipo)) {
       resumenData.porTipo.forEach(item => {
@@ -184,11 +184,11 @@ function AttendanceStats({ resumenData, attendanceData }) {
   } else {
     // Calcular desde attendanceData (fallback)
     totalActivities = attendanceData.reduce((acc, day) => acc + day.activities.length, 0);
-    attendedActivities = attendanceData.reduce((acc, day) => 
+    attendedActivities = attendanceData.reduce((acc, day) =>
       acc + day.activities.filter(a => a.attended).length, 0
     );
     overallRate = totalActivities > 0 ? (attendedActivities / totalActivities) * 100 : 0;
-    
+
     attendanceData.forEach(day => {
       day.activities.forEach(activity => {
         typeStats[activity.type].total++;
@@ -198,7 +198,7 @@ function AttendanceStats({ resumenData, attendanceData }) {
       });
     });
   }
-  
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
       {/* Asistencia General */}
@@ -212,7 +212,7 @@ function AttendanceStats({ resumenData, attendanceData }) {
         <h3 className="text-xs sm:text-sm font-extrabold text-blue-800 mb-0.5 sm:mb-1">Asistencia General</h3>
         <p className="text-[10px] sm:text-xs text-blue-600 font-semibold">{attendedActivities} de {totalActivities} actividades</p>
       </div>
-      
+
       {/* Clases */}
       <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl border-2 border-green-200 transition-all duration-300 hover:-translate-y-1">
         <div className="flex items-center justify-between mb-2 sm:mb-3">
@@ -226,7 +226,7 @@ function AttendanceStats({ resumenData, attendanceData }) {
         <h3 className="text-xs sm:text-sm font-extrabold text-green-800 mb-0.5 sm:mb-1">Clases</h3>
         <p className="text-[10px] sm:text-xs text-green-600 font-semibold">{typeStats.clase.attended} de {typeStats.clase.total}</p>
       </div>
-      
+
       {/* Tareas */}
       <div className="bg-gradient-to-br from-purple-50 via-violet-50 to-purple-100 p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl border-2 border-purple-200 transition-all duration-300 hover:-translate-y-1">
         <div className="flex items-center justify-between mb-2 sm:mb-3">
@@ -240,7 +240,7 @@ function AttendanceStats({ resumenData, attendanceData }) {
         <h3 className="text-xs sm:text-sm font-extrabold text-purple-800 mb-0.5 sm:mb-1">Tareas</h3>
         <p className="text-[10px] sm:text-xs text-purple-600 font-semibold">{typeStats.tarea.attended} de {typeStats.tarea.total}</p>
       </div>
-      
+
       {/* Simulaciones */}
       <div className="bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl border-2 border-orange-200 transition-all duration-300 hover:-translate-y-1">
         <div className="flex items-center justify-between mb-2 sm:mb-3">
@@ -264,21 +264,21 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
   const monthName = currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-  
+
   // Obtener el primer día del mes y cuántos días tiene
   const firstDay = new Date(currentYear, currentMonth, 1);
   const lastDay = new Date(currentYear, currentMonth + 1, 0);
   const daysInMonth = lastDay.getDate();
   const startingDayOfWeek = firstDay.getDay(); // 0 = Domingo, 1 = Lunes, etc.
-  
+
   // Crear array de días del mes con datos de asistencia
   const calendarDays = [];
-  
+
   // Días vacíos al inicio del mes
   for (let i = 0; i < startingDayOfWeek; i++) {
     calendarDays.push({ day: null, isPlaceholder: true });
   }
-  
+
   // Días del mes
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -287,10 +287,10 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
       const normalizedDate = normalizeDateToYYYYMMDD(d.date);
       return normalizedDate === dateStr;
     });
-    
+
     const isToday = day === currentDate.getDate() && currentMonth === currentDate.getMonth();
     const isFutureDay = new Date(currentYear, currentMonth, day) > currentDate;
-    
+
     calendarDays.push({
       day,
       dateStr,
@@ -299,7 +299,7 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
       isFutureDay
     });
   }
-  
+
   return (
     <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-violet-200/50 overflow-hidden ring-2 ring-violet-100/50">
       <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 p-3 sm:p-4 md:p-6 shadow-lg">
@@ -307,7 +307,7 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
           Calendario de Asistencia - {monthName}
         </h3>
       </div>
-      
+
       <div className="p-2 sm:p-3 md:p-4 lg:p-6">
         <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-3 sm:mb-4">
           {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
@@ -316,15 +316,15 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
             </div>
           ))}
         </div>
-        
+
         <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {calendarDays.map((item, index) => {
             if (item.isPlaceholder) {
               return <div key={`placeholder-${index}`} className="aspect-square" />;
             }
-            
+
             const { day, dayData, isToday, isFutureDay } = item;
-            
+
             // Filtrar actividades según el filtro seleccionado
             const filteredActivities = dayData?.activities?.filter(activity => {
               if (selectedFilter === 'todos') return true;
@@ -333,17 +333,16 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
               if (selectedFilter === 'simulaciones') return activity.type === 'simulacion';
               return true;
             }) || [];
-            
+
             const hasFilteredActivities = filteredActivities.length > 0;
             const allAttended = hasFilteredActivities && filteredActivities.every(a => a.attended);
             const someAttended = hasFilteredActivities && filteredActivities.some(a => a.attended);
-            
+
             return (
               <div
                 key={day}
-                className={`aspect-square flex flex-col items-center justify-center text-[10px] sm:text-xs md:text-sm rounded-lg sm:rounded-xl border-2 transition-all duration-200 touch-manipulation ${
-                  isToday 
-                    ? 'border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-300' 
+                className={`aspect-square flex flex-col items-center justify-center text-[10px] sm:text-xs md:text-sm rounded-lg sm:rounded-xl border-2 transition-all duration-200 touch-manipulation ${isToday
+                    ? 'border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-300'
                     : hasFilteredActivities
                       ? allAttended
                         ? 'border-green-300 bg-green-50 hover:bg-green-100 shadow-md'
@@ -353,7 +352,7 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
                       : isFutureDay
                         ? 'border-gray-200 bg-gray-50 text-gray-400'
                         : 'border-gray-200 bg-gray-50'
-                }`}
+                  }`}
               >
                 <span className={`font-extrabold ${isToday ? 'text-blue-700' : ''}`}>{day}</span>
                 {hasFilteredActivities && (
@@ -361,9 +360,8 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
                     {filteredActivities.slice(0, 3).map((activity, idx) => (
                       <div
                         key={idx}
-                        className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shadow-sm ${
-                          activity.attended ? 'bg-green-500 ring-1 ring-green-300' : 'bg-red-500 ring-1 ring-red-300'
-                        }`}
+                        className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shadow-sm ${activity.attended ? 'bg-green-500 ring-1 ring-green-300' : 'bg-red-500 ring-1 ring-red-300'
+                          }`}
                         title={`${activity.title}: ${activity.attended ? 'Asistió' : 'Faltó'}`}
                       />
                     ))}
@@ -376,7 +374,7 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
             );
           })}
         </div>
-        
+
         {/* Leyenda - Mejorada */}
         <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[10px] sm:text-xs">
           <div className="flex items-center space-x-1.5 sm:space-x-2 bg-green-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-green-200">
@@ -402,32 +400,32 @@ export function Asistencia_Alumno_comp() {
   const { currentCourse } = useStudent();
   const { alumno } = useAuth();
   const alumnoId = alumno?.id;
-  
+
   const [attendanceData, setAttendanceData] = useState([]);
   const [resumenData, setResumenData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('todos'); // todos, clases, tareas, simulaciones
-  
+
   // Cargar datos de asistencia desde la API
   useEffect(() => {
     if (!alumnoId) {
       setIsLoading(false);
       return;
     }
-    
+
     let alive = true;
     const loadAttendanceData = async () => {
       setIsLoading(true);
       setError('');
-      
+
       try {
         // Obtener asistencias del último mes
         const fechaHasta = new Date().toISOString().split('T')[0];
         const fechaDesde = new Date();
         fechaDesde.setMonth(fechaDesde.getMonth() - 1);
         const fechaDesdeStr = fechaDesde.toISOString().split('T')[0];
-        
+
         const [asistenciasRes, resumenRes] = await Promise.all([
           getAsistenciasEstudiante(alumnoId, {
             desde: fechaDesdeStr,
@@ -438,9 +436,9 @@ export function Asistencia_Alumno_comp() {
             hasta: fechaHasta
           }).catch(() => ({ data: null }))
         ]);
-        
+
         if (!alive) return;
-        
+
         const asistencias = Array.isArray(asistenciasRes?.data) ? asistenciasRes.data : [];
         const transformedData = transformApiDataToAttendanceData(asistencias);
         setAttendanceData(transformedData);
@@ -455,11 +453,11 @@ export function Asistencia_Alumno_comp() {
         setIsLoading(false);
       }
     };
-    
+
     loadAttendanceData();
     return () => { alive = false; };
   }, [alumnoId, currentCourse]);
-  
+
   // Filtrar datos según el filtro seleccionado
   const filteredAttendanceData = attendanceData.map(day => ({
     ...day,
@@ -471,7 +469,7 @@ export function Asistencia_Alumno_comp() {
       return true;
     })
   })).filter(day => day.activities.length > 0);
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-white">
@@ -482,7 +480,7 @@ export function Asistencia_Alumno_comp() {
       </div>
     );
   }
-  
+
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-white">
@@ -498,13 +496,13 @@ export function Asistencia_Alumno_comp() {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 lg:py-8 font-inter text-gray-800">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
-        
+
         {/* Header - Mejorado */}
-        <div className="text-center mb-4 sm:mb-6 md:mb-8">
+        <div className="text-center lg:text-left mb-4 sm:mb-6 md:mb-8">
           <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 mb-2 sm:mb-3 tracking-tight">
             CONTROL DE ASISTENCIA
           </h1>
@@ -514,10 +512,10 @@ export function Asistencia_Alumno_comp() {
             </p>
           )}
         </div>
-        
+
         {/* Estadísticas */}
         <AttendanceStats resumenData={resumenData} attendanceData={attendanceData} />
-        
+
         {/* Filtros - Mejorados */}
         <div className="flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
           {[
@@ -529,20 +527,19 @@ export function Asistencia_Alumno_comp() {
             <button
               key={filter.key}
               onClick={() => setSelectedFilter(filter.key)}
-              className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-extrabold text-xs sm:text-sm md:text-base transition-all duration-200 active:scale-95 touch-manipulation border-2 shadow-md hover:shadow-lg ${
-                selectedFilter === filter.key
+              className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-extrabold text-xs sm:text-sm md:text-base transition-all duration-200 active:scale-95 touch-manipulation border-2 shadow-md hover:shadow-lg ${selectedFilter === filter.key
                   ? `bg-gradient-to-r ${filter.gradient} text-white border-transparent shadow-lg`
                   : `bg-white text-${filter.color}-600 border-${filter.color}-300 hover:bg-${filter.color}-50 hover:border-${filter.color}-400`
-              }`}
+                }`}
             >
               {filter.label}
             </button>
           ))}
         </div>
-        
+
         {/* Calendario */}
         <AttendanceCalendar attendanceData={attendanceData} selectedFilter={selectedFilter} />
-        
+
         {/* Lista detallada de actividades recientes - Mejorada */}
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-violet-200/50 overflow-hidden ring-2 ring-violet-100/50">
           <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 p-3 sm:p-4 md:p-6 shadow-lg">
@@ -553,7 +550,7 @@ export function Asistencia_Alumno_comp() {
               Actividades Recientes
             </h3>
           </div>
-          
+
           <div className="p-3 sm:p-4 md:p-6">
             <div className="space-y-2 sm:space-y-3">
               {filteredAttendanceData.length === 0 ? (
@@ -569,22 +566,20 @@ export function Asistencia_Alumno_comp() {
               ) : (
                 filteredAttendanceData
                   .slice(0, 10) // Últimos 10 días con actividades
-                  .map(day => 
+                  .map(day =>
                     day.activities.map(activity => (
-                      <div 
+                      <div
                         key={activity.id}
-                        className={`flex items-center justify-between p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all duration-200 hover:shadow-md ${
-                          activity.attended 
-                            ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50' 
+                        className={`flex items-center justify-between p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all duration-200 hover:shadow-md ${activity.attended
+                            ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50'
                             : 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/50 flex-shrink-0 ${
-                            activity.type === 'clase' ? 'bg-gradient-to-br from-green-500 to-emerald-600' :
-                            activity.type === 'tarea' ? 'bg-gradient-to-br from-purple-500 to-violet-600' :
-                            'bg-gradient-to-br from-orange-500 to-amber-600'
-                          }`}>
+                          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/50 flex-shrink-0 ${activity.type === 'clase' ? 'bg-gradient-to-br from-green-500 to-emerald-600' :
+                              activity.type === 'tarea' ? 'bg-gradient-to-br from-purple-500 to-violet-600' :
+                                'bg-gradient-to-br from-orange-500 to-amber-600'
+                            }`}>
                             {activity.type === 'clase' && <IconoClase className="text-white w-5 h-5 sm:w-6 sm:h-6" />}
                             {activity.type === 'tarea' && <IconoTarea className="text-white w-5 h-5 sm:w-6 sm:h-6" />}
                             {activity.type === 'simulacion' && <IconoSimulacion className="text-white w-5 h-5 sm:w-6 sm:h-6" />}
@@ -598,7 +593,7 @@ export function Asistencia_Alumno_comp() {
                             </p>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
                           {activity.attended ? (
                             <div className="p-1.5 sm:p-2 bg-green-100 rounded-full">
@@ -609,11 +604,10 @@ export function Asistencia_Alumno_comp() {
                               <IconoFalta className="text-red-600 w-4 h-4 sm:w-5 sm:h-5" />
                             </div>
                           )}
-                          <span className={`text-[10px] sm:text-xs md:text-sm font-extrabold px-2 sm:px-2.5 py-1 rounded-lg border ${
-                            activity.attended 
-                              ? 'text-green-700 bg-green-50 border-green-200' 
+                          <span className={`text-[10px] sm:text-xs md:text-sm font-extrabold px-2 sm:px-2.5 py-1 rounded-lg border ${activity.attended
+                              ? 'text-green-700 bg-green-50 border-green-200'
                               : 'text-red-700 bg-red-50 border-red-200'
-                          }`}>
+                            }`}>
                             {activity.attended ? 'Asistió' : 'Faltó'}
                           </span>
                         </div>
@@ -624,7 +618,7 @@ export function Asistencia_Alumno_comp() {
             </div>
           </div>
         </div>
-        
+
       </div>
     </div>
   );

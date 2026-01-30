@@ -1,9 +1,9 @@
 // C:\Users\isc20\Desktop\MQERK\mqerk_ver1-Miguel-el-Angel\client\src\components\shared\ChatFloatingButton.jsx
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import axios from '../../api/axios'; 
-import { buildStaticUrl } from '../../utils/url'; 
-import { compressFile, formatFileSize } from '../../utils/fileCompression'; 
+import axios from '../../api/axios';
+import { buildStaticUrl } from '../../utils/url';
+import { compressFile, formatFileSize } from '../../utils/fileCompression';
 
 const ChatFloatingButton = () => {
   const { user, isAuthenticated } = useAuth();
@@ -12,7 +12,7 @@ const ChatFloatingButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  
+
   // Estados de carga y paginación
   const [loading, setLoading] = useState(false); // Carga inicial
   const [loadingMore, setLoadingMore] = useState(false); // Carga de historial antiguo
@@ -27,8 +27,8 @@ const ChatFloatingButton = () => {
   const [compressing, setCompressing] = useState(false);
   const [compressionProgress, setCompressionProgress] = useState({ progress: 0, message: '' });
   const [modalData, setModalData] = useState({ isOpen: false, type: 'info', title: '', message: '' });
-  const [position, setPosition] = useState(null); 
-  const [pdfViewerFailed, setPdfViewerFailed] = useState({}); 
+  const [position, setPosition] = useState(null);
+  const [pdfViewerFailed, setPdfViewerFailed] = useState({});
 
   // --- REFERENCIAS ---
   const messagesEndRef = useRef(null);
@@ -51,7 +51,7 @@ const ChatFloatingButton = () => {
   }), [messages, category]);
 
   // --- HOOKS PERSONALIZADOS (Manteniendo tu lógica exacta) ---
-  
+
   // useAudioNotification
   const unlockAudio = useCallback(() => {
     if (audioUnlocked.current) return;
@@ -161,7 +161,7 @@ const ChatFloatingButton = () => {
       const moveClientX = moveEvent.clientX || moveEvent.touches?.[0].clientX;
       const moveClientY = moveEvent.clientY || moveEvent.touches?.[0].clientY;
       if (Math.abs(moveClientX - dragStartPos.current.startX) > 5 ||
-          Math.abs(moveClientY - dragStartPos.current.startY) > 5) {
+        Math.abs(moveClientY - dragStartPos.current.startY) > 5) {
         isDragging.current = true;
       }
       if (isDragging.current) {
@@ -288,7 +288,7 @@ const ChatFloatingButton = () => {
       });
 
       const newBatch = Array.isArray(res.data.data) ? [...res.data.data] : [];
-      
+
       // Si llegan menos de los pedidos, ya no hay más historial
       if (newBatch.length < limit) {
         setHasMore(false);
@@ -300,33 +300,33 @@ const ChatFloatingButton = () => {
         // Lógica de combinación:
         // Si es isLoadMore -> Ponemos los nuevos al PRINCIPIO (...newBatch, ...prev)
         // Si es inicio -> Ponemos los nuevos y buscamos coincidencias optimistas
-        
+
         let mergedMessages;
 
         if (isLoadMore) {
-             // Concatenar historial viejo al principio y filtrar duplicados por ID
-             const combined = [...newBatch, ...prev];
-             // Usamos Map para asegurar unicidad por ID
-             const uniqueMap = new Map();
-             combined.forEach(msg => {
-                 if (msg.id) uniqueMap.set(msg.id, msg);
-                 else uniqueMap.set(JSON.stringify(msg), msg); // Fallback para optimistas sin ID
-             });
-             mergedMessages = Array.from(uniqueMap.values());
+          // Concatenar historial viejo al principio y filtrar duplicados por ID
+          const combined = [...newBatch, ...prev];
+          // Usamos Map para asegurar unicidad por ID
+          const uniqueMap = new Map();
+          combined.forEach(msg => {
+            if (msg.id) uniqueMap.set(msg.id, msg);
+            else uniqueMap.set(JSON.stringify(msg), msg); // Fallback para optimistas sin ID
+          });
+          mergedMessages = Array.from(uniqueMap.values());
         } else {
-            // Lógica original preservada para carga inicial / updates
-            mergedMessages = [...newBatch];
-            prev.forEach(msg => {
-              if (!msg.id && !mergedMessages.some(m =>
-                m.message === msg.message &&
-                m.sender_role === msg.sender_role &&
-                Math.abs(new Date(m.created_at) - new Date(msg.created_at)) < 5000
-              )) {
-                mergedMessages.push(msg);
-              }
-            });
+          // Lógica original preservada para carga inicial / updates
+          mergedMessages = [...newBatch];
+          prev.forEach(msg => {
+            if (!msg.id && !mergedMessages.some(m =>
+              m.message === msg.message &&
+              m.sender_role === msg.sender_role &&
+              Math.abs(new Date(m.created_at) - new Date(msg.created_at)) < 5000
+            )) {
+              mergedMessages.push(msg);
+            }
+          });
         }
-        
+
         return mergedMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
       });
 
@@ -366,16 +366,16 @@ const ChatFloatingButton = () => {
     const container = e.target;
     // Si scrollTop es 0 (arriba), hay más mensajes y no estamos cargando...
     if (container.scrollTop === 0 && hasMore && !loading && !loadingMore) {
-        const currentHeight = container.scrollHeight; // Guardar altura actual
-        
-        loadHistory(true).then(() => {
-            // Ajustar scroll para mantener posición visual
-            requestAnimationFrame(() => {
-                if(container) {
-                    container.scrollTop = container.scrollHeight - currentHeight;
-                }
-            });
+      const currentHeight = container.scrollHeight; // Guardar altura actual
+
+      loadHistory(true).then(() => {
+        // Ajustar scroll para mantener posición visual
+        requestAnimationFrame(() => {
+          if (container) {
+            container.scrollTop = container.scrollHeight - currentHeight;
+          }
         });
+      });
     }
   }, [hasMore, loading, loadingMore, loadHistory]);
 
@@ -431,7 +431,7 @@ const ChatFloatingButton = () => {
     const fileToSend = selectedFile;
     setSelectedFile(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''; 
+      fileInputRef.current.value = '';
     }
 
     const optimMsg = {
@@ -462,7 +462,7 @@ const ChatFloatingButton = () => {
 
     } catch (error) {
       console.error("Error sending message:", error);
-      setMessages(prev => prev.filter(m => m !== optimMsg)); 
+      setMessages(prev => prev.filter(m => m !== optimMsg));
       setModalData({ isOpen: true, type: 'error', title: 'Error de envío', message: 'No se pudo enviar el mensaje. Verifica tu conexión.' });
     }
   }, [newMessage, selectedFile, category, setModalData]);
@@ -508,15 +508,15 @@ const ChatFloatingButton = () => {
   // Efecto Scroll: Solo baja si NO estamos cargando historial antiguo
   useEffect(() => {
     if (isOpen && messages.length > 0 && !loading && !loadingMore) {
-        // Verificación adicional: Solo bajar si el último mensaje es reciente (o si es la primera carga pequeña)
-        const lastMsg = messages[messages.length - 1];
-        const isRecent = new Date() - new Date(lastMsg.created_at) < 5000;
-        
-        if (isRecent || messages.length <= 50) {
-            requestAnimationFrame(() => {
-                setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "auto" }), 0);
-            });
-        }
+      // Verificación adicional: Solo bajar si el último mensaje es reciente (o si es la primera carga pequeña)
+      const lastMsg = messages[messages.length - 1];
+      const isRecent = new Date() - new Date(lastMsg.created_at) < 5000;
+
+      if (isRecent || messages.length <= 50) {
+        requestAnimationFrame(() => {
+          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "auto" }), 0);
+        });
+      }
     }
   }, [messages.length, isOpen, loading, loadingMore]);
 
@@ -647,7 +647,7 @@ const ChatFloatingButton = () => {
 
   // --- COMPONENTES INTERNOS (Sin cambios) ---
   // (ChatMessage, FileAttachmentPreview, ChatHeader, StatusModal, FileCompressionIndicator, Iconos... se mantienen igual)
-  
+
   const ChatMessage = ({ msg, idx }) => {
     // ... Tu lógica original de ChatMessage ...
     const isMe = msg.sender_role === 'estudiante';
@@ -694,16 +694,16 @@ const ChatFloatingButton = () => {
 
   // StatusModal y FileCompressionIndicator los mantienes igual, no los pego para ahorrar espacio pero deben estar
   const StatusModal = ({ isOpen, type, title, message, onClose }) => {
-     // ... (tu código original aquí)
-     if (!isOpen) return null;
-     const iconMap = { info: 'ℹ️', success: '✅', warning: '⚠️', error: '❌' };
-     return (<div className="fixed inset-0 bg-black/50 z-[100000] flex items-center justify-center p-4"><div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-300"><div className="text-center"><div className="text-4xl mb-3">{iconMap[type]}</div><h3 className="font-bold text-lg text-gray-800 mb-2">{title}</h3><p className="text-gray-600 mb-4">{message}</p><button onClick={onClose} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors w-full">Aceptar</button></div></div></div>);
+    // ... (tu código original aquí)
+    if (!isOpen) return null;
+    const iconMap = { info: 'ℹ️', success: '✅', warning: '⚠️', error: '❌' };
+    return (<div className="fixed inset-0 bg-black/50 z-[100000] flex items-center justify-center p-4"><div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-300"><div className="text-center"><div className="text-4xl mb-3">{iconMap[type]}</div><h3 className="font-bold text-lg text-gray-800 mb-2">{title}</h3><p className="text-gray-600 mb-4">{message}</p><button onClick={onClose} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors w-full">Aceptar</button></div></div></div>);
   };
-  
+
   const FileCompressionIndicator = ({ isOpen, progress, message, fileName, onCancel }) => {
-     // ... (tu código original aquí)
-     if (!isOpen) return null;
-     return (<div className="fixed inset-0 bg-black/50 z-[100000] flex items-center justify-center p-4"><div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-300"><div className="text-center"><div className="text-4xl mb-3">🔄</div><h3 className="font-bold text-lg text-gray-800 mb-2">Procesando Archivo</h3><p className="text-gray-600 mb-2">{message}</p><p className="text-xs text-gray-500 mb-4 truncate">{fileName}</p><div className="w-full bg-gray-200 rounded-full h-2.5 mb-4"><div className="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-out" style={{ width: `${progress}%` }}></div></div><button onClick={onCancel} className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors w-full">Cancelar y Recargar</button></div></div></div>);
+    // ... (tu código original aquí)
+    if (!isOpen) return null;
+    return (<div className="fixed inset-0 bg-black/50 z-[100000] flex items-center justify-center p-4"><div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-300"><div className="text-center"><div className="text-4xl mb-3">🔄</div><h3 className="font-bold text-lg text-gray-800 mb-2">Procesando Archivo</h3><p className="text-gray-600 mb-2">{message}</p><p className="text-xs text-gray-500 mb-4 truncate">{fileName}</p><div className="w-full bg-gray-200 rounded-full h-2.5 mb-4"><div className="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-out" style={{ width: `${progress}%` }}></div></div><button onClick={onCancel} className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors w-full">Cancelar y Recargar</button></div></div></div>);
   };
 
   // Iconos
@@ -712,10 +712,17 @@ const ChatFloatingButton = () => {
   const CloseIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
   const AttachIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>);
 
+  // Listener para abrir chat externamente (desde Header)
+  useEffect(() => {
+    const handleOpenChat = () => setIsOpen(true);
+    window.addEventListener('open-chat', handleOpenChat);
+    return () => window.removeEventListener('open-chat', handleOpenChat);
+  }, []);
+
   if (!isAuthenticated || user?.role !== 'estudiante') return null;
 
   const containerStyle = position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto', pointerEvents: 'none' } : { pointerEvents: 'none' };
-  const defaultClasses = !position ? "fixed bottom-20 left-4 sm:bottom-6 sm:right-6 md:bottom-8 md:right-8 z-[9998]" : "fixed z-[9998]";
+  const defaultClasses = !position ? "fixed bottom-20 left-4 sm:left-auto sm:bottom-6 sm:right-6 md:bottom-8 md:right-8 z-[9998]" : "fixed z-[9998]";
 
   return (
     <>
@@ -727,16 +734,16 @@ const ChatFloatingButton = () => {
           <div className="fixed inset-0 z-[99998] w-full h-full bg-white sm:fixed sm:bottom-20 sm:right-6 sm:left-auto sm:top-auto sm:w-[28rem] sm:h-[36rem] sm:max-w-[calc(100vw-3rem)] sm:max-h-[calc(100vh-6rem)] sm:rounded-2xl sm:shadow-2xl sm:border sm:border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300 pointer-events-auto">
             <ChatHeader advisorName={advisorName} currentOnlineStatus={currentOnlineStatus} category={category} setCategory={setCategory} setIsOpen={setIsOpen} />
 
-            <div 
+            <div
               ref={chatContainerRef} // Ref agregado para el scroll
               onScroll={handleScroll} // Evento agregado para infinite scroll
               className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 space-y-2 sm:space-y-3 md:space-y-4 bg-gray-50/50 scrollbar-thin scrollbar-thumb-gray-200 cursor-auto"
             >
               {/* Spinner de carga superior (mensajes viejos) */}
               {loadingMore && (
-                 <div className="w-full flex justify-center py-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"></div>
-                 </div>
+                <div className="w-full flex justify-center py-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"></div>
+                </div>
               )}
 
               {loading && !loadingMore && (
@@ -744,7 +751,7 @@ const ChatFloatingButton = () => {
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
                 </div>
               )}
-              
+
               {!loading && filteredMessages.length === 0 && (
                 <div className="text-center text-gray-400 text-sm mt-10 space-y-2">
                   <div className="text-4xl opacity-50">👋</div>
@@ -770,7 +777,7 @@ const ChatFloatingButton = () => {
         )}
 
         {!isOpen && (
-          <button onMouseDown={handlePointerDown} onTouchStart={handlePointerDown} onClick={toggleOpen} className="pointer-events-auto bg-violet-600 hover:bg-violet-700 text-white p-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 active:scale-95 group relative z-[9999] cursor-move" aria-label="Abrir Chat" style={{ pointerEvents: 'auto' }}>
+          <button onMouseDown={handlePointerDown} onTouchStart={handlePointerDown} onClick={toggleOpen} className="hidden sm:flex pointer-events-auto bg-violet-600 hover:bg-violet-700 text-white p-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 active:scale-95 group relative z-[9999] cursor-move" aria-label="Abrir Chat" style={{ pointerEvents: 'auto' }}>
             <span className="absolute inset-0 rounded-full bg-violet-400 opacity-75 animate-ping" style={{ animationDuration: '2s' }}></span>
             <span className="absolute inset-0 rounded-full bg-violet-400 opacity-50 animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}></span>
             {unreadCount > 0 && (<span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white animate-bounce shadow-lg z-10">{unreadCount}</span>)}

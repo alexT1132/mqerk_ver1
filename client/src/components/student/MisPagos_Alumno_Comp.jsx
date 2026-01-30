@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import { formatCurrencyMXN, formatDateTimeMX } from '../../utils/formatters.js';
 import { useStudent } from '../../context/StudentContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -156,30 +157,31 @@ function Modal({ isOpen, onClose, children, title }) {
   }, [isOpen]);
 
   if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-x-0 top-14 sm:top-20 bottom-0 sm:bottom-4 z-[9999] flex items-center justify-center px-2 sm:px-4 overflow-y-auto">
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-[9999] flex flex-col sm:items-center sm:justify-center sm:p-4">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
-      <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-4xl w-full mx-auto my-auto max-h-[calc(100vh-3.5rem)] sm:max-h-[calc(100vh-10rem)] overflow-y-auto border-2 border-violet-200/50 ring-2 ring-violet-100/50">
-        <div className="flex items-center justify-between p-4 sm:p-5 md:p-6 border-b-2 border-violet-200/50 sticky top-0 bg-white rounded-t-xl sm:rounded-t-2xl z-10">
-          <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">{title}</h2>
+      <div className="relative bg-white w-full h-full sm:h-auto sm:rounded-2xl sm:shadow-2xl sm:max-w-4xl sm:w-full mx-auto sm:my-auto sm:max-h-[calc(100vh-10rem)] overflow-y-auto border-0 sm:border-2 sm:border-violet-200/50 ring-0 sm:ring-2 sm:ring-violet-100/50 flex flex-col">
+        {/* Header - Fixed at top */}
+        <div className="flex items-center justify-between p-4 pt-10 sm:p-5 sm:pt-5 md:p-6 border-b-2 border-violet-200/50 bg-white sm:rounded-t-2xl z-20 shrink-0 shadow-sm sm:shadow-none">
+          <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 truncate mr-2">{title}</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-violet-50 rounded-xl transition-all duration-200 active:scale-95 touch-manipulation border-2 border-violet-200/50"
+            className="flex-shrink-0 p-2.5 bg-violet-50 hover:bg-violet-100 rounded-full transition-all duration-200 active:scale-95 touch-manipulation border-2 border-violet-200/50 shadow-sm"
           >
-            <X className="w-4 h-4 sm:w-5 sm:h-5 text-violet-600" />
+            <X className="w-5 h-5 sm:w-5 sm:h-5 text-violet-600" />
           </button>
         </div>
 
-        <div className="p-4 sm:p-5 md:p-6">
+        <div className="p-4 sm:p-5 md:p-6 overflow-y-auto grow">
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -206,7 +208,7 @@ function PaymentMethodCard({ method, onClick }) {
       onClick={handleClick}
       className={`relative cursor-pointer bg-gradient-to-br ${methodColors[method.id]} 
       rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 ease-in-out touch-manipulation
-      p-4 sm:p-5 md:p-6 flex flex-col items-center justify-center text-center min-h-[120px] sm:min-h-[140px] md:min-h-[160px] group border-2 border-white/20 ring-2 ring-white/10`}
+      p-3 sm:p-5 md:p-6 flex flex-col items-center justify-center text-center min-h-[110px] sm:min-h-[140px] md:min-h-[160px] group border-2 border-white/20 ring-2 ring-white/10`}
     >
       <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-xl sm:rounded-2xl"></div>
       {method.icon}
@@ -218,14 +220,14 @@ function PaymentMethodCard({ method, onClick }) {
       </p>
       {method.id === 'card' && showComingSoon && (
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-700/95 to-violet-900/95 rounded-2xl z-30 border-2 sm:border-4 border-yellow-400 shadow-2xl p-3 sm:p-5 gap-1.5 sm:gap-2"
+          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-700/95 to-violet-900/95 rounded-xl sm:rounded-2xl z-30 border-2 sm:border-4 border-yellow-400 shadow-2xl p-2 sm:p-5 gap-1 sm:gap-2"
           role="status" aria-live="polite"
         >
-          <span className="text-yellow-300 text-base sm:text-xl font-extrabold mb-1 sm:mb-2 drop-shadow-lg text-center leading-tight px-1">
+          <span className="text-yellow-300 text-xs sm:text-xl font-extrabold mb-0.5 sm:mb-2 drop-shadow-lg text-center leading-tight px-1">
             ¡Muy pronto disponible!
           </span>
-          <span className="text-white text-xs sm:text-base font-semibold text-center max-w-[220px] sm:max-w-xs leading-snug px-1">
-            Estamos trabajando para ofrecerte pagos con tarjeta de forma segura y rápida. ¡Gracias por tu paciencia!
+          <span className="text-white text-[10px] sm:text-base font-semibold text-center max-w-[220px] sm:max-w-xs leading-tight px-1">
+            Estamos trabajando para ofrecerte pagos con tarjeta. ¡Gracias!
           </span>
         </div>
       )}
@@ -257,9 +259,9 @@ function CardPaymentModal({ onReceiptUpload }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-violet-50 rounded-xl p-6">
-        <h4 className="font-bold text-gray-800 mb-4 text-lg">¿Cómo funciona?</h4>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="bg-violet-50 rounded-xl p-4 sm:p-6">
+        <h4 className="font-bold text-gray-800 mb-3 sm:mb-4 text-base sm:text-lg">¿Cómo funciona?</h4>
         <p className="text-gray-700 mb-4">
           Serás redirigido a una pasarela de pago segura donde podrás completar tu transacción con total seguridad.
         </p>
@@ -283,7 +285,7 @@ function CardPaymentModal({ onReceiptUpload }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <div>
           <a
             href="#"
@@ -394,30 +396,30 @@ function TransferPaymentModal({ onReceiptUpload }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
 
-      <div className="bg-blue-50 rounded-xl p-6">
-        <h4 className="font-bold text-blue-800 mb-4 text-lg">Datos Bancarios</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
+      <div className="bg-blue-50 rounded-xl p-4 sm:p-6">
+        <h4 className="font-bold text-blue-800 mb-3 sm:mb-4 text-base sm:text-lg">Datos Bancarios</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <div className="space-y-2 sm:space-y-4">
             <div>
-              <label className="text-xs text-blue-600 font-medium uppercase tracking-wide">Banco</label>
-              <p className="font-bold text-lg">{bankInfo.bank}</p>
+              <label className="text-[10px] sm:text-xs text-blue-600 font-medium uppercase tracking-wide">Banco</label>
+              <p className="font-bold text-sm sm:text-lg">{bankInfo.bank}</p>
             </div>
             <div>
-              <label className="text-xs text-blue-600 font-medium uppercase tracking-wide">Beneficiario</label>
-              <p className="font-bold">{bankInfo.beneficiary}</p>
+              <label className="text-[10px] sm:text-xs text-blue-600 font-medium uppercase tracking-wide">Beneficiario</label>
+              <p className="font-bold text-sm sm:text-base">{bankInfo.beneficiary}</p>
             </div>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-2 sm:space-y-4">
             <div>
-              <label className="text-xs text-blue-600 font-medium uppercase tracking-wide">Número de Cuenta</label>
-              <div className="flex items-center gap-3">
-                <span className="font-mono font-bold text-lg">{bankInfo.account}</span>
+              <label className="text-[10px] sm:text-xs text-blue-600 font-medium uppercase tracking-wide">Número de Cuenta</label>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="font-mono font-bold text-sm sm:text-lg">{bankInfo.account}</span>
                 <div className="relative">
                   <button
                     onClick={() => handleCopy(bankInfo.account, 'account')}
-                    className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition"
+                    className="px-2 sm:px-3 py-1 bg-blue-500 text-white text-xs sm:text-sm rounded hover:bg-blue-600 transition"
                   >
                     📋 Copiar
                   </button>
@@ -430,13 +432,13 @@ function TransferPaymentModal({ onReceiptUpload }) {
               </div>
             </div>
             <div>
-              <label className="text-xs text-blue-600 font-medium uppercase tracking-wide">CLABE</label>
-              <div className="flex items-center gap-3">
-                <span className="font-mono font-bold text-lg">{bankInfo.clabe}</span>
+              <label className="text-[10px] sm:text-xs text-blue-600 font-medium uppercase tracking-wide">CLABE</label>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="font-mono font-bold text-sm sm:text-lg">{bankInfo.clabe}</span>
                 <div className="relative">
                   <button
                     onClick={() => handleCopy(bankInfo.clabe, 'clabe')}
-                    className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition"
+                    className="px-2 sm:px-3 py-1 bg-blue-500 text-white text-xs sm:text-sm rounded hover:bg-blue-600 transition"
                   >
                     📋 Copiar
                   </button>
@@ -452,20 +454,20 @@ function TransferPaymentModal({ onReceiptUpload }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gray-50 rounded-xl p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
           <h4 className="font-bold text-gray-800 mb-4">📋 Instrucciones</h4>
-          <ol className="space-y-3 text-gray-700">
-            <li className="flex items-start gap-3">
-              <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>
+          <ol className="space-y-2 sm:space-y-3 text-gray-700 text-xs sm:text-base">
+            <li className="flex items-start gap-2 sm:gap-3">
+              <span className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0">1</span>
               <span>Realiza una transferencia SPEI o depósito al número de cuenta/CLABE indicado.</span>
             </li>
-            <li className="flex items-start gap-3">
-              <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>
+            <li className="flex items-start gap-2 sm:gap-3">
+              <span className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0">2</span>
               <span>Asegúrate de incluir tu nombre completo en la referencia o concepto de pago.</span>
             </li>
-            <li className="flex items-start gap-3">
-              <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>
+            <li className="flex items-start gap-2 sm:gap-3">
+              <span className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0">3</span>
               <span>Sube tu comprobante de transferencia para validación rápida.</span>
             </li>
           </ol>
@@ -554,18 +556,18 @@ function CashPaymentModal({ onReceiptUpload }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-green-50 rounded-xl p-6">
-        <h4 className="font-bold text-green-800 mb-4 text-lg">📍 Punto de Pago</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="bg-green-50 rounded-xl p-4 sm:p-6">
+        <h4 className="font-bold text-green-800 mb-3 sm:mb-4 text-base sm:text-lg">📍 Punto de Pago</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <div className="space-y-2 sm:space-y-4">
             <div>
-              <label className="text-xs text-green-600 font-medium uppercase tracking-wide">Dirección</label>
+              <label className="text-[10px] sm:text-xs text-green-600 font-medium uppercase tracking-wide">Dirección</label>
               <a
                 href={mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-blue-600 hover:underline flex items-start gap-1"
+                className="font-semibold text-blue-600 hover:underline flex items-start gap-1 text-xs sm:text-base leading-tight"
                 title="Abrir en Google Maps"
               >
                 <span className="mt-0.5">📍</span>
@@ -573,34 +575,34 @@ function CashPaymentModal({ onReceiptUpload }) {
               </a>
             </div>
             <div>
-              <label className="text-xs text-green-600 font-medium uppercase tracking-wide">Horario de Atención</label>
-              <p className="font-semibold">{locationInfo.hours}</p>
+              <label className="text-[10px] sm:text-xs text-green-600 font-medium uppercase tracking-wide">Horario de Atención</label>
+              <p className="font-semibold text-xs sm:text-base">{locationInfo.hours}</p>
             </div>
             <div>
-              <label className="text-xs text-green-600 font-medium uppercase tracking-wide">Contacto</label>
-              <p className="font-semibold">{locationInfo.contact}</p>
+              <label className="text-[10px] sm:text-xs text-green-600 font-medium uppercase tracking-wide">Contacto</label>
+              <p className="font-semibold text-xs sm:text-base">{locationInfo.contact}</p>
             </div>
           </div>
 
           {/* Tarjeta decorativa con consejos */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-green-200 shadow-sm">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center">
-                <span className="text-green-600 text-xl">💡</span>
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-green-200 shadow-sm">
+            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500/10 rounded-full flex items-center justify-center">
+                <span className="text-green-600 text-base sm:text-xl">💡</span>
               </div>
-              <h5 className="font-bold text-green-800">Consejos Útiles</h5>
+              <h5 className="font-bold text-green-800 text-sm sm:text-base">Consejos Útiles</h5>
             </div>
-            <div className="space-y-2 text-sm text-green-700">
-              <p className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">•</span>
+            <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-green-700">
+              <p className="flex items-start gap-1.5 sm:gap-2">
+                <span className="text-green-500 mt-0.5">•</span>
                 <span>Lleva identificación oficial.</span>
               </p>
-              <p className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">•</span>
+              <p className="flex items-start gap-1.5 sm:gap-2">
+                <span className="text-green-500 mt-0.5">•</span>
                 <span>Solicita tu recibo de pago.</span>
               </p>
-              <p className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">•</span>
+              <p className="flex items-start gap-1.5 sm:gap-2">
+                <span className="text-green-500 mt-0.5">•</span>
                 <span>Pregunta por descuentos disponibles.</span>
               </p>
 
@@ -609,8 +611,8 @@ function CashPaymentModal({ onReceiptUpload }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gray-50 rounded-xl p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
           <h4 className="font-bold text-gray-800 mb-4">📋 Instrucciones</h4>
           <ol className="space-y-3 text-gray-700">
             <li className="flex items-start gap-3">
@@ -917,8 +919,8 @@ function PaymentHistoryIntelligent({ allPaymentsHistory = [], onFilterChange, on
                       <div className={`w-3 h-3 rounded-full ${planColors[plan.planType]}`}></div>
                       <h4 className="font-bold text-gray-800">{plan.planName}</h4>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${plan.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          plan.status === 'active' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
+                        plan.status === 'active' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
                         }`}>
                         {plan.status === 'completed' ? 'Completado' :
                           plan.status === 'active' ? 'Activo' : 'Cancelado'}
@@ -1037,35 +1039,6 @@ function PaymentHistoryIntelligent({ allPaymentsHistory = [], onFilterChange, on
 }
 
 // --- Componente para la tabla del plan de pagos ---
-// Generador compartido de calendario de pagos con reglas por plan y tolerancia
-function generatePaymentSchedule({ startDate, totalPayments = 8, paymentAmount = 1500, planType = 'mensual', now = new Date() }) {
-  if (!startDate) return [];
-  const type = (planType || 'mensual').toString().toLowerCase();
-  const shared = genScheduleShared({ startDate, planType: type, now });
-  return shared.slice(0, totalPayments).map((p, idx) => {
-    // Mantener la fecha "paymentDate" usada por la tabla
-    const paymentDate = new Date(startDate);
-    if (type === 'start') {
-      paymentDate.setMonth(paymentDate.getMonth() + (idx === 0 ? 0 : 4));
-    } else {
-      paymentDate.setMonth(paymentDate.getMonth() + idx);
-    }
-    // La verificación depende del plan: premium todos pagados; otros solo el primero
-    const verificationDate = idx < (type === 'premium' ? totalPayments : 1) ? paymentDate : null;
-    return {
-      id: idx + 1,
-      paymentNumber: idx + 1,
-      amount: p.amount ?? paymentAmount,
-      paymentDate,
-      dueDate: p.dueDate,
-      status: p.status,
-      isOverdue: p.isOverdue,
-      verificationDate,
-      month: paymentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
-    };
-  });
-}
-
 function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'mensual' }) {
   const { currentCourse } = useStudent();
 
@@ -1099,13 +1072,11 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
   };
 
   // Generar calendario de pagos del curso actual. El primer pago SIEMPRE está pagado.
-  const paymentSchedule = generatePaymentSchedule({
+  const paymentSchedule = genScheduleShared({
     startDate: currentPlan.startDate,
-    totalPayments: currentPlan.totalPayments,
-    paymentAmount: currentPlan.paymentAmount,
     planType: selectedPlan,
     now: new Date()
-  }).map(p => ({ ...p, receiptUrl: null }));
+  }).slice(0, currentPlan.totalPayments).map(p => ({ ...p, receiptUrl: null }));
 
   const allPaymentsPaid = paymentSchedule.length > 0 && paymentSchedule.every(payment => payment.status === 'paid');
   const planCompletionDate = allPaymentsPaid ? paymentSchedule[paymentSchedule.length - 1].verificationDate : null;
@@ -1238,9 +1209,9 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                 <td className="py-3 sm:py-4 px-2 sm:px-4">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${payment.status === 'paid' ? 'bg-green-500 text-white' :
-                        payment.isOverdue ? 'bg-red-500 text-white' :
-                          payment.status === 'pending' ? 'bg-yellow-500 text-white' :
-                            'bg-gray-300 text-gray-600'
+                      payment.isOverdue ? 'bg-red-500 text-white' :
+                        payment.status === 'pending' ? 'bg-yellow-500 text-white' :
+                          'bg-gray-300 text-gray-600'
                       }`}>
                       {payment.status === 'paid' && allPaymentsPaid ? '✓' : payment.paymentNumber}
                     </div>
@@ -1292,8 +1263,8 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                       <button
                         onClick={() => handlePayment(payment.id)}
                         className={`text-xs sm:text-sm px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${payment.isOverdue
-                            ? 'bg-red-500 text-white hover:bg-red-600'
-                            : 'bg-green-500 text-white hover:bg-green-600'
+                          ? 'bg-red-500 text-white hover:bg-red-600'
+                          : 'bg-green-500 text-white hover:bg-green-600'
                           }`}
                       >
                         💳 {payment.isOverdue ? 'Pagar Ahora' : 'Pagar'}
@@ -1311,8 +1282,8 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
 
       {/* Resumen del plan - MEJORADO */}
       <div className={`mt-5 sm:mt-6 p-3.5 sm:p-4 rounded-xl border-2 ${allPaymentsPaid
-          ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300'
-          : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
+        ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300'
+        : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
         }`}>
         {/* Header del resumen */}
         <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -1390,8 +1361,8 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
           <div className="bg-white rounded-full h-3 overflow-hidden shadow-inner">
             <div
               className={`h-full transition-all duration-1000 ease-out ${allPaymentsPaid
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-600'
-                  : 'bg-gradient-to-r from-blue-500 to-purple-600'
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600'
+                : 'bg-gradient-to-r from-blue-500 to-purple-600'
                 }`}
               style={{
                 width: `${(paymentSchedule.filter(p => p.status === 'paid').length / currentPlan.totalPayments) * 100}%`
@@ -1897,10 +1868,8 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
     return { name, paymentAmount, totalPayments, frequency, startDate: activationDate, planType };
   }, [activationDate, planType]);
 
-  const schedule = useMemo(() => generatePaymentSchedule({
+  const schedule = useMemo(() => genScheduleShared({
     startDate: planConfig.startDate,
-    totalPayments: planConfig.totalPayments,
-    paymentAmount: planConfig.paymentAmount,
     planType: planConfig.planType,
     now: new Date(),
   }), [planConfig]);
@@ -2013,8 +1982,8 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
             <button
               onClick={() => setActiveTab('current')}
               className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-extrabold transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation ${activeTab === 'current'
-                  ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-violet-200/50'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-violet-50'
+                ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-violet-200/50'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-violet-50'
                 }`}
             >
               📋 Plan Actual
@@ -2022,8 +1991,8 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
             <button
               onClick={() => setActiveTab('history')}
               className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-extrabold transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation ${activeTab === 'history'
-                  ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-violet-200/50'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-violet-50'
+                ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-violet-200/50'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-violet-50'
                 }`}
             >
               📚 Historial
@@ -2069,7 +2038,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
                   Métodos de pago
                 </span>
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
                 {paymentMethods.map(method => (
                   <PaymentMethodCard
                     key={method.id}

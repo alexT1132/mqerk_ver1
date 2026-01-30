@@ -132,7 +132,7 @@ export function SideBarSm_Alumno_comp({ isMenuOpen, closeMenu }) {
                           strokeWidth: 2,
                         })}
                       </div>
-                      <span className="text-[15px] leading-tight font-medium ml-1 truncate">
+                      <span className="text-[15px] leading-normal font-medium ml-1 truncate">
                         {item.label}
                       </span>
                     </Link>
@@ -156,7 +156,7 @@ export function SideBarSm_Alumno_comp({ isMenuOpen, closeMenu }) {
                           strokeWidth: 2,
                         })}
                       </div>
-                      <span className={`text-[15px] leading-tight font-medium ml-1 truncate ${item.path === '/alumno/logout' ? 'text-red-500' : ''}`}>
+                      <span className={`text-[15px] leading-normal font-medium ml-1 truncate ${item.path === '/alumno/logout' ? 'text-red-500' : ''}`}>
                         {item.label}
                       </span>
                     </Link>

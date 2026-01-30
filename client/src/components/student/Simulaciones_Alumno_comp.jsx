@@ -59,6 +59,8 @@ import {
   LineChart, // Icono para gráficas
   GraduationCap as School, // Icono para Núcleo UNAM / IPN
   Anchor,     // Icono para Militar, Naval y Náutica Mercante
+  Table2,    // Icono para vista de tabla
+  LayoutGrid, // Icono para vista de tarjetas
   RefreshCw   // Icono para refrescar
 } from 'lucide-react';
 import UnifiedCard from '../common/UnifiedCard.jsx';
@@ -101,6 +103,28 @@ export function Simulaciones_Alumno_comp() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const monthButtonRef = useRef(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
+
+  // Estado para controlar el modo de vista (tabla o tarjetas)
+  const [viewMode, setViewMode] = useState('table'); // 'table' o 'cards'
+
+  // Efecto para forzar vista de tabla en pantallas grandes
+  useEffect(() => {
+    const handleResize = () => {
+      // Si la pantalla es >= 1024px (lg breakpoint), forzar vista de tabla (igual que el hidden lg:block de la tabla)
+      if (window.innerWidth >= 1024) {
+        setViewMode('table');
+      }
+    };
+
+    // Ejecutar al montar
+    handleResize();
+
+    // Escuchar cambios de tamaño
+    window.addEventListener('resize', handleResize);
+
+    // Limpiar listener al desmontar
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Estados para efectos visuales
   const [showConfetti, setShowConfetti] = useState(false);
@@ -708,7 +732,7 @@ export function Simulaciones_Alumno_comp() {
           totalPreguntas: Number(q.total_preguntas || 0)
         };
       });
-      
+
       console.log('[DEBUG Simulaciones_Alumno_comp - setSimulaciones]', {
         totalMapped: mapped.length,
         mappedSims: mapped.map(s => ({
@@ -720,7 +744,7 @@ export function Simulaciones_Alumno_comp() {
           completado: s.completado
         }))
       });
-      
+
       setSimulaciones(mapped);
 
       // Cargar respuestas pendientes para simulaciones completadas
@@ -962,7 +986,7 @@ export function Simulaciones_Alumno_comp() {
         }
       } catch { /* ignore */ }
     };
-    
+
     // También escuchar eventos de localStorage como fallback (para cuando no hay window.opener)
     const checkLocalStorage = () => {
       try {
@@ -982,13 +1006,13 @@ export function Simulaciones_Alumno_comp() {
             loadSimulaciones(scope);
           }
         }
-      } catch {}
+      } catch { }
     };
-    
+
     // Verificar localStorage periódicamente como fallback
     const interval = setInterval(checkLocalStorage, 2000);
     checkLocalStorage(); // Verificar inmediatamente
-    
+
     window.addEventListener('message', onMessage);
     return () => {
       window.removeEventListener('message', onMessage);
@@ -1148,7 +1172,7 @@ export function Simulaciones_Alumno_comp() {
   // Calcular posición inteligente del dropdown
   const calculateDropdownPosition = useCallback(() => {
     if (!monthButtonRef.current) return null;
-    
+
     const rect = monthButtonRef.current.getBoundingClientRect();
     const viewportH = window.innerHeight;
     const viewportW = window.innerWidth;
@@ -1156,20 +1180,20 @@ export function Simulaciones_Alumno_comp() {
     const gap = 4;
     const desiredHeight = 300;
     const minHeight = 120;
-    
+
     // Calcular espacio disponible
     const spaceBelow = viewportH - rect.bottom - margin;
     const spaceAbove = rect.top - margin;
-    
+
     // Decidir si mostrar arriba o abajo
     // Mostrar arriba si hay menos de 250px abajo Y hay más espacio arriba
     const shouldShowAbove = spaceBelow < 250 && spaceAbove > spaceBelow;
-    
+
     // Calcular altura máxima disponible
-    const maxHeight = shouldShowAbove 
+    const maxHeight = shouldShowAbove
       ? Math.max(minHeight, Math.min(desiredHeight, spaceAbove - gap))
       : Math.max(minHeight, Math.min(desiredHeight, spaceBelow - gap));
-    
+
     // Calcular posición horizontal (asegurar que no se salga de la pantalla)
     let left = rect.left;
     const dropdownWidth = rect.width;
@@ -1179,12 +1203,12 @@ export function Simulaciones_Alumno_comp() {
     if (left < margin) {
       left = margin;
     }
-    
+
     // Calcular posición vertical
-    const top = shouldShowAbove 
+    const top = shouldShowAbove
       ? `${Math.max(margin, rect.top - maxHeight - gap)}px`
       : `${rect.bottom + gap}px`;
-    
+
     return {
       position: 'fixed',
       top,
@@ -1201,13 +1225,13 @@ export function Simulaciones_Alumno_comp() {
       // Bloquear scroll del body para evitar que aparezca la barra de scroll principal
       const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-      
+
       // Calcular posición ANTES de mostrar el dropdown para evitar parpadeo
       const style = calculateDropdownPosition();
       if (style) {
         setDropdownStyle(style);
       }
-      
+
       const handleResize = () => {
         const newStyle = calculateDropdownPosition();
         if (newStyle) setDropdownStyle(newStyle);
@@ -1216,10 +1240,10 @@ export function Simulaciones_Alumno_comp() {
         const newStyle = calculateDropdownPosition();
         if (newStyle) setDropdownStyle(newStyle);
       };
-      
+
       window.addEventListener('resize', handleResize);
       window.addEventListener('scroll', handleScroll, true);
-      
+
       return () => {
         // Restaurar scroll del body
         document.body.style.overflow = prevOverflow;
@@ -1256,14 +1280,14 @@ export function Simulaciones_Alumno_comp() {
   // Funciones para manejar modal de gráficas
   const handleVerGraficas = async (simulacion) => {
     if (!simulacion) return;
-    
+
     // Validar que haya al menos 3 intentos para un análisis preciso
     const totalAttempts = getTotalAttempts(simulacion.id);
     if (totalAttempts < 3) {
       showNotification('Análisis no disponible', `Se requieren al menos 3 intentos para generar un análisis preciso. Actualmente tienes ${totalAttempts} intento${totalAttempts !== 1 ? 's' : ''}.`, 'warning');
       return;
     }
-    
+
     setSelectedSimulacionGraficas(simulacion);
     // Cargar historial antes de abrir el modal para evitar estado "sin datos"
     try { await fetchHistorial(simulacion); } catch { }
@@ -1441,8 +1465,8 @@ export function Simulaciones_Alumno_comp() {
         {/* Header - Mejorado para móviles */}
         <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8 mt-4 sm:mt-6 md:mt-8">
           <div className="px-4 sm:px-6 py-5 sm:py-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center relative gap-4">
+              <div className="text-center w-full">
                 <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2 tracking-tight">
                   SIMULACIONES
                 </h1>
@@ -1450,7 +1474,7 @@ export function Simulaciones_Alumno_comp() {
                   Simuladores para exámenes de ingreso y evaluaciones académicas
                 </p>
               </div>
-              <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+              <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 lg:absolute lg:right-0">
                 <Clock className="w-4 h-4 mr-1.5 text-violet-600" />
                 <span className="font-semibold">Actualizado hoy</span>
               </div>
@@ -1778,8 +1802,8 @@ export function Simulaciones_Alumno_comp() {
                 </div>
                 <button
                   onClick={() => {
-                    const scope = selectedTipo === 'generales' 
-                      ? { type: 'generales' } 
+                    const scope = selectedTipo === 'generales'
+                      ? { type: 'generales' }
                       : { type: 'modulo', moduloId: selectedModulo?.id };
                     loadSimulaciones(scope);
                   }}
@@ -1826,9 +1850,29 @@ export function Simulaciones_Alumno_comp() {
         {/* Filtros - Mejorado para móviles */}
         <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-gray-200/50 shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
-            <div className="text-sm sm:text-base md:text-lg font-extrabold text-gray-800 flex items-center gap-2">
-              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-violet-600" />
-              <span>Filtrar simulaciones</span>
+            <div className="flex items-center justify-between w-full md:w-auto">
+              <div className="text-sm sm:text-base md:text-lg font-extrabold text-gray-800 flex items-center gap-2">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-violet-600" />
+                <span>Filtrar simulaciones</span>
+              </div>
+
+              {/* Toggle de vista - Solo móvil/tablet (< lg) */}
+              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 lg:hidden">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-1.5 rounded transition-all ${viewMode === 'table' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  title="Vista de tabla"
+                >
+                  <Table2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`p-1.5 rounded transition-all ${viewMode === 'cards' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  title="Vista de tarjetas"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Acciones */}
@@ -1849,11 +1893,11 @@ export function Simulaciones_Alumno_comp() {
               {isDropdownOpen && Object.keys(dropdownStyle).length > 0 && createPortal(
                 <>
                   {/* Overlay para cerrar al hacer click fuera */}
-                  <div 
+                  <div
                     className="fixed inset-0 z-[9998] bg-transparent"
                     onClick={() => setIsDropdownOpen(false)}
                   />
-                  <div 
+                  <div
                     style={dropdownStyle}
                     className="bg-white border-2 border-gray-300 rounded-xl shadow-2xl overflow-y-auto"
                   >
@@ -1882,8 +1926,8 @@ export function Simulaciones_Alumno_comp() {
           </div>
         </div>
 
-        {/* Vista de escritorio - Tabla de simulaciones - Mejorada */}
-        <div className="hidden lg:block bg-white rounded-xl sm:rounded-2xl border border-slate-200/90 border-b-0 shadow-xl overflow-hidden ring-2 ring-slate-100/90">
+        {/* Vista de escritorio - Tabla de simulaciones (ahora togglable en móvil) */}
+        <div className={`${viewMode === 'table' ? 'block' : 'hidden'} bg-white rounded-xl sm:rounded-2xl border border-slate-200/90 border-b-0 shadow-xl overflow-hidden ring-2 ring-slate-100/90`}>
           <div className="overflow-x-auto simulaciones-table-scroll" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <table className="min-w-full">
               <thead>
@@ -1934,7 +1978,7 @@ export function Simulaciones_Alumno_comp() {
                                 onClick={(e) => { e.stopPropagation(); openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id }); }}
                                 className="mt-0.5 text-[9px] sm:text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
                               >
-                                Ver descripción completa
+                                Ver más...
                               </button>
                             </div>
                           )}
@@ -2016,11 +2060,10 @@ export function Simulaciones_Alumno_comp() {
                         {simulacion.completado && getTotalAttempts(simulacion.id) > 0 ? (
                           <button
                             onClick={() => handleVerGraficas(simulacion)}
-                            className={`inline-flex items-center px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] font-extrabold rounded-lg border transition-all active:scale-95 touch-manipulation shadow-sm ${
-                              getTotalAttempts(simulacion.id) >= 3 
-                                ? 'text-indigo-700 bg-indigo-100 hover:bg-indigo-200 border-indigo-200' 
-                                : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-60'
-                            }`}
+                            className={`inline-flex items-center px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] font-extrabold rounded-lg border transition-all active:scale-95 touch-manipulation shadow-sm ${getTotalAttempts(simulacion.id) >= 3
+                              ? 'text-indigo-700 bg-indigo-100 hover:bg-indigo-200 border-indigo-200'
+                              : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-60'
+                              }`}
                             title={getTotalAttempts(simulacion.id) >= 3 ? 'Ver análisis gráfico' : `Se requieren al menos 3 intentos para el análisis. Actualmente tienes ${getTotalAttempts(simulacion.id)}.`}
                             disabled={getTotalAttempts(simulacion.id) < 3}
                           >
@@ -2080,7 +2123,7 @@ export function Simulaciones_Alumno_comp() {
         </div>
 
         {/* Vista móvil - Cards de simulaciones - Mejoradas */}
-        <div className="lg:hidden space-y-4 sm:space-y-5">
+        <div className={`${viewMode === 'cards' ? 'block' : 'hidden'} space-y-4 sm:space-y-5`}>
           {filteredSimulaciones.length > 0 ? (
             filteredSimulaciones.map((simulacion, index) => (
               <div
@@ -2113,7 +2156,7 @@ export function Simulaciones_Alumno_comp() {
                           onClick={(e) => { e.stopPropagation(); openLongText(simulacion.nombre, simulacion.descripcion, { tipo: 'simulacion', id: simulacion.id }); }}
                           className="mt-1 text-[10px] sm:text-xs text-blue-600 hover:text-blue-800 hover:underline font-semibold"
                         >
-                          Ver descripción completa
+                          Ver más...
                         </button>
                       </div>
                     )}
