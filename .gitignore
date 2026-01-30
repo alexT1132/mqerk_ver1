@@ -82,3 +82,8 @@ docker-compose.override.yml
 # utilidades
 pdf_coor.py
 start.bat
+
+client/src/components/tools/nexus_config.json
+client/src/components/tools/nexus_settings.json
+server/.env
+client/.env

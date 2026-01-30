@@ -1,0 +1,437 @@
+[2026-01-23T23:49:38.373Z] [INFO] [Quiz.jsx] Creando quiz con IA
+{
+  "titulo": "Español y redacción indirecta (IA · 5 p)",
+  "cantidadPreguntas": 5,
+  "preguntas": [
+    {
+      "type": "multiple",
+      "text": "Selecciona la opción que presenta la escritura cor...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "En la oración: 'La **celeridad** con la que actuó ...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Lee el siguiente fragmento y elige la opción que m...",
+      "optionsCount": 4
+    },
+    {
+      "type": "tf",
+      "text": "En la oración 'Ella corre muy rápido por el parque...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "Reescribe la siguiente frase para que sea más clar...",
+      "optionsCount": 0
+    }
+  ]
+}
+[2026-01-23T23:49:39.108Z] [INFO] [Quiz.jsx] Quiz creado
+{
+  "id": 1,
+  "titulo": "Español y redacción indirecta (IA · 5 p)",
+  "respuesta": {
+    "data": {
+      "id": 1,
+      "titulo": "Español y redacción indirecta (IA · 5 p)",
+      "descripcion": "Quiz generado con IA sobre: Español y redacción indirecta. Nivel: intermedio.",
+      "id_area": 1,
+      "materia": "Español y redacción indirecta",
+      "puntos_max": 100,
+      "peso_calificacion": "0.00",
+      "fecha_limite": null,
+      "grupos": "[\"V1\"]",
+      "max_intentos": null,
+      "requiere_revision": 0,
+      "activo": 1,
+      "publicado": 0,
+      "creado_por": 21,
+      "time_limit_min": 60,
+      "passing_score": null,
+      "shuffle_questions": 1,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "imagen_portada": null,
+      "recursos_json": null,
+      "created_at": "2026-01-23T23:49:39.000Z",
+      "updated_at": null
+    }
+  }
+}
+[2026-01-23T23:49:39.204Z] [INFO] [Quiz.jsx] Quiz creado con IA exitosamente
+{
+  "quizId": 1,
+  "titulo": "Español y redacción indirecta (IA · 5 p)",
+  "cantidadPreguntas": 5
+}
+[2026-01-23T23:49:39.205Z] [INFO] [Quiz.jsx] Verificación de preguntas guardadas
+{
+  "quizId": 1,
+  "cantidadEsperada": 5,
+  "cantidadGuardada": 5,
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Selecciona la opción que presenta la escritura cor..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "En la oración: 'La **celeridad** con la que actuó ..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Lee el siguiente fragmento y elige la opción que m..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "En la oración 'Ella corre muy rápido por el parque..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "Reescribe la siguiente frase para que sea más clar..."
+    }
+  ]
+}
+[2026-01-24T03:05:38.266Z] [INFO] [Quiz.jsx] Creando quiz con IA
+{
+  "titulo": "Español y redacción indirecta (IA · 10 p)",
+  "cantidadPreguntas": 10,
+  "preguntas": [
+    {
+      "type": "multiple",
+      "text": "Selecciona la oración que presenta una correcta ac...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "En la oración 'La decisión del juez fue inexorable...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Identifica el antónimo de la palabra efímero en el...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Lee el siguiente fragmento y elige la opción que m...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "En la oración 'El corredor llegó rápidamente a la ...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Completa la siguiente oración con el conector adec...",
+      "optionsCount": 4
+    },
+    {
+      "type": "tf",
+      "text": "La palabra 'exuberante' se escribe con 'x' y no co...",
+      "optionsCount": 0
+    },
+    {
+      "type": "tf",
+      "text": "En la frase 'Los estudiantes y el profesor llegaro...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "Reemplaza la frase 'que tiene mucha antigüedad' po...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "En el contexto de un debate, ¿qué significa la pal...",
+      "optionsCount": 0
+    }
+  ]
+}
+[2026-01-24T03:05:38.657Z] [INFO] [Quiz.jsx] Quiz creado
+{
+  "id": 2,
+  "titulo": "Español y redacción indirecta (IA · 10 p)",
+  "respuesta": {
+    "data": {
+      "id": 2,
+      "titulo": "Español y redacción indirecta (IA · 10 p)",
+      "descripcion": "Quiz generado con IA sobre: Español y redacción indirecta. Nivel: intermedio.",
+      "id_area": 1,
+      "materia": "Español y redacción indirecta",
+      "puntos_max": 100,
+      "peso_calificacion": "0.00",
+      "fecha_limite": null,
+      "grupos": "[\"V1\"]",
+      "max_intentos": null,
+      "requiere_revision": 0,
+      "activo": 1,
+      "publicado": 0,
+      "creado_por": 21,
+      "time_limit_min": 60,
+      "passing_score": null,
+      "shuffle_questions": 1,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "imagen_portada": null,
+      "recursos_json": null,
+      "created_at": "2026-01-24T03:05:38.000Z",
+      "updated_at": null
+    }
+  }
+}
+[2026-01-24T03:05:38.689Z] [INFO] [Quiz.jsx] Verificación de preguntas guardadas
+{
+  "quizId": 2,
+  "cantidadEsperada": 10,
+  "cantidadGuardada": 10,
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Selecciona la oración que presenta una correcta ac..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "En la oración 'La decisión del juez fue inexorable..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Identifica el antónimo de la palabra efímero en el..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Lee el siguiente fragmento y elige la opción que m..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "En la oración 'El corredor llegó rápidamente a la ..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Completa la siguiente oración con el conector adec..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "La palabra 'exuberante' se escribe con 'x' y no co..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "En la frase 'Los estudiantes y el profesor llegaro..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "Reemplaza la frase 'que tiene mucha antigüedad' po..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "En el contexto de un debate, ¿qué significa la pal..."
+    }
+  ]
+}
+[2026-01-24T03:05:38.690Z] [INFO] [Quiz.jsx] Quiz creado con IA exitosamente
+{
+  "quizId": 2,
+  "titulo": "Español y redacción indirecta (IA · 10 p)",
+  "cantidadPreguntas": 10
+}
+[2026-01-27T17:13:39.149Z] [INFO] [Quiz.jsx] Creando quiz con IA
+{
+  "titulo": "Español y redacción indirecta (IA · 5 p)",
+  "cantidadPreguntas": 5,
+  "preguntas": [
+    {
+      "type": "multiple",
+      "text": "Elija la opción que presenta una correcta acentuac...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "En la oración \"La decisión del juez fue inexorable...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Lea el siguiente fragmento y elija la opción que m...",
+      "optionsCount": 4
+    },
+    {
+      "type": "tf",
+      "text": "En la oración \"Ella corre muy rápido por el parque...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "Complete la siguiente frase para que tenga coheren...",
+      "optionsCount": 0
+    }
+  ]
+}
+[2026-01-27T17:13:39.282Z] [INFO] [Quiz.jsx] Quiz creado
+{
+  "id": 3,
+  "titulo": "Español y redacción indirecta (IA · 5 p)",
+  "respuesta": {
+    "data": {
+      "id": 3,
+      "titulo": "Español y redacción indirecta (IA · 5 p)",
+      "descripcion": "Quiz generado con IA sobre: Español y redacción indirecta. Nivel: intermedio.",
+      "id_area": 1,
+      "materia": "Español y redacción indirecta",
+      "puntos_max": 100,
+      "peso_calificacion": "0.00",
+      "fecha_limite": null,
+      "grupos": "[\"V1\"]",
+      "max_intentos": 3,
+      "requiere_revision": 0,
+      "activo": 1,
+      "publicado": 0,
+      "creado_por": 21,
+      "time_limit_min": 60,
+      "passing_score": null,
+      "shuffle_questions": 1,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "imagen_portada": null,
+      "recursos_json": null,
+      "created_at": "2026-01-27T17:13:39.000Z",
+      "updated_at": null
+    }
+  }
+}
+[2026-01-27T17:13:39.315Z] [INFO] [Quiz.jsx] Verificación de preguntas guardadas
+{
+  "quizId": 3,
+  "cantidadEsperada": 5,
+  "cantidadGuardada": 5,
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Elija la opción que presenta una correcta acentuac..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "En la oración \"La decisión del juez fue inexorable..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Lea el siguiente fragmento y elija la opción que m..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "En la oración \"Ella corre muy rápido por el parque..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "Complete la siguiente frase para que tenga coheren..."
+    }
+  ]
+}
+[2026-01-27T17:13:39.317Z] [INFO] [Quiz.jsx] Quiz creado con IA exitosamente
+{
+  "quizId": 3,
+  "titulo": "Español y redacción indirecta (IA · 5 p)",
+  "cantidadPreguntas": 5
+}
+[2026-01-27T18:29:10.169Z] [INFO] [Quiz.jsx] Creando quiz con IA
+{
+  "titulo": "Español y redacción indirecta (IA · 5 p)",
+  "cantidadPreguntas": 5,
+  "preguntas": [
+    {
+      "type": "multiple",
+      "text": "Identifica la opción que presenta una acentuación ...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "En la oración \"La postura del director fue **infle...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Completa la siguiente oración con el conector lógi...",
+      "optionsCount": 4
+    },
+    {
+      "type": "tf",
+      "text": "Lee el siguiente fragmento: \"La fotosíntesis es un...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "¿Qué tipo de palabra es \"mañana\" en la oración \"Ma...",
+      "optionsCount": 0
+    }
+  ]
+}
+[2026-01-27T18:29:10.534Z] [INFO] [Quiz.jsx] Quiz creado
+{
+  "id": 4,
+  "titulo": "Español y redacción indirecta (IA · 5 p)",
+  "respuesta": {
+    "data": {
+      "id": 4,
+      "titulo": "Español y redacción indirecta (IA · 5 p)",
+      "descripcion": "Quiz generado con IA sobre: Español y redacción indirecta. Nivel: intermedio.",
+      "id_area": 1,
+      "materia": "Español y redacción indirecta",
+      "puntos_max": 100,
+      "peso_calificacion": "0.00",
+      "fecha_limite": null,
+      "grupos": "[\"V1\"]",
+      "max_intentos": null,
+      "requiere_revision": 0,
+      "activo": 1,
+      "publicado": 0,
+      "creado_por": 21,
+      "time_limit_min": 60,
+      "passing_score": null,
+      "shuffle_questions": 1,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "imagen_portada": null,
+      "recursos_json": null,
+      "created_at": "2026-01-27T18:29:10.000Z",
+      "updated_at": null
+    }
+  }
+}
+[2026-01-27T18:29:10.558Z] [INFO] [Quiz.jsx] Verificación de preguntas guardadas
+{
+  "quizId": 4,
+  "cantidadEsperada": 5,
+  "cantidadGuardada": 5,
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Identifica la opción que presenta una acentuación ..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "En la oración \"La postura del director fue **infle..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Completa la siguiente oración con el conector lógi..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "Lee el siguiente fragmento: \"La fotosíntesis es un..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "¿Qué tipo de palabra es \"mañana\" en la oración \"Ma..."
+    }
+  ]
+}
+[2026-01-27T18:29:10.560Z] [INFO] [Quiz.jsx] Quiz creado con IA exitosamente
+{
+  "quizId": 4,
+  "titulo": "Español y redacción indirecta (IA · 5 p)",
+  "cantidadPreguntas": 5
+}

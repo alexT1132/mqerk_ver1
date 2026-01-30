@@ -1,0 +1,84 @@
+# General
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+coverage/
+
+# Server uploads y archivos generados
+server/uploads/
+server/comprobantes/
+server/public/
+server/contratos/
+server/tokens/
+
+# Environment
+.env
+**/.env
+*.local
+*.env.*
+# Archivos de ejemplo con claves expuestas 
+env.txt
+ENV.txt
+**/env.txt
+
+# Editores
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+ehthumbs.db
+Icon?
+desktop.ini
+
+# Project-specific directories
+_logs/
+-p/
+.roo/
+
+# Configuration files with secrets
+server/config.js
+*.config.local
+
+# Cache and temporary files
+.cache/
+*.cache
+*.pid
+*.seed
+*.tmp
+*.temp
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Docker (optional)
+docker-compose.override.yml
+
+# utilidades
+pdf_coor.py
+start.bat
