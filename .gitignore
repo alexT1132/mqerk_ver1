@@ -87,3 +87,8 @@ client/src/components/tools/nexus_config.json
 client/src/components/tools/nexus_settings.json
 server/.env
 client/.env
+
+
+# Si no existe, añade esta regla para evitar commitear backups en el futuro:
+echo "_backups/" >> .gitignore
+git add .gitignore

@@ -51,17 +51,17 @@ function MathText({ text = "" }) {
 
   // ✅ Normalizar saltos de línea y espacios primero
   let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  
+
   // ✅ Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
   // Esto debe hacerse ANTES de proteger las fórmulas
   processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
-  
+
   // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
   // Pero proteger las fórmulas LaTeX para no procesarlas
   const latexPlaceholder = '___LATEX_PLACEHOLDER___';
   const latexMatches = [];
   let placeholderIndex = 0;
-  
+
   // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
   processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
     const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
@@ -69,10 +69,10 @@ function MathText({ text = "" }) {
     placeholderIndex++;
     return placeholder;
   });
-  
+
   // Procesar Markdown: **texto** -> <strong>texto</strong>
   processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
-  
+
   // Restaurar fórmulas LaTeX
   latexMatches.forEach((match, idx) => {
     processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
@@ -96,14 +96,14 @@ function MathText({ text = "" }) {
     // Limpiar espacios en blanco al inicio y final de la fórmula
     const formula = m[1].trim();
     if (formula) {
-      parts.push({ 
-        type: 'math', 
+      parts.push({
+        type: 'math',
         content: formula
       });
     }
     lastIndex = m.index + m[0].length;
   }
-  
+
   if (lastIndex < processedText.length) {
     parts.push({ type: 'text', content: processedText.slice(lastIndex) });
   }
@@ -111,7 +111,7 @@ function MathText({ text = "" }) {
   // Si no se encontraron fórmulas, devolver el texto con HTML procesado (ya con Markdown convertido)
   if (!matchFound || parts.length === 0) {
     return (
-      <span 
+      <span
         className="whitespace-pre-wrap"
         dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
       />
@@ -127,7 +127,7 @@ function MathText({ text = "" }) {
             <InlineMath math={part.content} />
           </span>
         ) : (
-          <span 
+          <span
             key={`text-${idx}`}
             dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
           />
@@ -260,9 +260,9 @@ export default function Quizz_Review() {
   const { quizId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { alumno, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, alumno, isAuthenticated, loading: authLoading } = useAuth();
 
-  const estudianteId = useMemo(() => alumno?.id_estudiante || alumno?.id || alumno?.folio || null, [alumno]);
+  const estudianteId = useMemo(() => alumno?.id || user?.id_estudiante || user?.id || null, [alumno, user]);
 
   // Estado básico del runner
   const [loading, setLoading] = useState(true);
@@ -278,7 +278,7 @@ export default function Quizz_Review() {
   const [isMathQuiz, setIsMathQuiz] = useState(false);
   // Timing por pregunta (ms) para análisis: distribuimos el tiempo entre preguntas según interacción
   const timingRef = useRef({ lastTs: null, lastQid: null, buckets: new Map() });
-  
+
   // Estados para la lógica de seguridad
   const [tabAwayCount, setTabAwayCount] = useState(0);
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -298,7 +298,7 @@ export default function Quizz_Review() {
     const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = ''; return ''; };
     const onPopState = () => { window.history.pushState(null, '', window.location.href); };
     const onVisibility = () => { if (document.visibilityState === 'hidden') { setTabAwayCount((c) => c + 1); } };
-    
+
     const onResize = () => {
       // En móviles/tablets (dispositivos táctiles) NO bloquear por tamaño de ventana
       const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
@@ -315,20 +315,19 @@ export default function Quizz_Review() {
     // VERSIÓN MEJORADA: Bloquea más atajos de teclado
     const onKeyDown = (e) => {
       // Bloqueo de Recarga
-      if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) { 
-        e.preventDefault(); 
+      if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
+        e.preventDefault();
       }
       // Bloqueo de Navegación y Backspace
       if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); }
       if (e.key === 'Backspace' && !['input', 'textarea', 'select'].includes(e.target.tagName.toLowerCase()) && !e.target.isContentEditable) { e.preventDefault(); }
 
       // Bloqueo de atajos para DevTools y ver código fuente
-      if (e.key === 'F12' || 
-         (e.ctrlKey && e.shiftKey && e.key === 'I') || 
-         (e.ctrlKey && e.shiftKey && e.key === 'J') || 
-         (e.ctrlKey && e.shiftKey && e.key === 'C') ||
-         (e.ctrlKey && e.key === 'u'))
-      {
+      if (e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+        (e.ctrlKey && e.shiftKey && e.key === 'J') ||
+        (e.ctrlKey && e.shiftKey && e.key === 'C') ||
+        (e.ctrlKey && e.key === 'u')) {
         e.preventDefault();
       }
     };
@@ -342,7 +341,7 @@ export default function Quizz_Review() {
     window.addEventListener('resize', onResize);
     window.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('contextmenu', onContextMenu, true);
-    
+
     return () => {
       window.removeEventListener('beforeunload', onBeforeUnload);
       window.removeEventListener('popstate', onPopState);
@@ -356,25 +355,25 @@ export default function Quizz_Review() {
   // Lógica de advertencia/bloqueo por cambio de pestaña
   useEffect(() => {
     if (showFinalWarning) return;
-    
+
     if (tabAwayCount >= 5 && tabAwayCount <= 6) {
       setShowWarningModal(true);
     }
     else if (tabAwayCount > 6 && !submitOnceRef.current) {
       submitOnceRef.current = true;
-      setShowWarningModal(false); 
+      setShowWarningModal(false);
       setShowFinalWarning(true);
       setForcedSubmitMessage('El quiz se finalizó por exceder el límite de cambios de pestaña.');
 
       setTimeout(async () => {
-        try { await handleEnviar(); } 
-        catch (err) { console.error("Fallo el envío automático por cambio de pestaña:", err); } 
+        try { await handleEnviar(); }
+        catch (err) { console.error("Fallo el envío automático por cambio de pestaña:", err); }
         // El cierre automático se maneja en el useEffect de finalizado
         // No necesitamos hacer nada aquí porque handleEnviar() ya marca finalizado como true
-      }, 5000); 
+      }, 5000);
     }
   }, [tabAwayCount, navigate, showFinalWarning]);
-  
+
   useEffect(() => {
     let mounted = true;
     const bootstrap = async () => {
@@ -391,15 +390,15 @@ export default function Quizz_Review() {
           setLoading(false);
           return;
         }
-        const [preg, meta] = await Promise.all([ listPreguntasQuiz(quizId), getQuiz(quizId) ]);
-        
+        const [preg, meta] = await Promise.all([listPreguntasQuiz(quizId), getQuiz(quizId)]);
+
         if (!mounted) return;
         setPreguntas(preg?.data?.data || preg?.data || []);
         // Inicializar reloj base al cargar preguntas
         timingRef.current.lastTs = Date.now();
         timingRef.current.lastQid = null;
         const q = meta?.data?.data || meta?.data || {};
-        
+
         // Determinar si es un quiz de matemáticas - buscar materia en múltiples lugares
         // También verificar el título del quiz como fallback
         const materia = q?.materia || meta?.data?.materia || meta?.data?.data?.materia || meta?.materia || '';
@@ -408,12 +407,12 @@ export default function Quizz_Review() {
         console.log('[Quizz_Review] Título del quiz:', titulo);
         console.log('[Quizz_Review] Objeto completo meta:', meta);
         console.log('[Quizz_Review] Objeto q:', q);
-        
+
         // Verificar si es matemáticas por materia o por título
         const esMatematicas = isMathSubject(materia) || isMathSubject(titulo);
         console.log('[Quizz_Review] ¿Es quiz de matemáticas?', esMatematicas);
         setIsMathQuiz(esMatematicas);
-  setQuizMeta(q || null);
+        setQuizMeta(q || null);
         const tlm = Number(q.time_limit_min || q.timeLimitMin || q.tiempo_limite_min || q.time_limit || 0);
         // ✅ CRÍTICO: Si no hay tiempo límite, usar 30 minutos por defecto (nunca null)
         if (!Number.isNaN(tlm) && tlm > 0) {
@@ -442,9 +441,9 @@ export default function Quizz_Review() {
           return;
         }
         setStartedAt(Date.now());
-      } catch (e) { 
-          console.error(e);
-          setError('No se pudieron cargar las preguntas del quiz.'); 
+      } catch (e) {
+        console.error(e);
+        setError('No se pudieron cargar las preguntas del quiz.');
       }
       finally { if (mounted) setLoading(false); }
     };
@@ -458,12 +457,12 @@ export default function Quizz_Review() {
     const key = `quiz_open_${quizId}`;
     const pid = Math.random().toString(36).slice(2);
     const beat = () => {
-      try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), pid })); } catch {}
+      try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), pid })); } catch { }
     };
     beat();
     const iv = setInterval(beat, 5000);
     const onVis = () => beat();
-    const onUnload = () => { try { localStorage.removeItem(key); } catch {} };
+    const onUnload = () => { try { localStorage.removeItem(key); } catch { } };
     window.addEventListener('visibilitychange', onVis);
     window.addEventListener('beforeunload', onUnload);
     window.addEventListener('pagehide', onUnload);
@@ -472,10 +471,10 @@ export default function Quizz_Review() {
       window.removeEventListener('visibilitychange', onVis);
       window.removeEventListener('beforeunload', onUnload);
       window.removeEventListener('pagehide', onUnload);
-      try { localStorage.removeItem(key); } catch {}
+      try { localStorage.removeItem(key); } catch { }
     };
   }, [quizId]);
-  
+
   const [timeLimitSec, setTimeLimitSec] = useState(null);
   const [remainingSec, setRemainingSec] = useState(null);
 
@@ -534,7 +533,7 @@ export default function Quizz_Review() {
 
   const handleEnviar = async () => {
     if (enviando) return;
-    setEnviando(true); 
+    setEnviando(true);
     setError('');
     try {
       // Cerrar el último tramo de tiempo sobre la última pregunta activa
@@ -598,12 +597,12 @@ export default function Quizz_Review() {
       // Fallback: usar localStorage para notificar si no hay window.opener
       try {
         localStorage.setItem('quiz_finished_refresh', JSON.stringify({ quizId, sesionId, timestamp: Date.now() }));
-      } catch {}
+      } catch { }
     } catch (e) {
       console.error(e);
       setError('No se pudo enviar el quiz. Intenta de nuevo.');
       setEnviando(false);
-      throw e; 
+      throw e;
     }
   };
 
@@ -611,7 +610,7 @@ export default function Quizz_Review() {
     if (sec == null) return '--:--';
     const m = Math.floor(sec / 60);
     const s = sec % 60;
-    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   // Contar preguntas respondidas (incluyendo respuestas cortas que pueden estar vacías)
@@ -637,13 +636,13 @@ export default function Quizz_Review() {
     if (returnTo && typeof returnTo === 'string' && returnTo.includes('/alumno/actividades')) {
       return returnTo;
     }
-    
+
     // 2. Intentar obtener areaId del quizMeta
     const areaIdFromMeta = quizMeta?.id_area || quizMeta?.area_id;
     if (areaIdFromMeta && Number.isFinite(Number(areaIdFromMeta))) {
       return `/alumno/actividades?type=quiz&areaId=${areaIdFromMeta}`;
     }
-    
+
     // 3. Intentar obtener areaId de la URL actual (si se pasó como parámetro)
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -651,8 +650,8 @@ export default function Quizz_Review() {
       if (areaIdFromUrl && Number.isFinite(Number(areaIdFromUrl))) {
         return `/alumno/actividades?type=quiz&areaId=${areaIdFromUrl}`;
       }
-    } catch {}
-    
+    } catch { }
+
     // 4. Fallback: área por defecto (Español)
     return '/alumno/actividades?type=quiz&areaId=1';
   };
@@ -660,18 +659,18 @@ export default function Quizz_Review() {
   // Cerrar pestaña con fallback: intenta cerrar y, si el navegador lo bloquea, vuelve a Actividades
   const handleCloseTab = () => {
     const returnPath = getReturnPath();
-    try { localStorage.removeItem(`quiz_open_${quizId}`); } catch {}
+    try { localStorage.removeItem(`quiz_open_${quizId}`); } catch { }
     try {
       if (window.opener && !window.opener.closed) {
-        try { window.opener.focus(); } catch {}
-        try { window.opener.postMessage({ type: 'QUIZ_CLOSED', quizId, sesionId }, window.location.origin); } catch {}
+        try { window.opener.focus(); } catch { }
+        try { window.opener.postMessage({ type: 'QUIZ_CLOSED', quizId, sesionId }, window.location.origin); } catch { }
       }
-    } catch {}
-    try { window.close(); } catch {}
+    } catch { }
+    try { window.close(); } catch { }
     // Si window.close() no cierra (pestaña no abierta por script), redirigir como fallback
     setTimeout(() => {
       try { navigate(returnPath, { replace: true }); }
-      catch { try { window.location.href = returnPath; } catch {} }
+      catch { try { window.location.href = returnPath; } catch { } }
     }, 150);
   };
 
@@ -685,28 +684,28 @@ export default function Quizz_Review() {
   // Cerrar automáticamente la pestaña cuando el quiz termina
   useEffect(() => {
     if (!finalizado) return;
-    
+
     // Limpiar localStorage
-    try { localStorage.removeItem(`quiz_open_${quizId}`); } catch {}
-    
+    try { localStorage.removeItem(`quiz_open_${quizId}`); } catch { }
+
     // Obtener la ruta de retorno correcta
     const returnPath = getReturnPath();
-    
+
     // Función para intentar cerrar la pestaña de manera más agresiva
     const attemptClose = () => {
       try {
         // Notificar a la ventana padre si existe
         if (window.opener && !window.opener.closed) {
-          try { 
-            window.opener.focus(); 
-            window.opener.postMessage({ 
-              type: forcedSubmitMessage ? 'QUIZ_CLOSED' : 'QUIZ_FINISHED', 
-              quizId, 
-              sesionId 
-            }, window.location.origin); 
-          } catch {}
+          try {
+            window.opener.focus();
+            window.opener.postMessage({
+              type: forcedSubmitMessage ? 'QUIZ_CLOSED' : 'QUIZ_FINISHED',
+              quizId,
+              sesionId
+            }, window.location.origin);
+          } catch { }
         }
-        
+
         // Intentar cerrar la pestaña - solo funciona si fue abierta con window.open()
         const canClose = window.opener !== null || window.history.length <= 1;
         if (canClose) {
@@ -719,7 +718,7 @@ export default function Quizz_Review() {
                 window.location.href = 'about:blank';
                 setTimeout(() => {
                   try { navigate(returnPath, { replace: true }); }
-                  catch { try { window.location.href = returnPath; } catch {} }
+                  catch { try { window.location.href = returnPath; } catch { } }
                 }, 100);
               }
             }, 100);
@@ -736,15 +735,15 @@ export default function Quizz_Review() {
         console.log('[Quiz] Error al cerrar pestaña:', e.message);
         // Fallback final: redirigir
         try { navigate(returnPath, { replace: true }); }
-        catch { try { window.location.href = returnPath; } catch {} }
+        catch { try { window.location.href = returnPath; } catch { } }
       }
     };
-    
+
     // Si fue forzado por seguridad o timeout, cerrar más rápido
     if (forcedSubmitMessage || autoTimeout) {
       const delay = forcedSubmitMessage ? 2500 : 4000; // 2.5s si fue forzado, 4s si fue timeout
       const closeTimer = setTimeout(attemptClose, delay);
-      
+
       return () => {
         clearTimeout(closeTimer);
       };
@@ -752,7 +751,7 @@ export default function Quizz_Review() {
     // Si terminó normalmente, dar tiempo para ver el resultado pero cerrar automáticamente
     else {
       const closeTimer = setTimeout(attemptClose, 8000); // 8 segundos después de terminar normalmente
-      
+
       return () => {
         clearTimeout(closeTimer);
       };
@@ -777,8 +776,8 @@ export default function Quizz_Review() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
-    <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm mt-12 sm:mt-16">
-      <div className="w-full px-3 sm:px-6 lg:px-8 py-1 sm:py-1.5">
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm mt-12 sm:mt-16">
+        <div className="w-full px-3 sm:px-6 lg:px-8 py-1 sm:py-1.5">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0 flex-1">
               <div className="flex items-start gap-2">
@@ -792,7 +791,7 @@ export default function Quizz_Review() {
               <div className="hidden sm:flex items-center text-[10px] text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full font-medium">
                 {answeredCount}/{totalQuestions}
               </div>
-              <div className={`flex items-center gap-1 text-xs sm:text-sm font-bold px-2 py-0.5 rounded-full border ${timeLimitSec ? (remainingSec!=null && remainingSec<=60 ? 'border-red-300 bg-red-50 text-red-700 animate-pulse' : 'border-gray-200 bg-white text-gray-800') : 'border-gray-200 bg-gray-100 text-gray-600'}`}>
+              <div className={`flex items-center gap-1 text-xs sm:text-sm font-bold px-2 py-0.5 rounded-full border ${timeLimitSec ? (remainingSec != null && remainingSec <= 60 ? 'border-red-300 bg-red-50 text-red-700 animate-pulse' : 'border-gray-200 bg-white text-gray-800') : 'border-gray-200 bg-gray-100 text-gray-600'}`}>
                 <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span className="whitespace-nowrap">{timeLimitSec ? formatTime(remainingSec) : 'Sin límite'}</span>
               </div>
@@ -806,7 +805,7 @@ export default function Quizz_Review() {
         )}
       </div>
 
-  <div className="w-full px-3 sm:px-6 lg:px-10 pt-12 sm:pt-16 pb-4 sm:pb-8">
+      <div className="w-full px-3 sm:px-6 lg:px-10 pt-12 sm:pt-16 pb-4 sm:pb-8">
         {loading && (
           <div className="py-24 text-center text-gray-500 flex flex-col items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
@@ -840,9 +839,9 @@ export default function Quizz_Review() {
                     <div className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[12px] sm:text-sm font-bold ring-3 sm:ring-4 ring-indigo-100">{idx + 1}</div>
                     <div className="w-full">
                       <p className="font-semibold text-gray-900 mb-3 sm:mb-4 text-[15px] sm:text-lg">
-                        <MathText text={p.enunciado || p.pregunta || `Pregunta ${idx+1}`} />
+                        <MathText text={p.enunciado || p.pregunta || `Pregunta ${idx + 1}`} />
                       </p>
-                      
+
                       {/* ✅ Imagen de la pregunta si existe */}
                       {(p.imagen || p.image) && (
                         <div className="mb-3 sm:mb-4">
@@ -856,7 +855,7 @@ export default function Quizz_Review() {
                           />
                         </div>
                       )}
-                      
+
                       {/* Opción múltiple */}
                       {p.tipo === 'opcion_multiple' && (p.opciones || []).length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
@@ -932,8 +931,8 @@ export default function Quizz_Review() {
                             });
                             return esMatematicas ? (
                               <MathEquationEditor
-                                value={typeof respuestas[p.id] === 'object' && respuestas[p.id]?.valor_texto !== undefined 
-                                  ? respuestas[p.id].valor_texto 
+                                value={typeof respuestas[p.id] === 'object' && respuestas[p.id]?.valor_texto !== undefined
+                                  ? respuestas[p.id].valor_texto
                                   : (respuestas[p.id] || '')}
                                 onChange={(value) => handleTextAnswer(p.id, value)}
                                 placeholder="Escribe tu respuesta aquí..."
@@ -942,8 +941,8 @@ export default function Quizz_Review() {
                             ) : (
                               <>
                                 <textarea
-                                  value={typeof respuestas[p.id] === 'object' && respuestas[p.id]?.valor_texto !== undefined 
-                                    ? respuestas[p.id].valor_texto 
+                                  value={typeof respuestas[p.id] === 'object' && respuestas[p.id]?.valor_texto !== undefined
+                                    ? respuestas[p.id].valor_texto
                                     : (respuestas[p.id] || '')}
                                   onChange={(e) => handleTextAnswer(p.id, e.target.value)}
                                   placeholder="Escribe tu respuesta aquí..."
@@ -995,7 +994,7 @@ export default function Quizz_Review() {
       </div>
 
       {!loading && !error && !finalizado && totalQuestions > 0 && (
-         <div className="sticky bottom-0 z-40 bg-white/90 backdrop-blur-lg shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)] border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
+        <div className="sticky bottom-0 z-40 bg-white/90 backdrop-blur-lg shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)] border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
           <div className="w-full px-3 sm:px-6 lg:px-8 py-2 sm:py-3 flex items-center justify-center sm:justify-end">
             <button
               disabled={enviando || answeredCount === 0 || showFinalWarning || showWarningModal || isWindowTooSmall}
@@ -1016,13 +1015,13 @@ export default function Quizz_Review() {
             <AlertTriangle className="w-14 h-14 text-yellow-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900">Has Salido de la Pestaña del Quiz</h2>
             <p className="text-gray-600 mt-3">
-              El verdadero reto es contigo mismo. ¡Confiamos en tu honestidad!<br/>
+              El verdadero reto es contigo mismo. ¡Confiamos en tu honestidad!<br />
               Respira profundo y concéntrate en tus respuestas.
             </p>
             <p className="text-sm text-gray-500 mt-4">
               (Advertencia {tabAwayCount} de 7)
             </p>
-            <button 
+            <button
               onClick={() => setShowWarningModal(false)}
               className="mt-6 w-full px-4 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
@@ -1039,7 +1038,7 @@ export default function Quizz_Review() {
             <Maximize2 className="w-14 h-14 text-indigo-600 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900">Maximiza la Ventana para Continuar</h2>
             <p className="text-gray-600 mt-2">
-             Para asegurar una experiencia de examen justa, el quiz se pausará hasta que la ventana ocupe la pantalla completa.
+              Para asegurar una experiencia de examen justa, el quiz se pausará hasta que la ventana ocupe la pantalla completa.
             </p>
           </div>
         </div>

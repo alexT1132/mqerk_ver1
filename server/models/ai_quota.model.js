@@ -36,11 +36,11 @@ export const getLimitsByRole = async (role) => {
   const roleLower = (role || '').toLowerCase();
   return {
     diario: roleLower === 'estudiante' ? config.limite_diario_estudiante :
-            roleLower === 'asesor' ? config.limite_diario_asesor :
-            roleLower === 'admin' ? config.limite_diario_admin : config.limite_diario_estudiante,
+      roleLower === 'asesor' ? config.limite_diario_asesor :
+        roleLower === 'admin' ? config.limite_diario_admin : config.limite_diario_estudiante,
     mensual: roleLower === 'estudiante' ? config.limite_mensual_estudiante :
-             roleLower === 'asesor' ? config.limite_mensual_asesor :
-             roleLower === 'admin' ? config.limite_mensual_admin : config.limite_mensual_estudiante,
+      roleLower === 'asesor' ? config.limite_mensual_asesor :
+        roleLower === 'admin' ? config.limite_mensual_admin : config.limite_mensual_estudiante,
     global: {
       diario: config.limite_diario_global,
       mensual: config.limite_mensual_global
@@ -50,6 +50,13 @@ export const getLimitsByRole = async (role) => {
     cacheTTL: config.cache_ttl_horas || 6
   };
 };
+
+/**
+ * Registra un uso de IA en el log
+ * @param {Object} usageData - Datos del uso
+ * @returns {Promise<number>} ID del registro creado
+ */
+import AiUsageModel from './aiUsageModel.js';
 
 /**
  * Registra un uso de IA en el log
@@ -82,7 +89,7 @@ export const logAIUsage = async (usageData) => {
          AND TABLE_NAME = 'ai_usage_log' 
          AND COLUMN_NAME = 'proveedor'`
       );
-      
+
       if (columnCheck && columnCheck.length > 0) {
         columns += ', proveedor';
         values.push(proveedor || 'gemini');
@@ -97,6 +104,43 @@ export const logAIUsage = async (usageData) => {
       `INSERT INTO ai_usage_log (${columns}) VALUES (${placeholders})`,
       values
     );
+
+    // --- SINCRONIZACIÓN CON LEGACY TRACKING (Simuladores y Quizzes) ---
+    // Esto asegura que el contador que ve el usuario en el frontend se actualice automáticamente
+    // sin necesidad de que el frontend llame a /increment manualmente.
+    if (exito && id_usuario) {
+      try {
+        let legacyType = null;
+        let estudianteId = null;
+
+        // Mapear el propósito/tipo_operacion a los tipos del legacy tracking
+        if (tipo_operacion === 'quizzes' || tipo_operacion === 'quiz') {
+          legacyType = 'quiz';
+        } else if (tipo_operacion === 'analisis' || tipo_operacion === 'simulacion') {
+          legacyType = 'simulacion';
+        }
+
+        if (legacyType) {
+          // Obtener id_estudiante asociado al usuario
+          const [userRows] = await db.query('SELECT id_estudiante FROM usuarios WHERE id = ?', [id_usuario]);
+          if (userRows.length > 0 && userRows[0].id_estudiante) {
+            estudianteId = userRows[0].id_estudiante;
+            await AiUsageModel.incrementUsage(estudianteId, legacyType);
+            console.log(`[AI Quota] ✅ Legacy counter actualizado para ${legacyType} (user ${id_usuario} -> student ${estudianteId})`);
+          } else {
+            console.log(`[AI Quota] ℹ️ No se actualizó legacy counter: Usuario ${id_usuario} no es estudiante o no tiene ID asociado.`);
+          }
+        }
+      } catch (legacyErr) {
+        // No fallar si el legacy tracking falla, solo loguear
+        // Esto puede pasar si ya se alcanzó el límite diario en el legacy tracking,
+        // pero aquí permitimos pasar si la cuota global (logs) lo permite.
+        // Ojo: Si queremos ser estrictos con el límite de 5, el checkQuota debería haberlo atrapado antes,
+        // pero checkQuota usa getLimitsByRole que es diferente a AiUsageModel.
+        console.warn(`[AI Quota] ⚠️ No se pudo actualizar legacy counter: ${legacyErr.message}`);
+      }
+    }
+    // ------------------------------------------------------------------
 
     return result.insertId;
   } catch (error) {

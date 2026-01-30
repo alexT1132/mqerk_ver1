@@ -271,6 +271,7 @@ export const crearIntentoQuiz = async ({ id_quiz, id_estudiante, puntaje, tiempo
   const sql = `INSERT INTO quizzes_intentos (id_quiz, id_estudiante, puntaje, intent_number, tiempo_segundos, total_preguntas, correctas) VALUES (?,?,?,?,?,?,?)`;
   try {
     const [res] = await db.query(sql, [Number(id_quiz), Number(id_estudiante), Number(puntaje), Number(intent_number), tiempo_segundos ? Number(tiempo_segundos) : null, total_preguntas ? Number(total_preguntas) : null, correctas ? Number(correctas) : null]);
+    console.log('[crearIntentoQuiz] Insertado intento ID:', res.insertId, 'para estudiante:', id_estudiante);
     const [rows] = await db.query('SELECT * FROM quizzes_intentos WHERE id = ?', [res.insertId]);
     return rows[0];
   } catch (e) {

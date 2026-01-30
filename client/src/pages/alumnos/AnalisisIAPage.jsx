@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'https://esm.sh/remark-gfm';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
+import AlertDialog from '../../components/ui/AlertDialog';
 
 /**
  * Página completa para mostrar el análisis de rendimiento generado por la IA de Gemini.
@@ -42,6 +43,7 @@ export default function AnalisisIAPage() {
   const [chatQuery, setChatQuery] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [chatResponse, setChatResponse] = useState(null);
+  const [showQuotaModal, setShowQuotaModal] = useState(false); // Nuevo estado para el modal de cuota
 
   const contentRef = useRef(null);
 
@@ -72,12 +74,21 @@ export default function AnalisisIAPage() {
   // ✅ Cargar contador de uso de IA desde base de datos
   useEffect(() => {
     const loadAiUsage = async () => {
-      const usage = await getUsageToday();
+      const qUsage = await getUsageToday('quiz');
+      const sUsage = await getUsageToday('simulacion');
+
       setAiUsage(prev => ({
         ...prev,
-        quizCount: usage.count,
-        quizLimit: usage.limit
+        quizCount: qUsage.count,
+        quizLimit: qUsage.limit,
+        simuladorCount: sUsage.count,
+        simuladorLimit: sUsage.limit
       }));
+
+      // Mostrar modal si la cuota está agotada
+      if ((qUsage.limit - qUsage.count <= 0) && (sUsage.limit - sUsage.count <= 0)) {
+        setShowQuotaModal(true);
+      }
     };
     loadAiUsage();
   }, [estudianteId, user?.id]);
@@ -87,7 +98,7 @@ export default function AnalisisIAPage() {
   const DAILY_LIMIT = userRole === 'asesor' || userRole === 'admin' ? 20 : 5;
 
   // ✅ SOLUCIÓN: Obtener uso desde base de datos (persistente)
-  const getUsageToday = async () => {
+  const getUsageToday = async (type = 'quiz') => {
     try {
       const studentId = estudianteId || user?.id;
       if (!studentId) {
@@ -95,62 +106,33 @@ export default function AnalisisIAPage() {
         return { count: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
       }
 
-      const response = await api.get(`/ai-usage/${studentId}/quiz`);
-      console.log('✅ Uso de IA obtenido desde BD (quiz):', response.data.data);
+      const response = await api.get(`/ai-usage/${studentId}/${type}`);
+      // console.log(`✅ Uso de IA obtenido desde BD (${type}):`, response.data.data);
       return response.data.data;
     } catch (error) {
-      console.error('❌ Error obteniendo uso de IA desde BD:', error);
+      console.error(`❌ Error obteniendo uso de IA (${type}) desde BD:`, error);
       // Fallback en caso de error
       return { count: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
-    }
-  };
-
-  const incrementUsage = async () => {
-    try {
-      const studentId = estudianteId || user?.id;
-      if (!studentId) {
-        console.warn('⚠️ No se pudo obtener ID de estudiante para incrementar uso de IA');
-        return;
-      }
-
-      const response = await api.post(`/ai-usage/${studentId}/quiz/increment`);
-      const newUsage = response.data.data;
-      setAiUsage(prev => ({
-        ...prev,
-        quizCount: newUsage.count,
-        quizLimit: newUsage.limit
-      }));
-      console.log('✅ Uso de IA incrementado en BD (quiz):', newUsage);
-    } catch (error) {
-      if (error.response?.status === 429) {
-        console.warn('⚠️ Límite diario de análisis alcanzado');
-        const currentUsage = error.response.data.data;
-        setAiUsage(prev => ({
-          ...prev,
-          quizCount: currentUsage.count,
-          quizLimit: currentUsage.limit
-        }));
-      } else {
-        console.error('❌ Error incrementando uso de IA:', error);
-      }
     }
   };
 
   // Detectar fuente del análisis y limpiar marcadores ocultos (debe estar antes de los useEffect que lo usan)
   const sourceMatch = analysisTextState ? analysisTextState.match(/<<<AI_SOURCE:(\w+)>>>/) : null;
   const analysisSource = sourceMatch?.[1] || null;
-  const cleanedAnalysisText = analysisTextState ? analysisTextState.replace(/\n*<<<AI_SOURCE:\w+>>>\s*$/, '') : analysisTextState;
+  const cleanedAnalysisText = analysisTextState ? analysisTextState.replace(/\n*<<<AI_SOURCE:[\w_]+>>>\s*$/, '') : analysisTextState;
 
-  // Incrementar uso cuando se muestra un análisis exitoso de Gemini
+  // Notificar si se está usando fallback por error
   useEffect(() => {
-    if (cleanedAnalysisText && !isLoading && !error) {
-      if (analysisSource === 'GEMINI') {
-        // Solo incrementar si es un análisis de Gemini (no fallback)
-        incrementUsage();
-      }
+    if (analysisSource === 'FALLBACK_ON_ERROR') {
+      // Usar setTimeout para evitar conflictos con renderizado inicial
+      setTimeout(() => {
+        // Si tienes un toast/notification system global, úsalo aquí. 
+        // Como no veo importado 'showNotification', usaré logs o alertas visuales locales si es necesario.
+        // Pero dado que el componente ya maneja 'error', aquí solo es informativo.
+        console.warn('⚠️ Mostrando análisis local debido a fallo de API.');
+      }, 500);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cleanedAnalysisText, isLoading, error, analysisSource]);
+  }, [analysisSource]);
 
   // Helpers para procesar markdown
   const stripMd = (s) => String(s || '')
@@ -510,7 +492,7 @@ export default function AnalisisIAPage() {
           }
           <div
             ref={contentRef}
-            className="w-full"
+            className="w-full min-h-[500px] prose prose-indigo max-w-none"
           >
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
@@ -717,7 +699,12 @@ export default function AnalisisIAPage() {
               </h3>
               <button
                 onClick={() => setShowChat(!showChat)}
-                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                disabled={(aiUsage.quizLimit - aiUsage.quizCount <= 0 && aiUsage.simuladorLimit - aiUsage.simuladorCount <= 0) || (analysisSource && analysisSource.includes('FALLBACK'))}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+                  (aiUsage.quizLimit - aiUsage.quizCount <= 0 && aiUsage.simuladorLimit - aiUsage.simuladorCount <= 0) || (analysisSource && analysisSource.includes('FALLBACK'))
+                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                }`}
               >
                 <MessageSquare className="w-4 h-4" />
                 {showChat ? 'Ocultar Chat' : 'Preguntar al Tutor'}
@@ -745,7 +732,18 @@ export default function AnalisisIAPage() {
                 )}
 
                 <div className="relative">
+                  {/* Bloqueo si no hay cuota */}
+                  {(aiUsage.remaining <= 0 || (analysisSource && analysisSource.includes('FALLBACK'))) && (
+                    <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center text-center rounded-xl border border-slate-200 p-4">
+                      <AlertTriangle className="w-8 h-8 text-amber-500 mb-2" />
+                      <p className="text-sm font-bold text-slate-700">Tutor no disponible</p>
+                      <p className="text-xs text-slate-500 max-w-[200px]">
+                        {aiUsage.remaining <= 0 ? 'Has agotado tu cuota diaria de IA.' : 'El análisis local no permite consultas al tutor.'}
+                      </p>
+                    </div>
+                  )}
                   <textarea
+                    disabled={aiUsage.remaining <= 0 || (analysisSource && analysisSource.includes('FALLBACK'))}
                     value={chatQuery}
                     onChange={(e) => setChatQuery(e.target.value)}
                     placeholder="Ejemplo: Explícame mejor por qué fallé la pregunta sobre acentuación..."
@@ -816,8 +814,10 @@ export default function AnalisisIAPage() {
                   {analysisSource === 'GROQ' && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">GROQ LLAMA</span>
                   )}
-                  {analysisSource === 'FALLBACK' && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">ANÁLISIS LOCAL</span>
+                  {(analysisSource === 'FALLBACK' || analysisSource === 'FALLBACK_LOCAL' || analysisSource === 'FALLBACK_ON_ERROR') && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> ANALIZADOR LOCAL
+                    </span>
                   )}
                 </div>
                 <p className="text-sm text-slate-500 truncate">{itemNameState || 'Evaluación'}</p>
@@ -887,6 +887,15 @@ export default function AnalisisIAPage() {
           100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); background-color: transparent; }
         }
       `}</style>
+
+      <AlertDialog
+        open={showQuotaModal}
+        onClose={() => setShowQuotaModal(false)}
+        title="Cuota de IA Agotada"
+        message="Has agotado tu cuota diaria de análisis con IA. Ahora se utilizará el analizador local."
+        type="warning"
+        confirmText="Entendido"
+      />
     </div >
   );
 }

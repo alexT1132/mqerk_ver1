@@ -26,7 +26,7 @@ export const listPreguntasQuiz = async (req, res) => {
         try {
           const metadata = JSON.parse(p.metadata_json);
           preguntaImagen = metadata.imagen || metadata.image || null;
-        } catch {}
+        } catch { }
       }
       safe.push({
         id: p.id,
@@ -46,7 +46,7 @@ export const listPreguntasQuiz = async (req, res) => {
             try {
               const metadata = JSON.parse(o.metadata_json);
               opcionImagen = metadata.imagen || metadata.image || null;
-            } catch {}
+            } catch { }
           }
           return { id: o.id, texto: o.texto, imagen: opcionImagen }; // ✅ Incluir imagen de la opción
         })
@@ -54,7 +54,7 @@ export const listPreguntasQuiz = async (req, res) => {
     }
     res.json({ data: safe });
   } catch (e) {
-    console.error('listPreguntasQuiz', e); res.status(500).json({ message: 'Error interno'});
+    console.error('listPreguntasQuiz', e); res.status(500).json({ message: 'Error interno' });
   }
 };
 
@@ -84,7 +84,7 @@ export const getQuizFull = async (req, res) => {
         try {
           const metadata = JSON.parse(p.metadata_json);
           preguntaImagen = metadata.imagen || metadata.image || null;
-        } catch {}
+        } catch { }
       }
       // ✅ CRÍTICO: Extraer imagen de cada opción si existe
       const opcionesConImagen = opciones.map(o => {
@@ -97,7 +97,7 @@ export const getQuizFull = async (req, res) => {
           try {
             const metadata = JSON.parse(o.metadata_json);
             opcionImagen = metadata.imagen || metadata.image || null;
-          } catch {}
+          } catch { }
         }
         return { ...o, imagen: opcionImagen };
       });
@@ -115,11 +115,11 @@ export const crearSesionQuiz = async (req, res) => {
   try {
     const { id } = req.params; // quiz
     const { id_estudiante } = req.body;
-    if(!id_estudiante) return res.status(400).json({ message:'id_estudiante requerido'});
+    if (!id_estudiante) return res.status(400).json({ message: 'id_estudiante requerido' });
     const quiz = await Quizzes.getQuizById(id);
-    if(!quiz) return res.status(404).json({ message:'Quiz no encontrado'});
+    if (!quiz) return res.status(404).json({ message: 'Quiz no encontrado' });
     if (Object.prototype.hasOwnProperty.call(quiz, 'activo') && Number(quiz.activo) === 0) {
-      return res.status(404).json({ message:'Quiz no encontrado'});
+      return res.status(404).json({ message: 'Quiz no encontrado' });
     }
     // Política más flexible: permitir iniciar sesión aunque no tenga permiso explícito del área.
     // Esto evita bloquear al alumno que entra desde la pestaña de Quizzes.
@@ -133,14 +133,14 @@ export const crearSesionQuiz = async (req, res) => {
     // determinar número de intento proyectado
     const totalPrevios = await Quizzes.contarIntentosQuizEstudiante(id, id_estudiante);
     if (quiz.max_intentos && totalPrevios >= quiz.max_intentos) {
-      return res.status(400).json({ message:'Max intentos alcanzado'});
+      return res.status(400).json({ message: 'Max intentos alcanzado' });
     }
     // Convertir minutos a segundos si existe la columna time_limit_min en la actividad (se guarda en actividades)
     const limiteSeg = quiz.time_limit_min ? Number(quiz.time_limit_min) * 60 : null;
     const sesion = await QQ.crearSesion({ id_quiz: id, id_estudiante, intento_num: totalPrevios + 1, tiempo_limite_seg: limiteSeg });
     res.status(201).json({ data: sesion });
-  } catch(e){ 
-    console.error('crearSesionQuiz', e); 
+  } catch (e) {
+    console.error('crearSesionQuiz', e);
     // Si es un error de foreign key, dar un mensaje más específico
     if (e.code === 'ER_NO_REFERENCED_ROW_2' || e.errno === 1452) {
       console.error('[crearSesionQuiz] Error de foreign key:', e.sqlMessage);
@@ -150,12 +150,12 @@ export const crearSesionQuiz = async (req, res) => {
       if (!quizCheck) {
         return res.status(404).json({ message: 'Quiz no encontrado en la base de datos' });
       }
-      return res.status(500).json({ 
+      return res.status(500).json({
         message: 'Error al crear sesión: problema con la estructura de la base de datos. Contacta al administrador.',
         details: 'El quiz existe pero hay un problema con las foreign keys de la tabla quizzes_sesiones'
       });
     }
-    res.status(500).json({ message:'Error interno', details: e.message });
+    res.status(500).json({ message: 'Error interno', details: e.message });
   }
 };
 
@@ -164,28 +164,29 @@ export const registrarRespuestasSesion = async (req, res) => {
   try {
     const { id_sesion } = req.params;
     const { respuestas } = req.body; // [{id_pregunta, id_opcion, tiempo_ms}]
-    if(!Array.isArray(respuestas)) return res.status(400).json({ message:'respuestas debe ser array'});
+    if (!Array.isArray(respuestas)) return res.status(400).json({ message: 'respuestas debe ser array' });
     const sesion = await QQ.getSesion(id_sesion);
-    if(!sesion || sesion.estado !== 'en_progreso') return res.status(404).json({ message:'Sesión no válida'});
+    if (!sesion || sesion.estado !== 'en_progreso') return res.status(404).json({ message: 'Sesión no válida' });
     // No bloquear por permisos de área en guardado incremental
     for (const r of respuestas) {
       if (!r.id_pregunta) continue; // ignorar inválidas
       await QQ.agregarRespuesta({ id_sesion, id_pregunta: r.id_pregunta, id_opcion: r.id_opcion || null, valor_texto: r.valor_texto, tiempo_ms: r.tiempo_ms });
     }
-    res.json({ message:'OK' });
-  } catch(e){ console.error('registrarRespuestasSesion', e); res.status(500).json({ message:'Error interno'}); }
+    res.json({ message: 'OK' });
+  } catch (e) { console.error('registrarRespuestasSesion', e); res.status(500).json({ message: 'Error interno' }); }
 };
 
 // Finalizar sesión: corrige, inserta intento en quizzes_intentos y devuelve resultados
 export const finalizarSesionQuiz = async (req, res) => {
   try {
     const { id_sesion } = req.params;
+    console.log('[finalizarSesionQuiz] Iniciando finalización para sesión:', id_sesion);
     const sesion = await QQ.getSesion(id_sesion);
-    if(!sesion || sesion.estado !== 'en_progreso') return res.status(404).json({ message:'Sesión no válida'});
+    if (!sesion || sesion.estado !== 'en_progreso') return res.status(404).json({ message: 'Sesión no válida' });
     const quiz = await Quizzes.getQuizById(sesion.id_quiz);
-    if(!quiz) return res.status(404).json({ message:'Quiz no encontrado'});
+    if (!quiz) return res.status(404).json({ message: 'Quiz no encontrado' });
     if (Object.prototype.hasOwnProperty.call(quiz, 'activo') && Number(quiz.activo) === 0) {
-      return res.status(404).json({ message:'Quiz no encontrado'});
+      return res.status(404).json({ message: 'Quiz no encontrado' });
     }
     // Política más flexible: permitir finalizar sesión y registrar intento aunque no tenga permiso del área
     // if (quiz.id_area) {
@@ -211,22 +212,25 @@ export const finalizarSesionQuiz = async (req, res) => {
     } catch { /* ignore */ }
     // Insertar intento definitivo con tiempo
     try {
+      console.log('[finalizarSesionQuiz] Creando intento para quiz:', sesion.id_quiz, 'estudiante:', sesion.id_estudiante, 'puntaje:', resultado.puntaje);
       await Quizzes.crearIntentoQuiz({ id_quiz: sesion.id_quiz, id_estudiante: sesion.id_estudiante, puntaje: resultado.puntaje, tiempo_segundos, total_preguntas: resultado.total_preguntas, correctas: resultado.correctas });
+      console.log('[finalizarSesionQuiz] Intento creado exitosamente.');
     } catch (e) {
+      console.error('[finalizarSesionQuiz] Error al crear intento:', e);
       // Si es un error de foreign key, dar un mensaje más específico
       if (e.code === 'ER_NO_REFERENCED_ROW_2' || e.errno === 1452) {
         console.error('[finalizarSesionQuiz] Error de foreign key:', e.message);
         console.error('[finalizarSesionQuiz] Quiz ID:', sesion.id_quiz, 'Estudiante ID:', sesion.id_estudiante);
-        return res.status(500).json({ 
-          message: 'Error al guardar el intento del quiz: problema de configuración de la base de datos. Contacta a soporte.', 
-          details: e.message 
+        return res.status(500).json({
+          message: 'Error al guardar el intento del quiz: problema de configuración de la base de datos. Contacta a soporte.',
+          details: e.message
         });
       }
       throw e;
     }
     res.json({ data: { sesion: { id: sesion.id, estado: 'finalizado' }, ...resultado } });
-  } catch(e){ 
-    console.error('finalizarSesionQuiz', e); 
+  } catch (e) {
+    console.error('finalizarSesionQuiz', e);
     const status = e?.response?.status || 500;
     const msg = e?.message || 'Error interno';
     res.status(status).json({ message: msg, ...(e?.details && { details: e.details }) });
@@ -301,7 +305,7 @@ export const getReviewQuizIntento = async (req, res) => {
         try {
           const metadata = JSON.parse(p.metadata_json);
           preguntaImagen = metadata.imagen || metadata.image || null;
-        } catch {}
+        } catch { }
       }
       // ✅ CRÍTICO: Extraer imagen de cada opción si existe
       const opcionesConImagen = opciones.map(o => {
@@ -314,7 +318,7 @@ export const getReviewQuizIntento = async (req, res) => {
           try {
             const metadata = JSON.parse(o.metadata_json);
             opcionImagen = metadata.imagen || metadata.image || null;
-          } catch {}
+          } catch { }
         }
         return { ...o, imagen: opcionImagen };
       });
@@ -343,7 +347,7 @@ export const getReviewQuizIntento = async (req, res) => {
           correcta = seleccionadas.length === 1 && correctasIds.includes(seleccionadas[0]);
         }
       }
-      
+
       // Para respuestas cortas, incluir campos de calificación desde la respuesta
       const respuestaObj = {
         id: p.id,
@@ -357,7 +361,7 @@ export const getReviewQuizIntento = async (req, res) => {
         correcta,
         tiempo_ms,
       };
-      
+
       // Si es respuesta corta y tenemos la respuesta con calificación, incluir campos adicionales
       if (p.tipo === 'respuesta_corta' && respuestaCorta) {
         respuestaObj.id_respuesta = respuestaCorta.id; // ID de la respuesta en la BD
@@ -367,7 +371,7 @@ export const getReviewQuizIntento = async (req, res) => {
         respuestaObj.revisada_por = respuestaCorta.revisada_por || null;
         respuestaObj.notas_revision = respuestaCorta.notas_revision || null;
       }
-      
+
       return respuestaObj;
     });
 

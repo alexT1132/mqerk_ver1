@@ -505,9 +505,9 @@ export function QuizTable({
                                                                 </p>
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); openLongText(quiz.nombre, quiz.descripcion, { tipo: 'quiz', id: quiz.id }); }}
-                                                                    className="mt-0.5 text-[9px] sm:text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                                                                    className=" mt-0.5 text-[9px] sm:text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
                                                                 >
-                                                                    Ver mas..
+                                                                    Ver más...
                                                                 </button>
                                                             </div>
                                                         )}

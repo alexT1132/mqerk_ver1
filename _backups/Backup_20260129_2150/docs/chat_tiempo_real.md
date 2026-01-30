@@ -1,5 +1,0 @@
-# Chat en Tiempo Real
-
-En la plataforma del alumno, se incluye un icono flotante accesible desde cualquier página que permite iniciar un chat en tiempo real con el asesor asignado o con el soporte técnico (administrador de la Academia). Esta funcionalidad está diseñada para resolver dudas sobre problemas de la plataforma, pagos, actividades académicas o cualquier consulta relacionada con la experiencia del estudiante.
-
-Los usuarios pueden enviar mensajes de texto instantáneos, adjuntar archivos como PDFs, imágenes, documentos y otros tipos de archivos para facilitar una asistencia más efectiva y detallada. El chat incluye indicadores de escritura en tiempo real, notificaciones push para nuevos mensajes, historial de conversaciones persistente, y soporte para múltiples sesiones simultáneas si es necesario. Además, permite marcar mensajes como leídos, buscar en el historial y gestionar archivos compartidos directamente desde la interfaz.

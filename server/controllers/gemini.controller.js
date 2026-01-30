@@ -278,15 +278,51 @@ const getApiKeyByPurpose = (purpose) => {
 };
 
 
+import { checkQuota, logAIUsage } from '../models/ai_quota.model.js';
+
 export const geminiGenerate = async (req, res) => {
   try {
+    // 0. VERIFICACIÓN DE CUOTA DE IA (Strict Backend Enforcement)
+    // Extraer usuario desde el middleware authREquired (req.user debe existir)
+    const userId = req.user?.id;
+    const userRole = req.user?.role || req.user?.rol;
+
+    // Solo verificar cuota si hay un usuario autenticado
+    if (userId) {
+      const quotaCheck = await checkQuota(userId, userRole);
+
+      if (!quotaCheck.allowed) {
+        console.warn(`[AI Quota] 🚫 Usuario ${userId} bloqueado por límite: ${quotaCheck.reason}`);
+        return res.status(403).json({
+          error: 'Límite de uso de IA alcanzado. Por favor espera al reinicio de tu cuota.',
+          code: 'QUOTA_EXCEEDED',
+          reason: quotaCheck.reason,
+          quota: quotaCheck.quota
+        });
+      }
+
+      // Adjuntar info de cuota al request para usarlo en la respuesta
+      const dailyStats = quotaCheck.quota?.daily;
+      const monthlyStats = quotaCheck.quota?.monthly;
+      req.aiQuota = {
+        restanteHoy: dailyStats ? dailyStats.remaining : 0,
+        restanteMes: monthlyStats ? monthlyStats.remaining : 0,
+        porcentajeHoy: dailyStats ? Math.round((dailyStats.used / dailyStats.limit) * 100) : 0,
+        porcentajeMes: monthlyStats ? Math.round((monthlyStats.used / monthlyStats.limit) * 100) : 0,
+        limiteDiario: dailyStats ? dailyStats.limit : 0,
+        limiteMensual: monthlyStats ? monthlyStats.limit : 0
+      };
+    } else {
+      console.warn('[Gemini] ⚠️ Petición sin usuario autenticado. La cuota no se descontará.');
+    }
+
     // Extraer el propósito de la petición para seleccionar la API key correcta
     const { purpose, proveedor } = req.body || {};
-    
+
     // Si el proveedor no es 'gemini' o está vacío, permitir (compatibilidad)
     // pero registrar como 'gemini' para este endpoint
     const finalProveedor = (proveedor && proveedor.toLowerCase() === 'groq') ? 'groq' : 'gemini';
-    
+
     const apiKey = getApiKeyByPurpose(purpose);
 
     if (!apiKey) {
@@ -370,6 +406,30 @@ export const geminiGenerate = async (req, res) => {
           const finishReason = data?.candidates?.[0]?.finishReason;
           if (finishReason && finishReason !== 'STOP') {
             console.warn(`[Gemini] ⚠️ finishReason: ${finishReason} (posible truncamiento)`);
+          }
+
+          // REGISTRAR USO EXITOSO EN DB
+          if (userId) {
+            try {
+              // Estimar tokens (muy aproximado: 1 palabra ~ 1.3 tokens)
+              const inputTokensEstimate = JSON.stringify(contents).length / 4;
+              const outputTokensEstimate = responseText.length / 4;
+              const totalTokens = Math.ceil(inputTokensEstimate + outputTokensEstimate);
+
+              await logAIUsage({
+                id_usuario: userId,
+                tipo_operacion: purpose || 'generacion_texto',
+                modelo_usado: currentModel,
+                tokens_estimados: totalTokens,
+                exito: true,
+                proveedor: finalProveedor,
+                // Si tienes forma de medir duración real, úsala. Aquí es aproximado.
+                duracion_ms: 0
+              });
+              console.log(`[AI Quota] ✅ Uso registrado para usuario ${userId}`);
+            } catch (logErr) {
+              console.error('[AI Quota] Error registrando uso (no crítico):', logErr);
+            }
           }
 
           // Agregar información de cuota si está disponible
@@ -500,11 +560,11 @@ export const geminiGenerate = async (req, res) => {
 
     // --- FALLBACK A GROQ CUANDO GEMINI FALLA ---
     console.error(`[Gemini] Falló tras ${attempt} intentos. Intentando fallback a Groq...`);
-    
+
     try {
       // Importar dinámicamente para evitar dependencia circular
       const { groqGenerate } = await import('./groq.controller.js');
-      
+
       // Crear un mock request/response para reutilizar la lógica de Groq
       const mockReq = {
         ...req,
@@ -514,10 +574,10 @@ export const geminiGenerate = async (req, res) => {
           purpose: purpose || 'general' // Usar el mismo propósito
         }
       };
-      
+
       // Llamar a groqGenerate directamente
       return groqGenerate(mockReq, res);
-      
+
     } catch (groqError) {
       console.error('[Gemini->Groq] Fallback también falló:', groqError.message);
       return res.status(lastStatus).json({

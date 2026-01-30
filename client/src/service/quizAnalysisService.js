@@ -1,3 +1,4 @@
+import api from '../api/axios';
 // Servicio dedicado para análisis de rendimiento de quizzes con IA (Gemini + Respaldo Groq)
 // REFACTORIZADO: Ahora usa el proxy backend en lugar de llamadas directas a Google API
 
@@ -25,6 +26,18 @@ export function isQuizIAConfigured() {
   return true; // El proxy backend maneja la autenticación
 }
 
+export const getAiUsage = async (studentId, type = 'quiz') => {
+  try {
+    if (!studentId) return { count: 0, limit: 5, remaining: 5 };
+    const response = await api.get(`/ai-usage/${studentId}/${type}`);
+    return response.data.data;
+  } catch (error) {
+    console.error(`Error obteniendo uso de IA (${type}):`, error);
+    return { count: 0, limit: 5, remaining: 5 };
+  }
+};
+
+
 // Normaliza la respuesta del endpoint de Gemini a texto legible
 function extractTextFromGemini(respJson) {
   // Estructuras comunes: candidates[0].content.parts[0].text ó promptFeedback
@@ -44,7 +57,399 @@ function extractTextFromGroq(respJson) {
 /**
  * Ejecuta un análisis resumido de desempeño para un quiz específico.
  */
-export async function analyzeQuizPerformance(params) {
+// Utilidades locales para generación de fallback (MOVED TO MODULE SCOPE)
+const stripMd = (s) => String(s || '')
+  .replace(/`{1,3}[^`]*`{1,3}/g, '') // code
+  .replace(/\*\*|__/g, '') // bold
+  .replace(/\*|_|~~/g, '') // other md marks
+  .replace(/\[(.*?)\]\((.*?)\)/g, '$1') // links
+  .replace(/#+\s*(.*)/g, '$1') // headings
+  .replace(/>\s?/g, '') // blockquotes
+  .replace(/\s+/g, ' ') // collapse spaces
+  .trim();
+const normalize = (s) => String(s || '')
+  .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+  .toLowerCase();
+const truncate = (s, n) => (String(s).length > n ? String(s).slice(0, n - 1).trimEnd() + '…' : String(s));
+
+const pickMicroTip = (enun) => {
+  const t = normalize(enun);
+  // Gramática específica: queísmo / dequeísmo
+  if (/(queismo|queísmo|dequeismo|dequeísmo)/i.test(t)) {
+    return 'Prueba si el verbo o expresión exige "de" (régimen). Sustituye la subordinada por "eso/esto" y verifica: si suena bien sin "de" → evita el dequeísmo; si el verbo pide "de" → evita el queísmo.';
+  }
+  // Ciencias naturales / Astronomía
+  if (/(planeta|sistema solar|mercurio|venus|tierra|marte|jupit|saturno|urano|neptuno|orbita|sol)/i.test(t)) {
+    return 'Repasa el orden de los planetas y un rasgo clave de cada uno (Mercurio→Neptuno).';
+  }
+  // Historia
+  if (/(primera guerra mundial|segunda guerra mundial|independenc|revolucion|siglo|año|fecha|periodo|cronolo)/i.test(t)) {
+    return 'Construye una línea de tiempo con fechas y hitos; asocia causas y consecuencias.';
+  }
+  // Matemáticas
+  if (/(porcent|fraccion|proporc|ecuacion|polinom|derivad|integral|teorema|pitagoras|angulo|triang|algebra|aritmet)/i.test(t)) {
+    return 'Escribe la fórmula/definición clave y reemplaza datos con unidades; valida con un ejemplo simple.';
+  }
+  // Lectura y comprensión
+  if (/(idea principal|infer|argument|autor|parrafo|texto|titulo|resumen|contexto)/i.test(t)) {
+    return 'Subraya palabras clave y distingue idea principal de detalles; parafrasea en una línea.';
+  }
+  // Gramática y ortografía
+  if (/(ortograf|acentu|diacri|tilde|puntu|coma|punto y coma|signos|concord|sujeto|verbo|estilo indirecto|discurso indirecto)/i.test(t)) {
+    if (/(acentu|diacri|tilde)/i.test(t)) return 'Repasa acentuación diacrítica: tú/tu, él/el, más/mas, sí/si, té/te.';
+    if (/(puntu|coma|punto y coma|signos)/i.test(t)) return 'Cuida la puntuación: comas en incisos/listas y evita coma entre sujeto y predicado.';
+    if (/(concord|sujeto|verbo)/i.test(t)) return 'Verifica concordancia sujeto–verbo en número y persona.';
+    if (/(estilo indirecto|discurso indirecto)/i.test(t)) return 'Ajusta tiempos y pronombres al pasar a estilo indirecto.';
+  }
+  // Ciencias (química/física/biología)
+  if (/(atomo|molecul|tabla periodica|elemento|fuerza|energia|velocidad|aceleracion|celula|adn|mitosis|meiosis|fotosintesis|ecosistema)/i.test(t)) {
+    return 'Identifica magnitudes/partes y relaciones; usa unidades correctas y un esquema rápido.';
+  }
+  return 'Identifica el concepto/regla clave del enunciado antes de elegir la respuesta.';
+};
+
+const buildExamplesSection = (incorrectasLista) => {
+  if (!Array.isArray(incorrectasLista) || incorrectasLista.length === 0) return '';
+  const items = incorrectasLista.filter(Boolean).slice(0, 3);
+  if (!items.length) return '';
+  const bullets = items.map((enunRaw) => {
+    const clean = stripMd(enunRaw).replace(/\s+/g, ' ').trim();
+    const resumen = truncate(clean, 110);
+    const tip = pickMicroTip(clean);
+    return `- "${resumen}"\n  Micro-consejo: ${tip}`;
+  }).join('\n');
+  return `\n\n### Ejemplos breves de preguntas con error\n\n${bullets}`;
+};
+
+const buildExplainSection = (detail) => {
+  if (!Array.isArray(detail) || !detail.length) return '';
+  const lines = detail.slice(0, 5).map((q) => {
+    const enun = stripMd(q.enunciado || '').trim();
+    const sel = (Array.isArray(q.seleccion) ? q.seleccion : []).filter(Boolean).join('; ');
+    const cor = (Array.isArray(q.correctas) ? q.correctas : []).filter(Boolean).join('; ');
+    const hint = pickMicroTip(enun);
+    return `- ${enun}\n  Elegiste: ${sel || '—'}\n  Correcta(s): ${cor || '—'}\n  Breve porqué: ${hint}`;
+  }).join('\n');
+  return `\n\n### Explicación de preguntas incorrectas\n\n${lines}`;
+};
+
+// Clasificación simple de tema + recursos abiertos sugeridos
+const classifyTopic = (enun) => {
+  const t = normalize(enun);
+  if (/(queismo|queísmo)/i.test(t)) return 'queismo';
+  if (/(dequeismo|dequeísmo)/i.test(t)) return 'dequeismo';
+  if (/(puntu|coma|punto y coma|signos)/i.test(t)) return 'puntuacion';
+  if (/(acentu|diacri|tilde)/i.test(t)) return 'acentuacion';
+  if (/(concord|sujeto|verbo)/i.test(t)) return 'concordancia';
+  if (/(redaccion|cohesion|coherenc|parrafo|oracion|estilo)/i.test(t)) return 'redaccion';
+  if (/(porcent|fraccion|proporc|ecuacion|polinom|algebra|aritmet|teorema|pitagoras|angulo|triang)/i.test(t)) return 'matematicas';
+  if (/(idea principal|infer|argument|autor|parrafo|texto|titulo|resumen|contexto|comprension)/i.test(t)) return 'lectura';
+  if (/(primera guerra mundial|segunda guerra mundial|independenc|revolucion|siglo|año|fecha|periodo|cronolo|historia)/i.test(t)) return 'historia';
+  if (/(atomo|molecul|tabla periodica|elemento|fuerza|energia|velocidad|aceleracion|celula|adn|mitosis|meiosis|fotosintesis|ecosistema)/i.test(t)) return 'ciencias';
+  if (/(planeta|sistema solar|orbita|sol|mercurio|venus|tierra|marte|jupiter|saturno|urano|neptuno)/i.test(t)) return 'astronomia';
+  if (/(gramatic|ortograf)/i.test(t)) return 'gramatica-general';
+  return 'general';
+};
+
+const resourcesFor = (topic) => {
+  switch (topic) {
+    case 'queismo':
+      return [
+        { label: 'Queísmo – Wikipedia', url: 'https://es.wikipedia.org/wiki/Que%C3%ADsmo' },
+        { label: 'DPD RAE – Queísmo (índice)', url: 'https://www.rae.es/diccionario-panhispanico-de-dudas' },
+      ];
+    case 'dequeismo':
+      return [
+        { label: 'Dequeísmo – Wikipedia', url: 'https://es.wikipedia.org/wiki/Deque%C3%ADsmo' },
+        { label: 'DPD RAE – Dequeísmo (índice)', url: 'https://www.rae.es/diccionario-panhispanico-de-dudas' },
+      ];
+    case 'puntuacion':
+      return [
+        { label: 'Puntuación (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Puntuaci%C3%B3n' },
+        { label: 'Ortografía (RAE)', url: 'https://www.rae.es/recursos/ortografia' },
+      ];
+    case 'acentuacion':
+      return [
+        { label: 'Tilde diacrítica (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Tilde_diacr%C3%ADtica' },
+        { label: 'Ortografía (RAE)', url: 'https://www.rae.es/recursos/ortografia' },
+      ];
+    case 'concordancia':
+      return [
+        { label: 'Concordancia gramatical', url: 'https://es.wikipedia.org/wiki/Concordancia_(gram%C3%A1tica)' },
+        { label: 'DPD RAE – Concordancia (índice)', url: 'https://www.rae.es/diccionario-panhispanico-de-dudas' },
+      ];
+    case 'redaccion':
+      return [
+        { label: 'Redacción (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Redacci%C3%B3n' },
+        { label: 'Conectores (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Conector_l%C3%B3gico' },
+      ];
+    case 'matematicas':
+      return [
+        { label: 'Khan Academy: Álgebra', url: 'https://es.khanacademy.org/math/algebra' },
+        { label: 'Khan Academy: Porcentajes', url: 'https://es.khanacademy.org/math/pre-algebra/percent' },
+      ];
+    case 'lectura':
+      return [
+        { label: 'Comprensión de lectura (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Comprensi%C3%B3n_de_lectura' },
+        { label: 'Lectura activa: técnicas', url: 'https://es.wikipedia.org/wiki/Lectura' },
+      ];
+    case 'historia':
+      return [
+        { label: 'Historia universal (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Historia_universal' },
+        { label: 'Línea de tiempo (Wikipedia)', url: 'https://es.wikipedia.org/wiki/L%C3%ADnea_de_tiempo' },
+      ];
+    case 'ciencias':
+      return [
+        { label: 'Khan Academy: Física básica', url: 'https://es.khanacademy.org/science/physics' },
+        { label: 'Khan Academy: Biología', url: 'https://es.khanacademy.org/science/biology' },
+      ];
+    case 'astronomia':
+      return [
+        { label: 'Sistema solar (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Sistema_solar' },
+        { label: 'Planetas (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Planeta' },
+      ];
+    case 'gramatica-general':
+      return [
+        { label: 'Ortografía (RAE)', url: 'https://www.rae.es/recursos/ortografia' },
+        { label: 'DPD (RAE): dudas', url: 'https://www.rae.es/diccionario-panhispanico-de-dudas' },
+      ];
+    default:
+      return [
+        { label: 'Khan Academy (español)', url: 'https://es.khanacademy.org/' },
+        { label: 'Wikipedia: conceptos básicos', url: 'https://es.wikipedia.org/wiki/Wikipedia:Portada' },
+      ];
+  }
+};
+
+const buildRecurringSection = (list) => {
+  if (!Array.isArray(list) || !list.length) return '';
+  const top = list.slice(0, 5);
+  const bullets = top.map((it) => {
+    const raw = stripMd(it?.enunciado || '').replace(/\s+/g, ' ').trim();
+    if (!raw) return null;
+    const resumen = truncate(raw, 120);
+    const tip = pickMicroTip(raw);
+    const topic = classifyTopic(raw);
+    const links = resourcesFor(topic).slice(0, 2).map(r => `[${r.label}](${r.url})`).join(', ');
+    const veces = Number(it?.veces || 1);
+    return `- "${resumen}" (veces: ${veces})\n  Pista: ${tip}\n  Recursos: ${links}`;
+  }).filter(Boolean).join('\n');
+  if (!bullets) return '';
+  return `\n\n### Errores recurrentes y recursos\n\n${bullets}`;
+};
+
+// Fallback: construir explicación mínima cuando no tenemos detalle por pregunta
+const buildExplainFromList = (list) => {
+  if (!Array.isArray(list) || !list.length) return '';
+  const items = list.filter(Boolean).slice(0, 4);
+  const lines = items.map((enunRaw) => {
+    const enun = stripMd(enunRaw || '').trim();
+    const hint = pickMicroTip(enun);
+    return `- ${enun}\n  Elegiste: N/D\n  Correcta(s): N/D\n  Breve porqué: ${hint}`;
+  }).join('\n');
+  return `\n\n### Explicación de preguntas incorrectas\n\n${lines}`;
+};
+
+export const buildFallbackAnalysis = (p) => {
+  try {
+    const name = p?.itemName || 'Quiz';
+    const totalIntentos = Number(p?.totalIntentos || 0);
+    const mejor = Number(p?.mejorPuntaje || 0);
+    const promedio = Math.round(Number(p?.promedio || 0));
+    const scores = Array.isArray(p?.scores) ? p.scores : [];
+    const ultimo = Number(p?.ultimoPuntaje ?? (scores.length ? scores[scores.length - 1] : 0));
+    const desviacion = (typeof p?.desviacionPuntaje === 'number') ? p.desviacionPuntaje.toFixed(2) : 'N/D';
+    const pendiente = (typeof p?.pendienteTendencia === 'number') ? p.pendienteTendencia.toFixed(3) : 'N/D';
+    const promDur = (typeof p?.promedioDuracion === 'number') ? Math.round(p.promedioDuracion) : null;
+    const mejorDur = (typeof p?.mejorDuracion === 'number') ? Math.round(p.mejorDuracion) : null;
+    const peorDur = (typeof p?.peorDuracion === 'number') ? Math.round(p.peorDuracion) : null;
+    const intentNum = p?.intentoNumero;
+    const totPreg = p?.totalPreguntasIntento;
+    const corr = p?.correctasIntento;
+    const inc = p?.incorrectasIntento;
+    const om = p?.omitidasIntento;
+    const avgQ = (typeof p?.promedioTiempoPregunta !== 'undefined' && p?.promedioTiempoPregunta != null)
+      ? Math.round(p.promedioTiempoPregunta / 1000) : null;
+    const totalT = (typeof p?.totalTiempoIntento !== 'undefined' && p?.totalTiempoIntento != null)
+      ? Math.round(p.totalTiempoIntento / 1000) : null;
+
+
+
+    const intro = buildHumanIntro(p);
+
+    // Resumen muy breve (sin secciones genéricas)
+    const secResumen = `\n\n### Resultado del intento\n\n` +
+      `- Calificación: ${ultimo}%\n` +
+      `- Correctas: ${corr || 0} / ${totPreg || 0}\n` +
+      `- Incorrectas: ${inc || 0}\n` +
+      `- Total de intentos: ${totalIntentos}\n` +
+      `- Mejor puntaje: ${mejor}%`;
+
+    const explic = buildExplainSection(p?.incorrectasDetalle);
+    const secRecurrentes = buildRecurringSection(p?.erroresRecurrentes);
+    const secGuia = buildSecResourceGuide(p);
+
+    const secConclusion = `\n\n### Próximos pasos\n\n` +
+      `Enfócate en dominar los temas donde fallaste. Usa los recursos sugeridos y practica con ejercicios similares. ` +
+      `La constancia es clave para mejorar.`;
+
+    // Orden simplificado: Intro → Resumen → Explicación → Recurrentes → Guía → Conclusión (SIN tendencia, equilibrio ni progreso)
+    return [intro, secResumen, explic, secRecurrentes, secGuia, secConclusion, '\n\n<<<AI_SOURCE:FALLBACK>>>'].join('');
+  } catch (e) {
+    console.warn('No se pudo construir análisis local de fallback:', e);
+    return '### Análisis\n\nNo se pudo obtener la respuesta de la IA. Revisa tu conexión e intenta nuevamente.';
+  }
+};
+
+// Garantiza secciones mínimas en la salida final y normaliza encabezados
+const escapeReg = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const stripAccents = (s) => String(s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '');
+const hasHeadingStrict = (md, title) => new RegExp(`(^|\n)###\\s+${escapeReg(title)}\\b`, 'i').test(String(md || ''));
+const hasHeadingLoose = (md, title) => {
+  const lines = String(md || '').split('\n');
+  const tNorm = stripAccents(title).toLowerCase();
+  for (const raw of lines) {
+    const l = raw.trim();
+    if (!l) continue;
+    // Acepta ya sea un heading markdown o una línea que coincide con el título (con o sin dos puntos)
+    if (/^#{1,6}\s+/i.test(l)) {
+      const h = stripAccents(l.replace(/^#{1,6}\s+/, '')).toLowerCase();
+      if (h.startsWith(tNorm)) return true;
+    } else {
+      const w = stripAccents(l.replace(/[:：]+\s*$/, '')).toLowerCase();
+      if (w === tNorm) return true;
+    }
+  }
+  return false;
+};
+const normalizeHeadings = (md) => {
+  if (!md) return md;
+  // Primero: si un heading ### aparece pegado al texto anterior (sin salto de línea), forzar salto.
+  // Aplica para niveles 1–6 de #.
+  const ensureLineBreaksBeforeHashes = (txt) => String(txt).replace(/#{1,6}\s+/g, (match, offset, str) => {
+    if (offset === 0) return match; // ya está al inicio
+    const prev = str[offset - 1];
+    if (prev === '\n') return match; // ya tiene salto
+    return '\n\n' + match; // forzar línea en blanco antes del heading
+  });
+  let text = ensureLineBreaksBeforeHashes(md);
+  const titles = [
+    // ❌ Secciones genéricas eliminadas:
+    // 'Resumen general',
+    // 'Tendencia y variabilidad',
+    // 'Equilibrio puntaje-tiempo',
+    // 'Análisis de errores',
+
+    // ✅ Secciones útiles que se mantienen:
+    'Progreso respecto al oficial',
+    'Guía para encontrar recursos',
+    'Errores recurrentes y recursos',
+    'Recomendaciones técnicas',
+    'Conclusión breve',
+    'Explicación de preguntas incorrectas',
+    'Ejemplos breves de preguntas con error'
+  ];
+  const lines = String(text).split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    let l = lines[i];
+    const raw = l.trim();
+    const rawNoColon = raw.replace(/[:：]+\s*$/, '');
+    const matchedTitle = titles.find(t => stripAccents(rawNoColon).toLowerCase() === stripAccents(t).toLowerCase());
+    if (matchedTitle) {
+      // Asegurar línea en formato heading ### y separar con una línea en blanco antes
+      if (out.length && out[out.length - 1].trim() !== '') out.push('');
+      out.push(`### ${matchedTitle}`);
+      // Si siguiente línea no está vacía, añadir una línea en blanco después también
+      if (i + 1 < lines.length && lines[i + 1].trim() !== '') {
+        out.push('');
+      }
+      continue;
+    }
+    // Si ya viene como heading con otro nivel, lo normalizamos a ###
+    const m = raw.match(/^(#{1,6})\s+(.+)/);
+    if (m) {
+      const text = m[2];
+      const maybeTitle = titles.find(t => stripAccents(text).toLowerCase().startsWith(stripAccents(t).toLowerCase()));
+      if (maybeTitle) {
+        if (out.length && out[out.length - 1].trim() !== '') out.push('');
+        out.push(`### ${maybeTitle}`);
+        if (i + 1 < lines.length && lines[i + 1].trim() !== '') out.push('');
+        continue;
+      }
+    }
+    out.push(l);
+  }
+  // Compactar líneas en blanco dobles
+  return out.join('\n').replace(/\n{3,}/g, '\n\n');
+};
+
+const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
+const buildSecResumen = (p) => {
+  const name = p?.itemName || 'Quiz';
+  const totalIntentos = num(p?.totalIntentos) ?? 0;
+  const mejor = num(p?.mejorPuntaje) ?? 0;
+  const promedio = Math.round(num(p?.promedio) ?? 0);
+  const scores = Array.isArray(p?.scores) ? p.scores : [];
+  const ultimo = num(p?.ultimoPuntaje ?? (scores.length ? scores[scores.length - 1] : 0));
+  const oficial = num(p?.oficialPuntaje);
+  const prev = num(p?.previoPuntaje);
+  const dLastPrev = (typeof p?.deltaUltimoVsAnterior === 'number') ? p.deltaUltimoVsAnterior : (ultimo != null && prev != null ? ultimo - prev : null);
+  const dLastOff = (typeof p?.deltaUltimoVsOficial === 'number') ? p.deltaUltimoVsOficial : (ultimo != null && oficial != null ? ultimo - oficial : null);
+  const dBestOff = (typeof p?.deltaMejorVsOficial === 'number') ? p.deltaMejorVsOficial : ((num(p?.mejorPuntaje) != null && oficial != null) ? num(p?.mejorPuntaje) - oficial : null);
+  const lines = [
+    `- Has realizado ${totalIntentos} intento(s) en "${name}".`,
+    `- Mejor puntaje: ${mejor}%. Promedio: ${promedio}%. Último: ${ultimo}%.`,
+    (oficial != null ? `- Oficial (intento 1): ${oficial}%` : null),
+    (dLastPrev != null ? `- Cambio último vs. anterior: ${dLastPrev > 0 ? '+' : ''}${dLastPrev} pts` : null),
+    (dLastOff != null ? `- Cambio último vs. oficial: ${dLastOff > 0 ? '+' : ''}${dLastOff} pts` : null),
+    (dBestOff != null ? `- Cambio mejor vs. oficial: ${dBestOff > 0 ? '+' : ''}${dBestOff} pts` : null),
+  ].filter(Boolean);
+  return `\n\n### Resumen general\n\n${lines.join('\n')}`;
+};
+// Guía general de recursos (siempre útil)
+const buildSecResourceGuide = (p) => {
+  return `\n\n### Guía para encontrar recursos\n\n` +
+    `- Escribe 2–3 palabras clave del enunciado + “explicación” o “ejercicios resueltos”.\n` +
+    `- Para PDFs: añade \`filetype:pdf\` (ej.: porcentajes descuento filetype:pdf).\n` +
+    `- Limita por sitios confiables: \`site:es.khanacademy.org\`, \`site:wikipedia.org\`, \`site:rae.es\`.\n` +
+    `- Matemáticas: “Khan Academy [tema] ejercicios”, “propiedad [tema] ejemplos”.\n` +
+    `- Lengua/Gramática: “DPD RAE [duda]”, “queísmo dequeísmo ejemplos”.\n` +
+    `- Historia/Ciencias: “línea de tiempo [evento]”, “concepto [tema] resumen + ejemplos”.`;
+};
+// Saludo humano inicial para que el alumno sienta acompañamiento
+const buildHumanIntro = (p) => {
+  const name = p?.itemName || 'esta evaluación';
+  const total = num(p?.totalIntentos) ?? 0;
+  const scores = Array.isArray(p?.scores) ? p.scores : [];
+  const ultimo = num(p?.ultimoPuntaje ?? (scores.length ? scores[scores.length - 1] : null));
+  const best = num(p?.mejorPuntaje);
+  const alumno = (p?.alumnoNombre || '').trim();
+  const first = alumno ? alumno.split(/\s+/)[0] : '';
+  const parts = [];
+  parts.push(`${alumno ? `¡Hola, ${first}!` : '¡Hola!'} Veo que llevas ${total} intento${total === 1 ? '' : 's'} en ${name}. Gracias por tu esfuerzo — vamos a convertirlo en aprendizaje útil.`);
+  if (best != null && ultimo != null && ultimo < best) {
+    parts.push(`Aunque el último fue ${ultimo}%, ya demostraste que puedes llegar a ${best}%. Te ayudo a recuperar ese nivel y superarlo.`);
+  } else if (ultimo != null) {
+    parts.push(`En el último intento obtuviste ${ultimo}%. Te comparto claves concretas para seguir subiendo.`);
+  } else if (best != null) {
+    parts.push(`Tu mejor resultado hasta ahora es ${best}%.`);
+  }
+  parts.push(`Abajo tienes un diagnóstico breve y consejos accionables. Vamos paso a paso.`);
+  return parts.join(' ');
+};
+
+const insertBeforeHeading = (md, headingTitle, sectionMd) => {
+  if (!sectionMd) return md;
+  const lines = String(md || '').split('\n');
+  const idx = lines.findIndex(l => /^###\s+/.test(l) && l.toLowerCase().includes(headingTitle.toLowerCase()));
+  if (idx === -1) return md + sectionMd; // si no existe, lo agregamos al final
+  const before = lines.slice(0, idx).join('\n');
+  const after = lines.slice(idx).join('\n');
+  return before + sectionMd + '\n' + after;
+};
+
+async function _analyzeQuizPerformanceInternal(params) {
   const {
     itemName,
     alumnoNombre,
@@ -88,534 +493,63 @@ export async function analyzeQuizPerformance(params) {
     materiasConDiagnostico,
   } = params || {};
 
-  // Utilidades locales para generación de fallback (INTACTAS)
-  const stripMd = (s) => String(s || '')
-    .replace(/`{1,3}[^`]*`{1,3}/g, '') // code
-    .replace(/\*\*|__/g, '') // bold
-    .replace(/\*|_|~~/g, '') // other md marks
-    .replace(/\[(.*?)\]\((.*?)\)/g, '$1') // links
-    .replace(/#+\s*(.*)/g, '$1') // headings
-    .replace(/>\s?/g, '') // blockquotes
-    .replace(/\s+/g, ' ') // collapse spaces
-    .trim();
-  const normalize = (s) => String(s || '')
-    .normalize('NFD').replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
-  const truncate = (s, n) => (String(s).length > n ? String(s).slice(0, n - 1).trimEnd() + '…' : String(s));
-
-  const pickMicroTip = (enun) => {
-    const t = normalize(enun);
-    // Gramática específica: queísmo / dequeísmo
-    if (/(queismo|queísmo|dequeismo|dequeísmo)/i.test(t)) {
-      return 'Prueba si el verbo o expresión exige "de" (régimen). Sustituye la subordinada por "eso/esto" y verifica: si suena bien sin "de" → evita el dequeísmo; si el verbo pide "de" → evita el queísmo.';
-    }
-    // Ciencias naturales / Astronomía
-    if (/(planeta|sistema solar|mercurio|venus|tierra|marte|jupit|saturno|urano|neptuno|orbita|sol)/i.test(t)) {
-      return 'Repasa el orden de los planetas y un rasgo clave de cada uno (Mercurio→Neptuno).';
-    }
-    // Historia
-    if (/(primera guerra mundial|segunda guerra mundial|independenc|revolucion|siglo|año|fecha|periodo|cronolo)/i.test(t)) {
-      return 'Construye una línea de tiempo con fechas y hitos; asocia causas y consecuencias.';
-    }
-    // Matemáticas
-    if (/(porcent|fraccion|proporc|ecuacion|polinom|derivad|integral|teorema|pitagoras|angulo|triang|algebra|aritmet)/i.test(t)) {
-      return 'Escribe la fórmula/definición clave y reemplaza datos con unidades; valida con un ejemplo simple.';
-    }
-    // Lectura y comprensión
-    if (/(idea principal|infer|argument|autor|parrafo|texto|titulo|resumen|contexto)/i.test(t)) {
-      return 'Subraya palabras clave y distingue idea principal de detalles; parafrasea en una línea.';
-    }
-    // Gramática y ortografía
-    if (/(ortograf|acentu|diacri|tilde|puntu|coma|punto y coma|signos|concord|sujeto|verbo|estilo indirecto|discurso indirecto)/i.test(t)) {
-      if (/(acentu|diacri|tilde)/i.test(t)) return 'Repasa acentuación diacrítica: tú/tu, él/el, más/mas, sí/si, té/te.';
-      if (/(puntu|coma|punto y coma|signos)/i.test(t)) return 'Cuida la puntuación: comas en incisos/listas y evita coma entre sujeto y predicado.';
-      if (/(concord|sujeto|verbo)/i.test(t)) return 'Verifica concordancia sujeto–verbo en número y persona.';
-      if (/(estilo indirecto|discurso indirecto)/i.test(t)) return 'Ajusta tiempos y pronombres al pasar a estilo indirecto.';
-    }
-    // Ciencias (química/física/biología)
-    if (/(atomo|molecul|tabla periodica|elemento|fuerza|energia|velocidad|aceleracion|celula|adn|mitosis|meiosis|fotosintesis|ecosistema)/i.test(t)) {
-      return 'Identifica magnitudes/partes y relaciones; usa unidades correctas y un esquema rápido.';
-    }
-    return 'Identifica el concepto/regla clave del enunciado antes de elegir la respuesta.';
-  };
-
-  const buildExamplesSection = (incorrectasLista) => {
-    if (!Array.isArray(incorrectasLista) || incorrectasLista.length === 0) return '';
-    const items = incorrectasLista.filter(Boolean).slice(0, 3);
-    if (!items.length) return '';
-    const bullets = items.map((enunRaw) => {
-      const clean = stripMd(enunRaw).replace(/\s+/g, ' ').trim();
-      const resumen = truncate(clean, 110);
-      const tip = pickMicroTip(clean);
-      return `- "${resumen}"\n  Micro-consejo: ${tip}`;
-    }).join('\n');
-    return `\n\n### Ejemplos breves de preguntas con error\n\n${bullets}`;
-  };
-
-  const buildExplainSection = (detail) => {
-    if (!Array.isArray(detail) || !detail.length) return '';
-    const lines = detail.slice(0, 5).map((q) => {
-      const enun = stripMd(q.enunciado || '').trim();
-      const sel = (Array.isArray(q.seleccion) ? q.seleccion : []).filter(Boolean).join('; ');
-      const cor = (Array.isArray(q.correctas) ? q.correctas : []).filter(Boolean).join('; ');
-      const hint = pickMicroTip(enun);
-      return `- ${enun}\n  Elegiste: ${sel || '—'}\n  Correcta(s): ${cor || '—'}\n  Breve porqué: ${hint}`;
-    }).join('\n');
-    return `\n\n### Explicación de preguntas incorrectas\n\n${lines}`;
-  };
-
-  // Clasificación simple de tema + recursos abiertos sugeridos
-  const classifyTopic = (enun) => {
-    const t = normalize(enun);
-    if (/(queismo|queísmo)/i.test(t)) return 'queismo';
-    if (/(dequeismo|dequeísmo)/i.test(t)) return 'dequeismo';
-    if (/(puntu|coma|punto y coma|signos)/i.test(t)) return 'puntuacion';
-    if (/(acentu|diacri|tilde)/i.test(t)) return 'acentuacion';
-    if (/(concord|sujeto|verbo)/i.test(t)) return 'concordancia';
-    if (/(redaccion|cohesion|coherenc|parrafo|oracion|estilo)/i.test(t)) return 'redaccion';
-    if (/(porcent|fraccion|proporc|ecuacion|polinom|algebra|aritmet|teorema|pitagoras|angulo|triang)/i.test(t)) return 'matematicas';
-    if (/(idea principal|infer|argument|autor|parrafo|texto|titulo|resumen|contexto|comprension)/i.test(t)) return 'lectura';
-    if (/(primera guerra mundial|segunda guerra mundial|independenc|revolucion|siglo|año|fecha|periodo|cronolo|historia)/i.test(t)) return 'historia';
-    if (/(atomo|molecul|tabla periodica|elemento|fuerza|energia|velocidad|aceleracion|celula|adn|mitosis|meiosis|fotosintesis|ecosistema)/i.test(t)) return 'ciencias';
-    if (/(planeta|sistema solar|orbita|sol|mercurio|venus|tierra|marte|jupiter|saturno|urano|neptuno)/i.test(t)) return 'astronomia';
-    if (/(gramatic|ortograf)/i.test(t)) return 'gramatica-general';
-    return 'general';
-  };
-
-  const resourcesFor = (topic) => {
-    switch (topic) {
-      case 'queismo':
-        return [
-          { label: 'Queísmo – Wikipedia', url: 'https://es.wikipedia.org/wiki/Que%C3%ADsmo' },
-          { label: 'DPD RAE – Queísmo (índice)', url: 'https://www.rae.es/diccionario-panhispanico-de-dudas' },
-        ];
-      case 'dequeismo':
-        return [
-          { label: 'Dequeísmo – Wikipedia', url: 'https://es.wikipedia.org/wiki/Deque%C3%ADsmo' },
-          { label: 'DPD RAE – Dequeísmo (índice)', url: 'https://www.rae.es/diccionario-panhispanico-de-dudas' },
-        ];
-      case 'puntuacion':
-        return [
-          { label: 'Puntuación (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Puntuaci%C3%B3n' },
-          { label: 'Ortografía (RAE)', url: 'https://www.rae.es/recursos/ortografia' },
-        ];
-      case 'acentuacion':
-        return [
-          { label: 'Tilde diacrítica (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Tilde_diacr%C3%ADtica' },
-          { label: 'Ortografía (RAE)', url: 'https://www.rae.es/recursos/ortografia' },
-        ];
-      case 'concordancia':
-        return [
-          { label: 'Concordancia gramatical', url: 'https://es.wikipedia.org/wiki/Concordancia_(gram%C3%A1tica)' },
-          { label: 'DPD RAE – Concordancia (índice)', url: 'https://www.rae.es/diccionario-panhispanico-de-dudas' },
-        ];
-      case 'redaccion':
-        return [
-          { label: 'Redacción (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Redacci%C3%B3n' },
-          { label: 'Conectores (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Conector_l%C3%B3gico' },
-        ];
-      case 'matematicas':
-        return [
-          { label: 'Khan Academy: Álgebra', url: 'https://es.khanacademy.org/math/algebra' },
-          { label: 'Khan Academy: Porcentajes', url: 'https://es.khanacademy.org/math/pre-algebra/percent' },
-        ];
-      case 'lectura':
-        return [
-          { label: 'Comprensión de lectura (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Comprensi%C3%B3n_de_lectura' },
-          { label: 'Lectura activa: técnicas', url: 'https://es.wikipedia.org/wiki/Lectura' },
-        ];
-      case 'historia':
-        return [
-          { label: 'Historia universal (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Historia_universal' },
-          { label: 'Línea de tiempo (Wikipedia)', url: 'https://es.wikipedia.org/wiki/L%C3%ADnea_de_tiempo' },
-        ];
-      case 'ciencias':
-        return [
-          { label: 'Khan Academy: Física básica', url: 'https://es.khanacademy.org/science/physics' },
-          { label: 'Khan Academy: Biología', url: 'https://es.khanacademy.org/science/biology' },
-        ];
-      case 'astronomia':
-        return [
-          { label: 'Sistema solar (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Sistema_solar' },
-          { label: 'Planetas (Wikipedia)', url: 'https://es.wikipedia.org/wiki/Planeta' },
-        ];
-      case 'gramatica-general':
-        return [
-          { label: 'Ortografía (RAE)', url: 'https://www.rae.es/recursos/ortografia' },
-          { label: 'DPD (RAE): dudas', url: 'https://www.rae.es/diccionario-panhispanico-de-dudas' },
-        ];
-      default:
-        return [
-          { label: 'Khan Academy (español)', url: 'https://es.khanacademy.org/' },
-          { label: 'Wikipedia: conceptos básicos', url: 'https://es.wikipedia.org/wiki/Wikipedia:Portada' },
-        ];
-    }
-  };
-
-  const buildRecurringSection = (list) => {
-    if (!Array.isArray(list) || !list.length) return '';
-    const top = list.slice(0, 5);
-    const bullets = top.map((it) => {
-      const raw = stripMd(it?.enunciado || '').replace(/\s+/g, ' ').trim();
-      if (!raw) return null;
-      const resumen = truncate(raw, 120);
-      const tip = pickMicroTip(raw);
-      const topic = classifyTopic(raw);
-      const links = resourcesFor(topic).slice(0, 2).map(r => `[${r.label}](${r.url})`).join(', ');
-      const veces = Number(it?.veces || 1);
-      return `- "${resumen}" (veces: ${veces})\n  Pista: ${tip}\n  Recursos: ${links}`;
-    }).filter(Boolean).join('\n');
-    if (!bullets) return '';
-    return `\n\n### Errores recurrentes y recursos\n\n${bullets}`;
-  };
-
-  // Fallback: construir explicación mínima cuando no tenemos detalle por pregunta
-  const buildExplainFromList = (list) => {
-    if (!Array.isArray(list) || !list.length) return '';
-    const items = list.filter(Boolean).slice(0, 4);
-    const lines = items.map((enunRaw) => {
-      const enun = stripMd(enunRaw || '').trim();
-      const hint = pickMicroTip(enun);
-      return `- ${enun}\n  Elegiste: N/D\n  Correcta(s): N/D\n  Breve porqué: ${hint}`;
-    }).join('\n');
-    return `\n\n### Explicación de preguntas incorrectas\n\n${lines}`;
-  };
-
-  const buildFallbackAnalysis = (p) => {
-    try {
-      const name = p?.itemName || 'Quiz';
-      const totalIntentos = Number(p?.totalIntentos || 0);
-      const mejor = Number(p?.mejorPuntaje || 0);
-      const promedio = Math.round(Number(p?.promedio || 0));
-      const scores = Array.isArray(p?.scores) ? p.scores : [];
-      const ultimo = Number(p?.ultimoPuntaje ?? (scores.length ? scores[scores.length - 1] : 0));
-      const desviacion = (typeof p?.desviacionPuntaje === 'number') ? p.desviacionPuntaje.toFixed(2) : 'N/D';
-      const pendiente = (typeof p?.pendienteTendencia === 'number') ? p.pendienteTendencia.toFixed(3) : 'N/D';
-      const promDur = (typeof p?.promedioDuracion === 'number') ? Math.round(p.promedioDuracion) : null;
-      const mejorDur = (typeof p?.mejorDuracion === 'number') ? Math.round(p.mejorDuracion) : null;
-      const peorDur = (typeof p?.peorDuracion === 'number') ? Math.round(p.peorDuracion) : null;
-      const intentNum = p?.intentoNumero;
-      const totPreg = p?.totalPreguntasIntento;
-      const corr = p?.correctasIntento;
-      const inc = p?.incorrectasIntento;
-      const om = p?.omitidasIntento;
-      const avgQ = (typeof p?.promedioTiempoPregunta !== 'undefined' && p?.promedioTiempoPregunta != null)
-        ? Math.round(p.promedioTiempoPregunta / 1000) : null;
-      const totalT = (typeof p?.totalTiempoIntento !== 'undefined' && p?.totalTiempoIntento != null)
-        ? Math.round(p.totalTiempoIntento / 1000) : null;
 
 
-
-      const intro = buildHumanIntro(p);
-
-      // Resumen muy breve (sin secciones genéricas)
-      const secResumen = `\n\n### Resultado del intento\n\n` +
-        `- Calificación: ${ultimo}%\n` +
-        `- Correctas: ${corr || 0} / ${totPreg || 0}\n` +
-        `- Incorrectas: ${inc || 0}\n` +
-        `- Total de intentos: ${totalIntentos}\n` +
-        `- Mejor puntaje: ${mejor}%`;
-
-      const explic = buildExplainSection(p?.incorrectasDetalle);
-      const secRecurrentes = buildRecurringSection(p?.erroresRecurrentes);
-      const secGuia = buildSecResourceGuide(p);
-
-      const secConclusion = `\n\n### Próximos pasos\n\n` +
-        `Enfócate en dominar los temas donde fallaste. Usa los recursos sugeridos y practica con ejercicios similares. ` +
-        `La constancia es clave para mejorar.`;
-
-      // Orden simplificado: Intro → Resumen → Explicación → Recurrentes → Guía → Conclusión (SIN tendencia, equilibrio ni progreso)
-      return [intro, secResumen, explic, secRecurrentes, secGuia, secConclusion, '\n\n<<<AI_SOURCE:FALLBACK>>>'].join('');
-    } catch (e) {
-      console.warn('No se pudo construir análisis local de fallback:', e);
-      return '### Análisis\n\nNo se pudo obtener la respuesta de la IA. Revisa tu conexión e intenta nuevamente.';
-    }
-  };
-
-  // Garantiza secciones mínimas en la salida final y normaliza encabezados
-  const escapeReg = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const stripAccents = (s) => String(s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '');
-  const hasHeadingStrict = (md, title) => new RegExp(`(^|\n)###\\s+${escapeReg(title)}\\b`, 'i').test(String(md || ''));
-  const hasHeadingLoose = (md, title) => {
-    const lines = String(md || '').split('\n');
-    const tNorm = stripAccents(title).toLowerCase();
-    for (const raw of lines) {
-      const l = raw.trim();
-      if (!l) continue;
-      // Acepta ya sea un heading markdown o una línea que coincide con el título (con o sin dos puntos)
-      if (/^#{1,6}\s+/i.test(l)) {
-        const h = stripAccents(l.replace(/^#{1,6}\s+/, '')).toLowerCase();
-        if (h.startsWith(tNorm)) return true;
-      } else {
-        const w = stripAccents(l.replace(/[:：]+\s*$/, '')).toLowerCase();
-        if (w === tNorm) return true;
-      }
-    }
-    return false;
-  };
-  const normalizeHeadings = (md) => {
-    if (!md) return md;
-    // Primero: si un heading ### aparece pegado al texto anterior (sin salto de línea), forzar salto.
-    // Aplica para niveles 1–6 de #.
-    const ensureLineBreaksBeforeHashes = (txt) => String(txt).replace(/#{1,6}\s+/g, (match, offset, str) => {
-      if (offset === 0) return match; // ya está al inicio
-      const prev = str[offset - 1];
-      if (prev === '\n') return match; // ya tiene salto
-      return '\n\n' + match; // forzar línea en blanco antes del heading
-    });
-    let text = ensureLineBreaksBeforeHashes(md);
-    const titles = [
-      // ❌ Secciones genéricas eliminadas:
-      // 'Resumen general',
-      // 'Tendencia y variabilidad',
-      // 'Equilibrio puntaje-tiempo',
-      // 'Análisis de errores',
-
-      // ✅ Secciones útiles que se mantienen:
-      'Progreso respecto al oficial',
-      'Guía para encontrar recursos',
-      'Errores recurrentes y recursos',
-      'Recomendaciones técnicas',
-      'Conclusión breve',
-      'Explicación de preguntas incorrectas',
-      'Ejemplos breves de preguntas con error'
-    ];
-    const lines = String(text).split('\n');
-    const out = [];
-    for (let i = 0; i < lines.length; i++) {
-      let l = lines[i];
-      const raw = l.trim();
-      const rawNoColon = raw.replace(/[:：]+\s*$/, '');
-      const matchedTitle = titles.find(t => stripAccents(rawNoColon).toLowerCase() === stripAccents(t).toLowerCase());
-      if (matchedTitle) {
-        // Asegurar línea en formato heading ### y separar con una línea en blanco antes
-        if (out.length && out[out.length - 1].trim() !== '') out.push('');
-        out.push(`### ${matchedTitle}`);
-        // Si siguiente línea no está vacía, añadir una línea en blanco después también
-        if (i + 1 < lines.length && lines[i + 1].trim() !== '') {
-          out.push('');
-        }
-        continue;
-      }
-      // Si ya viene como heading con otro nivel, lo normalizamos a ###
-      const m = raw.match(/^(#{1,6})\s+(.+)/);
-      if (m) {
-        const text = m[2];
-        const maybeTitle = titles.find(t => stripAccents(text).toLowerCase().startsWith(stripAccents(t).toLowerCase()));
-        if (maybeTitle) {
-          if (out.length && out[out.length - 1].trim() !== '') out.push('');
-          out.push(`### ${maybeTitle}`);
-          if (i + 1 < lines.length && lines[i + 1].trim() !== '') out.push('');
-          continue;
-        }
-      }
-      out.push(l);
-    }
-    // Compactar líneas en blanco dobles
-    return out.join('\n').replace(/\n{3,}/g, '\n\n');
-  };
-
-  const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
-  const buildSecResumen = (p) => {
-    const name = p?.itemName || 'Quiz';
-    const totalIntentos = num(p?.totalIntentos) ?? 0;
-    const mejor = num(p?.mejorPuntaje) ?? 0;
-    const promedio = Math.round(num(p?.promedio) ?? 0);
-    const scores = Array.isArray(p?.scores) ? p.scores : [];
-    const ultimo = num(p?.ultimoPuntaje ?? (scores.length ? scores[scores.length - 1] : 0));
-    const oficial = num(p?.oficialPuntaje);
-    const prev = num(p?.previoPuntaje);
-    const dLastPrev = (typeof p?.deltaUltimoVsAnterior === 'number') ? p.deltaUltimoVsAnterior : (ultimo != null && prev != null ? ultimo - prev : null);
-    const dLastOff = (typeof p?.deltaUltimoVsOficial === 'number') ? p.deltaUltimoVsOficial : (ultimo != null && oficial != null ? ultimo - oficial : null);
-    const dBestOff = (typeof p?.deltaMejorVsOficial === 'number') ? p.deltaMejorVsOficial : ((num(p?.mejorPuntaje) != null && oficial != null) ? num(p?.mejorPuntaje) - oficial : null);
-    const lines = [
-      `- Has realizado ${totalIntentos} intento(s) en "${name}".`,
-      `- Mejor puntaje: ${mejor}%. Promedio: ${promedio}%. Último: ${ultimo}%.`,
-      (oficial != null ? `- Oficial (intento 1): ${oficial}%` : null),
-      (dLastPrev != null ? `- Cambio último vs. anterior: ${dLastPrev > 0 ? '+' : ''}${dLastPrev} pts` : null),
-      (dLastOff != null ? `- Cambio último vs. oficial: ${dLastOff > 0 ? '+' : ''}${dLastOff} pts` : null),
-      (dBestOff != null ? `- Cambio mejor vs. oficial: ${dBestOff > 0 ? '+' : ''}${dBestOff} pts` : null),
-    ].filter(Boolean);
-    return `\n\n### Resumen general\n\n${lines.join('\n')}`;
-  };
-  // Guía general de recursos (siempre útil)
-  const buildSecResourceGuide = (p) => {
-    return `\n\n### Guía para encontrar recursos\n\n` +
-      `- Escribe 2–3 palabras clave del enunciado + “explicación” o “ejercicios resueltos”.\n` +
-      `- Para PDFs: añade \`filetype:pdf\` (ej.: porcentajes descuento filetype:pdf).\n` +
-      `- Limita por sitios confiables: \`site:es.khanacademy.org\`, \`site:wikipedia.org\`, \`site:rae.es\`.\n` +
-      `- Matemáticas: “Khan Academy [tema] ejercicios”, “propiedad [tema] ejemplos”.\n` +
-      `- Lengua/Gramática: “DPD RAE [duda]”, “queísmo dequeísmo ejemplos”.\n` +
-      `- Historia/Ciencias: “línea de tiempo [evento]”, “concepto [tema] resumen + ejemplos”.`;
-  };
-  // Saludo humano inicial para que el alumno sienta acompañamiento
-  const buildHumanIntro = (p) => {
-    const name = p?.itemName || 'esta evaluación';
-    const total = num(p?.totalIntentos) ?? 0;
-    const scores = Array.isArray(p?.scores) ? p.scores : [];
-    const ultimo = num(p?.ultimoPuntaje ?? (scores.length ? scores[scores.length - 1] : null));
-    const best = num(p?.mejorPuntaje);
-    const alumno = (p?.alumnoNombre || '').trim();
-    const first = alumno ? alumno.split(/\s+/)[0] : '';
-    const parts = [];
-    parts.push(`${alumno ? `¡Hola, ${first}!` : '¡Hola!'} Veo que llevas ${total} intento${total === 1 ? '' : 's'} en ${name}. Gracias por tu esfuerzo — vamos a convertirlo en aprendizaje útil.`);
-    if (best != null && ultimo != null && ultimo < best) {
-      parts.push(`Aunque el último fue ${ultimo}%, ya demostraste que puedes llegar a ${best}%. Te ayudo a recuperar ese nivel y superarlo.`);
-    } else if (ultimo != null) {
-      parts.push(`En el último intento obtuviste ${ultimo}%. Te comparto claves concretas para seguir subiendo.`);
-    } else if (best != null) {
-      parts.push(`Tu mejor resultado hasta ahora es ${best}%.`);
-    }
-    parts.push(`Abajo tienes un diagnóstico breve y consejos accionables. Vamos paso a paso.`);
-    return parts.join(' ');
-  };
-  const buildSecTendencia = (p) => {
-    const scores = Array.isArray(p?.scores) ? p.scores : [];
-    const pendiente = (typeof p?.pendienteTendencia === 'number') ? p.pendienteTendencia.toFixed(3) : 'N/D';
-    const desviacion = (typeof p?.desviacionPuntaje === 'number') ? p.desviacionPuntaje.toFixed(2) : 'N/D';
-    // Interpretación simple
-    let label = 'estable';
-    const penNum = typeof p?.pendienteTendencia === 'number' ? p.pendienteTendencia : null;
-    if (penNum != null) {
-      if (penNum > 0.2) label = 'mejora';
-      else if (penNum < -0.2) label = 'descenso';
-    }
-    return `\n\n### Tendencia y variabilidad\n\n- Secuencia de puntajes: ${scores.join(', ') || 'N/D'}.\n- Pendiente de tendencia: ${pendiente} (${label}).\n- Variabilidad (Desviación Estándar): ${desviacion}.\n- Interpretación: ${label === 'mejora' ? 'Crecimiento sostenido.' : label === 'descenso' ? 'Alerta de regresión.' : 'Estabilidad en el rendimiento.'}`;
-  };
-  const buildSecProgresoOficial = (p) => {
-    const practiceCount = Math.max(0, Number(p?.practiceCount || 0));
-    const dLastPrev = (typeof p?.deltaUltimoVsAnterior === 'number') ? p.deltaUltimoVsAnterior : null;
-    const dLastOff = (typeof p?.deltaUltimoVsOficial === 'number') ? p.deltaUltimoVsOficial : null;
-    const dBestOff = (typeof p?.deltaMejorVsOficial === 'number') ? p.deltaMejorVsOficial : null;
-    const verdict = (() => {
-      const best = dBestOff == null ? -Infinity : dBestOff;
-      if (practiceCount === 0) return 'Aún no hay práctica posterior al oficial.';
-      if (best >= 15) return 'Alta: la práctica elevó claramente tu techo de puntaje.';
-      if (best >= 7) return 'Media: la práctica muestra avance sostenido.';
-      if (best >= 3) return 'Ligera: hay señales de mejora, sigue practicando.';
-      if (best >= 0) return 'Neutral: sin mejora significativa respecto al oficial.';
-      return 'Baja: tu mejor puntaje aún está por debajo del oficial; revisa estrategia.';
-    })();
-    const rows = [
-      `- Intentos de práctica (desde el oficial): ${practiceCount}`,
-      (dLastPrev != null ? `- Último vs. anterior: ${dLastPrev > 0 ? '+' : ''}${dLastPrev} pts` : null),
-      (dLastOff != null ? `- Último vs. oficial: ${dLastOff > 0 ? '+' : ''}${dLastOff} pts` : null),
-      (dBestOff != null ? `- Mejor vs. oficial: ${dBestOff > 0 ? '+' : ''}${dBestOff} pts` : null),
-      `- Veredicto: ${verdict}`
-    ].filter(Boolean).join('\n');
-    return `\n\n### Progreso respecto al oficial\n\n${rows}`;
-  };
-  const buildSecEquilibrio = (p) => {
-    const promDur = (typeof p?.promedioDuracion === 'number') ? Math.round(p.promedioDuracion) : null;
-    const mejorDur = (typeof p?.mejorDuracion === 'number') ? Math.round(p.mejorDuracion) : null;
-    const peorDur = (typeof p?.peorDuracion === 'number') ? Math.round(p.peorDuracion) : null;
-    const avgQ = (typeof p?.promedioTiempoPregunta !== 'undefined' && p?.promedioTiempoPregunta != null)
-      ? Math.round(p.promedioTiempoPregunta / 1000) : null;
-    const totalT = (typeof p?.totalTiempoIntento !== 'undefined' && p?.totalTiempoIntento != null)
-      ? Math.round(p.totalTiempoIntento / 1000) : null;
-    return `\n\n### Equilibrio puntaje-tiempo\n\n- Tiempo prom. por intento (s): ${promDur ?? 'N/D'}; mejor: ${mejorDur ?? 'N/D'}; peor: ${peorDur ?? 'N/D'}.\n- Último intento: ${totalT ?? 'N/D'}s total; ${avgQ ?? 'N/D'}s por pregunta.`;
-  };
-  const buildSecAnalisisErrores = () => `\n\n### Análisis de errores\n\n- Revisa si tus fallos son conceptuales (falta de estudio) o de atención.\n- Identifica si te equivocas en preguntas largas o cortas.\n- Verifica si cambiaste respuestas correctas por incorrectas.`;
-  const buildSecRecsTecnicas = () => `\n\n### Recomendaciones técnicas\n\n- Aplica la técnica Feynman: explica el concepto en voz alta.\n- Usa la técnica Pomodoro para sesiones de estudio enfocadas.\n- Realiza mapas mentales para conectar conceptos relacionados.`;
-  const buildSecConclusion = () => `\n\n### Conclusión breve\n\nVas construyendo base. Con un enfoque técnico y análisis de errores, tu rendimiento mejorará. Mantén la constancia.`;
-
-  const ensureSections = (md, p) => {
-    let out = String(md || '');
-    // ❌ ELIMINADO: Secciones genéricas poco útiles
-    // if (!hasHeadingLoose(out, 'Resumen general')) out += buildSecResumen(p);
-    // if (!hasHeadingLoose(out, 'Equilibrio puntaje-tiempo')) out += buildSecEquilibrio(p);
-    // if (!hasHeadingLoose(out, 'Análisis de errores')) out += buildSecAnalisisErrores(p);
-
-    // ✅ Solo agregar secciones realmente útiles si faltan
-    if (!hasHeadingLoose(out, 'Recomendaciones técnicas')) out += buildSecRecsTecnicas(p);
-    if (!hasHeadingLoose(out, 'Conclusión breve')) out += buildSecConclusion(p);
-
-    // Normalizar títulos a markdown y espaciado
-    out = normalizeHeadings(out);
-    return out;
-  };
-
-  const insertBeforeHeading = (md, headingTitle, sectionMd) => {
-    if (!sectionMd) return md;
-    const lines = String(md || '').split('\n');
-    const idx = lines.findIndex(l => /^###\s+/.test(l) && l.toLowerCase().includes(headingTitle.toLowerCase()));
-    if (idx === -1) return md + sectionMd; // si no existe, lo agregamos al final
-    const before = lines.slice(0, idx).join('\n');
-    const after = lines.slice(idx).join('\n');
-    return before + sectionMd + '\n' + after;
-  };
-
-  // NUEVO: El systemPrompt se enfoca en análisis profundo de errores específicos
+  // NUEVO: El systemPrompt se enfoca en análisis profundo de errores específicos y formato estricto
   const systemPrompt = `Eres un tutor académico experto y amigable enfocado en corrección de errores y aprendizaje efectivo.
-  
-  FORMATO DE SALUDO INICIAL:
-  - Saluda al estudiante usando SOLO su primer nombre de forma amigable
-  - Ejemplo: "¡Hola, Miguel Ángel! Me da gusto que hayas realizado [X] intentos en esta simulación."
-  - Sé cálido y motivador desde el inicio
-  - NO uses frases formales como "Basándonos en la información proporcionada" o "vamos a analizar"
-  
-  FORMATO DE PRESENTACIÓN DE ERRORES (TIPO EXAMEN):
-  Para CADA pregunta incorrecta, usa este formato EXACTO:
-  
-  ---
-  
-  ### Pregunta [N]: [Título descriptivo del tema] [MARCADOR]
-  
-  **Marcadores de prioridad:**
-  - 🔴 ERROR RECURRENTE (2+ intentos fallidos) - REQUIERE MÁXIMA ATENCIÓN
-  - 🚨 CONOCIMIENTO INESTABLE (a veces acierta, a veces falla)
-  - ⚠️ ERROR ÚNICO (solo falló una vez)
-  
-  **Enunciado de la pregunta:**
-  [Texto completo de la pregunta]
-  
-  ❌ **Tu respuesta:** "[Respuesta que eligió el estudiante]" (Incorrecta)
-  
-  ✅ **Respuesta correcta:** "[Respuesta correcta completa]"
-  
-  **¿Por qué está incorrecta tu respuesta?**
-  [Explicación clara y directa del error conceptual. Si es ERROR RECURRENTE (🔴), enfatiza que ha fallado esta pregunta múltiples veces y necesita dedicar tiempo extra a entender el concepto.]
-  
-  **Cómo resolverlo paso a paso:**
-  1. [Primer paso específico con ejemplo]
-  2. [Segundo paso específico con ejemplo]
-  3. [Tercer paso específico con ejemplo]
-  [Continúa hasta completar el proceso de resolución]
-  
-  **Ejemplo similar resuelto:**
-  [Proporciona un ejemplo concreto similar a la pregunta, resuelto paso a paso]
-  
-  **Qué estudiar específicamente:**
-  - [Concepto/tema específico 1]
-  - [Concepto/tema específico 2]
-  - [Práctica recomendada]
-  
-  ---
-  
-  PRIORIDAD DE ANÁLISIS:
-  1. **🔴 ERRORES RECURRENTES (MÁXIMA PRIORIDAD):**
-     - Preguntas falladas en 2 o más intentos
-     - Dedica MÁS ESPACIO y DETALLE a estas preguntas
-     - Explica por qué sigue fallando y cómo romper el patrón
-  
-  2. **🚨 CONOCIMIENTO INESTABLE:**
-     - Preguntas que a veces acierta y a veces falla
-     - Indica que está adivinando, no dominando el concepto
-  
-  3. **⚠️ ERRORES ÚNICOS:**
-     - Preguntas falladas solo una vez
-     - TAMBIÉN deben analizarse (puede haber adivinado después)
-     - Explicación más breve que los errores recurrentes
-  
-  REGLAS CRÍTICAS:
-  - ⚠️ **ANALIZA TODAS LAS PREGUNTAS FALLADAS**, incluso si solo falló 1 vez
-  - Razón: Si acertó después, pudo haber sido por adivinación, no por comprensión real
-  - Los errores recurrentes (🔴) reciben MÁS ESPACIO, pero los únicos (⚠️) también se explican
-  - El 80% del análisis debe ser sobre las preguntas incorrectas con explicaciones DETALLADAS
-  - Usa emojis y formato visual para hacer el análisis más atractivo
-  - NO incluyas secciones genéricas como "Resumen general" o "Tendencia y variabilidad"
-  - Sé específico, práctico y accionable en cada recomendación
-  - Mantén un tono amigable y motivador en todo momento`;
+
+  OBJETIVO PRINCIPAL:
+  Generar un reporte de análisis de errores estructurado, visualmente limpio y consistente.
+
+  REGLAS DE FORMATO Y CODIFICACIÓN (CRÍTICO):
+  - Usa formato Markdown estándar.
+  - ⚠️ IMPORTANTE: Respeta todos los acentos y caracteres especiales del idioma español (á, é, í, ó, ú, ñ, ¿, ¡). NO los sustituyas por códigos HTML ni los omitas.
+  - Usa negritas (**texto**) para resaltar conceptos clave.
+  - Mantén una separación clara entre secciones con líneas horizontales (---).
+
+  ESTRUCTURA OBLIGATORIA DEL REPORTE (Sigue este orden exacto):
+
+  1. SALUDO INICIAL
+     - Formato: "¡Hola, [Nombre]! [Mensaje motivador breve sobre sus intentos]"
+
+  2. ANÁLISIS DE ERRORES (Sección Principal)
+     - Itera sobre CADA pregunta incorrecta proporcionada.
+     - Usa este formato EXACTO para cada una:
+     
+     ---
+     ### Pregunta [N]: [Título breve del tema] [MARCADOR SI APLICA]
+     
+     **Enunciado:**
+     [Texto del enunciado corregido]
+
+     ❌ **Tu respuesta:** "[Lo que respondió el alumno]"
+     ✅ **Respuesta correcta:** "[La respuesta correcta]"
+
+     **Explicación y Corrección:**
+     [Aquí debes fusionar dos cosas: 
+      1. Por qué la respuesta del alumno es incorrecta (y si es un error recurrente, indícalo).
+      2. Cómo llegar a la respuesta correcta paso a paso.]
+
+     **Qué estudiar:**
+     - [Nombre exacto del tema o concepto clave para buscar]
+     ---
+
+  3. ANÁLISIS DE ESTRATEGIA (METACOGNICIÓN) - ¡OBLIGATORIO!
+     - Título: "🧠 Análisis de Estrategia"
+     - Diagnóstico sobre tiempos (muy rápido/muy lento).
+     - Patrones de fatiga o ansiedad visibles.
+     - 1 Consejo táctico accionable.
+
+  4. PLAN DE RECUPERACIÓN y RECURSOS
+     - Título: "📚 Recursos y Plan de Estudio"
+     - Tabla Markdown con plan semanal (Lunes a Miércoles de recuperación intensiva).
+     - Prompts de IA sugeridos para que el alumno copie y pegue.
+
+  REGLAS DE CONTENIDO:
+  - 🔴 ERRORES RECURRENTES: Tienen prioridad máxima. Explicaciones más largas.
+  - 🚨 CONOCIMIENTO INESTABLE: Mencionar que el alumno parece estar adivinando.
+  - ⚠️ ERRORES ÚNICOS: Explicación concisa pero completa.
+  - Si no hay datos de comportamiento (tiempos), omite la sección de tiempos pero MANTÉN el consejo estratégico general.`;
 
 
   // ...existing code...
@@ -658,6 +592,23 @@ export async function analyzeQuizPerformance(params) {
       };
     }) : [];
 
+  // Convertir la lista de errores a texto legible para la IA
+  const incorrectasString = listaIncorrectasPrompt.map((err, idx) => {
+    const seleccion = (Array.isArray(err.seleccion) ? err.seleccion : []).filter(Boolean).join('; ');
+    const correctas = (Array.isArray(err.correctas) ? err.correctas : []).filter(Boolean).join('; ');
+    const reincide = err.es_reincidente ? `🔴 RECURRENTE (Fallada ${err.veces_fallada} veces)` : '';
+    const inestable = err.esInconsistente ? `🚨 CONOCIMIENTO INESTABLE (A veces acierta, a veces falla)` : '';
+
+    return `
+PREGUNTA ${idx + 1}:
+ENUNCIADO: ${err.enunciado || 'No disponible'}
+TU RESPUESTA: ${seleccion || 'Sin respuesta'}
+RESPUESTA CORRECTA: ${correctas || 'No disponible'}
+TEMA: ${classifyTopic(err.enunciado || '')}
+MARCADORES: ${reincide} ${inestable}
+    `.trim();
+  }).join('\n\n----------------------------------\n\n');
+
   // El userQuery contiene todas las instrucciones específicas sobre la TAREA a realizar.
   const userQuery = `ANÁLISIS DETALLADO DE ERRORES para: "${itemName || 'Quiz'}".
 Estudiante: ${alumnoNombre ? alumnoNombre : 'Alumno'}.
@@ -674,25 +625,27 @@ ${listaIncorrectasPrompt.length > 0 ? `
 🔴 1. ANÁLISIS DETALLADO DE CADA ERROR (SECCIÓN PRINCIPAL)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-⚠️ IMPORTANTE: Debes analizar TODAS las preguntas que el estudiante falló en CUALQUIER intento, no solo las del último intento.
+⚠️ IMPORTANTE: Debes analizar TODAS las preguntas presentadas a continuación.
+
+DATOS DE LAS PREGUNTAS (INPUT):
+------------------------------------------------------------------------------
+${incorrectasString}
+------------------------------------------------------------------------------
 
 PRIORIDAD DE ANÁLISIS:
 
-1. **🔴 ERRORES RECURRENTES (MÁXIMA PRIORIDAD):**
-   Preguntas que falló en 2 o más intentos.
+1. **🔴 E. RECURRENTES (MÁXIMA PRIORIDAD):**
+   Preguntas marcadas como RECURRENTE.
    - Dedica MÁS ESPACIO y DETALLE a estas preguntas
    - Explica por qué sigue fallando la misma pregunta
    - Proporciona estrategias específicas para romper el patrón de error
 
 2. **🚨 CONOCIMIENTO INESTABLE:**
-   Preguntas que a veces acertó y a veces falló en diferentes intentos.
-   Esto indica:
-   - Está adivinando (no domina el concepto)
-   - Tuvo suerte en algunos intentos
-   - Conocimiento superficial o inestable
+   Preguntas marcadas como INESTABLE.
+   Esto indica adivinanza o confusión.
 
-3. **⚠️ ERRORES ÚNICOS:**
-   Preguntas que falló solo en un intento.
+3. **⚠️ E. ÚNICOS:**
+   Preguntas sin marcadores especiales.
    Pueden ser errores de atención o conceptos nuevos.
 
 FORMATO EXACTO para CADA pregunta incorrecta:
@@ -896,7 +849,7 @@ INSTRUCCIONES CRÍTICAS:
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ ...payload, purpose: 'analisis' }), // Usa GEMINI_API_KEY_ANALISIS
+            body: JSON.stringify({ ...payload, purpose: params.purpose || 'analisis' }), // 'analisis' (sims) o 'quizzes'
           });
 
           if (res.ok) {
@@ -965,15 +918,20 @@ INSTRUCCIONES CRÍTICAS:
   }
 
   // =================================================================================
-  // 3. FALLBACK FINAL (Si Gemini y Groq fallaron)
+  // 3. FALLBACK FINAL (Si Gemini y Groq fallaron o no hay texto)
   // =================================================================================
   if (!text) {
     if (json?.promptFeedback?.blockReason) {
       console.warn('IA bloqueó el prompt:', json.promptFeedback.blockReason, json.promptFeedback.safetyRatings || '');
     }
-    console.warn('IA sin texto utilizable (ni Gemini ni Groq). Usando fallback local.');
-    return buildFallbackAnalysis(params);
+    console.warn('IA sin texto utilizable (ni Gemini ni Groq) o error de cuota/red. Usando fallback local.');
+    // Asegurar que nunca lanzamos error, sino que devolvemos el análisis local
+    const fallbackText = buildFallbackAnalysis(params);
+    return fallbackText + '\n<<<AI_SOURCE:FALLBACK_LOCAL>>>';
   }
+
+
+
 
   // =================================================================================
   // 4. POST-PROCESAMIENTO (Común para cualquier IA que haya respondido)
@@ -1198,3 +1156,17 @@ export const calculateExamStrategy = (questions) => {
     analizado: true
   };
 };
+
+// Wrapper seguro para manejo de errores de API (REQ-003)
+export async function analyzeQuizPerformance(params) {
+  try {
+    return await _analyzeQuizPerformanceInternal(params);
+  } catch (err) {
+    console.error('CRITICAL ERROR in Quiz Analysis Service (Wrapper caught exception):', err);
+    console.warn('⚡ Triggering automatic LOCAL FALLBACK due to API failure.');
+
+    // Construir fallback y marcarlo
+    const fallback = buildFallbackAnalysis(params);
+    return fallback + '\n\n<<<AI_SOURCE:FALLBACK_ON_ERROR>>>';
+  }
+}
