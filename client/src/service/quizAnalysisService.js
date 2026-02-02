@@ -3,6 +3,7 @@ import api from '../api/axios';
 // REFACTORIZADO: Ahora usa el proxy backend en lugar de llamadas directas a Google API
 
 // Configuración del proxy backend (Gemini)
+const wait = (ms) => new Promise(res => setTimeout(res, ms));
 const PROXY_ENDPOINT = '/api/ai/gemini/generate';
 // Modelo configurado manualmente (si se especifica, se usa ese directamente)
 const QUIZ_AI_MODEL_CONFIGURED = import.meta?.env?.VITE_GEMINI_QUIZ_MODEL || import.meta?.env?.VITE_GEMINI_MODEL || 'gemini-1.5-flash';
@@ -16,7 +17,7 @@ const MODELOS_DISPONIBLES = [
 // --- NUEVA CONFIGURACIÓN: RESPALDO GROQ ---
 // Asegúrate de que tu backend tenga esta ruta configurada para manejar peticiones a Groq
 const GROQ_PROXY_ENDPOINT = '/api/ai/groq/generate';
-const GROQ_MODEL = 'llama3-70b-8192'; // Modelo potente y rápido, buena alternativa a Gemini Pro
+const GROQ_MODEL = 'llama-3.3-70b-versatile'; // Modelo oficial del Dashboard (High Limits)
 
 // Detectar si se debe usar solo Groq (sin intentar Gemini primero)
 const USE_GROQ_ONLY = import.meta?.env?.VITE_USE_GROQ_FOR_ANALYSIS === 'true';
@@ -495,61 +496,55 @@ async function _analyzeQuizPerformanceInternal(params) {
 
 
 
-  // NUEVO: El systemPrompt se enfoca en análisis profundo de errores específicos y formato estricto
-  const systemPrompt = `Eres un tutor académico experto y amigable enfocado en corrección de errores y aprendizaje efectivo.
+  // REQ-004: Simplificación del System Prompt para evitar tool_use_failed en Llama-3
+  const systemPrompt = `Eres un tutor académico experto y empático. Tu meta es corregir errores y enseñar estrategias de estudio.
 
-  OBJETIVO PRINCIPAL:
-  Generar un reporte de análisis de errores estructurado, visualmente limpio y consistente.
+  FORMATO DE SALIDA (Markdown):
+  - Usa negritas para resaltar conceptos clave.
+  - Respeta caracteres en español (tildes, ñ).
 
-  REGLAS DE FORMATO Y CODIFICACIÓN (CRÍTICO):
-  - Usa formato Markdown estándar.
-  - ⚠️ IMPORTANTE: Respeta todos los acentos y caracteres especiales del idioma español (á, é, í, ó, ú, ñ, ¿, ¡). NO los sustituyas por códigos HTML ni los omitas.
-  - Usa negritas (**texto**) para resaltar conceptos clave.
-  - Mantén una separación clara entre secciones con líneas horizontales (---).
+  ESTRUCTURA DEL REPORTE:
 
-  ESTRUCTURA OBLIGATORIA DEL REPORTE (Sigue este orden exacto):
+  1. SALUDO:
+     "¡Hola, [Nombre]! [Frase motivadora breve]"
 
-  1. SALUDO INICIAL
-     - Formato: "¡Hola, [Nombre]! [Mensaje motivador breve sobre sus intentos]"
-
-  2. ANÁLISIS DE ERRORES (Sección Principal)
-     - Itera sobre CADA pregunta incorrecta proporcionada.
-     - Usa este formato EXACTO para cada una:
-     
+  2. ANÁLISIS DE ERRORES (Solo las 5 preguntas más críticas):
+     Para cada pregunta, usa EXACTAMENTE este formato VERTICAL y limpio:
      ---
-     ### Pregunta [N]: [Título breve del tema] [MARCADOR SI APLICA]
+     ### Pregunta [N]: [Tema]
      
      **Enunciado:**
-     [Texto del enunciado corregido]
+     > [Texto de la pregunta]
+     
+     ❌ **Tu respuesta:**
+     [Texto de tu opción]
+     
+     ✅ **Respuesta correcta:**
+     [Texto de la opción correcta]
 
-     ❌ **Tu respuesta:** "[Lo que respondió el alumno]"
-     ✅ **Respuesta correcta:** "[La respuesta correcta]"
+     **¿Por qué está incorrecta?** 
+     - [Punto clave del error]
+     - [Explicación conceptual breve]
 
-     **Explicación y Corrección:**
-     [Aquí debes fusionar dos cosas: 
-      1. Por qué la respuesta del alumno es incorrecta (y si es un error recurrente, indícalo).
-      2. Cómo llegar a la respuesta correcta paso a paso.]
-
-     **Qué estudiar:**
-     - [Nombre exacto del tema o concepto clave para buscar]
+     **Cómo resolverlo:**
+     1. [Paso práctico 1]
+     2. [Paso práctico 2]
+     
+     **Recurso clave:**
+     - [Tema a estudiar]
      ---
 
-  3. ANÁLISIS DE ESTRATEGIA (METACOGNICIÓN) - ¡OBLIGATORIO!
-     - Título: "🧠 Análisis de Estrategia"
-     - Diagnóstico sobre tiempos (muy rápido/muy lento).
-     - Patrones de fatiga o ansiedad visibles.
-     - 1 Consejo táctico accionable.
+  3. ESTRATEGIA DE EXAMEN:
+     - Analiza si el estudiante fue muy rápido o muy lento.
+     - Da 1 consejo táctico (ej. "Lee las opciones primero").
 
-  4. PLAN DE RECUPERACIÓN y RECURSOS
-     - Título: "📚 Recursos y Plan de Estudio"
-     - Tabla Markdown con plan semanal (Lunes a Miércoles de recuperación intensiva).
-     - Prompts de IA sugeridos para que el alumno copie y pegue.
+  4. PLAN DE ESTUDIO:
+     - Tabla semanal simple (Lunes-Miércoles).
+     - 3 Prompts de IA para que el alumno practique.
 
-  REGLAS DE CONTENIDO:
-  - 🔴 ERRORES RECURRENTES: Tienen prioridad máxima. Explicaciones más largas.
-  - 🚨 CONOCIMIENTO INESTABLE: Mencionar que el alumno parece estar adivinando.
-  - ⚠️ ERRORES ÚNICOS: Explicación concisa pero completa.
-  - Si no hay datos de comportamiento (tiempos), omite la sección de tiempos pero MANTÉN el consejo estratégico general.`;
+  PRIORIDADES:
+  - Si la pregunta dice "RECURRENTE", explica con más detalle.
+  - Sé breve y directo. Evita introducciones largas.`;
 
 
   // ...existing code...
@@ -566,8 +561,9 @@ async function _analyzeQuizPerformanceInternal(params) {
   const duracionesList = duracionesCapped.join(', ');
 
   // Construir lista de preguntas incorrectas con flag de reincidencia y contador
+  // REQ-002: Reducir a 5 para evitar error 400 (Token Overflow)
   const listaIncorrectasPrompt = (Array.isArray(incorrectasDetalle) && incorrectasDetalle.length > 0) ?
-    incorrectasDetalle.slice(0, 10).map(item => {
+    incorrectasDetalle.slice(0, 5).map(item => {
       // Verificar si este error es recurrente y contar cuántas veces falló
       let vecesFallada = 1;
       let esRecurrente = false;
@@ -581,7 +577,7 @@ async function _analyzeQuizPerformanceInternal(params) {
 
         if (errorMatch) {
           esRecurrente = true;
-          vecesFallada = errorMatch.veces || 2; // Usar el contador de erroresRecurrentes
+          vecesFallada = errorMatch.veces || 2;
         }
       }
 
@@ -601,7 +597,7 @@ async function _analyzeQuizPerformanceInternal(params) {
 
     return `
 PREGUNTA ${idx + 1}:
-ENUNCIADO: ${err.enunciado || 'No disponible'}
+ENUNCIADO: ${truncate(err.enunciado, 600) || 'No disponible'}
 TU RESPUESTA: ${seleccion || 'Sin respuesta'}
 RESPUESTA CORRECTA: ${correctas || 'No disponible'}
 TEMA: ${classifyTopic(err.enunciado || '')}
@@ -648,34 +644,34 @@ PRIORIDAD DE ANÁLISIS:
    Preguntas sin marcadores especiales.
    Pueden ser errores de atención o conceptos nuevos.
 
-FORMATO EXACTO para CADA pregunta incorrecta:
+FORMATO EXACTO para CADA pregunta incorrecta (Vertical y Limpio):
 
 ---
 
-### Pregunta [N]: [Título descriptivo del tema] [MARCADOR]
+### Pregunta [N]: [Título descriptivo] [MARCADOR]
 
-**Enunciado de la pregunta:**
-[Texto completo de la pregunta]
+**Enunciado:**
+> [Texto completo de la pregunta]
 
-❌ **Tu respuesta:** "[Opción que eligió]" (Incorrecta)
+❌ **Tu respuesta:**
+"[Opción que eligió]"
 
-✅ **Respuesta correcta:** "[Opción correcta completa]"
+✅ **Respuesta correcta:**
+"[Opción correcta completa]"
 
-**¿Por qué está incorrecta tu respuesta?**
-[Explicación clara y directa del error conceptual. Si es 🔴 ERROR RECURRENTE, enfatiza las veces falladas.]
-[Si es 🚨 CONOCIMIENTO INESTABLE, indica que a veces acierta y a veces falla (adivinanza).]
+**Análisis del error:**
+- **Fallo:** [Identifica el error conceptual específico aquí]
+- **Explicación:** [Explica por qué es incorrecto usando negritas para palabras clave]
 
-**Cómo resolverlo paso a paso:**
-1. [Primer paso específico con ejemplo]
-2. [Segundo paso específico con ejemplo]
-3. [Tercer paso específico con ejemplo]
+**Pasos para resolverlo:**
+1. [Primer paso específico]
+2. [Segundo paso específico]
 
-**Ejemplo similar resuelto:**
-[Ejemplo concreto similar resuelto paso a paso]
+**Ejemplo similar:**
+> [Ejemplo corto y claro]
 
-**Qué estudiar específicamente:**
-- [Concepto/tema específico 1]
-- [Concepto/tema específico 2]
+**Qué estudiar:**
+- [Concepto específico]
 
 ---
 
@@ -822,98 +818,113 @@ INSTRUCCIONES CRÍTICAS:
   let groqSuccess = false; // Flag para saber si Groq respondió
 
   // =================================================================================
-  // 1. INTENTO CON GEMINI (Estrategia Principal) - SOLO SI NO ESTÁ CONFIGURADO GROQ ONLY
+  // 1. ESTRATEGIA PRIORITARIA: GROQ (Llama-3 Paid)
   // =================================================================================
-  if (!USE_GROQ_ONLY) {
-    try {
-      let modelosAProbar = [];
-      if (QUIZ_AI_MODEL_CONFIGURED) {
-        modelosAProbar = [QUIZ_AI_MODEL_CONFIGURED, ...MODELOS_DISPONIBLES.filter(m => m !== QUIZ_AI_MODEL_CONFIGURED)];
+  console.log('🚀 Iniciando análisis con estrategia: PRIORIDAD GROQ');
+
+  try {
+    // Groq usa formato OpenAI (messages)
+    // Estructura compatible con el controlador de Groq (formato Gemini)
+    // El controlador se encarga de convertir 'contents' a 'messages' de OpenAI
+    const baseGroqPayload = buildPayloadForModel(GROQ_MODEL);
+    const groqPayload = {
+      ...baseGroqPayload,
+      proveedor: 'groq', // Forzar driver Groq en backend
+      model: GROQ_MODEL,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 3072, // Groq usa max_tokens, el controlador lo mapea
+        topP: 0.9
+      }
+    };
+
+    console.log(`📡 Conectando con Groq (${GROQ_MODEL})...`);
+
+    const resGroq = await fetch(GROQ_PROXY_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(groqPayload),
+    });
+
+    if (resGroq.ok) {
+      const jsonGroq = await resGroq.json();
+      text = extractTextFromGroq(jsonGroq);
+      if (text) {
+        groqSuccess = true;
+        console.log('✅ Groq respondió exitosamente (Proveedor Principal).');
       } else {
-        modelosAProbar = MODELOS_DISPONIBLES;
+        console.warn('⚠️ Groq respondió OK pero sin contenido de texto.');
       }
-
-      let res = null;
-      let modeloUsado = null;
-
-      console.log('🔍 Iniciando análisis de quiz con IA (usando proxy backend)...');
-
-      // Intentar cada modelo hasta encontrar uno que funcione
-      for (const modelo of modelosAProbar) {
-        try {
-          const payload = buildPayloadForModel(modelo);
-
-          console.log(`📡 Probando modelo: ${modelo} (vía proxy ${PROXY_ENDPOINT})`);
-
-          res = await fetch(PROXY_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ ...payload, purpose: params.purpose || 'analisis' }), // 'analisis' (sims) o 'quizzes'
-          });
-
-          if (res.ok) {
-            json = await res.json();
-            text = extractTextFromGemini(json);
-            if (text) {
-              modeloUsado = modelo;
-              geminiSuccess = true;
-              console.log(`✅ Análisis generado exitosamente con ${modeloUsado} (vía proxy)`);
-              break; // Éxito con Gemini, salir del loop
-            }
-          } else {
-            console.warn(`⚠️ Gemini ${modelo} no respondió OK: ${res.status} `);
-          }
-        } catch (err) {
-          console.warn(`⚠️ Error de red al probar modelo ${modelo}: `, err.message);
-        }
-      }
-    } catch (err) {
-      console.warn('Fallo general en bloque Gemini:', err);
+    } else {
+      console.warn(`❌ Groq falló con status: ${resGroq.status}`);
     }
-  } else {
-    console.log('⚙️ Configurado para usar solo Groq. Saltando intento con Gemini.');
+  } catch (groqErr) {
+    console.error('❌ Error crítico al intentar conectar con Groq:', groqErr);
   }
 
   // =================================================================================
-  // 2. INTENTO CON GROQ (Respaldo si Gemini falló)
+  // 2. ESTRATEGIA DE RESPALDO: GEMINI (Si Groq falló)
   // =================================================================================
-  if (!geminiSuccess) {
-    console.log('🔄 Gemini falló o no devolvió texto. Activando respaldo de GROQ...');
+  if (!groqSuccess) {
+    if (USE_GROQ_ONLY) {
+      console.log('⚠️ Groq falló y la configuración USE_GROQ_ONLY está activa. No se intentará Gemini.');
+    } else {
+      console.log('🔄 Groq falló. Activando respaldo LEGACY (Gemini)...');
 
-    try {
-      // Groq usa formato OpenAI (messages), no el formato de Google (contents)
-      const groqPayload = {
-        model: GROQ_MODEL,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userQuery }
-        ],
-        temperature: 0.7,
-        max_tokens: 3072
-      };
+      // Cooldown de seguridad para no saturar si fue un error de red global
+      console.log('⏳ Esperando 2s antes de llamar a Gemini...');
+      await wait(2000);
 
-      const resGroq = await fetch(GROQ_PROXY_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(groqPayload), // Asegúrate de que tu backend soporte este body
-      });
-
-      if (resGroq.ok) {
-        const jsonGroq = await resGroq.json();
-        text = extractTextFromGroq(jsonGroq);
-        if (text) {
-          groqSuccess = true;
-          console.log('✅ Respaldo Groq respondió exitosamente.');
+      try {
+        let modelosAProbar = [];
+        if (QUIZ_AI_MODEL_CONFIGURED) {
+          modelosAProbar = [QUIZ_AI_MODEL_CONFIGURED, ...MODELOS_DISPONIBLES.filter(m => m !== QUIZ_AI_MODEL_CONFIGURED)];
         } else {
-          console.warn('⚠️ Groq respondió OK pero sin contenido de texto.');
+          modelosAProbar = MODELOS_DISPONIBLES;
         }
-      } else {
-        console.warn(`❌ Groq falló con status: ${resGroq.status} `);
+
+        let res = null;
+        let modeloUsado = null;
+
+        // Intentar cada modelo hasta encontrar uno que funcione
+        for (const modelo of modelosAProbar) {
+          try {
+            // Exponential Backoff entre intentos de Gemini
+            if (modelosAProbar.indexOf(modelo) > 0) {
+              console.log(`⏳ Esperando 2s antes de probar siguiente modelo (${modelo})...`);
+              await wait(2000);
+            }
+            const payload = buildPayloadForModel(modelo);
+
+            console.log(`📡 Probando respaldo Gemini: ${modelo}`);
+
+            res = await fetch(PROXY_ENDPOINT, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ ...payload, purpose: params.purpose || 'analisis' }),
+            });
+
+            if (res.ok) {
+              json = await res.json();
+              text = extractTextFromGemini(json);
+              if (text) {
+                modeloUsado = modelo;
+                geminiSuccess = true;
+                console.log(`✅ Respaldo Gemini exitoso con ${modeloUsado}`);
+                break;
+              }
+            } else {
+              console.warn(`⚠️ Gemini ${modelo} no respondió OK: ${res.status} `);
+            }
+          } catch (err) {
+            console.warn(`⚠️ Error de red al probar modelo ${modelo}: `, err.message);
+          }
+        }
+      } catch (err) {
+        console.warn('Fallo general en bloque de respaldo Gemini:', err);
       }
-    } catch (groqErr) {
-      console.error('❌ Error crítico al intentar conectar con Groq:', groqErr);
     }
   }
 
@@ -948,7 +959,7 @@ INSTRUCCIONES CRÍTICAS:
     if (section) out += section;
   }
   // Garantizar secciones mínimas
-  out = ensureSections(out, params);
+  out = normalizeHeadings(out);
   // Prepend saludo humano si el texto no lo incluye ya
   const start = String(out).slice(0, 280).toLowerCase();
   const hasHumanIntro = start.includes('hola') || start.includes('¡hola') || start.includes('veo que') || start.includes('vamos a');
@@ -999,7 +1010,7 @@ INSTRUCCIONES CRÍTICAS:
   }
 
   // Marca la fuente según quién respondió
-  const sourceTag = geminiSuccess ? 'GEMINI' : groqSuccess ? 'GROQ' : 'FALLBACK';
+  const sourceTag = groqSuccess ? 'GROQ' : geminiSuccess ? 'GEMINI' : 'FALLBACK';
   return out + `\n\n<<<AI_SOURCE:${sourceTag}>>>`;
 }
 
@@ -1028,9 +1039,15 @@ INSTRUCCIONES:
 `;
 
   try {
+    // Determinar proveedor (default a GROQ si no dice explícitamente 'false', ya que el usuario prefiere Groq)
+    const shouldUseGroq = import.meta?.env?.VITE_USE_GROQ_FOR_ANALYSIS !== 'false';
+    const refinedEndpoint = shouldUseGroq ? GROQ_PROXY_ENDPOINT : PROXY_ENDPOINT;
+
     const payload = {
       model: QUIZ_AI_MODEL_CONFIGURED,
-      messages: [{ role: 'user', content: prompt }]
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      purpose: 'tutor',
+      proveedor: shouldUseGroq ? 'groq' : 'gemini'
     };
 
     // Intentar con el proxy
@@ -1040,9 +1057,6 @@ INSTRUCCIONES:
         'Content-Type': 'application/json',
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       };
-
-      const shouldUseGroq = import.meta?.env?.VITE_USE_GROQ_FOR_ANALYSIS === 'true';
-      const refinedEndpoint = shouldUseGroq ? GROQ_PROXY_ENDPOINT : PROXY_ENDPOINT;
 
       const response = await fetch(refinedEndpoint, {
         method: 'POST',

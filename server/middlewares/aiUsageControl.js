@@ -11,14 +11,17 @@ export const verificarLimitesAI = async (req, res, next) => {
     const role = req.user?.role || req.user?.rol;
 
     if (!userId) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Usuario no autenticado',
         code: 'UNAUTHORIZED'
       });
     }
 
+    // Obtener propósito de la operación para cuota específica
+    const operationType = req.body?.purpose || req.body?.tipo_operacion || 'general';
+
     // Verificar cuota
-    const quotaCheck = await checkQuota(userId, role);
+    const quotaCheck = await checkQuota(userId, role, operationType);
 
     if (!quotaCheck.allowed) {
       const messages = {
@@ -57,7 +60,7 @@ export const registrarUsoAI = async (req, res, next) => {
   const originalJson = res.json.bind(res);
 
   // Sobrescribir res.json para interceptar la respuesta
-  res.json = function(data) {
+  res.json = function (data) {
     // Si la respuesta fue exitosa (status 200), registrar el uso
     if (res.statusCode >= 200 && res.statusCode < 300) {
       const startTime = req.aiStartTime || Date.now();

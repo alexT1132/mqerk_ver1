@@ -55,20 +55,17 @@ const newQuestion = (type = "multiple") => ({
 
 /* ----------------------- Renderiza LaTeX con KaTeX ----------------------- */
 /** Renderiza texto plano mezclado con fórmulas delimitadas por $...$ y respeta saltos de línea */
+/* ----------------------- Renderiza LaTeX con KaTeX ----------------------- */
+/** Renderiza texto plano mezclado con fórmulas delimitadas por $...$ o $$...$$ */
 function MathText({ text = "", onFormulaClick }) {
   if (!text) return null;
 
-  // ✅ Función para sanitizar HTML (similar a RichTextEditor)
-  // NOTA: El Markdown ya se procesa antes de llamar a esta función, así que puede contener <strong>, <b>, etc.
+  // ✅ Función para sanitizar HTML
   const sanitizeHtmlLite = (html) => {
     if (!html) return '';
-    // Crear un elemento temporal para sanitizar
     const div = document.createElement('div');
-    // Usar innerHTML para preservar las etiquetas HTML válidas que ya procesamos (como <strong>)
     div.innerHTML = html;
-    // Lista blanca de etiquetas permitidas
     const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
-    // Recorrer todos los nodos y eliminar etiquetas no permitidas
     const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
     const nodesToRemove = [];
     let node;
@@ -79,79 +76,122 @@ function MathText({ text = "", onFormulaClick }) {
     }
     nodesToRemove.forEach(n => {
       const parent = n.parentNode;
-      while (n.firstChild) {
-        parent.insertBefore(n.firstChild, n);
-      }
+      while (n.firstChild) parent.insertBefore(n.firstChild, n);
       parent.removeChild(n);
     });
     return div.innerHTML;
   };
 
-  // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
-  // Pero proteger las fórmulas LaTeX para no procesarlas
-  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
-  const latexMatches = [];
-  let processedText = text;
-  let placeholderIndex = 0;
-  
-  // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
-  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
-    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
-    latexMatches.push(match);
-    placeholderIndex++;
-    return placeholder;
-  });
-  
-  // Procesar Markdown: **texto** -> <strong>texto</strong>
-  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
-  
-  // Restaurar fórmulas LaTeX
-  latexMatches.forEach((match, idx) => {
-    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
-  });
+  // ✅ Procesador de Markdown simple
+  const processMarkdown = (txt) => {
+    if (!txt) return '';
+    return txt.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  };
 
-  // ✅ Usar regex simple y robusto: busca $...$ de forma no-greedy
-  // Esto funciona bien para la mayoría de casos, incluyendo fórmulas complejas
-  const re = /\$([^$]+?)\$/g;
   const parts = [];
+  let i = 0;
   let lastIndex = 0;
-  let m;
-  let matchFound = false;
 
-  // Resetear el regex para evitar problemas con múltiples llamadas
-  re.lastIndex = 0;
+  // Parser robusto carácter a carácter para manejar anidamientos y escapes
+  while (i < text.length) {
+    const char = text[i];
 
-  while ((m = re.exec(processedText)) !== null) {
-    matchFound = true;
-    if (m.index > lastIndex) {
-      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
+    // 1. Saltar escapes
+    if (char === '\\') {
+      i += 2;
+      continue;
     }
-    // Limpiar espacios en blanco al inicio y final de la fórmula
-    const formula = m[1].trim();
-    if (formula) {
-      parts.push({ 
-        type: 'math', 
-        content: formula,
-        full: m[0],
-        start: m.index,
-        end: m.index + m[0].length
-      });
+
+    // 2. Detectar inicio fórmula ($)
+    if (char === '$') {
+      const start = i;
+      const isBlock = i + 1 < text.length && text[i + 1] === '$';
+      const delimiter = isBlock ? '$$' : '$';
+      // Avanzar más allá del delimitador de apertura
+      i += delimiter.length;
+
+      let content = '';
+      let closed = false;
+
+      // Buscar cierre
+      while (i < text.length) {
+        const c = text[i];
+        if (c === '\\') {
+          content += c;
+          if (i + 1 < text.length) content += text[i + 1];
+          i += 2;
+          continue;
+        }
+        if (c === '$') {
+          let isClosing = false;
+          if (isBlock) {
+            // Para $$ necesitamos otro $ seguido
+            if (i + 1 < text.length && text[i + 1] === '$') isClosing = true;
+          } else {
+            isClosing = true;
+          }
+
+          if (isClosing) {
+            closed = true;
+            break;
+          }
+        }
+        content += c;
+        i++;
+      }
+
+      if (closed) {
+        // Validar heurística SÓLO para inline ($)
+        let isValidMath = true;
+        if (!isBlock) {
+          const formulaTrimmed = content.trim();
+          // Heurística de moneda: $120 pesos
+          const beginsWithNumber = /^\d+/.test(formulaTrimmed);
+          const hasTextWords = /[a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,}/.test(formulaTrimmed);
+          const hasMathOperators = /[=\+\-\^_{}\\]/.test(formulaTrimmed);
+          if (beginsWithNumber && hasTextWords && !hasMathOperators) {
+            isValidMath = false;
+          }
+        }
+
+        if (isValidMath) {
+          // Agregar texto previo
+          if (start > lastIndex) {
+            const txtSegment = text.substring(lastIndex, start);
+            parts.push({ type: 'text', content: processMarkdown(txtSegment) });
+          }
+
+          // Agregar fórmula
+          const fullMatchEnd = i + delimiter.length;
+          const fullMatch = text.substring(start, fullMatchEnd);
+
+          parts.push({
+            type: 'math',
+            content: content.trim(),
+            full: fullMatch,
+            start: start,
+            end: fullMatchEnd,
+            isBlock: isBlock
+          });
+
+          // Avanzar cursor principal más allá del cierre
+          i += delimiter.length;
+          lastIndex = i;
+          continue;
+        } else {
+          // Interpretar como texto
+          i = start + 1;
+          continue;
+        }
+      }
     }
-    lastIndex = m.index + m[0].length;
-  }
-  
-  if (lastIndex < processedText.length) {
-    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
+    i++;
   }
 
-  // Si no se encontraron fórmulas, devolver el texto con HTML procesado (ya con Markdown convertido)
-  if (!matchFound || parts.length === 0) {
-    return (
-      <span 
-        className="whitespace-pre-wrap"
-        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
-      />
-    );
+  // Agregar resto del texto
+  if (lastIndex < text.length) {
+    const txtSegment = text.substring(lastIndex);
+    parts.push({ type: 'text', content: processMarkdown(txtSegment) });
   }
 
   const handleFormulaClick = (formula, fullMatch, start, end) => {
@@ -160,21 +200,20 @@ function MathText({ text = "", onFormulaClick }) {
     }
   };
 
-  // Renderizar las partes encontradas, procesando HTML en las partes de texto
   return (
-    <span className="whitespace-pre-wrap">
+    <span className="block w-full break-words overflow-x-auto whitespace-pre-wrap">
       {parts.map((part, idx) =>
         part.type === 'math' ? (
           <span
             key={`math-${idx}`}
             onClick={() => onFormulaClick && handleFormulaClick(part.content, part.full, part.start, part.end)}
-            className={onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors inline-block" : "inline-block"}
+            className={`${onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors" : ""} ${part.isBlock ? "block text-center my-2" : "inline-block align-middle"}`}
             title={onFormulaClick ? "Clic para editar esta fórmula" : ""}
           >
-            <InlineMath math={part.content} />
+            <InlineMath math={part.content} display={part.isBlock} />
           </span>
         ) : (
-          <span 
+          <span
             key={`text-${idx}`}
             dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
           />
@@ -301,21 +340,19 @@ function jumpToPlaceholder(el, backwards = false) {
 function OptionRow({ option, optionLabel = 'a', onChange, onRemove }) {
   return (
     <div
-      className={`flex flex-col gap-4 rounded-xl border-2 p-5 transition-all duration-200 ${
-        option.correct
-          ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 shadow-lg ring-2 ring-emerald-200/50'
-          : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
-      }`}
+      className={`flex flex-col gap-4 rounded-xl border-2 p-5 transition-all duration-200 ${option.correct
+        ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 shadow-lg ring-2 ring-emerald-200/50'
+        : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+        }`}
     >
       <div className="flex items-start gap-3">
         {/* Etiqueta de opción (a, b, c, ...) */}
         <div className="flex-shrink-0 mt-1">
           <span
-            className={`inline-flex items-center justify-center w-7 h-7 rounded-lg font-bold text-sm border-2 ${
-              option.correct
-                ? 'border-emerald-500 bg-emerald-100 text-emerald-700'
-                : 'border-slate-300 bg-slate-100 text-slate-600'
-            }`}
+            className={`inline-flex items-center justify-center w-7 h-7 rounded-lg font-bold text-sm border-2 ${option.correct
+              ? 'border-emerald-500 bg-emerald-100 text-emerald-700'
+              : 'border-slate-300 bg-slate-100 text-slate-600'
+              }`}
           >
             {optionLabel})
           </span>
@@ -816,7 +853,7 @@ export default function EspanolFormBuilder() {
                 } else if (metadata.image) {
                   preguntaImage = { url: metadata.image, preview: metadata.image };
                 }
-              } catch {}
+              } catch { }
             }
             return {
               id: genId(),
@@ -841,7 +878,7 @@ export default function EspanolFormBuilder() {
                       } else if (metadata.image) {
                         opcionImage = { url: metadata.image, preview: metadata.image };
                       }
-                    } catch {}
+                    } catch { }
                   }
                 }
                 return { ...opt, image: opcionImage };
@@ -917,7 +954,7 @@ export default function EspanolFormBuilder() {
                 } else if (metadata.image) {
                   preguntaImage = { url: metadata.image, preview: metadata.image };
                 }
-              } catch {}
+              } catch { }
             }
             return {
               id: genId(),
@@ -940,7 +977,7 @@ export default function EspanolFormBuilder() {
                     } else if (metadata.image) {
                       opcionImage = { url: metadata.image, preview: metadata.image };
                     }
-                  } catch {}
+                  } catch { }
                 }
                 return { id: genId(), text: o.texto || '', correct: !!o.es_correcta, image: opcionImage };
               }) : [],
@@ -1038,12 +1075,12 @@ export default function EspanolFormBuilder() {
           points: q.points,
           answer: q.answer
         };
-        
+
         // ✅ Incluir imagen de la pregunta si existe
         if (q.image) {
           preguntaBase.image = q.image.preview || q.image.url || null;
         }
-        
+
         // ✅ Incluir opciones con sus imágenes
         if (q.type === 'multiple' && q.options) {
           preguntaBase.options = q.options.map(o => {
@@ -1055,7 +1092,7 @@ export default function EspanolFormBuilder() {
             return opcionBase;
           });
         }
-        
+
         return preguntaBase;
       });
       const body = {
@@ -1078,7 +1115,7 @@ export default function EspanolFormBuilder() {
         await createQuiz(body);
       }
       await showAlert("Borrador guardado exitosamente.", 'Borrador guardado', 'success');
-      navigate('/asesor/quizt');
+      navigate('/asesor/quizt', { replace: true });
     } catch (e) {
       await showAlert(e?.response?.data?.message || 'No se pudo guardar el borrador', 'Error', 'error');
     } finally {
@@ -1144,12 +1181,12 @@ export default function EspanolFormBuilder() {
           points: q.points,
           answer: q.answer
         };
-        
+
         // ✅ Incluir imagen de la pregunta si existe
         if (q.image) {
           preguntaBase.image = q.image.preview || q.image.url || null;
         }
-        
+
         // ✅ Incluir opciones con sus imágenes
         if (q.type === 'multiple' && q.options) {
           preguntaBase.options = q.options.map(o => ({
@@ -1159,10 +1196,10 @@ export default function EspanolFormBuilder() {
             image: o.image ? (o.image.preview || o.image.url || null) : null
           }));
         }
-        
+
         return preguntaBase;
       });
-      
+
       if (quizId) {
         const body = {
           titulo: meta.titulo || undefined,
@@ -1176,7 +1213,7 @@ export default function EspanolFormBuilder() {
         };
         await updateQuiz(quizId, body);
         await showAlert('Quiz actualizado exitosamente', 'Éxito', 'success');
-        navigate('/asesor/quizt');
+        navigate('/asesor/quizt', { replace: true });
       } else if (simId) {
         const body = {
           preguntas,
@@ -1184,12 +1221,12 @@ export default function EspanolFormBuilder() {
         };
         await updateSimulacion(simId, body);
         await showAlert('Simulador actualizado exitosamente', 'Éxito', 'success');
-        // Redirigir según contexto (área específica vs generales) - NO usar replace para preservar historial
+        // Redirigir según contexto (área específica vs generales) - Usar replace para evitar volver al editor con Back
         if (areaId) {
           const areaParam = encodeURIComponent(areaTitle || areaId);
-          navigate(`/asesor/simuladores/modulo?area=${areaParam}`);
+          navigate(`/asesor/simuladores/modulo?area=${areaParam}`, { replace: true });
         } else {
-          navigate('/asesor/simuladores/generales');
+          navigate('/asesor/simuladores/generales', { replace: true });
         }
       }
     } catch (e) {
@@ -1218,12 +1255,12 @@ export default function EspanolFormBuilder() {
           text: q.text,
           puntos: Number(q.points || 1)
         };
-        
+
         // ✅ Incluir imagen de la pregunta si existe
         if (q.image) {
           preguntaBase.image = q.image.preview || q.image.url || null;
         }
-        
+
         if (q.type === 'multiple') {
           const opciones = (q.options || []).map(o => {
             const opcionBase = { texto: o.text, es_correcta: !!o.correct };
@@ -1256,9 +1293,9 @@ export default function EspanolFormBuilder() {
       }
       if (areaId) {
         const areaParam = encodeURIComponent(areaTitle || areaId);
-        navigate(`/asesor/simuladores/modulo?area=${areaParam}`);
+        navigate(`/asesor/simuladores/modulo?area=${areaParam}`, { replace: true });
       } else {
-        navigate('/asesor/simuladores/generales');
+        navigate('/asesor/simuladores/generales', { replace: true });
       }
     } catch (e) {
       await showAlert(e?.response?.data?.message || 'No se pudo guardar el simulador', 'Error', 'error');
@@ -1371,7 +1408,7 @@ export default function EspanolFormBuilder() {
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={async () => {
-                    const ok = window.confirm('¿Estás seguro de que deseas cancelar? Se perderán los cambios no guardados. NO se guardará como borrador.');
+                    const ok = await showConfirm('¿Estás seguro de que deseas cancelar? Se perderán los cambios no guardados. NO se guardará como borrador.', 'Confirmar cancelación');
                     if (!ok) return;
 
                     // ✅ Caso especial: simulador recién creado para entrar al builder (new=1)
@@ -1388,16 +1425,21 @@ export default function EspanolFormBuilder() {
                       }
                     }
 
-                    // Navegar a la lista correspondiente - NO usar replace para preservar historial
+                    // Navegar a la lista correspondiente
+                    // Usamos replace: true para evitar "loops" con el botón Atrás
                     if (isSim) {
                       if (areaId) {
                         const areaParam = encodeURIComponent(areaTitle || areaId);
-                        navigate(`/asesor/simuladores/modulo?area=${areaParam}`);
+                        navigate(`/asesor/simuladores/modulo?area=${areaParam}`, { replace: true });
                       } else {
-                        navigate('/asesor/simuladores/generales');
+                        navigate('/asesor/simuladores/generales', { replace: true });
                       }
                     } else {
-                      navigate('/asesor/quizt');
+                      // Enviamos el título del área para que la lista cargue la materia correcta
+                      navigate('/asesor/quizt', {
+                        state: { title: areaTitle },
+                        replace: true
+                      });
                     }
                   }}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-rose-300 bg-white px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-50 hover:border-rose-400 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
@@ -1589,7 +1631,7 @@ export default function EspanolFormBuilder() {
         <Modal open={previewOpen} onClose={() => setPreviewOpen(false)} title="Vista previa">
           <article className="space-y-6">
             <header>
-              <h3 className="text-lg font-semibold text-slate-900">Formulario de Español</h3>
+              <h3 className="text-lg font-semibold text-slate-900">{meta.titulo || (isSim ? 'Simulación' : 'Evaluación')} • {areaTitle || 'General'}</h3>
               <p className="mt-1 text-sm text-slate-500">Puntos totales: {totalPoints}</p>
             </header>
 

@@ -29,7 +29,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
   };
 
   // Quitamos el auto-cierre extendido; el cierre será inmediato desde el sidebar
-  useEffect(() => {}, [isDesktopSidebarOpen]);
+  useEffect(() => { }, [isDesktopSidebarOpen]);
 
   // Manejo de notificaciones
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -90,7 +90,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
 
   // Determinar si realmente hay sidebar activo en esta pantalla
   const hasSidebar = Boolean(SideBarDesktopComponent) || Boolean(SideBarSmComponent);
-  
+
   // Verificar si hay un curso seleccionado (para mostrar el botón flotante en /alumno/cursos cuando hay curso)
   const hasSelectedCourse = React.useMemo(() => {
     if (!isCoursesRoute) return true; // Si no es ruta de cursos, siempre mostrar si hay sidebar
@@ -99,8 +99,8 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       if (!raw || raw === 'null' || raw === 'undefined') return false;
       const obj = JSON.parse(raw);
       return obj && typeof obj === 'object' && (obj.id || obj.title);
-    } catch { 
-      return false; 
+    } catch {
+      return false;
     }
   }, [isCoursesRoute]);
 
@@ -115,7 +115,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
   );
 
   return (
-  <div className={`min-h-screen ${backgroundClassName} relative overflow-x-hidden ${isAdminBienvenidaRoute ? 'overflow-y-hidden' : ''}`}>
+    <div className={`min-h-screen ${backgroundClassName} relative overflow-x-hidden ${isAdminBienvenidaRoute ? 'overflow-y-hidden' : ''}`}>
       {/* Header principal */}
       {HeaderComponent && (
         <HeaderComponent />
@@ -129,9 +129,9 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       )}
 
       {/* Overlay con blur para móvil */}
-    {hasSidebar && isMenuOpen && (
+      {hasSidebar && isMenuOpen && (
         <div
-      className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 sm:hidden transition-all duration-150 ease-out"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 sm:hidden transition-all duration-150 ease-out"
           onClick={closeMenu}
           aria-hidden="true"
           style={{ backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
@@ -139,9 +139,9 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       )}
 
       {/* Overlay con blur para escritorio */}
-  {hasSidebar && isDesktopSidebarOpen && (
+      {hasSidebar && isDesktopSidebarOpen && (
         <div
-        className="fixed inset-0 bg-black/10 backdrop-blur-[1px] z-30 hidden md:block transition-all duration-100 ease-out pointer-events-none"
+          className="fixed inset-0 bg-black/10 backdrop-blur-[1px] z-30 hidden md:block transition-all duration-100 ease-out pointer-events-none"
           // El overlay de escritorio es solo visual; no captura clics para evitar interferir con el hover del sidebar
           aria-hidden="true"
           style={{ backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)' }}
@@ -151,9 +151,9 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       {/* Sidebar para móvil */}
       {SideBarSmComponent && <SideBarSmComponent isMenuOpen={isMenuOpen} closeMenu={closeMenu} />}
 
-  {/* Botón hamburguesa flotante (solo móvil) */}
-  {/* Mostrar si hay sidebar Y (no es ruta de cursos O hay curso seleccionado) */}
-  {hasSidebar && (!isCoursesRoute || hasSelectedCourse) && (
+      {/* Botón hamburguesa flotante (solo móvil) */}
+      {/* Mostrar si hay sidebar Y (no es ruta de cursos O hay curso seleccionado) */}
+      {hasSidebar && (!isCoursesRoute || hasSelectedCourse) && (
         <button
           onClick={toggleMenu}
           className="sm:hidden fixed bottom-4 right-4 w-10 h-10 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 z-50 flex items-center justify-center"
@@ -168,20 +168,20 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       {/* Contenido principal de la página */}
       <main
         className={
-          `relative z-10 pt-14 overflow-x-hidden overflow-y-auto ` +
-          (contentClassName && contentClassName.includes('px-0') 
-            ? '' 
+          `relative z-10 pt-14 ` +
+          (contentClassName && contentClassName.includes('px-0')
+            ? ''
             : 'px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8') +
           (contentClassName && contentClassName.includes('pb-0')
             ? ''
-            : 'pb-6') +
+            : ' pb-10') +
           (hasSidebar
             ? (' sm:ml-20 ' + (isDesktopSidebarOpen ? ' lg:ml-64' : ' lg:ml-20') + ' transition-none lg:transition-[margin] lg:duration-200')
             : '') +
           (contentClassName ? ` ${contentClassName}` : '') +
           (isAdminBienvenidaRoute ? ' p-0' : '')
         }
-        style={{ minHeight: isAdminBienvenidaRoute ? 'calc(100vh - 56px)' : '100vh' }}
+        style={{ minHeight: isAdminBienvenidaRoute ? 'calc(100vh - 56px)' : 'calc(100vh - 3.5rem)' }}
       >
         {children}
       </main>

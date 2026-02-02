@@ -7,7 +7,7 @@ import axios from "../../../api/axios.js";
 export function Modal({ open, onClose, title, children, footer }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-40 pb-6">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-18 pb-6">
       <div className="w-full max-w-4xl rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 h-[85vh] max-h-[85vh] flex flex-col overflow-hidden border-2 border-violet-200/50">
         <div className="flex items-center justify-between border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -55,36 +55,36 @@ export const SECTIONS = {
   ],
 
   'Griego': [
-    '\\alpha','\\beta','\\gamma','\\delta','\\epsilon','\\zeta','\\eta','\\theta',
-    '\\iota','\\kappa','\\lambda','\\mu','\\nu','\\xi','\\pi','\\rho','\\sigma',
-    '\\tau','\\upsilon','\\phi','\\chi','\\psi','\\omega',
-    '\\Gamma','\\Delta','\\Theta','\\Lambda','\\Xi','\\Pi','\\Sigma','\\Upsilon','\\Phi','\\Psi','\\Omega'
+    '\\alpha', '\\beta', '\\gamma', '\\delta', '\\epsilon', '\\zeta', '\\eta', '\\theta',
+    '\\iota', '\\kappa', '\\lambda', '\\mu', '\\nu', '\\xi', '\\pi', '\\rho', '\\sigma',
+    '\\tau', '\\upsilon', '\\phi', '\\chi', '\\psi', '\\omega',
+    '\\Gamma', '\\Delta', '\\Theta', '\\Lambda', '\\Xi', '\\Pi', '\\Sigma', '\\Upsilon', '\\Phi', '\\Psi', '\\Omega'
   ],
 
   'ABΓ (Conj.)': [
-    '\\mathbb{N}','\\mathbb{Z}','\\mathbb{Q}','\\mathbb{R}','\\mathbb{C}',
-    '\\mathcal{A}','\\mathcal{B}','\\mathcal{L}','\\mathcal{F}',
-    '\\subset','\\subseteq','\\supset','\\supseteq','\\in','\\notin',
-    '\\cup','\\cap','\\setminus','\\varnothing'
+    '\\mathbb{N}', '\\mathbb{Z}', '\\mathbb{Q}', '\\mathbb{R}', '\\mathbb{C}',
+    '\\mathcal{A}', '\\mathcal{B}', '\\mathcal{L}', '\\mathcal{F}',
+    '\\subset', '\\subseteq', '\\supset', '\\supseteq', '\\in', '\\notin',
+    '\\cup', '\\cap', '\\setminus', '\\varnothing'
   ],
 
   'Trig': [
-    '\\sin','\\cos','\\tan','\\cot','\\sec','\\csc',
-    '\\arcsin','\\arccos','\\arctan',
-    '\\sin^{-1}','\\cos^{-1}','\\tan^{-1}'
+    '\\sin', '\\cos', '\\tan', '\\cot', '\\sec', '\\csc',
+    '\\arcsin', '\\arccos', '\\arctan',
+    '\\sin^{-1}', '\\cos^{-1}', '\\tan^{-1}'
   ],
 
   'Rel/Op': [
-    '\\le','\\ge','<','>','\\neq','\\approx','\\equiv','\\propto',
-    '\\to','\\Rightarrow','\\Leftarrow','\\Leftrightarrow',
-    '\\parallel','\\perp','\\angle','\\measuredangle'
+    '\\le', '\\ge', '<', '>', '\\neq', '\\approx', '\\equiv', '\\propto',
+    '\\to', '\\Rightarrow', '\\Leftarrow', '\\Leftrightarrow',
+    '\\parallel', '\\perp', '\\angle', '\\measuredangle'
   ],
 
   'Álgebra': [
-    '\\log','\\ln','e^{x}','a^{b}','x^{\\square}','_{\\square}',
-    '(x+1)^2','(a-b)^2','(a+b)^3','(a-b)^3',
-    '\\sqrt{\\square}','\\sqrt[n]{\\square}',
-    '\\binom{n}{k}','\\choose','\\gcd','\\operatorname{lcm}',
+    '\\log', '\\ln', 'e^{x}', 'a^{b}', 'x^{\\square}', '_{\\square}',
+    '(x+1)^2', '(a-b)^2', '(a+b)^3', '(a-b)^3',
+    '\\sqrt{\\square}', '\\sqrt[n]{\\square}',
+    '\\binom{n}{k}', '\\choose', '\\gcd', '\\operatorname{lcm}',
     'x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}',
     'ax^2 + bx + c = 0',
     '(a+b)(a-b) = a^2 - b^2',
@@ -96,19 +96,19 @@ export const SECTIONS = {
   ],
 
   'Cálculo': [
-    '\\sum_{i=1}^{n} a_i','\\prod_{k=1}^{n} b_k',
-    '\\int f(x)\\,dx','\\int_{a}^{b} f(x)\\,dx',
-    '\\int \\square\\,dx','\\int_{\\square}^{\\square} \\square\\,dx',
-    '\\int x^{\\square}\\,dx','\\int e^{\\square}\\,dx',
-    '\\int \\sin(\\square)\\,dx','\\int \\cos(\\square)\\,dx',
-    '\\int \\frac{1}{\\square}\\,dx','\\int \\ln(\\square)\\,dx',
-    '\\iint\\, dA','\\iiint\\, dV','\\oint\\,',
-    '\\lim_{x\\to 0}','\\lim_{n\\to\\infty}',
-    '\\lim_{x\\to \\square}','\\lim_{x\\to \\square} \\frac{\\square}{\\square}',
-    '\\frac{d}{dx}','\\frac{d^2}{dx^2}',
-    '\\frac{d}{dx}(\\square)','\\frac{d^2}{dx^2}(\\square)',
-    '\\frac{\\partial}{\\partial x}','\\frac{\\partial^2}{\\partial x^2}',
-    '\\frac{\\partial}{\\partial x}(\\square)','\\frac{\\partial}{\\partial y}(\\square)',
+    '\\sum_{i=1}^{n} a_i', '\\prod_{k=1}^{n} b_k',
+    '\\int f(x)\\,dx', '\\int_{a}^{b} f(x)\\,dx',
+    '\\int \\square\\,dx', '\\int_{\\square}^{\\square} \\square\\,dx',
+    '\\int x^{\\square}\\,dx', '\\int e^{\\square}\\,dx',
+    '\\int \\sin(\\square)\\,dx', '\\int \\cos(\\square)\\,dx',
+    '\\int \\frac{1}{\\square}\\,dx', '\\int \\ln(\\square)\\,dx',
+    '\\iint\\, dA', '\\iiint\\, dV', '\\oint\\,',
+    '\\lim_{x\\to 0}', '\\lim_{n\\to\\infty}',
+    '\\lim_{x\\to \\square}', '\\lim_{x\\to \\square} \\frac{\\square}{\\square}',
+    '\\frac{d}{dx}', '\\frac{d^2}{dx^2}',
+    '\\frac{d}{dx}(\\square)', '\\frac{d^2}{dx^2}(\\square)',
+    '\\frac{\\partial}{\\partial x}', '\\frac{\\partial^2}{\\partial x^2}',
+    '\\frac{\\partial}{\\partial x}(\\square)', '\\frac{\\partial}{\\partial y}(\\square)',
     '\\frac{d}{dx}(x^n) = nx^{n-1}',
     '\\frac{d}{dx}(e^x) = e^x',
     '\\frac{d}{dx}(\\ln x) = \\frac{1}{x}',
@@ -153,7 +153,7 @@ export const SECTIONS = {
   ],
 
   'Parént./Matriz': [
-    '\\left(\\square\\right)','\\left[\\square\\right]','\\left\\{\\square\\right\\}',
+    '\\left(\\square\\right)', '\\left[\\square\\right]', '\\left\\{\\square\\right\\}',
     '\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}',
     '\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}',
     '\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix}',
@@ -161,20 +161,20 @@ export const SECTIONS = {
   ],
 
   'Vect/Flechas': [
-    '\\vec{v}','\\overrightarrow{AB}','\\overleftarrow{CD}',
-    '\\nabla','\\nabla\\cdot\\vec{F}','\\nabla\\times\\vec{F}'
+    '\\vec{v}', '\\overrightarrow{AB}', '\\overleftarrow{CD}',
+    '\\nabla', '\\nabla\\cdot\\vec{F}', '\\nabla\\times\\vec{F}'
   ],
 
   'Prob/Combi': [
-    'P(A)','P(A\\mid B)','\\Pr\\,(\\square)','\\mathbb{E}[X]','\\operatorname{Var}(X)',
-    '\\binom{n}{k}','\\frac{n!}{k!\\,(n-k)!}','n!','(n-1)!'
+    'P(A)', 'P(A\\mid B)', '\\Pr\\,(\\square)', '\\mathbb{E}[X]', '\\operatorname{Var}(X)',
+    '\\binom{n}{k}', '\\frac{n!}{k!\\,(n-k)!}', 'n!', '(n-1)!'
   ],
 
   'Química/H₂O': [
-    'H_2O','CO_2','Na^+','Cl^-','x^{2+}','x^{3-}',
-    'H_2SO_4','HNO_3','HCl','NaOH','CaCO_3',
-    'CH_4','C_2H_5OH','NH_3','H_2O_2',
-    'NaCl','KCl','MgCl_2','AlCl_3',
+    'H_2O', 'CO_2', 'Na^+', 'Cl^-', 'x^{2+}', 'x^{3-}',
+    'H_2SO_4', 'HNO_3', 'HCl', 'NaOH', 'CaCO_3',
+    'CH_4', 'C_2H_5OH', 'NH_3', 'H_2O_2',
+    'NaCl', 'KCl', 'MgCl_2', 'AlCl_3',
     'pH = -\\log[H^+]',
     'pOH = -\\log[OH^-]',
     'pH + pOH = 14',
@@ -197,10 +197,10 @@ export const SECTIONS = {
   ],
 
   'Plantillas': [
-    '\\frac{\\square}{\\square}','\\sqrt{\\square}','\\sqrt[n]{\\square}',
-    '\\left(\\square\\right)','\\left[\\square\\right]','\\left\\{\\square\\right\\}',
-    'a^{\\square}','\\_{\\square}','\\lim_{x\\to \\square}',
-    '\\sum_{i=\\square}^{\\square} \\square','\\int_{\\square}^{\\square} \\square\\,dx',
+    '\\frac{\\square}{\\square}', '\\sqrt{\\square}', '\\sqrt[n]{\\square}',
+    '\\left(\\square\\right)', '\\left[\\square\\right]', '\\left\\{\\square\\right\\}',
+    'a^{\\square}', '\\_{\\square}', '\\lim_{x\\to \\square}',
+    '\\sum_{i=\\square}^{\\square} \\square', '\\int_{\\square}^{\\square} \\square\\,dx',
     'x = \\frac{-\\square \\pm \\sqrt{\\square^2-4\\square\\square}}{2\\square}',
     'ax^2 + \\square x + \\square = 0',
     'y = \\square x + \\square',
@@ -339,7 +339,7 @@ export const SECTIONS = {
     'a^{1/n} = \\sqrt[n]{a}',
     '\\sqrt{a} \\cdot \\sqrt{b} = \\sqrt{ab}',
     '\\frac{\\sqrt{a}}{\\sqrt{b}} = \\sqrt{\\frac{a}{b}}',
-    
+
     // Geometría IPN
     'a^2 + b^2 = c^2',
     'd = \\sqrt{(x_2-x_1)^2 + (y_2-y_1)^2}',
@@ -364,7 +364,7 @@ export const SECTIONS = {
     'V = \\frac{1}{3}\\pi r^2 h',
     'A_{lateral} = \\pi r l',
     'A_{total} = \\pi r(r + l)',
-    
+
     // Trigonometría IPN
     '\\sin^2\\theta + \\cos^2\\theta = 1',
     '\\tan\\theta = \\frac{\\sin\\theta}{\\cos\\theta}',
@@ -385,7 +385,7 @@ export const SECTIONS = {
     '\\cos\\left(\\frac{\\theta}{2}\\right) = \\pm\\sqrt{\\frac{1+\\cos\\theta}{2}}',
     'a^2 = b^2 + c^2 - 2bc\\cos A',
     '\\frac{a}{\\sin A} = \\frac{b}{\\sin B} = \\frac{c}{\\sin C} = 2R',
-    
+
     // Física IPN - Mecánica
     'F = ma',
     'W = Fd',
@@ -404,7 +404,7 @@ export const SECTIONS = {
     '\\tau = rF\\sin\\theta',
     'L = I\\omega',
     'K = \\frac{1}{2}I\\omega^2',
-    
+
     // Física IPN - Termodinámica
     'PV = nRT',
     '\\frac{P_1V_1}{T_1} = \\frac{P_2V_2}{T_2}',
@@ -413,7 +413,7 @@ export const SECTIONS = {
     '\\Delta U = Q - W',
     '\\eta = \\frac{W_{out}}{Q_{in}}',
     '\\Delta S = \\frac{Q}{T}',
-    
+
     // Física IPN - Electricidad y Magnetismo
     'F = k\\frac{q_1 q_2}{r^2}',
     'E = \\frac{F}{q}',
@@ -436,7 +436,7 @@ export const SECTIONS = {
     'B = \\frac{\\mu_0 I}{2\\pi r}',
     '\\Phi = BA\\cos\\theta',
     '\\varepsilon = -N\\frac{\\Delta\\Phi}{\\Delta t}',
-    
+
     // Física IPN - Ondas
     'v = \\lambda f',
     'f = \\frac{1}{T}',
@@ -447,7 +447,7 @@ export const SECTIONS = {
     'T = 2\\pi\\sqrt{\\frac{L}{g}}',
     'T = 2\\pi\\sqrt{\\frac{m}{k}}',
     'f = \\frac{1}{2\\pi}\\sqrt{\\frac{k}{m}}',
-    
+
     // Química IPN - Estequiometría
     'n = \\frac{m}{M}',
     'M = \\frac{m}{n}',
@@ -457,7 +457,7 @@ export const SECTIONS = {
     'ppm = \\frac{m_{soluto}}{m_{solución}} \\times 10^6',
     'X_i = \\frac{n_i}{n_{total}}',
     'P_i = X_i P_{total}',
-    
+
     // Química IPN - Equilibrio y pH
     'pH = -\\log[H^+]',
     'pOH = -\\log[OH^-]',
@@ -469,7 +469,7 @@ export const SECTIONS = {
     'pH = pK_a + \\log\\left(\\frac{[A^-]}{[HA]}\\right)',
     'K_c = \\frac{[C]^c[D]^d}{[A]^a[B]^b}',
     'K_p = K_c(RT)^{\\Delta n}',
-    
+
     // Química IPN - Termoquímica
     '\\Delta H = \\sum H_{products} - \\sum H_{reactants}',
     '\\Delta G = \\Delta H - T\\Delta S',
@@ -477,7 +477,7 @@ export const SECTIONS = {
     '\\Delta G^0 = -nFE^0',
     'q = mc\\Delta T',
     '\\Delta S = \\frac{q_{rev}}{T}',
-    
+
     // Química IPN - Electroquímica
     'E^0 = E^0_{cathode} - E^0_{anode}',
     'E = E^0 - \\frac{RT}{nF}\\ln Q',
@@ -485,7 +485,7 @@ export const SECTIONS = {
     '\\Delta G = -nFE',
     'Q = It',
     'm = \\frac{MQ}{nF}',
-    
+
     // Razonamiento matemático IPN
     '\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}',
     '\\sum_{i=1}^{n} i^2 = \\frac{n(n+1)(2n+1)}{6}',
@@ -505,10 +505,10 @@ export const SECTIONS = {
 function extractPlaceholders(formula) {
   const matches = formula.match(/\\square/g);
   if (!matches) return [];
-  
+
   const count = matches.length;
   const labels = [];
-  
+
   // Generar etiquetas descriptivas según el tipo de fórmula
   if (formula.includes('x = \\frac{-\\square \\pm \\sqrt{\\square^2-4\\square\\square}}{2\\square}')) {
     return ['Coeficiente b', 'Coeficiente b (en raíz)', 'Coeficiente a', 'Coeficiente c', 'Coeficiente a (denominador)'];
@@ -557,7 +557,7 @@ function extractPlaceholders(formula) {
   } else if (formula.includes('\\Pr\\,(\\square)')) {
     return ['Evento'];
   }
-  
+
   // Etiquetas genéricas
   for (let i = 0; i < count; i++) {
     labels.push(`Valor ${i + 1}`);
@@ -568,18 +568,18 @@ function extractPlaceholders(formula) {
 /** Analiza una fórmula LaTeX y extrae componentes editables */
 function parseFormula(formula) {
   const clean = formula.replace(/^\$|\$$/g, '').trim();
-  
+
   // Fórmula general cuadrática: x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}
   // Patrón más flexible que detecta la estructura general
   // Busca: variable = \frac{-coef \pm \sqrt{coef^2-4coefcoef}}{2coef}
   const quadraticPattern = /^([a-zA-Z])\s*=\s*\\frac\{-([a-zA-Z])\s*\\pm\s*\\sqrt\{([a-zA-Z])\^2-4([a-zA-Z])([a-zA-Z])\}\}\{2([a-zA-Z])\}$/;
   let quadraticMatch = clean.match(quadraticPattern);
-  
+
   // Si no coincide, intentar sin espacios
   if (!quadraticMatch) {
     quadraticMatch = clean.match(/^([a-zA-Z])=\\frac\{-([a-zA-Z])\\pm\\sqrt\{([a-zA-Z])\^2-4([a-zA-Z])([a-zA-Z])\}\}\{2([a-zA-Z])\}$/);
   }
-  
+
   if (quadraticMatch) {
     return {
       type: 'quadratic',
@@ -589,7 +589,7 @@ function parseFormula(formula) {
       c: quadraticMatch[5]  // del 4ac (último)
     };
   }
-  
+
   // Detectar manualmente si tiene la estructura de fórmula cuadrática
   // Buscar: variable = \frac{-... \pm \sqrt{...^2-4...}}{2...}
   if (clean.includes('\\frac') && clean.includes('\\pm') && clean.includes('\\sqrt') && clean.includes('^2-4')) {
@@ -598,7 +598,7 @@ function parseFormula(formula) {
     const bMatch = clean.match(/-([a-zA-Z])\s*\\pm/);
     const aMatch = clean.match(/\{2([a-zA-Z])\}$/);
     const sqrtMatch = clean.match(/\\sqrt\{([a-zA-Z])\^2-4([a-zA-Z])([a-zA-Z])\}/);
-    
+
     if (varMatch && bMatch && aMatch && sqrtMatch) {
       return {
         type: 'quadratic',
@@ -609,7 +609,7 @@ function parseFormula(formula) {
       };
     }
   }
-  
+
   // Ecuación cuadrática: ax^2 + bx + c = 0
   const quadEqMatch = clean.match(/^([a-zA-Z])([a-zA-Z])\^2\s*\+\s*([a-zA-Z])([a-zA-Z])\s*\+\s*([a-zA-Z])\s*=\s*0$/);
   if (quadEqMatch) {
@@ -651,7 +651,7 @@ function parseFormula(formula) {
       u: chainRuleMatch[3]
     };
   }
-  
+
   // Patrones comunes para detectar
   // x^2 o x^{2}
   const powerMatch = clean.match(/^([a-zA-Z0-9]+)\^(?:\{([^}]+)\}|([0-9]+))$/);
@@ -662,7 +662,7 @@ function parseFormula(formula) {
       exponent: powerMatch[2] || powerMatch[3] || '1'
     };
   }
-  
+
   // \frac{a}{b}
   const fracMatch = clean.match(/^\\frac\{([^}]+)\}\{([^}]+)\}$/);
   if (fracMatch) {
@@ -672,7 +672,7 @@ function parseFormula(formula) {
       denominator: fracMatch[2]
     };
   }
-  
+
   // \sqrt{x} o \sqrt[n]{x}
   const sqrtMatch = clean.match(/^\\sqrt(?:\[([^\]]+)\])?\{([^}]+)\}$/);
   if (sqrtMatch) {
@@ -682,7 +682,7 @@ function parseFormula(formula) {
       radicand: sqrtMatch[2]
     };
   }
-  
+
   // Variable simple: x, y, a, etc.
   const simpleMatch = clean.match(/^([a-zA-Z])$/);
   if (simpleMatch) {
@@ -691,7 +691,7 @@ function parseFormula(formula) {
       value: simpleMatch[1]
     };
   }
-  
+
   // Número simple
   const numberMatch = clean.match(/^([0-9]+(?:\.[0-9]+)?)$/);
   if (numberMatch) {
@@ -700,7 +700,7 @@ function parseFormula(formula) {
       value: numberMatch[1]
     };
   }
-  
+
   // Expresión compuesta simple: x + y, a - b, etc.
   const sumMatch = clean.match(/^([a-zA-Z0-9]+)\s*([+\-])\s*([a-zA-Z0-9]+)$/);
   if (sumMatch) {
@@ -711,7 +711,7 @@ function parseFormula(formula) {
       right: sumMatch[3]
     };
   }
-  
+
   // Integral indefinida: \int f(x) \, dx o \int 2x \, dx o \int 2x dx
   // Detectar el patrón de integral: \int ... d[variable]
   // Usar un enfoque más flexible: buscar todo hasta encontrar d[variable] al final
@@ -734,7 +734,7 @@ function parseFormula(formula) {
       }
     }
   }
-  
+
   // Integral definida: \int_{a}^{b} f(x) \, dx
   const integralDefPattern = /^\\int_\{([^}]+)\}\^\{([^}]+)\}/;
   const integralDefMatch = clean.match(integralDefPattern);
@@ -760,7 +760,7 @@ function parseFormula(formula) {
       }
     }
   }
-  
+
   // Si no coincide con ningún patrón conocido, devolver null para modo avanzado
   return null;
 }
@@ -768,38 +768,38 @@ function parseFormula(formula) {
 /** Construye LaTeX a partir de componentes editables */
 function buildFormula(components) {
   if (!components) return '';
-  
+
   switch (components.type) {
     case 'quadratic':
       return `${components.variable} = \\frac{-${components.b} \\pm \\sqrt{${components.b}^2-4${components.a}${components.c}}}{2${components.a}}`;
-    
+
     case 'quadraticEq':
       return `${components.a}${components.aVar}^2 + ${components.b}${components.bVar} + ${components.c} = 0`;
-    
+
     case 'power':
-      const exp = components.exponent.includes('{') || components.exponent.includes(' ') 
-        ? `{${components.exponent}}` 
+      const exp = components.exponent.includes('{') || components.exponent.includes(' ')
+        ? `{${components.exponent}}`
         : components.exponent;
       return `${components.base}^${exp}`;
-    
+
     case 'fraction':
       return `\\frac{${components.numerator}}{${components.denominator}}`;
-    
+
     case 'sqrt':
       const idx = components.index ? `[${components.index}]` : '';
       return `\\sqrt${idx}{${components.radicand}}`;
-    
+
     case 'variable':
     case 'number':
       return components.value;
-    
+
     case 'sum':
       return `${components.left} ${components.operator} ${components.right}`;
-    
+
     case 'integral':
       const diff = components.differential || 'x';
       return `\\int ${components.function || 'f(x)'} \\, d${diff}`;
-    
+
     case 'integralDef':
       const diffDef = components.differential || 'x';
       return `\\int_{${components.lower || 'a'}}^{${components.upper || 'b'}} ${components.function || 'f(x)'} \\, d${diffDef}`;
@@ -817,7 +817,7 @@ function buildFormula(components) {
       const u = (components.u || 'u').trim() || 'u';
       return `\\frac{d${y}}{d${x}} = \\frac{d${y}}{d${u}} \\frac{d${u}}{d${x}}`;
     }
-    
+
     default:
       return '';
   }
@@ -834,7 +834,7 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
     if (open && formula) {
       const cleanFormula = formula.replace(/^\$|\$$/g, '');
       const parsed = parseFormula(cleanFormula);
-      
+
       if (parsed) {
         setComponents(parsed);
         setUseAdvanced(false);
@@ -850,7 +850,7 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
 
   const handleSave = () => {
     let finalFormula;
-    
+
     if (useAdvanced) {
       if (!advancedFormula.trim()) {
         setError('La fórmula no puede estar vacía');
@@ -864,7 +864,7 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
       }
       finalFormula = buildFormula(components);
     }
-    
+
     // Agregar delimitadores
     const final = finalFormula.startsWith('$') ? finalFormula : `$${finalFormula}$`;
     onSave(final);
@@ -878,7 +878,7 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
   const currentFormula = useAdvanced ? advancedFormula : (components ? buildFormula(components) : '');
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-40 pb-6">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-28 pb-6">
       <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl flex flex-col h-[70vh] max-h-[70vh] overflow-hidden border border-slate-200/50">
         <div className="border-b border-slate-200 bg-gradient-to-r from-violet-50/50 to-indigo-50/50 p-5 flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center justify-between">
@@ -897,7 +897,7 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
             </button>
           </div>
         </div>
-        
+
         <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0 bg-gradient-to-b from-white to-slate-50/30">
           {/* Vista previa de la fórmula */}
           <div className="rounded-xl border-2 border-violet-300 bg-gradient-to-br from-violet-50 to-indigo-50 p-5 shadow-sm">
@@ -1061,7 +1061,7 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
 
               {components.type === 'variable' && (
                 <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
                     Variable <span className="text-rose-500 font-bold">*</span>
                   </label>
                   <input
@@ -1076,7 +1076,7 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
 
               {components.type === 'number' && (
                 <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
                     Número <span className="text-rose-500 font-bold">*</span>
                   </label>
                   <input
@@ -1449,20 +1449,20 @@ export function PlaceholderModal({ open, onClose, formula, onConfirm }) {
     e.preventDefault();
     let result = formula;
     let placeholderIndex = 0;
-    
+
     // Reemplazar cada \square en orden con los valores ingresados
     result = result.replace(/\\square/g, () => {
       const val = values[placeholderIndex] || '?';
       placeholderIndex++;
       return val;
     });
-    
+
     onConfirm(result);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-40 pb-6">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-16 pb-6">
       <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 border-2 border-violet-200/50 h-[600px] max-h-[600px] flex flex-col overflow-hidden">
         <div className="border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 rounded-t-3xl flex-shrink-0">
           <div className="flex items-center gap-3 mb-2">
@@ -1477,7 +1477,7 @@ export function PlaceholderModal({ open, onClose, formula, onConfirm }) {
             </div>
           </div>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <div className="overflow-y-auto flex-1 min-h-0 p-4 space-y-4 bg-gradient-to-b from-white to-slate-50/30">
             {/* Vista previa única y dinámica */}
@@ -1487,18 +1487,18 @@ export function PlaceholderModal({ open, onClose, formula, onConfirm }) {
                 Vista previa
               </p>
               <div className="text-xl font-medium text-slate-900 flex items-center justify-center min-h-[60px] bg-white/80 rounded-xl p-4 border-2 border-violet-200/50 shadow-sm">
-              <InlineMath math={(() => {
-                // Generar vista previa con valores ingresados o placeholders
-                let preview = formula;
-                let placeholderIdx = 0;
-                preview = preview.replace(/\\square/g, () => {
-                  const val = values[placeholderIdx] || '□';
-                  placeholderIdx++;
-                  return val;
-                });
-                return preview;
-              })()} />
-            </div>
+                <InlineMath math={(() => {
+                  // Generar vista previa con valores ingresados o placeholders
+                  let preview = formula;
+                  let placeholderIdx = 0;
+                  preview = preview.replace(/\\square/g, () => {
+                    const val = values[placeholderIdx] || '□';
+                    placeholderIdx++;
+                    return val;
+                  });
+                  return preview;
+                })()} />
+              </div>
               {/* Indicador de progreso */}
               {values.some(v => v) && (
                 <div className="mt-2 pt-2 border-t border-violet-200">
@@ -1510,11 +1510,10 @@ export function PlaceholderModal({ open, onClose, formula, onConfirm }) {
                       {labels.map((_, idx) => (
                         <div
                           key={idx}
-                          className={`w-2 h-2 rounded-full transition-all ${
-                            values[idx] 
-                              ? 'bg-violet-500 scale-125' 
-                              : 'bg-slate-300'
-                          }`}
+                          className={`w-2 h-2 rounded-full transition-all ${values[idx]
+                            ? 'bg-violet-500 scale-125'
+                            : 'bg-slate-300'
+                            }`}
                         />
                       ))}
                     </div>
@@ -1758,11 +1757,11 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
   // Filtrar fórmulas según la búsqueda
   const filteredFormulas = searchQuery.trim()
     ? (SECTIONS_TO_USE[tab] || []).filter(formula => {
-        const formulaName = getFormulaName(formula).toLowerCase();
-        const formulaCode = formula.toLowerCase();
-        const query = searchQuery.toLowerCase();
-        return formulaName.includes(query) || formulaCode.includes(query);
-      })
+      const formulaName = getFormulaName(formula).toLowerCase();
+      const formulaCode = formula.toLowerCase();
+      const query = searchQuery.toLowerCase();
+      return formulaName.includes(query) || formulaCode.includes(query);
+    })
     : (SECTIONS_TO_USE[tab] || []);
 
   const handleFormulaClick = (formula) => {
@@ -1774,7 +1773,7 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
   const handleInsertFormula = () => {
     const formulaToUse = (editableFormula || selectedFormula || '').trim();
     if (!formulaToUse) return;
-    
+
     // Verificar si la fórmula tiene placeholders
     if (formulaToUse.includes('\\square')) {
       // Para placeholders mantenemos el flujo existente
@@ -1891,11 +1890,10 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
                   setSelectedFormula(null);
                   setSearchQuery('');
                 }}
-                className={`rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-200 transform ${
-                  tab === label 
-                    ? "bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-violet-300/50 scale-105 ring-2 ring-violet-200/50" 
-                    : "bg-slate-100 text-slate-600 hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 hover:text-violet-700 hover:scale-105 active:scale-95 border-2 border-slate-200 hover:border-violet-300 shadow-sm hover:shadow-md"
-                }`}
+                className={`rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-200 transform ${tab === label
+                  ? "bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-violet-300/50 scale-105 ring-2 ring-violet-200/50"
+                  : "bg-slate-100 text-slate-600 hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 hover:text-violet-700 hover:scale-105 active:scale-95 border-2 border-slate-200 hover:border-violet-300 shadow-sm hover:shadow-md"
+                  }`}
               >
                 {label}
               </button>
@@ -1997,75 +1995,73 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
               <p className="text-xs text-slate-500">Intenta con otros términos de búsqueda o selecciona otra categoría</p>
             </div>
           ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 sm:gap-4">
-            {filteredFormulas.map((tok, i) => {
-              const hasPlaceholders = tok.includes('\\square');
-              // Detectar fórmulas largas o complejas
-              const isLongFormula = tok.length > 30 || 
-                tok.includes('\\frac{-b') || 
-                tok.includes('a^3 + b^3') || 
-                tok.includes('a^3 - b^3') ||
-                tok.includes('a^2 + 2ab') ||
-                tok.includes('a^2 - 2ab') ||
-                tok.includes('\\Rightarrow') ||
-                (tok.includes('\\frac') && tok.length > 20);
-              // Fórmulas muy largas que necesitan tamaño extra pequeño
-              const isVeryLongFormula = tok.length > 40 || 
-                tok.includes('a^3 + b^3') || 
-                tok.includes('a^3 - b^3') ||
-                tok.includes('\\frac{-b');
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleFormulaClick(tok);
-                  }}
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    // Prevenir el comportamiento por defecto para evitar selección
-                    e.preventDefault();
-                  }}
-                  className={`group relative rounded-2xl border-2 p-3 sm:p-3.5 transition-all duration-200 transform select-none cursor-pointer backdrop-blur-sm ${
-                    selectedFormula === tok
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 sm:gap-4">
+              {filteredFormulas.map((tok, i) => {
+                const hasPlaceholders = tok.includes('\\square');
+                // Detectar fórmulas largas o complejas
+                const isLongFormula = tok.length > 30 ||
+                  tok.includes('\\frac{-b') ||
+                  tok.includes('a^3 + b^3') ||
+                  tok.includes('a^3 - b^3') ||
+                  tok.includes('a^2 + 2ab') ||
+                  tok.includes('a^2 - 2ab') ||
+                  tok.includes('\\Rightarrow') ||
+                  (tok.includes('\\frac') && tok.length > 20);
+                // Fórmulas muy largas que necesitan tamaño extra pequeño
+                const isVeryLongFormula = tok.length > 40 ||
+                  tok.includes('a^3 + b^3') ||
+                  tok.includes('a^3 - b^3') ||
+                  tok.includes('\\frac{-b');
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleFormulaClick(tok);
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      // Prevenir el comportamiento por defecto para evitar selección
+                      e.preventDefault();
+                    }}
+                    className={`group relative rounded-2xl border-2 p-3 sm:p-3.5 transition-all duration-200 transform select-none cursor-pointer backdrop-blur-sm ${selectedFormula === tok
                       ? hasPlaceholders
                         ? 'border-amber-500 bg-gradient-to-br from-amber-100 via-amber-50 to-amber-100 ring-4 ring-amber-200/50 shadow-xl shadow-amber-300/50 scale-105 z-10'
                         : 'border-violet-500 bg-gradient-to-br from-violet-100 via-indigo-50 to-purple-50 ring-4 ring-violet-200/50 shadow-xl shadow-violet-300/50 scale-105 z-10'
                       : hasPlaceholders
                         ? 'border-amber-200/80 bg-gradient-to-br from-amber-50/80 to-amber-100/40 hover:border-amber-400 hover:bg-gradient-to-br hover:from-amber-100 hover:via-amber-50 hover:to-amber-100 active:scale-95 hover:scale-105 hover:shadow-lg hover:shadow-amber-200/50 active:bg-amber-200'
                         : 'border-slate-200/80 bg-white hover:border-violet-400 hover:bg-gradient-to-br hover:from-violet-50/80 hover:via-indigo-50/40 hover:to-purple-50/40 active:scale-95 hover:scale-105 hover:shadow-lg hover:shadow-violet-200/50 active:bg-violet-100'
-                  }`}
-                  title={hasPlaceholders ? `${getFormulaName(tok)} - Haz clic para completar valores` : getFormulaName(tok)}
-                >
-                  <div className={`font-medium text-slate-800 flex items-center justify-center min-h-[50px] sm:min-h-[55px] max-h-[80px] sm:max-h-[90px] overflow-hidden pointer-events-none ${isVeryLongFormula ? 'text-[10px] sm:text-xs' : isLongFormula ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>
-                    <div className="w-full text-center px-1">
-                      <InlineMath math={tok} />
+                      }`}
+                    title={hasPlaceholders ? `${getFormulaName(tok)} - Haz clic para completar valores` : getFormulaName(tok)}
+                  >
+                    <div className={`font-medium text-slate-800 flex items-center justify-center min-h-[50px] sm:min-h-[55px] max-h-[80px] sm:max-h-[90px] overflow-hidden pointer-events-none ${isVeryLongFormula ? 'text-[10px] sm:text-xs' : isLongFormula ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>
+                      <div className="w-full text-center px-1">
+                        <InlineMath math={tok} />
+                      </div>
                     </div>
-                  </div>
-                  {hasPlaceholders && (
-                    <div className="absolute top-2 right-2 pointer-events-none">
-                      <span className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-amber-600 w-6 h-6 text-xs font-bold text-white shadow-lg border-2 border-amber-400 ring-2 ring-amber-200/50">
-                        ⚙
-                      </span>
-                    </div>
-                  )}
-                  {selectedFormula === tok && (
-                    <div className="absolute top-2 left-2 pointer-events-none">
-                      <span className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 w-6 h-6 text-xs font-bold text-white shadow-lg ring-2 ring-violet-200/50">
-                        ✓
-                      </span>
-                    </div>
-                  )}
-                  {/* Hover effect overlay */}
-                  <div className={`absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-200 ${
-                    selectedFormula === tok ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
-                  } ${hasPlaceholders ? 'bg-amber-500/5' : 'bg-violet-500/5'}`}></div>
-                </button>
-              );
-            })}
-          </div>
+                    {hasPlaceholders && (
+                      <div className="absolute top-2 right-2 pointer-events-none">
+                        <span className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-amber-600 w-6 h-6 text-xs font-bold text-white shadow-lg border-2 border-amber-400 ring-2 ring-amber-200/50">
+                          ⚙
+                        </span>
+                      </div>
+                    )}
+                    {selectedFormula === tok && (
+                      <div className="absolute top-2 left-2 pointer-events-none">
+                        <span className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 w-6 h-6 text-xs font-bold text-white shadow-lg ring-2 ring-violet-200/50">
+                          ✓
+                        </span>
+                      </div>
+                    )}
+                    {/* Hover effect overlay */}
+                    <div className={`absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-200 ${selectedFormula === tok ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
+                      } ${hasPlaceholders ? 'bg-amber-500/5' : 'bg-violet-500/5'}`}></div>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
 
@@ -2084,7 +2080,7 @@ export default function MathPalette({ open, onClose, onPick, initialFormula }) {
           </div>
         </div>
       </div>
-      
+
       {/* Modal para fórmulas con placeholders */}
       <PlaceholderModal
         open={placeholderModal.open}

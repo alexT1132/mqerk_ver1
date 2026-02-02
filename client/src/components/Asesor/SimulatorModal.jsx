@@ -63,7 +63,7 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
     grupos: initialForm.grupos,
     areaId: initialForm.areaId
   }) : '';
-  
+
   useEffect(() => {
     if (open) {
       setStep(1);
@@ -72,7 +72,7 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
         const gruposInicial = initialForm.grupos
           ? (Array.isArray(initialForm.grupos) ? initialForm.grupos : String(initialForm.grupos).split(',').map(s => s.trim()).filter(Boolean))
           : [];
-        
+
         const newForm = {
           titulo: initialForm.titulo || initialForm.nombre || "",
           // ✅ CRÍTICO: Priorizar descripcion sobre instrucciones para preservar la descripción generada por IA
@@ -90,12 +90,12 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
           areaId: initialForm.areaId !== undefined ? initialForm.areaId : null,
           areaTitle: initialForm.areaTitle !== undefined ? initialForm.areaTitle : null
         };
-        
+
         // ✅ Log crítico: solo si no hay descripción cuando viene de IA
         if ((initialForm.descripcion || initialForm.instrucciones) && (!newForm.descripcion || newForm.descripcion.length === 0)) {
           console.warn('[SimulatorModal] ⚠️ Descripción de IA no se cargó correctamente');
         }
-        
+
         setForm(newForm);
       } else {
         // Reset grupos al abrir sin initialForm
@@ -104,7 +104,7 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
       // foco inicial
       setTimeout(() => firstFocusable.current?.focus(), 50);
     } else {
-        // Reset cuando se cierra
+      // Reset cuando se cierra
       setForm({
         titulo: "",
         instrucciones: "",
@@ -161,7 +161,7 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
     // ✅ CRÍTICO: Si viene de IA (initialForm tiene titulo/nombre), preservarlo siempre
     const tituloDelInitialForm = initialForm?.titulo || initialForm?.nombre || '';
     const descripcionDelInitialForm = initialForm?.descripcion || initialForm?.instrucciones || '';
-    
+
     // ✅ CRÍTICO: Si el usuario borró el título/nombre pero viene de IA, usar el de IA
     // Prioridad: 1) Lo que el usuario escribió, 2) Lo que viene de initialForm (IA), 3) Fallback
     const tituloFinal = (form.titulo?.trim() || form.nombre?.trim() || tituloDelInitialForm?.trim() || '').trim();
@@ -169,23 +169,23 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
       showError('El nombre/título del simulador debe tener al menos 3 caracteres.');
       return;
     }
-    
+
     // ✅ Sincronizar título y nombre antes de enviar (usar el que tenga valor, con fallback a initialForm)
     // ✅ CRÍTICO: Si el usuario no escribió nada, usar el valor de initialForm (generado por IA)
     const nombreFinal = (form.nombre?.trim() || form.titulo?.trim() || tituloDelInitialForm?.trim() || tituloFinal).trim();
     const tituloFinalizado = (form.titulo?.trim() || form.nombre?.trim() || tituloDelInitialForm?.trim() || tituloFinal).trim();
-    
+
     // ✅ CRÍTICO: Si la descripción está vacía pero viene de IA, usar la de IA
     // Prioridad: 1) form.descripcion (si tiene contenido), 2) form.instrucciones (si tiene contenido), 3) initialForm.descripcion, 4) initialForm.instrucciones
     // IMPORTANTE: Verificar explícitamente si form.descripcion tiene contenido, no solo si es truthy
     const formDescripcion = form.descripcion?.trim() || '';
     const formInstrucciones = form.instrucciones?.trim() || '';
     const descripcionFinal = (
-      (formDescripcion && formDescripcion.length > 0 ? formDescripcion : null) || 
-      (formInstrucciones && formInstrucciones.length > 0 ? formInstrucciones : null) || 
+      (formDescripcion && formDescripcion.length > 0 ? formDescripcion : null) ||
+      (formInstrucciones && formInstrucciones.length > 0 ? formInstrucciones : null) ||
       (descripcionDelInitialForm?.trim() || '')
     );
-    
+
     // ✅ Log para debugging si la descripción está vacía
     if (!descripcionFinal || descripcionFinal.length === 0) {
       console.warn('[SimulatorModal] ⚠️ DESCRIPCIÓN VACÍA al enviar:', {
@@ -196,7 +196,7 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
         descripcionFinal
       });
     }
-    
+
     // ✅ Log para debugging
     console.log('[SimulatorModal] handleSubmit - Validación de título:', {
       formTitulo: form.titulo,
@@ -207,7 +207,7 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
       nombreFinal,
       tituloFinalizado
     });
-    
+
     // Validaciones adicionales con mensajes
     if (!nombreFinal || nombreFinal.length < 3) {
       showError('El nombre del simulador debe tener al menos 3 caracteres.');
@@ -260,7 +260,7 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
       const normMraw = Math.max(0, parseInt(form.minutos ?? 0, 10) || 0);
       const addH = Math.floor(normMraw / 60);
       const normM = normMraw % 60;
-      
+
       // ✅ Asegurar que título y nombre estén sincronizados antes de enviar
       // ✅ IMPORTANTE: Preservar la descripción del form (que puede venir de iaPrefill)
       // ✅ CRÍTICO: Preservar areaId y areaTitle del form (vienen de iaPrefill cuando se genera con IA)
@@ -300,146 +300,146 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
         if (!e.target.closest("[data-modal]")) onClose?.();
       }}
     >
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm -z-10" aria-hidden="true" />
-      <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-center py-2">
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm -z-10" aria-hidden="true" />
+      <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-start pt-24 pb-10 py-2">
         <div
           data-modal
-          className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 max-h-[calc(100vh-3rem)] overflow-hidden flex flex-col"
+          className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 max-h-[calc(100vh-160px)] overflow-hidden flex flex-col"
         >
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <Stepper step={step} />
-            <div>
-              <h2
-                id="sim-modal-title"
-                className="text-sm font-semibold text-slate-900 sm:text-base"
-              >
-                {step === 1 ? (mode === 'edit' ? 'Editar instrucciones' : 'Crear instrucciones') : (mode === 'edit' ? 'Editar simulador' : 'Información del simulador')}
-              </h2>
-              <p className="text-[11px] text-slate-500">
-                Paso {step} de 2
-              </p>
+          {/* Header */}
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <Stepper step={step} />
+              <div>
+                <h2
+                  id="sim-modal-title"
+                  className="text-sm font-semibold text-slate-900 sm:text-base"
+                >
+                  {step === 1 ? (mode === 'edit' ? 'Editar instrucciones' : 'Crear instrucciones') : (mode === 'edit' ? 'Editar simulador' : 'Información del simulador')}
+                </h2>
+                <p className="text-[11px] text-slate-500">
+                  Paso {step} de 2
+                </p>
+              </div>
             </div>
-          </div>
 
-          <button
-            ref={firstFocusable}
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
-            aria-label="Cerrar"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Error Message */}
-        {errorMessage && (
-          <div className="mx-4 mt-3 p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-center gap-2 text-xs flex-shrink-0">
-            <XCircle className="h-4 w-4 shrink-0" />
-            <span className="flex-1 font-medium">{errorMessage}</span>
             <button
-              onClick={() => setErrorMessage(null)}
-              className="ml-auto p-0.5 hover:bg-red-100 rounded transition-colors"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </div>
-        )}
-
-        {/* Body: min-h-0 para que haga scroll en pantallas bajas */}
-        <div className="flex-1 min-h-0 px-4 py-3 sm:px-5 sm:py-4 overflow-y-auto">
-          {step === 1 ? (
-            <StepOne form={form} setForm={setForm} />
-          ) : (
-            <StepTwo form={form} setForm={setForm} gruposAsesor={gruposAsesor} gruposLoading={gruposLoading} hasGrupos={hasGrupos} />
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/50 px-4 py-3 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <button
+              ref={firstFocusable}
               onClick={onClose}
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all"
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
+              aria-label="Cerrar"
             >
               <X className="h-4 w-4" />
-              Cancelar
             </button>
-            {step > 1 && (
+          </div>
+
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mx-4 mt-3 p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-center gap-2 text-xs flex-shrink-0">
+              <XCircle className="h-4 w-4 shrink-0" />
+              <span className="flex-1 font-medium">{errorMessage}</span>
               <button
-                onClick={() => setStep(1)}
-                disabled={loading}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => setErrorMessage(null)}
+                className="ml-auto p-0.5 hover:bg-red-100 rounded transition-colors"
               >
-                <ArrowLeft className="h-4 w-4" />
-                Atrás
+                <X className="h-3 w-3" />
               </button>
+            </div>
+          )}
+
+          {/* Body: min-h-0 para que haga scroll en pantallas bajas */}
+          <div className="flex-1 min-h-0 px-4 py-3 sm:px-5 sm:py-4 overflow-y-auto">
+            {step === 1 ? (
+              <StepOne form={form} setForm={setForm} />
+            ) : (
+              <StepTwo form={form} setForm={setForm} gruposAsesor={gruposAsesor} gruposLoading={gruposLoading} hasGrupos={hasGrupos} />
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            {step === 1 ? (
+          {/* Footer */}
+          <div className="flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/50 px-4 py-3 flex-shrink-0">
+            <div className="flex items-center gap-2">
               <button
-                disabled={!canNext}
-                onClick={() => setStep(2)}
-                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                onClick={onClose}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all"
               >
-                Siguiente
-                <ArrowRight className="h-4 w-4" />
+                <X className="h-4 w-4" />
+                Cancelar
               </button>
-            ) : (
-              <>
-                {mode === 'edit' && onEditQuestions && (
+              {step > 1 && (
+                <button
+                  onClick={() => setStep(1)}
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Atrás
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {step === 1 ? (
+                <button
+                  disabled={!canNext}
+                  onClick={() => setStep(2)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                >
+                  Siguiente
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              ) : (
+                <>
+                  {mode === 'edit' && onEditQuestions && (
+                    <button
+                      disabled={!canCreate || loading}
+                      onClick={async () => {
+                        await handleSubmit(true); // No cerrar el modal todavía
+                        onClose?.(); // Cerrar después de guardar
+                        // Pequeño delay para asegurar que el guardado se complete
+                        setTimeout(() => {
+                          onEditQuestions?.();
+                        }, 100);
+                      }}
+                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                      title="Guardar cambios y editar preguntas"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Guardando...
+                        </>
+                      ) : (
+                        <>
+                          Guardar y editar preguntas
+                          <ArrowRight className="h-4 w-4" />
+                        </>
+                      )}
+                    </button>
+                  )}
                   <button
                     disabled={!canCreate || loading}
-                    onClick={async () => {
-                      await handleSubmit(true); // No cerrar el modal todavía
-                      onClose?.(); // Cerrar después de guardar
-                      // Pequeño delay para asegurar que el guardado se complete
-                      setTimeout(() => {
-                        onEditQuestions?.();
-                      }, 100);
-                    }}
-                    className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                    title="Guardar cambios y editar preguntas"
+                    onClick={handleSubmit}
+                    className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                   >
                     {loading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Guardando...
+                        {mode === 'edit' ? 'Guardando...' : 'Creando...'}
                       </>
                     ) : (
                       <>
-                        Guardar y editar preguntas
-                        <ArrowRight className="h-4 w-4" />
+                        {mode === 'edit' ? 'Guardar cambios' : 'Crear simulador'}
+                        <Check className="h-4 w-4" />
                       </>
                     )}
                   </button>
-                )}
-                <button
-                  disabled={!canCreate || loading}
-                  onClick={handleSubmit}
-                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {mode === 'edit' ? 'Guardando...' : 'Creando...'}
-                    </>
-                  ) : (
-                    <>
-                      {mode === 'edit' ? 'Guardar cambios' : 'Crear simulador'}
-                      <Check className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
   );
@@ -453,8 +453,8 @@ function Stepper({ step }) {
           <div
             className={[
               "grid h-7 w-7 place-items-center rounded-full text-[11px] font-bold shadow-sm ring-1 transition-all",
-              step >= n 
-                ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white ring-violet-300" 
+              step >= n
+                ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white ring-violet-300"
                 : "bg-slate-200 text-slate-500 ring-slate-300",
             ].join(" ")}
           >
@@ -500,8 +500,8 @@ function StepOne({ form, setForm }) {
           onChange={(e) => {
             const nuevoTitulo = e.target.value.slice(0);
             // ✅ Sincronizar título con nombre automáticamente
-            setForm((f) => ({ 
-              ...f, 
+            setForm((f) => ({
+              ...f,
               titulo: nuevoTitulo,
               nombre: f.nombre || nuevoTitulo // Si nombre está vacío, usar título
             }));
@@ -557,8 +557,8 @@ function StepTwo({ form, setForm, gruposAsesor = [], gruposLoading = false, hasG
           onChange={(e) => {
             const nuevoNombre = e.target.value;
             // ✅ Sincronizar nombre con título si título está vacío
-            setForm((f) => ({ 
-              ...f, 
+            setForm((f) => ({
+              ...f,
               nombre: nuevoNombre,
               titulo: f.titulo || nuevoNombre // Si título está vacío, usar nombre
             }));
@@ -596,40 +596,43 @@ function StepTwo({ form, setForm, gruposAsesor = [], gruposLoading = false, hasG
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5 text-violet-600" />
-          Duración (hrs)
+          Duración estimada
         </label>
-        <input
-          type="number"
-          min="0"
-          value={form.horas}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, horas: Number(e.target.value) }))
-          }
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-200 transition-all"
-        />
-      </div>
-
-      <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
-          <Clock className="h-3.5 w-3.5 text-violet-600" />
-          Duración (min)
-        </label>
-        <input
-          type="number"
-          min="0"
-          max={599}
-          value={Math.max(0, Number(form.minutos || 0))}
-          onChange={(e) => setForm((f) => ({ ...f, minutos: Math.max(0, Number(e.target.value || 0)) }))}
-          onBlur={(e) => {
-            const hr = Math.max(0, parseInt(form.horas || 0, 10) || 0);
-            const mr = Math.max(0, parseInt(e.target.value || 0, 10) || 0);
-            const addH = Math.floor(mr / 60);
-            const nm = mr % 60;
-            setForm((f) => ({ ...f, horas: hr + addH, minutos: nm }));
-          }}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-200 transition-all"
-        />
-        <p className="mt-1 text-[11px] leading-snug text-slate-500">Si ingresas 60 o más minutos, se sumarán a las horas automáticamente.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="relative">
+            <input
+              type="number"
+              min="0"
+              value={form.horas}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, horas: Number(e.target.value) }))
+              }
+              className="w-full rounded-lg border border-slate-200 bg-white pl-3 pr-10 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-200 transition-all"
+              placeholder="0"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none">HRS</span>
+          </div>
+          <div className="relative">
+            <input
+              type="number"
+              min="0"
+              max={599}
+              value={Math.max(0, Number(form.minutos || 0))}
+              onChange={(e) => setForm((f) => ({ ...f, minutos: Math.max(0, Number(e.target.value || 0)) }))}
+              onBlur={(e) => {
+                const hr = Math.max(0, parseInt(form.horas || 0, 10) || 0);
+                const mr = Math.max(0, parseInt(e.target.value || 0, 10) || 0);
+                const addH = Math.floor(mr / 60);
+                const nm = mr % 60;
+                setForm((f) => ({ ...f, horas: hr + addH, minutos: nm }));
+              }}
+              className="w-full rounded-lg border border-slate-200 bg-white pl-3 pr-10 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-200 transition-all"
+              placeholder="0"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none">MIN</span>
+          </div>
+        </div>
+        <p className="mt-1 text-[10px] leading-snug text-slate-400">El tiempo total se ajusta automáticamente.</p>
       </div>
 
       {/* Intentos permitidos */}
@@ -685,7 +688,7 @@ function StepTwo({ form, setForm, gruposAsesor = [], gruposLoading = false, hasG
             No tienes grupos asignados. Contacta al administrador.
           </p>
         ) : (
-          <div className="space-y-1.5 rounded-lg border border-slate-200 bg-slate-50 p-2.5 max-h-40 overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 rounded-lg border border-slate-200 bg-slate-50 p-2.5 max-h-48 overflow-y-auto">
             {gruposAsesor.map((grupo) => {
               const isSelected = Array.isArray(form.grupos) && form.grupos.includes(grupo);
               return (

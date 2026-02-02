@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Sparkles, AlertTriangle, Share2, Printer, ClipboardCopy, Download, ArrowLeft, Bot, MessageSquare, Send, X, Loader2, Brain, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
-import { askQuickTutor } from '../../service/quizAnalysisService';
+import { Share2, Printer, ClipboardCopy, Download, ArrowLeft, Sparkles, AlertTriangle, Bot, Brain, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
+import ChatTutor from '../../components/simulaciones/ChatTutor'; // ✅ Importar ChatTutor compartido
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'https://esm.sh/remark-gfm';
 import { useAuth } from '../../context/AuthContext';
@@ -36,14 +36,27 @@ export default function AnalisisIAPage() {
   const [itemNameState, setItemNameState] = useState(itemName || '');
   const [headings, setHeadings] = useState([]);
   const [justHighlightedId, setJustHighlightedId] = useState(null);
-  const [aiUsage, setAiUsage] = useState({ quizCount: 0, simuladorCount: 0, quizLimit: 5, simuladorLimit: 5 });
+  const [aiUsage, setAiUsage] = useState({
+    quizCount: 0, simuladorCount: 0, tutorCount: 0,
+    quizLimit: 5, simuladorLimit: 5, tutorLimit: 10,
+    remainingQuiz: 5, remainingSimulador: 5, remainingTutor: 10
+  });
 
-  // Chat Tutor State
+  // Custom Hook or just state for Chat visibility
   const [showChat, setShowChat] = useState(false);
-  const [chatQuery, setChatQuery] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  const [chatResponse, setChatResponse] = useState(null);
   const [showQuotaModal, setShowQuotaModal] = useState(false); // Nuevo estado para el modal de cuota
+  const [cooldownIA, setCooldownIA] = useState(0); // THROTTLING: Cooldown de seguridad
+
+  // Effect para manejar el countdown del Throttling
+  useEffect(() => {
+    let interval;
+    if (cooldownIA > 0) {
+      interval = setInterval(() => {
+        setCooldownIA((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [cooldownIA]);
 
   const contentRef = useRef(null);
 
@@ -71,55 +84,70 @@ export default function AnalisisIAPage() {
     }
   }, [location.state]);
 
-  // ✅ Cargar contador de uso de IA desde base de datos
-  useEffect(() => {
-    const loadAiUsage = async () => {
-      const qUsage = await getUsageToday('quiz');
-      const sUsage = await getUsageToday('simulacion');
+  // Helpers para tracking de uso de IA
+  const DAILY_LIMIT = userRole === 'asesor' || userRole === 'admin' ? 20 : 5;
+
+  // Detectar fuente del análisis y limpiar marcadores ocultos (debe estar antes de los useEffect que lo usan)
+  const sourceMatch = analysisTextState ? analysisTextState.match(/<<<AI_SOURCE:([\w_]+)>>>/) : null;
+  const analysisSource = sourceMatch?.[1] || null;
+  const cleanedAnalysisText = analysisTextState ? analysisTextState.replace(/\n*<<<AI_SOURCE:[\w_]+>>>\s*$/, '') : analysisTextState;
+
+  // Función para obtener y actualizar el uso de IA
+  // Ahora acepta currentAnalysisSource como parámetro para evitar ReferenceError
+  const refreshAiUsage = async (currentAnalysisSource) => {
+    const studentId = estudianteId || user?.id;
+    if (!studentId) {
+      console.warn('⚠️ No se pudo obtener ID de estudiante para tracking de IA');
+      return;
+    }
+
+    try {
+      const qUsageResponse = await api.get(`/ai-usage/${studentId}/quiz`);
+      const sUsageResponse = await api.get(`/ai-usage/${studentId}/simulacion`);
+      const tUsageResponse = await api.get(`/ai-usage/${studentId}/tutor`); // ✅ Fetch Tutor usage
+
+      const qUsage = qUsageResponse.data.data;
+      const sUsage = sUsageResponse.data.data;
+      const tUsage = tUsageResponse.data.data;
+
+      const remainingQuiz = qUsage.limit - qUsage.count;
+      const remainingSimulador = sUsage.limit - sUsage.count;
+      const remainingTutor = tUsage.limit - tUsage.count;
+      const totalRemaining = remainingQuiz + remainingSimulador;
 
       setAiUsage(prev => ({
         ...prev,
         quizCount: qUsage.count,
         quizLimit: qUsage.limit,
         simuladorCount: sUsage.count,
-        simuladorLimit: sUsage.limit
+        simuladorLimit: sUsage.limit,
+        tutorCount: tUsage.count,
+        tutorLimit: tUsage.limit,
+        remainingQuiz: remainingQuiz,
+        remainingSimulador: remainingSimulador,
+        remainingTutor: remainingTutor,
+        totalRemaining: totalRemaining
       }));
 
-      // Mostrar modal si la cuota está agotada
-      if ((qUsage.limit - qUsage.count <= 0) && (sUsage.limit - sUsage.count <= 0)) {
-        setShowQuotaModal(true);
-      }
-    };
-    loadAiUsage();
-  }, [estudianteId, user?.id]);
+      // Determinar si el modal de cuota debe mostrarse
+      // ✅ FIX: Solo mostrar modal si la cuota de QUIZ está agotada (estamos en contexto de Quizzes)
+      // No bloquear por simuladores aquí.
+      const isQuotaExhausted = (remainingQuiz <= 0);
+      const isFallbackActive = (currentAnalysisSource && currentAnalysisSource.includes('FALLBACK'));
+      setShowQuotaModal(isQuotaExhausted || isFallbackActive);
 
-  // Helpers para tracking de uso de IA
-  const AI_USAGE_KEY = 'ai_analysis_usage';
-  const DAILY_LIMIT = userRole === 'asesor' || userRole === 'admin' ? 20 : 5;
-
-  // ✅ SOLUCIÓN: Obtener uso desde base de datos (persistente)
-  const getUsageToday = async (type = 'quiz') => {
-    try {
-      const studentId = estudianteId || user?.id;
-      if (!studentId) {
-        console.warn('⚠️ No se pudo obtener ID de estudiante para tracking de IA');
-        return { count: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
-      }
-
-      const response = await api.get(`/ai-usage/${studentId}/${type}`);
-      // console.log(`✅ Uso de IA obtenido desde BD (${type}):`, response.data.data);
-      return response.data.data;
     } catch (error) {
-      console.error(`❌ Error obteniendo uso de IA (${type}) desde BD:`, error);
-      // Fallback en caso de error
-      return { count: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
+      console.error(`❌ Error obteniendo uso de IA desde BD:`, error);
+      // En caso de error, asegurar que el modal no se muestre por error
+      setShowQuotaModal(false);
     }
   };
 
-  // Detectar fuente del análisis y limpiar marcadores ocultos (debe estar antes de los useEffect que lo usan)
-  const sourceMatch = analysisTextState ? analysisTextState.match(/<<<AI_SOURCE:(\w+)>>>/) : null;
-  const analysisSource = sourceMatch?.[1] || null;
-  const cleanedAnalysisText = analysisTextState ? analysisTextState.replace(/\n*<<<AI_SOURCE:[\w_]+>>>\s*$/, '') : analysisTextState;
+  // ✅ Cargar contador de uso de IA desde base de datos al montar el componente
+  // y re-evaluar cuando cambie la fuente del análisis (ej. a FALLBACK)
+  useEffect(() => {
+    refreshAiUsage(analysisSource); // Pasar analysisSource como argumento
+  }, [estudianteId, user?.id, analysisSource]);
 
   // Notificar si se está usando fallback por error
   useEffect(() => {
@@ -699,83 +727,28 @@ export default function AnalisisIAPage() {
               </h3>
               <button
                 onClick={() => setShowChat(!showChat)}
-                disabled={(aiUsage.quizLimit - aiUsage.quizCount <= 0 && aiUsage.simuladorLimit - aiUsage.simuladorCount <= 0) || (analysisSource && analysisSource.includes('FALLBACK'))}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
-                  (aiUsage.quizLimit - aiUsage.quizCount <= 0 && aiUsage.simuladorLimit - aiUsage.simuladorCount <= 0) || (analysisSource && analysisSource.includes('FALLBACK'))
-                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                }`}
+                // Deshabilitar solo si es fallback local y no hay red
+                disabled={(analysisSource && analysisSource.includes('FALLBACK'))}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${(analysisSource && analysisSource.includes('FALLBACK'))
+                  ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  }`}
               >
-                <MessageSquare className="w-4 h-4" />
-                {showChat ? 'Ocultar Chat' : 'Preguntar al Tutor'}
+                <Bot className="w-4 h-4" />
+                {showChat ? 'Ocultar Tutor' : 'Consultar Tutor'}
               </button>
             </div>
 
             {showChat && (
-              <div className="bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-xl p-4 sm:p-6 shadow-sm">
-                <p className="text-sm text-slate-600 mb-4">
-                  ¿Tienes dudas sobre tu análisis? Pregunta a tu tutor personal para obtener explicaciones detalladas, ejemplos extra o consejos específicos.
-                </p>
-
-                {chatResponse && (
-                  <div className="mb-4 bg-white border border-indigo-100 rounded-lg p-4 shadow-sm relative animate-fade-in">
-                    <div className="absolute top-0 right-0 p-2 opacity-10">
-                      <Sparkles className="w-12 h-12 text-indigo-500" />
-                    </div>
-                    <div className="prose prose-sm max-w-none text-slate-700">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{chatResponse}</ReactMarkdown>
-                    </div>
-                    <div className="mt-2 text-xs text-indigo-400 font-medium text-right flex items-center justify-end gap-1">
-                      <Bot className="w-3 h-3" /> Respuesta generada por IA
-                    </div>
-                  </div>
-                )}
-
-                <div className="relative">
-                  {/* Bloqueo si no hay cuota */}
-                  {(aiUsage.remaining <= 0 || (analysisSource && analysisSource.includes('FALLBACK'))) && (
-                    <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center text-center rounded-xl border border-slate-200 p-4">
-                      <AlertTriangle className="w-8 h-8 text-amber-500 mb-2" />
-                      <p className="text-sm font-bold text-slate-700">Tutor no disponible</p>
-                      <p className="text-xs text-slate-500 max-w-[200px]">
-                        {aiUsage.remaining <= 0 ? 'Has agotado tu cuota diaria de IA.' : 'El análisis local no permite consultas al tutor.'}
-                      </p>
-                    </div>
-                  )}
-                  <textarea
-                    disabled={aiUsage.remaining <= 0 || (analysisSource && analysisSource.includes('FALLBACK'))}
-                    value={chatQuery}
-                    onChange={(e) => setChatQuery(e.target.value)}
-                    placeholder="Ejemplo: Explícame mejor por qué fallé la pregunta sobre acentuación..."
-                    className="w-full text-sm rounded-xl border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500 min-h-[100px] pr-12 resize-none py-3 px-4 shadow-sm"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        if (!chatQuery.trim() || chatLoading) return;
-                        setChatLoading(true);
-                        setChatResponse(null);
-                        askQuickTutor(cleanedAnalysisText, chatQuery, user?.nombre)
-                          .then(res => { setChatResponse(res); setChatLoading(false); })
-                          .catch(() => { setChatResponse('Error al conectar con el tutor.'); setChatLoading(false); });
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={() => {
-                      if (!chatQuery.trim() || chatLoading) return;
-                      setChatLoading(true);
-                      setChatResponse(null);
-                      askQuickTutor(cleanedAnalysisText, chatQuery, user?.nombre)
-                        .then(res => { setChatResponse(res); setChatLoading(false); })
-                        .catch(() => { setChatResponse('Error al conectar con el tutor.'); setChatLoading(false); });
-                    }}
-                    disabled={!chatQuery.trim() || chatLoading}
-                    className="absolute bottom-3 right-3 p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg active:scale-95"
-                  >
-                    {chatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
+              <ChatTutor
+                analysisContext={cleanedAnalysisText}
+                studentName={user?.nombre}
+                onClose={() => setShowChat(false)}
+                onUsageUpdate={() => refreshAiUsage(analysisSource)}
+                aiUsage={{ remaining: aiUsage.remainingTutor }}
+                isFallback={(analysisSource === 'FALLBACK' || analysisSource === 'FALLBACK_LOCAL' || analysisSource === 'FALLBACK_ON_ERROR')}
+                analysisSource={analysisSource}
+              />
             )}
           </div>
         </>
@@ -829,11 +802,11 @@ export default function AnalisisIAPage() {
               <Sparkles className="w-4 h-4 text-indigo-600" />
               <div className="text-xs">
                 <span className="font-semibold text-slate-700">
-                  {aiUsage.quizLimit - aiUsage.quizCount} quizzes
+                  {aiUsage.remainingQuiz} quizzes
                 </span>
                 <span className="text-slate-400 mx-1">+</span>
                 <span className="font-semibold text-slate-700">
-                  {aiUsage.simuladorLimit - aiUsage.simuladorCount} simuladores
+                  {aiUsage.remainingSimulador} simuladores
                 </span>
               </div>
             </div>

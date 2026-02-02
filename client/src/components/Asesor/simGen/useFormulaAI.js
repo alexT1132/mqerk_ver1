@@ -87,7 +87,7 @@ Fórmula solicitada: ${cleanedQuery}`;
             maxOutputTokens: 2000,
           },
           model: 'gemini-2.5-flash',
-          purpose: 'formulas'
+          purpose: 'formula_gen'
         }),
       });
 
@@ -95,12 +95,12 @@ Fórmula solicitada: ${cleanedQuery}`;
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorInfo = classifyAPIError(response, errorData);
-        
+
         // Iniciar cooldown para errores de rate limit
         if (errorInfo.type === 'RATE_LIMIT' || errorInfo.type === 'SERVICE_UNAVAILABLE') {
           startCooldown(errorInfo.is503);
         }
-        
+
         throw new Error(errorInfo.message);
       }
 
@@ -140,7 +140,7 @@ Fórmula solicitada: ${cleanedQuery}`;
 
     } catch (error) {
       const errorMessage = error.message || 'Error al generar la fórmula. Por favor intenta de nuevo.';
-      
+
       setState(prev => ({
         ...prev,
         loading: false,
@@ -182,13 +182,13 @@ Fórmula solicitada: ${cleanedQuery}`;
     error: state.error,
     generatedFormula: state.generatedFormula,
     usage: state.usage,
-    
+
     // Acciones
     generateFormula,
     clearState,
     setGeneratedFormula,
     setError,
-    
+
     // Helpers
     hasFormula: !!state.generatedFormula,
     hasError: !!state.error,

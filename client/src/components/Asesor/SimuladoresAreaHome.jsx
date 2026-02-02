@@ -1,23 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
+import {
+  Users,
+  Brain,
+  ArrowLeft as LucideArrowLeft,
+  ArrowRight,
+  Gamepad2,
+  Sparkles,
+  LayoutGrid,
+  GraduationCap
+} from "lucide-react";
 
-const ArrowLeft = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" {...props}>
-    <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-const StudentsIcon = (props) => (
-  <svg viewBox="0 0 24 24" {...props}>
-    <path d="M12 3l9 4-9 4-9-4 9-4zM3 10l9 4 9-4" stroke="currentColor" strokeWidth="1.6" fill="none"/>
-    <path d="M7 14v4a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-4" stroke="currentColor" strokeWidth="1.6" fill="none"/>
-  </svg>
-);
-const BrainIcon = (props) => (
-  <svg viewBox="0 0 24 24" {...props}>
-    <path d="M8.5 7A3.5 3.5 0 0 0 5 10.5v3A3.5 3.5 0 0 0 8.5 17H10V7H8.5zM14 7v10h1.5A3.5 3.5 0 0 0 19 13.5v-3A3.5 3.5 0 0 0 15.5 7H14z" fill="currentColor" opacity=".25"/>
-    <path d="M10 7v10m4-10v10" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-  </svg>
-);
+/* --- Iconos inline --- */
+const ArrowLeft = (props) => <LucideArrowLeft {...props} />;
 
 // Icono compacto de "simulaciones": dos barras verticales (pausa)
 const SimIcon = (props) => (
@@ -27,88 +22,121 @@ const SimIcon = (props) => (
   </svg>
 );
 
-export default function SimuladoresAreaHome(){
+export default function SimuladoresAreaHome() {
   const [search] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const incoming = location.state?.title || '';
   const queryArea = (search.get('area') || '').trim();
   const areaTitle = incoming || queryArea || 'Módulo específico';
 
   return (
-    <section className="px-3 sm:px-6 lg:px-10 pt-4 sm:pt-6 pb-6 sm:pb-8">
-      <header className="rounded-2xl border border-slate-200/70 bg-white shadow-sm px-3 sm:px-6 py-3 sm:py-4 mb-5 sm:mb-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
+    <section className="px-3 sm:px-6 lg:px-10 py-6 sm:py-8">
+      {/* Header superior premium */}
+      <header className="-mt-1 sm:-mt-2 md:-mt-3 rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 shadow-xl ring-2 ring-slate-100/50 px-4 sm:px-7 py-5 sm:py-6 mb-8 relative overflow-hidden">
+        {/* blobs suaves */}
+        <div className="pointer-events-none absolute -left-10 -top-14 h-64 w-64 rounded-full bg-violet-200/50 blur-3xl" />
+        <div className="pointer-events-none absolute -right-10 -bottom-14 h-64 w-64 rounded-full bg-indigo-200/50 blur-3xl" />
+
+        <div className="relative z-10 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
             <button
-              onClick={() => window.history.back()}
-              className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
+              onClick={() => navigate(-1)}
+              className="mt-1 inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
               aria-label="Volver"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 truncate">{areaTitle}</h1>
-              <p className="text-slate-500">Selecciona lo que quieres gestionar</p>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 truncate">
+                {areaTitle}
+              </h1>
+              <p className="text-sm sm:text-base text-slate-600 font-medium mt-1.5">
+                Selecciona lo que quieres gestionar
+              </p>
             </div>
           </div>
-          <div className="mt-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-100">🎯</span>
-            <span className="whitespace-nowrap">2 opciones</span>
+
+          <div className="mt-1 inline-flex items-center gap-2.5 rounded-xl border-2 border-violet-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-2.5 text-sm text-slate-700 shadow-md">
+            <div className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-sm">
+              <span className="text-xs">🎯</span>
+            </div>
+            <span className="whitespace-nowrap font-bold">2 opciones</span>
           </div>
         </div>
       </header>
 
-      <div className="rounded-3xl bg-gradient-to-br from-violet-50 to-fuchsia-50 border border-violet-100/60 shadow-sm px-3 sm:px-6 py-3 sm:py-4 mb-6 sm:mb-10">
-        <div className="flex items-center gap-3 sm:gap-4 justify-center text-center">
-          <div className="inline-flex w-10 h-10 sm:w-14 sm:h-14 items-center justify-center rounded-2xl text-white shadow-md bg-gradient-to-tr from-violet-600 to-indigo-600">
-            <SimIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+      {/* Banner intermedio premium */}
+      <div className="relative mt-2 sm:mt-3 md:mt-4 rounded-3xl border-2 border-violet-200/60 bg-gradient-to-br from-violet-50/80 via-indigo-50/80 to-purple-50/80 shadow-xl ring-2 ring-slate-100/50 px-4 sm:px-7 py-5 sm:py-6 mb-10 sm:mb-14 overflow-hidden">
+        <div className="pointer-events-none absolute -left-10 -top-10 h-48 w-48 rounded-full bg-violet-200/50 blur-2xl" />
+        <div className="pointer-events-none absolute -right-10 -bottom-10 h-48 w-48 rounded-full bg-indigo-200/50 blur-2xl" />
+        <div className="relative z-10 flex items-center gap-4 sm:gap-5 justify-center text-center">
+          <div className="relative">
+            <div className="inline-flex w-16 h-16 sm:w-20 sm:h-20 items-center justify-center rounded-3xl text-white shadow-2xl bg-gradient-to-br from-violet-500 via-indigo-600 to-purple-600 ring-4 ring-white/50">
+              <SimIcon className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+            </div>
           </div>
           <div className="text-center">
-            <h2 className="text-xl sm:text-3xl font-bold text-violet-800">Simulaciones por área</h2>
-            <div className="mx-auto mt-1 h-1 w-28 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600" />
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">
+              Simulaciones por área
+            </h2>
+            <div className="mx-auto mt-2 flex gap-2 justify-center">
+              <span className="h-1.5 w-20 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 shadow-sm" />
+              <span className="h-1.5 w-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 shadow-sm" />
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-10">
-        <article className="rounded-3xl border border-white/60 bg-gradient-to-b from-violet-50 to-indigo-50 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.15)] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-          <div className="p-5 sm:p-8 text-center">
-            <div className="mx-auto inline-flex w-14 h-14 sm:w-16 sm:h-16 items-center justify-center rounded-2xl text-white shadow-lg bg-gradient-to-br from-violet-600 to-indigo-500">
-              <StudentsIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+      {/* Grid de tarjetas estilo Quizt&Act */}
+      <div className="mx-auto max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
+        {/* Card Estudiantes */}
+        <article className="group relative rounded-3xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 via-indigo-50/50 to-white shadow-xl ring-2 ring-slate-100/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:ring-blue-200/50">
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-50/0 to-indigo-50/0 group-hover:from-blue-50/30 group-hover:to-indigo-50/30 transition-all duration-300" />
+          <div className="relative p-6 sm:p-9 text-center">
+            <div className="mx-auto inline-flex w-16 h-16 sm:w-20 sm:h-20 items-center justify-center rounded-3xl text-white shadow-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 ring-4 ring-white/50 group-hover:scale-110 transition-transform duration-300">
+              <GraduationCap className="w-8 h-8 sm:w-10 sm:h-10" />
             </div>
-            <h3 className="mt-5 sm:mt-6 text-lg sm:text-2xl font-semibold text-slate-900">Estudiantes</h3>
-            <p className="mt-2 sm:mt-3 text-slate-600">Lista de alumnos y estado por área</p>
-            <div className="mt-6 sm:mt-8">
+            <h3 className="mt-6 sm:mt-7 text-2xl sm:text-3xl font-bold text-slate-900">
+              Estudiantes
+            </h3>
+            <p className="mt-3 sm:mt-4 text-sm sm:text-base text-slate-600 font-medium leading-relaxed">
+              Lista de alumnos y estado por área
+            </p>
+            <div className="mt-7 sm:mt-9">
               <Link
                 to="/asesor/lista-alumnos"
                 state={{ title: areaTitle }}
-                className="group inline-flex items-center gap-2 font-medium text-violet-700 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-300 rounded-lg"
+                className="group inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
               >
                 ACCEDER
-                <svg viewBox="0 0 24 24" className="w-4 h-4 transition-transform group-hover:translate-x-0.5">
-                  <path d="M5 12h12M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
           </div>
         </article>
 
-        <article className="rounded-3xl border border-white/60 bg-gradient-to-b from-fuchsia-50 to-pink-50 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.15)] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-          <div className="p-5 sm:p-8 text-center">
-            <div className="mx-auto inline-flex w-14 h-14 sm:w-16 sm:h-16 items-center justify-center rounded-2xl text-white shadow-lg bg-gradient-to-br from-fuchsia-500 to-pink-500">
-              <BrainIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+        {/* Card Simuladores */}
+        <article className="group relative rounded-3xl border-2 border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 via-pink-50/50 to-white shadow-xl ring-2 ring-slate-100/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:ring-fuchsia-200/50">
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-fuchsia-50/0 to-pink-50/0 group-hover:from-fuchsia-50/30 group-hover:to-pink-50/30 transition-all duration-300" />
+          <div className="relative p-6 sm:p-9 text-center">
+            <div className="mx-auto inline-flex w-16 h-16 sm:w-20 sm:h-20 items-center justify-center rounded-3xl text-white shadow-2xl bg-gradient-to-br from-fuchsia-500 via-pink-500 to-rose-600 ring-4 ring-white/50 group-hover:scale-110 transition-transform duration-300">
+              <SimIcon className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
             </div>
-            <h3 className="mt-5 sm:mt-6 text-lg sm:text-2xl font-semibold text-slate-900">Simuladores</h3>
-            <p className="mt-2 sm:mt-3 text-slate-600">Gestiona y crea simulaciones de este módulo</p>
-            <div className="mt-6 sm:mt-8">
+            <h3 className="mt-6 sm:mt-7 text-2xl sm:text-3xl font-bold text-slate-900">
+              Simuladores
+            </h3>
+            <p className="mt-3 sm:mt-4 text-sm sm:text-base text-slate-600 font-medium leading-relaxed">
+              Gestiona y crea simulaciones de este módulo
+            </p>
+            <div className="mt-7 sm:mt-9">
               <Link
                 to={{ pathname: '/asesor/simuladores/modulo', search: `?area=${encodeURIComponent(areaTitle)}` }}
-                className="group inline-flex items-center gap-2 font-medium text-fuchsia-700 hover:text-fuchsia-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-fuchsia-300 rounded-lg"
+                state={{ title: areaTitle }}
+                className="group inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
               >
                 ACCEDER
-                <svg viewBox="0 0 24 24" className="w-4 h-4 transition-transform group-hover:translate-x-0.5">
-                  <path d="M5 12h12M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
           </div>

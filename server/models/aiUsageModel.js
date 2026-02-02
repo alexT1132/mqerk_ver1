@@ -9,9 +9,10 @@ class AiUsageModel {
      * Obtener o crear registro de uso para hoy
      * @param {number} studentId - ID del estudiante
      * @param {string} type - Tipo de análisis ('simulacion' | 'quiz')
+     * @param {string} userRole - Rol del usuario ('estudiante' | 'asesor' | 'admin')
      * @returns {Promise<Object>} - { count, limit, remaining, date }
      */
-    static async getOrCreateUsageToday(studentId, type) {
+    static async getOrCreateUsageToday(studentId, type, userRole = 'estudiante') {
         const today = new Date().toISOString().split('T')[0];
 
         try {
@@ -32,9 +33,13 @@ class AiUsageModel {
                 };
             }
 
-            // Si no existe, crear nuevo registro con límite por defecto
-            // TODO: Obtener límite según rol del estudiante
-            const defaultLimit = 5; // Estudiantes regulares
+            // Si no existe, crear nuevo registro con límite por defecto según el rol
+            let defaultLimit;
+            if (userRole === 'asesor' || userRole === 'admin') {
+                defaultLimit = 20;
+            } else {
+                defaultLimit = 5; // Estudiantes regulares
+            }
 
             await pool.query(
                 `INSERT INTO ai_usage_tracking (id_estudiante, fecha, tipo, contador, limite_diario) 

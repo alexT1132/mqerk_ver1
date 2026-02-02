@@ -24,7 +24,7 @@ import ReviewModal from "./ReviewModal";
 import { getCooldownRemainingMs } from "../../service/simuladoresAI";
 import { logInfo, logError, logDebug } from "../../utils/logger";
 import { listQuizzes, deleteQuiz as apiDeleteQuiz, getQuizFull, getQuizEstudiantesEstado, getQuizIntentoReview, updateQuiz } from "../../api/quizzes";
-import { getAreasCatalog } from "../../api/areas";
+import { getAreasCatalog, listAreas } from "../../api/areas";
 import InlineMath from "./simGen/InlineMath";
 
 // Componente para renderizar texto con fórmulas LaTeX (igual que en Quizz_Review.jsx)
@@ -56,73 +56,79 @@ function MathText({ text = "" }) {
 
   // ✅ Normalizar saltos de línea y espacios primero
   let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  
+
   // ✅ Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
   // Esto debe hacerse ANTES de proteger las fórmulas
   processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
-  
+
   // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
   // Pero proteger las fórmulas LaTeX para no procesarlas
   const latexPlaceholder = '___LATEX_PLACEHOLDER___';
   const latexMatches = [];
   let placeholderIndex = 0;
-  
+
+  // Regex para detectar $...$ y $$...$$
+  const fullLatexRe = /\$\$([\s\S]+?)\$\$|\$([\s\S]+?)\$/g;
+
   // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
-  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+  processedText = processedText.replace(fullLatexRe, (match) => {
     const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
     latexMatches.push(match);
     placeholderIndex++;
     return placeholder;
   });
-  
+
   // Procesar Markdown: **texto** -> <strong>texto</strong>
   processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
-  
+
   // Restaurar fórmulas LaTeX
   latexMatches.forEach((match, idx) => {
     processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
   });
 
-  const re = /\$([^$]+?)\$/g;
   const parts = [];
   let lastIndex = 0;
   let m;
   let matchFound = false;
 
-  re.lastIndex = 0;
+  fullLatexRe.lastIndex = 0;
 
-  while ((m = re.exec(processedText)) !== null) {
+  while ((m = fullLatexRe.exec(processedText)) !== null) {
     matchFound = true;
     if (m.index > lastIndex) {
       parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
     }
-    const formula = m[1].trim();
+
+    // m[1] es para $$...$$, m[2] es para $...$
+    const formula = (m[1] || m[2] || "").trim();
+    const isBlock = !!m[1];
+
     if (formula) {
-      parts.push({ type: 'math', content: formula });
+      parts.push({ type: 'math', content: formula, display: isBlock });
     }
     lastIndex = m.index + m[0].length;
   }
-  
+
   if (lastIndex < processedText.length) {
     parts.push({ type: 'text', content: processedText.slice(lastIndex) });
   }
 
   if (!matchFound || parts.length === 0) {
     return (
-      <span 
-        className="whitespace-pre-wrap"
+      <span
+        className="block w-full break-words overflow-x-auto whitespace-pre-wrap"
         dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
       />
     );
   }
 
   return (
-    <span className="whitespace-pre-wrap">
+    <span className="block w-full break-words overflow-x-auto whitespace-pre-wrap">
       {parts.map((part, idx) =>
         part.type === 'math' ? (
-          <InlineMath key={`math-${idx}`} math={part.content} />
+          <InlineMath key={`math-${idx}`} math={part.content} display={part.display} />
         ) : (
-          <span 
+          <span
             key={`text-${idx}`}
             dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
           />
@@ -334,6 +340,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
   });
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+
   // Cooldown ticker - actualiza el estado y limpia el error cuando expira
   useEffect(() => {
     let mounted = true;
@@ -366,16 +373,29 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       // cargar catálogo de áreas para filtrar (solo si no hay áreas cargadas)
       if (!currentAreas || currentAreas.length === 0) {
         try {
-          const { data: areasRes } = await getAreasCatalog();
-          const options = [];
-          if (areasRes?.data?.generales) options.push(...areasRes.data.generales);
-          if (areasRes?.data?.modulos) options.push(...areasRes.data.modulos);
+          // ✅ Usar listAreas para traer TODAS las áreas activas (incluyendo generales/contenedores)
+          const { data: res } = await listAreas();
+          const options = Array.isArray(res?.data) ? res.data : [];
           setAreas(options);
           currentAreas = options; // Actualizar la referencia local
           // Resolver id inicial por título si aún no hay uno seleccionado
           if (selectedAreaId == null) {
             const norm = (s) => (s || '').toString().trim().toLowerCase();
-            const match = options.find(a => norm(a.nombre || a.title) === norm(areaTitle));
+            const findMatch = (list, title) => {
+              if (!list || !title) return null;
+              const nTitle = norm(title);
+              let m = list.find(a => norm(a.nombre || a.title) === nTitle);
+              if (m) return m;
+              // Fallback para títulos con prefijos "Transversal: X"
+              if (title.includes(':')) {
+                const parts = title.split(':');
+                const suffix = parts[parts.length - 1];
+                if (suffix) m = list.find(a => norm(a.nombre || a.title) === norm(suffix));
+              }
+              return m;
+            };
+
+            const match = findMatch(options, areaTitle);
             if (match?.id) {
               setSelectedAreaId(match.id);
             }
@@ -385,13 +405,69 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
 
       // Usar el id seleccionado (o el derivado) para la primera carga
       const effectiveId = selectedAreaId ?? (function () {
-        const norm = (s) => (s || '').toString().trim().toLowerCase();
-        const match = (currentAreas || []).find(a => norm(a.nombre || a.title) === norm(areaTitle));
+        const norm = (s) => (s || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
+
+        console.log('[Quiz] Trying to match area:', areaTitle);
+        console.log('[Quiz] Available areas count:', currentAreas?.length);
+        if (currentAreas?.length > 0) {
+          console.log('[Quiz] First 3 areas in list:', currentAreas.slice(0, 3).map(a => a.nombre));
+          const exactMatch = currentAreas.find(a => norm(a.nombre) === norm(areaTitle));
+          console.log('[Quiz] Exact match attempt:', exactMatch ? 'FOUND' : 'NOT FOUND', 'Comparing:', norm(areaTitle), 'with DB names');
+        }
+
+        const findMatch = (list, title) => {
+          if (!list || !title) return null;
+          const nTitle = norm(title);
+
+          // 1. Exact match
+          let m = list.find(a => norm(a.nombre) === nTitle);
+          if (m) return m;
+
+          // Prepare search parts
+          const hasColon = title.includes(':');
+          const searchSuffix = hasColon ? norm(title.split(':').pop()) : null;
+
+          return list.find(a => {
+            const nDb = norm(a.nombre);
+            // Bidirectional inclusion
+            if (nDb.includes(nTitle)) return true;
+            if (nTitle.includes(nDb)) return true;
+
+            // Suffix checks
+            if (searchSuffix) {
+              if (nDb.endsWith(searchSuffix)) return true;
+              if (nDb.includes(searchSuffix)) return true;
+            }
+
+            // DB colon check
+            if (a.nombre && a.nombre.includes(':')) {
+              const dbSuffix = norm(a.nombre.split(':').pop());
+              if (dbSuffix === nTitle) return true;
+              if (searchSuffix && dbSuffix === searchSuffix) return true;
+            }
+            return false;
+          });
+        };
+        const match = findMatch(currentAreas, areaTitle);
+        if (match?.id) {
+          console.log(`[Quiz] Resolved match for "${areaTitle}": ${match.nombre} (ID: ${match.id})`);
+        } else {
+          console.log('[Quiz] FAILED to match. Normalized title:', norm(areaTitle));
+        }
         return match?.id || null;
       })();
+
+      // Si estamos buscando por área pero no encontramos ID, mostrar vacío en lugar de todos
+      if (areaTitle && !effectiveId) {
+        console.warn("[Quiz] No match found for area:", areaTitle);
+        setData([]);
+        setLoading(false);
+        return;
+      }
+
       // Mostrar tanto borradores como publicados (visible: false)
       const params = effectiveId ? { id_area: effectiveId, visible: false } : { visible: false };
-      const { data } = await listQuizzes(params);
+      const { data } = await listQuizzes(params); // ... resto del código
       const rows = Array.isArray(data?.data) ? data.data : [];
       const mapped = rows.map((r) => {
         const now = new Date();
@@ -464,7 +540,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const { data } = await getQuizFull(item.id);
       setPreviewQuiz(data?.data || null);
     } catch (e) {
-       
+
       alert(e?.response?.data?.message || 'No se pudo cargar la vista previa');
       setPreviewOpen(false);
     } finally {
@@ -477,17 +553,17 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       alert('Error: No se puede editar un quiz sin ID');
       return;
     }
-    
+
     try {
       // Cargar los datos completos del quiz
       const { data: fullData } = await getQuizFull(item.id);
       const quizData = fullData?.data?.quiz || fullData?.data || fullData || {};
-      
+
       // Calcular horas y minutos desde time_limit_min
       const timeLimitMin = Number(quizData.time_limit_min || 0);
       const horas = Math.floor(timeLimitMin / 60);
       const minutos = timeLimitMin % 60;
-      
+
       // Formatear fecha_limite para el input type="date" (YYYY-MM-DD)
       let fechaLimiteFormatted = '';
       const fechaLimiteRaw = quizData.fecha_limite || quizData.fechaLimite;
@@ -501,11 +577,11 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
           console.warn('[Quiz] Error al formatear fecha_limite:', e);
         }
       }
-      
+
       // Determinar intentosMode y maxIntentos
       const maxIntentos = quizData.max_intentos;
       const intentosMode = maxIntentos && maxIntentos > 0 ? 'limited' : 'unlimited';
-      
+
       // Preparar el objeto de edición con todos los datos
       const editData = {
         ...item,
@@ -525,7 +601,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
         areaId: quizData.id_area !== undefined && quizData.id_area !== null ? Number(quizData.id_area) : null,
         areaTitle: quizData.materia || areaTitle || null
       };
-      
+
       setEditing(editData);
       setEditModalOpen(true);
     } catch (e) {
@@ -533,24 +609,24 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       alert(e?.response?.data?.message || 'No se pudo cargar el quiz para editar');
     }
   };
-  
+
   // ✅ Función para actualizar el quiz (igual que handleUpdate en simuladores)
   const handleUpdate = async (form) => {
     if (!editing || !editing.id) {
       alert('Error: No hay quiz seleccionado para actualizar');
       return;
     }
-    
+
     try {
       // ✅ CRÍTICO: El form usa "instrucciones" como descripción (ya que el modal mapea descripcion->instrucciones)
       const descripcionFinal = form.descripcion || form.instrucciones || '';
-      
+
       // Formatear fecha_limite
       let fechaLimiteFinal = null;
       if (form.fechaLimite && form.fechaLimite.trim() !== '') {
         fechaLimiteFinal = form.fechaLimite; // Ya viene en formato YYYY-MM-DD
       }
-      
+
       const payload = {
         titulo: form.nombre || form.titulo,
         // ✅ CRÍTICO: Siempre incluir descripcion, incluso si está vacío (usar string vacío en lugar de null para forzar actualización)
@@ -560,9 +636,9 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
         publico: !!form.publico,
         ...(form.intentosMode === 'limited' ? { max_intentos: Math.max(1, Number(form.maxIntentos || 1)) } : { max_intentos: null }),
       };
-      
+
       await updateQuiz(editing.id, payload);
-      
+
       // Actualizar el item en la lista local
       setData(prev => prev.map(q => {
         if (q.id === editing.id) {
@@ -577,10 +653,10 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
         }
         return q;
       }));
-      
+
       setEditModalOpen(false);
       setEditing(null);
-      
+
       // Recargar para asegurar que los datos estén actualizados
       await loadQuizzes();
     } catch (e) {
@@ -599,7 +675,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const rows = Array.isArray(data?.data) ? data.data : [];
       setResultsRows(rows);
     } catch (e) {
-       
+
       alert(e?.response?.data?.message || 'No se pudo cargar el estado de estudiantes');
       setResultsOpen(false);
     } finally {
@@ -625,14 +701,14 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const { data } = await getQuizIntentoReview(resultsQuizMeta.id, row.id_estudiante, 1);
       setReviewData(data?.data || null);
     } catch (e) {
-       
+
       alert(e?.response?.data?.message || 'No se pudo cargar el detalle del intento');
       setReviewOpen(false);
     } finally {
       setReviewLoading(false);
     }
   };
-  
+
   // Función para cambiar el intento en el modal de review
   const handleChangeIntentoReview = async (intentoNum) => {
     if (!resultsQuizMeta?.id || !reviewHeader.estudiante?.id) return;
@@ -642,7 +718,7 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       const { data } = await getQuizIntentoReview(resultsQuizMeta.id, reviewHeader.estudiante.id, intentoNum);
       setReviewData(data?.data || null);
     } catch (e) {
-       
+
       alert(e?.response?.data?.message || 'No se pudo cargar el detalle del intento');
     } finally {
       setReviewLoading(false);
@@ -730,6 +806,34 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
   }, [areaTitle]);
 
 
+
+  // Bloquear el scroll de la página cuando CUALQUIER modal esté abierto
+  useEffect(() => {
+    const isAnyModalOpen = open || iaChoiceOpen || successModal.open || editModalOpen || previewOpen || resultsOpen || reviewOpen || confirmModal.open;
+
+    if (!isAnyModalOpen) return;
+
+    const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+
+    // Bloquear scroll
+    document.body.style.overflow = 'hidden';
+
+    // Compensar el ancho del scrollbar para evitar saltos de layout
+    try {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+    } catch (e) {
+      console.error("Error compensando scrollbar:", e);
+    }
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
+    };
+  }, [open, iaChoiceOpen, successModal.open, editModalOpen, previewOpen, resultsOpen, reviewOpen, confirmModal.open]);
 
   return (
     <div className="mx-auto max-w-8xl px-4 pb-12 pt-4 sm:px-6 lg:px-8">
@@ -890,42 +994,29 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       {/* Desktop: tabla */}
       <div className="hidden md:block">
         <div className="overflow-hidden rounded-3xl border-2 border-slate-200 bg-white shadow-xl ring-2 ring-slate-100/50">
-          <div className="overflow-x-auto lg:overflow-x-visible">
-            <table className="min-w-full table-fixed divide-y divide-slate-200">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50">
                 <tr>
                   <th
                     scope="col"
-                    className="sticky left-0 z-10 bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 px-6 py-5 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 w-[22rem] border-r-2 border-slate-200"
+                    className="sticky left-0 z-20 bg-slate-50 px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[280px] border-r-2 border-slate-200"
                   >
                     Quizt
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-5 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 w-[8rem]"
-                  >
+                  <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[100px]">
                     Preguntas
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-5 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 w-[9rem]"
-                  >
+                  <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
                     Intentos
                   </th>
-
-                  <th
-                    scope="col"
-                    className="px-6 py-5 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 w-[8rem]"
-                  >
+                  <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
                     Estado
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-5 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 w-[9rem]"
-                  >
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
                     Actualizado
                   </th>
-                  <th scope="col" className="px-6 py-5 w-[12rem]"></th>
+                  <th scope="col" className="px-6 py-4 min-w-[220px]"></th>
                 </tr>
               </thead>
 
@@ -935,29 +1026,29 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                     key={item.id}
                     className="bg-white hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200"
                   >
-                    <td className="sticky left-0 z-10 bg-inherit hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 px-6 py-5 w-[22rem] border-r-2 border-slate-200">
-                      <div className="max-w-xs">
-                        <div className="font-semibold text-slate-900 truncate">
+                    <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 px-6 py-5 border-r-2 border-slate-200">
+                      <div className="max-w-xs xl:max-w-md">
+                        <div className="font-semibold text-slate-900 truncate" title={item.name}>
                           {item.name}
                         </div>
-                        {/* ✅ Mostrar instrucciones debajo del nombre (igual que en simuladores) */}
-                        {item.instrucciones && item.instrucciones.trim() && (
+                        {item.instrucciones && (
                           <div className="mt-1 text-xs text-slate-500 line-clamp-2">
                             {item.instrucciones}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-5 text-center text-slate-700 whitespace-nowrap font-bold">
-                      <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 px-3 py-1.5 text-sm font-bold text-blue-700 ring-2 ring-blue-200">
+                    <td className="px-6 py-5 text-center whitespace-nowrap">
+                      <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 px-3 py-1.5 text-sm font-bold text-blue-700 ring-2 ring-blue-200 uppercase tracking-tighter">
                         {item.questions}
                       </span>
                     </td>
-                    <td className="px-6 py-5 text-center text-slate-700 whitespace-nowrap">
+                    <td className="px-6 py-5 text-center whitespace-nowrap">
                       {item.total_intentos_global != null ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 ring-2 ring-slate-300 shadow-sm">
-                          {item.total_intentos_global} / {item.attempts === '∞' ? '∞' : item.attempts}
-                        </span>
+                        <div className="flex flex-col items-center">
+                          <span className="text-sm font-bold text-slate-700">{item.total_intentos_global}</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase">Límite: {item.attempts}</span>
+                        </div>
                       ) : (
                         <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-bold text-slate-600">{item.attempts}</span>
                       )}
@@ -965,16 +1056,20 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
 
                     <td className="px-6 py-5 text-center whitespace-nowrap">
                       {item.status === "Publicado" ? (
-                        <Badge type="success">Publicado</Badge>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 text-[10px] font-black text-emerald-700 uppercase tracking-widest ring-1 ring-emerald-200">
+                          <CheckCircle2 className="size-3" /> Publicado
+                        </span>
                       ) : (
-                        <Badge type="draft">Borrador</Badge>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/80 text-[10px] font-black text-amber-700 uppercase tracking-widest ring-1 ring-amber-200">
+                          <CircleDashed className="size-3" /> Borrador
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-5 text-slate-600 text-sm font-medium whitespace-nowrap">
                       {item.updatedAt}
                     </td>
-                    <td className="px-6 py-5 w-[12rem]">
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="px-6 py-5">
+                      <div className="flex items-center justify-end gap-1.5 flex-nowrap">
                         <button
                           onClick={() => handleView(item)}
                           title="Vista previa"
@@ -989,27 +1084,16 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                         >
                           <span className="font-bold text-sm">%</span>
                         </button>
-                        {item.status === "Borrador" && (
-                          <button
-                            onClick={() => handlePublish(item)}
-                            title="Publicar"
-                            className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:from-emerald-100 hover:to-green-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-                          >
-                            <UploadCloud className="h-4 w-4" />
-                          </button>
-                        )}
                         <button
                           onClick={() => handleEdit(item)}
                           title="Editar"
-                          aria-label="Editar"
                           className="rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => openDeleteConfirm(item)}
+                          onClick={() => handleDelete(item)}
                           title="Eliminar"
-                          aria-label="Eliminar"
                           className="rounded-xl border-2 border-rose-300 bg-gradient-to-r from-rose-50 to-red-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:from-rose-100 hover:to-red-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1018,37 +1102,28 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                     </td>
                   </tr>
                 ))}
-
                 {!loading && data.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="px-4 py-20 text-center"
-                    >
+                    <td colSpan={6} className="px-5 py-24 text-center">
                       <div className="flex flex-col items-center gap-4">
-                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 ring-4 ring-violet-200">
-                          <PlaySquare className="w-10 h-10 text-violet-600" />
+                        <div className="size-20 rounded-[2rem] bg-slate-50 flex items-center justify-center ring-8 ring-slate-100/50">
+                          <PlaySquare className="size-10 text-slate-300" />
                         </div>
-                        <div className="space-y-2">
-                          <p className="text-lg font-bold text-slate-700">
-                            Aún no hay quizt
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            Crea el primero con el botón
-                            <span className="mx-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1.5 font-bold text-white shadow-md">
-                              Nuevo quizt
-                            </span>
-                          </p>
+                        <div className="space-y-1">
+                          <p className="text-lg font-black text-slate-900">Sin quizzes registrados</p>
+                          <p className="text-sm text-slate-400 font-bold uppercase tracking-wider">Comienza creando uno nuevo para esta área</p>
                         </div>
                       </div>
                     </td>
                   </tr>
                 )}
-
                 {loading && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
-                      Cargando quizzes…
+                    <td colSpan={6} className="px-5 py-12 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="size-8 rounded-full border-4 border-slate-100 border-t-indigo-600 animate-spin" />
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Cargando datos...</p>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -1059,200 +1134,256 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
       </div>
 
       {/* Preview modal */}
-      {previewOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 px-0.5 mt-16">
-          <div className="w-full max-w-lg rounded-lg bg-white shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between border-b px-2 py-1.5">
-              <h3 className="text-base font-semibold text-slate-900">Vista previa</h3>
-              <button onClick={() => setPreviewOpen(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
-            </div>
-            <div className="max-h-[60vh] overflow-y-auto px-2 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {previewLoading && (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Cargando…</div>
-              )}
-              {!previewLoading && previewQuiz && (
-                <div className="space-y-2.5">
-                  <header className="border-b pb-0.5">
-                    <h4 className="text-base font-semibold text-slate-900">{previewQuiz.quiz?.titulo || 'Quiz'}</h4>
-                    <p className="text-xs text-slate-500">Preguntas: {Array.isArray(previewQuiz.preguntas) ? previewQuiz.preguntas.length : 0}</p>
-                  </header>
-                  <ol className="space-y-1.5">
-                    {previewQuiz.preguntas?.map((p, idx) => (
-                      <li key={p.id} className="rounded border border-slate-200 p-1.5">
-                        <div className="mb-0.5 text-xs text-slate-500">
-                          {idx + 1}. {p.tipo === 'opcion_multiple' ? 'Opción múltiple' : p.tipo === 'verdadero_falso' ? 'Verdadero/Falso' : 'Respuesta corta'} • {p.puntos || 1} pt{(p.puntos || 1) > 1 ? 's' : ''}
-                        </div>
-                        <div className="font-medium text-slate-900 mb-0.5 text-sm">
-                          <MathText text={p.enunciado || ''} />
-                        </div>
-                        {p.tipo === 'opcion_multiple' && (
-                          <ul className="mt-0.5 space-y-1">
-                            {p.opciones?.map((o) => (
-                              <li key={o.id} className={`rounded border px-1.5 py-1 text-xs ${o.es_correcta ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
-                                <MathText text={o.texto || '—'} />
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {p.tipo === 'verdadero_falso' && (
-                          <p className="mt-0.5 text-xs text-slate-700">Correcta: <strong><MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} /></strong></p>
-                        )}
-                        {p.tipo === 'respuesta_corta' && (
-                          <p className="mt-0.5 text-xs text-slate-700">Respuesta esperada: <strong><MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} /></strong></p>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end gap-2 border-t px-2 py-1.5">
-              <button onClick={() => setPreviewOpen(false)} className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Cerrar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Resultados modal */}
-      {resultsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col">
-            {/* Header mejorado */}
-            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg">
-                  <span className="text-white font-bold text-lg">%</span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Resultados del Quiz</h3>
-                  <p className="text-sm text-slate-600 mt-0.5">{resultsQuizMeta?.titulo || 'Quiz'}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setResultsOpen(false)}
-                className="rounded-xl p-2 text-slate-500 hover:bg-white/80 hover:text-slate-700 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Contenido con scroll */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 bg-slate-50/30">
-              {resultsLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
-                    <p className="text-sm font-medium text-slate-600">Cargando resultados...</p>
+      {
+        previewOpen && (
+          <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-900/65 backdrop-blur-md p-4 sm:p-6 lg:p-8 overflow-y-auto animate-in fade-in duration-300">
+            <div className="w-full max-w-4xl max-h-[85vh] mt-10 flex flex-col bg-white rounded-3xl shadow-2xl border border-slate-200/50 overflow-hidden animate-in zoom-in-95 duration-300">
+              {/* Header premium */}
+              <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="grid place-items-center size-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg">
+                    <Eye className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 leading-tight">Vista previa</h3>
+                    <p className="text-xs text-slate-500 font-medium">Previsualización del contenido para estudiantes</p>
                   </div>
                 </div>
-              ) : resultsRows.length ? (
-                <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-200/60">
-                      <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50">
-                        <tr>
-                          <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Estudiante
-                          </th>
-                          <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Grupo
-                          </th>
-                          <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Intentos
-                          </th>
-                          <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Puntaje Oficial
-                          </th>
-                          <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Acción
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 bg-white">
-                        {resultsRows.map((r, idx) => (
-                          <tr
-                            key={r.id_estudiante}
-                            className={`hover:bg-indigo-50/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
-                          >
-                            <td className="px-5 py-4">
-                              <div className="font-semibold text-slate-900 text-sm">
-                                {`${r.apellidos || ''} ${r.nombre || ''}`.trim() || 'Sin nombre'}
+                <button
+                  onClick={() => setPreviewOpen(false)}
+                  className="rounded-xl p-2 text-slate-400 hover:bg-white hover:text-slate-600 transition-all hover:rotate-90 duration-300"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Contenido con scroll optimizado */}
+              <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar bg-slate-50/30">
+                {previewLoading && (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <div className="size-12 rounded-full border-4 border-slate-100 border-t-violet-600 animate-spin" />
+                    <p className="text-sm font-semibold text-slate-500">Cargando contenido...</p>
+                  </div>
+                )}
+                {!previewLoading && previewQuiz && (
+                  <div className="space-y-6">
+                    <header className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm ring-4 ring-slate-100/50">
+                      <h4 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-700 to-indigo-700">
+                        {previewQuiz.quiz?.titulo || 'Quiz'}
+                      </h4>
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-700">
+                          {Array.isArray(previewQuiz.preguntas) ? previewQuiz.preguntas.length : 0} Preguntas
+                        </span>
+                        <span className="text-xs text-slate-400 font-medium whitespace-nowrap">Evaluación activa</span>
+                      </div>
+                    </header>
+
+                    <ol className="space-y-4">
+                      {previewQuiz.preguntas?.map((p, idx) => (
+                        <li key={p.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+                              Pregunta {idx + 1}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold">
+                              {p.tipo === 'opcion_multiple' ? 'Opción múltiple' : p.tipo === 'verdadero_falso' ? 'Verdadero/Falso' : 'Respuesta corta'} • {p.puntos || 1} pt{(p.puntos || 1) > 1 ? 's' : ''}
+                            </span>
+                          </div>
+
+                          <div className="text-base font-semibold text-slate-800 leading-relaxed mb-4 overflow-x-auto pb-1">
+                            <MathText text={p.enunciado || ''} />
+                          </div>
+
+                          {p.tipo === 'opcion_multiple' && (
+                            <ul className="grid gap-2">
+                              {p.opciones?.map((o) => (
+                                <li key={o.id} className={`flex items-center gap-3 rounded-xl border p-3.5 text-sm transition-all ${o.es_correcta ? 'border-emerald-200 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-100' : 'border-slate-200 bg-white text-slate-600'}`}>
+                                  <div className={`size-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${o.es_correcta ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300'}`}>
+                                    {o.es_correcta && <CheckCircle2 className="size-3 text-white" />}
+                                  </div>
+                                  <MathText text={o.texto || '—'} />
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          {p.tipo === 'verdadero_falso' && (
+                            <div className="flex gap-4">
+                              {['Verdadero', 'Falso'].map(val => {
+                                const isCorrect = p.opciones?.find(x => x.es_correcta)?.texto === val;
+                                return (
+                                  <div key={val} className={`flex-1 rounded-xl border p-3.5 text-center text-sm font-bold ${isCorrect ? 'border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm' : 'border-slate-100 bg-slate-50 opacity-60'}`}>
+                                    {val} {isCorrect && '✓'}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {p.tipo === 'respuesta_corta' && (
+                            <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50 p-4">
+                              <span className="text-[10px] font-extrabold text-indigo-500 uppercase block mb-1">Respuesta correcta esperada</span>
+                              <div className="text-sm font-mono font-bold text-indigo-700">
+                                <MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} />
                               </div>
-                            </td>
-                            <td className="px-5 py-4 text-center">
-                              <span className="inline-flex items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold text-sm">
-                                {r.grupo || '—'}
-                              </span>
-                            </td>
-                            <td className="px-5 py-4 text-center">
-                              <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
-                                {r.total_intentos || 0}
-                              </span>
-                            </td>
-                            <td className="px-5 py-4 text-center">
-                              {r.total_intentos > 0 ? (
-                                <span className={`inline-flex items-center justify-center min-w-[4rem] px-4 py-2 rounded-xl font-bold text-sm shadow-sm ${(Number(r.oficial_puntaje || 0) >= 70)
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </div>
+
+
+            </div>
+          </div>
+        )
+      }
+
+      {/* Resultados modal */}
+      {
+        resultsOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col">
+              {/* Header mejorado */}
+              <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg">
+                    <span className="text-white font-bold text-lg">%</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Resultados del Quiz</h3>
+                    <p className="text-sm text-slate-600 mt-0.5">{resultsQuizMeta?.titulo || 'Quiz'}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setResultsOpen(false)}
+                  className="rounded-xl p-2 text-slate-500 hover:bg-white/80 hover:text-slate-700 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Contenido con scroll */}
+              <div className="flex-1 overflow-y-auto px-6 py-4 bg-slate-50/30">
+                {resultsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+                      <p className="text-sm font-medium text-slate-600">Cargando resultados...</p>
+                    </div>
+                  </div>
+                ) : resultsRows.length ? (
+                  <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-slate-200/60">
+                        <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50">
+                          <tr>
+                            <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
+                              Estudiante
+                            </th>
+                            <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                              Grupo
+                            </th>
+                            <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                              Intentos
+                            </th>
+                            <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                              Puntaje Oficial
+                            </th>
+                            <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-700">
+                              Acción
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                          {resultsRows.map((r, idx) => (
+                            <tr
+                              key={r.id_estudiante}
+                              className={`hover:bg-indigo-50/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                            >
+                              <td className="px-5 py-4">
+                                <div className="font-semibold text-slate-900 text-sm">
+                                  {`${r.apellidos || ''} ${r.nombre || ''}`.trim() || 'Sin nombre'}
+                                </div>
+                              </td>
+                              <td className="px-5 py-4 text-center">
+                                <span className="inline-flex items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold text-sm">
+                                  {r.grupo || '—'}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 text-center">
+                                <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
+                                  {r.total_intentos || 0}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 text-center">
+                                {r.total_intentos > 0 ? (
+                                  <span className={`inline-flex items-center justify-center min-w-[4rem] px-4 py-2 rounded-xl font-bold text-sm shadow-sm ${(Number(r.oficial_puntaje || 0) >= 70)
                                     ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white ring-2 ring-emerald-200'
                                     : (Number(r.oficial_puntaje || 0) >= 50)
                                       ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white ring-2 ring-amber-200'
                                       : 'bg-gradient-to-r from-rose-500 to-red-600 text-white ring-2 ring-rose-200'
-                                  }`}>
-                                  {Number(r.oficial_puntaje || 0)}%
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-sm font-medium">
-                                  Sin intento
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-5 py-4 text-right">
-                              <button
-                                disabled={r.total_intentos === 0}
-                                onClick={() => openReview(r)}
-                                className="inline-flex items-center gap-1.5 rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-4 py-2 text-xs font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 hover:border-indigo-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                                Ver detalle
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                                    }`}>
+                                    {Number(r.oficial_puntaje || 0)}%
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-sm font-medium">
+                                    Sin intento
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-5 py-4 text-right">
+                                <button
+                                  disabled={r.total_intentos === 0}
+                                  onClick={() => openReview(r)}
+                                  className="inline-flex items-center gap-1.5 rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-4 py-2 text-xs font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 hover:border-indigo-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                  Ver detalle
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 px-4">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mb-4">
-                    <PlaySquare className="h-10 w-10 text-slate-400" />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 px-4">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mb-4">
+                      <PlaySquare className="h-10 w-10 text-slate-400" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-slate-700 mb-2">Sin resultados aún</h4>
+                    <p className="text-sm text-slate-500 text-center max-w-sm">
+                      Aún no hay estudiantes que hayan completado este quiz.
+                    </p>
                   </div>
-                  <h4 className="text-lg font-semibold text-slate-700 mb-2">Sin resultados aún</h4>
-                  <p className="text-sm text-slate-500 text-center max-w-sm">
-                    Aún no hay estudiantes que hayan completado este quiz.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Footer mejorado */}
-            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t border-slate-200/60">
-              <div className="text-sm text-slate-600">
-                {resultsRows.length > 0 && (
-                  <span className="font-medium">
-                    {resultsRows.length} {resultsRows.length === 1 ? 'estudiante' : 'estudiantes'}
-                  </span>
                 )}
               </div>
-              <button
-                onClick={() => setResultsOpen(false)}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-violet-700 transition-all hover:shadow-lg"
-              >
-                Cerrar
-              </button>
+
+              {/* Footer mejorado */}
+              <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t border-slate-200/60">
+                <div className="text-sm text-slate-600">
+                  {resultsRows.length > 0 && (
+                    <span className="font-medium">
+                      {resultsRows.length} {resultsRows.length === 1 ? 'estudiante' : 'estudiantes'}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setResultsOpen(false)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-violet-700 transition-all hover:shadow-lg"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Review modal - Usando componente reutilizable */}
       <ReviewModal
@@ -1451,40 +1582,44 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
         onEditQuestions={editing ? () => {
           // Navegar al builder después de guardar
           const finalIdArea = editing.areaId !== undefined && editing.areaId !== null ? Number(editing.areaId) : (selectedAreaId || null);
-          const navState = finalIdArea ? { 
-            quizId: editing.id, 
-            areaId: finalIdArea, 
-            areaTitle: editing.areaTitle || areaTitle 
+          const navState = finalIdArea ? {
+            quizId: editing.id,
+            areaId: finalIdArea,
+            areaTitle: editing.areaTitle || areaTitle
           } : { quizId: editing.id };
           navigate(`/asesor/quizt/builder?id=${editing.id}`, { state: navState });
         } : null}
       />
 
       {/* Modal de éxito */}
-      {successModal.open && (
-        <SuccessModal
-          message={successModal.message}
-          count={successModal.count}
-          willRedirect={successModal.willRedirect}
-          onClose={() => setSuccessModal(prev => ({ ...prev, open: false }))}
-        />
-      )}
+      {
+        successModal.open && (
+          <SuccessModal
+            message={successModal.message}
+            count={successModal.count}
+            willRedirect={successModal.willRedirect}
+            onClose={() => setSuccessModal(prev => ({ ...prev, open: false }))}
+          />
+        )
+      }
 
       {/* Modal de confirmación genérico */}
-      {confirmModal.open && (
-        <ConfirmationModal
-          isOpen={confirmModal.open}
-          onClose={() => setConfirmModal(prev => ({ ...prev, open: false }))}
-          onConfirm={confirmModal.onConfirm}
-          title={confirmModal.title}
-          message={confirmModal.message}
-          type={confirmModal.type}
-          confirmText={confirmModal.confirmText}
-          cancelText={confirmModal.cancelText}
-          loading={deleteLoading} // Reusing deleteLoading for generic loading state if needed
-        />
-      )}
-    </div>
+      {
+        confirmModal.open && (
+          <ConfirmationModal
+            isOpen={confirmModal.open}
+            onClose={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+            onConfirm={confirmModal.onConfirm}
+            title={confirmModal.title}
+            message={confirmModal.message}
+            type={confirmModal.type}
+            confirmText={confirmModal.confirmText}
+            cancelText={confirmModal.cancelText}
+            loading={deleteLoading} // Reusing deleteLoading for generic loading state if needed
+          />
+        )
+      }
+    </div >
   );
 }
 

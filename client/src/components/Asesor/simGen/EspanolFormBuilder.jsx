@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 // Nota: reemplazado react-katex por un componente local liviano para evitar dependencia
 import InlineMath from './InlineMath.jsx';
 import MathPalette, { Modal } from './MathPalette.jsx';
+import { useAlert } from '../../../components/shared/AlertModal.jsx';
 
 const genId = () => {
   // Navegador moderno y https/localhost
@@ -16,7 +17,7 @@ const genId = () => {
     bytes[6] = (bytes[6] & 0x0f) | 0x40; // versión 4
     bytes[8] = (bytes[8] & 0x3f) | 0x80; // variante
     const h = [...bytes].map(b => b.toString(16).padStart(2, '0'));
-    return `${h.slice(0,4).join('')}-${h.slice(4,6).join('')}-${h.slice(6,8).join('')}-${h.slice(8,10).join('')}-${h.slice(10).join('')}`;
+    return `${h.slice(0, 4).join('')}-${h.slice(4, 6).join('')}-${h.slice(6, 8).join('')}-${h.slice(8, 10).join('')}-${h.slice(10).join('')}`;
   }
   // Último recurso
   return `id-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
@@ -37,28 +38,115 @@ const newQuestion = (type = "multiple") => ({
 });
 
 /* ----------------------- Renderiza LaTeX con KaTeX ----------------------- */
-/** Renderiza texto plano mezclado con fórmulas delimitadas por $...$ */
+/** Renderiza texto plano mezclado con fórmulas delimitadas por $...$ con parser robusto */
 function MathText({ text = "" }) {
-  const re = /\$(.+?)\$/g;
-  const parts = [];
-  let lastIndex = 0;
-  let m;
+  if (!text) return null;
 
-  while ((m = re.exec(text)) !== null) {
-    if (m.index > lastIndex) {
-      parts.push({ t: text.slice(lastIndex, m.index) });
+  // Regex para detectar $...$ y $$...$$
+  const fullLatexRe = /\$\$([\s\S]+?)\$\$|\$([\s\S]+?)\$/g;
+
+  const parts = [];
+  let i = 0;
+  let lastIndex = 0;
+
+  // Parser robusto carácter a carácter para manejar anidamientos y escapes
+  while (i < text.length) {
+    const char = text[i];
+
+    // 1. Saltar escapes
+    if (char === '\\') {
+      i += 2;
+      continue;
     }
-    parts.push({ m: m[1] });
-    lastIndex = m.index + m[0].length;
+
+    // 2. Detectar inicio fórmula ($)
+    if (char === '$') {
+      const start = i;
+      const isBlock = i + 1 < text.length && text[i + 1] === '$';
+      const delimiter = isBlock ? '$$' : '$';
+      // Avanzar más allá del delimitador de apertura
+      i += delimiter.length;
+
+      let content = '';
+      let closed = false;
+
+      // Buscar cierre
+      while (i < text.length) {
+        const c = text[i];
+        if (c === '\\') {
+          content += c;
+          if (i + 1 < text.length) content += text[i + 1];
+          i += 2;
+          continue;
+        }
+        if (c === '$') {
+          let isClosing = false;
+          if (isBlock) {
+            // Para $$ necesitamos otro $ seguido
+            if (i + 1 < text.length && text[i + 1] === '$') isClosing = true;
+          } else {
+            isClosing = true;
+          }
+
+          if (isClosing) {
+            closed = true;
+            break;
+          }
+        }
+        content += c;
+        i++;
+      }
+
+      if (closed) {
+        // Validar heurística SÓLO para inline ($)
+        let isValidMath = true;
+        if (!isBlock) {
+          const formulaTrimmed = content.trim();
+          // Heurística de moneda: $120 pesos
+          const beginsWithNumber = /^\d+/.test(formulaTrimmed);
+          const hasTextWords = /[a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,}/.test(formulaTrimmed);
+          const hasMathOperators = /[=\+\-\^_{}\\]/.test(formulaTrimmed);
+          if (beginsWithNumber && hasTextWords && !hasMathOperators) {
+            isValidMath = false;
+          }
+        }
+
+        if (isValidMath) {
+          // Agregar texto previo
+          if (start > lastIndex) {
+            parts.push({ t: text.substring(lastIndex, start) });
+          }
+          // Agregar fórmula
+          parts.push({ m: content.trim(), display: isBlock });
+          // Avanzar cursor principal más allá del cierre
+          i += delimiter.length;
+          lastIndex = i;
+          continue;
+        } else {
+          // Interpretar como texto
+          i = start + 1;
+          continue;
+        }
+      }
+    }
+    i++;
   }
-  if (lastIndex < text.length) parts.push({ t: text.slice(lastIndex) });
+
+  // Resto del texto
+  if (lastIndex < text.length) {
+    parts.push({ t: text.substring(lastIndex) });
+  }
 
   return (
-    <>
-      {parts.map((p, i) =>
-        p.m ? <InlineMath key={i} math={p.m} /> : <span key={i}>{p.t}</span>
+    <span className="block w-full break-words overflow-x-auto whitespace-pre-wrap">
+      {parts.map((p, idx) =>
+        p.m ? (
+          <InlineMath key={idx} math={p.m} display={p.display} />
+        ) : (
+          <span key={idx}>{p.t}</span>
+        )
       )}
-    </>
+    </span>
   );
 }
 
@@ -313,9 +401,9 @@ function QuestionCard({ q, onChange, onRemove }) {
       </div>
 
       {/* Vista previa en vivo del enunciado */}
-        <div className="mt-3 text-sm text-slate-700">
-          <MathText text={q.text} />
-        </div>
+      <div className="mt-3 text-sm text-slate-700">
+        <MathText text={q.text} />
+      </div>
 
       {/* Enunciado + botón paleta */}
       <div className="mt-3">
@@ -443,6 +531,7 @@ export default function EspanolFormBuilder() {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([newQuestion("multiple")]);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const { showAlert, showConfirm, AlertComponent } = useAlert();
 
   const totalPoints = useMemo(
     () => questions.reduce((acc, q) => acc + (q.points || 0), 0),
@@ -497,11 +586,11 @@ export default function EspanolFormBuilder() {
           options:
             q.type === "multiple"
               ? q.options.map((o) => ({
-                  id: o.id,
-                  text: o.text,
-                  correct: o.correct,
-                  hasImage: !!o.image,
-                }))
+                id: o.id,
+                text: o.text,
+                correct: o.correct,
+                hasImage: !!o.image,
+              }))
               : undefined,
           answer: q.type !== "multiple" ? q.answer : undefined,
         }))
@@ -531,172 +620,175 @@ export default function EspanolFormBuilder() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      {/* Header */}
-      <header className="mb-6 rounded-2xl border border-slate-200 bg-gradient-to-r from-violet-600 to-fuchsia-600 p-6 text-white shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold sm:text-2xl">Crear formulario • Español</h1>
-            <p className="mt-1 text-sm opacity-90">
-              Construye preguntas con imágenes, LaTeX, opción múltiple, verdadero/falso y respuesta corta.
-            </p>
+    <>
+      <AlertComponent />
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        {/* Header */}
+        <header className="mb-6 rounded-2xl border border-slate-200 bg-gradient-to-r from-violet-600 to-fuchsia-600 p-6 text-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-bold sm:text-2xl">Crear formulario • Español</h1>
+              <p className="mt-1 text-sm opacity-90">
+                Construye preguntas con imágenes, LaTeX, opción múltiple, verdadero/falso y respuesta corta.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="rounded-full bg-white/15 px-3 py-1">Preguntas: {questions.length}</span>
+              <span className="rounded-full bg-white/15 px-3 py-1">Puntos: {totalPoints}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="rounded-full bg-white/15 px-3 py-1">Preguntas: {questions.length}</span>
-            <span className="rounded-full bg-white/15 px-3 py-1">Puntos: {totalPoints}</span>
-          </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Acciones */}
-      <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <button
-            onClick={() => {
-              if (window.confirm('¿Estás seguro de que deseas cancelar? Se perderán los cambios no guardados.')) {
-                navigate('/asesor/simuladores', { replace: true });
-              }
-            }}
-            className="inline-flex items-center gap-2 rounded-xl border-2 border-rose-300 bg-white px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-50 hover:border-rose-400 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Cancelar
-          </button>
-          <button
-            onClick={() => setPreviewOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            Vista previa
-          </button>
-          <button
-            onClick={handleDraft}
-            className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
-          >
-            Guardar borrador
-          </button>
-          <button
-            onClick={handlePublish}
-            className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700"
-          >
-            Publicar
-          </button>
-        </div>
-      </section>
-
-      {/* Constructor */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-slate-900">Preguntas</h2>
-          <div className="flex flex-wrap gap-2">
+        {/* Acciones */}
+        <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-end gap-3">
             <button
-              onClick={() => addQuestion("multiple")}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+              onClick={async () => {
+                const ok = await showConfirm('¿Estás seguro de que deseas cancelar? Se perderán los cambios no guardados.', 'Confirmar cancelación');
+                if (ok) {
+                  navigate('/asesor/simuladores', { replace: true });
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-rose-300 bg-white px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-50 hover:border-rose-400 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
             >
-              + Opción múltiple
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Cancelar
             </button>
             <button
-              onClick={() => addQuestion("tf")}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+              onClick={() => setPreviewOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
             >
-              + Verdadero/Falso
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              Vista previa
             </button>
             <button
-              onClick={() => addQuestion("short")}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+              onClick={handleDraft}
+              className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
             >
-              + Respuesta corta
+              Guardar borrador
+            </button>
+            <button
+              onClick={handlePublish}
+              className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700"
+            >
+              Publicar
             </button>
           </div>
-        </div>
+        </section>
 
-        <div className="space-y-4">
-          {questions.map((q) => (
-            <QuestionCard
-              key={q.id}
-              q={q}
-              onChange={(data) => updateQuestion(q.id, data)}
-              onRemove={() => removeQuestion(q.id)}
-            />
-          ))}
-        </div>
-      </section>
+        {/* Constructor */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-slate-900">Preguntas</h2>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => addQuestion("multiple")}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                + Opción múltiple
+              </button>
+              <button
+                onClick={() => addQuestion("tf")}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                + Verdadero/Falso
+              </button>
+              <button
+                onClick={() => addQuestion("short")}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                + Respuesta corta
+              </button>
+            </div>
+          </div>
 
-      {/* Preview */}
-      <Modal open={previewOpen} onClose={() => setPreviewOpen(false)} title="Vista previa">
-        <article className="space-y-6">
-          <header>
-            <h3 className="text-lg font-semibold text-slate-900">Formulario de Español</h3>
-            <p className="mt-1 text-sm text-slate-500">Puntos totales: {totalPoints}</p>
-          </header>
-
-          <ol className="space-y-5">
-            {questions.map((q, i) => (
-              <li key={q.id} className="rounded-xl border border-slate-200 p-4">
-                <div className="mb-2 text-sm text-slate-500">
-                  {i + 1}.{" "}
-                  {q.type === "multiple" ? "Opción múltiple" : q.type === "tf" ? "Verdadero/Falso" : "Respuesta corta"} •{" "}
-                  {q.points} pt{q.points > 1 ? "s" : ""}
-                </div>
-
-                <div className="font-medium text-slate-900">
-                  {q.text ? <MathText text={q.text} /> : <em className="text-slate-400">Sin consigna</em>}
-                </div>
-
-                {/* Imagen de la pregunta */}
-                {q.image?.preview && (
-                  <img
-                    src={q.image.preview}
-                    alt=""
-                    className="mb-3 max-h-56 w-full rounded-lg border border-slate-200 object-contain"
-                  />
-                )}
-
-                {q.type === "multiple" && (
-                  <ul className="mt-3 space-y-2">
-                    {q.options.map((o) => (
-                      <li
-                        key={o.id}
-                        className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-sm ${
-                          o.correct ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white"
-                        }`}
-                      >
-                        {o.image?.preview && (
-                          <img
-                            src={o.image.preview}
-                            alt=""
-                            className="h-14 w-20 rounded border border-slate-200 object-cover"
-                          />
-                        )}
-                        <span>
-                          {o.text ? <MathText text={o.text} /> : <span className="text-slate-400">Opción sin texto</span>}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {q.type === "tf" && (
-                  <p className="mt-3 text-sm text-slate-700">
-                    Respuesta correcta: <strong>{q.answer === "true" ? "Verdadero" : "Falso"}</strong>
-                  </p>
-                )}
-
-                {q.type === "short" && (
-                  <p className="mt-3 text-sm text-slate-700">
-                    Respuesta esperada: <strong>{q.answer || "—"}</strong>
-                  </p>
-                )}
-              </li>
+          <div className="space-y-4">
+            {questions.map((q) => (
+              <QuestionCard
+                key={q.id}
+                q={q}
+                onChange={(data) => updateQuestion(q.id, data)}
+                onRemove={() => removeQuestion(q.id)}
+              />
             ))}
-          </ol>
-        </article>
-      </Modal>
-    </div>
+          </div>
+        </section>
+
+        {/* Preview */}
+        <Modal open={previewOpen} onClose={() => setPreviewOpen(false)} title="Vista previa">
+          <article className="space-y-6">
+            <header>
+              <h3 className="text-lg font-semibold text-slate-900">Formulario de Español</h3>
+              <p className="mt-1 text-sm text-slate-500">Puntos totales: {totalPoints}</p>
+            </header>
+
+            <ol className="space-y-5">
+              {questions.map((q, i) => (
+                <li key={q.id} className="rounded-xl border border-slate-200 p-4">
+                  <div className="mb-2 text-sm text-slate-500">
+                    {i + 1}.{" "}
+                    {q.type === "multiple" ? "Opción múltiple" : q.type === "tf" ? "Verdadero/Falso" : "Respuesta corta"} •{" "}
+                    {q.points} pt{q.points > 1 ? "s" : ""}
+                  </div>
+
+                  <div className="font-medium text-slate-900">
+                    {q.text ? <MathText text={q.text} /> : <em className="text-slate-400">Sin consigna</em>}
+                  </div>
+
+                  {/* Imagen de la pregunta */}
+                  {q.image?.preview && (
+                    <img
+                      src={q.image.preview}
+                      alt=""
+                      className="mb-3 max-h-56 w-full rounded-lg border border-slate-200 object-contain"
+                    />
+                  )}
+
+                  {q.type === "multiple" && (
+                    <ul className="mt-3 space-y-2">
+                      {q.options.map((o) => (
+                        <li
+                          key={o.id}
+                          className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-sm ${o.correct ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white"
+                            }`}
+                        >
+                          {o.image?.preview && (
+                            <img
+                              src={o.image.preview}
+                              alt=""
+                              className="h-14 w-20 rounded border border-slate-200 object-cover"
+                            />
+                          )}
+                          <span>
+                            {o.text ? <MathText text={o.text} /> : <span className="text-slate-400">Opción sin texto</span>}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {q.type === "tf" && (
+                    <p className="mt-3 text-sm text-slate-700">
+                      Respuesta correcta: <strong>{q.answer === "true" ? "Verdadero" : "Falso"}</strong>
+                    </p>
+                  )}
+
+                  {q.type === "short" && (
+                    <p className="mt-3 text-sm text-slate-700">
+                      Respuesta esperada: <strong>{q.answer || "—"}</strong>
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </article>
+        </Modal>
+      </div>
+    </>
   );
 }

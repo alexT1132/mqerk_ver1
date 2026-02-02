@@ -1,115 +1,213 @@
-// Renderizador real de fórmulas con KaTeX
-// Requiere dependencias: react-katex y katex (ya están en package.json)
-import { InlineMath as KaInlineMath, BlockMath } from 'react-katex';
-import 'katex/dist/katex.min.css';
+import React from 'react';
 
-export default function InlineMath({ math, children, display = false }) {
-  const formula = typeof math === 'string' ? math : (typeof children === 'string' ? children : '');
-  // Fallback: si no hay fórmula, no renderizar nada
-  if (!formula || formula.trim() === '') return null;
-  
-  // Limpiar la fórmula de espacios en blanco y caracteres problemáticos
-  let cleanFormula = formula.trim();
-  
-  // Remover delimitadores $ si están presentes (ya que react-katex los agrega automáticamente)
-  cleanFormula = cleanFormula.replace(/^\$+|\$+$/g, '').trim();
+// =====================================================================
+// EN TU PROYECTO: DESCOMENTA ESTAS LÍNEAS Y BORRA LOS "MOCKS" DE ABAJO
+// =====================================================================
+// import { InlineMath as KaInlineMath, BlockMath } from 'react-katex';
+// import 'katex/dist/katex.min.css';
 
-  // ✅ CRÍTICO: Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
-  cleanFormula = cleanFormula.replace(/×/g, '\\times').replace(/÷/g, '\\div');
+// =====================================================================
+// MOCKS PARA VISTA PREVIA (BORRAR EN PRODUCCIÓN)
+// Usamos window.katex directamente, con carga dinámica si falta
+// =====================================================================
+const useKatex = () => {
+  const [ready, setReady] = React.useState(false);
 
-  // Normalizar saltos de línea / HTML breaks que rompen KaTeX (común en editores ricos)
-  cleanFormula = cleanFormula
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/\r\n?/g, '\n')
-    .replace(/\n+/g, ' ')
-    .replace(/[ \t]+/g, ' ')
-    .trim();
-  
-  // ✅ Detectar y envolver texto con acentos en \text{} para evitar errores de KaTeX
-  // Esto evita errores de "Accented Unicode text character used in math mode"
-  if (cleanFormula && /[áéíóúÁÉÍÓÚñÑüÜ]/.test(cleanFormula)) {
-    // Guardar referencia a la fórmula original para verificar contexto
-    const originalFormula = cleanFormula;
-    
-    // Primero, buscar y envolver frases con espacios escapados y acentos
-    // Ejemplo: "moles\ de\ soluto" -> "\text{moles de soluto}"
-    cleanFormula = cleanFormula.replace(/([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+(?:\\\s+[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)+)/g, (match, p1, offset) => {
-      // Verificar que contiene acentos
-      if (!/[áéíóúÁÉÍÓÚñÑüÜ]/.test(match)) {
-        return match;
+  React.useEffect(() => {
+    // Si ya está listo de inmediato
+    if (window.katex) {
+      setReady(true);
+      return;
+    }
+
+    // Identificador para evitar inyección duplicada
+    const SCRIPT_ID = 'katex-script-dynamic';
+    const STYLE_ID = 'katex-style-dynamic';
+
+    if (!document.getElementById(SCRIPT_ID)) {
+      // Inyectar CSS
+      if (!document.getElementById(STYLE_ID)) {
+        const link = document.createElement('link');
+        link.id = STYLE_ID;
+        link.rel = 'stylesheet';
+        link.href = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css";
+        link.crossOrigin = "anonymous";
+        document.head.appendChild(link);
       }
-      
-      // Verificar que no está ya dentro de \text{}
-      const beforeText = originalFormula.substring(0, offset);
-      const openText = (beforeText.match(/\\text\{/g) || []).length;
-      const closeText = (beforeText.match(/\}/g) || []).length;
-      if (openText > closeText) {
-        return match; // Ya está dentro de \text{}
+
+      // Inyectar JS
+      const script = document.createElement('script');
+      script.id = SCRIPT_ID;
+      script.src = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js";
+      script.crossOrigin = "anonymous";
+      script.onload = () => {
+        window.dispatchEvent(new Event('katex-loaded'));
+      };
+      document.head.appendChild(script);
+    }
+
+    // Escuchar evento o pollear
+    const handler = () => setReady(true);
+    window.addEventListener('katex-loaded', handler);
+
+    const interval = setInterval(() => {
+      if (window.katex) {
+        setReady(true);
+        clearInterval(interval);
       }
-      
-      // Limpiar espacios escapados y envolver en \text{}
-      const cleaned = match.replace(/\\\s+/g, ' ').replace(/\s+/g, ' ').trim();
-      return `\\text{${cleaned}}`;
+    }, 200);
+
+    return () => {
+      window.removeEventListener('katex-loaded', handler);
+      clearInterval(interval);
+    };
+  }, []);
+
+  return ready;
+};
+
+const KaInlineMath = ({ math }) => {
+  const ref = React.useRef();
+  const ready = useKatex();
+
+  React.useEffect(() => {
+    if (ready && window.katex && ref.current) {
+      try {
+        window.katex.render(math, ref.current, {
+          throwOnError: false,
+          displayMode: false,
+          strict: false,
+          trust: true
+        });
+      } catch (e) { console.error(e); }
+    }
+  }, [math, ready]);
+
+  return <span ref={ref} />;
+};
+
+const BlockMath = ({ math }) => {
+  const ref = React.useRef();
+  const ready = useKatex();
+
+  React.useEffect(() => {
+    if (ready && window.katex && ref.current) {
+      try {
+        window.katex.render(math, ref.current, {
+          throwOnError: false,
+          displayMode: true,
+          strict: false,
+          trust: true
+        });
+      } catch (e) { console.error(e); }
+    }
+  }, [math, ready]);
+
+  return <div ref={ref} />;
+};
+// =====================================================================
+
+
+/**
+ * Componente Wrapper para KaTeX con heurísticas de limpieza y corrección automática.
+ * Soluciona problemas de compatibilidad de Regex y mejora la detección de texto.
+ */
+const InlineMath = React.memo(function InlineMath({ math, children, display = false }) {
+  // Memoizamos la limpieza para no recalcular en cada render si la fórmula no cambia
+  const cleanFormula = React.useMemo(() => {
+    const rawInput = typeof math === 'string' ? math : (typeof children === 'string' ? children : '');
+
+    if (!rawInput || !rawInput.trim()) return null;
+
+    let processed = rawInput.trim();
+
+    // 1. ELIMINAR DELIMITADORES $ (Compatible con todos los navegadores)
+    // Reemplazamos el Lookbehind (?<!\\) que rompe Safari por una función lógica
+    processed = processed.replace(/(\\)?\$/g, (match, escaped) => {
+      return escaped ? match : ''; // Si tiene \, lo dejamos. Si es solo $, lo borramos.
     });
-    
-    // Actualizar referencia después del primer reemplazo
-    const updatedFormula = cleanFormula;
-    
-    // Luego, buscar palabras individuales con acentos que no están en \text{}
-    cleanFormula = cleanFormula.replace(/\b([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)\b/g, (match, word, offset) => {
-      // Solo procesar si tiene acentos
-      if (!/[áéíóúÁÉÍÓÚñÑüÜ]/.test(word)) {
-        return match;
+
+    // 2. CORRECCIONES TIPOGRÁFICAS COMUNES
+    processed = processed
+      .replace(/×/g, '\\times')
+      .replace(/÷/g, '\\div')
+      .replace(/¿/g, '')
+      .replace(/¡/g, '')
+      .replace(/sen\s/g, '\\sin ')    // Corrección común en español
+      .replace(/tg\s/g, '\\tan ');    // Corrección común en español
+
+    // 3. LIMPIEZA DE ESPACIOS Y SALTOS DE LÍNEA
+    processed = processed
+      .replace(/<br\s*\/?>/gi, ' ')
+      .replace(/\r\n?/g, '\n')
+      .replace(/\n+/g, ' ')
+      .replace(/[ \t]+/g, ' ')
+      .trim();
+
+    const originalFormula = processed;
+
+    // 4. HEURÍSTICA DE TEXTO: Detectar frases y envolverlas en \text{}
+    // Evita romper comandos LaTeX existentes ({, }, \)
+    processed = processed.replace(
+      /(^|[^\\{a-zA-Z])([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]{2,}(?:\s+[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]{1,})+)/g,
+      (match, prefix, phrase, offset) => {
+        // Verificar balance de llaves para no reemplazar dentro de comandos (ej: \frac{...})
+        const beforeText = originalFormula.substring(0, offset + prefix.length);
+        const openBraces = (beforeText.match(/\{/g) || []).length;
+        const closeBraces = (beforeText.match(/\}/g) || []).length;
+
+        // Si hay llaves desbalanceadas, asumimos que estamos dentro de un comando LaTeX y no tocamos
+        if (openBraces > closeBraces) return match;
+
+        // Verificar si ya está protegido por \text o \mathrm
+        if (/\\(text|mathrm|bf|it)\s*\{$/.test(beforeText)) return match;
+
+        return `${prefix}\\text{${phrase}}`;
       }
-      
-      // Verificar que no está ya dentro de \text{}
-      const beforeText = updatedFormula.substring(0, offset);
-      const openText = (beforeText.match(/\\text\{/g) || []).length;
-      const closeText = (beforeText.match(/\}/g) || []).length;
-      if (openText > closeText) {
-        return match; // Ya está dentro de \text{}
-      }
-      
-      // Envolver en \text{}
-      return `\\text{${word}}`;
-    });
-  }
-  
-  // Para fórmulas muy largas o complejas, usar BlockMath en lugar de InlineMath
-  // Solo usar BlockMath si es explícitamente display o si la fórmula es MUY larga
-  // Las fórmulas simples como \sum_{i=1}^{n} a_i deben ser inline
+    );
+
+    return processed;
+  }, [math, children]);
+
+  if (!cleanFormula) return null;
+
+  // Decidir si usar bloque o línea
   const isVeryLong = cleanFormula.length > 200;
   const shouldUseBlock = display || isVeryLong;
-  
-  // react-katex puede lanzar si la fórmula es inválida; capturamos de forma segura
+
+  // Configuración de KaTeX para tolerar errores sin explotar
+  // Nota: En los mocks de arriba ya aplicamos throwOnError: false, pero lo mantenemos aquí
+  // por si usas la librería real.
+  const katexSettings = {
+    strict: false,
+    trust: true,
+    throwOnError: false,
+    errorColor: '#ef4444' // Color rojo suave de Tailwind (rose-500)
+  };
+
   try {
     if (shouldUseBlock) {
       return (
-        <div className="katex-display-wrapper" style={{ textAlign: 'center', width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
-          <div style={{ display: 'inline-block' }}>
-            <BlockMath math={cleanFormula} />
-          </div>
+        <div className="katex-display-wrapper my-2 w-full overflow-x-auto text-center" style={{ maxWidth: '100%' }}>
+          <BlockMath math={cleanFormula} settings={katexSettings} />
         </div>
       );
-    } else {
-      // Para fórmulas inline, no agregar overflowX a menos que sea necesario
-      return <KaInlineMath math={cleanFormula} />;
     }
-  } catch (error) {
-    // Log del error en desarrollo para debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[InlineMath] Error renderizando fórmula:', cleanFormula.substring(0, 100), error);
-    }
-    // Mostrar fallback claro si hay error de sintaxis, con scroll horizontal para fórmulas largas
+
     return (
-      <div className="overflow-x-auto w-full" style={{ maxWidth: '100%' }}>
-        <div className="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
-          <span className="text-rose-700 text-xs font-bold">Error LaTeX</span>
-          <span className="font-mono text-[0.95em] text-slate-700 whitespace-nowrap" title={`Error renderizando: ${cleanFormula.substring(0, 200)}...`}>
-            {cleanFormula}
-          </span>
-        </div>
-      </div>
+      <span className="katex-inline-wrapper">
+        <KaInlineMath math={cleanFormula} settings={katexSettings} />
+      </span>
+    );
+
+  } catch (error) {
+    // Fallback visual en caso de error catastrófico de renderizado
+    return (
+      <span className="inline-flex items-center gap-1 rounded bg-red-50 px-2 py-0.5 text-xs text-red-600 border border-red-100" title={error.message}>
+        ⚠️ Error LaTeX: {cleanFormula.substring(0, 20)}...
+      </span>
     );
   }
-}
+});
+
+export default InlineMath;

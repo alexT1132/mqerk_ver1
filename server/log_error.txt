@@ -435,3 +435,101 @@
   "titulo": "Español y redacción indirecta (IA · 5 p)",
   "cantidadPreguntas": 5
 }
+[2026-02-02T18:21:40.059Z] [INFO] [Quiz.jsx] Creando quiz con IA
+{
+  "titulo": "Matemáticas y pensamiento analítico (IA · 5 p)",
+  "cantidadPreguntas": 5,
+  "preguntas": [
+    {
+      "type": "multiple",
+      "text": "Un comerciante vende dos tipos de café: el tipo A ...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Una escalera de 10 metros de longitud está apoyada...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "Una tienda ofrece un descuento del 25% en todos su...",
+      "optionsCount": 4
+    },
+    {
+      "type": "tf",
+      "text": "La gráfica de una función cuadrática de la forma $...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "Si un automóvil viaja a una velocidad constante de...",
+      "optionsCount": 0
+    }
+  ]
+}
+[2026-02-02T18:21:40.478Z] [INFO] [Quiz.jsx] Quiz creado
+{
+  "id": 5,
+  "titulo": "Matemáticas y pensamiento analítico (IA · 5 p)",
+  "respuesta": {
+    "data": {
+      "id": 5,
+      "titulo": "Matemáticas y pensamiento analítico (IA · 5 p)",
+      "descripcion": "Quiz generado con IA sobre: Matemáticas y pensamiento analítico. Nivel: intermedio.",
+      "id_area": 2,
+      "materia": "Matemáticas y pensamiento analítico",
+      "puntos_max": 100,
+      "peso_calificacion": "0.00",
+      "fecha_limite": null,
+      "grupos": "[\"V1\"]",
+      "max_intentos": null,
+      "requiere_revision": 0,
+      "activo": 1,
+      "publicado": 0,
+      "creado_por": 21,
+      "time_limit_min": 60,
+      "passing_score": null,
+      "shuffle_questions": 1,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "imagen_portada": null,
+      "recursos_json": null,
+      "created_at": "2026-02-02T18:21:40.000Z",
+      "updated_at": null
+    }
+  }
+}
+[2026-02-02T18:21:40.509Z] [INFO] [Quiz.jsx] Verificación de preguntas guardadas
+{
+  "quizId": 5,
+  "cantidadEsperada": 5,
+  "cantidadGuardada": 5,
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Un comerciante vende dos tipos de café: el tipo A ..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Una escalera de 10 metros de longitud está apoyada..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Una tienda ofrece un descuento del 25% en todos su..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "La gráfica de una función cuadrática de la forma $..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "Si un automóvil viaja a una velocidad constante de..."
+    }
+  ]
+}
+[2026-02-02T18:21:40.510Z] [INFO] [Quiz.jsx] Quiz creado con IA exitosamente
+{
+  "quizId": 5,
+  "titulo": "Matemáticas y pensamiento analítico (IA · 5 p)",
+  "cantidadPreguntas": 5
+}

@@ -60,16 +60,11 @@ function MathText({ text = "", onFormulaClick }) {
   if (!text) return null;
 
   // ✅ Función para sanitizar HTML (similar a RichTextEditor)
-  // NOTA: El Markdown ya se procesa antes de llamar a esta función, así que puede contener <strong>, <b>, etc.
   const sanitizeHtmlLite = (html) => {
     if (!html) return '';
-    // Crear un elemento temporal para sanitizar
     const div = document.createElement('div');
-    // Usar innerHTML para preservar las etiquetas HTML válidas que ya procesamos (como <strong>)
     div.innerHTML = html;
-    // Lista blanca de etiquetas permitidas
     const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
-    // Recorrer todos los nodos y eliminar etiquetas no permitidas
     const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
     const nodesToRemove = [];
     let node;
@@ -88,68 +83,74 @@ function MathText({ text = "", onFormulaClick }) {
     return div.innerHTML;
   };
 
-  // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
-  // Pero proteger las fórmulas LaTeX para no procesarlas
+  // ✅ Normalizar saltos de línea y espacios primero
+  let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // ✅ Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
+  processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
+
+  // Regex para detectar $...$ y $$...$$
+  const fullLatexRe = /\$\$([\s\S]+?)\$\$|\$([\s\S]+?)\$/g;
+
+  // Protegiendo LaTeX antes de procesar Markdown
   const latexPlaceholder = '___LATEX_PLACEHOLDER___';
   const latexMatches = [];
-  let processedText = text;
   let placeholderIndex = 0;
-  
-  // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
-  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+
+  processedText = processedText.replace(fullLatexRe, (match) => {
     const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
     latexMatches.push(match);
     placeholderIndex++;
     return placeholder;
   });
-  
+
   // Procesar Markdown: **texto** -> <strong>texto</strong>
   processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
-  
-  // Restaurar fórmulas LaTeX
+
+  // Restaurar LaTeX
   latexMatches.forEach((match, idx) => {
     processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
   });
 
-  // ✅ Usar regex simple y robusto: busca $...$ de forma no-greedy
-  // Esto funciona bien para la mayoría de casos, incluyendo fórmulas complejas
-  const re = /\$([^$]+?)\$/g;
   const parts = [];
   let lastIndex = 0;
   let m;
   let matchFound = false;
 
-  // Resetear el regex para evitar problemas con múltiples llamadas
-  re.lastIndex = 0;
+  fullLatexRe.lastIndex = 0;
 
-  while ((m = re.exec(processedText)) !== null) {
+  while ((m = fullLatexRe.exec(processedText)) !== null) {
     matchFound = true;
     if (m.index > lastIndex) {
       parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
     }
-    // Limpiar espacios en blanco al inicio y final de la fórmula
-    const formula = m[1].trim();
+
+    // m[1] es para $$...$$, m[2] es para $...$
+    const formula = (m[1] || m[2] || "").trim();
+    const isBlock = !!m[1];
+
     if (formula) {
-      parts.push({ 
-        type: 'math', 
+      parts.push({
+        type: 'math',
         content: formula,
         full: m[0],
         start: m.index,
-        end: m.index + m[0].length
+        end: m.index + m[0].length,
+        display: isBlock
       });
     }
     lastIndex = m.index + m[0].length;
   }
-  
+
   if (lastIndex < processedText.length) {
     parts.push({ type: 'text', content: processedText.slice(lastIndex) });
   }
 
-  // Si no se encontraron fórmulas, devolver el texto con HTML procesado (ya con Markdown convertido)
+  // Si no se encontraron fórmulas, devolver el texto con HTML procesado
   if (!matchFound || parts.length === 0) {
     return (
-      <span 
-        className="whitespace-pre-wrap"
+      <span
+        className="block w-full break-words overflow-x-auto whitespace-pre-wrap"
         dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
       />
     );
@@ -161,21 +162,21 @@ function MathText({ text = "", onFormulaClick }) {
     }
   };
 
-  // Renderizar las partes encontradas, procesando HTML en las partes de texto
+  // Renderizar las partes encontradas, con soporte para overflow
   return (
-    <span className="whitespace-pre-wrap">
+    <span className="block w-full break-words overflow-x-auto whitespace-pre-wrap">
       {parts.map((part, idx) =>
         part.type === 'math' ? (
           <span
             key={`math-${idx}`}
             onClick={() => onFormulaClick && handleFormulaClick(part.content, part.full, part.start, part.end)}
-            className={onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors inline-block" : "inline-block"}
+            className={`${onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors" : ""} ${part.display ? "block text-center my-2" : "inline-block align-middle"}`}
             title={onFormulaClick ? "Clic para editar esta fórmula" : ""}
           >
-            <InlineMath math={part.content} />
+            <InlineMath math={part.content} display={part.display} />
           </span>
         ) : (
-          <span 
+          <span
             key={`text-${idx}`}
             dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
           />
@@ -757,12 +758,12 @@ export default function EspanolFormBuilder() {
             points: q.points,
             answer: q.answer
           };
-          
+
           // ✅ Incluir imagen de la pregunta si existe
           if (q.image) {
             preguntaBase.image = q.image.preview || q.image.url || null;
           }
-          
+
           // ✅ Incluir opciones con sus imágenes
           if (q.type === 'multiple' && q.options) {
             preguntaBase.options = q.options.map(o => {
@@ -774,7 +775,7 @@ export default function EspanolFormBuilder() {
               return opcionBase;
             });
           }
-          
+
           return preguntaBase;
         })
       };
@@ -879,12 +880,12 @@ export default function EspanolFormBuilder() {
             points: q.points,
             answer: q.answer
           };
-          
+
           // ✅ Incluir imagen de la pregunta si existe
           if (q.image) {
             preguntaBase.image = q.image.preview || q.image.url || null;
           }
-          
+
           // ✅ Incluir opciones con sus imágenes
           if (q.type === 'multiple' && q.options) {
             preguntaBase.options = q.options.map(o => {
@@ -896,7 +897,7 @@ export default function EspanolFormBuilder() {
               return opcionBase;
             });
           }
-          
+
           return preguntaBase;
         })
       };
@@ -952,8 +953,9 @@ export default function EspanolFormBuilder() {
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
-                  onClick={() => {
-                    if (window.confirm('¿Estás seguro de que deseas cancelar? Se perderán los cambios no guardados.')) {
+                  onClick={async () => {
+                    const confirmed = await showConfirm('¿Estás seguro de que deseas cancelar? Se perderán los cambios no guardados.', 'Confirmar cancelación');
+                    if (confirmed) {
                       navigate('/asesor/quizt');
                     }
                   }}

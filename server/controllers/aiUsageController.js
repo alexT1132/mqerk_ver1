@@ -11,12 +11,13 @@ class AiUsageController {
     static async getUsage(req, res) {
         try {
             const { studentId, type } = req.params;
+            const userRole = req.user?.rol || req.user?.role; // Obtener el rol del usuario autenticado
 
             // Validar tipo
-            if (!['simulacion', 'quiz'].includes(type)) {
+            if (!['simulacion', 'quiz', 'tutor'].includes(type)) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Tipo inválido. Debe ser "simulacion" o "quiz"'
+                    message: 'Tipo inválido. Debe ser "simulacion", "quiz" o "tutor"'
                 });
             }
 
@@ -28,7 +29,7 @@ class AiUsageController {
                 });
             }
 
-            const usage = await AiUsageModel.getOrCreateUsageToday(studentId, type);
+            const usage = await AiUsageModel.getOrCreateUsageToday(studentId, type, userRole);
 
             res.json({
                 success: true,
@@ -53,10 +54,10 @@ class AiUsageController {
             const { studentId, type } = req.params;
 
             // Validar tipo
-            if (!['simulacion', 'quiz'].includes(type)) {
+            if (!['simulacion', 'quiz', 'tutor'].includes(type)) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Tipo inválido. Debe ser "simulacion" o "quiz"'
+                    message: 'Tipo inválido. Debe ser "simulacion", "quiz" o "tutor"'
                 });
             }
 

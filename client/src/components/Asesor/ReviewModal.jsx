@@ -33,66 +33,84 @@ function MathText({ text = "" }) {
     return div.innerHTML;
   };
 
+  // ✅ Normalizar saltos de línea y espacios primero
   let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // ✅ Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
+  // Esto debe hacerse ANTES de proteger las fórmulas
   processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
-  
+
+  // Regex para detectar $...$ y $$...$$
+  const fullLatexRe = /\$\$([\s\S]+?)\$\$|\$([\s\S]+?)\$/g;
+
+  // Protegiendo LaTeX antes de procesar Markdown
   const latexPlaceholder = '___LATEX_PLACEHOLDER___';
   const latexMatches = [];
   let placeholderIndex = 0;
-  
-  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+
+  processedText = processedText.replace(fullLatexRe, (match) => {
     const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
     latexMatches.push(match);
     placeholderIndex++;
     return placeholder;
   });
-  
+
+  // Procesar Markdown: **texto** -> <strong>texto</strong>
   processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
-  
+
+  // Restaurar LaTeX
   latexMatches.forEach((match, idx) => {
     processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
   });
 
-  const re = /\$([^$]+?)\$/g;
   const parts = [];
   let lastIndex = 0;
   let m;
   let matchFound = false;
 
-  re.lastIndex = 0;
+  fullLatexRe.lastIndex = 0;
 
-  while ((m = re.exec(processedText)) !== null) {
+  while ((m = fullLatexRe.exec(processedText)) !== null) {
     matchFound = true;
     if (m.index > lastIndex) {
       parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
     }
-    const formula = m[1].trim();
+
+    // m[1] es para $$...$$, m[2] es para $...$
+    const formula = (m[1] || m[2] || "").trim();
+    const isBlock = !!m[1];
+
     if (formula) {
-      parts.push({ type: 'math', content: formula });
+      parts.push({ type: 'math', content: formula, display: isBlock });
     }
     lastIndex = m.index + m[0].length;
   }
-  
+
   if (lastIndex < processedText.length) {
     parts.push({ type: 'text', content: processedText.slice(lastIndex) });
   }
 
   if (!matchFound || parts.length === 0) {
     return (
-      <span dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }} />
+      <span
+        className="block w-full break-words overflow-x-auto whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
+      />
     );
   }
 
   return (
-    <span>
-      {parts.map((part, idx) => {
-        if (part.type === 'math') {
-          return <InlineMath key={idx} formula={part.content} />;
-        }
-        return (
-          <span key={idx} dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }} />
-        );
-      })}
+    <span className="block w-full break-words overflow-x-auto whitespace-pre-wrap">
+      {parts.map((part, idx) =>
+        part.type === 'math' ? (
+          <InlineMath key={`math-${idx}`} math={part.content} display={part.display} />
+        ) : (
+          <span
+            key={`text-${idx}`}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
+          />
+        )
+      )}
     </span>
   );
 }
@@ -107,13 +125,13 @@ function MathText({ text = "" }) {
  * @param {Object} props.estudiante - Objeto con datos del estudiante { id, nombre, totalIntentos }
  * @param {string} props.titulo - Título del quiz/simulación
  */
-export default function ReviewModal({ 
-  open, 
-  onClose, 
-  tipo, 
-  idEvaluacion, 
-  estudiante, 
-  titulo 
+export default function ReviewModal({
+  open,
+  onClose,
+  tipo,
+  idEvaluacion,
+  estudiante,
+  titulo
 }) {
   const [loading, setLoading] = useState(false);
   const [reviewData, setReviewData] = useState(null);
@@ -128,7 +146,7 @@ export default function ReviewModal({
 
   const loadIntentoData = async (intentoNum) => {
     if (!idEvaluacion || !estudiante?.id) return;
-    
+
     setLoading(true);
     try {
       const reviewFn = tipo === 'quiz' ? getQuizIntentoReview : getSimulacionIntentoReview;
@@ -156,9 +174,9 @@ export default function ReviewModal({
   if (!open) return null;
 
   const preguntas = reviewData?.preguntas || [];
-  const preguntasOpcionMultiple = preguntas.filter(p => 
-    p.tipo === 'opcion_multiple' || 
-    p.tipo === 'verdadero_falso' || 
+  const preguntasOpcionMultiple = preguntas.filter(p =>
+    p.tipo === 'opcion_multiple' ||
+    p.tipo === 'verdadero_falso' ||
     p.tipo === 'multi_respuesta'
   );
   const respuestasCortas = preguntas.filter(p => p.tipo === 'respuesta_corta');
@@ -199,8 +217,8 @@ export default function ReviewModal({
               </div>
             )}
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="ml-2 sm:ml-4 rounded-lg sm:rounded-xl p-1.5 sm:p-2 text-slate-500 hover:bg-white/80 hover:text-slate-700 transition-colors flex-shrink-0"
             aria-label="Cerrar"
           >
@@ -228,7 +246,7 @@ export default function ReviewModal({
                   totalIntentos={estudiante?.totalIntentos}
                 />
               )}
-              
+
               {/* Preguntas de opción múltiple */}
               {preguntasOpcionMultiple.length > 0 && (
                 <div className="space-y-3 sm:space-y-4">
@@ -240,13 +258,12 @@ export default function ReviewModal({
                     const sel = new Set(p.seleccionadas || []);
                     const corr = !!p.correcta;
                     return (
-                      <div 
-                        key={p.id || idx} 
-                        className={`rounded-lg sm:rounded-xl border-2 p-3 sm:p-4 shadow-sm transition-all hover:shadow-md ${
-                          corr 
-                            ? 'bg-gradient-to-br from-emerald-50/50 to-green-50/30 border-emerald-200' 
+                      <div
+                        key={p.id || idx}
+                        className={`rounded-lg sm:rounded-xl border-2 p-3 sm:p-4 shadow-sm transition-all hover:shadow-md ${corr
+                            ? 'bg-gradient-to-br from-emerald-50/50 to-green-50/30 border-emerald-200'
                             : 'bg-gradient-to-br from-rose-50/50 to-red-50/30 border-rose-200'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2 sm:mb-3">
                           <div className="flex-1 min-w-0">
@@ -254,11 +271,10 @@ export default function ReviewModal({
                               <span className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm flex-shrink-0">
                                 {p.orden || (idx + 1)}
                               </span>
-                              <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold border-2 ${
-                                corr 
-                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+                              <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold border-2 ${corr
+                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                                   : 'bg-rose-100 text-rose-800 border-rose-300'
-                              }`}>
+                                }`}>
                                 {corr ? '✓ Correcta' : '✗ Incorrecta'}
                               </span>
                             </div>
@@ -271,12 +287,12 @@ export default function ReviewModal({
                           {(p.opciones || []).map((o) => {
                             const isSel = sel.has(o.id);
                             const isOk = o.es_correcta === 1;
-                            const cl = isSel && isOk 
-                              ? 'bg-emerald-100 border-2 border-emerald-400 shadow-sm' 
-                              : isSel && !isOk 
-                                ? 'bg-rose-100 border-2 border-rose-400 shadow-sm' 
-                                : !isSel && isOk 
-                                  ? 'bg-green-50 border-2 border-green-300' 
+                            const cl = isSel && isOk
+                              ? 'bg-emerald-100 border-2 border-emerald-400 shadow-sm'
+                              : isSel && !isOk
+                                ? 'bg-rose-100 border-2 border-rose-400 shadow-sm'
+                                : !isSel && isOk
+                                  ? 'bg-green-50 border-2 border-green-300'
                                   : 'bg-slate-50 border-2 border-slate-200';
                             return (
                               <li key={o.id} className={`rounded-md sm:rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between transition-all ${cl}`}>
@@ -285,9 +301,8 @@ export default function ReviewModal({
                                 </span>
                                 <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-3 flex-shrink-0">
                                   {isSel && (
-                                    <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded ${
-                                      isOk ? 'bg-emerald-200 text-emerald-800' : 'bg-rose-200 text-rose-800'
-                                    }`}>
+                                    <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded ${isOk ? 'bg-emerald-200 text-emerald-800' : 'bg-rose-200 text-rose-800'
+                                      }`}>
                                       Seleccionada
                                     </span>
                                   )}
@@ -317,37 +332,37 @@ export default function ReviewModal({
                       const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
                       return requiereRevision;
                     }).length > 0 && (
-                      <span className="px-2 py-1 text-[10px] sm:text-xs bg-yellow-100 text-yellow-700 rounded-full">
-                        {respuestasCortas.filter(p => {
-                          const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
-                          return requiereRevision;
-                        }).length} requieren revisión
-                      </span>
-                    )}
+                        <span className="px-2 py-1 text-[10px] sm:text-xs bg-yellow-100 text-yellow-700 rounded-full">
+                          {respuestasCortas.filter(p => {
+                            const requiereRevision = p.calificacion_confianza < 70 || p.calificacion_status === 'manual_review';
+                            return requiereRevision;
+                          }).length} requieren revisión
+                        </span>
+                      )}
                   </h4>
-                  
+
                   <div className="space-y-3 sm:space-y-4">
                     {respuestasCortas.map((pregunta) => {
                       const respuestaEsperada = pregunta.opciones?.find(o => o.es_correcta === 1)?.texto;
-                      
+
                       if (!respuestaEsperada) return null;
-                      
+
                       // Para simulaciones: correcta se determina desde calificacion_confianza cuando es manual
                       const correctaValue = tipo === 'simulacion' && pregunta.calificacion_metodo === 'manual' && pregunta.calificacion_confianza != null
                         ? (pregunta.calificacion_confianza === 100 ? 1 : 0)
                         : (pregunta.correcta ? 1 : 0);
-                      
+
                       if (!pregunta.id_respuesta) {
                         return (
                           <div key={pregunta.id} className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                             <p className="text-sm text-yellow-800">
-                              ⚠️ Esta respuesta aún no está disponible para revisión manual. 
+                              ⚠️ Esta respuesta aún no está disponible para revisión manual.
                               La respuesta se está procesando automáticamente.
                             </p>
                           </div>
                         );
                       }
-                      
+
                       const respuestaObj = {
                         id: pregunta.id_respuesta,
                         valor_texto: pregunta.valor_texto || null,
@@ -359,7 +374,7 @@ export default function ReviewModal({
                         revisada_por: pregunta.revisada_por || null,
                         notas_revision: pregunta.notas_revision || null
                       };
-                      
+
                       return (
                         <ManualReviewShortAnswer
                           key={pregunta.id}
@@ -396,8 +411,8 @@ export default function ReviewModal({
               </span>
             )}
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-violet-700 transition-all hover:shadow-lg"
           >
             Cerrar

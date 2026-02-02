@@ -1,44 +1,101 @@
-// PerfilEstudiante.jsx - Perfil completo del estudiante para asesor
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getEstudianteByIdRequest } from "../../api/estudiantes.js";
-import { buildStaticUrl } from "../../utils/url.js";
 import {
   Mail, MapPin, Phone, CalendarDays, User2, GraduationCap, School, BookOpen,
-  Users, FileText, ArrowLeft, Award, Loader2, AlertCircle
+  Users, FileText, ArrowLeft, Award, Loader2, AlertCircle, ChevronRight,
+  UserCircle, HeartPulse, Sparkles, BookMarked, Fingerprint
 } from "lucide-react";
+import { getEstudianteByIdRequest } from "../../api/estudiantes.js";
+import { buildStaticUrl } from "../../utils/url.js";
 
-const SectionCard = ({ title, children }) => (
-  <section className="rounded-2xl border border-slate-200 bg-white shadow-md hover:shadow-lg transition-shadow">
-    <div className="px-5 sm:px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-      <div className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-1.5 shadow-sm">
-        <span className="text-sm font-bold tracking-wide text-white">
-          {title.toUpperCase()}
-        </span>
+/* Components Reutilizables Premium */
+
+const ProfileAvatar = ({ src, name, className = "" }) => {
+  const [failed, setFailed] = useState(false);
+  const initials = (name || "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0].toUpperCase())
+    .join("");
+
+  const sharedClasses = `size-24 sm:size-28 lg:size-32 rounded-3xl object-cover shadow-2xl ring-4 ring-white group-hover:ring-violet-100 transition-all duration-500 ${className}`;
+
+  if (!src || failed) {
+    return (
+      <div
+        className={`${sharedClasses} grid place-items-center bg-gradient-to-br from-violet-500 via-indigo-600 to-purple-600 text-white text-3xl font-black`}
+      >
+        {initials || <User2 className="size-12" />}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative group">
+      <img
+        src={src}
+        alt={name}
+        className={sharedClasses}
+        onError={() => setFailed(true)}
+      />
+      <div className="absolute -bottom-2 -right-2 size-7 sm:size-8 rounded-full bg-emerald-500 border-4 border-white shadow-lg flex items-center justify-center" title="Perfil Activo">
+        <div className="size-2 sm:size-2.5 rounded-full bg-white animate-pulse" />
       </div>
     </div>
-    <div className="px-5 sm:px-6 py-5">{children}</div>
+  );
+};
+
+const SectionCard = ({ title, icon: Icon, children, gradient = "from-violet-600 to-indigo-600" }) => (
+  <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 rounded-[2rem] border border-slate-200/60 bg-white shadow-xl overflow-hidden ring-1 ring-slate-100">
+    <div className="px-5 sm:px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+      <div className={`p-2 rounded-xl bg-gradient-to-br ${gradient} text-white shadow-md`}>
+        {Icon && <Icon className="size-4 sm:size-5" />}
+      </div>
+      <h3 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+        {title}
+      </h3>
+    </div>
+    <div className="px-5 sm:px-6 py-5 sm:py-6 bg-white/50">{children}</div>
   </section>
 );
 
-const Row = ({ icon: Icon, label, value }) => (
-  <li className="flex items-start gap-3 py-2.5 border-b border-slate-100 last:border-0">
-    <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
-      <Icon className="h-4 w-4" />
-    </span>
+const InfoRow = ({ icon: Icon, label, value, colorClass = "text-indigo-600 bg-indigo-50" }) => (
+  <li className="flex items-center gap-3 sm:gap-4 py-3 sm:py-4 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors px-2 rounded-xl">
+    <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl ${colorClass} shrink-0 shadow-sm`}>
+      <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+    </div>
     <div className="flex-1 min-w-0">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">{label}</p>
-      <p className="text-[15px] font-medium text-slate-900 leading-relaxed">{value || <span className="text-slate-400 italic">No especificado</span>}</p>
+      <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">{label}</p>
+      <p className="text-sm sm:text-base font-bold text-slate-800 truncate">{value || <span className="text-slate-300 font-medium italic text-xs">No especificado</span>}</p>
     </div>
   </li>
 );
 
+const TabButton = ({ active, onClick, icon: Icon, label }) => (
+  <button
+    onClick={onClick}
+    className={`
+      flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-300 whitespace-nowrap
+      ${active
+        ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-200 -translate-y-0.5"
+        : "bg-white text-slate-500 hover:text-slate-700 border border-slate-200/60 hover:border-slate-300 hover:bg-slate-50"
+      }
+    `}
+  >
+    <Icon className={`size-3.5 sm:size-4.5 ${active ? "animate-pulse" : ""}`} />
+    {label}
+  </button>
+);
+
+/* Main Component */
 export default function PerfilEstudiante() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [estudiante, setEstudiante] = useState(null);
+  const [activeTab, setActiveTab] = useState("personal"); // personal | academico | curso
 
   useEffect(() => {
     let alive = true;
@@ -61,131 +118,158 @@ export default function PerfilEstudiante() {
     return () => { alive = false; };
   }, [id]);
 
+  const nombreCompleto = useMemo(() =>
+    `${estudiante?.nombre || ""} ${estudiante?.apellidos || ""}`.trim(),
+    [estudiante]
+  );
+
+  const fotoUrl = useMemo(() =>
+    estudiante?.foto ? buildStaticUrl(estudiante.foto) : null,
+    [estudiante]
+  );
+
+  const edad = useMemo(() => {
+    if (!estudiante?.fecha_nacimiento) return "";
+    try {
+      const dob = new Date(estudiante.fecha_nacimiento);
+      if (isNaN(dob)) return "";
+      const diff = Date.now() - dob.getTime();
+      return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+    } catch { return ""; }
+  }, [estudiante]);
+
   if (loading) {
     return (
-      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-            <p className="text-sm text-slate-600">Cargando perfil...</p>
-          </div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="relative">
+          <Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
+          <div className="absolute inset-0 h-12 w-12 rounded-full border-t-2 border-violet-400 animate-pulse" />
         </div>
+        <p className="text-base font-bold text-slate-500 animate-pulse">Sincronizando perfil...</p>
       </div>
     );
   }
 
   if (error || !estudiante) {
     return (
-      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-8">
-        <div className="rounded-xl border-2 border-rose-200 bg-rose-50 p-4 sm:p-6 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-rose-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-sm font-semibold text-rose-900 mb-1">Error</h3>
-            <p className="text-sm text-rose-700">{error || "Estudiante no encontrado"}</p>
-            <button
-              onClick={() => navigate(-1)}
-              className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Volver
-            </button>
+      <div className="w-full max-w-2xl mx-auto px-4 py-12">
+        <div className="rounded-[2.5rem] border-2 border-rose-100 bg-rose-50/50 p-8 text-center shadow-xl">
+          <div className="mx-auto size-20 rounded-full bg-rose-100 flex items-center justify-center mb-6 text-rose-600">
+            <AlertCircle className="size-10" />
           </div>
+          <h3 className="text-2xl font-black text-rose-900 mb-2">Oops! Algo salió mal</h3>
+          <p className="text-rose-700 font-medium mb-8">{error || "No pudimos encontrar al estudiante solicitado."}</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 rounded-2xl bg-white border-2 border-rose-200 px-8 py-3.5 text-sm font-bold text-rose-700 hover:bg-rose-100 shadow-lg hover:shadow-xl transition-all"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Regresar
+          </button>
         </div>
       </div>
     );
   }
 
-  const nombreCompleto = `${estudiante.nombre || ""} ${estudiante.apellidos || ""}`.trim();
-  const fotoUrl = estudiante.foto ? buildStaticUrl(estudiante.foto) : null;
-
-  // Calcular edad
-  let edad = "";
-  try {
-    if (estudiante.fecha_nacimiento) {
-      const dob = new Date(estudiante.fecha_nacimiento);
-      if (!isNaN(dob)) {
-        const diff = Date.now() - dob.getTime();
-        edad = String(Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000)));
-      }
-    }
-  } catch { }
-
   return (
-    <div className="w-full">
-      {/* Header con foto y nombre - Sin fondo morado, elementos más arriba */}
-      <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 pt-0 pb-4 sm:pb-5">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-4 sm:py-8 pb-32">
+      {/* Botón Volver - Adaptativo */}
+      <div className="mb-4 sm:mb-6 flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="mb-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+          className="group inline-flex items-center gap-2 rounded-2xl border-2 border-slate-100 bg-white px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-bold text-slate-600 shadow-sm hover:shadow-lg hover:bg-slate-50 hover:border-slate-200 transition-all duration-300"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Volver
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+          <span className="hidden sm:inline">Volver</span>
         </button>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-1">
-          <div className="flex-shrink-0">
-            {fotoUrl ? (
-              <img
-                src={fotoUrl}
-                alt={nombreCompleto}
-                className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl object-cover ring-2 ring-slate-200 shadow-md"
-              />
-            ) : (
-              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xl sm:text-2xl font-bold ring-2 ring-slate-200 shadow-md">
-                {nombreCompleto.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold mb-2 text-slate-900 truncate">{nombreCompleto}</h1>
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {estudiante.folio_formateado && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-                  <FileText className="h-3 w-3" />
-                  {estudiante.folio_formateado}
-                </span>
-              )}
-              {estudiante.grupo && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-                  <Users className="h-3 w-3" />
-                  {estudiante.grupo}
-                </span>
-              )}
-              {estudiante.curso && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-                  <GraduationCap className="h-3 w-3" />
-                  {estudiante.curso}
-                </span>
-              )}
-              {estudiante.estatus && (
-                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${estudiante.estatus === 'Activo'
-                    ? 'bg-emerald-100 text-emerald-700 ring-emerald-200'
-                    : 'bg-rose-100 text-rose-700 ring-rose-200'
-                  }`}>
-                  {estudiante.estatus}
-                </span>
-              )}
-            </div>
-          </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl bg-amber-50 border border-amber-100 text-amber-700">
+          <Sparkles className="size-3.5 sm:size-4 animate-star" />
+          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Vista de Asesor</span>
         </div>
       </div>
 
-      {/* Grid de información */}
-      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-4 sm:py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Columna izquierda - Información personal */}
-          <div className="lg:col-span-2 space-y-6">
-            <SectionCard title="Información Personal">
+      {/* Header Profile - Optimizado para tablets/iPad */}
+      <header className="relative mb-8 sm:mb-10 overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] bg-white border border-slate-200/60 shadow-2xl p-6 md:p-8 lg:p-10 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 lg:gap-12 transition-all hover:shadow-indigo-100/50">
+        <div className="absolute -top-20 -right-20 size-64 rounded-full bg-violet-100/40 blur-3xl -z-0" />
+        <div className="absolute -bottom-20 -left-20 size-64 rounded-full bg-indigo-100/40 blur-3xl -z-0" />
+
+        <div className="relative z-10 shrink-0">
+          <ProfileAvatar src={fotoUrl} name={nombreCompleto} />
+        </div>
+
+        <div className="relative z-10 flex-1 text-center md:text-left min-w-0 flex flex-col justify-center h-full">
+          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-4 group inline-block">
+            {nombreCompleto}
+            <div className="hidden md:block h-1.5 w-0 group-hover:w-full bg-gradient-to-r from-violet-600 to-indigo-600 rounded-full transition-all duration-500 mt-1" />
+          </h1>
+
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 mt-2">
+            {estudiante.folio_formateado && (
+              <span className="inline-flex items-center gap-2 rounded-xl sm:rounded-2xl bg-slate-100/80 backdrop-blur-sm border border-slate-200 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-slate-700 shadow-sm">
+                <Fingerprint className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-400" />
+                {estudiante.folio_formateado}
+              </span>
+            )}
+            {estudiante.grupo && (
+              <span className="inline-flex items-center gap-2 rounded-xl sm:rounded-2xl bg-indigo-50 border border-indigo-100 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-indigo-700 shadow-sm">
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {estudiante.grupo}
+              </span>
+            )}
+            {estudiante.curso && (
+              <span className="inline-flex items-center gap-2 rounded-xl sm:rounded-2xl bg-violet-50 border border-violet-100 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-violet-700 shadow-sm">
+                <GraduationCap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {estudiante.curso}
+              </span>
+            )}
+            <span className={`inline-flex items-center gap-2 rounded-xl sm:rounded-2xl px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold border shadow-sm ${estudiante.estatus === 'Activo'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+              : 'bg-rose-50 text-rose-700 border-rose-100'
+              }`}>
+              <div className={`size-1.5 sm:size-2 rounded-full ${estudiante.estatus === 'Activo' ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`} />
+              {estudiante.estatus}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      {/* Tabs Switcher - Mejorado para iPad (flex-row en lugar de wrap desordenado) */}
+      <nav className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3 mb-8 bg-slate-100/50 p-1.5 sm:p-2 rounded-[1.5rem] sm:rounded-3xl border border-slate-200/60 shadow-inner w-full sm:w-fit overflow-x-auto no-scrollbar">
+        <TabButton
+          active={activeTab === "personal"}
+          onClick={() => setActiveTab("personal")}
+          icon={UserCircle}
+          label="Personal"
+        />
+        <TabButton
+          active={activeTab === "academico"}
+          onClick={() => setActiveTab("academico")}
+          icon={BookMarked}
+          label="Estudios"
+        />
+        <TabButton
+          active={activeTab === "curso"}
+          onClick={() => setActiveTab("curso")}
+          icon={School}
+          label="Curso"
+        />
+      </nav>
+
+      {/* Tab Content - 2 columnas desde iPad (md) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 items-start">
+        {activeTab === "personal" && (
+          <>
+            <SectionCard title="Datos de Contacto" icon={User2}>
               <ul className="space-y-1">
-                <Row icon={User2} label="Nombre completo" value={nombreCompleto} />
-                <Row icon={Mail} label="Correo electrónico" value={estudiante.email} />
-                <Row icon={Phone} label="Teléfono" value={estudiante.telefono} />
-                {edad && <Row icon={CalendarDays} label="Edad" value={`${edad} años`} />}
+                <InfoRow icon={User2} label="Nombre" value={nombreCompleto} />
+                <InfoRow icon={Mail} label="Email" value={estudiante.email} colorClass="text-rose-600 bg-rose-50" />
+                <InfoRow icon={Phone} label="Móvil" value={estudiante.telefono} colorClass="text-sky-600 bg-sky-50" />
+                {edad && <InfoRow icon={CalendarDays} label="Edad" value={`${edad} años`} colorClass="text-amber-600 bg-amber-50" />}
                 {estudiante.fecha_nacimiento && (
-                  <Row
+                  <InfoRow
                     icon={CalendarDays}
-                    label="Fecha de nacimiento"
+                    label="Fecha de Nacimiento"
                     value={new Date(estudiante.fecha_nacimiento).toLocaleDateString('es-MX', {
                       year: 'numeric',
                       month: 'long',
@@ -193,98 +277,99 @@ export default function PerfilEstudiante() {
                     })}
                   />
                 )}
-                {estudiante.comunidad2 || estudiante.comunidad1 ? (
-                  <Row
-                    icon={MapPin}
-                    label="Ubicación"
-                    value={estudiante.comunidad2 || estudiante.comunidad1}
-                  />
-                ) : null}
               </ul>
             </SectionCard>
 
-            {/* Información del tutor */}
-            {(estudiante.nombre_tutor || estudiante.tel_tutor) && (
-              <SectionCard title="Información del Tutor">
+            <SectionCard title="Geolocalización" icon={MapPin} gradient="from-emerald-600 to-teal-600">
+              <ul className="space-y-1">
+                <InfoRow
+                  icon={MapPin}
+                  label="Colonia / Comunidad"
+                  value={estudiante.comunidad1 || estudiante.comunidad2}
+                  colorClass="text-emerald-600 bg-emerald-50"
+                />
+                <InfoRow
+                  icon={School}
+                  label="Municipio / Zona"
+                  value={estudiante.municipio}
+                />
+              </ul>
+            </SectionCard>
+          </>
+        )}
+
+        {activeTab === "academico" && (
+          <>
+            <SectionCard title="Trayectoria" icon={GraduationCap} gradient="from-indigo-600 to-blue-600">
+              <ul className="space-y-1">
+                <InfoRow icon={School} label="Estatus Académico" value={estudiante.academico1} />
+                <InfoRow icon={BookOpen} label="Institución" value={estudiante.academico2} colorClass="text-violet-600 bg-violet-50" />
+                <InfoRow icon={ChevronRight} label="Semestre" value={estudiante.semestre} />
+                <InfoRow icon={Award} label="Carrera de Interés" value={estudiante.orientacion} colorClass="text-amber-600 bg-amber-50" />
+                <InfoRow
+                  icon={School}
+                  label="Universidades Meta"
+                  value={[estudiante.universidades1, estudiante.universidades2].filter(Boolean).join(", ")}
+                  colorClass="text-cyan-600 bg-cyan-50"
+                />
+              </ul>
+            </SectionCard>
+
+            <div className="space-y-6 sm:space-y-10">
+              <SectionCard title="Protección Civil / Tutor" icon={Users} gradient="from-purple-600 to-fuchsia-600">
                 <ul className="space-y-1">
-                  {estudiante.nombre_tutor && (
-                    <Row icon={User2} label="Nombre del tutor" value={estudiante.nombre_tutor} />
-                  )}
-                  {estudiante.tel_tutor && (
-                    <Row icon={Phone} label="Teléfono del tutor" value={estudiante.tel_tutor} />
-                  )}
+                  <InfoRow icon={User2} label="Tutor Legal" value={estudiante.nombre_tutor} />
+                  <InfoRow icon={Phone} label="Emergencias" value={estudiante.tel_tutor} colorClass="text-sky-600 bg-sky-50" />
                 </ul>
               </SectionCard>
-            )}
 
-            {/* Información académica */}
-            <SectionCard title="Información Académica">
-              <ul className="space-y-1">
-                {estudiante.academico1 && (
-                  <Row icon={School} label="Nivel académico" value={estudiante.academico1} />
-                )}
-                {estudiante.academico2 && (
-                  <Row icon={BookOpen} label="Bachillerato" value={estudiante.academico2} />
-                )}
-                {estudiante.semestre && (
-                  <Row icon={GraduationCap} label="Semestre" value={estudiante.semestre} />
-                )}
-                {estudiante.orientacion && (
-                  <Row icon={Award} label="Orientación/Licenciatura" value={estudiante.orientacion} />
-                )}
-                {(estudiante.universidades1 || estudiante.universidades2) && (
-                  <Row
-                    icon={School}
-                    label="Universidades"
-                    value={[estudiante.universidades1, estudiante.universidades2].filter(Boolean).join(", ")}
-                  />
-                )}
-              </ul>
-            </SectionCard>
-          </div>
-
-          {/* Columna derecha - Información del curso */}
-          <div className="space-y-6">
-            <SectionCard title="Información del Curso">
-              <ul className="space-y-1">
-                {estudiante.curso && (
-                  <Row icon={GraduationCap} label="Curso" value={estudiante.curso} />
-                )}
-                {estudiante.grupo && (
-                  <Row icon={Users} label="Grupo" value={estudiante.grupo} />
-                )}
-                {estudiante.turno && (
-                  <Row icon={CalendarDays} label="Turno" value={estudiante.turno} />
-                )}
-                {estudiante.plan && (
-                  <Row icon={Award} label="Plan" value={estudiante.plan} />
-                )}
-                {estudiante.anio && (
-                  <Row icon={CalendarDays} label="Año" value={estudiante.anio} />
-                )}
-                {estudiante.asesor && (
-                  <Row icon={User2} label="Asesor" value={estudiante.asesor} />
-                )}
-              </ul>
-            </SectionCard>
-
-            {/* Información de salud (si existe) */}
-            {(estudiante.alergia || estudiante.discapacidad1) && (
-              <SectionCard title="Información de Salud">
+              <SectionCard title="Salud y Atención" icon={HeartPulse} gradient="from-rose-500 to-pink-600">
                 <ul className="space-y-1">
-                  {estudiante.alergia && (
-                    <Row icon={AlertCircle} label="Alergias" value={estudiante.alergia} />
-                  )}
-                  {estudiante.discapacidad1 && (
-                    <Row icon={AlertCircle} label="Discapacidad/Trastorno" value={estudiante.discapacidad1} />
-                  )}
+                  <InfoRow icon={AlertCircle} label="Alergias" value={estudiante.alergia} colorClass="text-rose-600 bg-rose-50" />
+                  <InfoRow icon={AlertCircle} label="Necesidades Esp." value={estudiante.discapacidad1} colorClass="text-orange-600 bg-orange-50" />
                 </ul>
               </SectionCard>
-            )}
-          </div>
-        </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === "curso" && (
+          <>
+            <SectionCard title="Configuración" icon={Users} gradient="from-cyan-600 to-blue-600">
+              <ul className="space-y-1">
+                <InfoRow icon={GraduationCap} label="Curso Actual" value={estudiante.curso} colorClass="text-violet-600 bg-violet-50" />
+                <InfoRow icon={Users} label="ID de Grupo" value={estudiante.grupo} colorClass="text-indigo-600 bg-indigo-50" />
+                <InfoRow icon={CalendarDays} label="Turno" value={estudiante.turno} colorClass="text-amber-600 bg-amber-50" />
+              </ul>
+            </SectionCard>
+
+            <SectionCard title="Asignación y Plan" icon={BookMarked} gradient="from-slate-700 to-slate-900">
+              <ul className="space-y-1">
+                <InfoRow icon={Award} label="Esquema Educativo" value={estudiante.plan} />
+                <InfoRow icon={CalendarDays} label="Periodo Ciclo" value={estudiante.anio} />
+                <InfoRow icon={User2} label="Asesor Responsable" value={estudiante.asesor} colorClass="text-emerald-600 bg-emerald-50" />
+              </ul>
+            </SectionCard>
+          </>
+        )}
       </div>
+
+      <style>{`
+        @keyframes star {
+           0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+           50% { transform: scale(1.2) rotate(180deg); opacity: 0.7; }
+        }
+        .animate-star {
+           animation: star 3s ease-in-out infinite;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }
-

@@ -62,16 +62,16 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
   // MEJORA: Acepta un overrideQuery para evitar hacks con setTimeout
   const handleGenerate = async (overrideQuery = null) => {
     const textToProcess = typeof overrideQuery === 'string' ? overrideQuery : query;
-    
+
     if (!textToProcess.trim()) return;
 
     // Si se pasa un override, aseguramos que el input se actualice visualmente
     if (typeof overrideQuery === 'string') {
-        setQuery(overrideQuery);
+      setQuery(overrideQuery);
     }
 
     const formula = await generateFormulaAI(textToProcess, cooldownMs);
-    
+
     if (formula) {
       // Agregar al historial (máximo 5)
       setHistory(prev => {
@@ -175,22 +175,22 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
 
   return (
     <>
-      {/* Modal compacta personalizada */}
-      <div className="mqerk-ai-formula-overlay fixed inset-0 z-[60] flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-24 pb-6">
-        
-        {/* Contenedor principal */}
-        <div className="mqerk-ai-formula-dialog w-full max-w-lg rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 border-2 border-violet-200/50 
-                        max-h-[85vh] h-auto flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-          
+      {/* Overlay con centrado vertical forzado para monitores 1080p */}
+      <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-19 pb-6">
+
+        {/* Contenedor principal  */}
+        <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 border-2 border-violet-200/50 
+                        max-h-[480px] h-auto flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+
           {/* Header */}
-          <div className="mqerk-ai-formula-header flex items-center justify-between border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-4 sm:p-5 flex-shrink-0">
+          <div className="flex items-center justify-between border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-4 sm:p-5 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/50">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
               </div>
-              <h3 className="mqerk-ai-formula-title text-lg sm:text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">
+              <h3 className="text-lg sm:text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">
                 Asistente de Fórmulas
               </h3>
             </div>
@@ -205,10 +205,10 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
             </button>
           </div>
 
-          {/* Contenido Scrollable */}
-          <div className="mqerk-ai-formula-content mqerk-hide-scrollbar overflow-y-auto flex-1 min-h-0 p-4 bg-gradient-to-b from-white to-slate-50/30">
-            <div className="mqerk-ai-formula-stack space-y-5">
-              
+          {/* Contenido Scrollable con ocultamiento de barra nativo */}
+          <div className="overflow-y-auto flex-1 min-h-0 p-4 bg-gradient-to-b from-white to-slate-50/30 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+            <div className="space-y-5">
+
               {/* Input Area */}
               <div>
                 <label className="block text-sm font-extrabold text-violet-700 mb-2 px-1">
@@ -223,17 +223,17 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
                     }}
                     onKeyPress={handleKeyPress}
                     placeholder="Ej: Fórmula cuadrática, Teorema de Pitágoras, Integral de x..."
-                    className="mqerk-ai-formula-textarea w-full rounded-xl border-2 border-slate-200 px-4 py-3 pr-28 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 resize-none hover:border-violet-300 bg-slate-50 focus:bg-white h-20 sm:h-24 shadow-inner"
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-3 pr-28 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 resize-none hover:border-violet-300 bg-slate-50 focus:bg-white h-16 sm:h-20 md:h-24 shadow-inner"
                     style={{ whiteSpace: 'pre-wrap' }}
                     disabled={loading}
                     autoFocus
                   />
-                  
+
                   {/* Botón Flotante Generar dentro del Textarea */}
                   <button
                     onClick={() => handleGenerate()}
                     disabled={loading || !query.trim() || isCooldownActive}
-                    className="mqerk-ai-formula-generate absolute right-2 bottom-2 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 py-2 text-xs font-bold text-white hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-violet-300/50 transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2 ring-2 ring-violet-200/50 z-10"
+                    className="absolute right-2 bottom-2 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 py-2 text-xs font-bold text-white hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-violet-300/50 transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2 ring-2 ring-violet-200/50 z-10"
                   >
                     {loading ? (
                       <>
@@ -261,19 +261,17 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
 
               {/* Mensajes de Error / Cooldown */}
               {error && (
-                <div className={`rounded-2xl border-2 p-4 shadow-md animate-in slide-in-from-top-2 ${
-                  error.includes('espera') || error.includes('límite') || error.includes('503')
+                <div className={`rounded-2xl border-2 p-4 shadow-md animate-in slide-in-from-top-2 ${error.includes('espera') || error.includes('límite') || error.includes('503')
                   ? 'border-amber-300 bg-amber-50 ring-amber-200/50'
                   : 'border-rose-300 bg-rose-50 ring-rose-200/50'
-                }`}>
+                  }`}>
                   <div className="flex items-start gap-3">
                     <span className="text-xl">
                       {(error.includes('espera') || error.includes('límite')) ? '⏳' : '⚠️'}
                     </span>
                     <div>
-                      <p className={`font-bold text-sm ${
-                        error.includes('espera') ? 'text-amber-800' : 'text-rose-700'
-                      }`}>{error}</p>
+                      <p className={`font-bold text-sm ${error.includes('espera') ? 'text-amber-800' : 'text-rose-700'
+                        }`}>{error}</p>
                     </div>
                   </div>
                 </div>
@@ -282,25 +280,25 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
               {/* RESULTADO GENERADO */}
               {generatedFormula && (
                 <div className="group relative rounded-3xl border-2 border-violet-400 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 p-1 shadow-xl shadow-violet-200/50 ring-4 ring-violet-200/30 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-                  
+
                   {/* Header de la tarjeta */}
                   <div className="flex items-center justify-between px-4 py-2 border-b border-violet-200/50 bg-white/40 backdrop-blur-sm rounded-t-[1.3rem]">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                       <p className="text-[10px] font-extrabold text-violet-700 uppercase tracking-widest">Resultado</p>
                     </div>
-                    
+
                     {/* Botón Copiar Rápido */}
-                    <button 
+                    <button
                       onClick={handleCopy}
                       className="text-xs flex items-center gap-1 text-slate-500 hover:text-violet-600 transition-colors"
                       title="Copiar LaTeX"
                     >
                       {copied ? (
-                         <span className="text-emerald-600 font-bold flex items-center gap-1">
-                           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                           Copiado
-                         </span>
+                        <span className="text-emerald-600 font-bold flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                          Copiado
+                        </span>
                       ) : (
                         <>
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
@@ -314,7 +312,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
                     {/* Visualización de la Fórmula */}
                     <div className="bg-white rounded-2xl p-6 border-2 border-violet-200/50 min-h-[80px] flex items-center justify-center shadow-inner mb-4">
                       <div className={`w-full text-center ${generatedFormula.length > 150 ? 'text-base' : generatedFormula.length > 80 ? 'text-lg' : 'text-2xl'} text-slate-900`}>
-                        <div className="mqerk-hide-scrollbar overflow-x-auto w-full">
+                        <div className="overflow-x-auto w-full [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
                           <InlineMath math={generatedFormula} display={generatedFormula.length > 50 || generatedFormula.includes('\\frac') || generatedFormula.includes('\\int')} />
                         </div>
                       </div>
@@ -328,9 +326,9 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
                       </div>
                     )}
 
-                    {/* BARRA DE ACCIONES (Restaurada funcionalidad) */}
+                    {/* BARRA DE ACCIONES */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                       {/* Botón Regenerar */}
+                      {/* Botón Regenerar */}
                       <button
                         onClick={handleRegenerate}
                         disabled={loading || isCooldownActive}
@@ -339,7 +337,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
                         🔄 Regenerar
                       </button>
 
-                      {/* Botón Editar (Ahora funcional) */}
+                      {/* Botón Editar */}
                       <button
                         onClick={handleOpenEdit}
                         className="col-span-1 rounded-xl border-2 border-indigo-200 bg-indigo-50 px-3 py-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-all active:scale-95"
@@ -347,14 +345,14 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
                         ✏️ Editar
                       </button>
 
-                      {/* Botón Insertar (PRINCIPAL - Restaurado) */}
+                      {/* Botón Insertar */}
                       <button
                         onClick={handleInsert}
                         className="col-span-2 rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-800 shadow-lg shadow-slate-300/50 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
                       >
                         <span>Insertar Fórmula</span>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                         </svg>
                       </button>
                     </div>
@@ -362,7 +360,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
                 </div>
               )}
 
-              {/* Sugerencias Rápidas (Solo si no hay resultado) */}
+              {/* Sugerencias Rápidas */}
               {!generatedFormula && !loading && (
                 <div className="space-y-4 animate-in fade-in duration-500 delay-100">
                   <div className="rounded-2xl border-2 border-violet-100 bg-white/60 p-5 shadow-sm">
@@ -372,7 +370,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
                         Sugerencias rápidas
                       </p>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 gap-4">
                       {Object.entries(formulaExamples).map(([category, examples]) => (
                         <div key={category}>
@@ -398,45 +396,30 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
               {/* Historial Reciente */}
               {history.length > 0 && !generatedFormula && (
                 <div className="border-t-2 border-slate-100 pt-4">
-                   <p className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                      <span>🕒</span> Recientes
-                   </p>
-                   <div className="space-y-2">
-                      {history.map((item, idx) => (
-                        <div key={idx} className="group flex items-center justify-between gap-3 p-2 hover:bg-violet-50 rounded-xl border border-transparent hover:border-violet-100 transition-all cursor-pointer" onClick={() => handleUseHistory(item)}>
-                           <div className="flex-1 min-w-0">
-                              <p className="text-[10px] font-bold text-violet-500 mb-0.5">{item.query}</p>
-                              <div className="text-sm opacity-70 group-hover:opacity-100 transition-opacity">
-                                <InlineMath math={item.formula} />
-                              </div>
-                           </div>
-                           <button className="text-violet-400 group-hover:text-violet-600 p-2">
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
-                           </button>
+                  <p className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span>🕒</span> Recientes
+                  </p>
+                  <div className="space-y-2">
+                    {history.map((item, idx) => (
+                      <div key={idx} className="group flex items-center justify-between gap-3 p-2 hover:bg-violet-50 rounded-xl border border-transparent hover:border-violet-100 transition-all cursor-pointer" onClick={() => handleUseHistory(item)}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-bold text-violet-500 mb-0.5">{item.query}</p>
+                          <div className="text-sm opacity-70 group-hover:opacity-100 transition-opacity">
+                            <InlineMath math={item.formula} />
+                          </div>
                         </div>
-                      ))}
-                   </div>
+                        <button className="text-violet-400 group-hover:text-violet-600 p-2">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           </div>
         </div>
       </div>
-
-      {/* Styles & Modals */}
-      <style>{`
-        .mqerk-hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .mqerk-hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        @media (max-height: 720px) {
-          .mqerk-ai-formula-overlay { padding-top: 10vh; }
-          .mqerk-ai-formula-textarea { height: 3.5rem; }
-        }
-      `}</style>
 
       {/* Modal para completar placeholders (si la IA devuelve \square) */}
       <PlaceholderModal
@@ -446,7 +429,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
         onConfirm={handlePlaceholderConfirm}
       />
 
-      {/* Modal para editar fórmula manualmente (Ahora accesible vía botón) */}
+      {/* Modal para editar fórmula manualmente */}
       <FormulaEditModal
         open={showEditModal}
         onClose={() => setShowEditModal(false)}

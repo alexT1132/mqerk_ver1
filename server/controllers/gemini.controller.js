@@ -224,7 +224,8 @@ const rotators = {
   quizzes: new GeminiKeyRotator('quizzes'),
   analisis: new GeminiKeyRotator('analisis'),
   formulas: new GeminiKeyRotator('formulas'),
-  calificacion: new GeminiKeyRotator('calificacion')
+  calificacion: new GeminiKeyRotator('calificacion'),
+  tutor: new GeminiKeyRotator('tutor') // ✅ FIX: Added tutor rotator
 };
 
 /**
@@ -287,9 +288,13 @@ export const geminiGenerate = async (req, res) => {
     const userId = req.user?.id;
     const userRole = req.user?.role || req.user?.rol;
 
+    // Extraer el propósito temprano para verificar cuota específica
+    const { purpose, proveedor } = req.body || {};
+
     // Solo verificar cuota si hay un usuario autenticado
     if (userId) {
-      const quotaCheck = await checkQuota(userId, userRole);
+      // ✅ FIX: Pasar purpose para verificar límites específicos (tutor vs analisis)
+      const quotaCheck = await checkQuota(userId, userRole, purpose);
 
       if (!quotaCheck.allowed) {
         console.warn(`[AI Quota] 🚫 Usuario ${userId} bloqueado por límite: ${quotaCheck.reason}`);
@@ -316,14 +321,14 @@ export const geminiGenerate = async (req, res) => {
       console.warn('[Gemini] ⚠️ Petición sin usuario autenticado. La cuota no se descontará.');
     }
 
-    // Extraer el propósito de la petición para seleccionar la API key correcta
-    const { purpose, proveedor } = req.body || {};
+    // Extraer el propósito (ya extraído arriba, pero mantenemos destructuración para seguridad si req.body cambió)
+    // const { purpose, proveedor } = req.body || {}; -> Ya declarado arriba
 
     // Si el proveedor no es 'gemini' o está vacío, permitir (compatibilidad)
     // pero registrar como 'gemini' para este endpoint
     const finalProveedor = (proveedor && proveedor.toLowerCase() === 'groq') ? 'groq' : 'gemini';
 
-    const apiKey = getApiKeyByPurpose(purpose);
+    let apiKey = getApiKeyByPurpose(purpose);
 
     if (!apiKey) {
       // ⚠️ SEGURIDAD: No exponer nombres de variables de entorno en respuestas al cliente
@@ -384,7 +389,7 @@ export const geminiGenerate = async (req, res) => {
             contents,
             generationConfig: finalGenConfig,
             safetySettings,
-            systemInstruction
+            system_instruction: systemInstruction // Google API v1beta expects snake_case
           }),
           signal: ac.signal,
         });

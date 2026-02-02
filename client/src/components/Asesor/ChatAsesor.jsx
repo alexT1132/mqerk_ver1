@@ -44,6 +44,10 @@ const ChatAsesor = () => {
     const [compressionProgress, setCompressionProgress] = useState({ progress: 0, message: '' });
     const [modalData, setModalData] = useState({ isOpen: false, type: 'info', title: '', message: '' });
 
+    // --- NUEVOS ESTADOS PARA IMÁGENES ---
+    const [previewUrl, setPreviewUrl] = useState(null);
+    const [viewerImage, setViewerImage] = useState(null);
+
     // Audio Ref para persistencia y unlock
     const audioRef = useRef(new Audio(NOTIFICATION_SOUND));
     const audioUnlocked = useRef(false);
@@ -335,26 +339,26 @@ const ChatAsesor = () => {
         }
 
         try {
+            let finalFile = file;
             if (file.size > maxSize) {
                 setCompressing(true);
                 setCompressionProgress({
                     progress: 0,
                     message: `⚠️ Archivo pesado detectado (${formatFileSize(file.size)}). Comprimiendo...`
                 });
-                const compressedFile = await compressFile(file, (progress, message) => {
+                finalFile = await compressFile(file, (progress, message) => {
                     setCompressionProgress({
                         progress,
                         message: `⚠️ Reduciendo tamaño... ${message}`
                     });
                 });
 
-                if (compressedFile.size > maxSize) {
-                    showModal('error', 'Imposible enviar', `Aun comprimido, el archivo pesa ${formatFileSize(compressedFile.size)}. El límite es 5MB.`);
+                if (finalFile.size > maxSize) {
+                    showModal('error', 'Imposible enviar', `Aun comprimido, el archivo pesa ${formatFileSize(finalFile.size)}. El límite es 5MB.`);
                     e.target.value = '';
                     setCompressing(false);
                     return;
                 }
-                setSelectedFile(compressedFile);
                 setCompressing(false);
             } else if (file.size > compressionThreshold && file.type.startsWith('image/')) {
                 setCompressing(true);
@@ -362,20 +366,29 @@ const ChatAsesor = () => {
                     progress: 0,
                     message: 'Optimizando imagen para carga rápida...'
                 });
-                const compressedFile = await compressFile(file, (progress, message) => {
+                finalFile = await compressFile(file, (progress, message) => {
                     setCompressionProgress({ progress, message });
                 });
-                setSelectedFile(compressedFile);
                 setCompressing(false);
-            } else {
-                setSelectedFile(file);
             }
+
+            setSelectedFile(finalFile);
+            if (finalFile.type.startsWith('image/')) {
+                const url = URL.createObjectURL(finalFile);
+                setPreviewUrl(url);
+            } else {
+                setPreviewUrl(null);
+            }
+
         } catch (error) {
             console.error('Error procesando archivo:', error);
             setCompressing(false);
             if (error.message === 'NOT_SUPPORTED_TYPE') {
                 showModal('warning', 'Atención', 'Este archivo no se puede optimizar, se intentará enviar original.');
                 setSelectedFile(file);
+                if (file.type.startsWith('image/')) {
+                    setPreviewUrl(URL.createObjectURL(file));
+                }
             } else {
                 showModal('error', 'Error', 'No se pudo procesar el archivo. Intenta con otro más ligero.');
                 e.target.value = '';
@@ -384,7 +397,11 @@ const ChatAsesor = () => {
     };
 
     const handleRemoveFile = () => {
+        if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+        }
         setSelectedFile(null);
+        setPreviewUrl(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -440,6 +457,7 @@ const ChatAsesor = () => {
                 type: selectedFile ? (selectedFile.type.startsWith('image/') ? 'image' : 'file') : 'text',
                 sender_role: 'asesor',
                 file_path: selectedFile ? URL.createObjectURL(selectedFile) : null,
+                isOptimistic: true,
                 id: 'opt-' + Date.now(),
                 created_at: new Date().toISOString()
             };
@@ -470,8 +488,20 @@ const ChatAsesor = () => {
     // INTERFAZ VISUAL MEJORADA
     // ----------------------------------------------------------------------
 
+    // ----------------------------------------------------------------------
+    // INTERFAZ VISUAL PREMIUM (Update Step 1284)
+    // ----------------------------------------------------------------------
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend(e);
+        }
+    };
+
     return (
-        <>
+        <div className="flex flex-col h-full bg-slate-50/50 p-4 font-sans text-slate-600 sm:h-[calc(100vh-1rem)]">
+
             {/* MODALES Y STATUS */}
             {compressing && (
                 <FileCompressionIndicator
@@ -481,7 +511,6 @@ const ChatAsesor = () => {
                     fileName={fileInputRef.current?.files?.[0]?.name || 'Archivo'}
                     onCancel={() => {
                         setCompressing(false);
-                        // Recarga para limpiar estado de archivo si se cancela
                         window.location.reload();
                     }}
                 />
@@ -494,34 +523,38 @@ const ChatAsesor = () => {
                 onClose={() => setModalData({ ...modalData, isOpen: false })}
             />
 
-            <div className="flex h-[calc(100vh-4rem)] bg-gray-50 rounded-2xl shadow-lg border border-gray-200 overflow-hidden mx-4 my-4">
-                {/* Sidebar de Estudiantes */}
-                <div className="w-80 border-r border-gray-200 flex flex-col bg-white">
-                    <div className="p-4 border-b border-gray-100 bg-white">
-                        <div className="flex justify-between items-center mb-3">
-                            <h2 className="font-semibold text-gray-800 text-lg">Mis Estudiantes</h2>
-                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+            <div className="flex flex-1 overflow-hidden bg-white rounded-3xl shadow-xl ring-1 ring-slate-900/5">
+
+                {/* SIDEBAR DE ESTUDIANTES */}
+                <aside className="w-80 flex flex-col border-r border-slate-100 bg-white z-20">
+                    <div className="p-5 border-b border-slate-50">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Mensajes</h2>
+                            <span className="bg-violet-100 text-violet-700 text-xs font-bold px-2.5 py-1 rounded-full">
                                 {students.length}
                             </span>
                         </div>
                         <div className="relative group">
                             <input
                                 type="text"
-                                placeholder="Buscar..."
-                                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+                                placeholder="Buscar estudiante..."
+                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm 
+                                         focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all outline-none placeholder:text-slate-400"
                             />
-                            <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
+                            <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 group-focus-within:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
                         {loading ? (
-                            <div className="p-8 text-center text-gray-500 flex flex-col items-center">
-                                <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mb-2"></div>
-                                <span className="text-sm">Cargando...</span>
+                            <div className="p-10 flex flex-col items-center justify-center text-slate-400">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600 mb-3"></div>
+                                <span className="text-xs font-medium">Cargando lista...</span>
                             </div>
                         ) : (
-                            <div className="divide-y divide-gray-100">
+                            <div className="px-3 py-2 space-y-1">
                                 {students.map(s => {
                                     const itemKey = `${s.tipo || 'estudiante'}-${s.id}`;
                                     const unreadCount = (s.tipo === 'admin') ? adminUnreadCount : (unreadCounts[s.id] || 0);
@@ -530,342 +563,311 @@ const ChatAsesor = () => {
 
                                     const getInitials = (name) => {
                                         const parts = name.trim().split(' ').filter(Boolean);
-                                        if (parts.length >= 2) {
-                                            return (parts[0][0] + parts[1][0]).toUpperCase();
-                                        }
-                                        return parts[0]?.substring(0, 2).toUpperCase() || '?';
+                                        return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0]?.substring(0, 2).toUpperCase() || '?';
                                     };
 
                                     return (
                                         <button
                                             key={itemKey}
                                             onClick={() => setSelectedStudent(s)}
-                                            className={`w-full p-3 flex items-center gap-3 transition-all duration-150 text-left relative
+                                            className={`w-full p-3 flex items-center gap-3 rounded-xl transition-all duration-200 group relative
                                                 ${isSelected
-                                                    ? 'bg-blue-50 border-l-4 border-blue-600 shadow-inner'
-                                                    : 'hover:bg-gray-50 border-l-4 border-transparent'
+                                                    ? 'bg-violet-50 text-violet-900 shadow-sm ring-1 ring-violet-100'
+                                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                                                 }`}
                                         >
                                             <div className="relative shrink-0">
-                                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-base shadow-sm overflow-hidden
-                                                    ${isSelected ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-200' : 'bg-gray-100 text-gray-700'}`}>
+                                                <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shadow-sm overflow-hidden transition-transform group-hover:scale-105
+                                                    ${isSelected ? 'bg-violet-200 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>
                                                     {s.avatar ? (
-                                                        <img
-                                                            src={s.avatar}
-                                                            alt={s.name}
-                                                            className="w-full h-full object-cover"
-                                                            onError={(e) => {
-                                                                e.target.style.display = 'none';
-                                                                e.target.nextSibling.style.display = 'flex';
-                                                            }}
-                                                        />
+                                                        <img src={s.avatar} alt={s.name} className="w-full h-full object-cover"
+                                                            onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
                                                     ) : null}
-                                                    <div
-                                                        className="w-full h-full flex items-center justify-center rounded-full absolute inset-0"
-                                                        style={{ display: s.avatar ? 'none' : 'flex' }}
-                                                    >
+                                                    <div className="w-full h-full flex items-center justify-center" style={{ display: s.avatar ? 'none' : 'flex' }}>
                                                         {getInitials(s.name)}
                                                     </div>
                                                 </div>
                                                 {isOnline && (
-                                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                                                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></span>
                                                 )}
                                                 {unreadCount > 0 && (
-                                                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-0.5 shadow-sm ring-1 ring-white">
+                                                    <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-sm">
                                                         {unreadCount > 9 ? '9+' : unreadCount}
-                                                    </div>
+                                                    </span>
                                                 )}
                                             </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <p className={`font-medium truncate ${isSelected ? 'text-blue-900' : 'text-gray-800'}`}>{s.name}</p>
+
+                                            <div className="flex-1 min-w-0 text-left">
+                                                <div className="flex justify-between items-baseline">
+                                                    <p className="font-semibold text-sm truncate">{s.name}</p>
                                                 </div>
-                                                {s.tipo === 'admin'
-                                                    ? <p className="text-xs text-gray-500 truncate">Administración</p>
-                                                    : <p className="text-xs text-gray-500 truncate">Grupo: {s.grupo}</p>
-                                                }
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    {s.tipo === 'admin'
+                                                        ? <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">ADMIN</span>
+                                                        : <span className="text-xs text-slate-400 truncate group-hover:text-slate-500">Grupo {s.grupo}</span>
+                                                    }
+                                                </div>
                                             </div>
+
+                                            {/* Active indicator bar */}
+                                            {isSelected && (
+                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-violet-600 rounded-r-md"></div>
+                                            )}
                                         </button>
                                     );
                                 })}
                             </div>
                         )}
                     </div>
-                </div>
+                </aside>
 
-                {/* Área de Chat Principal */}
-                <div className="flex-1 flex flex-col bg-white">
+                {/* AREA DE CHAT */}
+                <main className="flex-1 flex flex-col bg-slate-50/30 relative min-w-0">
                     {selectedStudent ? (
                         <>
-                            {/* Cabecera del Chat */}
-                            <div className="px-6 py-4 bg-white border-b border-gray-200 flex items-center gap-4">
-                                <div className="relative">
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center font-bold shadow-sm overflow-hidden">
-                                        {selectedStudent.avatar ? (
-                                            <img
-                                                src={selectedStudent.avatar}
-                                                alt={selectedStudent.name}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
-                                                                    e.target.style.display = 'none';
-                                                                    e.target.nextSibling.style.display = 'flex';
-                                                                }}
-                                            />
-                                        ) : null}
-                                        <div
-                                            className="w-full h-full flex items-center justify-center rounded-full absolute inset-0"
-                                            style={{ display: selectedStudent.avatar ? 'none' : 'flex' }}
-                                        >
-                                            {selectedStudent.name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()}
+                            {/* Header del Chat */}
+                            <header className="px-6 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between sticky top-0 z-10">
+                                <div className="flex items-center gap-4">
+                                    <div className="relative">
+                                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden shadow-inner font-bold text-slate-500 text-sm relative">
+                                            {selectedStudent.avatar ? (
+                                                <img src={selectedStudent.avatar} alt="Avatar" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                                            ) : null}
+                                            <div className="w-full h-full flex items-center justify-center" style={{ display: selectedStudent.avatar ? 'none' : 'flex' }}>
+                                                {selectedStudent.name.substring(0, 2).toUpperCase()}
+                                            </div>
+                                        </div>
+                                        {selectedStudent.tipo !== 'admin' && onlineStudents.has(selectedStudent.id) && (
+                                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-slate-800 leading-tight">{selectedStudent.name}</h3>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            {selectedStudent.tipo !== 'admin' && onlineStudents.has(selectedStudent.id) ? (
+                                                <span className="text-xs font-medium text-emerald-600 flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> En línea
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs text-slate-400 font-medium">
+                                                    {selectedStudent.tipo === 'admin' ? 'Soporte y Administración' : 'Estudiante'}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
-                                    {(selectedStudent.tipo !== 'admin' && onlineStudents.has(selectedStudent.id)) && (
-                                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
-                                    )}
                                 </div>
-                                <div className="min-w-0">
-                                    <h3 className="font-semibold text-gray-900">{selectedStudent.name}</h3>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        {selectedStudent.tipo === 'admin' ? (
-                                            <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-xs rounded-full font-medium">Administrador</span>
-                                        ) : (
-                                            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">Estudiante</span>
-                                        )}
-                                        {(selectedStudent.tipo !== 'admin' && onlineStudents.has(selectedStudent.id)) && (
-                                            <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                                                En línea
-                                            </span>
-                                        )}
-                                    </div>
+                                <div className="flex items-center gap-2">
+                                    {/* Actions could go here */}
                                 </div>
-                            </div>
+                            </header>
 
-                            {/* Contenedor de Mensajes */}
-                            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+                            {/* Mensajes */}
+                            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scrollbar-thin scrollbar-thumb-slate-200">
                                 {loadingChat ? (
-                                    <div className="flex justify-center items-center h-64">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-200 border-t-blue-600"></div>
+                                    <div className="h-full flex flex-col items-center justify-center space-y-4">
+                                        <div className="w-10 h-10 border-4 border-violet-100 border-t-violet-600 rounded-full animate-spin"></div>
+                                        <p className="text-slate-400 text-sm animate-pulse">Cargando conversación...</p>
                                     </div>
                                 ) : messages.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                                        <p className="font-medium">Inicia la conversación</p>
+                                    <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-60">
+                                        <div className="w-20 h-20 bg-violet-50 rounded-full flex items-center justify-center mb-4 text-4xl">👋</div>
+                                        <h4 className="text-lg font-semibold text-slate-700">¡Comienza la charla!</h4>
+                                        <p className="text-sm text-slate-500 max-w-xs mt-2">Envía un mensaje para iniciar la conversación con {selectedStudent.name}.</p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-3">
-                                        {[...messages]
-                                            .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-                                            .map((msg, idx) => {
-                                            const isMe = (selectedStudent?.tipo === 'admin')
-                                                ? (String(msg.sender_role || '').toLowerCase() === 'asesor')
-                                                : (String(msg.sender_role || '').toLowerCase() === 'asesor');
-                                            const fileUrl = msg.file_path ? (msg.isOptimistic ? msg.file_path : buildStaticUrl(msg.file_path)) : null;
-                                            const fileName = msg.file_path?.split('/').pop() || 'Archivo';
-                                            const fileExt = fileName.toLowerCase().split('.').pop();
-                                            const isImageExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
-                                            const isPdfExt = fileExt === 'pdf';
-                                            const isImage = (msg.type === 'image' || (msg.file_path && isImageExt)) && fileUrl;
-                                            const isFile = (msg.type === 'file' || (msg.file_path && isPdfExt)) && fileUrl;
-                                            const isPdf = isFile;
+                                    messages.map((msg, idx) => {
+                                        const isMe = (String(msg.sender_role || '').toLowerCase() === 'asesor');
+                                        const fileUrl = msg.file_path ? (msg.isOptimistic ? msg.file_path : buildStaticUrl(msg.file_path)) : null;
+                                        const fileName = msg.file_path?.split('/').pop() || 'Archivo';
+                                        const isImage = (msg.type === 'image' || fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) && fileUrl;
+                                        const isPdf = (msg.type === 'file' || fileName.endsWith('.pdf')) && fileUrl;
 
-                                            return (
-                                                <div key={msg.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                                    <div className={`max-w-[80%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                                        {/* Mensaje de texto */}
-                                                        {msg.message && (
-                                                            <div className={`px-4 py-2.5 rounded-2xl rounded-br-sm shadow-sm text-sm
-                                                                ${isMe
-                                                                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
-                                                                    : 'bg-white text-gray-800 border border-gray-200'
-                                                                }`}>
-                                                                <p className="whitespace-pre-wrap leading-relaxed">{msg.message}</p>
-                                                            </div>
-                                                        )}
+                                        return (
+                                            <div key={msg.id || idx} className={`flex group ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                                <div className={`max-w-[85%] sm:max-w-[70%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
 
-                                                        {/* Adjunto de Imagen */}
-                                                        {isImage && (
-                                                            <div className="mt-1">
-                                                                <img
-                                                                    src={fileUrl}
-                                                                    alt="Imagen adjunta"
-                                                                    className="max-w-full rounded-lg object-contain border border-gray-200 bg-white shadow-sm"
-                                                                    style={{ maxHeight: '250px' }}
-                                                                    onError={(e) => { e.target.style.display = 'none'; }}
-                                                                />
-                                                            </div>
-                                                        )}
+                                                    {/* Burbuja de Texto */}
+                                                    {msg.message && (
+                                                        <div className={`px-5 py-3.5 shadow-sm text-[15px] leading-relaxed break-words
+                                                            ${isMe
+                                                                ? 'bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-2xl rounded-tr-sm'
+                                                                : 'bg-white border border-slate-100 text-slate-700 rounded-2xl rounded-tl-sm'
+                                                            }`}>
+                                                            {msg.message}
+                                                        </div>
+                                                    )}
 
-                                                        {/* Adjunto de PDF */}
-                                                        {isPdf && (
-                                                            <div className="mt-1">
-                                                                <div className="bg-white rounded-lg p-2 border border-gray-200 shadow-sm">
-                                                                    {pdfViewerFailed[msg.id || idx] ? (
-                                                                        <iframe
-                                                                            src={`https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(fileUrl)}`}
-                                                                            className="w-full rounded"
-                                                                            title={fileName}
-                                                                            style={{ height: '300px', minHeight: '200px' }}
-                                                                            allowFullScreen
-                                                                        />
-                                                                    ) : (
-                                                                        <iframe
-                                                                            src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                                                                            className="w-full rounded"
-                                                                            title={fileName}
-                                                                            style={{ height: '300px', minHeight: '200px' }}
-                                                                            allowFullScreen
-                                                                            type="application/pdf"
-                                                                            onError={() => setPdfViewerFailed(prev => ({ ...prev, [msg.id || idx]: true }))}
-                                                                            onLoad={(e) => {
-                                                                                try {
-                                                                                    const iframe = e.target;
-                                                                                    setTimeout(() => {
-                                                                                        if (iframe.contentDocument && iframe.contentDocument.body && iframe.contentDocument.body.innerHTML.trim() === '') {
-                                                                                            setPdfViewerFailed(prev => ({ ...prev, [msg.id || idx]: true }));
-                                                                                        }
-                                                                                    }, 2000);
-                                                                                } catch (err) {
-                                                                                    setPdfViewerFailed(prev => ({ ...prev, [msg.id || idx]: true }));
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    )}
-                                                                    <div className="mt-2 flex gap-2 justify-center">
-                                                                        <a
-                                                                            href={fileUrl}
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors
-                                                                                ${isMe ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
-                                                                        >
-                                                                            Abrir en Nueva Pestaña
-                                                                        </a>
-                                                                        <a
-                                                                            href={fileUrl}
-                                                                            download
-                                                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors
-                                                                                ${isMe ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-gray-600 hover:bg-gray-700 text-white'}`}
-                                                                        >
-                                                                            Descargar
-                                                                        </a>
+                                                    {/* Archivos Adjuntos */}
+                                                    {(isImage || isPdf || msg.file_path) && (
+                                                        <div className={`mt-2 p-1 rounded-xl overflow-hidden ${isMe ? '' : 'bg-white border border-slate-100 shadow-sm'}`}>
+                                                            {isImage ? (
+                                                                <div
+                                                                    className="relative group/img cursor-zoom-in"
+                                                                    onClick={() => setViewerImage(fileUrl)}
+                                                                >
+                                                                    <img src={fileUrl} alt="Adjunto" className="max-w-xs max-h-64 rounded-lg object-contain bg-slate-100 transition-transform hover:scale-[1.02]" />
+                                                                    <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover/img:opacity-100">
+                                                                        <svg className="w-8 h-8 text-white drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                                                        </svg>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Otros Archivos */}
-                                                        {isFile && !isPdf && !isImage && (
-                                                            <div className="mt-1">
-                                                                <a
-                                                                    href={fileUrl}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className={`flex items-center gap-2 underline text-xs ${isMe ? 'text-blue-100' : 'text-blue-600'}`}
-                                                                >
-                                                                    <AttachIcon className="w-4 h-4" /> {fileName}
+                                                            ) : isPdf ? (
+                                                                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg min-w-[200px]">
+                                                                    <div className="w-10 h-10 bg-rose-100 text-rose-600 rounded-lg flex items-center justify-center font-bold text-xs shrink-0">PDF</div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-xs font-semibold text-slate-700 truncate">{fileName}</p>
+                                                                        <a href={fileUrl} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 hover:underline">Ver documento</a>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <a href={fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                                                                    <AttachIcon className="w-4 h-4 text-slate-500" />
+                                                                    <span className="text-xs font-medium text-slate-600 truncate max-w-[150px]">{fileName}</span>
                                                                 </a>
-                                                            </div>
-                                                        )}
+                                                            )}
+                                                        </div>
+                                                    )}
 
-                                                        {/* Fallback para otros tipos de archivos */}
-                                                        {msg.file_path && !isImage && !isPdf && !isFile && (
-                                                            <div className="mt-1">
-                                                                <a
-                                                                    href={fileUrl}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className={`flex items-center gap-2 underline text-xs ${isMe ? 'text-blue-100' : 'text-blue-600'}`}
-                                                                >
-                                                                    <AttachIcon className="w-4 h-4" /> {fileName}
-                                                                </a>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Timestamp */}
-                                                        <span className={`text-xs mt-1 font-medium ${isMe ? 'text-blue-500' : 'text-gray-500'}`}>
-                                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            {isMe && <span className="ml-1 opacity-70">({msg.sender_role})</span>}
-                                                        </span>
+                                                    {/* Metabox del mensaje */}
+                                                    <div className={`mt-1 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[10px] font-medium text-slate-400 select-none
+                                                        ${isMe ? 'pr-1' : 'pl-1'}`}>
+                                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        {isMe && <span>· Enviado</span>}
                                                     </div>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
+                                            </div>
+                                        );
+                                    })
                                 )}
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Área de Entrada */}
-                            <div className="p-4 bg-white border-t border-gray-200">
+                            {/* Input Area */}
+                            <div className="p-4 sm:p-5 bg-white border-t border-slate-100">
                                 {selectedFile && (
-                                    <div className="mb-2 flex items-center gap-2 p-2 bg-blue-50 border border-blue-100 rounded-lg">
-                                        <AttachIcon className="w-4 h-4 text-blue-600" />
-                                        <span className="text-sm text-gray-700 truncate">{selectedFile.name}</span>
-                                        <button
-                                            type="button"
-                                            onClick={handleRemoveFile}
-                                            className="ml-auto text-gray-400 hover:text-red-500 transition-colors"
-                                        >
+                                    <div className="mb-3 flex items-center gap-3 p-3 bg-violet-50 border border-violet-100 rounded-xl animate-in slide-in-from-bottom-2">
+                                        <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center shadow-sm text-violet-600 overflow-hidden shrink-0 border border-violet-100">
+                                            {previewUrl ? (
+                                                <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                            ) : (
+                                                selectedFile.type.startsWith('image/')
+                                                    ? <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                                    : <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-violet-900 truncate">{selectedFile.name}</p>
+                                            <p className="text-xs text-violet-600 font-medium">{formatFileSize(selectedFile.size)}</p>
+                                        </div>
+                                        <button onClick={handleRemoveFile} className="p-1.5 hover:bg-violet-200 rounded-full text-violet-600 transition-colors">
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
                                     </div>
                                 )}
-                                <form onSubmit={handleSend} className="flex gap-2 items-center">
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/*,application/pdf"
-                                        onChange={handleFileSelect}
-                                        className="hidden"
-                                    />
+
+                                <form onSubmit={(e) => { e.preventDefault(); handleSend(e); }} className="flex items-end gap-2 relative">
                                     <button
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all flex items-center justify-center"
+                                        disabled={sending}
+                                        className="p-3 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-all disabled:opacity-50"
                                         title="Adjuntar archivo"
                                     >
-                                        <AttachIcon className="w-5 h-5" />
+                                        <AttachIcon className="w-6 h-6" />
                                     </button>
-                                    <div className="flex-1 bg-gray-100 rounded-xl border border-gray-300 focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-400 transition-all">
-                                        <input
-                                            type="text"
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                        accept="image/*,application/pdf"
+                                    />
+
+                                    <div className="flex-1 relative">
+                                        <textarea
                                             value={newMessage}
-                                            onChange={e => setNewMessage(e.target.value)}
+                                            onChange={(e) => setNewMessage(e.target.value)}
+                                            onKeyDown={handleKeyDown}
                                             placeholder="Escribe un mensaje..."
-                                            className="w-full bg-transparent px-4 py-3 focus:outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                                            className="w-full bg-slate-50 border-0 rounded-2xl px-4 py-3 text-slate-700 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-violet-500/20 max-h-32 min-h-[50px] resize-none shadow-sm scrollbar-none"
+                                            rows={1}
+                                            style={{ minHeight: '52px' }}
                                         />
                                     </div>
+
                                     <button
                                         type="submit"
                                         disabled={(!newMessage.trim() && !selectedFile) || sending}
-                                        className={`p-2.5 rounded-full shadow-sm transition-all flex items-center justify-center
+                                        className={`p-3 rounded-xl shadow-lg shadow-violet-200 transition-all duration-200 flex items-center justify-center
                                             ${(!newMessage.trim() && !selectedFile) || sending
-                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
-                                            }`}
+                                                ? 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'
+                                                : 'bg-violet-600 text-white hover:bg-violet-700 hover:shadow-violet-300 hover:-translate-y-0.5 active:translate-y-0'}`}
                                     >
                                         {sending ? (
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                         ) : (
-                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                            <svg className="w-5 h-5 translate-x-0.5 translate-y-px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                                             </svg>
                                         )}
                                     </button>
                                 </form>
+                                <div className="text-center mt-2">
+                                    <p className="text-[10px] text-slate-300 font-medium">Presiona Enter para enviar</p>
+                                </div>
                             </div>
                         </>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
-                            <div className="w-16 h-16 bg-white rounded-full shadow-sm border border-gray-100 flex items-center justify-center mb-4">
-                                <span className="text-2xl">💬</span>
+                        // Estado vacío (sin chat seleccionado)
+                        <div className="flex flex-col items-center justify-center h-full p-8 text-center opacity-80">
+                            <div className="w-32 h-32 bg-violet-50 rounded-full flex items-center justify-center mb-6 animate-in zoom-in duration-500">
+                                <svg className="w-16 h-16 text-violet-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
                             </div>
-                            <p className="text-gray-500 font-medium">Selecciona un estudiante para comenzar</p>
+                            <h2 className="text-2xl font-bold text-slate-800 mb-3">Chat del Asesor</h2>
+                            <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
+                                Selecciona un estudiante del panel izquierdo para ver el historial, responder consultas y dar seguimiento personalizado.
+                            </p>
+                            <div className="mt-8 flex gap-4 text-xs text-slate-400 font-medium uppercase tracking-wider">
+                                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400"></span> Online</span>
+                                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-300"></span> Offline</span>
+                            </div>
                         </div>
                     )}
-                </div>
+                </main>
             </div>
-        </>
+
+            {/* LIGHTBOX DE IMÁGENES */}
+            {viewerImage && (
+                <div
+                    className="fixed inset-0 z-[100] bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+                    onClick={() => setViewerImage(null)}
+                >
+                    <button
+                        className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors z-10"
+                        onClick={(e) => { e.stopPropagation(); setViewerImage(null); }}
+                    >
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+
+                    <img
+                        src={viewerImage}
+                        alt="Vista ampliada"
+                        className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-300"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+
+                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-medium">
+                        Click fuera para cerrar
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 

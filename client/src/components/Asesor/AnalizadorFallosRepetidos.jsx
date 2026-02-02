@@ -32,66 +32,84 @@ function MathText({ text = "" }) {
     return div.innerHTML;
   };
 
+  // ✅ Normalizar saltos de línea y espacios primero
   let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // ✅ Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
+  // Esto debe hacerse ANTES de proteger las fórmulas
   processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
-  
+
+  // Regex para detectar $...$ y $$...$$
+  const fullLatexRe = /\$\$([\s\S]+?)\$\$|\$([\s\S]+?)\$/g;
+
+  // Protegiendo LaTeX antes de procesar Markdown
   const latexPlaceholder = '___LATEX_PLACEHOLDER___';
   const latexMatches = [];
   let placeholderIndex = 0;
-  
-  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+
+  processedText = processedText.replace(fullLatexRe, (match) => {
     const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
     latexMatches.push(match);
     placeholderIndex++;
     return placeholder;
   });
-  
+
+  // Procesar Markdown: **texto** -> <strong>texto</strong>
   processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
-  
+
+  // Restaurar LaTeX
   latexMatches.forEach((match, idx) => {
     processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
   });
 
-  const re = /\$([^$]+?)\$/g;
   const parts = [];
   let lastIndex = 0;
   let m;
   let matchFound = false;
 
-  re.lastIndex = 0;
+  fullLatexRe.lastIndex = 0;
 
-  while ((m = re.exec(processedText)) !== null) {
+  while ((m = fullLatexRe.exec(processedText)) !== null) {
     matchFound = true;
     if (m.index > lastIndex) {
       parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
     }
-    const formula = m[1].trim();
+
+    // m[1] es para $$...$$, m[2] es para $...$
+    const formula = (m[1] || m[2] || "").trim();
+    const isBlock = !!m[1];
+
     if (formula) {
-      parts.push({ type: 'math', content: formula });
+      parts.push({ type: 'math', content: formula, display: isBlock });
     }
     lastIndex = m.index + m[0].length;
   }
-  
+
   if (lastIndex < processedText.length) {
     parts.push({ type: 'text', content: processedText.slice(lastIndex) });
   }
 
   if (!matchFound || parts.length === 0) {
     return (
-      <span dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }} />
+      <span
+        className="block w-full break-words overflow-x-auto whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
+      />
     );
   }
 
   return (
-    <span>
-      {parts.map((part, idx) => {
-        if (part.type === 'math') {
-          return <InlineMath key={idx} formula={part.content} />;
-        }
-        return (
-          <span key={idx} dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }} />
-        );
-      })}
+    <span className="block w-full break-words overflow-x-auto whitespace-pre-wrap">
+      {parts.map((part, idx) =>
+        part.type === 'math' ? (
+          <InlineMath key={`math-${idx}`} math={part.content} display={part.display} />
+        ) : (
+          <span
+            key={`text-${idx}`}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
+          />
+        )
+      )}
     </span>
   );
 }
@@ -665,7 +683,7 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
     }
 
     setMostrarBotonIA(false); // Ocultar botón mientras se genera
-    
+
     // Preparar datos para limpiar el cache antes de generar nuevo análisis
     const datosParaCache = {
       simulacion: tipo === 'quiz' ? 'Quiz' : 'Simulación',
@@ -673,10 +691,10 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
       idEstudiante: idEstudiante,
       preguntasProblematicas: analisis.preguntasProblematicas
     };
-    
+
     // Limpiar cache para forzar regeneración
     limpiarCacheAnalisisGemini(datosParaCache);
-    
+
     await generarAnalisisIA(analisis.preguntasProblematicas, [], tipo);
   };
 
@@ -735,7 +753,7 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
         // Guardar el análisis completo para la modal
         console.log('📊 Resultado IA completo recibido:', resultadoIA);
         setAnalisisIACompleto(resultadoIA);
-        
+
         // Extraer recomendaciones personalizadas del nuevo formato mejorado
         const recomendaciones = [];
 
@@ -788,12 +806,12 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
         }
 
         // Resumen mejorado
-        const resumenCompleto = resultadoIA.analisisGeneral?.resumen || 
-          resultadoIA.resumen || 
+        const resumenCompleto = resultadoIA.analisisGeneral?.resumen ||
+          resultadoIA.resumen ||
           'Análisis inteligente de fallos repetidos generado con IA';
-        
-        const diagnostico = resultadoIA.analisisGeneral?.diagnosticoPrincipal || 
-          resultadoIA.patronesErrores?.causaRaiz || 
+
+        const diagnostico = resultadoIA.analisisGeneral?.diagnosticoPrincipal ||
+          resultadoIA.patronesErrores?.causaRaiz ||
           '';
 
         setAnalisisIA({
@@ -979,56 +997,56 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
               </div>
               <p className="text-sm text-slate-600 mb-3">{analisisIA.resumen}</p>
 
-                {/* Intervención del Asesor (nuevo - más importante) */}
-                {analisisIA.intervencionAsesor && (
-                  <div className="mt-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border-2 border-indigo-200">
-                    <h5 className="font-bold text-indigo-900 text-sm mb-3 flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      Intervención Recomendada para el Asesor
-                    </h5>
-                    <div className="space-y-3">
-                      {analisisIA.intervencionAsesor.queEnsenar && (
-                        <div className="bg-white/80 p-3 rounded border border-indigo-100">
-                          <p className="text-xs font-bold text-indigo-700 mb-1">📚 QUÉ enseñar:</p>
-                          <p className="text-sm text-slate-800">{analisisIA.intervencionAsesor.queEnsenar}</p>
-                        </div>
-                      )}
-                      {analisisIA.intervencionAsesor.comoEnsenarlo && (
-                        <div className="bg-white/80 p-3 rounded border border-indigo-100">
-                          <p className="text-xs font-bold text-indigo-700 mb-1">🎯 CÓMO enseñarlo:</p>
-                          <p className="text-sm text-slate-800">{analisisIA.intervencionAsesor.comoEnsenarlo}</p>
-                        </div>
-                      )}
-                      {analisisIA.intervencionAsesor.verificacionAprendizaje && (
-                        <div className="bg-white/80 p-3 rounded border border-indigo-100">
-                          <p className="text-xs font-bold text-indigo-700 mb-1">✅ Cómo verificar que aprendió:</p>
-                          <p className="text-sm text-slate-800">{analisisIA.intervencionAsesor.verificacionAprendizaje}</p>
-                        </div>
-                      )}
-                      {analisisIA.intervencionAsesor.tiempoEstimado && (
-                        <div className="bg-white/80 p-3 rounded border border-indigo-100">
-                          <p className="text-xs font-bold text-indigo-700 mb-1">⏱️ Tiempo estimado:</p>
-                          <p className="text-sm text-slate-800">{analisisIA.intervencionAsesor.tiempoEstimado}</p>
-                        </div>
-                      )}
-                    </div>
+              {/* Intervención del Asesor (nuevo - más importante) */}
+              {analisisIA.intervencionAsesor && (
+                <div className="mt-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border-2 border-indigo-200">
+                  <h5 className="font-bold text-indigo-900 text-sm mb-3 flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Intervención Recomendada para el Asesor
+                  </h5>
+                  <div className="space-y-3">
+                    {analisisIA.intervencionAsesor.queEnsenar && (
+                      <div className="bg-white/80 p-3 rounded border border-indigo-100">
+                        <p className="text-xs font-bold text-indigo-700 mb-1">📚 QUÉ enseñar:</p>
+                        <p className="text-sm text-slate-800">{analisisIA.intervencionAsesor.queEnsenar}</p>
+                      </div>
+                    )}
+                    {analisisIA.intervencionAsesor.comoEnsenarlo && (
+                      <div className="bg-white/80 p-3 rounded border border-indigo-100">
+                        <p className="text-xs font-bold text-indigo-700 mb-1">🎯 CÓMO enseñarlo:</p>
+                        <p className="text-sm text-slate-800">{analisisIA.intervencionAsesor.comoEnsenarlo}</p>
+                      </div>
+                    )}
+                    {analisisIA.intervencionAsesor.verificacionAprendizaje && (
+                      <div className="bg-white/80 p-3 rounded border border-indigo-100">
+                        <p className="text-xs font-bold text-indigo-700 mb-1">✅ Cómo verificar que aprendió:</p>
+                        <p className="text-sm text-slate-800">{analisisIA.intervencionAsesor.verificacionAprendizaje}</p>
+                      </div>
+                    )}
+                    {analisisIA.intervencionAsesor.tiempoEstimado && (
+                      <div className="bg-white/80 p-3 rounded border border-indigo-100">
+                        <p className="text-xs font-bold text-indigo-700 mb-1">⏱️ Tiempo estimado:</p>
+                        <p className="text-sm text-slate-800">{analisisIA.intervencionAsesor.tiempoEstimado}</p>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Recomendaciones personalizadas de IA */}
-                {analisisIA.recomendaciones && analisisIA.recomendaciones.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <h5 className="font-semibold text-purple-900 text-sm">Recomendaciones Específicas:</h5>
-                    <ul className="space-y-2">
-                      {analisisIA.recomendaciones.slice(0, 8).map((rec, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-purple-800 bg-white/60 p-2.5 rounded-lg border border-purple-100">
-                          <MessageCircle className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
-                          <span className="flex-1">{rec}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+              {/* Recomendaciones personalizadas de IA */}
+              {analisisIA.recomendaciones && analisisIA.recomendaciones.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <h5 className="font-semibold text-purple-900 text-sm">Recomendaciones Específicas:</h5>
+                  <ul className="space-y-2">
+                    {analisisIA.recomendaciones.slice(0, 8).map((rec, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm text-purple-800 bg-white/60 p-2.5 rounded-lg border border-purple-100">
+                        <MessageCircle className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <span className="flex-1">{rec}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Estrategias de estudio */}
               {analisisIA.estrategias && analisisIA.estrategias.length > 0 && (
@@ -1227,7 +1245,7 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
                   <p className="text-sm text-yellow-800">No hay datos de análisis disponibles</p>
                 </div>
               )}
-              
+
               {/* Análisis General */}
               {(analisisIACompleto?.analisisGeneral || analisisIACompleto?.resumen) && (
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 sm:p-5 border border-blue-200">
@@ -1254,11 +1272,10 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
                   {analisisIACompleto.analisisGeneral?.nivelUrgencia && (
                     <div>
                       <p className="text-xs sm:text-sm font-semibold text-blue-800 mb-1">Nivel de Urgencia:</p>
-                      <span className={`inline-block px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${
-                        analisisIACompleto.analisisGeneral.nivelUrgencia === 'Alta' ? 'bg-red-100 text-red-800' :
-                        analisisIACompleto.analisisGeneral.nivelUrgencia === 'Media' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
+                      <span className={`inline-block px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${analisisIACompleto.analisisGeneral.nivelUrgencia === 'Alta' ? 'bg-red-100 text-red-800' :
+                          analisisIACompleto.analisisGeneral.nivelUrgencia === 'Media' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                        }`}>
                         {analisisIACompleto.analisisGeneral.nivelUrgencia}
                       </span>
                       {analisisIACompleto.analisisGeneral.razonUrgencia && (
@@ -1512,33 +1529,33 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
               {/* Estrategias de Estudio */}
               {((Array.isArray(analisisIACompleto.estrategiasEstudio) && analisisIACompleto.estrategiasEstudio.length > 0) ||
                 (Array.isArray(analisisIACompleto.estrategias) && analisisIACompleto.estrategias.length > 0)) && (
-                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 sm:p-5 border border-blue-200">
-                  <h4 className="font-bold text-blue-900 text-base sm:text-lg mb-3 sm:mb-4 flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                    <span>Estrategias de Estudio</span>
-                  </h4>
-                  <div className="space-y-2 sm:space-y-3">
-                    {(analisisIACompleto.estrategiasEstudio || analisisIACompleto.estrategias || []).map((estr, idx) => (
-                      <div key={idx} className="bg-white/80 p-3 sm:p-4 rounded-lg border border-blue-200">
-                        {(estr.materia || estr.actividad?.materia) && (
-                          <h5 className="font-semibold text-blue-800 mb-1.5 sm:mb-2 text-sm sm:text-base">{estr.materia || estr.actividad?.materia}</h5>
-                        )}
-                        {(estr.enfoque || estr.actividad?.enfoque || estr.actividad?.actividad) && (
-                          <p className="text-xs sm:text-sm text-slate-800 mb-1">
-                            <strong>Enfoque:</strong> {estr.enfoque || estr.actividad?.enfoque || estr.actividad?.actividad}
-                          </p>
-                        )}
-                        {estr.actividadEspecifica && (
-                          <p className="text-xs sm:text-sm text-slate-800 mb-1"><strong>Actividad:</strong> {estr.actividadEspecifica}</p>
-                        )}
-                        {(estr.tiempo || estr.actividad?.tiempo) && (
-                          <p className="text-[10px] sm:text-xs text-slate-600"><strong>Tiempo:</strong> {estr.tiempo || estr.actividad?.tiempo}</p>
-                        )}
-                      </div>
-                    ))}
+                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 sm:p-5 border border-blue-200">
+                    <h4 className="font-bold text-blue-900 text-base sm:text-lg mb-3 sm:mb-4 flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                      <span>Estrategias de Estudio</span>
+                    </h4>
+                    <div className="space-y-2 sm:space-y-3">
+                      {(analisisIACompleto.estrategiasEstudio || analisisIACompleto.estrategias || []).map((estr, idx) => (
+                        <div key={idx} className="bg-white/80 p-3 sm:p-4 rounded-lg border border-blue-200">
+                          {(estr.materia || estr.actividad?.materia) && (
+                            <h5 className="font-semibold text-blue-800 mb-1.5 sm:mb-2 text-sm sm:text-base">{estr.materia || estr.actividad?.materia}</h5>
+                          )}
+                          {(estr.enfoque || estr.actividad?.enfoque || estr.actividad?.actividad) && (
+                            <p className="text-xs sm:text-sm text-slate-800 mb-1">
+                              <strong>Enfoque:</strong> {estr.enfoque || estr.actividad?.enfoque || estr.actividad?.actividad}
+                            </p>
+                          )}
+                          {estr.actividadEspecifica && (
+                            <p className="text-xs sm:text-sm text-slate-800 mb-1"><strong>Actividad:</strong> {estr.actividadEspecifica}</p>
+                          )}
+                          {(estr.tiempo || estr.actividad?.tiempo) && (
+                            <p className="text-[10px] sm:text-xs text-slate-600"><strong>Tiempo:</strong> {estr.tiempo || estr.actividad?.tiempo}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
 
             {/* Footer de la modal - Mismo estilo que quiz y simuladores */}

@@ -13,6 +13,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { getCooldownRemainingMs } from '../../../service/simuladoresAI';
+import { useAlert } from '../../../components/shared/AlertModal.jsx';
 
 /**
  * Modal reutilizable para generar contenido con IA
@@ -40,7 +41,7 @@ export default function GeneradorIAModal({
   maxQuestions = 50,
   initialValues = {}
 }) {
-  if (!open) return null;
+  const { showAlert, showConfirm, AlertComponent } = useAlert();
 
   const MAX_IA = maxQuestions;
 
@@ -79,6 +80,7 @@ export default function GeneradorIAModal({
 
   // Cooldown effect
   useEffect(() => {
+    if (!open) return;
     let mounted = true;
     const tick = () => {
       if (!mounted) return;
@@ -115,6 +117,8 @@ export default function GeneradorIAModal({
     return ['conceptos básicos', 'aplicaciones', 'análisis', 'síntesis', 'evaluación'];
   }, [areaTitle]);
 
+  if (!open) return null;
+
   // Títulos según el tipo
   const getTitulo = () => {
     switch (tipo) {
@@ -140,8 +144,8 @@ export default function GeneradorIAModal({
       const secs = Math.ceil(rem / 1000);
       const mins = Math.floor(secs / 60);
       const secsRem = secs % 60;
-      const timeStr = mins > 0 
-        ? `${mins} minuto${mins > 1 ? 's' : ''} y ${secsRem} segundo${secsRem > 1 ? 's' : ''}` 
+      const timeStr = mins > 0
+        ? `${mins} minuto${mins > 1 ? 's' : ''} y ${secsRem} segundo${secsRem > 1 ? 's' : ''}`
         : `${secs} segundo${secs > 1 ? 's' : ''}`;
       setIaError(`⏳ Espera requerida\n\nDebes esperar ${timeStr} antes de volver a generar con IA. El botón quedará deshabilitado durante este tiempo.\n\nPuedes cerrar este modal y volver a intentarlo cuando termine el tiempo de espera.`);
       setCooldownMs(rem);
@@ -189,12 +193,9 @@ export default function GeneradorIAModal({
 
     // Validación: advertencia si hay más temas que preguntas
     if (iaChoiceMode === 'temas' && temasList.length > cantidad) {
-      const temasTexto = temasList.join(', ');
-      const advertencia = `⚠️ Advertencia: Has especificado ${temasList.length} tema${temasList.length > 1 ? 's' : ''} (${temasTexto}), ` +
-        `pero solo se generarán ${cantidad} pregunta${cantidad > 1 ? 's' : ''}. ` +
-        `Algunos temas no tendrán preguntas. ¿Deseas continuar de todas formas?`;
-      
-      const continuar = window.confirm(advertencia);
+      const advertencia = `Has especificado ${temasList.length} temas (${temasList.join(', ')}), pero solo se generarán ${cantidad} preguntas. Algunos temas no tendrán preguntas. ¿Deseas continuar?`;
+
+      const continuar = await showConfirm(advertencia, 'Advertencia');
       if (!continuar) {
         return;
       }
@@ -227,8 +228,8 @@ export default function GeneradorIAModal({
         const secs = Math.ceil(cooldownTime / 1000);
         const mins = Math.floor(secs / 60);
         const secsRem = secs % 60;
-        const timeStr = mins > 0 
-          ? `${mins} minuto${mins > 1 ? 's' : ''} y ${secsRem} segundo${secsRem > 1 ? 's' : ''}` 
+        const timeStr = mins > 0
+          ? `${mins} minuto${mins > 1 ? 's' : ''} y ${secsRem} segundo${secsRem > 1 ? 's' : ''}`
           : `${secs} segundo${secs > 1 ? 's' : ''}`;
         setIaError(`⚠️ Límite de solicitudes alcanzado (Error 429)\n\nSe alcanzó el límite de solicitudes a la API de Google Gemini.\n\n⏱️ Tiempo de espera: ${timeStr}\n\nEl botón quedará deshabilitado durante este tiempo.`);
         setCooldownMs(cooldownTime);
@@ -237,8 +238,8 @@ export default function GeneradorIAModal({
         const secs = Math.ceil(cooldownTime / 1000);
         const mins = Math.floor(secs / 60);
         const secsRem = secs % 60;
-        const timeStr = mins > 0 
-          ? `${mins} minuto${mins > 1 ? 's' : ''} y ${secsRem} segundo${secsRem > 1 ? 's' : ''}` 
+        const timeStr = mins > 0
+          ? `${mins} minuto${mins > 1 ? 's' : ''} y ${secsRem} segundo${secsRem > 1 ? 's' : ''}`
           : `${secs} segundo${secs > 1 ? 's' : ''}`;
         setIaError(`⏳ Espera requerida\n\nDebes esperar ${timeStr} antes de volver a generar con IA.`);
         setCooldownMs(cooldownTime);
@@ -256,12 +257,13 @@ export default function GeneradorIAModal({
 
   return (
     <>
+      <AlertComponent />
       <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-start justify-center px-4 pt-24 pb-6">
-        <div 
-          className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" 
+        <div
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-[2px]"
           onClick={handleClose}
         />
-        <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 overflow-hidden">
+        <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-2xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 overflow-hidden">
           {/* Header */}
           <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
             <div className="flex items-center gap-2.5">
@@ -709,7 +711,7 @@ export default function GeneradorIAModal({
                   {cooldownMs > 0 && (
                     <div className="mt-2 flex items-center gap-2">
                       <div className="flex-1 h-1.5 bg-amber-200 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className="h-full bg-amber-500 transition-all duration-1000 ease-linear"
                           style={{ width: `${Math.min(100, (cooldownMs / 45000) * 100)}%` }}
                         />

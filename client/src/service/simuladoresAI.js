@@ -273,7 +273,7 @@ const extractJson = (src) => {
   for (let i = 0; i < t.length; i++) {
     const ch = t[i];
     const nextCh = i + 1 < t.length ? t[i + 1] : null;
-    
+
     if (escapeNext) {
       // Si estamos escapando, verificar si es un escape válido de JSON
       // 'u' es especial porque puede ser \uXXXX (unicode), verificar si sigue un dígito hex
@@ -287,21 +287,21 @@ const extractJson = (src) => {
           continue;
         }
       }
-      
+
       // Verificar si es un escape válido de JSON de un solo carácter
       // Los escapes válidos son: \" \\ \/ \b \f \n \r \t
       // Pero necesitamos verificar el contexto: \t es válido, pero \text no lo es
       const singleCharEscapes = {
         '"': true, '\\': true, '/': true, 'b': true, 'f': true, 'n': true, 'r': true
       };
-      
+
       // 't' es especial: puede ser \t (tab) o parte de \text, \frac, etc.
       if (ch === 't') {
         // Verificar si el siguiente carácter forma parte de un comando LaTeX común
         const nextChars = t.slice(i, Math.min(i + 10, t.length));
         const latexCommands = ['text', 'frac', 'sqrt', 'sum', 'int', 'lim', 'sin', 'cos', 'tan', 'log', 'ln', 'exp'];
         const isLatexCommand = latexCommands.some(cmd => nextChars.startsWith(cmd));
-        
+
         if (isLatexCommand) {
           // Es un comando LaTeX, necesitamos doble escape
           fixedLatex += '\\\\' + ch;
@@ -319,7 +319,7 @@ const extractJson = (src) => {
       escapeNext = false;
       continue;
     }
-    
+
     if (ch === '\\') {
       if (inString) {
         // Dentro de un string, marcar que el siguiente carácter está escapado
@@ -331,7 +331,7 @@ const extractJson = (src) => {
       }
       continue;
     }
-    
+
     if (ch === '"') {
       // Verificar si la comilla está escapada
       if (i > 0 && t[i - 1] === '\\' && !escapeNext) {
@@ -343,7 +343,7 @@ const extractJson = (src) => {
       fixedLatex += ch;
       continue;
     }
-    
+
     fixedLatex += ch;
   }
   t = fixedLatex;
@@ -938,7 +938,7 @@ const normalizarPreguntas = (arr, cantidad, dist = null) => {
  * @param {number} [opts.maxOutputTokens] - Tokens máximos de salida (default: calculado automáticamente)
  * @returns {Promise<Array>} preguntas normalizadas
  */
-export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined, nivel = 'intermedio', modo = 'general', temas = undefined, distribucion = undefined, idioma = 'auto', temperature = 0.2, topP = undefined, topK = undefined, maxOutputTokens = undefined, purpose = 'simuladores' }) {
+export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined, nivel = 'intermedio', modo = 'general', temas = undefined, distribucion = undefined, idioma = 'auto', temperature = 0.2, topP = undefined, topK = undefined, maxOutputTokens = undefined, purpose = 'simulation_gen' }) {
   // Normalizar temas a array si se provee como string
   let temasList = Array.isArray(temas) ? temas : (typeof temas === 'string' ? temas.split(',').map(s => s.trim()).filter(Boolean) : []);
   // Validación flexible: requiere al menos uno de tema | area | temas
@@ -1001,28 +1001,28 @@ export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined,
   const listaReparto = (modo === 'temas' && temasList.length >= 2) ? temasList : temasDesdeTema;
   const repartoTemasLine = (listaReparto.length >= 2)
     ? (() => {
-        const total = Number(cantidadFinal) || (Number(cantidadFinal) === 0 ? 0 : (Number(cantidad) || 5));
-        const n = listaReparto.length;
-        const label = (modo === 'temas') ? 'temas específicos' : 'materias/temas';
-        if (total === n) {
-          // ✅ CASO ESPECIAL: Igual número de preguntas que materias = una pregunta por cada materia
-          return `\nIMPORTANTE: La lista contiene ${n} ${label}: ${listaReparto.map(t => `"${t}"`).join(', ')}. ` +
-            `Debes generar EXACTAMENTE ${total} preguntas, UNA pregunta por cada ${label.slice(0, -1)}. ` +
-            `La primera pregunta debe ser sobre "${listaReparto[0]}", la segunda sobre "${listaReparto[1]}", y así sucesivamente. ` +
-            `NO generes más de una pregunta por materia. Distribución: 1 pregunta por "${listaReparto.join('", 1 pregunta por "')}".`;
-        } else if (total > n) {
-          return `\nLa lista contiene múltiples ${label}: ${listaReparto.map(t => `"${t}"`).join(', ')}. ` +
-            `Distribuye las ${total} preguntas entre estos ${label} de forma equilibrada y genera AL MENOS 1 pregunta por cada uno; ` +
-            `reparte el resto de manera proporcional.`;
-        } else {
-          // total < n: más materias que preguntas
-          return `\nADVERTENCIA: La lista contiene ${n} ${label}: ${listaReparto.map(t => `"${t}"`).join(', ')}, ` +
-            `pero solo se generarán ${total} pregunta${total > 1 ? 's' : ''}. ` +
-            `Debes elegir una muestra diversa y repartir las ${total} pregunta${total > 1 ? 's' : ''} entre diferentes ${label}, ` +
-            `asegurándote de cubrir al menos ${Math.min(total, n)} ${label} diferentes (no te quedes en 1 solo tema/materia). ` +
-            `Prioriza la diversidad y el equilibrio en la distribución.`;
-        }
-      })()
+      const total = Number(cantidadFinal) || (Number(cantidadFinal) === 0 ? 0 : (Number(cantidad) || 5));
+      const n = listaReparto.length;
+      const label = (modo === 'temas') ? 'temas específicos' : 'materias/temas';
+      if (total === n) {
+        // ✅ CASO ESPECIAL: Igual número de preguntas que materias = una pregunta por cada materia
+        return `\nIMPORTANTE: La lista contiene ${n} ${label}: ${listaReparto.map(t => `"${t}"`).join(', ')}. ` +
+          `Debes generar EXACTAMENTE ${total} preguntas, UNA pregunta por cada ${label.slice(0, -1)}. ` +
+          `La primera pregunta debe ser sobre "${listaReparto[0]}", la segunda sobre "${listaReparto[1]}", y así sucesivamente. ` +
+          `NO generes más de una pregunta por materia. Distribución: 1 pregunta por "${listaReparto.join('", 1 pregunta por "')}".`;
+      } else if (total > n) {
+        return `\nLa lista contiene múltiples ${label}: ${listaReparto.map(t => `"${t}"`).join(', ')}. ` +
+          `Distribuye las ${total} preguntas entre estos ${label} de forma equilibrada y genera AL MENOS 1 pregunta por cada uno; ` +
+          `reparte el resto de manera proporcional.`;
+      } else {
+        // total < n: más materias que preguntas
+        return `\nADVERTENCIA: La lista contiene ${n} ${label}: ${listaReparto.map(t => `"${t}"`).join(', ')}, ` +
+          `pero solo se generarán ${total} pregunta${total > 1 ? 's' : ''}. ` +
+          `Debes elegir una muestra diversa y repartir las ${total} pregunta${total > 1 ? 's' : ''} entre diferentes ${label}, ` +
+          `asegurándote de cubrir al menos ${Math.min(total, n)} ${label} diferentes (no te quedes en 1 solo tema/materia). ` +
+          `Prioriza la diversidad y el equilibrio en la distribución.`;
+      }
+    })()
     : '';
 
   // Determinar si requiere problemas con fórmulas/ecuaciones (matemáticas, física, química)
@@ -1113,16 +1113,16 @@ This is an English language exam. EVERYTHING must be in English:
 - The JSON structure can use Spanish keys, but ALL user-facing text content must be 100% in English`
     : (idiomaMode === 'mix')
       ? (() => {
-          const total = Number(cantidadFinal) || (Number(cantidadFinal) === 0 ? 0 : (Number(cantidad) || 5));
-          const enCount = Math.floor(total / 2);
-          const esCount = Math.max(0, total - enCount);
-          return `\n\nREQUISITO CRÍTICO DE IDIOMA (MIXTO es-MX + en-US):
+        const total = Number(cantidadFinal) || (Number(cantidadFinal) === 0 ? 0 : (Number(cantidad) || 5));
+        const enCount = Math.floor(total / 2);
+        const esCount = Math.max(0, total - enCount);
+        return `\n\nREQUISITO CRÍTICO DE IDIOMA (MIXTO es-MX + en-US):
 - Genera EXACTAMENTE ${total} preguntas: ${esCount} en español (es-MX) y ${enCount} en inglés (en-US).
 - Para las preguntas en español: enunciado y opciones en español.
 - Para las preguntas en inglés: enunciado y opciones en inglés.
 - No mezcles idiomas dentro de la MISMA pregunta (no Spanglish en un mismo enunciado/opciones).
 - Si aparece contenido de inglés como materia, úsalo dentro de las preguntas en inglés; si aparece como referencia en español, debe ser mínimo (ej. citar una oración).`;
-        })()
+      })()
       : `\n\nREQUISITO CRÍTICO DE IDIOMA (es-MX):
 - TODO el contenido visible para el estudiante debe estar en español (es-MX): enunciados, opciones, instrucciones, textos de lectura, etc.
 - NO generes el examen completo en inglés.
@@ -1176,7 +1176,7 @@ Devuelve SOLO JSON con este esquema:
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig,
       model: MODEL,
-      purpose: purpose || 'simuladores' // Indica al servidor qué pool de API keys usar
+      purpose: purpose || 'simulation_gen' // Indica al servidor qué pool de API keys usar y qué cuota aplicar
     };
     console.log('[SimuladoresAI] Sending request with model:', MODEL);
     const resp = await fetch(PROXY_ENDPOINT, {

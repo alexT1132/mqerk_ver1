@@ -19,8 +19,25 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
-  UploadCloud
+  UploadCloud,
+  Layers,
+  GraduationCap,
+  Atom,
+  Users,
+  Feather,
+  Dna,
+  Cpu,
+  TrendingUp,
+  Trophy,
+  Sprout,
+  Map,
+  Landmark,
+  Ship,
+  BrainCircuit,
+  FileQuestion,
+  ChevronLeft
 } from "lucide-react";
+
 import SimuladorModalGen from "./SimulatorModal";
 import AnalizadorFallosRepetidos from "./AnalizadorFallosRepetidos";
 import ManualReviewShortAnswer from "./ManualReviewShortAnswer";
@@ -37,16 +54,11 @@ function MathText({ text = "" }) {
   if (!text) return null;
 
   // ✅ Función para sanitizar HTML (similar a RichTextEditor)
-  // NOTA: El Markdown ya se procesa antes de llamar a esta función, así que puede contener <strong>, <b>, etc.
   const sanitizeHtmlLite = (html) => {
     if (!html) return '';
-    // Crear un elemento temporal para sanitizar
     const div = document.createElement('div');
-    // Usar innerHTML para preservar las etiquetas HTML válidas que ya procesamos (como <strong>)
     div.innerHTML = html;
-    // Lista blanca de etiquetas permitidas
     const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
-    // Recorrer todos los nodos y eliminar etiquetas no permitidas
     const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
     const nodesToRemove = [];
     let node;
@@ -65,73 +77,79 @@ function MathText({ text = "" }) {
     return div.innerHTML;
   };
 
-  // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
-  // Pero proteger las fórmulas LaTeX para no procesarlas
+  // ✅ Normalizar saltos de línea y espacios primero
+  let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // ✅ Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
+  // Esto debe hacerse ANTES de proteger las fórmulas
+  processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
+
+  // Regex para detectar $...$ y $$...$$
+  const fullLatexRe = /\$\$([\s\S]+?)\$\$|\$([\s\S]+?)\$/g;
+
+  // Protegiendo LaTeX antes de procesar Markdown
   const latexPlaceholder = '___LATEX_PLACEHOLDER___';
   const latexMatches = [];
-  let processedText = text;
   let placeholderIndex = 0;
-  
-  // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
-  processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
+
+  processedText = processedText.replace(fullLatexRe, (match) => {
     const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
     latexMatches.push(match);
     placeholderIndex++;
     return placeholder;
   });
-  
+
   // Procesar Markdown: **texto** -> <strong>texto</strong>
   processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
-  
-  // Restaurar fórmulas LaTeX
+
+  // Restaurar LaTeX
   latexMatches.forEach((match, idx) => {
     processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
   });
 
-  // ✅ Usar regex simple y robusto: busca $...$ de forma no-greedy
-  const re = /\$([^$]+?)\$/g;
   const parts = [];
   let lastIndex = 0;
   let m;
   let matchFound = false;
 
-  // Resetear el regex para evitar problemas con múltiples llamadas
-  re.lastIndex = 0;
+  fullLatexRe.lastIndex = 0;
 
-  while ((m = re.exec(processedText)) !== null) {
+  while ((m = fullLatexRe.exec(processedText)) !== null) {
     matchFound = true;
     if (m.index > lastIndex) {
       parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
     }
-    // Limpiar espacios en blanco al inicio y final de la fórmula
-    const formula = m[1].trim();
+
+    // m[1] es para $$...$$, m[2] es para $...$
+    const formula = (m[1] || m[2] || "").trim();
+    const isBlock = !!m[1];
+
     if (formula) {
-      parts.push({ type: 'math', content: formula });
+      parts.push({ type: 'math', content: formula, display: isBlock });
     }
     lastIndex = m.index + m[0].length;
   }
-  
+
   if (lastIndex < processedText.length) {
     parts.push({ type: 'text', content: processedText.slice(lastIndex) });
   }
 
-  // Si no se encontraron fórmulas, devolver el texto con HTML procesado (ya con Markdown convertido)
   if (!matchFound || parts.length === 0) {
     return (
-      <span 
-        className="whitespace-pre-wrap"
+      <span
+        className="block w-full break-words overflow-x-auto whitespace-pre-wrap"
         dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
       />
     );
   }
 
   return (
-    <span className="whitespace-pre-wrap">
+    <span className="block w-full break-words overflow-x-auto whitespace-pre-wrap">
       {parts.map((part, idx) =>
         part.type === 'math' ? (
-          <InlineMath key={`math-${idx}`} math={part.content} />
+          <InlineMath key={`math-${idx}`} math={part.content} display={part.display} />
         ) : (
-          <span 
+          <span
             key={`text-${idx}`}
             dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
           />
@@ -156,6 +174,59 @@ function Badge({ children, type = "default" }) {
       {type === "draft" && <CircleDashed className="h-4 w-4" />}
       {children}
     </span>
+  );
+}
+
+/* --- SectionBadge: Réplica exacta del header de ModulosEspecificos.jsx --- */
+function SectionBadge({ title, subtitle, onBack, total, icon: IconProp }) {
+  return (
+    <div className="relative mx-auto max-w-8xl overflow-hidden rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-6 sm:p-8 shadow-xl ring-2 ring-slate-100/50 mb-8">
+      {/* blobs suaves al fondo */}
+      <div className="pointer-events-none absolute -left-10 -top-14 h-64 w-64 rounded-full bg-violet-200/50 blur-3xl" />
+      <div className="pointer-events-none absolute -right-10 -bottom-14 h-64 w-64 rounded-full bg-indigo-200/50 blur-3xl" />
+
+      <div className="relative z-10 flex items-center gap-5">
+        {/* Botón Volver Sutil */}
+        <button
+          onClick={onBack}
+          className="group/back flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-white/50 bg-white/30 backdrop-blur-md text-violet-700 hover:bg-white hover:border-white transition-all duration-200 shadow-sm active:scale-90"
+          aria-label="Volver"
+        >
+          <ChevronLeft className="size-6 transition-transform group-hover/back:-translate-x-0.5" strokeWidth={3} />
+        </button>
+
+        {/* ícono */}
+        <div className="relative hidden xs:grid size-16 sm:size-20 place-items-center rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-600 to-purple-600 text-white shadow-2xl ring-4 ring-white/50">
+          <IconProp className="size-8 sm:size-10 text-white" />
+          <div className="absolute -top-1 -right-1 inline-grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white ring-2 ring-white shadow-md">
+            <span className="text-[10px] font-bold">★</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 uppercase">
+            {title || "Módulos específicos"}
+          </h2>
+          <div className="mt-2 flex gap-2">
+            <span className="h-1.5 w-20 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 shadow-sm" />
+            <span className="h-1.5 w-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 shadow-sm" />
+          </div>
+        </div>
+
+        {/* Contador de Módulos (Réplica estilo Actividades con badge sutil) */}
+        {total > 0 && (
+          <div className="hidden md:flex ml-auto items-center gap-3 rounded-2xl bg-white/40 backdrop-blur-md px-5 py-3 border border-white/50 shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
+              <FileQuestion className="size-5" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-lg font-black text-slate-800 leading-none">{total}</span>
+              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Simuladores</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -364,21 +435,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   const [iaTopP, setIaTopP] = useState('');
   const [iaTopK, setIaTopK] = useState('');
   const [iaMaxTokens, setIaMaxTokens] = useState('');
-  // Lock page scroll while IA modal is open (avoid browser scrollbar)
-  useEffect(() => {
-    if (!iaChoiceOpen) return;
-    const prevOverflow = document.body.style.overflow;
-    const prevPaddingRight = document.body.style.paddingRight;
-    document.body.style.overflow = 'hidden';
-    try {
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-      if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
-    } catch { }
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      document.body.style.paddingRight = prevPaddingRight;
-    };
-  }, [iaChoiceOpen]);
+
   // Vista previa
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -392,6 +449,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   const [reviewData, setReviewData] = useState(null);
   const [reviewHeader, setReviewHeader] = useState({ simulacion: null, estudiante: null });
   const [selectedIntentoReview, setSelectedIntentoReview] = useState(1); // Intentar oficial por defecto
+
+
 
   const navigate = useNavigate();
   const headerTitle = useMemo(() => {
@@ -434,7 +493,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       // ✅ CRÍTICO: Para vista general (sin areaId), enviar id_area: 0 para que el backend filtre solo generales
       // Si no se envía id_area, el backend devuelve TODOS los simuladores (de todas las áreas)
       const params = areaId ? { ...baseParams, id_area: areaId } : { ...baseParams, id_area: 0 };
-      
+
       const res = await listSimulaciones(params);
       let rows = res.data?.data || res.data || [];
       if (!Array.isArray(rows)) rows = [];
@@ -442,7 +501,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       // Si estamos en vista general y no hay resultados, está bien (no hay simuladores generales)
       // Si estamos en área específica y no hay resultados, está bien (no hay simuladores en esa área)
       // El fallback anterior estaba cargando simuladores de otras áreas, lo cual es incorrecto
-      
+
       // Solo intentar hidratar desde el último creado si realmente no hay resultados
       // y el último creado coincide con la vista actual
       if (rows.length === 0) {
@@ -463,19 +522,19 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               return null;
             });
             const sim = r?.data?.data || r?.data || null;
-            
+
             // ✅ CRÍTICO: Solo agregar si coincide con la vista actual
             if (sim) {
               const simIdArea = sim.id_area !== null && sim.id_area !== undefined ? Number(sim.id_area) : null;
               const isGeneralView = !areaId || areaId === null || areaId === undefined;
               const isGeneralSim = simIdArea === null || simIdArea === undefined || Number(simIdArea) === 0;
-              
+
               // Solo agregar si:
               // - Estamos en vista general Y el simulador es general, O
               // - Estamos en área específica Y el simulador tiene ese id_area
-              const coincide = (isGeneralView && isGeneralSim) || 
-                              (!isGeneralView && Number(areaId) === simIdArea);
-              
+              const coincide = (isGeneralView && isGeneralSim) ||
+                (!isGeneralView && Number(areaId) === simIdArea);
+
               if (coincide) {
                 rows = [sim];
                 console.log('[SimuladoresGen] Hidratando desde localStorage (coincide con vista):', {
@@ -505,7 +564,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           }
         }
       }
-      
+
       // Filtro fuerte por área en cliente (si areaId -> solo de esa área; si no -> solo generales sin área)
       const filtered = Array.isArray(rows) ? rows.filter(r => {
         if (areaId) {
@@ -514,7 +573,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           const ridNum = rid !== null && rid !== undefined ? Number(rid) : null;
           const areaIdNum = Number(areaId);
           const matches = ridNum !== null && ridNum === areaIdNum;
-          
+
           return matches;
         }
         // generales: id_area nulo / 0 / undefined / string "0"
@@ -525,17 +584,17 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         const isZero = Number(ridGeneral) === 0;
         const isStringZero = String(ridGeneral) === '0';
         const isGeneral = isNull || isUndefined || isZero || isStringZero;
-        
-        
+
+
         return isGeneral;
       }) : [];
-      
+
       setDebugInfo({ fetched: filtered.length, raw: Array.isArray(rows) ? rows.length : -1 });
-      
+
       const mapped = filtered.map(r => {
         // ✅ CRÍTICO: Usar múltiples fallbacks para el nombre/título
         const nombreFinal = r.titulo || r.nombre || r.name || `Simulador ${r.id}` || 'Sin título';
-        
+
         // ✅ Verificar que el nombre no esté vacío
         if (!nombreFinal || nombreFinal.trim() === '') {
           console.warn('[SimuladoresGen] ⚠️ Simulador sin título/nombre:', {
@@ -546,10 +605,10 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
             todosLosCampos: Object.keys(r || {})
           });
         }
-        
+
         // ✅ CRÍTICO: Obtener instrucciones/descripción con múltiples fallbacks
         const instruccionesFinal = r.descripcion || r.instrucciones || r.instructions || '';
-        
+
         // ✅ Log si no hay instrucciones para debugging
         if (!instruccionesFinal || instruccionesFinal.trim() === '') {
           console.warn('[SimuladoresGen] ⚠️ Simulador sin instrucciones/descripción:', {
@@ -561,7 +620,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
             todosLosCampos: Object.keys(r || {})
           });
         }
-        
+
         return {
           id: r.id,
           name: nombreFinal,
@@ -573,7 +632,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           updatedAt: r.updated_at ? new Date(r.updated_at).toLocaleDateString('es-MX') : ""
         };
       });
-      
+
       setItems(mapped);
     } catch (e) { console.error(e); setError(e?.response?.data?.message || "No se pudieron cargar simulaciones"); }
     finally { setLoading(false); }
@@ -585,7 +644,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     didLoadRef.current = true;
     load();
   }, [areaId]);
-  
+
   // ✅ Verificar y limpiar localStorage de simuladores eliminados al cargar
   useEffect(() => {
     const checkAndCleanLastSimId = async () => {
@@ -621,7 +680,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         }
       }
     };
-    
+
     // Verificar solo una vez al montar el componente
     checkAndCleanLastSimId();
   }, []); // Solo ejecutar una vez al montar
@@ -656,14 +715,14 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       // Limpiar el error cuando el cooldown termine
       if (remaining === 0 && iaError) {
         const errorMsg = iaError.toLowerCase();
-        if (errorMsg.includes('límite de solicitudes') || 
-            errorMsg.includes('espera') || 
-            errorMsg.includes('cooldown') || 
-            errorMsg.includes('demasiadas peticiones') ||
-            errorMsg.includes('rate limit') ||
-            errorMsg.includes('429') ||
-            errorMsg.includes('503') ||
-            errorMsg.includes('espera requerida')) {
+        if (errorMsg.includes('límite de solicitudes') ||
+          errorMsg.includes('espera') ||
+          errorMsg.includes('cooldown') ||
+          errorMsg.includes('demasiadas peticiones') ||
+          errorMsg.includes('rate limit') ||
+          errorMsg.includes('429') ||
+          errorMsg.includes('503') ||
+          errorMsg.includes('espera requerida')) {
           setIaError('');
         }
       }
@@ -681,7 +740,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       const okSearch = s ? (String(it.name || '').toLowerCase().includes(s)) : true;
       return okStatus && okSearch;
     });
-    
+
     return filtered;
   }, [items, statusFilter, search]);
 
@@ -708,7 +767,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       alert('Error: No se puede cargar la vista previa de un simulador sin ID');
       return;
     }
-    
+
     setPreviewOpen(true);
     setPreviewLoading(true);
     setPreviewSim(null);
@@ -740,7 +799,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       alert('Error: No se puede editar un simulador sin ID');
       return;
     }
-    
+
     try {
       // Cargar los datos completos del simulador (usar getSimulacionFull para obtener todos los campos)
       const { data: fullData } = await getSimulacionFull(item.id).catch(async () => {
@@ -748,9 +807,9 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         const { data } = await getSimulacion(item.id);
         return { data };
       });
-      
+
       const simData = fullData?.data?.simulacion || fullData?.data || fullData || {};
-      
+
       // Log completo de lo que viene del backend para debugging
       console.log('[SimuladoresGen] handleEdit - Datos RAW del backend:', {
         simDataCompleto: simData,
@@ -760,7 +819,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         instrucciones: simData.instrucciones,
         time_limit_min: simData.time_limit_min
       });
-      
+
       // Mapear los datos del simulador al formato del initialForm
       // Grupos: puede venir como string separado por comas, array, o null
       let gruposArray = [];
@@ -771,12 +830,12 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           gruposArray = simData.grupos;
         }
       }
-      
+
       // Calcular horas y minutos desde time_limit_min
       const timeLimitMin = Number(simData.time_limit_min || 0);
       const horas = Math.floor(timeLimitMin / 60);
       const minutos = timeLimitMin % 60;
-      
+
       // Formatear fecha_limite para el input type="date" (YYYY-MM-DD)
       let fechaLimiteFormatted = '';
       const fechaLimiteRaw = simData.fecha_limite || simData.fechaLimite;
@@ -791,7 +850,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           console.warn('[SimuladoresGen] Error al formatear fecha_limite:', e, 'Valor recibido:', fechaLimiteRaw);
         }
       }
-      
+
       // Preparar el objeto de edición con todos los datos
       const editData = {
         ...item,
@@ -809,7 +868,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         areaId: simData.id_area !== undefined && simData.id_area !== null ? Number(simData.id_area) : null,
         areaTitle: simData.materia || simData.titulo_area || simData.areaTitle || null
       };
-      
+
       console.log('[SimuladoresGen] handleEdit - Datos procesados para editar:', {
         id: item.id,
         titulo: editData.titulo,
@@ -825,7 +884,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         areaId: editData.areaId,
         timeLimitMin
       });
-      
+
       setEditing(editData);
       setOpen(true);
     } catch (error) {
@@ -838,7 +897,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       alert('Error: No se puede eliminar un simulador sin ID');
       return;
     }
-    
+
     setConfirmModal({
       open: true,
       title: 'Eliminar simulador',
@@ -856,8 +915,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           if (lastId === item.id) {
             localStorage.removeItem('last_sim_id');
           }
-        } catch {}
-        
+        } catch { }
+
         try {
           await deleteSimulacion(item.id);
           setConfirmModal(prev => ({ ...prev, open: false }));
@@ -886,13 +945,13 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     // 1. Si el form tiene areaId/areaTitle (viene del modal que preservó iaPrefill) → usarlo
     // 2. Si hay iaPrefill con areaId → usarlo
     // 3. Si no, usar el área actual del componente
-    
+
     const hasFormArea = form && (form.areaId !== undefined || form.areaTitle !== undefined);
     const hasIaPrefill = iaPrefill && iaPrefill !== null;
-    
+
     let currentAreaId = null;
     let currentAreaTitle = null;
-    
+
     if (hasFormArea) {
       // ✅ PRIORIDAD 1: El form del modal tiene areaId/areaTitle (preservados desde iaPrefill)
       currentAreaId = form.areaId !== undefined ? form.areaId : null;
@@ -931,7 +990,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       alert('Error: El título del simulador es requerido y debe tener al menos 3 caracteres. Por favor, ingresa un nombre.');
       return;
     }
-    
+
     // ✅ Log para debugging
     console.log('[SimuladoresGen] handleCreate - Validación de título:', {
       formNombre: form.nombre,
@@ -941,7 +1000,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       tituloFinal,
       tituloFinalLength: tituloFinal.length
     });
-    
+
     // Mapear campos del modal al backend
     // ✅ IMPORTANTE: Priorizar descripción del form (si viene de iaPrefill), luego instrucciones
     // ✅ CRÍTICO: También buscar en iaPrefill si no hay descripción en el form
@@ -950,7 +1009,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     // ✅ CRÍTICO: No hacer .trim() aquí porque puede eliminar espacios válidos
     // Usar el valor directamente y solo hacer trim al final si es necesario
     const descripcionFinal = form.descripcion || form.instrucciones || descripcionDelIaPrefill || '';
-    
+
     // ✅ Log crítico solo si la descripción está vacía
     if (!descripcionFinal || descripcionFinal.length === 0) {
       console.warn('[SimuladoresGen] ⚠️ DESCRIPCIÓN VACÍA al crear:', {
@@ -971,11 +1030,11 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       grupos: form.grupos ? String(form.grupos).split(',').map(s => s.trim()).filter(Boolean) : null,
       // ✅ CRÍTICO: Incluir id_area siempre (null para generales, el valor numérico para áreas específicas)
       // Si currentAreaId es un número válido, usarlo; si es null/undefined, usar null explícitamente
-      id_area: (currentAreaId !== null && currentAreaId !== undefined && Number(currentAreaId) > 0) 
-        ? Number(currentAreaId) 
+      id_area: (currentAreaId !== null && currentAreaId !== undefined && Number(currentAreaId) > 0)
+        ? Number(currentAreaId)
         : null
     };
-    
+
     try {
       const hasIaQuestions = iaPreguntas && Array.isArray(iaPreguntas) && iaPreguntas.length > 0;
       // Si tenemos un banco IA pendiente, crear con preguntas incluidas
@@ -991,7 +1050,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
       const res = await createSimulacion(withQuestions);
       const s = res.data?.data || res.data;
-      
+
       console.log('[SimuladoresGen] Respuesta del backend:', {
         id: s?.id,
         titulo: s?.titulo,
@@ -1010,19 +1069,19 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         payloadDescripcionVacia: !withQuestions.descripcion || withQuestions.descripcion.trim() === '',
         todosLosCampos: Object.keys(s || {})
       });
-      
+
       // ✅ IMPORTANTE: Verificar que el simulador se guardó correctamente con el id_area correcto
       if (hasIaQuestions && s?.id) {
         try {
           const { getSimulacion } = await import('../../api/simulaciones');
           const verifyRes = await getSimulacion(s.id);
           const simuladorVerificado = verifyRes?.data?.data || verifyRes?.data;
-          
+
           // ✅ Verificar también las preguntas guardadas
           const { getSimulacionFull } = await import('../../api/simulaciones');
           const fullRes = await getSimulacionFull(s.id);
           const simuladorCompleto = fullRes?.data?.data || fullRes?.data;
-          
+
           // ✅ Log crítico: solo si descripción no se guardó
           if (!simuladorVerificado?.descripcion || simuladorVerificado.descripcion.length === 0) {
             console.warn('[SimuladoresGen] ⚠️ Descripción NO se guardó después de crear:', {
@@ -1030,15 +1089,15 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               descripcionEnviada: payload.descripcion?.substring(0, 50)
             });
           }
-          
+
           if (simuladorVerificado) {
             const idAreaGuardado = simuladorVerificado.id_area;
             const idAreaEsperado = currentAreaId;
-            
+
             // Comparar como números para evitar problemas de tipo
             const guardadoNum = idAreaGuardado !== null && idAreaGuardado !== undefined ? Number(idAreaGuardado) : null;
             const esperadoNum = idAreaEsperado !== null && idAreaEsperado !== undefined ? Number(idAreaEsperado) : null;
-            
+
             if (guardadoNum !== esperadoNum) {
               console.error('[SimuladoresGen] ❌ ERROR: id_area no se guardó correctamente', {
                 esperado: esperadoNum,
@@ -1053,16 +1112,16 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           console.error('[SimuladoresGen] Error al verificar simulador creado:', verifyError);
         }
       }
-      
+
       try { localStorage.setItem('last_sim_id', String(s.id)); } catch { }
-      
+
       // ✅ CRÍTICO: Usar el id_area del simulador guardado (s.id_area), no el currentAreaId del componente
       // Esto asegura que el tipo se muestre correctamente según donde realmente se guardó
       const idAreaGuardado = s.id_area !== null && s.id_area !== undefined ? Number(s.id_area) : null;
-      const tipoItem = idAreaGuardado 
-        ? (currentAreaTitle || `Área ${idAreaGuardado}`) 
+      const tipoItem = idAreaGuardado
+        ? (currentAreaTitle || `Área ${idAreaGuardado}`)
         : 'General';
-      
+
       console.log('[SimuladoresGen] Creando newItem para la lista:', {
         id: s.id,
         id_area: idAreaGuardado,
@@ -1070,11 +1129,11 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         currentAreaId: currentAreaId,
         s_id_area: s.id_area
       });
-      
+
       // ✅ CRÍTICO: Usar el título del simulador guardado, con fallback a nombre si titulo está vacío
       const tituloFinal = s.titulo || s.nombre || payload.titulo || 'Sin título';
-      
-      
+
+
       const newItem = {
         id: s.id,
         name: tituloFinal, // ✅ Usar título con fallback
@@ -1084,29 +1143,29 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         status: hasIaQuestions ? 'Borrador' : (s.publico ? 'Publicado' : 'Borrador'), // Borrador si tiene preguntas IA para que pueda editarlo
         updatedAt: s.updated_at ? new Date(s.updated_at).toLocaleDateString('es-MX') : ''
       };
-      
+
       // ✅ IMPORTANTE: Solo agregar a la lista si el id_area coincide con la vista actual
       // Si se guardó en área 101 pero estamos en vista general, no agregarlo aquí (aparecerá cuando recargues)
       // ✅ CRÍTICO: Considerar tanto null como undefined como vista general
       const isGeneralView = !areaId || areaId === null || areaId === undefined;
       const isGeneralSaved = !idAreaGuardado || idAreaGuardado === null || idAreaGuardado === undefined || Number(idAreaGuardado) === 0;
-      
-      const coincideConVista = (isGeneralView && isGeneralSaved) || 
-                               (!isGeneralView && !isGeneralSaved && Number(areaId) === idAreaGuardado);
-      
-      
+
+      const coincideConVista = (isGeneralView && isGeneralSaved) ||
+        (!isGeneralView && !isGeneralSaved && Number(areaId) === idAreaGuardado);
+
+
       setOpen(false);
       // Limpiar estado IA temporal
       setIaPreguntas(null);
       setIaPrefill(null);
-      
+
       // ✅ IMPORTANTE: Si tiene preguntas IA, NO navegar al builder, quedarse en la lista (igual que Quiz.jsx)
       // Esto permite que el simulador aparezca en la lista del asesor y pueda ser editado/publicado desde allí
       if (hasIaQuestions) {
         // Recargar la lista inmediatamente para que el simulador aparezca desde el backend
         // Esto asegura que los datos estén sincronizados y no haya problemas de duplicación
         await load();
-        
+
         // Mostrar modal de éxito después de recargar
         setSuccessModal({
           open: true,
@@ -1131,7 +1190,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           : { simId: s.id, tempCreated: true };
         navigate(`/asesor/quizt/builder?simId=${s.id}&new=1`, { state: navState });
       }
-    } catch (e) { 
+    } catch (e) {
       console.error('[SimuladoresGen] Error al crear simulador:', e);
       alert(e?.response?.data?.message || e?.message || 'No se pudo crear el simulador. Por favor, intenta de nuevo.');
     }
@@ -1139,7 +1198,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
   const handleUpdate = async (form) => {
     if (!editing) return;
-    
+
     // ✅ CRÍTICO: Obtener el id_area actual del simulador antes de actualizar
     // para preservarlo si no se está cambiando explícitamente
     let currentIdArea = null;
@@ -1152,7 +1211,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     } catch (err) {
       // Silencioso
     }
-    
+
     // ✅ CRÍTICO: Preservar id_area
     let finalIdArea = null;
     if (form && (form.areaId !== undefined && form.areaId !== null)) {
@@ -1164,17 +1223,17 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     } else {
       finalIdArea = null;
     }
-    
+
     // ✅ CRÍTICO: El form usa "instrucciones" como descripción (ya que el modal mapea descripcion->instrucciones)
     // IMPORTANTE: No hacer .trim() aquí porque puede eliminar espacios válidos, y siempre enviar el valor aunque esté vacío
     const descripcionFinal = form.descripcion || form.instrucciones || '';
-    
+
     // ✅ Log para debugging
-    
+
     // ✅ IMPORTANTE: Validar título antes de enviarlo (no enviar si está vacío para preservar el existente)
     const tituloDelForm = (form.nombre || form.titulo || '').trim();
     const tituloParaEnviar = tituloDelForm && tituloDelForm.length >= 3 ? tituloDelForm : undefined;
-    
+
     // ✅ CRÍTICO: Normalizar grupos - el backend espera JSON válido o NULL
     // El campo grupos tiene un CHECK constraint que requiere JSON válido: CHECK (json_valid(`grupos`))
     let gruposFinal = null;
@@ -1202,7 +1261,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     if (gruposFinal === '' || gruposFinal === undefined) {
       gruposFinal = null;
     }
-    
+
     // ✅ CRÍTICO: Normalizar fecha_limite - debe ser null si está vacío, o una fecha válida en formato ISO
     let fechaLimiteFinal = null;
     if (form.fechaLimite) {
@@ -1222,7 +1281,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         }
       }
     }
-    
+
     const payload = {
       ...(tituloParaEnviar !== undefined ? { titulo: tituloParaEnviar } : {}), // Solo incluir si es válido
       // ✅ CRÍTICO: Siempre incluir descripcion, incluso si está vacío (usar string vacío en lugar de null para forzar actualización)
@@ -1239,53 +1298,53 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       activo: true, // ✅ IMPORTANTE: Siempre mantener activo al actualizar
       grupos: gruposFinal, // ✅ Ya normalizado como string separado por comas o null
       // ✅ CRÍTICO: Incluir id_area siempre para preservarlo (null para generales, número para áreas específicas)
-      id_area: (finalIdArea !== null && finalIdArea !== undefined && Number(finalIdArea) > 0) 
-        ? Number(finalIdArea) 
+      id_area: (finalIdArea !== null && finalIdArea !== undefined && Number(finalIdArea) > 0)
+        ? Number(finalIdArea)
         : null
     };
-    
+
     // ✅ Log crítico: solo si descripción está vacía
     if (!payload.descripcion || payload.descripcion.length === 0) {
       console.warn('[SimuladoresGen] handleUpdate - ⚠️ Descripción vacía en payload');
     }
-    
+
     try {
       const res = await updateSimulacion(editing.id, payload);
       const s = res.data?.data || res.data;
-      
+
       // ✅ CRÍTICO: Usar el valor del payload directamente (más confiable que la respuesta del backend)
       const instruccionesActualizadas = payload.descripcion || s?.descripcion || s?.instrucciones || '';
-      
+
       // ✅ Log crítico: solo si hay problema
       if (!instruccionesActualizadas || instruccionesActualizadas.length === 0) {
         console.warn('[SimuladoresGen] handleUpdate - ⚠️ Descripción vacía después de actualizar');
       }
-      
+
       // ✅ Actualizar el estado inmediatamente con los datos del payload (más confiable)
       setItems(prev => prev.map(x => {
         if (x.id === editing.id) {
           const itemActualizado = {
-            id: s?.id || editing.id, 
-            name: s?.titulo || x.name, 
+            id: s?.id || editing.id,
+            name: s?.titulo || x.name,
             instrucciones: instruccionesActualizadas, // ✅ CRÍTICO: Usar las instrucciones del payload
             type: (s?.id_area && Number(s.id_area) > 0) ? (areaTitle || `Área ${s.id_area}`) : 'General',
-            questions: Number(x.questions || 0), 
-            attempts: Number(x.attempts || 0), 
-            status: s?.publico ? 'Publicado' : 'Borrador', 
+            questions: Number(x.questions || 0),
+            attempts: Number(x.attempts || 0),
+            status: s?.publico ? 'Publicado' : 'Borrador',
             updatedAt: s?.updated_at ? new Date(s.updated_at).toLocaleDateString('es-MX') : x.updatedAt
           };
           return itemActualizado;
         }
         return x;
       }));
-      
+
       setEditing(null);
       setOpen(false);
-      
+
       // ✅ Recargar la lista inmediatamente para sincronizar con el backend
       // El estado ya se actualizó arriba con el valor del payload, pero recargamos para asegurar consistencia
       await load();
-    } catch (e) { 
+    } catch (e) {
       console.error('[SimuladoresGen] handleUpdate - Error completo:', e);
       console.error('[SimuladoresGen] handleUpdate - Response data:', e?.response?.data);
       console.error('[SimuladoresGen] handleUpdate - Response status:', e?.response?.status);
@@ -1320,13 +1379,13 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
     setReviewLoading(true);
     setReviewData(null);
     setSelectedIntentoReview(1); // Resetear al intento oficial
-    setReviewHeader({ 
-      simulacion: resultsSimMeta, 
-      estudiante: { 
-        id: row.id_estudiante, 
+    setReviewHeader({
+      simulacion: resultsSimMeta,
+      estudiante: {
+        id: row.id_estudiante,
         nombre: `${row.apellidos || ''} ${row.nombre || ''}`.trim(),
         totalIntentos: row.total_intentos || 0
-      } 
+      }
     });
     try {
       // Cargar intento oficial por defecto
@@ -1339,7 +1398,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       setReviewLoading(false);
     }
   };
-  
+
   // Función para cambiar el intento en el modal de review
   const handleChangeIntentoReview = async (intentoNum) => {
     if (!resultsSimMeta?.id || !reviewHeader.estudiante?.id) return;
@@ -1383,7 +1442,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         } catch (err) {
           console.warn('[SimuladoresGen] No se pudo obtener datos actuales del simulador:', err);
         }
-        
+
         // Optimista
         const prev = [...items];
         setItems(prev => prev.map(x => x.id === item.id ? { ...x, status: 'Publicado' } : x));
@@ -1395,28 +1454,28 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
             publico: true,
             activo: true
           };
-          
+
           // ✅ Preservar título si existe
           if (currentSimData && currentSimData.titulo) {
             publishPayload.titulo = currentSimData.titulo;
             console.log('[SimuladoresGen] handlePublish - preservando título:', publishPayload.titulo);
           }
-          
+
           // ✅ Preservar descripción si existe
           if (currentSimData && currentSimData.descripcion) {
             publishPayload.descripcion = currentSimData.descripcion;
             console.log('[SimuladoresGen] handlePublish - preservando descripción');
           }
-          
+
           // ✅ Preservar id_area
           if (currentIdArea !== null && currentIdArea !== undefined && Number(currentIdArea) > 0) {
             publishPayload.id_area = Number(currentIdArea);
           } else {
             publishPayload.id_area = null;
           }
-          
+
           await updateSimulacion(item.id, publishPayload);
-          
+
           // ✅ Verificar que el id_area se preservó después de publicar
           try {
             const verifyRes = await getSimulacion(item.id);
@@ -1428,7 +1487,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               publico: simuladorVerificado?.publico,
               coincide: simuladorVerificado?.id_area === currentIdArea
             });
-            
+
             if (simuladorVerificado && simuladorVerificado.id_area !== currentIdArea) {
               console.error('[SimuladoresGen] ❌ ERROR: id_area se perdió después de publicar', {
                 esperado: currentIdArea,
@@ -1439,7 +1498,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           } catch (verifyErr) {
             console.warn('[SimuladoresGen] No se pudo verificar id_area después de publicar:', verifyErr);
           }
-          
+
           setConfirmModal(prev => ({ ...prev, open: false }));
           // Recargar la lista para reflejar los cambios
           setTimeout(() => load(), 500);
@@ -1471,7 +1530,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         setLoading(false);
         return;
       }
-      
+
       // Calcular cantidad total desde distribución personalizada
       const cantidad = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
       if (cantidad > MAX_IA) {
@@ -1492,21 +1551,21 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       const temaConComas = tema.includes(',');
       const materiasDelTema = temaConComas ? tema.split(',').map(s => s.trim()).filter(Boolean) : [];
       const numMaterias = materiasDelTema.length >= 2 ? materiasDelTema.length : 0;
-      
+
       // ✅ Advertencia si hay más materias que preguntas
       if (numMaterias > cantidad) {
         const materiasTexto = materiasDelTema.join(', ');
         const advertencia = `⚠️ Advertencia: Has especificado ${numMaterias} materia${numMaterias > 1 ? 's' : ''} (${materiasTexto}), ` +
           `pero solo se generarán ${cantidad} pregunta${cantidad > 1 ? 's' : ''}. ` +
           `Algunas materias no tendrán preguntas. ¿Deseas continuar de todas formas?`;
-        
+
         const continuar = window.confirm(advertencia);
         if (!continuar) {
           setLoading(false);
           return;
         }
       }
-      
+
       // Preparar parámetros avanzados de IA
       const aiParams = {
         tema: tema.trim(), // ✅ Asegurar que el tema tenga un valor válido
@@ -1542,7 +1601,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       const tituloSugerido = `${tema} (IA · ${cantidad} pregunta${cantidad > 1 ? 's' : ''})`.trim();
       // ✅ IMPORTANTE: Generar descripción más completa, natural y fluida basada en el tema y tipo (funciona tanto para generales como por área)
       const esPorArea = areaId && areaTitle;
-      const contextoSimulador = esPorArea 
+      const contextoSimulador = esPorArea
         ? `Simulación de práctica sobre ${tema} enfocada en el área de ${areaTitle}. Contiene ${cantidad} pregunta${cantidad > 1 ? 's' : ''} de contenido específico del área, generadas con inteligencia artificial para ayudarte a prepararte para tu examen de ingreso universitario.`
         : `Simulación de práctica general sobre ${tema} para examen de ingreso universitario. Contiene ${cantidad} pregunta${cantidad > 1 ? 's' : ''} de contenido general, generadas con inteligencia artificial para reforzar tus conocimientos.`;
       const descripcionGenerada = `${contextoSimulador} Lee cada pregunta cuidadosamente y selecciona la respuesta correcta.`;
@@ -1552,8 +1611,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       const isGeneralView = !areaId || areaId === null || areaId === undefined;
       // ✅ IMPORTANTE: Asegurar que todos los datos necesarios estén presentes en iaPrefill
       // Validar que el título no esté vacío antes de establecerlo
-      const tituloFinal = tituloSugerido && tituloSugerido.length >= 3 
-        ? tituloSugerido 
+      const tituloFinal = tituloSugerido && tituloSugerido.length >= 3
+        ? tituloSugerido
         : `Simulador ${tema || 'General'} (IA)`;
       setIaPrefill({
         titulo: tituloFinal, // ✅ Asegurar que siempre tenga un valor válido (mínimo 3 caracteres)
@@ -1571,7 +1630,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         areaId: isGeneralView ? null : (areaId !== null && areaId !== undefined ? Number(areaId) : null),
         areaTitle: isGeneralView ? null : (areaTitle || null),
       });
-      
+
       // Log para debugging
       console.log('[SimuladoresGen] IA generada - iaPrefill establecido:', {
         areaId: isGeneralView ? null : (areaId !== null && areaId !== undefined ? Number(areaId) : null),
@@ -1579,7 +1638,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         isGeneralView,
         areaIdOriginal: areaId
       });
-      
+
       setOpen(true);
     } catch (e) {
       console.error(e);
@@ -1601,7 +1660,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         const secs = Math.ceil(cooldownTime / 1000);
         const mins = Math.floor(secs / 60);
         const remainingSecs = secs % 60;
-        const timeDisplay = mins > 0 
+        const timeDisplay = mins > 0
           ? `${mins} minuto${mins > 1 ? 's' : ''}${remainingSecs > 0 ? ` y ${remainingSecs} segundo${remainingSecs > 1 ? 's' : ''}` : ''}`
           : `${secs} segundo${secs > 1 ? 's' : ''}`;
         setError(`⚠️ Demasiadas peticiones en poco tiempo\n\nHas realizado múltiples peticiones seguidas. Por favor, espera ${timeDisplay} antes de intentar nuevamente para evitar saturar el servicio de IA.\n\nEl botón de generar quedará deshabilitado durante el tiempo de espera.`);
@@ -1612,7 +1671,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         const secs = Math.ceil(cooldownTime / 1000);
         const mins = Math.floor(secs / 60);
         const remainingSecs = secs % 60;
-        const timeDisplay = mins > 0 
+        const timeDisplay = mins > 0
           ? `${mins} minuto${mins > 1 ? 's' : ''}${remainingSecs > 0 ? ` y ${remainingSecs} segundo${remainingSecs > 1 ? 's' : ''}` : ''}`
           : `${secs} segundo${secs > 1 ? 's' : ''}`;
         setError(`⚠️ Límite de solicitudes alcanzado (Error ${e?.status || 429})\n\nSe alcanzó el límite de solicitudes a la API de Google. Por favor, espera ${timeDisplay} antes de intentar nuevamente.\n\nEl botón de generar quedará deshabilitado durante el tiempo de espera.`);
@@ -1624,7 +1683,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         const secs = Math.ceil(cooldownTime / 1000);
         const mins = Math.floor(secs / 60);
         const remainingSecs = secs % 60;
-        const timeDisplay = mins > 0 
+        const timeDisplay = mins > 0
           ? `${mins} minuto${mins > 1 ? 's' : ''}${remainingSecs > 0 ? ` y ${remainingSecs} segundo${remainingSecs > 1 ? 's' : ''}` : ''}`
           : `${secs} segundo${secs > 1 ? 's' : ''}`;
         setError(`⏳ Espera requerida\n\nDebes esperar ${timeDisplay} antes de volver a generar con IA. El botón quedará deshabilitado durante este tiempo.`);
@@ -1652,7 +1711,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       setCooldownMs(rem);
       return;
     }
-    
+
     if (!areaId) {
       // Para simuladores generales, usar generalTopic y la misma lógica
       if (!generalTopic.trim()) {
@@ -1709,7 +1768,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         setLoading(false);
         return;
       }
-      
+
       // Distribución personalizada
       const distribucion = {
         multi: iaCountMultiple,
@@ -1729,31 +1788,31 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         ...(iaMaxTokens !== '' && { maxOutputTokens: Number(iaMaxTokens) })
       };
       const temasList = String(temasText || '').split(',').map(s => s.trim()).filter(Boolean);
-      
+
       // ✅ Validación: Detectar múltiples materias en el tema (separadas por comas)
       const temaConComas = tema.includes(',');
       const materiasDelTema = temaConComas ? tema.split(',').map(s => s.trim()).filter(Boolean) : [];
       // En modo 'temas', usar temasList; en modo 'general' con comas en tema, usar materiasDelTema
-      const numMaterias = modo === 'temas' && temasList.length 
-        ? temasList.length 
+      const numMaterias = modo === 'temas' && temasList.length
+        ? temasList.length
         : (materiasDelTema.length >= 2 ? materiasDelTema.length : 0);
-      
+
       // ✅ Advertencia si hay más materias que preguntas
       if (numMaterias > cantidad) {
-        const materiasTexto = modo === 'temas' && temasList.length 
-          ? temasList.join(', ') 
+        const materiasTexto = modo === 'temas' && temasList.length
+          ? temasList.join(', ')
           : (materiasDelTema.length >= 2 ? materiasDelTema.join(', ') : '');
         const advertencia = `⚠️ Advertencia: Has especificado ${numMaterias} materia${numMaterias > 1 ? 's' : ''} (${materiasTexto}), ` +
           `pero solo se generarán ${cantidad} pregunta${cantidad > 1 ? 's' : ''}. ` +
           `Algunas materias no tendrán preguntas. ¿Deseas continuar de todas formas?`;
-        
+
         const continuar = window.confirm(advertencia);
         if (!continuar) {
           setLoading(false);
           return;
         }
       }
-      
+
       if (modo === 'temas' && temasList.length) {
         opts.modo = 'temas';
         opts.temas = temasList;
@@ -1796,8 +1855,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       const isGeneralView = !areaId || areaId === null || areaId === undefined;
       // ✅ IMPORTANTE: Asegurar que todos los datos necesarios estén presentes en iaPrefill
       // Validar que el título no esté vacío antes de establecerlo
-      const tituloFinal = tituloSugerido && tituloSugerido.length >= 3 
-        ? tituloSugerido 
+      const tituloFinal = tituloSugerido && tituloSugerido.length >= 3
+        ? tituloSugerido
         : `Simulador ${tema || 'General'} (IA${opts.modo === 'temas' ? ' · por temas' : ''})`;
       setIaPrefill({
         titulo: tituloFinal, // ✅ Asegurar que siempre tenga un valor válido (mínimo 3 caracteres)
@@ -1815,7 +1874,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         areaId: isGeneralView ? null : (areaId !== null && areaId !== undefined ? Number(areaId) : null),
         areaTitle: isGeneralView ? null : (areaTitle || null),
       });
-      
+
       // Log para debugging
       console.log('[SimuladoresGen] IA generada (con opciones) - iaPrefill establecido:', {
         areaId: isGeneralView ? null : (areaId !== null && areaId !== undefined ? Number(areaId) : null),
@@ -1824,7 +1883,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         areaIdOriginal: areaId,
         modo: opts.modo
       });
-      
+
       // Cerrar modal de IA y abrir modal de creación
       setIaChoiceOpen(false);
       setIaError('');
@@ -1883,47 +1942,61 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       setLoading(false);
     }
   };
+  // Bloquear el scroll de la página cuando CUALQUIER modal esté abierto
+  useEffect(() => {
+    const isAnyModalOpen = iaChoiceOpen || open || confirmModal.open || successModal.open || previewOpen || resultsOpen || reviewOpen;
+
+    if (!isAnyModalOpen) return;
+
+    const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+
+    // Bloquear scroll
+    document.body.style.overflow = 'hidden';
+
+    // Compensar el ancho del scrollbar para evitar saltos de layout
+    try {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+    } catch (e) {
+      console.error("Error compensando scrollbar:", e);
+    }
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
+    };
+  }, [iaChoiceOpen, open, confirmModal.open, successModal.open, previewOpen, resultsOpen, reviewOpen]);
+
 
   return (
     <div className="mx-auto max-w-8xl px-4 pb-8 pt-4 sm:pt-6 sm:px-6 lg:px-8">
-      {/* Encabezado breve */}
-      <div className="relative overflow-hidden rounded-3xl border border-cyan-200/40 bg-gradient-to-r from-cyan-50/70 via-white to-indigo-50/70 p-2.5 sm:p-3.5 shadow-sm mb-3 sm:mb-4">
-        {/* blobs suaves al fondo */}
-        <div className="pointer-events-none absolute -left-10 -top-14 h-56 w-56 rounded-full bg-cyan-200/40 blur-3xl" />
-        <div className="pointer-events-none absolute -right-10 -bottom-14 h-56 w-56 rounded-full bg-indigo-200/40 blur-3xl" />
-
-        <div className="relative z-10 flex items-center gap-3 sm:gap-4">
-          {/* Volver atrás */}
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            title="Volver"
-            aria-label="Volver"
-            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          {/* ícono con badge */}
-          <div className="relative grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-sky-500 to-violet-600 text-white shadow-lg sm:size-14">
-            <Icon className="size-6 sm:size-7" />
-            <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-emerald-500 ring-2 ring-white">
-              <Sparkles className="size-3 text-white" />
-            </span>
-          </div>
-
-          <div className="flex flex-col min-w-0">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-sky-700 to-violet-700">
-              {headerTitle}
-            </h1>
-
-            {/* subrayado doble */}
-            <div className="mt-1 flex gap-2">
-              <span className="h-1 w-14 sm:w-16 rounded-full bg-gradient-to-r from-sky-500 to-sky-300" />
-              <span className="h-1 w-8 sm:w-10 rounded-full bg-gradient-to-r from-violet-500 to-violet-300" />
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Header Premium Replicado */}
+      <SectionBadge
+        title={headerTitle}
+        subtitle="Gestiona y crea simuladores para tus estudiantes."
+        total={viewItems.length}
+        icon={(() => {
+          // Lógica para seleccionar icono basado en el título del área
+          const t = (areaTitle || '').toLowerCase();
+          if (t.includes('exactas')) return Atom;
+          if (t.includes('sociales')) return Users;
+          if (t.includes('humanidades') || t.includes('artes')) return Feather;
+          if (t.includes('salud') || t.includes('naturales') || t.includes('biología')) return Dna;
+          if (t.includes('ingeniería') || t.includes('tecnología')) return Cpu;
+          if (t.includes('económico') || t.includes('administrativas')) return TrendingUp;
+          if (t.includes('educación') || t.includes('deportes')) return Trophy;
+          if (t.includes('agropecuarias')) return Sprout;
+          if (t.includes('turismo')) return Map;
+          if (t.includes('unam') || t.includes('ipn') || t.includes('núcleo')) return Landmark;
+          if (t.includes('militar') || t.includes('naval')) return Ship;
+          if (t.includes('psicométrico') || t.includes('transversal')) return BrainCircuit;
+          return Icon; // Fallback al icono pasado por prop (PlaySquare por defecto)
+        })()}
+        onBack={() => navigate(-1)}
+      />
 
       {/* Toolbar superior rediseñada */}
       <div className="mb-6 rounded-2xl border-2 border-slate-200 bg-white/90 backdrop-blur-sm px-4 py-4 shadow-lg ring-2 ring-slate-100/50">
@@ -1948,8 +2021,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                   onClick={() => setStatusFilter(v)}
                   className={[
                     'px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200',
-                    statusFilter === v 
-                      ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md scale-105' 
+                    statusFilter === v
+                      ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md scale-105'
                       : 'text-slate-600 hover:text-slate-800 hover:bg-white'
                   ].join(' ')}
                 >
@@ -2070,43 +2143,26 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 <tr>
                   <th
                     scope="col"
-                    className="sticky left-0 z-10 bg-gradient-to-r from-violet-50 to-indigo-50 px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap border-r border-slate-200"
+                    className="sticky left-0 z-20 bg-slate-50 px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[280px] border-r-2 border-slate-200"
                   >
                     Simulador
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap"
-                  >
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
                     Tipo
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap"
-                  >
+                  <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[100px]">
                     Preguntas
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap"
-                  >
+                  <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[100px]">
                     Intentos
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap"
-                  >
+                  <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
                     Estado
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap"
-                  >
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
                     Actualizado
                   </th>
-                  <th scope="col" className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-700 whitespace-nowrap">
-                    Acciones
-                  </th>
+                  <th scope="col" className="px-6 py-4 min-w-[220px]"></th>
                 </tr>
               </thead>
 
@@ -2114,11 +2170,11 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 {viewItems.map((item, idx) => (
                   <tr
                     key={item.id}
-                    className={(idx % 2 === 0 ? "bg-white" : "bg-slate-50/50") + " hover:bg-violet-50/30 transition-colors duration-150"}
+                    className="bg-white hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200 group"
                   >
-                    <td className="sticky left-0 z-10 bg-inherit px-6 py-4 border-r border-slate-200">
-                      <div className="max-w-xs">
-                        <div className="font-semibold text-slate-900 truncate">
+                    <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 px-6 py-4 border-r-2 border-slate-200">
+                      <div className="max-w-xs xl:max-w-md">
+                        <div className="font-semibold text-slate-900 truncate" title={item.name}>
                           {item.name}
                         </div>
                         {item.instrucciones && item.instrucciones.trim() && (
@@ -2128,33 +2184,35 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-700 font-medium">{item.type}</td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-lg bg-violet-100 text-violet-700 font-bold text-sm">
+                    <td className="px-6 py-4 text-slate-700 font-medium text-sm">
+                      <span className="text-[13px] font-bold text-slate-600 uppercase tracking-tighter">{item.type}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-violet-50 px-3 py-1.5 text-sm font-bold text-violet-700 ring-2 ring-violet-200 uppercase tracking-tighter">
                         {item.questions}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
+                    <td className="px-6 py-4 text-center">
+                      <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-indigo-50 px-3 py-1.5 text-sm font-bold text-indigo-700 ring-2 ring-indigo-200 uppercase tracking-tighter">
                         {item.attempts}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center whitespace-nowrap">
                       {item.status === "Publicado" ? (
                         <Badge type="success">Publicado</Badge>
                       ) : (
                         <Badge type="draft">Borrador</Badge>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-slate-600 font-medium text-sm">
+                    <td className="px-6 py-4 text-slate-600 text-sm font-medium">
                       {item.updatedAt}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5 flex-nowrap">
                         <button
                           onClick={() => handleView(item)}
-                          className="rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                           title="Vista previa"
+                          className="rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
@@ -2177,7 +2235,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                         <button
                           onClick={() => handleEdit(item)}
                           title="Editar"
-                          aria-label="Editar"
                           className="rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
                           <Pencil className="h-4 w-4" />
@@ -2185,7 +2242,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                         <button
                           onClick={() => handleDelete(item)}
                           title="Eliminar"
-                          aria-label="Eliminar"
                           className="rounded-xl border-2 border-rose-300 bg-gradient-to-r from-rose-50 to-red-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:from-rose-100 hover:to-red-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -2194,28 +2250,27 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                     </td>
                   </tr>
                 ))}
-
                 {viewItems.length === 0 && !loading && (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-16 text-center"
-                    >
+                    <td colSpan={7} className="px-6 py-24 text-center">
                       <div className="flex flex-col items-center justify-center gap-4">
-                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-100 via-indigo-100 to-purple-100 shadow-lg ring-4 ring-white">
-                          <PlaySquare className="h-10 w-10 text-violet-600" />
+                        <div className="size-20 rounded-[2rem] bg-slate-50 flex items-center justify-center ring-8 ring-slate-100/50">
+                          <PlaySquare className="size-10 text-slate-300" />
                         </div>
-                        <div>
-                          <p className="text-base font-bold text-slate-700 mb-2">
-                            Aún no hay simuladores
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            Crea el primero con el botón
-                            <span className="mx-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-3 py-1 font-bold text-sm shadow-md">
-                              Nuevo simulador
-                            </span>
-                          </p>
+                        <div className="space-y-1">
+                          <p className="text-lg font-black text-slate-900">Sin simuladores registrados</p>
+                          <p className="text-sm text-slate-400 font-bold uppercase tracking-wider">Comienza creando uno nuevo para esta área</p>
                         </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                {loading && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="size-8 rounded-full border-4 border-slate-100 border-t-indigo-600 animate-spin" />
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Cargando datos...</p>
                       </div>
                     </td>
                   </tr>
@@ -2227,7 +2282,12 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       </div>
       <SimuladorModalGen
         open={open}
-        onClose={() => { setOpen(false); setEditing(null); setIaPreguntas(null); setIaPrefill(null); }}
+        onClose={() => {
+          setOpen(false);
+          setEditing(null);
+          setIaPreguntas(null);
+          setIaPrefill(null);
+        }}
         onCreate={handleCreate}
         onUpdate={handleUpdate}
         mode={editing ? 'edit' : 'create'}
@@ -2265,597 +2325,598 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         onEditQuestions={editing ? () => {
           // Navegar al builder después de guardar
           const finalIdArea = editing.areaId !== undefined && editing.areaId !== null ? Number(editing.areaId) : (areaId || null);
-          const navState = finalIdArea ? { 
-            simId: editing.id, 
-            areaId: finalIdArea, 
-            areaTitle: editing.areaTitle || areaTitle 
+          const navState = finalIdArea ? {
+            simId: editing.id,
+            areaId: finalIdArea,
+            areaTitle: editing.areaTitle || areaTitle
           } : { simId: editing.id };
           navigate(`/asesor/quizt/builder?simId=${editing.id}`, { state: navState });
         } : null}
       />
 
       {/* Modal: elección de IA (para vista de área y simuladores generales) */}
-      {iaChoiceOpen && (
-        <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-center justify-center px-4 pt-24 pb-6">
-          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={() => { setIaChoiceOpen(false); setIaError(''); }} />
-          <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 overflow-hidden">
-            {/* Header */}
-            <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
-              <div className="flex items-center gap-2.5">
-                <div className="rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 p-1.5 shadow-md">
-                  <Sparkles className="h-4 w-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-slate-900">Generar simulador con IA</h3>
-                  <p className="text-xs text-slate-600 mt-0.5">Configuración personalizada. Puedes editarlo después.</p>
-                </div>
-                <button
-                  onClick={() => { setIaChoiceOpen(false); setIaError(''); }}
-                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors flex-shrink-0"
-                  aria-label="Cerrar"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            {/* Body con scroll */}
-            <div className="mqerk-hide-scrollbar flex-1 min-h-0 px-4 py-3 space-y-3 overflow-y-auto">
-              {/* Opciones de modo */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-2">Tipo de generación</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+      {
+        iaChoiceOpen && (
+          <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-center justify-center px-4 pt-24 pb-6">
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={() => { setIaChoiceOpen(false); setIaError(''); }} />
+            <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 overflow-hidden">
+              {/* Header */}
+              <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 p-1.5 shadow-md">
+                    <Sparkles className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-slate-900">Generar simulador con IA</h3>
+                    <p className="text-xs text-slate-600 mt-0.5">Configuración personalizada. Puedes editarlo después.</p>
+                  </div>
                   <button
-                    type="button"
-                    onClick={() => { setIaChoiceMode('general'); setIaError(''); }}
-                    className={["relative text-left rounded-lg border-2 p-2.5 transition-all",
-                      iaChoiceMode === 'general'
-                        ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    ].join(' ')}
+                    onClick={() => { setIaChoiceOpen(false); setIaError(''); }}
+                    className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors flex-shrink-0"
+                    aria-label="Cerrar"
                   >
-                    {iaChoiceMode === 'general' && (
-                      <div className="absolute top-1.5 right-1.5">
-                        <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center">
-                          <CheckCircle2 className="h-2.5 w-2.5 text-white" />
-                        </div>
-                      </div>
-                    )}
-                    <div className="text-sm font-semibold text-slate-800 mb-0.5">
-                      {areaId ? 'General del área' : 'General del tema'}
-                    </div>
-                    <div className="text-xs text-slate-600 leading-snug">
-                      {areaId
-                        ? `Preguntas variadas de "${areaTitle || 'esta área'}". Ideal para conocimientos generales.`
-                        : `Preguntas variadas sobre "${generalTopic || 'el tema'}". Ideal para conocimientos generales.`
-                      }
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setIaChoiceMode('temas'); setIaError(''); }}
-                    className={["relative text-left rounded-lg border-2 p-2.5 transition-all",
-                      iaChoiceMode === 'temas'
-                        ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    ].join(' ')}
-                  >
-                    {iaChoiceMode === 'temas' && (
-                      <div className="absolute top-1.5 right-1.5">
-                        <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center">
-                          <CheckCircle2 className="h-2.5 w-2.5 text-white" />
-                        </div>
-                      </div>
-                    )}
-                    <div className="text-sm font-semibold text-slate-800 mb-0.5">Por temas específicos</div>
-                    <div className="text-xs text-slate-600 leading-snug">
-                      Enfocado en temas concretos. Ej: "sinónimos, ortografía". Distribución equitativa.
-                    </div>
+                    ✕
                   </button>
                 </div>
               </div>
 
-              {/* Input de temas (solo si modo = temas) */}
-              {iaChoiceMode === 'temas' && (
+              {/* Body con scroll */}
+              <div className="mqerk-hide-scrollbar flex-1 min-h-0 px-4 py-3 space-y-3 overflow-y-auto">
+                {/* Opciones de modo */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700">
-                      Temas específicos <span className="text-rose-500">*</span>
-                    </label>
-                    {iaChoiceTopics && (
-                      <span className="text-[10px] text-slate-500">
-                        {iaChoiceTopics.split(',').filter(t => t.trim()).length} tema{iaChoiceTopics.split(',').filter(t => t.trim()).length !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <input
-                      value={iaChoiceTopics}
-                      onChange={e => {
-                        const value = e.target.value;
-                        // Limpiar duplicados automáticamente
-                        const temas = value.split(',').map(s => s.trim()).filter(Boolean);
-                        const unique = [...new Set(temas)];
-                        setIaChoiceTopics(unique.join(', '));
-                        setIaError('');
-                      }}
-                      className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-xs focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-200 transition-colors"
-                      placeholder="Ej: sinónimos, ortografía, lectura"
-                    />
-                    {iaChoiceTopics && (
-                      <button
-                        type="button"
-                        onClick={() => setIaChoiceTopics('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[10px]"
-                        title="Limpiar"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                  <div className="mt-1.5 flex items-center justify-between">
-                    <div className="flex flex-wrap gap-1.5">
-                      {temasPlantillas.slice(0, 3).map((tema, idx) => {
-                        const current = iaChoiceTopics.split(',').map(s => s.trim()).filter(Boolean);
-                        const isAdded = current.includes(tema);
-                        return (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => {
-                              if (!isAdded) {
-                                setIaChoiceTopics([...current, tema].join(', '));
-                                setIaError('');
-                              } else {
-                                setIaChoiceTopics(current.filter(t => t !== tema).join(', '));
-                              }
-                            }}
-                            className={[
-                              "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
-                              isAdded
-                                ? "border-emerald-300 bg-emerald-100 text-emerald-700"
-                                : "border-slate-300 bg-white text-slate-600 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700"
-                            ].join(' ')}
-                          >
-                            {isAdded ? '✓' : '+'} {tema}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {iaChoiceTopics && (
-                      <button
-                        type="button"
-                        onClick={() => setIaChoiceTopics('')}
-                        className="text-[10px] text-slate-500 hover:text-rose-600 transition-colors"
-                      >
-                        Limpiar todo
-                      </button>
-                    )}
-                  </div>
-                  <p className="mt-1 text-[11px] text-slate-500">
-                    Separa con comas. Mínimo 1, máximo 5 recomendado.
-                  </p>
-                </div>
-              )}
-
-              {/* Selector de nivel */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nivel de dificultad</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { value: 'básico', label: 'Básico', desc: 'Conceptos fundamentales' },
-                    { value: 'intermedio', label: 'Intermedio', desc: 'Aplicación' },
-                    { value: 'avanzado', label: 'Avanzado', desc: 'Análisis' }
-                  ].map((nivel) => {
-                    const isSelected = iaNivel === nivel.value;
-                    return (
-                      <button
-                        key={nivel.value}
-                        type="button"
-                        onClick={() => setIaNivel(nivel.value)}
-                        className={[
-                          "text-left rounded-lg border-2 p-2 transition-all",
-                          isSelected
-                            ? nivel.value === 'básico'
-                              ? 'border-blue-400 bg-blue-50 ring-1 ring-blue-200'
-                              : nivel.value === 'intermedio'
-                                ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
-                                : 'border-purple-400 bg-purple-50 ring-1 ring-purple-200'
-                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                        ].join(' ')}
-                      >
-                        <div className="text-xs font-semibold text-slate-800">{nivel.label}</div>
-                        <div className="text-[11px] text-slate-600 mt-0.5">{nivel.desc}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Selector de idioma */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Idioma de salida</label>
-                <select
-                  value={iaIdioma}
-                  onChange={(e) => setIaIdioma(e.target.value)}
-                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2.5 text-sm sm:text-base font-semibold text-slate-700 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-200 transition-all"
-                >
-                  <option value="auto">Auto (según área/tema)</option>
-                  <option value="es">Español (es-MX)</option>
-                  <option value="en">Inglés (en-US)</option>
-                  <option value="mix">Mixto (mitad ES, mitad EN)</option>
-                </select>
-                <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">
-                  Consejo: si mezclas materias (ej. “matemáticas, español, inglés…”), usa “Español” o “Auto”. Para practicar inglés, elige “Inglés” o “Mixto”.
-                </p>
-              </div>
-
-              {/* Distribución de tipos de preguntas */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Distribución de preguntas <span className="text-rose-500">*</span>
-                </label>
-                <div className="space-y-3">
-                  {/* Opción múltiple */}
-                  <div className="flex items-center gap-3">
-                    <label className="text-xs text-slate-600 w-32 flex-shrink-0">Opción múltiple:</label>
-                    <div className="flex items-center gap-2 flex-1">
-                      <button
-                        type="button"
-                        onClick={() => setIaCountMultiple(Math.max(0, iaCountMultiple - 1))}
-                        className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                        disabled={iaCountMultiple <= 0}
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min="0"
-                        max={MAX_IA}
-                        value={iaCountMultiple}
-                        onChange={(e) => {
-                          const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
-                          setIaCountMultiple(val);
-                          setIaError('');
-                        }}
-                        className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-                          if (total < MAX_IA) setIaCountMultiple(Math.min(MAX_IA, iaCountMultiple + 1));
-                        }}
-                        className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                        disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
-                      >
-                        +
-                      </button>
-                      <span className="text-[11px] text-slate-500">preguntas</span>
-                    </div>
-                  </div>
-
-                  {/* Verdadero/Falso */}
-                  <div className="flex items-center gap-3">
-                    <label className="text-xs text-slate-600 w-32 flex-shrink-0">Verdadero/Falso:</label>
-                    <div className="flex items-center gap-2 flex-1">
-                      <button
-                        type="button"
-                        onClick={() => setIaCountVerdaderoFalso(Math.max(0, iaCountVerdaderoFalso - 1))}
-                        className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                        disabled={iaCountVerdaderoFalso <= 0}
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min="0"
-                        max={MAX_IA}
-                        value={iaCountVerdaderoFalso}
-                        onChange={(e) => {
-                          const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
-                          setIaCountVerdaderoFalso(val);
-                          setIaError('');
-                        }}
-                        className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-                          if (total < MAX_IA) setIaCountVerdaderoFalso(Math.min(MAX_IA, iaCountVerdaderoFalso + 1));
-                        }}
-                        className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                        disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
-                      >
-                        +
-                      </button>
-                      <span className="text-[11px] text-slate-500">preguntas</span>
-                    </div>
-                  </div>
-
-                  {/* Respuesta corta */}
-                  <div className="flex items-center gap-3">
-                    <label className="text-xs text-slate-600 w-32 flex-shrink-0">Respuesta corta:</label>
-                    <div className="flex items-center gap-2 flex-1">
-                      <button
-                        type="button"
-                        onClick={() => setIaCountCorta(Math.max(0, iaCountCorta - 1))}
-                        className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                        disabled={iaCountCorta <= 0}
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min="0"
-                        max={MAX_IA}
-                        value={iaCountCorta}
-                        onChange={(e) => {
-                          const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
-                          setIaCountCorta(val);
-                          setIaError('');
-                        }}
-                        className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-                          if (total < MAX_IA) setIaCountCorta(Math.min(MAX_IA, iaCountCorta + 1));
-                        }}
-                        className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                        disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
-                      >
-                        +
-                      </button>
-                      <span className="text-[11px] text-slate-500">preguntas</span>
-                    </div>
-                  </div>
-
-                  {/* Resumen total */}
-                  <div className="pt-2 border-t border-slate-200">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-700">Total:</span>
-                      <span className="text-xs font-bold text-emerald-600">
-                        {iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Parámetros avanzados de configuración de IA */}
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setIaShowAdvanced(!iaShowAdvanced)}
-                  className="w-full flex items-center justify-between text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 p-2 rounded-lg border border-slate-200 transition-colors"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Brain className="h-3.5 w-3.5" />
-                    <span>Parámetros avanzados de IA</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {iaShowAdvanced ? (
-                      <ChevronUp className="h-3.5 w-3.5" />
-                    ) : (
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    )}
-                  </div>
-                </button>
-
-                {iaShowAdvanced && (
-                  <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-3 animate-in slide-in-from-top-2">
-                    {/* Temperatura / Creatividad */}
-                    <div className="text-xs">
-                      <div className="flex justify-between mb-1">
-                        <label className="font-semibold text-slate-700">Creatividad (Temperatura)</label>
-                        <span className="text-slate-500">{Number(iaTemperature).toFixed(1)}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        value={iaTemperature}
-                        onChange={e => setIaTemperature(Number(e.target.value))}
-                        className="w-full accent-emerald-500"
-                      />
-                      <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                        <span>Preciso</span>
-                        <span>Creativo</span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">Top‑P</label>
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          min="0"
-                          max="1"
-                          step="0.05"
-                          value={iaTopP}
-                          onChange={(e) => setIaTopP(e.target.value)}
-                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
-                          placeholder="(vacío)"
-                        />
-                        <p className="mt-1 text-[10px] text-slate-500">0–1 (vacío = default)</p>
-                      </div>
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">Top‑K</label>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min="1"
-                          step="1"
-                          value={iaTopK}
-                          onChange={(e) => setIaTopK(e.target.value)}
-                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
-                          placeholder="(vacío)"
-                        />
-                        <p className="mt-1 text-[10px] text-slate-500">Entero (vacío = default)</p>
-                      </div>
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">Max tokens</label>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min="64"
-                          step="64"
-                          value={iaMaxTokens}
-                          onChange={(e) => setIaMaxTokens(e.target.value)}
-                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
-                          placeholder="(vacío)"
-                        />
-                        <p className="mt-1 text-[10px] text-slate-500">Más alto = respuestas más largas</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Mensaje de error */}
-              {iaError && (
-                <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3 shadow-sm">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-xs sm:text-sm text-amber-800 font-semibold mb-1 leading-relaxed whitespace-pre-line">{iaError}</p>
-                    {cooldownMs > 0 && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-amber-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-amber-500 transition-all duration-1000 ease-linear"
-                            style={{ width: `${Math.min(100, (cooldownMs / 45000) * 100)}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] font-bold text-amber-700 whitespace-nowrap">
-                          {Math.ceil(cooldownMs / 1000)}s
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Resumen de configuración */}
-              {showSummary && (
-                <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 px-3 py-2.5">
-                  <div className="flex items-start justify-between mb-1.5">
-                    <span className="text-xs font-semibold text-emerald-900">Resumen de configuración</span>
+                  <label className="block text-xs font-semibold text-slate-700 mb-2">Tipo de generación</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => setShowSummary(false)}
-                      className="text-emerald-600 hover:text-emerald-800 text-[10px]"
+                      onClick={() => { setIaChoiceMode('general'); setIaError(''); }}
+                      className={["relative text-left rounded-lg border-2 p-2.5 transition-all",
+                        iaChoiceMode === 'general'
+                          ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      ].join(' ')}
                     >
-                      Ocultar
+                      {iaChoiceMode === 'general' && (
+                        <div className="absolute top-1.5 right-1.5">
+                          <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center">
+                            <CheckCircle2 className="h-2.5 w-2.5 text-white" />
+                          </div>
+                        </div>
+                      )}
+                      <div className="text-sm font-semibold text-slate-800 mb-0.5">
+                        {areaId ? 'General del área' : 'General del tema'}
+                      </div>
+                      <div className="text-xs text-slate-600 leading-snug">
+                        {areaId
+                          ? `Preguntas variadas de "${areaTitle || 'esta área'}". Ideal para conocimientos generales.`
+                          : `Preguntas variadas sobre "${generalTopic || 'el tema'}". Ideal para conocimientos generales.`
+                        }
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setIaChoiceMode('temas'); setIaError(''); }}
+                      className={["relative text-left rounded-lg border-2 p-2.5 transition-all",
+                        iaChoiceMode === 'temas'
+                          ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      ].join(' ')}
+                    >
+                      {iaChoiceMode === 'temas' && (
+                        <div className="absolute top-1.5 right-1.5">
+                          <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center">
+                            <CheckCircle2 className="h-2.5 w-2.5 text-white" />
+                          </div>
+                        </div>
+                      )}
+                      <div className="text-sm font-semibold text-slate-800 mb-0.5">Por temas específicos</div>
+                      <div className="text-xs text-slate-600 leading-snug">
+                        Enfocado en temas concretos. Ej: "sinónimos, ortografía". Distribución equitativa.
+                      </div>
                     </button>
                   </div>
-                  <div className="space-y-1 text-[11px] text-emerald-800">
-                    {!areaId && generalTopic && (
-                      <div className="flex items-start gap-2">
-                        <span className="font-medium">Tema:</span>
-                        <span className="flex-1">{generalTopic}</span>
+                </div>
+
+                {/* Input de temas (solo si modo = temas) */}
+                {iaChoiceMode === 'temas' && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700">
+                        Temas específicos <span className="text-rose-500">*</span>
+                      </label>
+                      {iaChoiceTopics && (
+                        <span className="text-[10px] text-slate-500">
+                          {iaChoiceTopics.split(',').filter(t => t.trim()).length} tema{iaChoiceTopics.split(',').filter(t => t.trim()).length !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <input
+                        value={iaChoiceTopics}
+                        onChange={e => {
+                          const value = e.target.value;
+                          // Limpiar duplicados automáticamente
+                          const temas = value.split(',').map(s => s.trim()).filter(Boolean);
+                          const unique = [...new Set(temas)];
+                          setIaChoiceTopics(unique.join(', '));
+                          setIaError('');
+                        }}
+                        className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-xs focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-200 transition-colors"
+                        placeholder="Ej: sinónimos, ortografía, lectura"
+                      />
+                      {iaChoiceTopics && (
+                        <button
+                          type="button"
+                          onClick={() => setIaChoiceTopics('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[10px]"
+                          title="Limpiar"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <div className="flex flex-wrap gap-1.5">
+                        {temasPlantillas.slice(0, 3).map((tema, idx) => {
+                          const current = iaChoiceTopics.split(',').map(s => s.trim()).filter(Boolean);
+                          const isAdded = current.includes(tema);
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                if (!isAdded) {
+                                  setIaChoiceTopics([...current, tema].join(', '));
+                                  setIaError('');
+                                } else {
+                                  setIaChoiceTopics(current.filter(t => t !== tema).join(', '));
+                                }
+                              }}
+                              className={[
+                                "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
+                                isAdded
+                                  ? "border-emerald-300 bg-emerald-100 text-emerald-700"
+                                  : "border-slate-300 bg-white text-slate-600 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700"
+                              ].join(' ')}
+                            >
+                              {isAdded ? '✓' : '+'} {tema}
+                            </button>
+                          );
+                        })}
                       </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Modo:</span>
-                      <span>{iaChoiceMode === 'general' ? (areaId ? 'General del área' : 'General del tema') : 'Por temas específicos'}</span>
+                      {iaChoiceTopics && (
+                        <button
+                          type="button"
+                          onClick={() => setIaChoiceTopics('')}
+                          className="text-[10px] text-slate-500 hover:text-rose-600 transition-colors"
+                        >
+                          Limpiar todo
+                        </button>
+                      )}
                     </div>
-                    {iaChoiceMode === 'temas' && iaChoiceTopics && (
-                      <div className="flex items-start gap-2">
-                        <span className="font-medium">Temas:</span>
-                        <span className="flex-1">{iaChoiceTopics}</span>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Separa con comas. Mínimo 1, máximo 5 recomendado.
+                    </p>
+                  </div>
+                )}
+
+                {/* Selector de nivel */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nivel de dificultad</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: 'básico', label: 'Básico', desc: 'Conceptos fundamentales' },
+                      { value: 'intermedio', label: 'Intermedio', desc: 'Aplicación' },
+                      { value: 'avanzado', label: 'Avanzado', desc: 'Análisis' }
+                    ].map((nivel) => {
+                      const isSelected = iaNivel === nivel.value;
+                      return (
+                        <button
+                          key={nivel.value}
+                          type="button"
+                          onClick={() => setIaNivel(nivel.value)}
+                          className={[
+                            "text-left rounded-lg border-2 p-2 transition-all",
+                            isSelected
+                              ? nivel.value === 'básico'
+                                ? 'border-blue-400 bg-blue-50 ring-1 ring-blue-200'
+                                : nivel.value === 'intermedio'
+                                  ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
+                                  : 'border-purple-400 bg-purple-50 ring-1 ring-purple-200'
+                              : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          ].join(' ')}
+                        >
+                          <div className="text-xs font-semibold text-slate-800">{nivel.label}</div>
+                          <div className="text-[11px] text-slate-600 mt-0.5">{nivel.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Selector de idioma */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Idioma de salida</label>
+                  <select
+                    value={iaIdioma}
+                    onChange={(e) => setIaIdioma(e.target.value)}
+                    className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2.5 text-sm sm:text-base font-semibold text-slate-700 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-200 transition-all"
+                  >
+                    <option value="auto">Auto (según área/tema)</option>
+                    <option value="es">Español (es-MX)</option>
+                    <option value="en">Inglés (en-US)</option>
+                    <option value="mix">Mixto (mitad ES, mitad EN)</option>
+                  </select>
+                  <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">
+                    Consejo: si mezclas materias (ej. “matemáticas, español, inglés…”), usa “Español” o “Auto”. Para practicar inglés, elige “Inglés” o “Mixto”.
+                  </p>
+                </div>
+
+                {/* Distribución de tipos de preguntas */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Distribución de preguntas <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="space-y-3">
+                    {/* Opción múltiple */}
+                    <div className="flex items-center gap-3">
+                      <label className="text-xs text-slate-600 w-32 flex-shrink-0">Opción múltiple:</label>
+                      <div className="flex items-center gap-2 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => setIaCountMultiple(Math.max(0, iaCountMultiple - 1))}
+                          className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
+                          disabled={iaCountMultiple <= 0}
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min="0"
+                          max={MAX_IA}
+                          value={iaCountMultiple}
+                          onChange={(e) => {
+                            const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
+                            setIaCountMultiple(val);
+                            setIaError('');
+                          }}
+                          className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
+                            if (total < MAX_IA) setIaCountMultiple(Math.min(MAX_IA, iaCountMultiple + 1));
+                          }}
+                          className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
+                          disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
+                        >
+                          +
+                        </button>
+                        <span className="text-[11px] text-slate-500">preguntas</span>
                       </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Nivel:</span>
-                      <span className="capitalize">{iaNivel}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Idioma:</span>
-                      <span>
-                        {iaIdioma === 'auto' ? 'Auto' : iaIdioma === 'es' ? 'Español' : iaIdioma === 'en' ? 'Inglés' : 'Mixto'}
-                      </span>
+
+                    {/* Verdadero/Falso */}
+                    <div className="flex items-center gap-3">
+                      <label className="text-xs text-slate-600 w-32 flex-shrink-0">Verdadero/Falso:</label>
+                      <div className="flex items-center gap-2 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => setIaCountVerdaderoFalso(Math.max(0, iaCountVerdaderoFalso - 1))}
+                          className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
+                          disabled={iaCountVerdaderoFalso <= 0}
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min="0"
+                          max={MAX_IA}
+                          value={iaCountVerdaderoFalso}
+                          onChange={(e) => {
+                            const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
+                            setIaCountVerdaderoFalso(val);
+                            setIaError('');
+                          }}
+                          className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
+                            if (total < MAX_IA) setIaCountVerdaderoFalso(Math.min(MAX_IA, iaCountVerdaderoFalso + 1));
+                          }}
+                          className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
+                          disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
+                        >
+                          +
+                        </button>
+                        <span className="text-[11px] text-slate-500">preguntas</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Cantidad:</span>
-                      <span>{iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''} ({iaCountMultiple} múltiple, {iaCountVerdaderoFalso} V/F, {iaCountCorta} corta)</span>
+
+                    {/* Respuesta corta */}
+                    <div className="flex items-center gap-3">
+                      <label className="text-xs text-slate-600 w-32 flex-shrink-0">Respuesta corta:</label>
+                      <div className="flex items-center gap-2 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => setIaCountCorta(Math.max(0, iaCountCorta - 1))}
+                          className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
+                          disabled={iaCountCorta <= 0}
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min="0"
+                          max={MAX_IA}
+                          value={iaCountCorta}
+                          onChange={(e) => {
+                            const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
+                            setIaCountCorta(val);
+                            setIaError('');
+                          }}
+                          className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
+                            if (total < MAX_IA) setIaCountCorta(Math.min(MAX_IA, iaCountCorta + 1));
+                          }}
+                          className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
+                          disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
+                        >
+                          +
+                        </button>
+                        <span className="text-[11px] text-slate-500">preguntas</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Área:</span>
-                      <span>{areaTitle || 'No especificada'}</span>
+
+                    {/* Resumen total */}
+                    <div className="pt-2 border-t border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-700">Total:</span>
+                        <span className="text-xs font-bold text-emerald-600">
+                          {iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              )}
 
-              {/* Info adicional */}
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-[11px] text-slate-600 leading-relaxed flex-1">
-                    <strong className="text-slate-700">Nota:</strong> Puedes editar las preguntas después. Proceso: 10-30 segundos.
-                  </p>
+                {/* Parámetros avanzados de configuración de IA */}
+                <div>
                   <button
                     type="button"
-                    onClick={() => setShowSummary(!showSummary)}
-                    className="text-[10px] text-emerald-600 hover:text-emerald-700 font-medium whitespace-nowrap"
+                    onClick={() => setIaShowAdvanced(!iaShowAdvanced)}
+                    className="w-full flex items-center justify-between text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 p-2 rounded-lg border border-slate-200 transition-colors"
                   >
-                    {showSummary ? 'Ocultar' : 'Ver'} resumen
+                    <div className="flex items-center gap-1.5">
+                      <Brain className="h-3.5 w-3.5" />
+                      <span>Parámetros avanzados de IA</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {iaShowAdvanced ? (
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      )}
+                    </div>
+                  </button>
+
+                  {iaShowAdvanced && (
+                    <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-3 animate-in slide-in-from-top-2">
+                      {/* Temperatura / Creatividad */}
+                      <div className="text-xs">
+                        <div className="flex justify-between mb-1">
+                          <label className="font-semibold text-slate-700">Creatividad (Temperatura)</label>
+                          <span className="text-slate-500">{Number(iaTemperature).toFixed(1)}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={iaTemperature}
+                          onChange={e => setIaTemperature(Number(e.target.value))}
+                          className="w-full accent-emerald-500"
+                        />
+                        <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                          <span>Preciso</span>
+                          <span>Creativo</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <label className="block font-semibold text-slate-700 mb-1">Top‑P</label>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            value={iaTopP}
+                            onChange={(e) => setIaTopP(e.target.value)}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                            placeholder="(vacío)"
+                          />
+                          <p className="mt-1 text-[10px] text-slate-500">0–1 (vacío = default)</p>
+                        </div>
+                        <div>
+                          <label className="block font-semibold text-slate-700 mb-1">Top‑K</label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="1"
+                            step="1"
+                            value={iaTopK}
+                            onChange={(e) => setIaTopK(e.target.value)}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                            placeholder="(vacío)"
+                          />
+                          <p className="mt-1 text-[10px] text-slate-500">Entero (vacío = default)</p>
+                        </div>
+                        <div>
+                          <label className="block font-semibold text-slate-700 mb-1">Max tokens</label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="64"
+                            step="64"
+                            value={iaMaxTokens}
+                            onChange={(e) => setIaMaxTokens(e.target.value)}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                            placeholder="(vacío)"
+                          />
+                          <p className="mt-1 text-[10px] text-slate-500">Más alto = respuestas más largas</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Mensaje de error */}
+                {iaError && (
+                  <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3 shadow-sm">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-xs sm:text-sm text-amber-800 font-semibold mb-1 leading-relaxed whitespace-pre-line">{iaError}</p>
+                      {cooldownMs > 0 && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-amber-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-amber-500 transition-all duration-1000 ease-linear"
+                              style={{ width: `${Math.min(100, (cooldownMs / 45000) * 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-[10px] font-bold text-amber-700 whitespace-nowrap">
+                            {Math.ceil(cooldownMs / 1000)}s
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Resumen de configuración */}
+                {showSummary && (
+                  <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                    <div className="flex items-start justify-between mb-1.5">
+                      <span className="text-xs font-semibold text-emerald-900">Resumen de configuración</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowSummary(false)}
+                        className="text-emerald-600 hover:text-emerald-800 text-[10px]"
+                      >
+                        Ocultar
+                      </button>
+                    </div>
+                    <div className="space-y-1 text-[11px] text-emerald-800">
+                      {!areaId && generalTopic && (
+                        <div className="flex items-start gap-2">
+                          <span className="font-medium">Tema:</span>
+                          <span className="flex-1">{generalTopic}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Modo:</span>
+                        <span>{iaChoiceMode === 'general' ? (areaId ? 'General del área' : 'General del tema') : 'Por temas específicos'}</span>
+                      </div>
+                      {iaChoiceMode === 'temas' && iaChoiceTopics && (
+                        <div className="flex items-start gap-2">
+                          <span className="font-medium">Temas:</span>
+                          <span className="flex-1">{iaChoiceTopics}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Nivel:</span>
+                        <span className="capitalize">{iaNivel}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Idioma:</span>
+                        <span>
+                          {iaIdioma === 'auto' ? 'Auto' : iaIdioma === 'es' ? 'Español' : iaIdioma === 'en' ? 'Inglés' : 'Mixto'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Cantidad:</span>
+                        <span>{iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''} ({iaCountMultiple} múltiple, {iaCountVerdaderoFalso} V/F, {iaCountCorta} corta)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Área:</span>
+                        <span>{areaTitle || 'No especificada'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Info adicional */}
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-[11px] text-slate-600 leading-relaxed flex-1">
+                      <strong className="text-slate-700">Nota:</strong> Puedes editar las preguntas después. Proceso: 10-30 segundos.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowSummary(!showSummary)}
+                      className="text-[10px] text-emerald-600 hover:text-emerald-700 font-medium whitespace-nowrap"
+                    >
+                      {showSummary ? 'Ocultar' : 'Ver'} resumen
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer con botones - siempre visible */}
+              <div className="flex-shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 border-t border-slate-200 bg-slate-50">
+                <div className="text-[11px] text-slate-500 flex items-center gap-2">
+                  {cooldownMs > 0 && (
+                    <span className="inline-flex items-center gap-1 text-amber-600">
+                      <AlertTriangle className="h-3 w-3" />
+                      Espera {Math.ceil(cooldownMs / 1000)}s
+                    </span>
+                  )}
+                  {!loading && !cooldownMs && (
+                    <span className="text-slate-400">
+                      Tiempo estimado: {(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) <= 10 ? '10-15s' : (iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) <= 30 ? '15-25s' : '25-35s'}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setIaChoiceOpen(false); setIaError(''); setShowSummary(false); }}
+                    disabled={loading}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await crearSimuladorConIAOpciones({ modo: iaChoiceMode, temasText: iaChoiceTopics });
+                    }}
+                    disabled={loading || cooldownMs > 0 || (!areaId && !generalTopic.trim()) || (iaChoiceMode === 'temas' && !iaChoiceTopics.trim()) || (iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) < 1}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 px-4 py-1.5 text-xs font-semibold text-white hover:from-emerald-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Generando {iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''}...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-3.5 w-3.5" />
+                        {cooldownMs > 0 ? `Espera ${Math.ceil(cooldownMs / 1000)}s` : 'Generar'}
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
-            </div>
 
-            {/* Footer con botones - siempre visible */}
-            <div className="flex-shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 border-t border-slate-200 bg-slate-50">
-              <div className="text-[11px] text-slate-500 flex items-center gap-2">
-                {cooldownMs > 0 && (
-                  <span className="inline-flex items-center gap-1 text-amber-600">
-                    <AlertTriangle className="h-3 w-3" />
-                    Espera {Math.ceil(cooldownMs / 1000)}s
-                  </span>
-                )}
-                {!loading && !cooldownMs && (
-                  <span className="text-slate-400">
-                    Tiempo estimado: {(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) <= 10 ? '10-15s' : (iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) <= 30 ? '15-25s' : '25-35s'}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => { setIaChoiceOpen(false); setIaError(''); setShowSummary(false); }}
-                  disabled={loading}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={async () => {
-                    await crearSimuladorConIAOpciones({ modo: iaChoiceMode, temasText: iaChoiceTopics });
-                  }}
-                  disabled={loading || cooldownMs > 0 || (!areaId && !generalTopic.trim()) || (iaChoiceMode === 'temas' && !iaChoiceTopics.trim()) || (iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) < 1}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 px-4 py-1.5 text-xs font-semibold text-white hover:from-emerald-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      <span>Generando {iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''}...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-3.5 w-3.5" />
-                      {cooldownMs > 0 ? `Espera ${Math.ceil(cooldownMs / 1000)}s` : 'Generar'}
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* CSS local: ocultar barra de scroll manteniendo scroll */}
-            <style>{`
+              {/* CSS local: ocultar barra de scroll manteniendo scroll */}
+              <style>{`
               .mqerk-hide-scrollbar {
                 -ms-overflow-style: none; /* IE/Edge legacy */
                 scrollbar-width: none; /* Firefox */
@@ -2880,53 +2941,105 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 }
               }
             `}</style>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Modal de vista previa */}
       {previewOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 px-0.5 mt-16">
-          <div className="w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-lg bg-white shadow-2xl border border-slate-200 flex flex-col">
-            <div className="flex items-center justify-between border-b px-4 py-3 bg-gradient-to-r from-violet-50 to-indigo-50">
-              <h3 className="text-base font-semibold text-slate-900">Vista previa</h3>
-              <button onClick={() => setPreviewOpen(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
+        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-900/65 backdrop-blur-md p-4 sm:p-6 lg:p-8 overflow-y-auto animate-in fade-in duration-300">
+          <div className="w-full max-w-4xl max-h-[85vh] mt-10 flex flex-col bg-white rounded-3xl shadow-2xl border border-slate-200/50 overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="grid place-items-center size-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg">
+                  <Eye className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">Vista previa</h3>
+                  <p className="text-xs text-slate-500 font-medium">Previsualización del simulador para estudiantes</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewOpen(false)}
+                className="rounded-xl p-2 text-slate-400 hover:bg-white hover:text-slate-600 transition-all hover:rotate-90 duration-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <div className="overflow-y-auto px-4 py-3">
+
+            {/* Contenido con scroll optimizado */}
+            <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar bg-slate-50/30">
               {previewLoading && (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-violet-600" />
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <div className="size-12 rounded-full border-4 border-slate-100 border-t-violet-600 animate-spin" />
+                  <p className="text-sm font-semibold text-slate-500">Cargando contenido...</p>
                 </div>
               )}
               {!previewLoading && previewSim && (
-                <div className="space-y-2.5">
-                  <header className="border-b pb-2">
-                    <h4 className="text-base font-semibold text-slate-900">{previewSim.simulador?.titulo || 'Simulador'}</h4>
-                    <p className="text-xs text-slate-500">Preguntas: {Array.isArray(previewSim.preguntas) ? previewSim.preguntas.length : 0}</p>
+                <div className="space-y-6">
+                  <header className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm ring-4 ring-slate-100/50">
+                    <h4 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-700 to-indigo-700">
+                      {previewSim.simulador?.titulo || 'Simulador'}
+                    </h4>
+                    <div className="mt-2 flex items-center gap-3">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-700">
+                        {Array.isArray(previewSim.preguntas) ? previewSim.preguntas.length : 0} Preguntas
+                      </span>
+                      <span className="text-xs text-slate-400 font-medium whitespace-nowrap">Simulación activa</span>
+                    </div>
                   </header>
-                  <ol className="space-y-1.5">
+
+                  <ol className="space-y-4">
                     {previewSim.preguntas?.map((p, idx) => (
-                      <li key={p.id} className="rounded border border-slate-200 p-1.5">
-                        <div className="mb-0.5 text-xs text-slate-500">
-                          {idx + 1}. {p.tipo === 'opcion_multiple' ? 'Opción múltiple' : p.tipo === 'verdadero_falso' ? 'Verdadero/Falso' : 'Respuesta corta'} • {p.puntos || 1} pt{(p.puntos || 1) > 1 ? 's' : ''}
+                      <li key={p.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+                            Pregunta {idx + 1}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold">
+                            {p.tipo === 'opcion_multiple' ? 'Opción múltiple' : p.tipo === 'verdadero_falso' ? 'Verdadero/Falso' : 'Respuesta corta'} • {p.puntos || 1} pt{(p.puntos || 1) > 1 ? 's' : ''}
+                          </span>
                         </div>
-                        <div className="font-medium text-slate-900 mb-0.5 text-sm">
-                          <MathText text={p.enunciado} />
+
+                        <div className="text-base font-semibold text-slate-800 leading-relaxed mb-4 overflow-x-auto pb-1">
+                          <MathText text={p.enunciado || ''} />
                         </div>
+
                         {p.tipo === 'opcion_multiple' && (
-                          <ul className="mt-0.5 space-y-1">
+                          <ul className="grid gap-2">
                             {p.opciones?.map((o) => (
-                              <li key={o.id} className={`rounded border px-1.5 py-1 text-xs ${o.es_correcta ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
+                              <li key={o.id} className={`flex items-center gap-3 rounded-xl border p-3.5 text-sm transition-all ${o.es_correcta ? 'border-emerald-200 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-100' : 'border-slate-200 bg-white text-slate-600'}`}>
+                                <div className={`size-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${o.es_correcta ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300'}`}>
+                                  {o.es_correcta && <CheckCircle2 className="size-3 text-white" />}
+                                </div>
                                 <MathText text={o.texto || '—'} />
                               </li>
                             ))}
                           </ul>
                         )}
+
                         {p.tipo === 'verdadero_falso' && (
-                          <p className="mt-0.5 text-xs text-slate-700">Correcta: <strong><MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} /></strong></p>
+                          <div className="flex gap-4">
+                            {['Verdadero', 'Falso'].map(val => {
+                              const isCorrect = p.opciones?.find(x => x.es_correcta)?.texto === val;
+                              return (
+                                <div key={val} className={`flex-1 rounded-xl border p-3.5 text-center text-sm font-bold ${isCorrect ? 'border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm' : 'border-slate-100 bg-slate-50 opacity-60'}`}>
+                                  {val} {isCorrect && '✓'}
+                                </div>
+                              );
+                            })}
+                          </div>
                         )}
+
                         {p.tipo === 'respuesta_corta' && (
-                          <p className="mt-0.5 text-xs text-slate-700">Respuesta esperada: <strong><MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} /></strong></p>
+                          <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50 p-4">
+                            <span className="text-[10px] font-extrabold text-indigo-500 uppercase block mb-1">Respuesta correcta esperada</span>
+                            <div className="text-sm font-mono font-bold text-indigo-700">
+                              <MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} />
+                            </div>
+                          </div>
                         )}
                       </li>
                     ))}
@@ -2934,154 +3047,153 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 </div>
               )}
             </div>
-            <div className="flex justify-end gap-2 border-t px-4 py-2 bg-slate-50">
-              <button onClick={() => setPreviewOpen(false)} className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Cerrar</button>
-            </div>
+
           </div>
         </div>
       )}
 
       {/* Resultados modal */}
-      {resultsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col">
-            {/* Header mejorado */}
-            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg">
-                  <span className="text-white font-bold text-lg">%</span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Resultados de la Simulación</h3>
-                  <p className="text-sm text-slate-600 mt-0.5">{resultsSimMeta?.titulo || 'Simulación'}</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setResultsOpen(false)} 
-                className="rounded-xl p-2 text-slate-500 hover:bg-white/80 hover:text-slate-700 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Contenido con scroll */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 bg-slate-50/30">
-              {resultsLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
-                    <p className="text-sm font-medium text-slate-600">Cargando resultados...</p>
+      {
+        resultsOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col">
+              {/* Header mejorado */}
+              <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg">
+                    <span className="text-white font-bold text-lg">%</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Resultados de la Simulación</h3>
+                    <p className="text-sm text-slate-600 mt-0.5">{resultsSimMeta?.titulo || 'Simulación'}</p>
                   </div>
                 </div>
-              ) : resultsRows.length ? (
-                <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-200/60">
-                      <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50">
-                        <tr>
-                          <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Estudiante
-                          </th>
-                          <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Grupo
-                          </th>
-                          <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Intentos
-                          </th>
-                          <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Puntaje Oficial
-                          </th>
-                          <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Acción
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 bg-white">
-                        {resultsRows.map((r, idx) => (
-                          <tr 
-                            key={r.id_estudiante}
-                            className={`hover:bg-indigo-50/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
-                          >
-                            <td className="px-5 py-4">
-                              <div className="font-semibold text-slate-900 text-sm">
-                                {`${r.apellidos || ''} ${r.nombre || ''}`.trim() || 'Sin nombre'}
-                              </div>
-                            </td>
-                            <td className="px-5 py-4 text-center">
-                              <span className="inline-flex items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold text-sm">
-                                {r.grupo || '—'}
-                              </span>
-                            </td>
-                            <td className="px-5 py-4 text-center">
-                              <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
-                                {r.total_intentos || 0}
-                              </span>
-                            </td>
-                            <td className="px-5 py-4 text-center">
-                              {r.total_intentos > 0 ? (
-                                <span className={`inline-flex items-center justify-center min-w-[4rem] px-4 py-2 rounded-xl font-bold text-sm shadow-sm ${
-                                  (Number(r.oficial_puntaje || 0) >= 70)
+                <button
+                  onClick={() => setResultsOpen(false)}
+                  className="rounded-xl p-2 text-slate-500 hover:bg-white/80 hover:text-slate-700 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Contenido con scroll */}
+              <div className="flex-1 overflow-y-auto px-6 py-4 bg-slate-50/30">
+                {resultsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+                      <p className="text-sm font-medium text-slate-600">Cargando resultados...</p>
+                    </div>
+                  </div>
+                ) : resultsRows.length ? (
+                  <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-slate-200/60">
+                        <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50">
+                          <tr>
+                            <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
+                              Estudiante
+                            </th>
+                            <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                              Grupo
+                            </th>
+                            <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                              Intentos
+                            </th>
+                            <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                              Puntaje Oficial
+                            </th>
+                            <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-700">
+                              Acción
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                          {resultsRows.map((r, idx) => (
+                            <tr
+                              key={r.id_estudiante}
+                              className={`hover:bg-indigo-50/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                            >
+                              <td className="px-5 py-4">
+                                <div className="font-semibold text-slate-900 text-sm">
+                                  {`${r.apellidos || ''} ${r.nombre || ''}`.trim() || 'Sin nombre'}
+                                </div>
+                              </td>
+                              <td className="px-5 py-4 text-center">
+                                <span className="inline-flex items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold text-sm">
+                                  {r.grupo || '—'}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 text-center">
+                                <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
+                                  {r.total_intentos || 0}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 text-center">
+                                {r.total_intentos > 0 ? (
+                                  <span className={`inline-flex items-center justify-center min-w-[4rem] px-4 py-2 rounded-xl font-bold text-sm shadow-sm ${(Number(r.oficial_puntaje || 0) >= 70)
                                     ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white ring-2 ring-emerald-200'
                                     : (Number(r.oficial_puntaje || 0) >= 50)
                                       ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white ring-2 ring-amber-200'
                                       : 'bg-gradient-to-r from-rose-500 to-red-600 text-white ring-2 ring-rose-200'
-                                }`}>
-                                  {Number(r.oficial_puntaje || 0)}%
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-sm font-medium">
-                                  Sin intento
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-5 py-4 text-right">
-                              <button
-                                disabled={r.total_intentos === 0}
-                                onClick={() => openReview(r)}
-                                className="inline-flex items-center gap-1.5 rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-4 py-2 text-xs font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 hover:border-indigo-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                                Ver detalle
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                                    }`}>
+                                    {Number(r.oficial_puntaje || 0)}%
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-sm font-medium">
+                                    Sin intento
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-5 py-4 text-right">
+                                <button
+                                  disabled={r.total_intentos === 0}
+                                  onClick={() => openReview(r)}
+                                  className="inline-flex items-center gap-1.5 rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-4 py-2 text-xs font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 hover:border-indigo-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                  Ver detalle
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 px-4">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mb-4">
-                    <PlaySquare className="h-10 w-10 text-slate-400" />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 px-4">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mb-4">
+                      <PlaySquare className="h-10 w-10 text-slate-400" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-slate-700 mb-2">Sin resultados aún</h4>
+                    <p className="text-sm text-slate-500 text-center max-w-sm">
+                      Aún no hay estudiantes que hayan completado esta simulación.
+                    </p>
                   </div>
-                  <h4 className="text-lg font-semibold text-slate-700 mb-2">Sin resultados aún</h4>
-                  <p className="text-sm text-slate-500 text-center max-w-sm">
-                    Aún no hay estudiantes que hayan completado esta simulación.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Footer mejorado */}
-            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t border-slate-200/60">
-              <div className="text-sm text-slate-600">
-                {resultsRows.length > 0 && (
-                  <span className="font-medium">
-                    {resultsRows.length} {resultsRows.length === 1 ? 'estudiante' : 'estudiantes'}
-                  </span>
                 )}
               </div>
-              <button 
-                onClick={() => setResultsOpen(false)} 
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-violet-700 transition-all hover:shadow-lg"
-              >
-                Cerrar
-              </button>
+
+              {/* Footer mejorado */}
+              <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t border-slate-200/60">
+                <div className="text-sm text-slate-600">
+                  {resultsRows.length > 0 && (
+                    <span className="font-medium">
+                      {resultsRows.length} {resultsRows.length === 1 ? 'estudiante' : 'estudiantes'}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setResultsOpen(false)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-violet-700 transition-all hover:shadow-lg"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Review modal - Usando componente reutilizable */}
       <ReviewModal
@@ -3098,30 +3210,34 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       />
 
       {/* Modal de confirmación genérico */}
-      {confirmModal.open && (
-        <ConfirmModal
-          isOpen={confirmModal.open}
-          onClose={() => setConfirmModal(prev => ({ ...prev, open: false }))}
-          onConfirm={confirmModal.onConfirm}
-          title={confirmModal.title}
-          message={confirmModal.message}
-          type={confirmModal.type}
-          confirmText={confirmModal.confirmText}
-          cancelText={confirmModal.cancelText}
-          loading={loading} // Reusing generic loading state if needed, or we could add specific loading state
-        />
-      )}
+      {
+        confirmModal.open && (
+          <ConfirmModal
+            isOpen={confirmModal.open}
+            onClose={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+            onConfirm={confirmModal.onConfirm}
+            title={confirmModal.title}
+            message={confirmModal.message}
+            type={confirmModal.type}
+            confirmText={confirmModal.confirmText}
+            cancelText={confirmModal.cancelText}
+            loading={loading} // Reusing generic loading state if needed, or we could add specific loading state
+          />
+        )
+      }
 
       {/* Modal de éxito */}
-      {successModal.open && (
-        <SuccessModal
-          message={successModal.message}
-          count={successModal.count}
-          willRedirect={successModal.willRedirect}
-          onClose={() => setSuccessModal(prev => ({ ...prev, open: false }))}
-        />
-      )}
-    </div>
+      {
+        successModal.open && (
+          <SuccessModal
+            message={successModal.message}
+            count={successModal.count}
+            willRedirect={successModal.willRedirect}
+            onClose={() => setSuccessModal(prev => ({ ...prev, open: false }))}
+          />
+        )
+      }
+    </div >
   );
 }
 
