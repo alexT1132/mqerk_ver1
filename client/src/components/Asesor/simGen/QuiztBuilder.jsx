@@ -1115,7 +1115,12 @@ export default function EspanolFormBuilder() {
         await createQuiz(body);
       }
       await showAlert("Borrador guardado exitosamente.", 'Borrador guardado', 'success');
-      navigate('/asesor/quizt', { replace: true });
+
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate('/asesor/quizt', { state: { title: areaTitle }, replace: true });
+      }
     } catch (e) {
       await showAlert(e?.response?.data?.message || 'No se pudo guardar el borrador', 'Error', 'error');
     } finally {
@@ -1213,7 +1218,12 @@ export default function EspanolFormBuilder() {
         };
         await updateQuiz(quizId, body);
         await showAlert('Quiz actualizado exitosamente', 'Éxito', 'success');
-        navigate('/asesor/quizt', { replace: true });
+
+        if (window.history.length > 1) {
+          navigate(-1);
+        } else {
+          navigate('/asesor/quizt', { state: { title: areaTitle }, replace: true });
+        }
       } else if (simId) {
         const body = {
           preguntas,

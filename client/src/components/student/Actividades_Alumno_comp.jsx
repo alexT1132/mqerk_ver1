@@ -21,6 +21,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStudent } from '../../context/StudentContext'; // BACKEND: Control de acceso a módulos
 import { useStudentNotifications } from '../../context/StudentNotificationContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import MisSolicitudesModal from './MisSolicitudesModal.jsx'; // Modal para ver solicitudes del estudiante
 import {
     Upload,
     Eye,
@@ -48,6 +49,7 @@ import {
     Leaf,
     CheckCircle2,
     AlertTriangle,
+    AlertCircle,  // BACKEND: Icono para solicitudes
     Play,
     Lock,      // BACKEND: Icono para módulos bloqueados
     Send,      // BACKEND: Icono para solicitar acceso
@@ -252,6 +254,8 @@ export function Actividades_Alumno_comp() {
     const [showNotasModal, setShowNotasModal] = useState(false);
     const [notasActividad, setNotasActividad] = useState(null);
     const [notasContent, setNotasContent] = useState('');
+    // Modal de solicitudes del estudiante
+    const [showSolicitudesModal, setShowSolicitudesModal] = useState(false);
 
     // Estados para modal de historial de quizzes
     const [showHistorialModal, setShowHistorialModal] = useState(false);
@@ -3170,9 +3174,21 @@ export function Actividades_Alumno_comp() {
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                                    <Brain className="w-4 h-4 mr-1.5 text-violet-600" />
-                                    <span className="font-semibold">{modulosEspecificos.length} módulos disponibles</span>
+                                <div className="flex items-center gap-3">
+                                    {/* Botón para ver solicitudes */}
+                                    <button
+                                        onClick={() => setShowSolicitudesModal(true)}
+                                        className="flex items-center gap-2 px-3 py-2 text-xs sm:text-sm text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-lg font-medium transition-all hover:shadow-md active:scale-95"
+                                        title="Ver mis solicitudes"
+                                    >
+                                        <AlertCircle className="w-4 h-4" />
+                                        <span className="hidden sm:inline">Mis Solicitudes</span>
+                                    </button>
+                                    {/* Contador de módulos */}
+                                    <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                        <Brain className="w-4 h-4 mr-1.5 text-violet-600" />
+                                        <span className="font-semibold">{modulosEspecificos.length} módulos disponibles</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -3187,6 +3203,7 @@ export function Actividades_Alumno_comp() {
                             const isAllowed = allowedActivityAreas.includes(modulo.id);
                             const request = activityRequests.find(req => req.areaId === modulo.id);
                             const isPending = request && request.status === 'pending';
+                            const isDenied = request && (request.status === 'denied' || request.status === 'rejected');
 
                             let actionHandler = () => { };
                             let footerContent;
@@ -3209,6 +3226,16 @@ export function Actividades_Alumno_comp() {
                                         <div className="inline-flex items-center text-amber-800 font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-100 to-yellow-100 px-3 py-1.5 rounded-xl border-2 border-amber-200 shadow-sm">
                                             <Hourglass className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
                                             <span>Pendiente</span>
+                                        </div>
+                                    );
+                                } else if (isDenied) {
+                                    // Solicitud rechazada: permitir solicitar de nuevo
+                                    isClickable = true;
+                                    actionHandler = () => handleRequestAccess(modulo.id);
+                                    footerContent = (
+                                        <div className="inline-flex items-center text-blue-700 font-extrabold text-xs sm:text-sm bg-gradient-to-r from-blue-100 to-indigo-100 px-3 py-1.5 rounded-lg border border-blue-200 shadow-sm group-hover:shadow-md transition-all">
+                                            <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
+                                            <span>Solicitar Acceso</span>
                                         </div>
                                     );
                                 } else {
@@ -3518,6 +3545,13 @@ export function Actividades_Alumno_comp() {
                     </div>
                 </div>
             )}
+
+            {/* Modal de solicitudes del estudiante */}
+            <MisSolicitudesModal
+                isOpen={showSolicitudesModal}
+                onClose={() => setShowSolicitudesModal(false)}
+                filterType="actividad"
+            />
 
             {/* Overlay para cerrar dropdown */}
             {isDropdownOpen && (

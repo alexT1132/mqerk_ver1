@@ -18,7 +18,7 @@ function RequestsManager({ rows, status, setStatus, onApprove, onDeny, areaNames
   }, [rows, status]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center sm:items-start sm:pt-28 justify-center p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[60] flex items-center sm:items-start sm:pt-36 justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
       <div className="relative w-full max-w-3xl max-h-[75vh] flex flex-col bg-white rounded-[2rem] shadow-2xl ring-1 ring-black/5 overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white z-10 shrink-0">
@@ -148,6 +148,9 @@ export default function SolicitudesModal({ open, onClose, areaId = null, areaNam
   const [error, setError] = useState(null);
   const [rows, setRows] = useState([]);
   const [viewAll, setViewAll] = useState(false);
+  const [showDenyModal, setShowDenyModal] = useState(false);
+  const [currentDenyRequestId, setCurrentDenyRequestId] = useState(null);
+  const [denyReason, setDenyReason] = useState('');
   const isSim = areaType === 'simulacion';
   const collectionLabel = isSim ? 'simuladores' : 'módulos';
 
@@ -171,17 +174,67 @@ export default function SolicitudesModal({ open, onClose, areaId = null, areaNam
     try {
       const params = new URLSearchParams();
       if (status) params.set('status', status);
+      // Solo filtrar por area_id en el backend si existe
       if (areaId) params.set('area_id', String(areaId));
       params.set('area_type', areaType);
+
+
+
       const res = await fetchWithRefresh(`/api/advisor/area-requests?${params.toString()}`);
       if (!res || !res.ok) throw new Error(`HTTP ${res?.status || 'fetch error'}`);
       const json = await res.json();
-      setRows(Array.isArray(json?.data) ? json.data : []);
+      let data = Array.isArray(json?.data) ? json.data : [];
+
+      // Si no hay area_id pero sí hay areaName, filtrar en el cliente por nombre
+      if (!areaId && areaName) {
+        const normalize = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        const normalizedAreaName = normalize(areaName);
+
+
+
+        data = data.filter(request => {
+          // Obtener el nombre del área de la solicitud
+          let requestAreaName = request.area_name;
+
+          // Si no tiene area_name pero tiene area_id, buscar en el mapa
+          if (!requestAreaName && request.area_id && areaNamesMap) {
+            requestAreaName = areaNamesMap[String(request.area_id)];
+          }
+
+          // Si aún no tenemos nombre, no podemos filtrar correctamente - rechazar
+          if (!requestAreaName) {
+            console.log('❌ No area name found for request:', request);
+            return false;
+          }
+
+          const normalizedRequestAreaName = normalize(requestAreaName);
+
+          // Coincidencia más estricta: debe contener el nombre completo o viceversa
+          // Evitamos coincidencias vacías
+          if (!normalizedAreaName || !normalizedRequestAreaName) {
+            return false;
+          }
+
+          const matches = normalizedRequestAreaName.includes(normalizedAreaName) ||
+            normalizedAreaName.includes(normalizedRequestAreaName);
+
+          if (matches) {
+          }
+
+          return matches;
+        });
+
+
+      } else {
+
+      }
+
+      setRows(data);
     } catch (e) { setError(e?.message || 'Error al cargar'); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchRequests(); }, [open, status, areaId, areaType]);
+  useEffect(() => { fetchRequests(); }, [open, status, areaId, areaName, areaType]);
 
   const approve = async (id) => {
     try {
@@ -192,14 +245,28 @@ export default function SolicitudesModal({ open, onClose, areaId = null, areaNam
     } catch (e) { alert('No se pudo aprobar: ' + e.message); }
   };
 
-  const deny = async (id) => {
+  const deny = (id) => {
+    setCurrentDenyRequestId(id);
+    setShowDenyModal(true);
+  };
+
+  const handleDenySubmit = async () => {
+    if (!currentDenyRequestId) return;
     try {
-      const notes = window.prompt('Razón del rechazo:') || '';
-      const res = await fetchWithRefresh(`/api/advisor/area-requests/${id}/deny`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notes }) });
+      const res = await fetchWithRefresh(`/api/advisor/area-requests/${currentDenyRequestId}/deny`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: denyReason })
+      });
       if (!res || !res.ok) throw new Error(`HTTP ${res?.status || 'error'}`);
       await fetchRequests();
       if (typeof onRefreshCounts === 'function') onRefreshCounts();
-    } catch (e) { alert('No se pudo rechazar: ' + e.message); }
+      setShowDenyModal(false);
+      setDenyReason('');
+      setCurrentDenyRequestId(null);
+    } catch (e) {
+      alert('No se pudo rechazar: ' + e.message);
+    }
   };
 
   const StatusBadge = ({ value }) => {
@@ -216,9 +283,9 @@ export default function SolicitudesModal({ open, onClose, areaId = null, areaNam
   if (viewAll) return <RequestsManager rows={rows} status={status} setStatus={setStatus} onApprove={approve} onDeny={deny} areaNamesMap={areaNamesMap} loading={loading} onClose={onClose} areaName={areaName} areaId={areaId} setViewAll={setViewAll} />;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center items-start pt-48 p-3 sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex justify-center items-start pt-96 p-3 sm:p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-sm rounded-[1.5rem] bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden mt-24 sm:mt-32 transition-all">
+      <div className="relative w-full max-w-sm rounded-[1.5rem] bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden mt-56 sm:mt-64 transition-all">
         {/* Header Compacto */}
         <div className="sticky top-0 flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-white/95 backdrop-blur z-10">
           <div className="min-w-0 flex items-center gap-3">
@@ -296,6 +363,46 @@ export default function SolicitudesModal({ open, onClose, areaId = null, areaNam
           )}
         </div>
       </div>
+
+      {showDenyModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setShowDenyModal(false)} />
+          <div className="relative w-full max-w-md rounded-[1.5rem] bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white z-10 shrink-0">
+              <h3 className="text-lg font-bold text-slate-900 leading-tight">Razón del rechazo</h3>
+              <button
+                onClick={() => setShowDenyModal(false)}
+                className="size-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-rose-500 transition-colors"
+              >
+                <XCircle className="size-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <textarea
+                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-violet-500 focus:border-violet-500 resize-y min-h-[100px]"
+                placeholder="Escribe la razón del rechazo aquí..."
+                value={denyReason}
+                onChange={(e) => setDenyReason(e.target.value)}
+              ></textarea>
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                onClick={() => setShowDenyModal(false)}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDenySubmit}
+                className="px-4 py-2 rounded-lg bg-rose-500 text-white hover:bg-rose-600 transition-colors"
+                disabled={!denyReason.trim()}
+              >
+                Rechazar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

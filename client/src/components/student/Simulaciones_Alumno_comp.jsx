@@ -64,6 +64,7 @@ import {
   RefreshCw   // Icono para refrescar
 } from 'lucide-react';
 import UnifiedCard from '../common/UnifiedCard.jsx';
+import MisSolicitudesModal from './MisSolicitudesModal.jsx'; // Nuevo modal importado
 
 /**
  * Helper para convertir nombres de iconos a componentes React
@@ -140,6 +141,9 @@ export function Simulaciones_Alumno_comp() {
   } = useStudent();
   const { user, alumno } = useAuth() || {};
   const estudianteId = alumno?.id || user?.id_estudiante || user?.id || null;
+
+  // Estado para modal de Mis Solicitudes
+  const [showMisSolicitudes, setShowMisSolicitudes] = useState(false);
 
   // Estados para historial de intentos
   const [showHistorialModal, setShowHistorialModal] = useState(false);
@@ -1641,6 +1645,13 @@ export function Simulaciones_Alumno_comp() {
     return (
       <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 pt-6 sm:pt-8 md:pt-10 py-4 lg:py-8">
         <div className="max-w-7xl mx-auto">
+          {/* Modal de Solicitudes */}
+          <MisSolicitudesModal
+            isOpen={showMisSolicitudes}
+            onClose={() => setShowMisSolicitudes(false)}
+            filterType="simulacion"
+          />
+
           {/* Header con navegación - Mejorado para móviles */}
           <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8 mt-4 sm:mt-6 md:mt-8">
             <div className="px-4 sm:px-6 py-5 sm:py-8">
@@ -1663,9 +1674,21 @@ export function Simulaciones_Alumno_comp() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                  <Brain className="w-4 h-4 mr-1.5 text-violet-600" />
-                  <span className="font-semibold">{modulosEspecificos.length} módulos disponibles</span>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Botón Mis Solicitudes */}
+                  <button
+                    onClick={() => setShowMisSolicitudes(true)}
+                    className="flex items-center space-x-2 text-xs sm:text-sm font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 px-3 py-2 rounded-lg border border-violet-200 transition-colors"
+                  >
+                    <Clock className="w-4 h-4" />
+                    <span>Mis Solicitudes</span>
+                  </button>
+
+                  <div className="flex items-center text-xs sm:text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                    <Brain className="w-4 h-4 mr-1.5 text-violet-600" />
+                    <span className="font-semibold">{modulosEspecificos.length} módulos disponibles</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1688,6 +1711,7 @@ export function Simulaciones_Alumno_comp() {
               const isAllowed = allowedSimulationAreas.includes(modulo.id);
               const request = simulationRequests.find(req => req.areaId === modulo.id);
               const isPending = request && request.status === 'pending';
+              const isDenied = request && (request.status === 'denied' || request.status === 'rejected');
 
               let actionHandler = () => { };
               let footerContent;
@@ -1699,7 +1723,7 @@ export function Simulaciones_Alumno_comp() {
                   actionHandler = () => handleSelectModulo(modulo);
                   footerContent = (
                     <div className="inline-flex items-center text-gray-700 font-extrabold text-xs sm:text-sm bg-gradient-to-r from-gray-100 to-slate-100 px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm group-hover:shadow-md transition-all">
-                      <span>Ver simulaciones</span>
+                      <span>Ver simuladores</span>
                       <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 rotate-180 group-hover:translate-x-1.5 transition-transform" />
                     </div>
                   );
@@ -1710,9 +1734,19 @@ export function Simulaciones_Alumno_comp() {
                       <span>Pendiente</span>
                     </div>
                   );
+                } else if (isDenied) {
+                  // Solicitud rechazada: permitir solicitar de nuevo
+                  isClickable = true;
+                  actionHandler = () => requestNewSimulationAreaAccess(modulo.id);
+                  footerContent = (
+                    <div className="inline-flex items-center text-blue-700 font-extrabold text-xs sm:text-sm bg-gradient-to-r from-blue-100 to-indigo-100 px-3 py-1.5 rounded-lg border border-blue-200 shadow-sm group-hover:shadow-md transition-all">
+                      <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
+                      <span>Solicitar Acceso</span>
+                    </div>
+                  );
                 } else {
                   isClickable = true;
-                  actionHandler = () => handleRequestAccess(modulo.id);
+                  actionHandler = () => requestNewSimulationAreaAccess(modulo.id);
                   footerContent = (
                     <div className="inline-flex items-center text-blue-700 font-extrabold text-xs sm:text-sm bg-gradient-to-r from-blue-100 to-indigo-100 px-3 py-1.5 rounded-lg border border-blue-200 shadow-sm group-hover:shadow-md transition-all">
                       <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />

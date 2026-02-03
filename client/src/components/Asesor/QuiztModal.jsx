@@ -249,7 +249,7 @@ export default function SimulatorModal({ open, onClose, onCreate, areaTitle, are
       <div className="fixed inset-0 bg-slate-900/55 backdrop-blur-[2px] -z-10" aria-hidden="true" />
 
       {/* Envuelve para centrar verticalmente en viewport; en pantallas bajas el overlay hace scroll */}
-      <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-start pt-25 pb-10 py-2">
+      <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-center pb-10 py-2">
         {/* Content: max-height para pantallas con poca altura (ej. 15.6" alto reducido) */}
         <div
           data-modal

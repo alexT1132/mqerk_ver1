@@ -46,37 +46,37 @@ const defaultStudentContext = {
   wsAttempts: 0,
 
   // Funciones no-op
-  simulateVerification: () => {},
-  resetStudentState: () => {},
-  forceCompleteReset: () => {},
-  goToStart: () => {},
-  loadEnrolledCourses: () => {},
-  selectCourse: () => {},
-  clearCourse: () => {},
-  enrollInCourse: () => {},
-  updateCourseProgress: () => {},
-  setActiveSectionHandler: () => {},
-  goToWelcome: () => {},
-  addAllowedSimulationArea: () => {},
-  requestNewSimulationAreaAccess: () => {},
-  addAllowedActivityArea: () => {},
-  requestNewActivityAreaAccess: () => {},
-  addAllowedArea: () => {},
-  requestNewAreaAccess: () => {},
-  clearAreas: () => {},
+  simulateVerification: () => { },
+  resetStudentState: () => { },
+  forceCompleteReset: () => { },
+  goToStart: () => { },
+  loadEnrolledCourses: () => { },
+  selectCourse: () => { },
+  clearCourse: () => { },
+  enrollInCourse: () => { },
+  updateCourseProgress: () => { },
+  setActiveSectionHandler: () => { },
+  goToWelcome: () => { },
+  addAllowedSimulationArea: () => { },
+  requestNewSimulationAreaAccess: () => { },
+  addAllowedActivityArea: () => { },
+  requestNewActivityAreaAccess: () => { },
+  addAllowedArea: () => { },
+  requestNewAreaAccess: () => { },
+  clearAreas: () => { },
   checkPaymentStatus: async () => ({ hasAccess: true, overdueDays: 0 }),
-  updatePaymentStatus: () => {},
+  updatePaymentStatus: () => { },
   refreshOverdueAccess: () => ({ hasAccess: true, overdueDays: 0 }),
 
   // UI prefs
-  headerPrefs: { showQuickLinks: true, links: ['cursos','calendario','pagos'] },
-  updateHeaderPrefs: () => {},
+  headerPrefs: { showQuickLinks: true, links: ['cursos', 'calendario', 'pagos'] },
+  updateHeaderPrefs: () => { },
 };
 
 export const useStudent = () => {
   const context = useContext(StudentContext);
   if (!context) {
-    try { console.warn('useStudent used outside StudentProvider. Using fallback context.'); } catch {}
+    try { console.warn('useStudent used outside StudentProvider. Using fallback context.'); } catch { }
     return defaultStudentContext;
   }
   return context;
@@ -116,13 +116,13 @@ export const StudentProvider = ({ children }) => {
   const [simulationRequests, setSimulationRequests] = useState([]); // Solicitudes de nuevas áreas para simulaciones
   const [allowedActivityAreas, setAllowedActivityAreas] = useState([]); // Áreas permitidas para actividades (inicialmente vacío para selección inicial)
   const [activityRequests, setActivityRequests] = useState([]); // Solicitudes de nuevas áreas para actividades
-  
+
   // Estados legacy para compatibilidad (deprecated - se mantendrán temporalmente)
   const [allowedAreas, setAllowedAreas] = useState([]); // Áreas permitidas (legacy)
   const [areaRequests, setAreaRequests] = useState([]); // Solicitudes de nuevas áreas (legacy)
   const [hasContentAccess, setHasContentAccess] = useState(true); // Acceso al contenido (global)
   const [overdueDays, setOverdueDays] = useState(0); // Días de mora efectivos (más allá de tolerancia)
-  
+
   // TODO: BACKEND - Datos del estudiante serán proporcionados por el endpoint del perfil
   // Estructura esperada: GET /api/students/profile
   const [studentData, setStudentData] = useState({
@@ -140,7 +140,7 @@ export const StudentProvider = ({ children }) => {
   const updateHeaderPrefs = (partialOrFn) => {
     setHeaderPrefs((prev) => {
       const next = typeof partialOrFn === 'function' ? partialOrFn(prev) : { ...prev, ...partialOrFn };
-      try { localStorage.setItem('studentHeaderPrefs', JSON.stringify(next)); } catch {}
+      try { localStorage.setItem('studentHeaderPrefs', JSON.stringify(next)); } catch { }
       return next;
     });
   };
@@ -183,7 +183,7 @@ export const StudentProvider = ({ children }) => {
           const ct = res.headers.get('content-type') || '';
           const body = ct.includes('application/json') ? JSON.stringify(await res.json()) : await res.text();
           console.warn(`[EEAU] intento ${attempt + 1} fallo: status=${res.status}`, body?.slice?.(0, 500) || body);
-        } catch {}
+        } catch { }
         if (res.status >= 500 && res.status <= 599 && attempt < retries) {
           await sleep(delayMs);
           continue;
@@ -208,10 +208,10 @@ export const StudentProvider = ({ children }) => {
       title: 'Curso EEAU',
       instructor: 'Kelvin Valentin Ramirez',
       image: eeauImg,
-         category: 'preparacion',
+      category: 'preparacion',
       type: 'curso',
       isActive: true,
-      enrollmentDate: new Date().toISOString().slice(0,10),
+      enrollmentDate: new Date().toISOString().slice(0, 10),
       progress: 0,
       lastAccessed: new Date().toISOString(),
       status: 'active',
@@ -225,10 +225,10 @@ export const StudentProvider = ({ children }) => {
     try {
       // Obtener ID del estudiante si está disponible (de studentData o alumno del AuthContext)
       const estudianteId = studentData?.id || studentData?.id_estudiante || alumno?.id;
-      const url = estudianteId 
+      const url = estudianteId
         ? `/api/eeau?id_estudiante=${estudianteId}`
         : '/api/eeau';
-      
+
       const res = await fetchWithRetry(url, { credentials: 'include' }, 2, 450);
       if (!res.ok) {
         console.warn('No se pudo obtener EEAU (status no OK, usando fallback):', res.status);
@@ -246,7 +246,7 @@ export const StudentProvider = ({ children }) => {
       let json;
       try {
         json = await res.json();
-      } catch(parseErr) {
+      } catch (parseErr) {
         console.warn('Parse JSON /api/eeau falló, usando fallback:', parseErr);
         const fallback = buildCourse();
         setEnrolledCourses([fallback]);
@@ -261,8 +261,8 @@ export const StudentProvider = ({ children }) => {
         // Solo usar si es una URL completa (http/https) o data URI
         // Ignorar rutas relativas como /public/ porque no existen en el frontend
         if (apiImage && (
-          apiImage.startsWith('http://') || 
-          apiImage.startsWith('https://') || 
+          apiImage.startsWith('http://') ||
+          apiImage.startsWith('https://') ||
           apiImage.startsWith('data:')
         )) {
           validImage = apiImage;
@@ -270,10 +270,10 @@ export const StudentProvider = ({ children }) => {
         // Si es una ruta relativa que empieza con /, ignorarla y usar la imagen importada
         // porque las rutas del backend no coinciden con las del frontend
       }
-      
+
       // Obtener progreso del backend (0-100) o usar 0 si no está disponible
       const progresoReal = c?.progreso != null ? Math.round(c.progreso) : 0;
-      
+
       const courseObj = c ? buildCourse({
         id: c.codigo || 'EEAU',
         title: c.titulo || 'Curso EEAU',
@@ -297,17 +297,17 @@ export const StudentProvider = ({ children }) => {
   // Función para manejar la verificación del estudiante - integración con backend
   const simulateVerification = () => {
     console.log('✅ Simulando verificación del estudiante...');
-    
+
     // TODO: Verificar con backend en lugar de solo cambiar estado local
     setIsVerified(true);
     setHasPaid(true);
     setIsFirstAccess(false);
-    
+
     // Persistir en localStorage
     localStorage.setItem('studentVerified', 'true');
     localStorage.setItem('studentPaid', 'true');
     localStorage.setItem('isFirstAccess', 'false');
-    
+
     console.log('✅ Verificación simulada completada');
   };
 
@@ -319,9 +319,9 @@ export const StudentProvider = ({ children }) => {
       setIsFirstAccess(false); // ✅ IMPORTANTE: Marcar que ya no es primer acceso
       localStorage.setItem('currentCourse', JSON.stringify(course));
       localStorage.setItem('isFirstAccess', 'false'); // ✅ Persistir en localStorage
-      
+
       console.log('✅ Curso seleccionado:', course.title);
-      
+
       // TODO: BACKEND - Actualizar el curso actual en el backend
       // updateCurrentCourseOnBackend(courseId);
     } else {
@@ -341,7 +341,7 @@ export const StudentProvider = ({ children }) => {
       //   },
       //   body: JSON.stringify({ courseId })
       // });
-      
+
       console.log(`Actualizando curso actual a: ${courseId}`);
     } catch (error) {
       console.error('Error al actualizar curso actual:', error);
@@ -370,7 +370,7 @@ export const StudentProvider = ({ children }) => {
       // });
       // const newCourse = await response.json();
       // setEnrolledCourses(prev => [...prev, newCourse]);
-      
+
       console.log(`Inscribiéndose al curso: ${courseId}`);
     } catch (error) {
       console.error('Error al inscribirse al curso:', error);
@@ -389,16 +389,16 @@ export const StudentProvider = ({ children }) => {
       //   },
       //   body: JSON.stringify({ progress })
       // });
-      
+
       // Actualizar el progreso localmente
-      setEnrolledCourses(prev => 
-        prev.map(course => 
-          course.id === courseId 
+      setEnrolledCourses(prev =>
+        prev.map(course =>
+          course.id === courseId
             ? { ...course, progress, lastAccessed: new Date().toISOString() }
             : course
         )
       );
-      
+
       console.log(`Actualizando progreso del curso ${courseId} a ${progress}%`);
     } catch (error) {
       console.error('Error al actualizar progreso:', error);
@@ -441,8 +441,14 @@ export const StudentProvider = ({ children }) => {
 
   const requestNewSimulationAreaAccess = async (areaId, options = {}) => {
     try {
-      // Evitar solicitudes duplicadas locales (UI)
-      if (simulationRequests.some(req => req.areaId === areaId && req.status === 'pending')) return;
+      // Solo bloquear si ya hay una solicitud PENDIENTE
+      // Si fue rechazada (denied/rejected), permitir solicitar de nuevo
+      const existingRequest = simulationRequests.find(req => req.areaId === areaId);
+      if (existingRequest && existingRequest.status === 'pending') {
+        console.log('Ya existe una solicitud pendiente para esta área de simulación');
+        return;
+      }
+
       const payload = { area_id: areaId, area_type: 'simulacion', notes: options?.notes || null };
       await AreaAccess.createAreaRequest(payload);
       // Refrescar desde backend
@@ -468,7 +474,14 @@ export const StudentProvider = ({ children }) => {
 
   const requestNewActivityAreaAccess = async (areaId, options = {}) => {
     try {
-      if (activityRequests.some(req => req.areaId === areaId && req.status === 'pending')) return;
+      // Solo bloquear si ya hay una solicitud PENDIENTE
+      // Si fue rechazada (denied/rejected), permitir solicitar de nuevo
+      const existingRequest = activityRequests.find(req => req.areaId === areaId);
+      if (existingRequest && existingRequest.status === 'pending') {
+        console.log('Ya existe una solicitud pendiente para esta área');
+        return;
+      }
+
       const payload = { area_id: areaId, area_type: 'actividad', notes: options?.notes || null };
       await AreaAccess.createAreaRequest(payload);
       await hydrateAreaAccess();
@@ -488,10 +501,10 @@ export const StudentProvider = ({ children }) => {
     try {
       if (!isStudent) return; // Solo estudiantes pueden consultar estos endpoints
       const [permAct, permSim, reqsAct, reqsSim] = await Promise.all([
-        AreaAccess.listMyAreaPermissions({ area_type: 'actividad' }).then(r=> r?.data?.data || []).catch(()=>[]),
-        AreaAccess.listMyAreaPermissions({ area_type: 'simulacion' }).then(r=> r?.data?.data || []).catch(()=>[]),
-        AreaAccess.listMyAreaRequests({ area_type: 'actividad' }).then(r=> r?.data?.data || []).catch(()=>[]),
-        AreaAccess.listMyAreaRequests({ area_type: 'simulacion' }).then(r=> r?.data?.data || []).catch(()=>[]),
+        AreaAccess.listMyAreaPermissions({ area_type: 'actividad' }).then(r => r?.data?.data || []).catch(() => []),
+        AreaAccess.listMyAreaPermissions({ area_type: 'simulacion' }).then(r => r?.data?.data || []).catch(() => []),
+        AreaAccess.listMyAreaRequests({ area_type: 'actividad' }).then(r => r?.data?.data || []).catch(() => []),
+        AreaAccess.listMyAreaRequests({ area_type: 'simulacion' }).then(r => r?.data?.data || []).catch(() => []),
       ]);
       const actIds = Array.from(new Set(permAct.map(p => p.area_id))).filter(Boolean);
       const simIds = Array.from(new Set(permSim.map(p => p.area_id))).filter(Boolean);
@@ -529,7 +542,7 @@ export const StudentProvider = ({ children }) => {
 
     // TODO: Enviar solicitud al backend
     console.log(`Enviando solicitud para el área: ${areaId}`);
-    
+
     const newRequest = { areaId, status: 'pending', date: new Date() };
     const newRequests = [...areaRequests, newRequest];
     setAreaRequests(newRequests);
@@ -543,13 +556,13 @@ export const StudentProvider = ({ children }) => {
     setSimulationRequests([]);
     localStorage.removeItem('allowedSimulationAreas');
     localStorage.removeItem('simulationRequests');
-    
+
     // Limpiar actividades
     setAllowedActivityAreas([]);
     setActivityRequests([]);
     localStorage.removeItem('allowedActivityAreas');
     localStorage.removeItem('activityRequests');
-    
+
     // Limpiar legacy
     setAllowedAreas([]);
     setAreaRequests([]);
@@ -571,7 +584,7 @@ export const StudentProvider = ({ children }) => {
     setHasPaid(storedPaid);
     setIsFirstAccess(storedFirstAccess);
     setActiveSection(storedActiveSection);
-    
+
     // Siempre restaurar currentCourse desde localStorage si existe y es válido
     // Esto asegura que el curso persista después de refrescar
     if (storedCourse) {
@@ -643,7 +656,7 @@ export const StudentProvider = ({ children }) => {
   useEffect(() => {
     // Solo sincronizar si hay enrolledCourses cargados
     if (enrolledCourses.length === 0) return;
-    
+
     // Si ya hay un currentCourse establecido, verificar que coincida con enrolledCourses
     if (currentCourse) {
       const courseExists = enrolledCourses.some(c => c.id === currentCourse.id);
@@ -661,23 +674,23 @@ export const StudentProvider = ({ children }) => {
         return; // Ya está sincronizado
       }
     }
-    
+
     // Si no hay currentCourse pero hay uno guardado en localStorage, restaurarlo
     if (!currentCourse) {
       try {
         const storedCourseRaw = localStorage.getItem('currentCourse');
         if (!storedCourseRaw || storedCourseRaw === 'null' || storedCourseRaw === 'undefined') return;
-        
+
         const storedCourse = JSON.parse(storedCourseRaw);
         if (!storedCourse || typeof storedCourse !== 'object') return;
-        
+
         // Buscar el curso en enrolledCourses por ID o título
-        const matchedCourse = enrolledCourses.find(c => 
-          c.id === storedCourse.id || 
+        const matchedCourse = enrolledCourses.find(c =>
+          c.id === storedCourse.id ||
           c.title === storedCourse.title ||
           (storedCourse.id && c.id && String(c.id).toLowerCase() === String(storedCourse.id).toLowerCase())
         );
-        
+
         if (matchedCourse) {
           console.log('✅ Restaurando curso desde localStorage y sincronizando con enrolledCourses:', matchedCourse.title);
           setCurrentCourse(matchedCourse);
@@ -701,14 +714,14 @@ export const StudentProvider = ({ children }) => {
   const [wsAttempts, setWsAttempts] = useState(0);
   // WebSocket con helper de URL y pre-chequeo de backend
   useEffect(() => {
-    if(!isAuthenticated){ return; }
+    if (!isAuthenticated) { return; }
     let ws; let closedManually = false; let reconnectTimer;
     let lastUrl = '';
-    async function openSocket(attempt){
+    async function openSocket(attempt) {
       setWsStatus('connecting');
       // Importar dinámicamente para evitar ciclos y facilitar tree-shaking
       const { getWsNotificationsUrl, waitForBackendHealth } = await import('../utils/ws.js');
-      
+
       // Intentar health check pero no bloquear si falla (puede ser problema temporal)
       let healthy = false;
       try {
@@ -737,12 +750,12 @@ export const StudentProvider = ({ children }) => {
           console.debug('[WS] Health check falló pero intentando abrir WS de todas formas (intento', attempt, ')');
         }
       }
-      
+
       const url = getWsNotificationsUrl();
       lastUrl = url;
       try {
         ws = new WebSocket(url);
-      } catch(err){
+      } catch (err) {
         console.error('[WS] Error creando instancia WebSocket', err);
         scheduleReconnect(attempt);
         return;
@@ -758,7 +771,7 @@ export const StudentProvider = ({ children }) => {
             const ptype = (p.kind || p.type || '').toLowerCase();
             const status = (p.metadata?.status || '').toLowerCase();
             if (ptype === 'area_access' && status === 'approved') {
-              try { if (isStudent) hydrateAreaAccess(); } catch {}
+              try { if (isStudent) hydrateAreaAccess(); } catch { }
             }
           }
           if (data.type === 'student_status' && data.payload && typeof data.payload.verificacion !== 'undefined') {
@@ -766,8 +779,8 @@ export const StudentProvider = ({ children }) => {
             if (v >= 2) {
               if (!isVerified) setIsVerified(true);
               if (!hasPaid) setHasPaid(true);
-              localStorage.setItem('studentVerified','true');
-              localStorage.setItem('studentPaid','true');
+              localStorage.setItem('studentVerified', 'true');
+              localStorage.setItem('studentPaid', 'true');
             } else if (v === 3) {
               setIsVerified(false);
               setHasPaid(false);
@@ -775,23 +788,23 @@ export const StudentProvider = ({ children }) => {
               localStorage.removeItem('studentPaid');
             }
           }
-        } catch(_){}
+        } catch (_) { }
       };
       ws.onerror = (e) => { console.warn('[WS] onerror', e?.message || e); setWsStatus('error'); };
       ws.onclose = (ev) => {
         setWsStatus('closed');
-        if(!closedManually){
-          scheduleReconnect(attempt+1);
+        if (!closedManually) {
+          scheduleReconnect(attempt + 1);
         }
       };
     }
-    function scheduleReconnect(nextAttempt){
+    function scheduleReconnect(nextAttempt) {
       const backoff = Math.min(30000, 1000 * Math.pow(2, nextAttempt));
       setWsAttempts(nextAttempt);
-      reconnectTimer = setTimeout(()=> openSocket(nextAttempt), backoff);
+      reconnectTimer = setTimeout(() => openSocket(nextAttempt), backoff);
     }
-    openSocket(wsAttempts+1);
-    return () => { closedManually = true; try { ws && ws.close(); } catch(_){}; if(reconnectTimer) clearTimeout(reconnectTimer); };
+    openSocket(wsAttempts + 1);
+    return () => { closedManually = true; try { ws && ws.close(); } catch (_) { }; if (reconnectTimer) clearTimeout(reconnectTimer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
@@ -814,7 +827,7 @@ export const StudentProvider = ({ children }) => {
     // Verificar si hay un usuario autenticado en localStorage para saber si realmente se perdió la sesión
     // Si no hay usuario en localStorage, entonces sí se cerró sesión realmente
     const hasUserInStorage = localStorage.getItem('mq_user');
-    
+
     if (!isAuthenticated && !hasUserInStorage) {
       // Solo limpiar si realmente se cerró sesión (no hay usuario en localStorage)
       console.log('[Curso] Sesión cerrada, limpiando curso...');
@@ -834,26 +847,26 @@ export const StudentProvider = ({ children }) => {
   // Función para resetear el estado (útil para testing)
   const resetStudentState = () => {
     console.log('🔄 Reseteando estado del estudiante...');
-    
+
     // Resetear todos los estados
     setIsVerified(false);
     setHasPaid(false);
     setCurrentCourse(null);
     setIsFirstAccess(true);
     setActiveSection(null);
-    
+
     // Limpiar TODO el localStorage relacionado con el estudiante
     localStorage.removeItem('studentVerified');
     localStorage.removeItem('studentPaid');
     localStorage.removeItem('isFirstAccess');
     localStorage.removeItem('currentCourse');
     localStorage.removeItem('activeSection');
-    
+
     // También limpiar las áreas
     clearAreas();
-    
+
     console.log('✅ Estado reseteado completamente');
-    
+
     // Forzar una recarga del estado después de un breve delay
     setTimeout(() => {
       window.location.reload();
@@ -897,7 +910,7 @@ export const StudentProvider = ({ children }) => {
   const updatePaymentStatus = (paymentId, status) => {
     // TODO: Implementar actualización local y sincronización con backend
     console.log(`Actualizando pago ${paymentId} a estado: ${status}`);
-    
+
     // Verificar si necesita bloquear/desbloquear acceso
     checkPaymentStatus();
   };
@@ -911,59 +924,60 @@ export const StudentProvider = ({ children }) => {
     activeSection,
     hasContentAccess,
     overdueDays,
-    
+
     // Cursos del estudiante (solo los matriculados)
     enrolledCourses,
     currentCourse,
-    
+
     // Áreas de simulación - NUEVOS ESTADOS SEPARADOS
     allowedSimulationAreas,
     simulationRequests,
     allowedActivityAreas,
     activityRequests,
-    
+
     // Áreas legacy (deprecated - se mantendrán temporalmente para compatibilidad)
     allowedAreas,
     areaRequests,
-    
+
     // Funciones de verificación y autenticación
     simulateVerification,
     resetStudentState,
     forceCompleteReset,
     goToStart,
-    
+
     // Funciones de manejo de cursos matriculados
     loadEnrolledCourses,
     selectCourse,
     clearCourse,
     enrollInCourse,
     updateCourseProgress,
-    
+
     // Funciones de navegación
     setActiveSectionHandler,
     goToWelcome,
-    
+
     // Funciones de áreas - NUEVAS FUNCIONES SEPARADAS
     addAllowedSimulationArea,
     requestNewSimulationAreaAccess,
     addAllowedActivityArea,
     requestNewActivityAreaAccess,
-    
+    hydrateAreaAccess, // Refrescar permisos y solicitudes desde backend
+
     // Funciones legacy (deprecated - se mantendrán temporalmente para compatibilidad)
     addAllowedArea,
     requestNewAreaAccess,
     clearAreas,
-    
-  // Funciones de pagos y acceso global
-  checkPaymentStatus,
-  updatePaymentStatus,
-  refreshOverdueAccess,
-  wsStatus,
-  wsAttempts,
 
-  // Preferencias UI
-  headerPrefs,
-  updateHeaderPrefs,
+    // Funciones de pagos y acceso global
+    checkPaymentStatus,
+    updatePaymentStatus,
+    refreshOverdueAccess,
+    wsStatus,
+    wsAttempts,
+
+    // Preferencias UI
+    headerPrefs,
+    updateHeaderPrefs,
   };
 
   return (

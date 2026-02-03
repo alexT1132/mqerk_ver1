@@ -6,7 +6,8 @@ import {
   GraduationCap,
   Layers,
   MessageSquare,
-  ChevronLeft
+  ChevronLeft,
+  RefreshCw
 } from "lucide-react";
 
 /* --- Réplica del Icono de Libro --- */
@@ -19,7 +20,7 @@ function IconBook({ className = "w-6 h-6" }) {
 }
 
 /* --- SectionBadge: Réplica exacta del header de Actividades.jsx --- */
-function SectionBadge({ title, subtitle, onBack, total }) {
+function SectionBadge({ title, subtitle, onBack, total, onRefresh, isRefreshing }) {
   return (
     <div className="relative mx-auto max-w-8xl overflow-hidden rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-6 sm:p-8 shadow-xl ring-2 ring-slate-100/50 mb-8">
       {/* blobs suaves al fondo */}
@@ -54,18 +55,33 @@ function SectionBadge({ title, subtitle, onBack, total }) {
           </div>
         </div>
 
-        {/* Contador de Módulos (Réplica estilo Actividades con badge sutil) */}
-        {total > 0 && (
-          <div className="hidden md:flex ml-auto items-center gap-3 rounded-2xl bg-white/40 backdrop-blur-md px-5 py-3 border border-white/50 shadow-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
-              <Layers className="size-5" />
+        {/* Contador de Módulos + Botón Refrescar */}
+        <div className="hidden md:flex ml-auto items-center gap-3">
+          {/* Botón de Refrescar */}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-white/50 bg-white/30 backdrop-blur-md text-violet-700 hover:bg-white hover:border-white transition-all duration-200 shadow-sm active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Refrescar solicitudes"
+            >
+              <RefreshCw className={`size-5 transition-transform ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'}`} strokeWidth={2.5} />
+            </button>
+          )}
+
+          {/* Contador */}
+          {total > 0 && (
+            <div className="flex items-center gap-3 rounded-2xl bg-white/40 backdrop-blur-md px-5 py-3 border border-white/50 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
+                <Layers className="size-5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-lg font-black text-slate-800 leading-none">{total}</span>
+                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Módulos</span>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-black text-slate-800 leading-none">{total}</span>
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Módulos</span>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
@@ -136,10 +152,9 @@ function AreaCard({ item, onOpenSolicitudes, badgeCount, to, state }) {
         >
           <MessageSquare className="size-5" />
           {badgeCount > 0 && (
-            <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
-            </span>
+            <div className="absolute -top-3 -right-3 z-20 flex min-h-[1.5rem] min-w-[1.5rem] w-auto items-center justify-center rounded-full bg-rose-500 border-2 border-white px-1.5 text-[10px] font-bold text-white shadow-lg animate-pulse">
+              {badgeCount > 99 ? '99+' : badgeCount}
+            </div>
           )}
         </button>
       </div>
@@ -161,6 +176,7 @@ export default function ModulosEspecificos({
   const [selectedAreaName, setSelectedAreaName] = useState(null);
   const [nameToArea, setNameToArea] = useState({});
   const [pendingCounts, setPendingCounts] = useState({});
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchWithRefresh = async (url, options = {}) => {
     const opts = { credentials: 'include', ...options };
@@ -176,6 +192,11 @@ export default function ModulosEspecificos({
     return res;
   };
 
+  /* Helper para normalizar textos (quitar acentos, minúsculas) */
+  const normalize = (str) => {
+    return (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  };
+
   useEffect(() => {
     let abort = false;
     (async () => {
@@ -189,7 +210,11 @@ export default function ModulosEspecificos({
 
         const map = {};
         for (const m of allAreas) {
-          if (m?.nombre) map[m.nombre.trim().toLowerCase()] = { id: m.id, nombre: m.nombre };
+          if (m?.nombre) {
+            // Guardamos tanto la versión normalizada como la original minúscula por compatibilidad
+            map[normalize(m.nombre)] = { id: m.id, nombre: m.nombre };
+            map[m.nombre.trim().toLowerCase()] = { id: m.id, nombre: m.nombre };
+          }
         }
         if (!abort) setNameToArea(map);
       } catch (e) {
@@ -205,16 +230,55 @@ export default function ModulosEspecificos({
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();
       const list = Array.isArray(json?.data) ? json.data : [];
+
+
+
       const counts = {};
+      const countsByName = {}; // Nuevo: contar también por nombre
+
       for (const r of list) {
-        const key = String(r.area_id);
-        counts[key] = (counts[key] || 0) + 1;
+
+
+        // Contar por area_id (como antes)
+        if (r.area_id) {
+          const key = String(r.area_id);
+          counts[key] = (counts[key] || 0) + 1;
+        }
+
+        // Contar también por area_name (normalizado)
+        // Si no tiene area_name, intentar obtenerlo del mapa areaIdToName
+        let areaName = r.area_name;
+        if (!areaName && r.area_id && areaIdToName) {
+          areaName = areaIdToName[String(r.area_id)];
+
+        }
+
+        if (areaName) {
+          try {
+            const normalizedName = normalize(areaName);
+
+            countsByName[normalizedName] = (countsByName[normalizedName] || 0) + 1;
+          } catch (err) {
+            console.error('Error normalizing area_name:', err, areaName);
+          }
+        } else {
+
+        }
       }
-      setPendingCounts(counts);
+
+
+
+      setPendingCounts({ byId: counts, byName: countsByName });
     } catch (e) {
       if (String(e?.message || '').includes('HTTP 401')) return;
       console.warn('No se pudieron obtener conteos de solicitudes', e);
     }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshPendingCounts();
+    setIsRefreshing(false);
   };
 
   useEffect(() => { refreshPendingCounts(); }, [nameToArea, areaType]);
@@ -235,24 +299,48 @@ export default function ModulosEspecificos({
 
   const _findArea = (item) => {
     const rawTitle = _getAreaKey(item);
-    const key = rawTitle.toLowerCase().trim();
-    if (nameToArea[key]) return nameToArea[key];
+    const normalizedTitle = normalize(rawTitle);
 
-    // Si tiene ": ", probamos con lo que esté después del primero
+    // 1. Intento directo con normalización
+    // 1. Intento directo con normalización
+    if (nameToArea[normalizedTitle]) return nameToArea[normalizedTitle];
+    // 2. Intento directo sin normalización (legacy)
+    const lowerTitle = rawTitle.toLowerCase().trim();
+    if (nameToArea[lowerTitle]) return nameToArea[lowerTitle];
+
+    // 3. Si tiene ": ", probamos con la parte derecha
     if (rawTitle.includes(':')) {
       const parts = rawTitle.split(':');
-      const subKey = parts[parts.length - 1].toLowerCase().trim();
-      if (nameToArea[subKey]) return nameToArea[subKey];
+      const subPart = parts[parts.length - 1];
+
+      const normSub = normalize(subPart);
+      if (nameToArea[normSub]) return nameToArea[normSub];
+
+      const lowerSub = subPart.toLowerCase().trim();
+      if (nameToArea[lowerSub]) return nameToArea[lowerSub];
     }
+
+    // 4. Fallback: búsqueda difusa (si el título contiene la clave del área)
+    // Esto ayuda si el título es "Transversal: Análisis Psicométrico" y la clave es "análisis psicométrico"
+    // Iteramos las claves y vemos si alguna está contenida en el título normalizado
+    const keys = Object.keys(nameToArea);
+    for (const key of keys) {
+      if (key.length > 4 && normalizedTitle.includes(key)) { // >4 para evitar falsos positivos cortos
+        return nameToArea[key];
+      }
+    }
+
     return null;
   };
 
   const openAreaSolicitudes = (item) => {
     const area = _findArea(item);
+
     if (area?.id) {
       setSelectedAreaId(area.id);
       setSelectedAreaName(area.nombre);
     } else {
+
       setSelectedAreaId(null);
       setSelectedAreaName(_getAreaKey(item));
     }
@@ -261,8 +349,44 @@ export default function ModulosEspecificos({
 
   const getBadgeCount = (item) => {
     const area = _findArea(item);
-    if (!area?.id) return 0;
-    return pendingCounts[String(area.id)] || 0;
+    const itemTitle = _getAreaKey(item);
+
+
+
+    // Intentar primero por area_id
+    if (area?.id && pendingCounts?.byId) {
+      const count = pendingCounts.byId[String(area.id)] || 0;
+      if (count > 0) {
+
+        return count;
+      }
+    }
+
+    // Si no hay area_id o no hay conteo, intentar por nombre
+    if (pendingCounts?.byName) {
+      const normalizedTitle = normalize(itemTitle);
+
+
+
+      // Buscar coincidencia exacta primero
+      if (pendingCounts.byName[normalizedTitle]) {
+        const count = pendingCounts.byName[normalizedTitle];
+
+        return count;
+      }
+
+      // Buscar coincidencia parcial (contiene)
+      for (const [areaName, count] of Object.entries(pendingCounts.byName)) {
+        if (areaName.includes(normalizedTitle) || normalizedTitle.includes(areaName)) {
+
+          return count;
+        }
+      }
+
+
+    }
+
+    return 0;
   };
 
   const _buildAccessLink = (item) => {
@@ -292,6 +416,8 @@ export default function ModulosEspecificos({
         subtitle={header.subtitle}
         onBack={() => (header?.backTo ? navigate(header.backTo) : navigate(-1))}
         total={items.length}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
       />
 
       <div className="mx-auto max-w-8xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">

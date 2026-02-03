@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { listActividades as apiListActividades, createActividad as apiCreateActividad, updateActividad as apiUpdateActividad, areaIdFromName, listEntregasActividad } from "../../api/actividades.js";
+import { listAreas } from "../../api/areas.js";
 import { Eye, FileText, Save, Pencil, Trash2, CalendarDays, Plus, Filter, ArrowLeft, AlertTriangle, X } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import dayjs from "dayjs";
@@ -454,8 +455,30 @@ export default function ActivitiesTable({
       try {
         setLoading(true);
         setError(null);
-        const id_area = areaIdFromName(areaTitle) || undefined;
-        const { data: acts } = await apiListActividades({ id_area, tipo: 'actividad', limit: 200, activo: 1 });
+
+        let id_area = areaIdFromName(areaTitle);
+
+        // Si no lo encontramos en el mapa estático, buscarlo dinámicamente
+        if (!id_area && areaTitle) {
+          try {
+            const { data: areasList } = await listAreas();
+            const found = (Array.isArray(areasList) ? areasList : []).find(
+              a => (a.nombre || a.titulo || '').toLowerCase().trim() === areaTitle.toLowerCase().trim()
+            );
+            if (found) id_area = found.id;
+          } catch (errArea) {
+            console.warn("No se pudo cargar la lista dinámica de áreas", errArea);
+          }
+        }
+
+        const params = { tipo: 'actividad', limit: 200, activo: 1 };
+        if (id_area) params.id_area = id_area;
+        // Si no hay id_area, es posible que queramos evitar cargar TODAS las actividades si estamos en un contexto de módulo específico.
+        // Pero el backend suele devolver todo si falta id_area.
+        // Si el usuario espera ver vacío en lugar de todo cuando falla el ID:
+        // if (!id_area) { setRows([]); return; } 
+
+        const { data: acts } = await apiListActividades(params);
         if (!alive) return;
         const mapped = (Array.isArray(acts) ? acts : []).map(a => ({
           id: a.id,
@@ -468,7 +491,7 @@ export default function ActivitiesTable({
         }));
         setRows(mapped);
       } catch (e) {
-        setError(e.message || 'No se pudieron cargar las actividades');
+        if (alive) setError(e.message || 'No se pudieron cargar las actividades');
       } finally {
         if (alive) setLoading(false);
       }
@@ -493,7 +516,7 @@ export default function ActivitiesTable({
             // Las calificaciones en BD están en escala 0-100 (nuevas) o 0-10 (antiguas)
             // Detectar la escala: si alguna calificación es > 10, están en escala 0-100
             const tieneEscala100 = calificadas.some(e => Number(e.calificacion || 0) > 10);
-            
+
             let promedio10;
             if (tieneEscala100) {
               // Calificaciones en escala 0-100: calcular promedio y convertir a 0-10

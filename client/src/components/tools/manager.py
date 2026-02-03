@@ -25,7 +25,7 @@ COL_SUCCESS = "#03DAC6"   # Verde Teal (Éxito)
 COL_WARN = "#FFB74D"      # Naranja (Advertencia)
 COL_OFF = "#424242"       # Gris Apagado (Puerto cerrado)
 
-APP_TITLE = "MQERK COMMANDER v5.0 Ultimate"
+APP_TITLE = "AYUDA COMMANDER v5.0 Ultimate"
 
 def get_npm_command():
     """Devuelve 'npm.cmd' en Windows para evitar errores de política de PowerShell."""
@@ -50,7 +50,7 @@ class MqerkCommander:
         # Init Loops
         self.check_git_status()
         self.start_port_monitor() # Iniciar el loop del monitor
-        self.log("✨ MQERK COMMANDER v5.0 Cargado.", "success")
+        self.log("✨ AYUDA COMMANDER v5.0 Cargado.", "success")
 
     def get_local_ip(self):
         try:
@@ -97,7 +97,7 @@ class MqerkCommander:
         header = tk.Frame(self.root, bg=COL_BG, height=40)
         header.pack(fill="x", padx=15, pady=(10, 5))
         
-        tk.Label(header, text="MQERK", font=("Segoe UI", 16, "bold"), fg=COL_ACCENT, bg=COL_BG).pack(side="left")
+        tk.Label(header, text="AYUDA", font=("Segoe UI", 16, "bold"), fg=COL_ACCENT, bg=COL_BG).pack(side="left")
         tk.Label(header, text="COMMANDER", font=("Segoe UI", 16), fg="gray", bg=COL_BG).pack(side="left", padx=5)
         
         self.lbl_status = tk.Label(header, text="Ready", font=("Segoe UI", 9), fg=COL_SUCCESS, bg=COL_BG)
@@ -231,6 +231,12 @@ class MqerkCommander:
         ttk.Button(row3, text="🔀 Cambiar", command=self.git_checkout_ui).pack(side="left", fill="x", expand=True, padx=2)
         ttk.Button(row3, text="🗑️ Borrar", command=self.git_delete_ui, style="Danger.TButton").pack(side="left", fill="x", expand=True, padx=2)
 
+        # Fila 4: Funciones Avanzadas de Git
+        ttk.Label(container, text="AVANZADO", background=COL_SURFACE, foreground="gray", font=("Segoe UI", 8)).pack(anchor="w", pady=(15,0))
+        row4 = tk.Frame(container, bg=COL_SURFACE); row4.pack(fill="x", pady=(5, 15))
+        ttk.Button(row4, text="🧹 Limpiar Ramas Fusionadas", command=self.git_clean_merged_branches, style="Info.TButton").pack(side="left", fill="x", expand=True, padx=2)
+        ttk.Button(row4, text="📜 Ver Log Compacto", command=self.git_show_compact_log, style="Info.TButton").pack(side="left", fill="x", expand=True, padx=2)
+
     # ================= HERRAMIENTAS + JSON EDITOR =================
     def build_tools(self):
         container = tk.Frame(self.tab_tools, bg=COL_SURFACE)
@@ -266,6 +272,20 @@ class MqerkCommander:
         ttk.Button(f_conf, text="📋 JSON Client", command=lambda: self.edit_file_ui("client", "package.json")).grid(row=1, column=1, sticky="ew", padx=2, pady=2)
         
         f_conf.columnconfigure(0, weight=1); f_conf.columnconfigure(1, weight=1)
+
+        # Comandos Personalizados
+        lf4 = ttk.LabelFrame(container, text="EJECUTAR COMANDOS DE TERMINAL (CLI)")
+        lf4.pack(fill="x", pady=10)
+        
+        f_custom_cmd = tk.Frame(lf4, bg=COL_SURFACE)
+        f_custom_cmd.pack(fill="x", padx=10, pady=10)
+        
+        self.e_custom_cmd = tk.Entry(f_custom_cmd, bg="#333", fg="white", font=("Segoe UI", 9))
+        self.e_custom_cmd.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        
+        ttk.Button(f_custom_cmd, text="▶️ Ejecutar", command=self.run_custom_command).pack(side="right")
+        
+        tk.Label(lf4, text="Ejemplos: git status, npm test, python script.py, ls -la", fg="gray", bg=COL_SURFACE, font=("Segoe UI", 8)).pack(anchor="w", padx=10, pady=(0,5))
 
     # ================= LOGICA CORE =================
     def start_port_monitor(self):
@@ -327,6 +347,12 @@ class MqerkCommander:
                         self.log("💡 Solución: Usa 'npm.cmd' en lugar de 'npm'", "error")
                         self.log("   O ejecuta en PowerShell como Admin:", "error")
                         self.log("   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser", "error")
+                    elif "git push" in cmd.lower() and ("authentication failed" in err.lower() or "credenciales" in err.lower() or "fatal: unable to access" in err.lower() or "remote: Invalid username or password" in err.lower()):
+                        self.log("❌ ERROR DE AUTENTICACIÓN GIT:", "error")
+                        self.log("   Parece que tus credenciales de Git no son válidas o han expirado.", "error")
+                        self.log("   Asegúrate de que tu token de acceso personal (PAT) o contraseña sean correctos.", "error")
+                        self.log("   Puedes intentar actualizar tus credenciales con 'git credential reject' o 'git config --global credential.helper store'.", "error")
+                        self.log(f"   Mensaje original de Git: {err.strip()}", "error")
                     elif "npm WARN" not in err:
                         self.log(err.strip(), "error")
                 if "git" in cmd: self.root.after(500, self.check_git_status)
@@ -374,7 +400,7 @@ class MqerkCommander:
         except: return messagebox.showerror("Error", "No git repo")
 
         top = tk.Toplevel(self.root)
-        top.title("PUSH CONTROLADO"); top.geometry("500x500"); top.configure(bg=COL_BG)
+        top.title("Preparar y Enviar Cambios (Git Push)"); top.geometry("500x500"); top.configure(bg=COL_BG)
         
         # Info Header
         tk.Label(top, text=f"Rama Actual: {curr}", fg=COL_ACCENT, bg=COL_BG, font=("Segoe UI", 10, "bold")).pack(pady=5)
@@ -408,8 +434,8 @@ class MqerkCommander:
         c_tgt = ttk.Combobox(f_rem, values=remotes, width=20); c_tgt.pack(side="left", padx=10); c_tgt.current(0)
 
         def go():
-            msg = e_msg.get(); tgt = c_tgt.get()
-            if not msg: return messagebox.showwarning("!", "Falta mensaje")
+            msg = e_msg.get().strip(); tgt = c_tgt.get()
+            if not msg: return messagebox.showwarning("!", "El mensaje del commit no puede estar vacío.")
             if tgt in ['master','main'] and curr not in ['master','main']:
                 if not messagebox.askyesno("Wait", f"Vas a subir a {tgt}. Seguro?"): return
             top.destroy()
@@ -420,14 +446,19 @@ class MqerkCommander:
     # GIT UTILS
     def git_stash_save(self):
         m = simpledialog.askstring("Stash", "Nombre (opcional):")
+        if m is None: return # El usuario canceló
         if m: self.run_bg(f'git stash save "{m}"')
         else: self.run_bg('git stash')
 
     def git_pull(self): self.run_bg("git pull")
     
     def git_new_branch(self):
-        n = simpledialog.askstring("Nueva", "Nombre:")
-        if n: self.run_bg(f"git checkout -b {n}")
+        n = simpledialog.askstring("Nueva", "Nombre de la nueva rama:")
+        if n is None: return # El usuario canceló
+        if not n.strip():
+            messagebox.showwarning("Entrada inválida", "El nombre de la rama no puede estar vacío.")
+            return
+        self.run_bg(f"git checkout -b {n.strip()}")
 
     def git_checkout_ui(self):
         try:
@@ -439,6 +470,17 @@ class MqerkCommander:
         def go():
             v = cb.get()
             if not v: return
+            
+            # Verificar si hay cambios sin guardar
+            try:
+                status_output = subprocess.check_output("git status --porcelain", shell=True).decode().strip()
+                if status_output:
+                    if not messagebox.askyesno("Advertencia", "Tienes cambios sin guardar. ¿Deseas continuar y perderlos?"):
+                        return
+            except Exception as e:
+                self.log(f"Error al verificar el estado de Git: {e}", "error")
+                return
+
             top.destroy()
             if "remotes/" in v:
                 c = v.split("/")[-1]; r = v.replace("remotes/","")
@@ -471,25 +513,52 @@ class MqerkCommander:
         ttk.Button(top, text="Local", command=lambda: show("LOCAL")).pack(pady=10, fill="x", padx=50)
         ttk.Button(top, text="Remota", command=lambda: show("REMOTE"), style="Danger.TButton").pack(pady=10, fill="x", padx=50)
 
+    def git_clean_merged_branches(self):
+        if not messagebox.askyesno("Confirmar Limpieza", "¿Estás seguro de que quieres eliminar todas las ramas locales fusionadas con la rama actual (main/master)?"):
+            return
+        self.run_bg("git branch --merged | egrep -v '(^\\*|main|master)' | xargs git branch -d")
+        self.log("Limpieza de ramas fusionadas iniciada.", "success")
+
+    def git_show_compact_log(self):
+        self.run_bg("git log --oneline --graph --decorate --all")
+
     # TOOLS
     def create_react_component(self):
-        n = simpledialog.askstring("React", "Nombre:")
-        if not n: return
+        n = simpledialog.askstring("React", "Nombre del componente (ej. MyComponent):")
+        if n is None: return # El usuario canceló
+        n = n.strip()
+        if not n:
+            messagebox.showwarning("Entrada inválida", "El nombre del componente no puede estar vacío.")
+            return
+        if not n[0].isupper():
+            messagebox.showwarning("Convención de Nomenclatura", "Los nombres de los componentes React deben comenzar con una letra mayúscula.")
+            return
+        
         p = os.path.join(CLIENT_DIR, "src/components", n)
         try:
-            os.makedirs(p)
-            with open(f"{p}/{n}.jsx","w") as f: f.write(f"import React from 'react'\nimport './{n}.css'\nconst {n}=()=><div>{n}</div>\nexport default {n}")
-            with open(f"{p}/{n}.css","w") as f: f.write("")
-            self.log(f"Componente {n} creado.", "success")
-        except: self.log("Error creando componente", "error")
+            os.makedirs(p, exist_ok=True) # Usar exist_ok=True para evitar error si la carpeta ya existe
+            jsx_path = os.path.join(p, f"{n}.jsx")
+            css_path = os.path.join(p, f"{n}.css")
+
+            with open(jsx_path,"w", encoding="utf-8") as f: 
+                f.write(f"import React from 'react'\nimport './{n}.css'\n\nconst {n} = () => {{\n  return (\n    <div className=\"{n.lower()}-container\">\n      <h1>{n} Component</h1>\n    </div>\n  )\n}}\n\nexport default {n}\n")
+            with open(css_path,"w", encoding="utf-8") as f: 
+                f.write(f".{n.lower()}-container {{\n  /* Estilos para {n} */\n}}\n")
+            
+            self.log(f"Componente {n} creado en {p}.", "success")
+        except Exception as e:
+            self.log(f"Error creando componente {n}: {e}", "error")
 
     def npm_install(self):
-        pkg = simpledialog.askstring("NPM", "Paquete:")
-        if not pkg: return
+        pkg = simpledialog.askstring("NPM", "Nombre del paquete a instalar:")
+        if pkg is None: return # El usuario canceló
+        if not pkg.strip():
+            messagebox.showwarning("Entrada inválida", "El nombre del paquete no puede estar vacío.")
+            return
         npm_cmd = get_npm_command()
         t = self.npm_target.get()
         cwd = SERVER_DIR if t == "server" else CLIENT_DIR
-        self.run_bg(f"npm install {pkg}", cwd=os.path.abspath(cwd))
+        self.run_bg(f"{npm_cmd} install {pkg.strip()}", cwd=os.path.abspath(cwd))
 
     # EDITORES UNIVERSALES (.env y package.json)
     def edit_file_ui(self, target, filename):
@@ -516,6 +585,14 @@ class MqerkCommander:
             w.destroy(); self.log(f"{filename} en {target} actualizado.", "success")
             
         ttk.Button(w, text="GUARDAR CAMBIOS", command=save).pack(fill="x")
+
+    def run_custom_command(self):
+        cmd = self.e_custom_cmd.get().strip()
+        if not cmd:
+            messagebox.showwarning("Entrada inválida", "El comando no puede estar vacío.")
+            return
+        self.run_bg(cmd)
+        self.e_custom_cmd.delete(0, tk.END) # Limpiar la entrada después de ejecutar
 
     def backup_project(self):
         import datetime; ts = datetime.datetime.now().strftime("%Y%m%d_%H%M")
