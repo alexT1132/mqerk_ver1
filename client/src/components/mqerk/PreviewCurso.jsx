@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Users, Star, BookOpen, Video, Award, X } from 'lucide-react';
-import { useLocation, useParams, Navigate } from "react-router-dom";
+import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import { usePreview } from "../../context/PreviewContext";
 
 export default function CoursePreview({ curso, nombreCurso }) {
   const location = useLocation();
+  const navigate = useNavigate(); // Agregar useNavigate
   const cursoData = curso || location.state?.curso;
 
   const { preview, loadByCourse } = usePreview();
+
+  console.log(preview);
 
   // Estados del componente
   const [activeTab, setActiveTab] = useState('Descripción');
@@ -85,6 +88,17 @@ export default function CoursePreview({ curso, nombreCurso }) {
       destacado: false
     }
   ]);
+
+  // Función para manejar la navegación al registro
+  const handleRegistro = (planSeleccionado = null) => {
+    // Puedes pasar el plan seleccionado como state si lo necesitas después
+    navigate('/registro_alumno', {
+      state: {
+        curso: cursoData,
+        plan: planSeleccionado
+      }
+    });
+  };
 
   // Redirigir si no hay curso
   if (!cursoData) {
@@ -208,8 +222,8 @@ export default function CoursePreview({ curso, nombreCurso }) {
             </h2>
             
             <button
-            onClick={() => setShowModal(true)} 
-            className="bg-white text-indigo-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/90 transition-all transform hover:scale-105 hover:shadow-2xl">
+              onClick={() => handleRegistro()}
+              className="bg-white text-indigo-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/90 transition-all transform hover:scale-105 hover:shadow-2xl">
               Empieza ya
             </button>
           </div>
@@ -514,7 +528,7 @@ export default function CoursePreview({ curso, nombreCurso }) {
 
               {/* Grid de planes */}
               <div className="grid md:grid-cols-3 gap-6 mt-12">
-                {planes.map((plan) => (
+                {preview.planes && preview.planes.map((plan) => (
                   <div 
                     key={plan.id}
                     className={`backdrop-blur-md rounded-3xl p-6 transition-all duration-300 transform hover:scale-105 ${
@@ -532,7 +546,7 @@ export default function CoursePreview({ curso, nombreCurso }) {
                     </p>
 
                     <div className="space-y-2 mb-6">
-                      {plan.beneficios.map((beneficio, beneficioIndex) => (
+                      {plan.beneficios && plan.beneficios.map((beneficio, beneficioIndex) => (
                         <div key={beneficioIndex} className="flex items-start gap-2">
                           <span className="text-white font-bold mt-1">•</span>
                           <span className="flex-1 text-white/90 text-sm">{beneficio}</span>
@@ -547,7 +561,9 @@ export default function CoursePreview({ curso, nombreCurso }) {
                       <span className="text-white text-4xl font-bold">{plan.precio}</span>
                     </div>
 
-                    <button className="w-full bg-white text-indigo-600 py-3 rounded-xl font-semibold hover:bg-white/90 transition-all transform hover:scale-105">
+                    <button 
+                      onClick={() => handleRegistro(plan)}
+                      className="w-full bg-white text-indigo-600 py-3 rounded-xl font-semibold hover:bg-white/90 transition-all transform hover:scale-105">
                       Adquirir
                     </button>
                   </div>
