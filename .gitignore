@@ -22,7 +22,6 @@ build/
 coverage/
 
 # Server uploads y archivos generados
-server/uploads/
 server/comprobantes/
 server/public/
 server/contratos/
