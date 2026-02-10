@@ -94,12 +94,12 @@ function Web() {
           +10 convenios y participaciones con instituciones
         </h2>
 
-        <div className="relative overflow-hidden w-full py-6 flex gap-6 select-none group">
+        <div className="relative overflow-hidden w-full py-6 flex gap-0 select-none group">
           {/* Renderizado del Marquee - Reutilizamos el map para limpiar código */}
           {[0, 1].map((i) => (
             <div
               key={i}
-              className="flex min-w-full shrink-0 animate-marquee items-center justify-around gap-6 group-hover:[animation-play-state:paused]"
+              className="flex min-w-full shrink-0 animate-marquee-infinite items-center justify-around gap-6 group-hover:[animation-play-state:paused]"
               aria-hidden={i === 1} // El segundo bloque se oculta a lectores de pantalla
             >
               {partnersImages.map((src, index) => (

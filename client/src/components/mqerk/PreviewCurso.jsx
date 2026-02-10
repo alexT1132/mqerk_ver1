@@ -224,14 +224,14 @@ export default function CoursePreview({ curso, nombreCurso }) {
               </div>
             )}
 
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-white leading-tight tracking-tight break-words">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-white leading-tight tracking-tighter break-words drop-shadow-2xl">
               {courseName}
             </h1>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start pt-2">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center lg:justify-start pt-4">
               <button
                 onClick={() => handleRegistro()}
-                className="w-full sm:w-auto bg-white text-indigo-700 px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-indigo-50 transition-all transform hover:scale-[1.02] hover:shadow-xl active:scale-95 ring-4 ring-white/20"
+                className="w-full sm:w-auto bg-white text-indigo-700 px-10 py-5 rounded-[1.5rem] font-black text-lg sm:text-xl hover:bg-indigo-50 transition-all transform hover:scale-[1.05] hover:shadow-2xl active:scale-95 ring-8 ring-white/10 shadow-xl"
               >
                 ¡Empieza ahora!
               </button>
@@ -240,7 +240,7 @@ export default function CoursePreview({ curso, nombreCurso }) {
                   const elemento = document.getElementById('detalles-curso');
                   if (elemento) elemento.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="w-full sm:w-auto bg-transparent border-2 border-white/30 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold text-base sm:text-lg hover:bg-white/10 transition-all"
+                className="w-full sm:w-auto bg-white/10 backdrop-blur-md border-2 border-white/40 text-white px-10 py-5 rounded-[1.5rem] font-black text-lg sm:text-xl hover:bg-white/20 transition-all transform hover:scale-[1.05] active:scale-95 shadow-lg"
               >
                 Ver detalles
               </button>
@@ -266,11 +266,11 @@ export default function CoursePreview({ curso, nombreCurso }) {
       </div>
 
       {/* Course Info Section */}
-      <div id="detalles-curso" className="bg-slate-50 relative mt-8 lg:mt-12 rounded-t-[3rem] shadow-inner min-h-screen overflow-x-hidden">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8 lg:py-16 overflow-x-hidden">
+      <div id="detalles-curso" className="bg-slate-50 relative mt-8 lg:mt-12 rounded-t-[3rem] shadow-inner min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
 
-          {/* Info Cards - Grid optimizado para móviles */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4 mb-8 sm:mb-12 max-w-full">
+          {/* Info Cards - Flex centered for better mobile alignment */}
+          <div className="flex flex-wrap items-stretch justify-center gap-3 sm:gap-4 mb-12">
             {[
               { icon: Calendar, label: courseModalidad, show: true },
               { icon: BookOpen, label: totalClasses, show: !!totalClasses },
@@ -278,20 +278,20 @@ export default function CoursePreview({ curso, nombreCurso }) {
               { icon: Users, label: courseDuration, show: true },
               { icon: Award, label: courseLevel, show: true }
             ].map((item, idx) => item.show && (
-              <div key={idx} className="bg-white border border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300 group">
-                <div className="p-2 sm:p-3 bg-indigo-50 rounded-lg sm:rounded-xl mb-2 sm:mb-3 group-hover:bg-indigo-100 transition-colors">
-                  <item.icon className="w-4 h-4 sm:w-6 sm:h-6 text-indigo-600" />
+              <div key={idx} className="flex-grow sm:flex-grow-0 basis-[calc(50%-12px)] sm:basis-auto bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300 group min-w-[140px]">
+                <div className="p-3 bg-indigo-50 rounded-xl mb-3 group-hover:bg-indigo-100 transition-colors">
+                  <item.icon className="w-6 h-6 text-indigo-600" />
                 </div>
-                <p className="text-slate-700 font-bold text-[10px] sm:text-xs leading-tight uppercase tracking-tight break-words w-full px-1">{item.label}</p>
+                <p className="text-slate-700 font-bold text-xs sm:text-sm line-clamp-2 leading-tight uppercase tracking-tight">{item.label}</p>
               </div>
             ))}
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid lg:grid-cols-12 gap-6 lg:gap-12 overflow-x-hidden">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
 
             {/* Left Column - Video & Content (8 cols) */}
-            <div className="lg:col-span-8 flex flex-col gap-6 sm:gap-8 overflow-x-hidden">
+            <div className="lg:col-span-8 flex flex-col gap-8">
 
               {/* Video Wrapper */}
               <div className="bg-slate-200 rounded-[2.5rem] overflow-hidden shadow-2xl border border-white aspect-video relative group">
@@ -314,13 +314,13 @@ export default function CoursePreview({ curso, nombreCurso }) {
                 )}
               </div>
 
-              <div className="bg-white rounded-xl sm:rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+              <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
                 <nav className="flex border-b border-slate-100 overflow-x-auto no-scrollbar scroll-smooth bg-slate-50/50" aria-label="Tabs">
                   {['Descripción', 'Aprenderás', 'Áreas de enseñanza'].map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`flex-1 min-w-fit whitespace-nowrap px-3 sm:px-6 py-4 sm:py-5 font-bold text-xs sm:text-base border-b-4 transition-all duration-300 outline-none ${activeTab === tab
+                      className={`flex-1 min-w-fit whitespace-nowrap px-6 py-5 font-bold text-sm sm:text-base border-b-4 transition-all duration-300 outline-none ${activeTab === tab
                         ? 'border-indigo-600 text-indigo-600 bg-white'
                         : 'border-transparent text-slate-400 hover:text-indigo-500 hover:bg-slate-50'
                         }`}
@@ -330,7 +330,7 @@ export default function CoursePreview({ curso, nombreCurso }) {
                   ))}
                 </nav>
 
-                <div className="p-4 sm:p-6 lg:p-10 min-h-[300px] overflow-x-hidden">
+                <div className="p-6 sm:p-10 min-h-[300px]">
                   {/* Tab: Descripción */}
                   <div className={`transition-all duration-500 ${activeTab === 'Descripción' ? 'opacity-100 translate-y-0 block' : 'opacity-0 translate-y-4 hidden'}`}>
                     <div className="prose prose-indigo max-w-none text-slate-600">
@@ -380,92 +380,100 @@ export default function CoursePreview({ curso, nombreCurso }) {
             </div>
 
             {/* Right Column - Pricing & Asesores (4 cols) */}
-            <div className="lg:col-span-4 space-y-4 sm:space-y-6 overflow-x-hidden">
+            <div className="lg:col-span-4 space-y-6">
 
               {/* Pricing Card */}
-              <div className="bg-white rounded-xl sm:rounded-[2rem] p-5 sm:p-6 lg:p-8 shadow-lg border border-indigo-100 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-[4rem] -mr-8 -mt-8 z-0"></div>
+              <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 shadow-xl border border-indigo-50 relative overflow-hidden lg:sticky lg:top-24">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-50/50 rounded-bl-[5rem] -mr-10 -mt-10 z-0"></div>
                 <div className="relative z-10">
-                  <h3 className="text-xs sm:text-sm font-bold text-indigo-500 tracking-wider uppercase mb-1 break-words">{planLateralNombre}</h3>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 break-all">${planLateralPrecio}</span>
-                    <span className="text-slate-500 font-medium text-xs sm:text-sm self-end mb-2">MXN</span>
+                  <div className="bg-indigo-600 text-white text-[10px] font-black px-3 py-1 rounded-full w-fit mb-4 tracking-widest uppercase">
+                    Plan Recomendado
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-800 mb-1">{planLateralNombre}</h3>
+                  <div className="flex items-baseline gap-2 mb-6">
+                    <span className="text-5xl font-black text-slate-900 tracking-tight">${planLateralPrecio}</span>
+                    <span className="text-slate-400 font-bold text-xs">MXN</span>
                   </div>
 
                   {(planLateralPrecioTachado !== '0' || planLateralDescuento !== '0') && (
-                    <div className="flex items-center gap-3 mb-6 bg-red-50 inline-flex px-3 py-1 rounded-lg">
+                    <div className="flex items-center gap-3 mb-8 bg-red-50/80 px-4 py-2 rounded-2xl w-fit">
                       {planLateralPrecioTachado !== '0' && (
-                        <span className="text-slate-400 line-through text-sm font-medium decoration-slate-400">${planLateralPrecioTachado}</span>
+                        <span className="text-slate-400 line-through text-sm font-bold">${planLateralPrecioTachado}</span>
                       )}
                       {planLateralDescuento !== '0' && (
-                        <span className="text-red-600 font-bold text-sm">-{planLateralDescuento}% OFF</span>
+                        <span className="text-red-600 font-black text-xs">-{planLateralDescuento}% DTO</span>
                       )}
                     </div>
                   )}
 
-                  <div className="space-y-3 mb-8">
+                  <div className="space-y-4 mb-10">
                     {planLateralBeneficios.length > 0 ? (
                       planLateralBeneficios.map((b, i) => (
-                        <div key={i} className="flex items-start gap-3">
-                          <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg className="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                        <div key={i} className="flex items-start gap-4">
+                          <div className="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                           </div>
-                          <span className="text-slate-600 text-sm font-medium">{b}</span>
+                          <span className="text-slate-600 text-sm font-bold leading-tight">{b}</span>
                         </div>
                       ))
                     ) : (
-                      <p className="text-slate-400 text-sm italic">Incluye acceso completo al curso</p>
+                      <p className="text-slate-400 text-sm italic font-medium">Incluye acceso ilimitado al curso</p>
                     )}
                   </div>
 
                   <button
                     onClick={() => setShowModal(true)}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-indigo-500/30 transition-all duration-300 transform active:scale-95 flex items-center justify-center gap-2 group"
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 rounded-[1.5rem] shadow-xl shadow-indigo-200 transition-all duration-300 transform active:scale-95 flex items-center justify-center gap-3 group"
                   >
-                    <span>Ver planes disponibles</span>
-                    <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    <span>Ver todos los planes</span>
+                    <svg className="w-5 h-5 transform group-hover:translate-x-1.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                   </button>
                 </div>
               </div>
 
-              {/* Rating & Social Proof */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
+              {/* Rating Section */}
+              <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex items-center justify-between">
                 <div>
-                  <p className="text-slate-500 text-xs font-bold uppercase tracking-wide">Valoración alumnos</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className="text-2xl font-bold text-slate-800">{courseRating}</span>
-                    <span className="text-slate-400 text-sm">/ 5.0</span>
+                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Valoración alumnos</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-3xl font-black text-slate-800">{courseRating}</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} className={`w-4 h-4 ${s <= Math.round(courseRating) ? 'fill-yellow-400 text-yellow-400' : 'fill-slate-100 text-slate-200'}`} />
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star key={s} className={`w-5 h-5 ${s <= Math.round(courseRating) ? 'fill-yellow-400 text-yellow-400' : 'fill-slate-100 text-slate-200'}`} />
-                  ))}
                 </div>
               </div>
 
               {/* Asesores Widget */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-indigo-500" />
-                  Asesores expertos
+              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+                <h3 className="font-black text-slate-800 text-sm uppercase tracking-widest mb-6 flex items-center gap-3">
+                  <div className="w-2 h-6 bg-indigo-600 rounded-full"></div>
+                  Equipo MQerK
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {asesores.length > 0 ? asesores.map((asesor, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition-colors">
-                      <img
-                        src={asesor.avatar || `https://ui-avatars.com/api/?name=${asesor.nombre}&background=random`}
-                        alt={asesor.nombre}
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm"
-                      />
-                      <div>
-                        <p className="text-sm font-bold text-slate-700">{asesor.nombre}</p>
-                        <p className="text-xs text-slate-500">{asesor.cargo || 'Instructor'}</p>
+                    <div key={idx} className="flex items-center gap-4 group cursor-pointer">
+                      <div className="relative">
+                        <img
+                          src={asesor.avatar || `https://ui-avatars.com/api/?name=${asesor.nombre}&background=4f46e5&color=fff&bold=true`}
+                          alt={asesor.nombre}
+                          className="w-12 h-12 rounded-[1rem] object-cover ring-4 ring-slate-50 group-hover:ring-indigo-50 transition-all shadow-sm"
+                        />
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-slate-800 truncate group-hover:text-indigo-600 transition-colors uppercase">{asesor.nombre}</p>
+                        <p className="text-[11px] font-bold text-slate-400 truncate tracking-wide">{asesor.cargo || 'Asesor Académico'}</p>
                       </div>
                     </div>
                   )) : (
-                    <div className="text-center py-4 text-slate-400 italic text-sm">
-                      Próximamente asignación de asesores
+                    <div className="text-center py-6">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-3">
+                        <Users className="w-6 h-6 text-slate-300" />
+                      </div>
+                      <p className="text-slate-400 font-bold text-xs">Asesores en proceso de asignación</p>
                     </div>
                   )}
                 </div>
@@ -478,84 +486,94 @@ export default function CoursePreview({ curso, nombreCurso }) {
 
       {/* Modal Fullscreen Responsive */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 perspective-1000">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
           <div
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"
+            className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl transition-opacity"
             onClick={() => setShowModal(false)}
           />
 
-          <div className="relative bg-white sm:rounded-3xl rounded-t-3xl w-full max-w-6xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
+          <div className="relative bg-slate-50 sm:rounded-[3rem] rounded-[2rem] w-full max-w-6xl max-h-[95vh] overflow-y-auto shadow-2xl animate-fade-in-up border border-white/20">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-20 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-800">Planes de inscripción</h2>
-              <button onClick={() => setShowModal(false)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors">
-                <X className="w-5 h-5 text-slate-600" />
+            <div className="sticky top-0 bg-white/80 backdrop-blur-md z-30 border-b border-slate-200 px-8 py-5 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
+                  <Award className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Planes MQerK</h2>
+              </div>
+              <button onClick={() => setShowModal(false)} className="p-3 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all active:scale-90">
+                <X className="w-6 h-6 text-slate-600" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 sm:p-10 bg-slate-50">
-              <div className="text-center max-w-2xl mx-auto mb-10">
-                <span className="text-indigo-600 font-bold uppercase tracking-wider text-xs">Invierte en tu futuro</span>
-                <h3 className="text-3xl font-extrabold text-slate-800 mt-2 mb-4">Elige el plan ideal para ti</h3>
-                <p className="text-slate-500">Todos nuestros planes incluyen acceso completo a la plataforma, materiales de estudio y soporte.</p>
+            <div className="p-6 sm:p-12">
+              <div className="text-center max-w-2xl mx-auto mb-16">
+                <div className="inline-block px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+                  Tu Éxito Comienza Aquí
+                </div>
+                <h3 className="text-3xl sm:text-4xl font-black text-slate-800 leading-tight">Elige el plan que mejor se adapte a tus metas académicas</h3>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-3 gap-8 items-stretch">
                 {preview?.planes?.map((plan) => (
                   <div
                     key={plan.id}
-                    className={`relative flex flex-col rounded-2xl p-6 sm:p-8 transition-all duration-300 ${plan.destacado
-                      ? 'bg-white ring-4 ring-indigo-500/20 shadow-xl scale-[1.02] z-10'
-                      : 'bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-lg'
+                    className={`relative flex flex-col rounded-[2.5rem] p-8 sm:p-10 transition-all duration-300 group ${plan.destacado
+                      ? 'bg-white ring-8 ring-indigo-500/5 shadow-2xl scale-[1.03] z-10 border-2 border-indigo-100'
+                      : 'bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-xl'
                       }`}
                   >
                     {plan.destacado && (
-                      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
-                        MÁS POPULAR
+                      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white text-[10px] font-black px-6 py-2 rounded-full shadow-xl uppercase tracking-widest">
+                        Más Elegido
                       </div>
                     )}
 
-                    <div className="mb-6">
-                      <h4 className="text-lg font-bold text-slate-900 mb-2">{plan.nombre}</h4>
-                      <p className="text-sm text-slate-500 min-h-[40px]">{plan.descripcion}</p>
+                    <div className="mb-8">
+                      <h4 className="text-2xl font-black text-slate-900 mb-3 uppercase tracking-tight group-hover:text-indigo-600 transition-colors">{plan.nombre}</h4>
+                      <p className="text-sm font-bold text-slate-400 leading-snug min-h-[44px]">{plan.descripcion}</p>
                     </div>
 
-                    <div className="mb-8">
-                      <p className="text-xs font-semibold text-indigo-600 mb-1 uppercase">{plan.etiquetaPrecio}</p>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-extrabold text-slate-900">${plan.precio}</span>
-                        <span className="text-slate-400 font-medium">MXN</span>
+                    <div className="mb-10">
+                      <p className="text-[10px] font-black text-indigo-600 mb-1 uppercase tracking-widest">{plan.etiquetaPrecio}</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-5xl font-black text-slate-900 tracking-tighter">${plan.precio}</span>
+                        <span className="text-slate-400 font-bold text-xs">MXN</span>
                       </div>
                     </div>
 
-                    <ul className="space-y-4 mb-8 flex-1">
+                    <div className="h-px bg-slate-100 w-full mb-10"></div>
+
+                    <ul className="space-y-4 mb-12 flex-1">
                       {plan.beneficios?.map((b, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-50 flex items-center justify-center mt-0.5">
-                            <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                        <li key={i} className="flex items-start gap-4">
+                          <div className="flex-shrink-0 w-6 h-6 rounded-xl bg-green-50 flex items-center justify-center mt-0.5 group-hover:bg-green-100 transition-colors">
+                            <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                           </div>
-                          <span className="text-sm text-slate-600 font-medium">{b}</span>
+                          <span className="text-[13px] text-slate-600 font-bold leading-tight">{b}</span>
                         </li>
                       ))}
                     </ul>
 
                     <button
                       onClick={() => handleRegistro(plan)}
-                      className={`w-full py-4 rounded-xl font-bold transition-all ${plan.destacado
-                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-indigo-500/40'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                      className={`w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-300 transform active:scale-[0.96] ${plan.destacado
+                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-600/30'
+                        : 'bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-800'
                         }`}
                     >
-                      Seleccionar {plan.nombre}
+                      Adquirir {plan.nombre}
                     </button>
                   </div>
                 ))}
               </div>
 
-              <p className="text-center text-xs text-slate-400 mt-12 max-w-3xl mx-auto">
-                * Los precios están en pesos mexicanos (MXN) e incluyen IVA. El acceso a los contenidos es inmediato tras la confirmación del pago en la plataforma.
-              </p>
+              <div className="mt-20 p-8 rounded-[2rem] bg-indigo-900 text-center relative overflow-hidden">
+                <p className="relative z-10 text-white/90 text-sm font-black italic max-w-3xl mx-auto leading-relaxed">
+                  "El proceso de ingreso es mediato. Una vez confirmado el plan, tendrás acceso total a los contenidos diseñados para asegurar tu ingreso a la universidad."
+                </p>
+              </div>
             </div>
           </div>
         </div>

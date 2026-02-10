@@ -11,6 +11,7 @@ import { ensureEEAUTable } from './models/eeau.model.js';
 import { ensureChatTable } from './models/chat.model.js';
 import { ensureAdminAsesorChatTable } from './models/admin_asesor_chat.model.js';
 import { schedulePlantillasJob } from './jobs/plantillasAuto.js';
+import { ensureCursosTables } from './models/init_courses_db.js';
 
 const PORT = Number(process.env.PORT) || 1002;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -18,6 +19,7 @@ const server = http.createServer(app);
 
 // Ensure DB has required structures before accepting requests
 Promise.all([
+	ensureCursosTables(),
 	ensureEstatusColumn().catch((err) => {
 		console.error('[DB] Error asegurando columna estatus:', err?.code || err?.message || err);
 		if (err?.code === 'ETIMEDOUT') {

@@ -37,6 +37,8 @@ import LoggerRoutes from "./routes/logger.routes.js";
 import GradingRoutes from "./routes/grading.routes.js";
 import ChatRoutes from "./routes/chat.routes.js";
 import AiUsageRoutes from "./routes/aiUsageRoutes.js";
+import cursosRoutes from "./routes/cursos.routes.js";
+import previewRoutes from "./routes/preview.routes.js";
 
 const app = express();
 
@@ -137,6 +139,8 @@ app.use("/api", LoggerRoutes);
 app.use("/api/grading", GradingRoutes);
 app.use("/api", ChatRoutes);
 app.use("/api/ai-usage", AiUsageRoutes);
+app.use("/api", cursosRoutes);
+app.use("/api", previewRoutes);
 
 // Middleware de manejo de errores global (debe ir al final, después de todas las rutas)
 app.use((err, req, res, next) => {

@@ -1,10 +1,8 @@
 // CourseDetail.jsx
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "../../../components/mqerk/Navbar";
-import Footer from "../../../components/footer";
 import Footer from "../../../components/layout/footer";
-// TODO: Agregar imagen del curso cuando esté disponible
-import Curso2 from "../../../assets/mqerk/preview/curso1/3.png";
 import Curso2 from "../../../assets/mqerk/cursos/CURSO 1.webp";
 
 // --- Ajusta este número (sin +, ni espacios). Ejemplo MX: 5215555555555
@@ -447,10 +445,9 @@ function PlansModal({ title, onClose }) {
                   ))}
                 </ul>
 
-                <a
-                  href={buildWaLink(title, p.name)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to="/registro_alumno"
+                  state={{ plan: p.name, curso: title, precio: p.priceText }}
                   className={[
                     "mt-5 inline-flex justify-center items-center rounded-xl px-4 py-2.5 font-semibold transition",
                     p.highlighted
@@ -459,7 +456,7 @@ function PlansModal({ title, onClose }) {
                   ].join(" ")}
                 >
                   Adquirir
-                </a>
+                </Link>
               </div>
             ))}
           </div>
