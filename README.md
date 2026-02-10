@@ -1,5 +1,7 @@
 # MQerk Academy - Sistema de Gestión Educativa
 
+EL CHAT DE RESTORAGE ADVISOR ES EL BUENO PAAR CUALQUEIR COSA
+
 ![React](https://img.shields.io/badge/React-19.1.0-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-Express-green)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-orange)

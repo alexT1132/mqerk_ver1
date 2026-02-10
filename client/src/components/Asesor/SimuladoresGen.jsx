@@ -35,7 +35,9 @@ import {
   Ship,
   BrainCircuit,
   FileQuestion,
-  ChevronLeft
+  ChevronLeft,
+  FileText,
+  BarChart3
 } from "lucide-react";
 
 import SimuladorModalGen from "./SimulatorModal";
@@ -217,7 +219,7 @@ function SectionBadge({ title, subtitle, onBack, total, icon: IconProp }) {
         {total > 0 && (
           <div className="hidden md:flex ml-auto items-center gap-3 rounded-2xl bg-white/40 backdrop-blur-md px-5 py-3 border border-white/50 shadow-sm">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
-              <FileQuestion className="size-5" />
+              <FileText className="size-5" />
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-black text-slate-800 leading-none">{total}</span>
@@ -280,7 +282,7 @@ function MobileRow({ item, onView, onEdit, onDelete, onPublish, onResultados }) 
           onClick={() => onResultados(item)}
           className="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
         >
-          <span className="mr-2 font-bold">%</span>
+          <BarChart3 className="mr-2 h-4 w-4" />
           Resultados
         </button>
         {item.status === "Borrador" && (
@@ -1598,7 +1600,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       setIaPreguntas(preguntas);
       // ✅ IMPORTANTE: Generar título y descripción basados en el tema
       // Asegurar que el título tenga un valor válido y descriptivo
-      const tituloSugerido = `${tema} (IA · ${cantidad} pregunta${cantidad > 1 ? 's' : ''})`.trim();
+      const tituloSugerido = `${tema} (IA - ${cantidad} pregunta${cantidad > 1 ? 's' : ''})`.trim();
       // ✅ IMPORTANTE: Generar descripción más completa, natural y fluida basada en el tema y tipo (funciona tanto para generales como por área)
       const esPorArea = areaId && areaTitle;
       const contextoSimulador = esPorArea
@@ -1837,7 +1839,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       setIaPreguntas(preguntas);
       // ✅ IMPORTANTE: Generar título y descripción basados en el tema y modo
       // Asegurar que el título tenga un valor válido y descriptivo
-      const tituloSugerido = `${tema} (IA · ${cantidad} pregunta${cantidad > 1 ? 's' : ''}${opts.modo === 'temas' ? ' · por temas' : ''})`.trim();
+      const tituloSugerido = `${tema} (IA - ${cantidad} pregunta${cantidad > 1 ? 's' : ''}${opts.modo === 'temas' ? ' - por temas' : ''})`.trim();
       // ✅ IMPORTANTE: Generar descripción más completa, natural y fluida basada en el tema, modo y área
       const esPorArea = areaId && areaTitle;
       let descripcionGenerada = '';
@@ -1857,7 +1859,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
       // Validar que el título no esté vacío antes de establecerlo
       const tituloFinal = tituloSugerido && tituloSugerido.length >= 3
         ? tituloSugerido
-        : `Simulador ${tema || 'General'} (IA${opts.modo === 'temas' ? ' · por temas' : ''})`;
+        : `Simulador ${tema || 'General'} (IA${opts.modo === 'temas' ? ' - por temas' : ''})`;
       setIaPrefill({
         titulo: tituloFinal, // ✅ Asegurar que siempre tenga un valor válido (mínimo 3 caracteres)
         instrucciones: instrucciones || 'Lee cada pregunta y selecciona la respuesta correcta. Este simulador cubre contenido general del área.',
@@ -2185,15 +2187,15 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-700 font-medium text-sm">
-                      <span className="text-[13px] font-bold text-slate-600 uppercase tracking-tighter">{item.type}</span>
+                      <span className="text-[13px] font-bold text-slate-600 uppercase">{item.type}</span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-violet-50 px-3 py-1.5 text-sm font-bold text-violet-700 ring-2 ring-violet-200 uppercase tracking-tighter">
+                      <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-violet-50 px-3 py-1.5 text-sm font-bold text-violet-700 ring-2 ring-violet-200 uppercase">
                         {item.questions}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-indigo-50 px-3 py-1.5 text-sm font-bold text-indigo-700 ring-2 ring-indigo-200 uppercase tracking-tighter">
+                      <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-indigo-50 px-3 py-1.5 text-sm font-bold text-indigo-700 ring-2 ring-indigo-200 uppercase">
                         {item.attempts}
                       </span>
                     </td>
@@ -2221,7 +2223,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                           title="Resultados"
                           className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:from-emerald-100 hover:to-green-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
-                          <span className="font-bold text-sm">%</span>
+                          <BarChart3 className="h-4 w-4" />
                         </button>
                         {item.status === "Borrador" && (
                           <button
