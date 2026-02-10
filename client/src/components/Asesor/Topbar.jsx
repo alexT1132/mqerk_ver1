@@ -1,9 +1,10 @@
 // src/components/Topbar.jsx
-import { Bell, X, CheckCheck, Trash2, Loader2 } from "lucide-react";
+import { Bell, X, CheckCheck, Trash2, Loader2, LogOut } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getMiPerfil, getNotifications, getUnreadCount, markNotificationRead, markAllNotificationsRead, deleteNotification } from "../../api/asesores.js";
 import { buildStaticUrl } from "../../utils/url.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import logo from '../../assets/MQerK_logo.png';
 
 export default function Topbar() {
@@ -15,6 +16,7 @@ export default function Topbar() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const { logout } = useAuth();
   const notificationsRef = useRef(null);
 
   // Función para cargar foto de perfil
@@ -93,7 +95,7 @@ export default function Topbar() {
       if (!notificationsOpen) {
         getUnreadCount().then(res => {
           setUnreadCount(res?.data?.unread_count || 0);
-        }).catch(() => {});
+        }).catch(() => { });
       }
     }, 30000); // Cada 30 segundos
 
@@ -120,7 +122,7 @@ export default function Topbar() {
     if (!notif.is_read) {
       try {
         await markNotificationRead(notif.id);
-        setNotifications(prev => prev.map(n => 
+        setNotifications(prev => prev.map(n =>
           n.id === notif.id ? { ...n, is_read: true } : n
         ));
         setUnreadCount(prev => Math.max(0, prev - 1));
@@ -158,6 +160,15 @@ export default function Topbar() {
       }
     } catch (e) {
       console.error('Error eliminando notificación:', e);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (e) {
+      console.error('Error al cerrar sesión:', e);
     }
   };
 
@@ -212,7 +223,7 @@ export default function Topbar() {
         <h1 className="hidden sm:block text-xs sm:text-sm md:text-base font-medium text-center select-none tracking-wide flex-1 px-2">
           Asesores Especializados en la Enseñanza de las Ciencias y Tecnología
         </h1>
-        
+
         {/* Título móvil más corto */}
         <h1 className="sm:hidden text-[10px] font-medium text-center select-none tracking-tight flex-1 px-1">
           Asesores Especializados
@@ -278,9 +289,8 @@ export default function Topbar() {
                         <div
                           key={notif.id}
                           onClick={() => handleNotificationClick(notif)}
-                          className={`px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer ${
-                            !notif.is_read ? 'bg-violet-50/50' : ''
-                          }`}
+                          className={`px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer ${!notif.is_read ? 'bg-violet-50/50' : ''
+                            }`}
                         >
                           <div className="flex items-start gap-3">
                             <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-xl ${getNotificationColor(notif.type)}`}>
@@ -377,6 +387,16 @@ export default function Topbar() {
                 <span className="absolute -right-0.5 -bottom-0.5 sm:-right-1 sm:-bottom-1 h-3 w-3 sm:h-3.5 sm:w-3.5 rounded-full bg-emerald-500 border-2 border-white shadow-lg z-10" />
               </>
             )}
+          </button>
+
+          {/* Botón de Logout */}
+          <button
+            onClick={handleLogout}
+            title="Cerrar Sesión"
+            className="flex items-center justify-center p-1.5 sm:p-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white hover:text-red-600 transition-all duration-300 shadow-lg active:scale-95 group"
+          >
+            <LogOut className="h-4 w-4 sm:h-5 sm:w-5 group-hover:rotate-12 transition-transform" />
+            <span className="hidden lg:inline ml-2 text-xs font-bold uppercase tracking-wider">Salir</span>
           </button>
         </div>
       </div>

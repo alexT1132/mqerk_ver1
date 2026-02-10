@@ -41,8 +41,6 @@ import {
 } from "lucide-react";
 
 import SimuladorModalGen from "./SimulatorModal";
-import AnalizadorFallosRepetidos from "./AnalizadorFallosRepetidos";
-import ManualReviewShortAnswer from "./ManualReviewShortAnswer";
 import ReviewModal from "./ReviewModal";
 import { generarPreguntasIA, getCooldownRemainingMs } from "../../service/simuladoresAI";
 import { listSimulaciones, deleteSimulacion, createSimulacion, updateSimulacion, getSimulacion, getSimulacionFull, estudiantesEstadoSimulacion, getSimulacionIntentoReview } from "../../api/simulaciones";
