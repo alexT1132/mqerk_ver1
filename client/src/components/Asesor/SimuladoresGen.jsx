@@ -37,7 +37,7 @@ import {
   FileQuestion,
   ChevronLeft,
   FileText,
-  BarChart3
+  Activity
 } from "lucide-react";
 
 import SimuladorModalGen from "./SimulatorModal";
@@ -218,8 +218,8 @@ function SectionBadge({ title, subtitle, onBack, total, icon: IconProp }) {
         {/* Contador de Módulos (Réplica estilo Actividades con badge sutil) */}
         {total > 0 && (
           <div className="hidden md:flex ml-auto items-center gap-3 rounded-2xl bg-white/40 backdrop-blur-md px-5 py-3 border border-white/50 shadow-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
-              <FileText className="size-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-white/50">
+              <Activity className="size-5" />
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-black text-slate-800 leading-none">{total}</span>
@@ -280,9 +280,9 @@ function MobileRow({ item, onView, onEdit, onDelete, onPublish, onResultados }) 
         </button>
         <button
           onClick={() => onResultados(item)}
-          className="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+          className="inline-flex items-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-bold text-amber-700 hover:bg-amber-100 transition-all active:scale-95"
         >
-          <BarChart3 className="mr-2 h-4 w-4" />
+          <Trophy className="mr-2 h-4 w-4 text-amber-500" />
           Resultados
         </button>
         {item.status === "Borrador" && (
@@ -2221,9 +2221,9 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                         <button
                           onClick={() => handleResultados(item)}
                           title="Resultados"
-                          className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:from-emerald-100 hover:to-green-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                          className="rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-2 text-sm font-semibold text-amber-700 hover:from-amber-100 hover:to-orange-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
-                          <BarChart3 className="h-4 w-4" />
+                          <Trophy className="h-4 w-4 text-amber-500" />
                         </button>
                         {item.status === "Borrador" && (
                           <button
