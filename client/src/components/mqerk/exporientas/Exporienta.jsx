@@ -1,7 +1,7 @@
 import React from 'react'
 import Navbar from '../../../components/mqerk/Navbar'
-import Uno from "../../../assets/mqerk/exporientas/1.png";
-import Dos from "../../../assets/mqerk/exporientas/2.png";
+import Uno from "../../../assets/mqerk/exporientas/1.webp";
+import Dos from "../../../assets/mqerk/exporientas/2.webp";
 import { Link } from "react-router-dom";
 import Footer from "../../../components/layout/footer";
 

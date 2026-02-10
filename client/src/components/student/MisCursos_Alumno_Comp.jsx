@@ -332,11 +332,10 @@ function MisCursos_Alumno_comp({ isLoading: propIsLoading, error: propError }) {
       // BACKEND: Aquí se debería hacer una llamada para actualizar el curso actual
       // Ejemplo: await updateCurrentCourse(course.id);
 
-      // Solo navegar al dashboard si no hay curso seleccionado actualmente
-      // Si ya hay un curso, solo lo cambiamos sin redirigir
-      if (!currentCourse) {
-        navigate('/alumno/');
-      }
+      // SIEMPRE navegar al dashboard después de seleccionar un curso
+      // Esto permite que el componente de inicio maneje la verificación de acceso (pago/verificación)
+      navigate('/alumno/');
+
       // Si ya había un curso seleccionado, solo lo cambiamos (permanecemos en /alumno/cursos)
     } catch (error) {
       console.error('Error al seleccionar/cambiar curso:', error);

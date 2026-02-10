@@ -1,30 +1,31 @@
 // CourseDetail.jsx
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Navbar from "../../../components/mqerk/Navbar";
+import Footer from "../../../components/footer";
 import Footer from "../../../components/layout/footer";
 // TODO: Agregar imagen del curso cuando esté disponible
 import Curso2 from "../../../assets/mqerk/preview/curso1/3.png";
+import Curso2 from "../../../assets/mqerk/cursos/CURSO 1.webp";
 
 // --- Ajusta este número (sin +, ni espacios). Ejemplo MX: 5215555555555
 const WHATSAPP_PHONE = "522871515760";
 
 const buildWaLink = (title, planLabel) => {
-  const msg = `Hola, quiero inscribirme al curso "${title}"${
-    planLabel ? ` con el plan "${planLabel}"` : ""
-  }. ¿Me comparten más información?`;
+  const msg = `Hola, quiero inscribirme al curso "${title}"${planLabel ? ` con el plan "${planLabel}"` : ""
+    }. ¿Me comparten más información?`;
   return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
 };
 
 // --- Iconos inline (sin dependencias)
 const IconCalendar = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" {...props}><rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" /><path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="1.5"/></svg>
+  <svg viewBox="0 0 24 24" fill="none" {...props}><rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" /><path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="1.5" /></svg>
 );
-const IconClock = (p)=>(<svg viewBox="0 0 24 24" fill="none" {...p}><circle cx="12" cy="12" r="9" stroke="currentColor"/><path d="M12 7v6l4 2" stroke="currentColor" strokeWidth="1.5"/></svg>);
-const IconBook = (p)=>(<svg viewBox="0 0 24 24" fill="none" {...p}><path d="M4 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3-3V4z" stroke="currentColor"/><path d="M7 17h10" stroke="currentColor"/></svg>);
-const IconBolt = (p)=>(<svg viewBox="0 0 24 24" fill="none" {...p}><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" stroke="currentColor"/></svg>);
-const IconStar = (p)=>(<svg viewBox="0 0 24 24" fill="currentColor" {...p}><path d="m12 17.27 6.18 3.73-1.64-7.03L21 9.24l-7.19-.61L12 2 10.19 8.63 3 9.24l4.46 4.73L5.82 21z"/></svg>);
-const IconShare = (p)=>(<svg viewBox="0 0 24 24" fill="none" {...p}><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v14" stroke="currentColor" strokeWidth="1.5"/></svg>);
-const IconPlay = (p)=>(<svg viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M8 5v14l11-7-11-7Z"/></svg>);
+const IconClock = (p) => (<svg viewBox="0 0 24 24" fill="none" {...p}><circle cx="12" cy="12" r="9" stroke="currentColor" /><path d="M12 7v6l4 2" stroke="currentColor" strokeWidth="1.5" /></svg>);
+const IconBook = (p) => (<svg viewBox="0 0 24 24" fill="none" {...p}><path d="M4 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3-3V4z" stroke="currentColor" /><path d="M7 17h10" stroke="currentColor" /></svg>);
+const IconBolt = (p) => (<svg viewBox="0 0 24 24" fill="none" {...p}><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" stroke="currentColor" /></svg>);
+const IconStar = (p) => (<svg viewBox="0 0 24 24" fill="currentColor" {...p}><path d="m12 17.27 6.18 3.73-1.64-7.03L21 9.24l-7.19-.61L12 2 10.19 8.63 3 9.24l4.46 4.73L5.82 21z" /></svg>);
+const IconShare = (p) => (<svg viewBox="0 0 24 24" fill="none" {...p}><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v14" stroke="currentColor" strokeWidth="1.5" /></svg>);
+const IconPlay = (p) => (<svg viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M8 5v14l11-7-11-7Z" /></svg>);
 
 // --- DEMO DATA (ajústalo a tu backend)
 const COURSE = {
@@ -232,7 +233,7 @@ export default function CourseDetail() {
                   <IconPlay className="w-6 h-6" />
                 </button>
                 <div className="mt-3 flex items-center gap-3 text-sm text-gray-600">
-                  
+
                   <span className="ml-auto inline-flex items-center gap-1">
                     <IconShare className="w-4 h-4 text-gray-500" /> Compartir
                   </span>
@@ -427,9 +428,8 @@ function PlansModal({ title, onClose }) {
                 ].join(" ")}
               >
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                    p.highlighted ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-700"
-                  }`}>
+                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${p.highlighted ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-700"
+                    }`}>
                     {p.badge}
                   </span>
                 </div>

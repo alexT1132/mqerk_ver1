@@ -1,10 +1,10 @@
 import Navbar from "../../../components/mqerk/Navbar";
-import Uno from "../../../assets/mqerk/preview/curso1/3.png";
-import Dos from "../../../assets/mqerk/preview/curso1/4.png";
-import Tres from "../../../assets/mqerk/preview/curso1/15.png";
-import Cuatro from "../../../assets/mqerk/preview/curso1/14.png";
-import Cinco from "../../../assets/mqerk/preview/curso1/13.png";
-import Seis from "../../../assets/mqerk/preview/curso1/12.png";
+import Uno from "../../../assets/mqerk/preview/curso1/3.webp";
+import Dos from "../../../assets/mqerk/preview/curso1/4.webp";
+import Tres from "../../../assets/mqerk/preview/curso1/15.webp";
+import Cuatro from "../../../assets/mqerk/preview/curso1/14.webp";
+import Cinco from "../../../assets/mqerk/preview/curso1/13.webp";
+import Seis from "../../../assets/mqerk/preview/curso1/12.webp";
 
 function Eeau() {
   return (

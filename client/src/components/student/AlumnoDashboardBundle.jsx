@@ -94,7 +94,8 @@ function StudentAwareLayout() {
   // (tomar quiz/simulación). Esto evita ocultamientos tras refresh en secciones como Asistencia/Calendario.
   const isAlumnoSection = location.pathname.startsWith('/alumno');
   // Ocultar sidebar en Mis Cursos cuando aún no hay curso seleccionado
-  const shouldShowSidebar = isAlumnoSection && !isQuizRoute && !isSimRoute && !(isCoursesRoute && !hasSelectedCourse);
+  // ADEMÁS: Ocultar sidebar si el alumno NO tiene acceso completo (por falta de verificación o pago)
+  const shouldShowSidebar = isAlumnoSection && !isQuizRoute && !isSimRoute && hasSelectedCourse && hasContentAccess;
 
   // Redirección temprana para evitar parpadeo del dashboard sin curso seleccionado
   // IMPORTANTE: Usar hasSelectedCourse (que verifica localStorage) en lugar de solo currentCourse
@@ -105,9 +106,11 @@ function StudentAwareLayout() {
   // Evita que un refresh profundo (p.ej. en pagos, perfil, actividades) te saque de la vista actual.
   const isAlumnoLanding = location.pathname === '/alumno' || location.pathname === '/alumno/' || location.pathname === '/alumno/dashboard';
   // Usar hasSelectedCourse que verifica tanto currentCourse como localStorage
-  const shouldRedirectToCourses = hydrated && isApproved && !hasSelectedCourse && isAlumnoLanding;
-  // Redirección por bloqueo global de acceso (solo desde la portada, no desde secciones internas)
-  const shouldRedirectToWelcome = !hasContentAccess && isAlumnoLanding;
+  // SIEMPRE redirigir a cursos si no hay uno seleccionado, sin importar la verificación aquí (se maneja en el dashboard)
+  const shouldRedirectToCourses = hydrated && !hasSelectedCourse && isAlumnoLanding;
+  // Ya no redirigimos a bienvenida externo; el dashboard ya maneja el bloqueo internamente
+  const shouldRedirectToWelcome = false;
+
 
   // BACKEND: El botón de logout se muestra cuando NO hay sidebar Y NO se está en quiz/simulación
   //const showLogoutButton = !shouldShowSidebar;

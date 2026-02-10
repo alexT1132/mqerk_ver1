@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import eeauImg from '../assets/mqerk/1.png';
+import eeauImg from '../assets/mqerk/1.webp';
 import { useAuth } from './AuthContext.jsx';
 import { computeOverdueState } from '../utils/payments.js';
 import * as AreaAccess from '../api/areaAccess.js';
@@ -441,14 +441,8 @@ export const StudentProvider = ({ children }) => {
 
   const requestNewSimulationAreaAccess = async (areaId, options = {}) => {
     try {
-      // Solo bloquear si ya hay una solicitud PENDIENTE
-      // Si fue rechazada (denied/rejected), permitir solicitar de nuevo
-      const existingRequest = simulationRequests.find(req => req.areaId === areaId);
-      if (existingRequest && existingRequest.status === 'pending') {
-        console.log('Ya existe una solicitud pendiente para esta área de simulación');
-        return;
-      }
-
+      // Evitar solicitudes duplicadas locales (UI)
+      if (simulationRequests.some(req => req.areaId === areaId && req.status === 'pending')) return;
       const payload = { area_id: areaId, area_type: 'simulacion', notes: options?.notes || null };
       await AreaAccess.createAreaRequest(payload);
       // Refrescar desde backend
@@ -474,14 +468,7 @@ export const StudentProvider = ({ children }) => {
 
   const requestNewActivityAreaAccess = async (areaId, options = {}) => {
     try {
-      // Solo bloquear si ya hay una solicitud PENDIENTE
-      // Si fue rechazada (denied/rejected), permitir solicitar de nuevo
-      const existingRequest = activityRequests.find(req => req.areaId === areaId);
-      if (existingRequest && existingRequest.status === 'pending') {
-        console.log('Ya existe una solicitud pendiente para esta área');
-        return;
-      }
-
+      if (activityRequests.some(req => req.areaId === areaId && req.status === 'pending')) return;
       const payload = { area_id: areaId, area_type: 'actividad', notes: options?.notes || null };
       await AreaAccess.createAreaRequest(payload);
       await hydrateAreaAccess();
@@ -819,6 +806,8 @@ export const StudentProvider = ({ children }) => {
       if (localStorage.getItem('studentVerified') !== 'true') localStorage.setItem('studentVerified', 'true');
       if (localStorage.getItem('studentPaid') !== 'true') localStorage.setItem('studentPaid', 'true');
     }
+    // Actualizar hasContentAccess cada vez que cambie la verificación
+    refreshOverdueAccess();
   }, [alumno?.verificacion]);
 
   // Resetear selección de curso y sección activa cuando el usuario cierra sesión
@@ -885,19 +874,33 @@ export const StudentProvider = ({ children }) => {
     localStorage.setItem('isFirstAccess', 'true');
   };
 
-  // Verificar acceso al contenido basado en calendario de pagos (tolerancia aplicada)
+  // Verificar acceso al contenido basado en:
+  // 1. Estado de verificación (debe ser >= 2 para tener acceso)
+  // 2. Calendario de pagos (tolerancia aplicada)
   const refreshOverdueAccess = (now = new Date()) => {
     try {
+      // Verificar estado de verificación
+      const verificacion = Number(alumno?.verificacion ?? 0);
+      const isVerifiedApproved = verificacion >= 2;
+
+      // Verificar estado de pagos
       const { isOverdueLocked, overdueDays } = computeOverdueState({ alumno, now });
-      setHasContentAccess(!isOverdueLocked);
+
+      // El alumno tiene acceso SOLO si está verificado Y no tiene pagos vencidos
+      const hasAccess = isVerifiedApproved && !isOverdueLocked;
+
+      setHasContentAccess(hasAccess);
       setOverdueDays(overdueDays || 0);
-      return { hasAccess: !isOverdueLocked, overdueDays };
+
+      return { hasAccess, overdueDays };
     } catch (e) {
-      console.warn('No se pudo evaluar estado de mora:', e);
-      // Ante error, no bloquear
-      setHasContentAccess(true);
+      console.warn('No se pudo evaluar estado de acceso:', e);
+      // Ante error, verificar al menos el estado de verificación
+      const verificacion = Number(alumno?.verificacion ?? 0);
+      const hasAccess = verificacion >= 2;
+      setHasContentAccess(hasAccess);
       setOverdueDays(0);
-      return { hasAccess: true, overdueDays: 0 };
+      return { hasAccess, overdueDays: 0 };
     }
   };
 
@@ -961,7 +964,6 @@ export const StudentProvider = ({ children }) => {
     requestNewSimulationAreaAccess,
     addAllowedActivityArea,
     requestNewActivityAreaAccess,
-    hydrateAreaAccess, // Refrescar permisos y solicitudes desde backend
 
     // Funciones legacy (deprecated - se mantendrán temporalmente para compatibilidad)
     addAllowedArea,

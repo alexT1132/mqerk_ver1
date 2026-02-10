@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react'
 import Navbar from '../../../components/mqerk/Navbar'
-import Uno from "../../../assets/mqerk/Fotos Estudiantes/16.png";
-import Dos from "../../../assets/mqerk/Fotos Estudiantes/17.png";
-import Tres from "../../../assets/mqerk/Fotos Estudiantes/18.png";
-import Primero from "../../../assets/mqerk/veranotx/01.png";
-import Segundo from "../../../assets/mqerk/veranotx/02.png";
-import Tercero from "../../../assets/mqerk/veranotx/03.png";
-import Cuarto from "../../../assets/mqerk/veranotx/04.png";
-import Quinto from "../../../assets/mqerk/veranotx/05.png";
-import Sexto from "../../../assets/mqerk/veranotx/06.png";
-import Septimo from "../../../assets/mqerk/veranotx/07.png";
+import Uno from "../../../assets/mqerk/Fotos Estudiantes/16.webp";
+import Dos from "../../../assets/mqerk/Fotos Estudiantes/17.webp";
+import Tres from "../../../assets/mqerk/Fotos Estudiantes/18.webp";
+import Primero from "../../../assets/mqerk/veranotx/01.webp";
+import Segundo from "../../../assets/mqerk/veranotx/02.webp";
+import Tercero from "../../../assets/mqerk/veranotx/03.webp";
+import Cuarto from "../../../assets/mqerk/veranotx/04.webp";
+import Quinto from "../../../assets/mqerk/veranotx/05.webp";
+import Sexto from "../../../assets/mqerk/veranotx/06.webp";
+import Septimo from "../../../assets/mqerk/veranotx/07.webp";
 import { Link } from 'react-router-dom';
-import CuatroImg from "../../../assets/mqerk/talleres/1.png";
-import CincoImg from "../../../assets/mqerk/talleres/2.png";
-import SeisImg from "../../../assets/mqerk/talleres/3.png";
+import CuatroImg from "../../../assets/mqerk/talleres/1.webp";
+import CincoImg from "../../../assets/mqerk/talleres/2.webp";
+import SeisImg from "../../../assets/mqerk/talleres/3.webp";
 import Footer from "../../../components/layout/footer";
 
 function Talleres() {

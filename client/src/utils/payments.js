@@ -44,9 +44,9 @@ export const generatePaymentSchedule = ({ startDate, planType = 'mensual', now =
       paymentDate.setDate(paymentDate.getDate() + (i * 30));
     }
 
-    // Fecha Límite = EXACTAMENTE la fecha calculada (fin del ciclo anterior / inicio del nuevo)
+    // Fecha Límite = Fecha de Pago + 30 días exactos (plazo de pago)
     const dueDate = new Date(paymentDate);
-    // Ya no se suman 30 días. La fecha calculada arriba (i*30) ES la fecha de corte.
+    dueDate.setDate(dueDate.getDate() + 30);
 
     let status = 'pending';
     let isOverdue = false;
@@ -63,7 +63,7 @@ export const generatePaymentSchedule = ({ startDate, planType = 'mensual', now =
       } else if (now < dueDate) {
         status = 'upcoming';
       }
-      // Si está entre dueDate y dueWithTolerance (días 31-33), status se queda en 'pending' (tolerancia)
+      // Si está entre dueDate y dueWithTolerance (días 1-3 de retraso), status se queda en 'pending' (tolerancia)
     }
 
     const verificationDate = i < (type === 'premium' ? totalPayments : 1) ? paymentDate : null;
