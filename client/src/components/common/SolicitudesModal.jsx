@@ -283,9 +283,9 @@ export default function SolicitudesModal({ open, onClose, areaId = null, areaNam
   if (viewAll) return <RequestsManager rows={rows} status={status} setStatus={setStatus} onApprove={approve} onDeny={deny} areaNamesMap={areaNamesMap} loading={loading} onClose={onClose} areaName={areaName} areaId={areaId} setViewAll={setViewAll} />;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center items-start pt-96 p-3 sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex justify-center items-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-sm rounded-[1.5rem] bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden mt-56 sm:mt-64 transition-all">
+      <div className="relative w-full max-w-sm rounded-[1.5rem] bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden transition-all">
         {/* Header Compacto */}
         <div className="sticky top-0 flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-white/95 backdrop-blur z-10">
           <div className="min-w-0 flex items-center gap-3">

@@ -9,6 +9,8 @@ import { Layout } from '../layouts/Layout.jsx';
 import Topbar from './Topbar.jsx';
 import SidebarIconOnly from './Sidebar.jsx';
 import MobileSidebar from './MobileSidebar.jsx';
+import ReminderNotifier from './ReminderNotifier.jsx';
+import { Toaster } from 'react-hot-toast';
 
 // Páginas principales del asesor
 import AsesorMaestro from './AsesorMaestro.jsx'; // Home con cursos
@@ -59,11 +61,18 @@ function SideBarSmWrapper({ isMenuOpen, closeMenu, counts }) {
 }
 
 function AsesorLayout({ children }) {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const handleLogout = async () => { await logout(); navigate('/login', { replace: true }); };
   const location = useLocation();
   const isFeedback = location.pathname.startsWith('/asesor/feedback');
+
+  // Protección de Rol: Redirigir si no es asesor (ej. admin o estudiante que entraron por error)
+  if (user && user.role !== 'asesor') {
+    if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+    if (user.role === 'estudiante') return <Navigate to="/alumno" replace />;
+    return <Navigate to="/" replace />;
+  }
 
   // Verificar si estamos en la página de selección de curso (inicio)
   const isInicioPage = location.pathname === '/asesor/inicio' || location.pathname === '/asesor/inicio/';
@@ -127,15 +136,20 @@ function AsesorLayout({ children }) {
   }, []);
 
   return (
-    <Layout
-      HeaderComponent={Topbar}
-      SideBarDesktopComponent={mostrarSidebar ? (props) => <SidebarIconOnly {...props} onLogout={handleLogout} active={isFeedback ? 'feedback' : undefined} counts={counts} /> : undefined}
-      SideBarSmComponent={mostrarSidebar ? (props) => <SideBarSmWrapper {...props} counts={counts} /> : undefined}
-      backgroundClassName="bg-transparent"
-      contentClassName="!px-0 !pb-0"
-    >
-      {children}
-    </Layout>
+    <>
+      <Toaster position="top-right" reverseOrder={false} />
+      <ReminderNotifier />
+      <Layout
+        HeaderComponent={Topbar}
+        SideBarDesktopComponent={mostrarSidebar ? SidebarIconOnly : undefined}
+        SideBarSmComponent={mostrarSidebar ? SideBarSmWrapper : undefined}
+        sidebarProps={{ onLogout: handleLogout, active: isFeedback ? 'feedback' : undefined, counts }}
+        backgroundClassName="bg-transparent"
+        contentClassName="!px-0 !pb-0 !pt-14 md:!pt-16 lg:!pt-20"
+      >
+        {children}
+      </Layout>
+    </>
   );
 }
 

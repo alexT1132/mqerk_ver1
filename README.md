@@ -2,6 +2,16 @@
 
 EL CHAT DE RESTORAGE ADVISOR ES EL BUENO PAAR CUALQUEIR COSA
 
+He aplicado la solución definitiva para el problema de visualización de las modales:
+
+Portales de React (createPortal): Ahora todas las modales de la Agenda ("Crear Recordatorio", "Detalles", "Confirmar", etc.) se renderizan directamente en el cuerpo del documento (document.body).
+Esto las saca del contenedor principal que estaba limitando su capa de visualización (z-index).
+Resultado: Las modales siempre estarán por encima de todo, incluyendo la barra superior (Header), sin importar el tamaño de la pantalla o el scroll.
+Limpieza: He eliminado los parches anteriores de relleno (padding-top) que causaban inconsistencias entre dispositivos. Ahora el centrado es natural y perfecto.
+Indicador Simplificado: También ajusté el contador de eventos en el calendario (+5) para que sea discreto y limpio como pediste.
+
+
+
 ![React](https://img.shields.io/badge/React-19.1.0-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-Express-green)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-orange)

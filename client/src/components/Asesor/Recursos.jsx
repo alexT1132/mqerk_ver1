@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom'; // Portal para modales
 import { Download, Eye, Trash2, UploadCloud, Search, FileText, File, Video, Image, Archive, FileEdit, X, Save, Loader2, Tag, Plus, CheckCircle, GraduationCap, Shield, Link as LinkIcon, Presentation, FileType } from 'lucide-react';
 import {
   listRecursos, createRecurso, updateRecurso, deleteRecurso, downloadRecurso,
@@ -140,6 +141,18 @@ export default function Recursos() {
     })();
     return () => { alive = false; };
   }, [activeTab]);
+
+  // Bloquear scroll del body cuando hay modales abiertas
+  useEffect(() => {
+    if (preview || linkModal.isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [preview, linkModal.isOpen]);
 
   // Filtrar recursos
   const filtered = useMemo(() => {
@@ -855,9 +868,9 @@ export default function Recursos() {
         )}
 
         {/* Modal de preview */}
-        {preview && (
-          <div className="fixed inset-0 z-[100] p-4 bg-black/60 backdrop-blur-sm" onClick={() => setPreview(null)}>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl w-full max-w-3xl max-h-[80vh] overflow-hidden shadow-2xl flex flex-col border-2 border-slate-200 ring-4 ring-violet-100" onClick={e => e.stopPropagation()}>
+        {preview && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setPreview(null)}>
+            <div className="relative bg-white rounded-3xl w-full max-w-3xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200/80" onClick={e => e.stopPropagation()}>
               {/* Header del modal */}
               <div className="px-5 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between shrink-0 shadow-lg">
                 <div className="flex-1 min-w-0">
@@ -1023,7 +1036,8 @@ export default function Recursos() {
                 )}
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Modal de confirmación */}
@@ -1039,9 +1053,9 @@ export default function Recursos() {
         />
 
         {/* Modal de agregar enlace */}
-        {linkModal.isOpen && (
-          <div className="fixed inset-0 z-[100] p-4 bg-black/60 backdrop-blur-sm" onClick={closeLinkModal}>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl flex flex-col border-2 border-slate-200 ring-4 ring-violet-100" onClick={e => e.stopPropagation()}>
+        {linkModal.isOpen && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={closeLinkModal}>
+            <div className="relative bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200/80" onClick={e => e.stopPropagation()}>
               {/* Header del modal */}
               <div className="px-5 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between shrink-0 shadow-lg">
                 <div className="flex items-center gap-3">
@@ -1163,7 +1177,8 @@ export default function Recursos() {
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>

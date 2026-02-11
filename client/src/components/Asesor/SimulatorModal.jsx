@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom"; // Portal para modales
 import { useNavigate } from "react-router-dom";
 import { getMisEstudiantes } from "../../api/asesores.js";
 import { XCircle, X, Loader2, CheckCircle2, FileText, Calendar, Clock, Users, ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -132,6 +133,18 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  // Bloquear scroll del body cuando la modal está abierta
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
 
   if (!open) return null;
 
@@ -290,9 +303,9 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
     }
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       aria-modal="true"
       role="dialog"
       aria-labelledby="sim-modal-title"
@@ -300,148 +313,146 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
         if (!e.target.closest("[data-modal]")) onClose?.();
       }}
     >
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm -z-10" aria-hidden="true" />
-      <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-start pt-24 pb-10 py-2">
-        <div
-          data-modal
-          className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 max-h-[calc(100vh-160px)] overflow-hidden flex flex-col"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <Stepper step={step} />
-              <div>
-                <h2
-                  id="sim-modal-title"
-                  className="text-sm font-semibold text-slate-900 sm:text-base"
-                >
-                  {step === 1 ? (mode === 'edit' ? 'Editar instrucciones' : 'Crear instrucciones') : (mode === 'edit' ? 'Editar simulador' : 'Información del simulador')}
-                </h2>
-                <p className="text-[11px] text-slate-500">
-                  Paso {step} de 2
-                </p>
-              </div>
+      <div
+        data-modal
+        className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200/80 max-h-[85vh] overflow-hidden flex flex-col"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <Stepper step={step} />
+            <div>
+              <h2
+                id="sim-modal-title"
+                className="text-sm font-semibold text-slate-900 sm:text-base"
+              >
+                {step === 1 ? (mode === 'edit' ? 'Editar instrucciones' : 'Crear instrucciones') : (mode === 'edit' ? 'Editar simulador' : 'Información del simulador')}
+              </h2>
+              <p className="text-[11px] text-slate-500">
+                Paso {step} de 2
+              </p>
             </div>
-
-            <button
-              ref={firstFocusable}
-              onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
-              aria-label="Cerrar"
-            >
-              <X className="h-4 w-4" />
-            </button>
           </div>
 
-          {/* Error Message */}
-          {errorMessage && (
-            <div className="mx-4 mt-3 p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-center gap-2 text-xs flex-shrink-0">
-              <XCircle className="h-4 w-4 shrink-0" />
-              <span className="flex-1 font-medium">{errorMessage}</span>
-              <button
-                onClick={() => setErrorMessage(null)}
-                className="ml-auto p-0.5 hover:bg-red-100 rounded transition-colors"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          )}
+          <button
+            ref={firstFocusable}
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
+            aria-label="Cerrar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
-          {/* Body: min-h-0 para que haga scroll en pantallas bajas */}
-          <div className="flex-1 min-h-0 px-4 py-3 sm:px-5 sm:py-4 overflow-y-auto">
-            {step === 1 ? (
-              <StepOne form={form} setForm={setForm} />
-            ) : (
-              <StepTwo form={form} setForm={setForm} gruposAsesor={gruposAsesor} gruposLoading={gruposLoading} hasGrupos={hasGrupos} />
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="mx-4 mt-3 p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-center gap-2 text-xs flex-shrink-0">
+            <XCircle className="h-4 w-4 shrink-0" />
+            <span className="flex-1 font-medium">{errorMessage}</span>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="ml-auto p-0.5 hover:bg-red-100 rounded transition-colors"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+
+        {/* Body: min-h-0 para que haga scroll en pantallas bajas */}
+        <div className="flex-1 min-h-0 px-4 py-3 sm:px-5 sm:py-4 overflow-y-auto">
+          {step === 1 ? (
+            <StepOne form={form} setForm={setForm} />
+          ) : (
+            <StepTwo form={form} setForm={setForm} gruposAsesor={gruposAsesor} gruposLoading={gruposLoading} hasGrupos={hasGrupos} />
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/50 px-4 py-3 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all"
+            >
+              <X className="h-4 w-4" />
+              Cancelar
+            </button>
+            {step > 1 && (
+              <button
+                onClick={() => setStep(1)}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Atrás
+              </button>
             )}
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/50 px-4 py-3 flex-shrink-0">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            {step === 1 ? (
               <button
-                onClick={onClose}
-                disabled={loading}
-                className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all"
+                disabled={!canNext}
+                onClick={() => setStep(2)}
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
               >
-                <X className="h-4 w-4" />
-                Cancelar
+                Siguiente
+                <ArrowRight className="h-4 w-4" />
               </button>
-              {step > 1 && (
-                <button
-                  onClick={() => setStep(1)}
-                  disabled={loading}
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Atrás
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {step === 1 ? (
-                <button
-                  disabled={!canNext}
-                  onClick={() => setStep(2)}
-                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
-                >
-                  Siguiente
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              ) : (
-                <>
-                  {mode === 'edit' && onEditQuestions && (
-                    <button
-                      disabled={!canCreate || loading}
-                      onClick={async () => {
-                        await handleSubmit(true); // No cerrar el modal todavía
-                        onClose?.(); // Cerrar después de guardar
-                        // Pequeño delay para asegurar que el guardado se complete
-                        setTimeout(() => {
-                          onEditQuestions?.();
-                        }, 100);
-                      }}
-                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                      title="Guardar cambios y editar preguntas"
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Guardando...
-                        </>
-                      ) : (
-                        <>
-                          Guardar y editar preguntas
-                          <ArrowRight className="h-4 w-4" />
-                        </>
-                      )}
-                    </button>
-                  )}
+            ) : (
+              <>
+                {mode === 'edit' && onEditQuestions && (
                   <button
                     disabled={!canCreate || loading}
-                    onClick={handleSubmit}
-                    className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                    onClick={async () => {
+                      await handleSubmit(true); // No cerrar el modal todavía
+                      onClose?.(); // Cerrar después de guardar
+                      // Pequeño delay para asegurar que el guardado se complete
+                      setTimeout(() => {
+                        onEditQuestions?.();
+                      }, 100);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    title="Guardar cambios y editar preguntas"
                   >
                     {loading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        {mode === 'edit' ? 'Guardando...' : 'Creando...'}
+                        Guardando...
                       </>
                     ) : (
                       <>
-                        {mode === 'edit' ? 'Guardar cambios' : 'Crear simulador'}
-                        <Check className="h-4 w-4" />
+                        Guardar y editar preguntas
+                        <ArrowRight className="h-4 w-4" />
                       </>
                     )}
                   </button>
-                </>
-              )}
-            </div>
+                )}
+                <button
+                  disabled={!canCreate || loading}
+                  onClick={handleSubmit}
+                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {mode === 'edit' ? 'Guardando...' : 'Creando...'}
+                    </>
+                  ) : (
+                    <>
+                      {mode === 'edit' ? 'Guardar cambios' : 'Crear simulador'}
+                      <Check className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

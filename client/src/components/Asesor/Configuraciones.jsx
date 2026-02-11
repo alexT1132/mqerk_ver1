@@ -35,10 +35,10 @@ export default function SettingsPage() {
   const [notificationModal, setNotificationModal] = useState({ open: false, message: '', type: 'success' }); // 'success' | 'error'
   // Modal de confirmación para eliminar cuenta
   const [deleteConfirmModal, setDeleteConfirmModal] = useState({ isOpen: false });
-  
+
   // Datos del perfil
   const [perfilData, setPerfilData] = useState(null);
-  
+
   // Formulario de información personal
   const [form, setForm] = useState({
     nombres: "",
@@ -77,10 +77,10 @@ export default function SettingsPage() {
       try {
         const { data } = await getMiPerfil();
         if (!alive) return;
-        
+
         const { perfil, preregistro } = data?.data || {};
         setPerfilData(data?.data || null);
-        
+
         if (preregistro) {
           setForm({
             nombres: preregistro.nombres || "",
@@ -90,7 +90,7 @@ export default function SettingsPage() {
             nacimiento: perfil?.nacimiento ? perfil.nacimiento.split('T')[0] : "",
           });
         }
-        
+
         // Cargar preview de foto si existe (usar foto_url si está disponible, sino construir con doc_fotografia)
         // ✅ Agregar timestamp para evitar cache al cargar inicialmente
         if (perfil?.foto_url) {
@@ -132,42 +132,42 @@ export default function SettingsPage() {
   const handleAvatarChange = async (e) => {
     const file = e?.target?.files?.[0];
     if (!file) return;
-    
+
     // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
       setNotificationModal({ open: true, message: 'Solo se permiten archivos de imagen', type: 'error' });
       return;
     }
-    
+
     // Validar tamaño (5MB)
     if (file.size > 5 * 1024 * 1024) {
       setNotificationModal({ open: true, message: 'La imagen no debe exceder 5MB', type: 'error' });
       return;
     }
-    
+
     // ✅ Mostrar preview inmediato antes de subir (para mejor UX)
     const previewUrl = URL.createObjectURL(file);
     setPhotoPreview(previewUrl);
-    
+
     setUploadingPhoto(true);
     setError(null);
     setSuccess(null);
-    
+
     try {
       const formData = new FormData();
       formData.append('foto', file);
-      
+
       const { data } = await updateMiFoto(formData);
-      
+
       // Recargar datos del perfil primero para obtener la URL actualizada
       const { data: refreshData } = await getMiPerfil();
       const perfilActualizado = refreshData?.data?.perfil || data?.data?.perfil;
-      
+
       // ✅ Limpiar el preview temporal
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
-      
+
       // Actualizar preview con la nueva URL del servidor (agregar timestamp para evitar cache)
       let nuevaFotoUrl = null;
       if (perfilActualizado?.foto_url) {
@@ -175,7 +175,7 @@ export default function SettingsPage() {
       } else if (perfilActualizado?.doc_fotografia) {
         nuevaFotoUrl = buildStaticUrl(perfilActualizado.doc_fotografia);
       }
-      
+
       // ✅ Agregar timestamp para forzar recarga del navegador
       if (nuevaFotoUrl) {
         const separator = nuevaFotoUrl.includes('?') ? '&' : '?';
@@ -184,16 +184,16 @@ export default function SettingsPage() {
       } else {
         setPhotoPreview(null);
       }
-      
+
       // Actualizar estado con datos frescos
       setPerfilData(refreshData?.data || {
         ...perfilData,
         perfil: perfilActualizado
       });
-      
+
       // ✅ Disparar evento para actualizar Topbar y otros componentes
       window.dispatchEvent(new CustomEvent('asesor-photo-updated'));
-      
+
       setNotificationModal({ open: true, message: 'Foto de perfil actualizada correctamente', type: 'success' });
     } catch (e) {
       // ✅ En caso de error, limpiar el preview temporal y restaurar el anterior
@@ -225,38 +225,38 @@ export default function SettingsPage() {
     setSaving(true);
     setError(null);
     setSuccess(null);
-    
+
     // Validaciones
     if (!form.nombres.trim()) {
       setError('El nombre es obligatorio');
       setSaving(false);
       return;
     }
-    
+
     if (!form.apellidos.trim()) {
       setError('Los apellidos son obligatorios');
       setSaving(false);
       return;
     }
-    
+
     if (!form.correo.trim()) {
       setError('El correo electrónico es obligatorio');
       setSaving(false);
       return;
     }
-    
+
     if (!validateEmail(form.correo.trim())) {
       setError('El formato del correo electrónico no es válido');
       setSaving(false);
       return;
     }
-    
+
     if (form.telefono && !validatePhone(form.telefono.trim())) {
       setError('El formato del teléfono no es válido');
       setSaving(false);
       return;
     }
-    
+
     try {
       const { data } = await updateMiPerfil({
         nombres: form.nombres.trim(),
@@ -265,10 +265,10 @@ export default function SettingsPage() {
         telefono: form.telefono.trim() || null,
         nacimiento: form.nacimiento || null,
       });
-      
+
       setPerfilData(data?.data || perfilData);
       setSuccess('Información personal actualizada correctamente');
-      
+
       // Limpiar mensaje después de 3 segundos
       setTimeout(() => setSuccess(null), 3000);
     } catch (e) {
@@ -280,36 +280,36 @@ export default function SettingsPage() {
 
   const onChangePassword = async (e) => {
     e.preventDefault();
-    
+
     // Validaciones
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
       setError('Todos los campos de contraseña son obligatorios');
       return;
     }
-    
+
     if (passwordForm.newPassword.length < 6) {
       setError('La nueva contraseña debe tener al menos 6 caracteres');
       return;
     }
-    
+
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setError('Las contraseñas no coinciden');
       return;
     }
-    
+
     setChangingPassword(true);
     setError(null);
     setSuccess(null);
-    
+
     try {
       await axios.put('/admin/change-password', {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
       });
-      
+
       setSuccess('Contraseña actualizada correctamente');
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-      
+
       // Limpiar mensaje después de 3 segundos
       setTimeout(() => setSuccess(null), 3000);
     } catch (e) {
@@ -345,7 +345,7 @@ export default function SettingsPage() {
   } else if (perfilData?.perfil?.doc_fotografia) {
     avatarUrl = buildStaticUrl(perfilData.perfil.doc_fotografia);
   }
-  
+
 
   return (
     <div className="w-full min-h-screen bg-white">
@@ -357,8 +357,8 @@ export default function SettingsPage() {
               <ShieldCheck className="size-8 sm:size-10 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-tight">
-                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.1', paddingBottom: '2px' }}>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-normal">
+                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block py-2" style={{ lineHeight: '1.2' }}>
                   Configuración
                 </span>
               </h1>
@@ -385,7 +385,7 @@ export default function SettingsPage() {
             </button>
           </div>
         )}
-        
+
         {success && (
           <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl text-green-700 flex items-center gap-3 shadow-md ring-2 ring-green-100">
             <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-md">
@@ -406,22 +406,19 @@ export default function SettingsPage() {
         {notificationModal.open && (
           <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4" onClick={() => setNotificationModal({ open: false, message: '', type: 'success' })}>
             <div className="bg-black/60 backdrop-blur-sm absolute inset-0" onClick={() => setNotificationModal({ open: false, message: '', type: 'success' })}></div>
-            <div 
-              className={`relative bg-white rounded-3xl shadow-2xl border-2 ${
-                notificationModal.type === 'success' 
-                  ? 'border-emerald-200 shadow-emerald-200/30' 
-                  : 'border-rose-200 shadow-rose-200/30'
-              } max-w-md w-full p-6 ring-4 ${
-                notificationModal.type === 'success' ? 'ring-emerald-100' : 'ring-rose-100'
-              }`}
+            <div
+              className={`relative bg-white rounded-3xl shadow-2xl border-2 ${notificationModal.type === 'success'
+                ? 'border-emerald-200 shadow-emerald-200/30'
+                : 'border-rose-200 shadow-rose-200/30'
+                } max-w-md w-full p-6 ring-4 ${notificationModal.type === 'success' ? 'ring-emerald-100' : 'ring-rose-100'
+                }`}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start gap-4 mb-4">
-                <div className={`flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center shadow-md ring-2 ${
-                  notificationModal.type === 'success' 
-                    ? 'bg-gradient-to-br from-emerald-500 to-green-600 ring-emerald-200' 
-                    : 'bg-gradient-to-br from-rose-500 to-red-600 ring-rose-200'
-                }`}>
+                <div className={`flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center shadow-md ring-2 ${notificationModal.type === 'success'
+                  ? 'bg-gradient-to-br from-emerald-500 to-green-600 ring-emerald-200'
+                  : 'bg-gradient-to-br from-rose-500 to-red-600 ring-rose-200'
+                  }`}>
                   {notificationModal.type === 'success' ? (
                     <CheckCircle2 className="w-6 h-6 text-white" />
                   ) : (
@@ -429,9 +426,8 @@ export default function SettingsPage() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <h3 className={`text-lg font-extrabold mb-1 ${
-                    notificationModal.type === 'success' ? 'text-emerald-900' : 'text-rose-900'
-                  }`}>
+                  <h3 className={`text-lg font-extrabold mb-1 ${notificationModal.type === 'success' ? 'text-emerald-900' : 'text-rose-900'
+                    }`}>
                     {notificationModal.type === 'success' ? 'Éxito' : 'Error'}
                   </h3>
                   <p className="text-slate-700 text-sm font-medium">{notificationModal.message}</p>
@@ -446,11 +442,10 @@ export default function SettingsPage() {
               <div className="flex justify-end">
                 <button
                   onClick={() => setNotificationModal({ open: false, message: '', type: 'success' })}
-                  className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg ${
-                    notificationModal.type === 'success'
-                      ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white'
-                      : 'bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white'
-                  }`}
+                  className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg ${notificationModal.type === 'success'
+                    ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white'
+                    : 'bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white'
+                    }`}
                 >
                   Aceptar
                 </button>
@@ -703,10 +698,11 @@ export default function SettingsPage() {
 
 /** ---------- UI helpers ---------- */
 
+
 function Card({ children, className = "" }) {
   return (
     <div
-      className={`rounded-2xl border-2 border-slate-200 bg-white p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 ring-2 ring-slate-100/50 ${className}`}
+      className={`rounded-2xl border-2 border-slate-200 bg-white p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 ring-2 ring-slate-100/50 ${className}`}
     >
       {children}
     </div>
@@ -715,13 +711,13 @@ function Card({ children, className = "" }) {
 
 function CardHeader({ icon, title, subtitle }) {
   return (
-    <div className="mb-6 flex items-start gap-3">
-      <div className="rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 p-2.5 text-white shadow-md ring-2 ring-violet-200 shrink-0">
+    <div className="mb-6 flex flex-col sm:flex-row sm:items-start gap-3">
+      <div className="rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 p-2.5 text-white shadow-md ring-2 ring-violet-200 shrink-0 self-start">
         {icon}
       </div>
       <div>
-        <h2 className="text-lg font-extrabold text-slate-900">{title}</h2>
-        {subtitle && <p className="text-sm text-slate-500 font-medium">{subtitle}</p>}
+        <h2 className="text-lg font-extrabold text-slate-900 leading-normal">{title}</h2>
+        {subtitle && <p className="text-sm text-slate-500 font-medium leading-relaxed">{subtitle}</p>}
       </div>
     </div>
   );
@@ -739,12 +735,13 @@ function Field({
   icon,
 }) {
   const IconComponent = icon;
-  
+
   return (
     <label className={`block ${className}`}>
-      <span className="mb-1.5 block text-sm font-medium text-slate-700 flex items-center gap-1.5">
-        {IconComponent && <IconComponent className="h-4 w-4 text-violet-500" />}
-        {label} {required && <span className="text-red-500">*</span>}
+      <span className="mb-2 block text-sm font-medium text-slate-700 flex items-center gap-1.5 leading-normal">
+        {IconComponent && <IconComponent className="h-4 w-4 text-violet-500 shrink-0" />}
+        <span className="truncate">{label}</span>
+        {required && <span className="text-red-500">*</span>}
       </span>
       <div className="relative">
         {IconComponent && (
@@ -759,7 +756,7 @@ function Field({
           onChange={onChange}
           placeholder={placeholder}
           required={required}
-          className={`block w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none ring-transparent transition-all duration-200 placeholder:text-slate-400 hover:border-violet-300 hover:shadow-md focus:border-violet-500 focus:ring-4 focus:ring-violet-500/30 font-medium ${icon ? 'pl-10' : ''}`}
+          className={`block w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none ring-transparent transition-all duration-200 placeholder:text-slate-400 hover:border-violet-300 hover:shadow-md focus:border-violet-500 focus:ring-4 focus:ring-violet-500/30 font-medium leading-normal ${icon ? 'pl-10' : ''}`}
         />
       </div>
     </label>
@@ -777,9 +774,9 @@ function PasswordField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-slate-700 flex items-center gap-1.5">
-        <LockKeyhole className="h-4 w-4 text-violet-500" />
-        {label}
+      <span className="mb-2 block text-sm font-medium text-slate-700 flex items-center gap-1.5 leading-normal">
+        <LockKeyhole className="h-4 w-4 text-violet-500 shrink-0" />
+        <span className="truncate">{label}</span>
       </span>
       <div className="relative">
         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
@@ -791,7 +788,7 @@ function PasswordField({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className="block w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 pl-10 pr-10 text-slate-900 shadow-sm outline-none ring-transparent transition-all duration-200 placeholder:text-slate-400 hover:border-violet-300 hover:shadow-md focus:border-violet-500 focus:ring-4 focus:ring-violet-500/30 font-medium"
+          className="block w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 pl-10 pr-10 text-slate-900 shadow-sm outline-none ring-transparent transition-all duration-200 placeholder:text-slate-400 hover:border-violet-300 hover:shadow-md focus:border-violet-500 focus:ring-4 focus:ring-violet-500/30 font-medium leading-normal"
         />
         <button
           type="button"

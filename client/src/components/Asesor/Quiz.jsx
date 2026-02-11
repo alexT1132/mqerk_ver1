@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom"; // Portal para modales
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Plus,
@@ -361,6 +362,17 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
     };
   }, []); // Sin dependencias para evitar el warning - usamos mounted flag y funciones de setState con callbacks
 
+  // Bloquear scroll del body cuando hay modales abiertas
+  useEffect(() => {
+    if (previewOpen || resultsOpen || reviewOpen || confirmModal.open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [previewOpen, resultsOpen, reviewOpen, confirmModal.open]);
 
 
   // Función para cargar quizzes (extraída para reutilizar)
@@ -1135,30 +1147,30 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
 
       {/* Preview modal */}
       {
-        previewOpen && (
-          <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-900/65 backdrop-blur-md p-4 sm:p-6 lg:p-8 overflow-y-auto animate-in fade-in duration-300">
-            <div className="w-full max-w-4xl max-h-[85vh] mt-10 flex flex-col bg-white rounded-3xl shadow-2xl border border-slate-200/50 overflow-hidden animate-in zoom-in-95 duration-300">
-              {/* Header premium */}
-              <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 border-b border-slate-100">
+        previewOpen && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
                 <div className="flex items-center gap-3">
-                  <div className="grid place-items-center size-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg">
-                    <Eye className="size-5" />
+                  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg">
+                    <Eye className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900 leading-tight">Vista previa</h3>
-                    <p className="text-xs text-slate-500 font-medium">Previsualización del contenido para estudiantes</p>
+                    <h3 className="text-lg font-bold text-slate-900">Vista previa</h3>
+                    <p className="text-sm text-slate-600 mt-0.5">Previsualización del contenido</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setPreviewOpen(false)}
-                  className="rounded-xl p-2 text-slate-400 hover:bg-white hover:text-slate-600 transition-all hover:rotate-90 duration-300"
+                  className="rounded-xl p-2 text-slate-500 hover:bg-white/80 hover:text-slate-700 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              {/* Contenido con scroll optimizado */}
-              <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar bg-slate-50/30">
+              {/* Contenido con scroll */}
+              <div className="flex-1 overflow-y-auto px-6 py-4 bg-slate-50/30">
                 {previewLoading && (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <div className="size-12 rounded-full border-4 border-slate-100 border-t-violet-600 animate-spin" />
@@ -1166,42 +1178,45 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                   </div>
                 )}
                 {!previewLoading && previewQuiz && (
-                  <div className="space-y-6">
-                    <header className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm ring-4 ring-slate-100/50">
-                      <h4 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-700 to-indigo-700">
+                  <div className="space-y-4">
+                    <header className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm">
+                      <h4 className="text-lg font-bold text-slate-900">
                         {previewQuiz.quiz?.titulo || 'Quiz'}
                       </h4>
                       <div className="mt-2 flex items-center gap-3">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-700">
+                        <span className="inline-flex items-center px-2.5 py-1 text-xs leading-5 font-bold rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
                           {Array.isArray(previewQuiz.preguntas) ? previewQuiz.preguntas.length : 0} Preguntas
                         </span>
-                        <span className="text-xs text-slate-400 font-medium whitespace-nowrap">Evaluación activa</span>
                       </div>
                     </header>
 
-                    <ol className="space-y-4">
+                    <ol className="space-y-3">
                       {previewQuiz.preguntas?.map((p, idx) => (
-                        <li key={p.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+                        <li key={p.id} className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm">
                           <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+                            <span className="text-xs font-bold text-slate-500 uppercase">
                               Pregunta {idx + 1}
                             </span>
-                            <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold">
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-semibold">
                               {p.tipo === 'opcion_multiple' ? 'Opción múltiple' : p.tipo === 'verdadero_falso' ? 'Verdadero/Falso' : 'Respuesta corta'} • {p.puntos || 1} pt{(p.puntos || 1) > 1 ? 's' : ''}
                             </span>
                           </div>
 
-                          <div className="text-base font-semibold text-slate-800 leading-relaxed mb-4 overflow-x-auto pb-1">
+                          <div className="text-sm font-semibold text-slate-900 leading-relaxed mb-3">
                             <MathText text={p.enunciado || ''} />
                           </div>
 
                           {p.tipo === 'opcion_multiple' && (
                             <ul className="grid gap-2">
                               {p.opciones?.map((o) => (
-                                <li key={o.id} className={`flex items-center gap-3 rounded-xl border p-3.5 text-sm transition-all ${o.es_correcta ? 'border-emerald-200 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-100' : 'border-slate-200 bg-white text-slate-600'}`}>
-                                  <div className={`size-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${o.es_correcta ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300'}`}>
-                                    {o.es_correcta && <CheckCircle2 className="size-3 text-white" />}
-                                  </div>
+                                <li key={o.id} className={`flex items-center gap-2 rounded-lg border p-3 text-sm font-normal ${o.es_correcta ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-600'}`}>
+                                  {o.es_correcta ? (
+                                    <div className="size-5 rounded-full flex-shrink-0 flex items-center justify-center bg-emerald-500">
+                                      <CheckCircle2 className="size-4 text-white" />
+                                    </div>
+                                  ) : (
+                                    <div className="size-5 rounded-full flex-shrink-0 border-2 border-slate-300" />
+                                  )}
                                   <MathText text={o.texto || '—'} />
                                 </li>
                               ))}
@@ -1209,11 +1224,11 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                           )}
 
                           {p.tipo === 'verdadero_falso' && (
-                            <div className="flex gap-4">
+                            <div className="flex gap-3">
                               {['Verdadero', 'Falso'].map(val => {
                                 const isCorrect = p.opciones?.find(x => x.es_correcta)?.texto === val;
                                 return (
-                                  <div key={val} className={`flex-1 rounded-xl border p-3.5 text-center text-sm font-bold ${isCorrect ? 'border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm' : 'border-slate-100 bg-slate-50 opacity-60'}`}>
+                                  <div key={val} className={`flex-1 rounded-lg border p-3 text-center text-sm font-semibold ${isCorrect ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
                                     {val} {isCorrect && '✓'}
                                   </div>
                                 );
@@ -1222,9 +1237,9 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                           )}
 
                           {p.tipo === 'respuesta_corta' && (
-                            <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50 p-4">
-                              <span className="text-[10px] font-extrabold text-indigo-500 uppercase block mb-1">Respuesta correcta esperada</span>
-                              <div className="text-sm font-mono font-bold text-indigo-700">
+                            <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+                              <span className="text-[10px] font-bold text-indigo-600 uppercase block mb-1">Respuesta correcta</span>
+                              <div className="text-sm font-medium text-indigo-800">
                                 <MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} />
                               </div>
                             </div>
@@ -1238,14 +1253,15 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
 
 
             </div>
-          </div>
+          </div>,
+          document.body
         )
       }
 
       {/* Resultados modal */}
       {
-        resultsOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        resultsOpen && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
             <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col">
               {/* Header mejorado */}
               <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
@@ -1381,7 +1397,8 @@ export default function Quiz({ Icon = PlaySquare, title = "QUIZZES", }) {
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )
       }
 
@@ -1655,8 +1672,8 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, type = 
 
   const Icon = colors.icon;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 animate-in zoom-in-95 duration-200">
         <div className="p-6">
           <div className="flex items-start gap-4">
@@ -1691,7 +1708,8 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, type = 
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

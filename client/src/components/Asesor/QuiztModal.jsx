@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom"; // Portal para modales
 import { getMisEstudiantes } from "../../api/asesores.js";
 
-export default function SimulatorModal({ open, onClose, onCreate, areaTitle, areaId, initialForm = null, onFormChange = null }) {
+export default function QuiztModal({ open, onClose, onCreate, areaTitle, areaId, initialForm = null, onFormChange = null }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [gruposAsesor, setGruposAsesor] = useState([]);
@@ -161,6 +162,18 @@ export default function SimulatorModal({ open, onClose, onCreate, areaTitle, are
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  // Bloquear scroll del body cuando la modal está abierta
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
   if (!open) return null;
 
   const canNext = step === 1 ? form.instrucciones.trim().length >= 10 : true;
@@ -235,9 +248,9 @@ export default function SimulatorModal({ open, onClose, onCreate, areaTitle, are
 
   const contentMaxW = step === 2 ? "max-w-xl sm:max-w-2xl" : "max-w-md sm:max-w-lg";
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       aria-modal="true"
       role="dialog"
       aria-labelledby="sim-modal-title"
@@ -245,96 +258,91 @@ export default function SimulatorModal({ open, onClose, onCreate, areaTitle, are
         if (!e.target.closest("[data-modal]")) onClose?.();
       }}
     >
-      {/* Overlay */}
-      <div className="fixed inset-0 bg-slate-900/55 backdrop-blur-[2px] -z-10" aria-hidden="true" />
-
-      {/* Envuelve para centrar verticalmente en viewport; en pantallas bajas el overlay hace scroll */}
-      <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-center pb-10 py-2">
-        {/* Content: max-height para pantallas con poca altura (ej. 15.6" alto reducido) */}
-        <div
-          data-modal
-          className={`relative w-full ${contentMaxW} rounded-2xl bg-white shadow-xl ring-1 ring-black/5 max-h-[calc(100vh-160px)] overflow-hidden flex flex-col`}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between gap-3 border-b px-4 py-2.5 bg-gradient-to-r from-violet-50 to-indigo-50">
-            <div className="flex items-center gap-3">
-              <Stepper step={step} />
-              <div>
-                <h2
-                  id="sim-modal-title"
-                  className="text-sm font-semibold text-slate-900 sm:text-base"
-                >
-                  {step === 1 ? "Crear instrucciones" : "Información del quizt"}
-                </h2>
-                <p className="text-[11px] text-slate-500">Paso {step} de 2</p>
-              </div>
-            </div>
-
-            <button
-              ref={firstFocusable}
-              onClick={onClose}
-              className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500"
-              aria-label="Cerrar"
-            >
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
+      {/* Content: max-height para pantallas con poca altura */}
+      <div
+        data-modal
+        className={`relative w-full ${contentMaxW} rounded-2xl bg-white shadow-2xl border border-slate-200/80 max-h-[85vh] overflow-hidden flex flex-col`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 border-b px-4 py-2.5 bg-gradient-to-r from-violet-50 to-indigo-50">
+          <div className="flex items-center gap-3">
+            <Stepper step={step} />
+            <div>
+              <h2
+                id="sim-modal-title"
+                className="text-sm font-semibold text-slate-900 sm:text-base"
               >
-                <path d="M18 6 6 18M6 6l12 12" />
+                {step === 1 ? "Crear instrucciones" : "Información del quizt"}
+              </h2>
+              <p className="text-[11px] text-slate-500">Paso {step} de 2</p>
+            </div>
+          </div>
+
+          <button
+            ref={firstFocusable}
+            onClick={onClose}
+            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500"
+            aria-label="Cerrar"
+          >
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body: flex-1 min-h-0 para que haga scroll en pantallas bajas */}
+        <div className="flex-1 min-h-0 px-5 py-3 sm:px-6 sm:py-4 overflow-y-auto">
+          {step === 1 ? (
+            <StepOne form={form} setForm={setForm} />
+          ) : (
+            <StepTwo form={form} setForm={setForm} gruposAsesor={gruposAsesor} gruposLoading={gruposLoading} hasGrupos={hasGrupos} />
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between gap-3 border-t px-4 py-2.5 bg-white/90">
+          <button
+            onClick={() => (step === 1 ? onClose?.() : setStep(1))}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-500"
+          >
+            {step === 1 ? <>Cancelar</> : <>Atrás</>}
+          </button>
+
+          {step === 1 ? (
+            <button
+              disabled={!canNext}
+              onClick={() => setStep(2)}
+              className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-500"
+            >
+              Siguiente
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M7.293 14.707a1 1 0 0 1 0-1.414L10.586 10 7.293 6.707a1 1 0 1 1 1.414-1.414L13.414 10l-4.707 4.707a1 1 0 0 1-1.414 0Z" />
               </svg>
             </button>
-          </div>
-
-          {/* Body: flex-1 min-h-0 para que haga scroll en pantallas bajas */}
-          <div className="flex-1 min-h-0 px-5 py-3 sm:px-6 sm:py-4 overflow-y-auto">
-            {step === 1 ? (
-              <StepOne form={form} setForm={setForm} />
-            ) : (
-              <StepTwo form={form} setForm={setForm} gruposAsesor={gruposAsesor} gruposLoading={gruposLoading} hasGrupos={hasGrupos} />
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between gap-3 border-t px-4 py-2.5 bg-white/90">
+          ) : (
             <button
-              onClick={() => (step === 1 ? onClose?.() : setStep(1))}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              disabled={!canCreate || loading}
+              onClick={handleCreate}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              {step === 1 ? <>Cancelar</> : <>Atrás</>}
-            </button>
-
-            {step === 1 ? (
-              <button
-                disabled={!canNext}
-                onClick={() => setStep(2)}
-                className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-500"
-              >
-                Siguiente
+              {loading ? "Creando..." : "Crear quizt"}
+              {!loading && (
                 <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M7.293 14.707a1 1 0 0 1 0-1.414L10.586 10 7.293 6.707a1 1 0 1 1 1.414-1.414L13.414 10l-4.707 4.707a1 1 0 0 1-1.414 0Z" />
+                  <path d="M16.707 5.293a1 1 0 0 0-1.414 0L8 12.586 4.707 9.293a1 1 0 1 0-1.414 1.414L8 15.414l8.121-8.121a1 1 0 0 0 0-1.414Z" />
                 </svg>
-              </button>
-            ) : (
-              <button
-                disabled={!canCreate || loading}
-                onClick={handleCreate}
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                {loading ? "Creando..." : "Crear quizt"}
-                {!loading && (
-                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M16.707 5.293a1 1 0 0 0-1.414 0L8 12.586 4.707 9.293a1 1 0 1 0-1.414 1.414L8 15.414l8.121-8.121a1 1 0 0 0 0-1.414Z" />
-                  </svg>
-                )}
-              </button>
-            )}
-          </div>
+              )}
+            </button>
+          )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

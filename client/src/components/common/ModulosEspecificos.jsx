@@ -46,7 +46,7 @@ function SectionBadge({ title, subtitle, onBack, total, onRefresh, isRefreshing 
         </div>
 
         <div className="flex flex-col">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 uppercase">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 uppercase pb-2 pr-2">
             {title || "Módulos específicos"}
           </h2>
           <div className="mt-2 flex gap-2">
@@ -98,7 +98,7 @@ function AreaCard({ item, onOpenSolicitudes, badgeCount, to, state }) {
 
   return (
     <article
-      className="group relative overflow-hidden rounded-[2.5rem] p-7 sm:p-8 shadow-lg bg-white border-2 border-slate-900 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+      className="group relative overflow-hidden rounded-[2rem] p-5 sm:p-6 shadow-lg bg-white border-2 border-slate-900 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 flex flex-col"
     >
       {/* Tint de fondo */}
       <div className={`pointer-events-none absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br ${tintColor} opacity-50 group-hover:opacity-70 transition-opacity duration-300`} />
@@ -107,52 +107,52 @@ function AreaCard({ item, onOpenSolicitudes, badgeCount, to, state }) {
       <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/10 group-hover:to-transparent transition-all duration-300" />
 
       {/* Contenedor del Icono con Glow */}
-      <div className="relative w-16 h-16 mb-6">
-        <div className={`absolute inset-0 blur-2xl opacity-60 bg-gradient-to-br ${gradientClasses} rounded-3xl group-hover:opacity-80 transition-opacity duration-300`} />
-        <div className={`relative w-16 h-16 rounded-3xl grid place-items-center text-white shadow-xl ring-4 ring-white/50 bg-gradient-to-br ${gradientClasses}`}>
-          <div className="scale-125">
+      <div className="relative w-14 h-14 mb-4">
+        <div className={`absolute inset-0 blur-2xl opacity-60 bg-gradient-to-br ${gradientClasses} rounded-2xl group-hover:opacity-80 transition-opacity duration-300`} />
+        <div className={`relative w-14 h-14 rounded-2xl grid place-items-center text-white shadow-xl ring-2 ring-white/50 bg-gradient-to-br ${gradientClasses}`}>
+          <div className="scale-110">
             {Icon ? (
-              React.isValidElement(Icon) ? Icon : <Icon className="w-6 h-6" />
+              React.isValidElement(Icon) ? Icon : <Icon className="w-5 h-5" />
             ) : (
-              <IconBook className="w-6 h-6" />
+              <IconBook className="w-5 h-5" />
             )}
           </div>
         </div>
 
         {/* Badge de solicitudes */}
         {badgeCount > 0 && (
-          <div className="absolute -top-3 -right-3 z-20 flex min-h-[1.5rem] min-w-[1.5rem] w-auto items-center justify-center rounded-full bg-rose-500 border-2 border-white px-1.5 text-[10px] font-bold text-white shadow-lg animate-pulse">
+          <div className="absolute -top-2 -right-2 z-20 flex min-h-[1.25rem] min-w-[1.25rem] w-auto items-center justify-center rounded-full bg-rose-500 border-2 border-white px-1 text-[9px] font-bold text-white shadow-lg animate-pulse">
             {badgeCount > 99 ? '99+' : badgeCount}
           </div>
         )}
       </div>
 
-      <h3 className="text-xl sm:text-2xl font-bold leading-tight text-slate-900 min-h-[3rem]">
+      <h3 className="text-lg sm:text-xl font-bold leading-tight text-slate-900 min-h-[2.5rem]">
         {title}
       </h3>
-      <p className="mt-2 text-sm text-slate-600 font-medium leading-relaxed mb-8 h-10 overflow-hidden line-clamp-2">
+      <p className="mt-2 text-sm text-slate-600 font-medium leading-relaxed mb-4 h-10 overflow-hidden line-clamp-2">
         {desc}
       </p>
 
-      <div className="mt-auto flex items-center gap-3">
+      <div className="mt-auto flex items-center gap-2">
         <Link
           to={to}
           state={state}
-          className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl group"
+          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 hover:scale-[1.02] active:scale-95 shadow-md hover:shadow-lg group"
         >
-          Explorar área
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          Explorar
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
         </Link>
 
         {/* Botón de solicitudes integrado discretamente */}
         <button
           onClick={onOpenSolicitudes}
-          className="relative flex h-11 w-11 items-center justify-center rounded-xl border-2 border-slate-200 bg-white text-slate-400 hover:text-slate-900 hover:border-slate-900 transition-all duration-200 active:scale-95 shadow-sm"
+          className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-slate-900 hover:border-slate-900 transition-all duration-200 active:scale-95 shadow-sm"
           title="Ver solicitudes"
         >
-          <MessageSquare className="size-5" />
+          <MessageSquare className="size-4" />
           {badgeCount > 0 && (
-            <div className="absolute -top-3 -right-3 z-20 flex min-h-[1.5rem] min-w-[1.5rem] w-auto items-center justify-center rounded-full bg-rose-500 border-2 border-white px-1.5 text-[10px] font-bold text-white shadow-lg animate-pulse">
+            <div className="absolute -top-2 -right-2 z-20 flex min-h-[1.25rem] min-w-[1.25rem] w-auto items-center justify-center rounded-full bg-rose-500 border-2 border-white px-1 text-[9px] font-bold text-white shadow-lg animate-pulse">
               {badgeCount > 99 ? '99+' : badgeCount}
             </div>
           )}
@@ -172,7 +172,7 @@ export default function ModulosEspecificos({
 }) {
   const navigate = useNavigate();
   const [openSolicitudes, setOpenSolicitudes] = useState(false);
-  const [selectedAreaId, setSelectedAreaId] = useState(null);
+  const [selectedAreaId, setNameAreaId] = useState(null);
   const [selectedAreaName, setSelectedAreaName] = useState(null);
   const [nameToArea, setNameToArea] = useState({});
   const [pendingCounts, setPendingCounts] = useState({});
@@ -337,11 +337,11 @@ export default function ModulosEspecificos({
     const area = _findArea(item);
 
     if (area?.id) {
-      setSelectedAreaId(area.id);
+      setNameAreaId(area.id);
       setSelectedAreaName(area.nombre);
     } else {
 
-      setSelectedAreaId(null);
+      setNameAreaId(null);
       setSelectedAreaName(_getAreaKey(item));
     }
     setOpenSolicitudes(true);
@@ -420,7 +420,7 @@ export default function ModulosEspecificos({
         isRefreshing={isRefreshing}
       />
 
-      <div className="mx-auto max-w-8xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+      <div className="mx-auto max-w-8xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 sm:gap-8">
         {items.map((item, i) => {
           const link = _buildAccessLink(item);
           const { to, state } = normalizeToState(link);

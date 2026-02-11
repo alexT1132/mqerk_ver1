@@ -11,12 +11,12 @@ export default function CursoBienvenida() {
 
   // Prioridad: 1) state (click en selección), 2) localStorage (curso previamente seleccionado)
   const nombreFromState = location.state?.curso ?? null;
-  
+
   // Cargar curso desde localStorage como respaldo si no hay en state
   useEffect(() => {
     if (nombreFromState) {
       setNombreCurso(nombreFromState);
-      try { localStorage.setItem("cursoSeleccionado", nombreFromState); } catch {}
+      try { localStorage.setItem("cursoSeleccionado", nombreFromState); } catch { }
     } else {
       try {
         const cursoGuardado = localStorage.getItem("cursoSeleccionado");
@@ -38,18 +38,18 @@ export default function CursoBienvenida() {
         setNombreCurso(e.newValue);
       }
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
-    
+
     const checkInterval = setInterval(() => {
       try {
         const current = localStorage.getItem("cursoSeleccionado");
         if (current && current !== nombreCurso) {
           setNombreCurso(current);
         }
-      } catch {}
+      } catch { }
     }, 1000);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(checkInterval);
@@ -77,7 +77,7 @@ export default function CursoBienvenida() {
               <p className="text-xs uppercase tracking-widest text-violet-700 font-extrabold">Dashboard del curso</p>
             </div>
           </div>
-          
+
           <div className="mt-2 mb-6">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-3 tracking-tight leading-tight">
               <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.1', paddingBottom: '2px' }}>
@@ -109,13 +109,13 @@ export default function CursoBienvenida() {
       {/* Contenido Principal */}
       <main className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-8 lg:py-12 relative z-10" aria-labelledby="panel-title">
         <h2 id="panel-title" className="sr-only">Panel del asesor</h2>
-        
+
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
             {/* Sección Principal - Izquierda */}
             <section className="space-y-6">
               {/* Panel de Bienvenida Mejorado */}
-              <DashboardCard 
+              <DashboardCard
                 className="bg-gradient-to-br from-violet-500 via-indigo-500 to-purple-500 border-2 border-violet-400 shadow-2xl ring-4 ring-violet-200/50"
               >
                 <div className="flex items-start gap-4">
@@ -125,7 +125,7 @@ export default function CursoBienvenida() {
                   <div className="flex-1">
                     <h3 className="text-xl font-extrabold text-white mb-2">¡Bienvenido al dashboard del curso!</h3>
                     <p className="text-base text-white/90 leading-relaxed font-bold">
-                      Desde aquí podrás acceder al temario, materiales, estudiantes y próximas sesiones. 
+                      Desde aquí podrás acceder al temario, materiales, estudiantes y próximas sesiones.
                       Explora todas las opciones disponibles para gestionar tu curso de manera eficiente.
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -142,7 +142,7 @@ export default function CursoBienvenida() {
 
               {/* Tarjetas de Acceso Rápido */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <DashboardCard 
+                <DashboardCard
                   title="Grupos asignados"
                   actions={
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-md ring-2 ring-violet-200">
@@ -162,7 +162,7 @@ export default function CursoBienvenida() {
                   </Link>
                 </DashboardCard>
 
-                <DashboardCard 
+                <DashboardCard
                   title="Materiales y recursos"
                   actions={
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-md ring-2 ring-violet-200">
@@ -184,7 +184,7 @@ export default function CursoBienvenida() {
               </div>
 
               {/* Tarjeta de Estadísticas Rápidas */}
-              <DashboardCard 
+              <DashboardCard
                 className="bg-gradient-to-br from-purple-100 via-violet-100 to-indigo-100 border-2 border-purple-300 ring-2 ring-purple-200/50"
               >
                 <h3 className="text-base font-extrabold text-purple-800 mb-4">Accesos rápidos</h3>
@@ -198,7 +198,7 @@ export default function CursoBienvenida() {
                     </div>
                     <span className="text-xs font-extrabold text-white text-center">Actividades</span>
                   </Link>
-                  
+
                   <Link
                     to="/asesor/feedback"
                     className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-indigo-400 to-purple-500 hover:from-indigo-500 hover:to-purple-600 border-2 border-indigo-300 hover:shadow-xl hover:scale-110 transition-all duration-200 group ring-2 ring-indigo-200"
@@ -208,7 +208,7 @@ export default function CursoBienvenida() {
                     </div>
                     <span className="text-xs font-extrabold text-white text-center">Feedback</span>
                   </Link>
-                  
+
                   <Link
                     to="/asesor/agenda"
                     className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-purple-400 to-pink-500 hover:from-purple-500 hover:to-pink-600 border-2 border-purple-300 hover:shadow-xl hover:scale-110 transition-all duration-200 group ring-2 ring-purple-200"
@@ -218,7 +218,7 @@ export default function CursoBienvenida() {
                     </div>
                     <span className="text-xs font-extrabold text-white text-center">Agenda</span>
                   </Link>
-                  
+
                   <Link
                     to="/asesor/simuladores"
                     className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 border-2 border-violet-400 hover:shadow-xl hover:scale-110 transition-all duration-200 group ring-2 ring-violet-300"
@@ -235,7 +235,7 @@ export default function CursoBienvenida() {
             {/* Sidebar - Derecha */}
             <aside className="space-y-6">
               {/* Próximas Sesiones */}
-              <DashboardCard 
+              <DashboardCard
                 title="Próximas sesiones"
                 actions={
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-md ring-2 ring-violet-200">
@@ -257,7 +257,7 @@ export default function CursoBienvenida() {
                       <div className="h-3 w-1/2 bg-violet-300/50 rounded animate-pulse"></div>
                     </div>
                   </div>
-                  
+
                   <div className="text-center py-6">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 mb-3 shadow-lg ring-4 ring-violet-200">
                       <Calendar className="h-8 w-8 text-white" />
@@ -273,7 +273,7 @@ export default function CursoBienvenida() {
               </DashboardCard>
 
               {/* Información del Curso */}
-              <DashboardCard 
+              <DashboardCard
                 className="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 border-2 border-indigo-300 ring-2 ring-indigo-200/50"
               >
                 <div className="flex items-center gap-3 mb-4">

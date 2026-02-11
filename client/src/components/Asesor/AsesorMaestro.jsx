@@ -10,8 +10,8 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
 
   return (
     <Link
-      to="/asesor/dashboard"                    
-      state={{ curso: title }}              
+      to="/asesor/dashboard"
+      state={{ curso: title }}
       onClick={() => {
         if (onSelect) onSelect(title);
         localStorage.setItem("cursoSeleccionado", title);
@@ -36,13 +36,13 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
       {/* Contenedor del icono */}
       <div className={[
         "relative z-10 flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 lg:h-16 lg:w-16 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl transition-all duration-500 flex-shrink-0",
-        selected 
-          ? "ring-2 ring-violet-400/60 scale-105 shadow-violet-500/30" 
+        selected
+          ? "ring-2 ring-violet-400/60 scale-105 shadow-violet-500/30"
           : "ring-1 ring-violet-200/50 group-hover:ring-violet-300/60 group-hover:scale-105 group-hover:shadow-lg"
       ].join(" ")}>
         {!imageError && image ? (
-          <img 
-            src={image} 
+          <img
+            src={image}
             alt={title}
             onError={() => setImageError(true)}
             className="h-full w-full object-cover"
@@ -50,15 +50,15 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
         ) : (
           <div className={[
             "h-full w-full flex items-center justify-center relative",
-            selected 
-              ? "bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600" 
+            selected
+              ? "bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600"
               : "bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500 group-hover:from-violet-600 group-hover:via-purple-600 group-hover:to-indigo-600"
           ].join(" ")}>
             {/* Efecto de brillo interno */}
             <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent"></div>
-            <GraduationCap 
+            <GraduationCap
               size={20}
-              className="text-white drop-shadow-xl relative z-10 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8" 
+              className="text-white drop-shadow-xl relative z-10 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8"
             />
           </div>
         )}
@@ -67,8 +67,8 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
       {/* Título del curso */}
       <h3 className={[
         "relative z-10 text-[10px] sm:text-xs md:text-sm lg:text-base font-extrabold text-center transition-all duration-300 leading-tight px-1 sm:px-1.5 md:px-2 break-words w-full line-clamp-2",
-        selected 
-          ? "text-violet-800 drop-shadow-sm" 
+        selected
+          ? "text-violet-800 drop-shadow-sm"
           : "text-violet-700 group-hover:text-violet-600 font-bold"
       ].join(" ")}>
         {title}
@@ -195,11 +195,11 @@ export default function AsesorDashboard({
 
   const handleSelect = (title) => {
     setSelected(title);
-    try { localStorage.setItem("cursoSeleccionado", title); } catch {}
+    try { localStorage.setItem("cursoSeleccionado", title); } catch { }
   };
 
-  const cursosMostrar = loading 
-    ? (courses || []) 
+  const cursosMostrar = loading
+    ? (courses || [])
     : (cursosAsignados.length > 0 ? cursosAsignados : (courses || []));
 
   useEffect(() => {
@@ -208,7 +208,7 @@ export default function AsesorDashboard({
       const cursoExiste = cursosMostrar.some(c => c.title === cursoGuardado);
       if (cursoGuardado && !cursoExiste) {
         setSelected(null);
-        try { localStorage.removeItem("cursoSeleccionado"); } catch {}
+        try { localStorage.removeItem("cursoSeleccionado"); } catch { }
       }
     }
   }, [loading, cursosMostrar, selected]);
@@ -232,7 +232,7 @@ export default function AsesorDashboard({
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] md:w-[450px] md:h-[450px] lg:w-[500px] lg:h-[500px] bg-gradient-to-br from-purple-300/30 to-pink-300/30 rounded-full blur-3xl pointer-events-none"></div>
 
       {/* Contenido Principal */}
-      <div className="relative z-10 w-full max-w-full px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 2xl:px-16 pt-6 sm:pt-8 md:pt-10 lg:pt-12 xl:pt-16 pb-8 sm:pb-12">
+      <div className="relative z-10 w-full max-w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-8 sm:pb-12">
         {/* Header mejorado */}
         <div className="mb-6 sm:mb-8 md:mb-10 lg:mb-12 space-y-4 sm:space-y-5 md:space-y-6">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-wrap">
@@ -243,10 +243,10 @@ export default function AsesorDashboard({
               <span className="text-xs sm:text-sm font-extrabold text-violet-800 uppercase tracking-wider">Panel de Asesor</span>
             </div>
           </div>
-          
+
           <div className="space-y-2 sm:space-y-3 md:space-y-4">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-extrabold mb-2 sm:mb-3 tracking-tight leading-tight">
-              <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.1', paddingBottom: '2px' }}>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 sm:mb-3 tracking-tight leading-tight">
+              <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.2', paddingBottom: '4px' }}>
                 Bienvenido de vuelta
               </span>
             </h1>
@@ -283,20 +283,20 @@ export default function AsesorDashboard({
               </div>
             )}
           </div>
-          
+
           {/* Grid de cursos */}
           {loading && cursosMostrar.length === 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 lg:gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="w-full h-[140px] sm:h-[150px] md:h-[160px] animate-pulse rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-200 to-indigo-200 border-2 border-violet-300 shadow-lg"></div>
               ))}
             </div>
           ) : cursosMostrar.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 lg:gap-5" style={{ gridAutoRows: 'minmax(140px, auto)' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6" style={{ gridAutoRows: 'minmax(140px, auto)' }}>
               {cursosMostrar.map((c, i) => (
                 <div key={c.id ?? i} className="w-full" style={{ minHeight: '140px' }}>
-                  <CourseChip 
-                    title={c.title} 
+                  <CourseChip
+                    title={c.title}
                     image={c.image}
                     selected={selected === c.title}
                     onSelect={handleSelect}
@@ -310,7 +310,7 @@ export default function AsesorDashboard({
               <div className="absolute inset-0 bg-gradient-to-br from-violet-200/30 via-purple-200/20 to-indigo-200/30"></div>
               <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 bg-gradient-to-br from-violet-400/30 to-indigo-400/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
               <div className="absolute bottom-0 left-0 w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 bg-gradient-to-br from-indigo-400/30 to-purple-400/30 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-              
+
               <div className="relative z-10">
                 <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 mb-4 sm:mb-5 md:mb-6 shadow-xl ring-2 sm:ring-4 ring-violet-200">
                   <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 text-white" />

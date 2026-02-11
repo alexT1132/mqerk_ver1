@@ -210,17 +210,17 @@ export default function Topbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 text-white bg-gradient-to-r from-[#3d18c3] to-[#4816bf] shadow-md supports-[backdrop-filter]:backdrop-blur">
-      <div className="w-full flex items-center justify-between px-3 sm:px-4 h-14">
+      <div className="w-full flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 h-14 md:h-16 lg:h-20 transition-all duration-300">
         {/* Izquierda */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Logo (visible siempre, más pequeño en móvil) */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <img src={logo} alt="MQerKAcademy" className="w-12 sm:w-16" />
+            <img src={logo} alt="MQerKAcademy" className="w-10 sm:w-14 md:w-16 lg:w-20 transition-all duration-300" />
           </div>
         </div>
 
         {/* Centro: título (oculto en móvil, visible desde sm) */}
-        <h1 className="hidden sm:block text-xs sm:text-sm md:text-base font-medium text-center select-none tracking-wide flex-1 px-2">
+        <h1 className="hidden sm:block text-sm md:text-base lg:text-xl font-medium text-center select-none tracking-wide flex-1 px-4 leading-tight">
           Asesores Especializados en la Enseñanza de las Ciencias y Tecnología
         </h1>
 
@@ -236,9 +236,9 @@ export default function Topbar() {
             <button
               onClick={() => setNotificationsOpen(!notificationsOpen)}
               aria-label="Notificaciones"
-              className="relative rounded-full p-1.5 sm:p-2 hover:bg-white/10 transition-colors"
+              className="relative rounded-full p-2 lg:p-3 hover:bg-white/10 transition-colors"
             >
-              <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Bell className="h-5 w-5 md:h-6 md:w-6" />
               {unreadCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 inline-flex items-center justify-center h-4 w-4 sm:h-5 sm:w-5 text-[10px] sm:text-xs font-bold text-white bg-red-500 rounded-full ring-2 ring-violet-700">
                   {unreadCount > 99 ? '99+' : unreadCount}
@@ -366,7 +366,7 @@ export default function Topbar() {
                   src={photoUrl}
                   alt="Avatar"
                   key={photoUrl} // ✅ Forzar re-render cuando cambia
-                  className="w-8 h-8 sm:w-9 sm:h-9 object-cover rounded-full ring-2 ring-white/30"
+                  className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 object-cover rounded-full ring-2 ring-white/30"
                   onError={(e) => {
                     // ✅ Si falla, ocultar y mostrar placeholder
                     e.target.style.display = 'none';

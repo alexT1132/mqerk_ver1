@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom';
  * Maneja la estructura base con header, sidebar y contenido principal
  * Incluye gestión de notificaciones y navegación responsive
  */
-export function Layout({ children, HeaderComponent, SideBarDesktopComponent, SideBarSmComponent, backgroundClassName = 'bg-white', contentClassName = '' }) {
+export function Layout({ children, HeaderComponent, SideBarDesktopComponent, SideBarSmComponent, backgroundClassName = 'bg-white', contentClassName = '', sidebarProps = {} }) {
   // Control del menú móvil
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // Control del sidebar en desktop
@@ -123,8 +123,8 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
 
       {/* Sidebar para pantallas grandes */}
       {SideBarDesktopComponent && (
-        <div className="fixed left-0 top-16 bottom-0 z-40 hidden sm:block">
-          <SideBarDesktopComponent setDesktopSidebarOpen={setIsDesktopSidebarOpen} />
+        <div className="fixed left-0 top-14 md:top-16 lg:top-20 bottom-0 z-40 hidden sm:block transition-all duration-300">
+          <SideBarDesktopComponent {...sidebarProps} setDesktopSidebarOpen={setIsDesktopSidebarOpen} />
         </div>
       )}
 
@@ -149,7 +149,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       )}
 
       {/* Sidebar para móvil */}
-      {SideBarSmComponent && <SideBarSmComponent isMenuOpen={isMenuOpen} closeMenu={closeMenu} />}
+      {SideBarSmComponent && <SideBarSmComponent {...sidebarProps} isMenuOpen={isMenuOpen} closeMenu={closeMenu} />}
 
       {/* Botón hamburguesa flotante (solo móvil) */}
       {/* Mostrar si hay sidebar Y (no es ruta de cursos O hay curso seleccionado) */}

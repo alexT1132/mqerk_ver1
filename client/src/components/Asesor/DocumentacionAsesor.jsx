@@ -20,6 +20,8 @@ import {
   CheckCircle,
   AlertCircle,
   Loader,
+  User,
+  Briefcase
 } from "lucide-react";
 import { getDocumentos, uploadDocumento, downloadDocumento, deleteDocumento } from "../../api/documentos.js";
 
@@ -61,7 +63,7 @@ const Pill = ({ icon: Icon, label, hint, status = "pending", documento, onUpload
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     // Validar tamaño del archivo (10MB)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
@@ -73,7 +75,7 @@ const Pill = ({ icon: Icon, label, hint, status = "pending", documento, onUpload
       e.target.value = '';
       return;
     }
-    
+
     // Validar tipo de archivo
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!allowedTypes.includes(file.type)) {
@@ -85,13 +87,13 @@ const Pill = ({ icon: Icon, label, hint, status = "pending", documento, onUpload
       e.target.value = '';
       return;
     }
-    
+
     onShowModal({
       type: 'loading',
       title: 'Subiendo documento',
       message: `Subiendo ${file.name}...`
     });
-    
+
     try {
       await onUpload(documento.id, file);
       onShowModal({
@@ -236,9 +238,9 @@ const Card = ({ title, items, onUpload, onDownload, esLineamientos = false, onSh
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {items.map((it) => (
-        <Pill 
-          key={it.id || it.label} 
-          {...it} 
+        <Pill
+          key={it.id || it.label}
+          {...it}
           onUpload={onUpload}
           onDownload={onDownload}
           esLineamiento={esLineamientos}
@@ -305,22 +307,21 @@ const CustomModal = ({ isOpen, onClose, type, title, message }) => {
         >
           <X className="h-5 w-5" />
         </button>
-        
+
         <div className="flex flex-col items-center text-center">
           <div className={`inline-flex items-center justify-center h-20 w-20 rounded-full ${iconBgClass} mb-5 shadow-xl ring-4 ring-white/50`}>
             <Icon className={`h-10 w-10 ${iconClass}`} />
           </div>
           <h3 className="text-2xl font-extrabold text-slate-800 mb-3">{title}</h3>
           <p className="text-sm text-slate-600 font-medium mb-8">{message}</p>
-          
+
           {type !== 'loading' && (
             <button
               onClick={onClose}
-              className={`px-6 py-3 rounded-xl font-bold transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
-                type === 'success'
-                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
-                  : 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white'
-              }`}
+              className={`px-6 py-3 rounded-xl font-bold transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${type === 'success'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
+                : 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white'
+                }`}
             >
               Cerrar
             </button>
@@ -335,6 +336,7 @@ const CustomModal = ({ isOpen, onClose, type, title, message }) => {
 
 export default function DocumentCenter() {
   const [documentos, setDocumentos] = useState({ documento: [], contrato: [], lineamiento: [] });
+  const [activeTab, setActiveTab] = useState('personales');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modal, setModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
@@ -431,36 +433,72 @@ export default function DocumentCenter() {
         {/* Encabezado general */}
         <TitleBar icon={FileUp} text="Documentación" />
 
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Sección Documentación */}
-          <Card 
-            title="Documentos" 
-            items={documentos.documento} 
-            onUpload={handleUpload}
-            onDownload={handleDownload}
-            onShowModal={showModal}
-          />
-
-          {/* Sección Contrato Laboral (a la derecha en desktop) */}
-          <Card 
-            title="Contrato laboral" 
-            items={documentos.contrato}
-            onUpload={handleUpload}
-            onDownload={handleDownload}
-            onShowModal={showModal}
-          />
+        {/* Tabs de navegación */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-slate-100/80 p-1.5 rounded-2xl flex items-center gap-1 shadow-inner ring-1 ring-slate-200/50">
+            <button
+              onClick={() => setActiveTab('personales')}
+              className={`
+                flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-200
+                ${activeTab === 'personales'
+                  ? 'bg-white text-violet-600 shadow-md ring-1 ring-slate-100'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                }
+              `}
+            >
+              <User className="h-4 w-4" />
+              Documentos Personales
+            </button>
+            <button
+              onClick={() => setActiveTab('laborales')}
+              className={`
+                flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-200
+                ${activeTab === 'laborales'
+                  ? 'bg-white text-indigo-600 shadow-md ring-1 ring-slate-100'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                }
+              `}
+            >
+              <Briefcase className="h-4 w-4" />
+              Documentos Laborales
+            </button>
+          </div>
         </div>
 
-        {/* Sección Lineamientos (full width) */}
         <div className="mt-6">
-          <Card 
-            title="Lineamientos" 
-            items={documentos.lineamiento}
-            onUpload={handleUpload}
-            onDownload={handleDownload}
-            esLineamientos={true}
-            onShowModal={showModal}
-          />
+          {activeTab === 'personales' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <Card
+                title="Documentos Personales"
+                items={documentos.documento}
+                onUpload={handleUpload}
+                onDownload={handleDownload}
+                onShowModal={showModal}
+              />
+            </div>
+          )}
+
+          {activeTab === 'laborales' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card
+                  title="Contrato laboral"
+                  items={documentos.contrato}
+                  onUpload={handleUpload}
+                  onDownload={handleDownload}
+                  onShowModal={showModal}
+                />
+                <Card
+                  title="Lineamientos"
+                  items={documentos.lineamiento}
+                  onUpload={handleUpload}
+                  onDownload={handleDownload}
+                  esLineamientos={true}
+                  onShowModal={showModal}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
