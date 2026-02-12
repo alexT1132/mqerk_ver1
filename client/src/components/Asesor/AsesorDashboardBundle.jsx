@@ -103,8 +103,11 @@ function AsesorLayout({ children }) {
     } catch { }
   }, [location.pathname, location.state?.curso]);
 
-  // Solo mostrar sidebar si NO estamos en la página de inicio Y hay un curso seleccionado
-  const mostrarSidebar = !isInicioPage && cursoSeleccionado;
+  // Verificar si es una página global que debe mostrar sidebar sin curso seleccionado
+  const isGlobalPage = ['/asesor/perfil', '/asesor/configuraciones', '/asesor/mis-pagos', '/asesor/chat'].some(path => location.pathname.startsWith(path));
+
+  // Solo mostrar sidebar si NO estamos en la página de inicio Y (hay un curso seleccionado O es una página global)
+  const mostrarSidebar = !isInicioPage && (cursoSeleccionado || isGlobalPage);
 
   // Estado para contadores de badge (ej. mensajes no leídos)
   const [counts, setCounts] = useState({ chat: 0 });

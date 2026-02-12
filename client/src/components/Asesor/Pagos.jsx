@@ -13,10 +13,10 @@ const MONTHS = [
 const fmtMoney = (n) =>
   typeof n === "number"
     ? n.toLocaleString("es-MX", {
-        style: "currency",
-        currency: "MXN",
-        maximumFractionDigits: 0,
-      })
+      style: "currency",
+      currency: "MXN",
+      maximumFractionDigits: 0,
+    })
     : n ?? "-";
 
 // Obtener nombre del tipo de servicio
@@ -51,12 +51,12 @@ const getWeeksInMonth = (year, monthIndex) => {
   const lastDay = new Date(year, monthIndex + 1, 0);
   const daysInMonth = lastDay.getDate();
   const startDay = firstDay.getDay(); // 0 = domingo, 1 = lunes, etc.
-  
+
   // Ajustar para que la semana empiece en lunes
   const offset = startDay === 0 ? 6 : startDay - 1;
   const totalDays = daysInMonth + offset;
   const weeks = Math.ceil(totalDays / 7);
-  
+
   return Math.min(weeks, 5); // Máximo 5 semanas
 };
 
@@ -94,7 +94,7 @@ export default function Pagos() {
   const [pagos, setPagos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   const currentDate = new Date();
   const [year, setYear] = useState(currentDate.getFullYear());
   const [month, setMonth] = useState(MONTHS[currentDate.getMonth()]);
@@ -133,23 +133,23 @@ export default function Pagos() {
       }
       return result;
     }
-    
+
     const result = {};
     for (let w = 1; w <= weeksInMonth; w++) {
       result[w] = [];
     }
-    
+
     // Calcular día de inicio del mes
     const firstDayOfMonth = new Date(year, monthIndex, 1);
     const dayOfWeek = firstDayOfMonth.getDay(); // 0 = domingo, 1 = lunes, etc.
     // Ajustar para que la semana empiece en lunes (0 = lunes, 6 = domingo)
     const offset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-    
+
     // Agrupar pagos por semana
     pagos.forEach(pago => {
       if (!pago.fecha_pago) return;
-      
+
       try {
         // Parsear fecha correctamente (puede venir como 'YYYY-MM-DD' o 'YYYY-MM-DDTHH:mm:ss')
         let fechaStr = String(pago.fecha_pago).trim();
@@ -159,43 +159,43 @@ export default function Pagos() {
         if (fechaStr.includes(' ')) {
           fechaStr = fechaStr.split(' ')[0];
         }
-        
+
         const [yearStr, monthStr, dayStr] = fechaStr.split('-');
         if (!yearStr || !monthStr || !dayStr) {
           console.warn('Formato de fecha inválido:', pago.fecha_pago);
           return;
         }
-        
+
         const fecha = new Date(parseInt(yearStr), parseInt(monthStr) - 1, parseInt(dayStr));
-        
+
         // Verificar que la fecha es válida
         if (isNaN(fecha.getTime())) {
           console.warn('Fecha inválida después de parsear:', pago.fecha_pago);
           return;
         }
-        
+
         // Verificar que la fecha pertenece al mes actual
         if (fecha.getFullYear() !== year || fecha.getMonth() !== monthIndex) {
           return;
         }
-        
+
         const dia = fecha.getDate();
-        
+
         // Determinar en qué semana cae el día
         // Calcular el día del año relativo al mes (día 1 = primer día del mes)
         // Luego calcular qué semana es basándose en que cada semana tiene 7 días
         const diaRelativo = dia - 1; // Día 1 = 0, Día 2 = 1, etc.
         const diaConOffset = diaRelativo + offset; // Ajustar por el día de la semana del primer día
         const semanaCalculada = Math.floor(diaConOffset / 7) + 1;
-        
+
         // Asegurar que la semana esté en el rango válido
         const semanaFinal = Math.max(1, Math.min(semanaCalculada, weeksInMonth));
-        
+
         if (!result[semanaFinal]) {
           result[semanaFinal] = [];
         }
         result[semanaFinal].push(pago);
-        
+
         // Log para depuración (solo en desarrollo)
         if (process.env.NODE_ENV === 'development') {
           console.log(`Pago ${pago.id_pago} (${dia}/${monthIndex + 1}/${year}) asignado a semana ${semanaFinal}`, {
@@ -212,7 +212,7 @@ export default function Pagos() {
         // Error procesando fecha de pago - se omite este pago del agrupamiento
       }
     });
-    
+
     return result;
   }, [pagos, year, monthIndex, weeksInMonth]);
 
@@ -235,7 +235,7 @@ export default function Pagos() {
       .reduce((sum, p) => sum + (p.ingreso_final || 0), 0);
     const totalHoras = rows
       .reduce((sum, p) => sum + (p.horas_trabajadas || 0), 0);
-    
+
     return {
       total,
       pagados,
@@ -254,7 +254,8 @@ export default function Pagos() {
   }, [month, weeksInMonth, week]);
 
   return (
-    <div className="w-full min-h-screen bg-white">
+    <div className="w-full min-h-screen relative">
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-8">

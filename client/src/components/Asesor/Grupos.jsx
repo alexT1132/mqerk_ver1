@@ -112,98 +112,112 @@ export default function Grupos() {
   }
 
   return (
-    <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-4 sm:py-6">
-      {/* Botón Volver */}
-      <div className="mb-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Volver
-        </button>
-      </div>
+    <div className="min-h-screen relative w-full overflow-x-hidden">
+      {/* Fondo fijo independiente del scroll */}
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
 
-      {/* Header */}
-      <div className="mb-4 sm:mb-6">
-        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-slate-900">Grupos</h2>
-        <p className="text-sm sm:text-base text-slate-600 mt-1.5">
-          Selecciona un grupo para ver sus actividades y estudiantes.
-        </p>
-      </div>
+      <div className="relative z-10 w-full px-4 sm:px-6 md:px-8 lg:px-12 py-4 sm:py-6">
+        {/* Botón Volver */}
+        <div className="mb-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Volver
+          </button>
+        </div>
 
-      {/* Grid de grupos - Responsive */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
-        {grupos.map((g) => {
-          const prefix = (g.id || g.nombre || "")[0]?.toLowerCase() || "m";
-          const theme = COLORS[prefix] || COLORS.m;
-          const grupoId = g.id || g.nombre || "";
-          const cantidad = g.cantidad_estudiantes || 0;
-          const subtitulo = labelFromId(grupoId);
+        {/* Header */}
+        <div className="mb-8 flex items-center gap-4">
+          <div className="p-4 rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 shadow-xl ring-4 ring-violet-200">
+            <Users className="size-8 sm:size-10 text-white" />
+          </div>
+          <div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-1 tracking-tight">
+              <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent inline-block pb-1" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
+                Grupos
+              </span>
+            </h2>
+            <p className="text-slate-600 text-sm sm:text-base font-medium">
+              Selecciona un grupo para ver sus actividades y estudiantes.
+            </p>
+          </div>
+        </div>
 
-          return (
-            <div
-              key={grupoId}
-              className="group relative w-full rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm hover:shadow-lg hover:border-slate-300 transition-all duration-200"
-            >
-              {/* Icono en gradiente */}
-              <div className="flex items-start gap-4 mb-4">
+        {/* Grid de grupos - Responsive */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+          {grupos.map((g) => {
+            const prefix = (g.id || g.nombre || "")[0]?.toLowerCase() || "m";
+            const theme = COLORS[prefix] || COLORS.m;
+            const grupoId = g.id || g.nombre || "";
+            const cantidad = g.cantidad_estudiantes || 0;
+            const subtitulo = labelFromId(grupoId);
+
+            return (
+              <div
+                key={grupoId}
+                className="group relative w-full rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm hover:shadow-lg hover:border-slate-300 transition-all duration-200"
+              >
+                {/* Icono en gradiente */}
+                <div className="flex items-start gap-4 mb-4">
+                  <div
+                    className={[
+                      "grid h-12 w-12 sm:h-14 sm:w-14 shrink-0 place-items-center rounded-xl text-white shadow-md",
+                      "bg-gradient-to-br", theme.from, theme.to,
+                      "ring-1 ring-white/30",
+                    ].join(" ")}
+                  >
+                    <UserIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="truncate text-lg sm:text-xl font-bold text-slate-900">
+                        {grupoId.toUpperCase()}
+                      </h3>
+                      {cantidad > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                          <Users className="h-3 w-3" />
+                          {cantidad}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm sm:text-base text-slate-600 font-medium">
+                      {subtitulo}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Información adicional */}
+                <div className="mb-4 pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span>Estudiantes activos</span>
+                    <span className="font-semibold text-slate-700">{cantidad}</span>
+                  </div>
+                </div>
+
+                {/* CTA Button */}
+                <button
+                  onClick={() => handleVerGrupo(grupoId)}
+                  className="w-full mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-indigo-700 hover:to-violet-700 transition-all duration-200 hover:shadow-md"
+                >
+                  <span>Ver grupo</span>
+                  <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+
+                {/* Borde suave al hover */}
                 <div
                   className={[
-                    "grid h-12 w-12 sm:h-14 sm:w-14 shrink-0 place-items-center rounded-xl text-white shadow-md",
-                    "bg-gradient-to-br", theme.from, theme.to,
-                    "ring-1 ring-white/30",
+                    "pointer-events-none absolute inset-0 rounded-2xl",
+                    "ring-0 ring-transparent group-hover:ring-2 group-hover:" + theme.ring,
+                    "transition-all duration-200",
                   ].join(" ")}
-                >
-                  <UserIcon className="w-6 h-6 sm:w-7 sm:h-7" />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="truncate text-lg sm:text-xl font-bold text-slate-900">
-                      {grupoId.toUpperCase()}
-                    </h3>
-                    {cantidad > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                        <Users className="h-3 w-3" />
-                        {cantidad}
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-1 text-sm sm:text-base text-slate-600 font-medium">
-                    {subtitulo}
-                  </p>
-                </div>
+                />
               </div>
-
-              {/* Información adicional */}
-              <div className="mb-4 pt-4 border-t border-slate-100">
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>Estudiantes activos</span>
-                  <span className="font-semibold text-slate-700">{cantidad}</span>
-                </div>
-              </div>
-
-              {/* CTA Button */}
-              <button
-                onClick={() => handleVerGrupo(grupoId)}
-                className="w-full mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-indigo-700 hover:to-violet-700 transition-all duration-200 hover:shadow-md"
-              >
-                <span>Ver grupo</span>
-                <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-              </button>
-
-              {/* Borde suave al hover */}
-              <div
-                className={[
-                  "pointer-events-none absolute inset-0 rounded-2xl",
-                  "ring-0 ring-transparent group-hover:ring-2 group-hover:" + theme.ring,
-                  "transition-all duration-200",
-                ].join(" ")}
-              />
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

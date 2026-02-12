@@ -6,10 +6,10 @@ import axios from '../../api/axios.js';
 const fmtMoney = (n) =>
   typeof n === "number"
     ? n.toLocaleString("es-MX", {
-        style: "currency",
-        currency: "MXN",
-        maximumFractionDigits: 0,
-      })
+      style: "currency",
+      currency: "MXN",
+      maximumFractionDigits: 0,
+    })
     : n ?? "-";
 
 export default function Reportes() {
@@ -88,7 +88,7 @@ export default function Reportes() {
   const { pagos: pagosStats, actividades, estudiantes, rendimiento } = stats;
 
   // Calcular máximo para gráficos
-  const maxIngresosMes = pagosStats.porMes.length > 0 
+  const maxIngresosMes = pagosStats.porMes.length > 0
     ? Math.max(...pagosStats.porMes.map(p => p.total))
     : 0;
 
@@ -97,7 +97,8 @@ export default function Reportes() {
     : 0;
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="w-full min-h-screen relative">
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-8">
@@ -107,7 +108,7 @@ export default function Reportes() {
             </div>
             <div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-tight">
-                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.1', paddingBottom: '2px' }}>
+                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
                   Reportes y Estadísticas
                 </span>
               </h1>
@@ -273,12 +274,11 @@ export default function Reportes() {
                     className="flex items-center justify-between p-4 bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl border-2 border-violet-200 hover:shadow-md transition-all"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
-                        idx === 0 ? 'bg-gradient-to-br from-amber-500 to-orange-600' :
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${idx === 0 ? 'bg-gradient-to-br from-amber-500 to-orange-600' :
                         idx === 1 ? 'bg-gradient-to-br from-slate-400 to-slate-600' :
-                        idx === 2 ? 'bg-gradient-to-br from-amber-700 to-amber-900' :
-                        'bg-gradient-to-br from-violet-500 to-indigo-600'
-                      }`}>
+                          idx === 2 ? 'bg-gradient-to-br from-amber-700 to-amber-900' :
+                            'bg-gradient-to-br from-violet-500 to-indigo-600'
+                        }`}>
                         {idx + 1}
                       </div>
                       <div>

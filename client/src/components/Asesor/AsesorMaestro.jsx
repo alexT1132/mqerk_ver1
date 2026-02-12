@@ -1,4 +1,4 @@
-// AsesorDashboard.jsx - Página de inicio con diseño mejorado
+// AsesorDashboard.jsx - Página de inicio
 import { Link } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import { BookOpen, GraduationCap, Sparkles, ArrowRight } from "lucide-react";
@@ -103,7 +103,7 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
 };
 
 /* ------------------------------------------------------------------ */
-/* Página Principal con Diseño Mejorado                               */
+/* Página Principal                    */
 /* ------------------------------------------------------------------ */
 
 export default function AsesorDashboard({
@@ -225,11 +225,14 @@ export default function AsesorDashboard({
   }, [prereg, perfil, authUser]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 relative overflow-x-hidden w-full">
-      {/* Elementos decorativos de fondo - Optimizados para móviles */}
-      <div className="absolute top-0 right-0 w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[500px] md:h-[500px] lg:w-[600px] lg:h-[600px] bg-gradient-to-br from-violet-400/40 to-indigo-400/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[500px] md:h-[500px] lg:w-[600px] lg:h-[600px] bg-gradient-to-br from-indigo-400/40 to-purple-400/40 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] md:w-[450px] md:h-[450px] lg:w-[500px] lg:h-[500px] bg-gradient-to-br from-purple-300/30 to-pink-300/30 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="min-h-screen relative overflow-x-hidden w-full">
+      {/* Fondo fijo independiente del scroll */}
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
+
+      {/* Elementos decorativos de fondo - Fijos y en capa inferior */}
+      <div className="fixed top-0 right-0 w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[500px] md:h-[500px] lg:w-[600px] lg:h-[600px] bg-gradient-to-br from-violet-400/40 to-indigo-400/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none -z-40"></div>
+      <div className="fixed bottom-0 left-0 w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[500px] md:h-[500px] lg:w-[600px] lg:h-[600px] bg-gradient-to-br from-indigo-400/40 to-purple-400/40 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none -z-40"></div>
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] md:w-[450px] md:h-[450px] lg:w-[500px] lg:h-[500px] bg-gradient-to-br from-purple-300/30 to-pink-300/30 rounded-full blur-3xl pointer-events-none -z-40"></div>
 
       {/* Contenido Principal */}
       <div className="relative z-10 w-full max-w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-8 sm:pb-12">
@@ -246,7 +249,7 @@ export default function AsesorDashboard({
 
           <div className="space-y-2 sm:space-y-3 md:space-y-4">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 sm:mb-3 tracking-tight leading-tight">
-              <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.2', paddingBottom: '4px' }}>
+              <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
                 Bienvenido de vuelta
               </span>
             </h1>
@@ -267,7 +270,7 @@ export default function AsesorDashboard({
               <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-wrap">
                 <div className="h-2 sm:h-2.5 md:h-3 w-12 sm:w-16 md:w-20 lg:w-24 rounded-full bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 shadow-xl"></div>
                 <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold">
-                  <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block pb-1" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
                     Mis Cursos
                   </span>
                 </h2>

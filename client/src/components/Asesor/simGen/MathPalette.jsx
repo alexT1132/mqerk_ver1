@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import InlineMath from './InlineMath.jsx';
 import { MathLiveInput } from './MathLiveInput.jsx';
 import axios from "../../../api/axios.js";
@@ -6,9 +7,15 @@ import axios from "../../../api/axios.js";
 /* ------------------------------- Modal base ------------------------------ */
 export function Modal({ open, onClose, title, children, footer }) {
   if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-18 pb-6">
-      <div className="w-full max-w-4xl rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 h-[85vh] max-h-[85vh] flex flex-col overflow-hidden border-2 border-violet-200/50">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-4xl rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 max-h-[90vh] flex flex-col overflow-hidden border-2 border-violet-200/50"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-5 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/50">
@@ -41,7 +48,8 @@ export function Modal({ open, onClose, title, children, footer }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -877,9 +885,15 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
 
   const currentFormula = useAdvanced ? advancedFormula : (components ? buildFormula(components) : '');
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-28 pb-6">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl flex flex-col h-[70vh] max-h-[70vh] overflow-hidden border border-slate-200/50">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl flex flex-col max-h-[90vh] h-auto overflow-hidden border border-slate-200/50"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="border-b border-slate-200 bg-gradient-to-r from-violet-50/50 to-indigo-50/50 p-5 flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center justify-between">
             <div>
@@ -1428,7 +1442,8 @@ export function FormulaEditModal({ open, onClose, formula, onSave }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

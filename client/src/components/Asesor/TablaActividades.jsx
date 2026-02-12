@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { listActividades as apiListActividades, createActividad as apiCreateActividad, updateActividad as apiUpdateActividad, areaIdFromName, listEntregasActividad } from "../../api/actividades.js";
 import { listAreas } from "../../api/areas.js";
-import { Eye, FileText, Save, Pencil, Trash2, CalendarDays, Plus, Filter, ArrowLeft, AlertTriangle, X } from "lucide-react";
+import { Eye, FileText, Save, Pencil, Trash2, CalendarDays, Plus, Filter, ArrowLeft, AlertTriangle, X, BookOpen } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
@@ -712,364 +712,373 @@ export default function ActivitiesTable({
   const openPdf = onOpenPdf || openPdfSafe;
 
   return (
-    <section className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {error && (
-        <div className="mb-4 rounded-xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-4 py-3 flex items-start gap-3 shadow-sm">
-          <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm font-medium text-rose-800">{error}</p>
-        </div>
-      )}
-
-      {/* Header mejorado */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              <ArrowLeft className="w-4 h-4" /> Volver
-            </button>
-            <div className="h-6 w-px bg-slate-200" />
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                {title}
-              </h1>
-              <p className="text-sm text-slate-600 mt-0.5">{areaTitle}</p>
-            </div>
+    <div className="min-h-screen relative">
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
+      <section className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {error && (
+          <div className="mb-4 rounded-xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-4 py-3 flex items-start gap-3 shadow-sm">
+            <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm font-medium text-rose-800">{error}</p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Filter className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <select
-                value={groupFilter}
-                onChange={(e) => setGroupFilter(e.target.value)}
-                className="pl-10 pr-4 rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                title="Filtrar por grupo"
+        )}
+
+        {/* Header mejorado */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 mb-8">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="p-2.5 rounded-xl hover:bg-slate-100 transition-all duration-200 hover:scale-110 active:scale-100 ring-2 ring-slate-200 hover:ring-slate-300"
               >
-                <option value="todos">Todos los grupos</option>
-                {GROUPS.map(g => (
-                  <option key={g} value={g}>Grupo {g.toUpperCase()}</option>
-                ))}
-              </select>
+                <ArrowLeft className="w-5 h-5 text-slate-600" />
+              </button>
+              <div className="flex items-center gap-4">
+                <div className="p-3 sm:p-4 rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-xl ring-2 ring-violet-200">
+                  <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
+                    <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block pb-1" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
+                      {title}
+                    </span>
+                  </h1>
+                  <p className="text-slate-600 text-sm font-medium mt-0.5">{areaTitle}</p>
+                </div>
+              </div>
             </div>
-            <button
-              onClick={() => setOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold px-5 py-2.5 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
-            >
-              <Plus className="w-4 h-4" /> Nueva actividad
-            </button>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Filter className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <select
+                  value={groupFilter}
+                  onChange={(e) => setGroupFilter(e.target.value)}
+                  className="pl-10 pr-4 rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                  title="Filtrar por grupo"
+                >
+                  <option value="todos">Todos los grupos</option>
+                  {GROUPS.map(g => (
+                    <option key={g} value={g}>Grupo {g.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={() => setOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold px-5 py-2.5 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+              >
+                <Plus className="w-4 h-4" /> Nueva actividad
+              </button>
+            </div>
+          </div>
+
+          {/* Estadísticas rápidas */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
+            <div className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-lg ring-2 ring-slate-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Total</div>
+              <div className="text-3xl font-extrabold text-slate-900">{data.length}</div>
+            </div>
+            <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 via-emerald-100/50 to-white p-5 shadow-lg ring-2 ring-emerald-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
+              <div className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-2">Entregadas</div>
+              <div className="text-3xl font-extrabold text-emerald-700">{summaryCounts.entregadas}</div>
+            </div>
+            <div className="rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-amber-100/50 to-white p-5 shadow-lg ring-2 ring-amber-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
+              <div className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-2">Pendientes</div>
+              <div className="text-3xl font-extrabold text-amber-700">{summaryCounts.pendientes}</div>
+            </div>
+            <div className="rounded-2xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 via-indigo-100/50 to-white p-5 shadow-lg ring-2 ring-indigo-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
+              <div className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">Con recurso</div>
+              <div className="text-3xl font-extrabold text-indigo-700">{data.filter(r => r.pdfUrl).length}</div>
+            </div>
           </div>
         </div>
 
-        {/* Estadísticas rápidas */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
-          <div className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-lg ring-2 ring-slate-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Total</div>
-            <div className="text-3xl font-extrabold text-slate-900">{data.length}</div>
-          </div>
-          <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 via-emerald-100/50 to-white p-5 shadow-lg ring-2 ring-emerald-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
-            <div className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-2">Entregadas</div>
-            <div className="text-3xl font-extrabold text-emerald-700">{summaryCounts.entregadas}</div>
-          </div>
-          <div className="rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-amber-100/50 to-white p-5 shadow-lg ring-2 ring-amber-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
-            <div className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-2">Pendientes</div>
-            <div className="text-3xl font-extrabold text-amber-700">{summaryCounts.pendientes}</div>
-          </div>
-          <div className="rounded-2xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 via-indigo-100/50 to-white p-5 shadow-lg ring-2 ring-indigo-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
-            <div className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">Con recurso</div>
-            <div className="text-3xl font-extrabold text-indigo-700">{data.filter(r => r.pdfUrl).length}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabla desktop */}
-      <div className="hidden md:block overflow-hidden rounded-3xl border-2 border-slate-200 bg-white shadow-xl ring-2 ring-slate-100/50">
-        <table className="w-full text-sm">
-          <thead className="text-left">
-            <tr className="border-b-2 border-slate-200 bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
-              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">No.</th>
-              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Actividad</th>
-              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Recurso</th>
-              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Fecha límite</th>
-              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Estado</th>
-              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Calificación</th>
-              <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Visualizar</th>
-              <th className="px-6 py-5 text-right text-slate-700 text-xs font-extrabold uppercase tracking-widest">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={`skeleton-${i}`} className="border-b border-slate-100 last:border-0">
-                  <td className="px-6 py-4"><div className="h-4 w-8 bg-slate-200/70 rounded-lg animate-pulse" /></td>
-                  <td className="px-6 py-4"><div className="h-5 w-48 bg-slate-200/70 rounded-lg animate-pulse" /></td>
-                  <td className="px-6 py-4"><div className="h-10 w-10 bg-slate-200/70 rounded-xl animate-pulse" /></td>
-                  <td className="px-6 py-4"><div className="h-9 w-28 bg-slate-200/70 rounded-lg animate-pulse" /></td>
-                  <td className="px-6 py-4"><div className="h-7 w-24 bg-slate-200/70 rounded-full animate-pulse" /></td>
-                  <td className="px-6 py-4"><div className="h-8 w-16 bg-slate-200/70 rounded-lg animate-pulse" /></td>
-                  <td className="px-6 py-4"><div className="h-10 w-10 bg-slate-200/70 rounded-xl animate-pulse" /></td>
-                  <td className="px-6 py-4"><div className="h-10 w-36 ml-auto bg-slate-200/70 rounded-xl animate-pulse" /></td>
-                </tr>
-              ))
-            )}
-            {!loading && data.map((r, idx) => (
-              <tr key={r.id} className="border-b border-slate-200 last:border-0 bg-white hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200 group">
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-bold text-slate-500">#{idx + 1}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-slate-900 group-hover:text-violet-700 transition-colors text-sm">{r.title}</div>
+        {/* Tabla desktop */}
+        <div className="hidden md:block overflow-hidden rounded-3xl border-2 border-slate-200 bg-white shadow-xl ring-2 ring-slate-100/50">
+          <table className="w-full text-sm">
+            <thead className="text-left">
+              <tr className="border-b-2 border-slate-200 bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
+                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">No.</th>
+                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Actividad</th>
+                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Recurso</th>
+                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Fecha límite</th>
+                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Estado</th>
+                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Calificación</th>
+                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Visualizar</th>
+                <th className="px-6 py-5 text-right text-slate-700 text-xs font-extrabold uppercase tracking-widest">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={`skeleton-${i}`} className="border-b border-slate-100 last:border-0">
+                    <td className="px-6 py-4"><div className="h-4 w-8 bg-slate-200/70 rounded-lg animate-pulse" /></td>
+                    <td className="px-6 py-4"><div className="h-5 w-48 bg-slate-200/70 rounded-lg animate-pulse" /></td>
+                    <td className="px-6 py-4"><div className="h-10 w-10 bg-slate-200/70 rounded-xl animate-pulse" /></td>
+                    <td className="px-6 py-4"><div className="h-9 w-28 bg-slate-200/70 rounded-lg animate-pulse" /></td>
+                    <td className="px-6 py-4"><div className="h-7 w-24 bg-slate-200/70 rounded-full animate-pulse" /></td>
+                    <td className="px-6 py-4"><div className="h-8 w-16 bg-slate-200/70 rounded-lg animate-pulse" /></td>
+                    <td className="px-6 py-4"><div className="h-10 w-10 bg-slate-200/70 rounded-xl animate-pulse" /></td>
+                    <td className="px-6 py-4"><div className="h-10 w-36 ml-auto bg-slate-200/70 rounded-xl animate-pulse" /></td>
+                  </tr>
+                ))
+              )}
+              {!loading && data.map((r, idx) => (
+                <tr key={r.id} className="border-b border-slate-200 last:border-0 bg-white hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200 group">
+                  <td className="px-6 py-5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-bold text-slate-500">#{idx + 1}</span>
                     </div>
-                    {r.group && (
-                      <Badge className={`${badgeGroup} shrink-0`}>{r.group.toUpperCase()}</Badge>
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-slate-900 group-hover:text-violet-700 transition-colors text-sm">{r.title}</div>
+                      </div>
+                      {r.group && (
+                        <Badge className={`${badgeGroup} shrink-0`}>{r.group.toUpperCase()}</Badge>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-5">
+                    <IconButton onClick={() => openPdf(r)} label="Abrir PDF" disabled={!r.pdfUrl} variant={r.pdfUrl ? "primary" : "default"}>
+                      <FileText className="w-5 h-5" />
+                    </IconButton>
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 ring-1 ring-blue-100">
+                      <CalendarDays className="w-4 h-4 text-indigo-600" />
+                      <span className="font-bold text-slate-700 text-sm">{formatDate(r.due)}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5">
+                    {(() => {
+                      const st = getEstadoActividad(r.id);
+                      return (
+                        <Badge className={badgeEstadoActividad(st.key)}>
+                          {st.label}
+                        </Badge>
+                      );
+                    })()}
+                  </td>
+                  <td className="px-6 py-5">
+                    {activityStats?.[r.id]?.promedio10 !== undefined ? (
+                      <div className={`inline-flex items-center justify-center px-3 py-2 rounded-xl font-bold text-sm ring-2 ${activityStats[r.id].promedio10 < 6
+                        ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white ring-rose-300 shadow-md'
+                        : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white ring-emerald-300 shadow-md'
+                        }`}>
+                        {Number(activityStats[r.id].promedio10).toFixed(1)}/10
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 font-medium">—</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-5">
+                    <IconButton onClick={() => goToEntregas(r)} label="Visualizar entregas" variant="primary">
+                      <Eye className="w-5 h-5" />
+                    </IconButton>
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="flex justify-end gap-2">
+                      <IconButton onClick={() => onSaveRow(r)} label="Guardar" variant="primary">
+                        <Save className="w-4 h-4" />
+                      </IconButton>
+                      <IconButton onClick={() => openEdit(r)} label="Editar">
+                        <Pencil className="w-4 h-4" />
+                      </IconButton>
+                      <IconButton onClick={() => onDelete(r)} label="Eliminar" variant="danger">
+                        <Trash2 className="w-4 h-4" />
+                      </IconButton>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {!loading && data.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 ring-4 ring-violet-200 flex items-center justify-center shadow-lg">
+                        <FileText className="w-10 h-10 text-violet-600" />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-lg font-bold text-slate-700">No hay actividades</p>
+                        <p className="text-sm text-slate-500">
+                          Crea tu primera actividad con el botón
+                          <span className="mx-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1.5 font-bold text-white shadow-md">
+                            Nueva actividad
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Cards móvil mejoradas */}
+        <div className="md:hidden space-y-4">
+          {loading && Array.from({ length: 3 }).map((_, i) => (
+            <div key={`m-skeleton-${i}`} className="rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-sm">
+              <div className="h-5 w-32 bg-slate-200/70 rounded-lg animate-pulse mb-3" />
+              <div className="h-4 w-48 bg-slate-200/70 rounded-lg animate-pulse mb-4" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-10 bg-slate-200/70 rounded-xl animate-pulse" />
+                <div className="h-10 bg-slate-200/70 rounded-xl animate-pulse" />
+              </div>
+            </div>
+          ))}
+          {!loading && data.map((r, idx) => (
+            <div key={r.id} className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-lg hover:shadow-xl transition-all">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">#{idx + 1}</span>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <CalendarDays className="w-3.5 h-3.5" />
+                      <span className="font-medium">{formatDate(r.due)}</span>
+                    </div>
+                  </div>
+                  <h3 className="font-semibold text-slate-900 text-base mb-2 leading-tight">{r.title}</h3>
+                  {r.group && (
+                    <Badge className={`${badgeGroup} inline-block`}>{r.group.toUpperCase()}</Badge>
+                  )}
+                </div>
+                {(() => {
+                  const st = getEstadoActividad(r.id);
+                  return (
+                    <Badge className={badgeEstadoActividad(st.key)}>
+                      {st.label}
+                    </Badge>
+                  );
+                })()}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="rounded-xl border-2 border-slate-200 bg-white p-3">
+                  <div className="text-xs font-medium text-slate-500 mb-2">Recurso</div>
+                  <div className="flex justify-start">
+                    <IconButton onClick={() => openPdf(r)} label="Abrir PDF" disabled={!r.pdfUrl} variant={r.pdfUrl ? "primary" : "default"}>
+                      <FileText className="w-4 h-4" />
+                    </IconButton>
+                  </div>
+                </div>
+                <div className="rounded-xl border-2 border-slate-200 bg-white p-3">
+                  <div className="text-xs font-medium text-slate-500 mb-2">Calificación</div>
+                  <div className="flex justify-start">
+                    {activityStats?.[r.id]?.promedio10 !== undefined ? (
+                      <div className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-sm ${activityStats[r.id].promedio10 < 6
+                        ? 'bg-rose-50 text-rose-700 border-2 border-rose-200'
+                        : 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200'
+                        }`}>
+                        {Number(activityStats[r.id].promedio10).toFixed(1)}/10
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 font-medium text-sm">—</span>
                     )}
                   </div>
-                </td>
-                <td className="px-6 py-5">
-                  <IconButton onClick={() => openPdf(r)} label="Abrir PDF" disabled={!r.pdfUrl} variant={r.pdfUrl ? "primary" : "default"}>
-                    <FileText className="w-5 h-5" />
-                  </IconButton>
-                </td>
-                <td className="px-6 py-5">
-                  <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 ring-1 ring-blue-100">
-                    <CalendarDays className="w-4 h-4 text-indigo-600" />
-                    <span className="font-bold text-slate-700 text-sm">{formatDate(r.due)}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-5">
-                  {(() => {
-                    const st = getEstadoActividad(r.id);
-                    return (
-                      <Badge className={badgeEstadoActividad(st.key)}>
-                        {st.label}
-                      </Badge>
-                    );
-                  })()}
-                </td>
-                <td className="px-6 py-5">
-                  {activityStats?.[r.id]?.promedio10 !== undefined ? (
-                    <div className={`inline-flex items-center justify-center px-3 py-2 rounded-xl font-bold text-sm ring-2 ${activityStats[r.id].promedio10 < 6
-                      ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white ring-rose-300 shadow-md'
-                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white ring-emerald-300 shadow-md'
-                      }`}>
-                      {Number(activityStats[r.id].promedio10).toFixed(1)}/10
+                </div>
+              </div>
+
+              <div className="flex flex-wrap justify-end gap-2 pt-3 border-t border-slate-200">
+                <IconButton onClick={() => onSaveRow(r)} label="Guardar" variant="primary">
+                  <Save className="w-4 h-4" />
+                </IconButton>
+                <IconButton onClick={() => goToEntregas(r)} label="Visualizar" variant="primary">
+                  <Eye className="w-4 h-4" />
+                </IconButton>
+                <IconButton onClick={() => openEdit(r)} label="Editar">
+                  <Pencil className="w-4 h-4" />
+                </IconButton>
+                <IconButton onClick={() => onDelete(r)} label="Eliminar" variant="danger">
+                  <Trash2 className="w-4 h-4" />
+                </IconButton>
+              </div>
+            </div>
+          ))}
+          {!loading && data.length === 0 && (
+            <div className="rounded-2xl border-2 border-slate-200 bg-white p-8 text-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                  <FileText className="w-8 h-8 text-slate-400" />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-slate-700">No hay actividades</p>
+                  <p className="text-sm text-slate-500 mt-1">Crea tu primera actividad para comenzar</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* MODAL crear */}
+        <NewActivityModal open={open} onClose={() => setOpen(false)} onSave={addRow} />
+        <EditActivityModal open={editOpen} onClose={() => { setEditOpen(false); setEditRow(null); }} row={editRow} onSave={saveEdit} />
+
+        {/* Modal: Recurso no disponible */}
+        {resModal.open && (
+          <div className="fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setResModal({ open: false, title: '', message: '', row: null })} />
+            <div className="absolute inset-0 grid place-items-center p-4">
+              <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200">
+                <div className="flex items-start justify-between gap-3 border-b bg-gradient-to-r from-amber-50 to-rose-50 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-rose-600 text-white shadow-sm">
+                      <AlertTriangle className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900">{resModal.title || 'Recurso no disponible'}</h3>
+                      <p className="text-[11px] text-slate-500">Verificación de recurso</p>
                     </div>
-                  ) : (
-                    <span className="text-slate-400 font-medium">—</span>
+                  </div>
+                  <button onClick={() => setResModal({ open: false, title: '', message: '', row: null })} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
+                </div>
+                <div className="px-4 py-3">
+                  <p className="text-sm text-slate-700">{resModal.message}</p>
+                </div>
+                <div className="flex justify-end gap-2 border-t px-3 py-2.5">
+                  {resModal.row && (
+                    <button
+                      onClick={() => { const r = resModal.row; setResModal({ open: false, title: '', message: '', row: null }); if (r) openEdit(r); }}
+                      className="inline-flex items-center rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                    >
+                      Editar actividad
+                    </button>
                   )}
-                </td>
-                <td className="px-6 py-5">
-                  <IconButton onClick={() => goToEntregas(r)} label="Visualizar entregas" variant="primary">
-                    <Eye className="w-5 h-5" />
-                  </IconButton>
-                </td>
-                <td className="px-6 py-5">
-                  <div className="flex justify-end gap-2">
-                    <IconButton onClick={() => onSaveRow(r)} label="Guardar" variant="primary">
-                      <Save className="w-4 h-4" />
-                    </IconButton>
-                    <IconButton onClick={() => openEdit(r)} label="Editar">
-                      <Pencil className="w-4 h-4" />
-                    </IconButton>
-                    <IconButton onClick={() => onDelete(r)} label="Eliminar" variant="danger">
-                      <Trash2 className="w-4 h-4" />
-                    </IconButton>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {!loading && data.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-6 py-20 text-center">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 ring-4 ring-violet-200 flex items-center justify-center shadow-lg">
-                      <FileText className="w-10 h-10 text-violet-600" />
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-lg font-bold text-slate-700">No hay actividades</p>
-                      <p className="text-sm text-slate-500">
-                        Crea tu primera actividad con el botón
-                        <span className="mx-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1.5 font-bold text-white shadow-md">
-                          Nueva actividad
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Cards móvil mejoradas */}
-      <div className="md:hidden space-y-4">
-        {loading && Array.from({ length: 3 }).map((_, i) => (
-          <div key={`m-skeleton-${i}`} className="rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-sm">
-            <div className="h-5 w-32 bg-slate-200/70 rounded-lg animate-pulse mb-3" />
-            <div className="h-4 w-48 bg-slate-200/70 rounded-lg animate-pulse mb-4" />
-            <div className="grid grid-cols-2 gap-3">
-              <div className="h-10 bg-slate-200/70 rounded-xl animate-pulse" />
-              <div className="h-10 bg-slate-200/70 rounded-xl animate-pulse" />
-            </div>
-          </div>
-        ))}
-        {!loading && data.map((r, idx) => (
-          <div key={r.id} className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-lg hover:shadow-xl transition-all">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">#{idx + 1}</span>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <CalendarDays className="w-3.5 h-3.5" />
-                    <span className="font-medium">{formatDate(r.due)}</span>
-                  </div>
+                  <button
+                    onClick={() => setResModal({ open: false, title: '', message: '', row: null })}
+                    className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Cerrar
+                  </button>
                 </div>
-                <h3 className="font-semibold text-slate-900 text-base mb-2 leading-tight">{r.title}</h3>
-                {r.group && (
-                  <Badge className={`${badgeGroup} inline-block`}>{r.group.toUpperCase()}</Badge>
-                )}
-              </div>
-              {(() => {
-                const st = getEstadoActividad(r.id);
-                return (
-                  <Badge className={badgeEstadoActividad(st.key)}>
-                    {st.label}
-                  </Badge>
-                );
-              })()}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="rounded-xl border-2 border-slate-200 bg-white p-3">
-                <div className="text-xs font-medium text-slate-500 mb-2">Recurso</div>
-                <div className="flex justify-start">
-                  <IconButton onClick={() => openPdf(r)} label="Abrir PDF" disabled={!r.pdfUrl} variant={r.pdfUrl ? "primary" : "default"}>
-                    <FileText className="w-4 h-4" />
-                  </IconButton>
-                </div>
-              </div>
-              <div className="rounded-xl border-2 border-slate-200 bg-white p-3">
-                <div className="text-xs font-medium text-slate-500 mb-2">Calificación</div>
-                <div className="flex justify-start">
-                  {activityStats?.[r.id]?.promedio10 !== undefined ? (
-                    <div className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-sm ${activityStats[r.id].promedio10 < 6
-                      ? 'bg-rose-50 text-rose-700 border-2 border-rose-200'
-                      : 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200'
-                      }`}>
-                      {Number(activityStats[r.id].promedio10).toFixed(1)}/10
-                    </div>
-                  ) : (
-                    <span className="text-slate-400 font-medium text-sm">—</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-2 pt-3 border-t border-slate-200">
-              <IconButton onClick={() => onSaveRow(r)} label="Guardar" variant="primary">
-                <Save className="w-4 h-4" />
-              </IconButton>
-              <IconButton onClick={() => goToEntregas(r)} label="Visualizar" variant="primary">
-                <Eye className="w-4 h-4" />
-              </IconButton>
-              <IconButton onClick={() => openEdit(r)} label="Editar">
-                <Pencil className="w-4 h-4" />
-              </IconButton>
-              <IconButton onClick={() => onDelete(r)} label="Eliminar" variant="danger">
-                <Trash2 className="w-4 h-4" />
-              </IconButton>
-            </div>
-          </div>
-        ))}
-        {!loading && data.length === 0 && (
-          <div className="rounded-2xl border-2 border-slate-200 bg-white p-8 text-center">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
-                <FileText className="w-8 h-8 text-slate-400" />
-              </div>
-              <div>
-                <p className="text-base font-semibold text-slate-700">No hay actividades</p>
-                <p className="text-sm text-slate-500 mt-1">Crea tu primera actividad para comenzar</p>
               </div>
             </div>
           </div>
         )}
-      </div>
 
-      {/* MODAL crear */}
-      <NewActivityModal open={open} onClose={() => setOpen(false)} onSave={addRow} />
-      <EditActivityModal open={editOpen} onClose={() => { setEditOpen(false); setEditRow(null); }} row={editRow} onSave={saveEdit} />
+        {/* Modal de confirmación para eliminar */}
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          message={confirmModal.message}
+          variant="danger"
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal({ isOpen: false, row: null, message: '', onConfirm: null })}
+        />
 
-      {/* Modal: Recurso no disponible */}
-      {resModal.open && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setResModal({ open: false, title: '', message: '', row: null })} />
-          <div className="absolute inset-0 grid place-items-center p-4">
-            <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200">
-              <div className="flex items-start justify-between gap-3 border-b bg-gradient-to-r from-amber-50 to-rose-50 px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-rose-600 text-white shadow-sm">
-                    <AlertTriangle className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900">{resModal.title || 'Recurso no disponible'}</h3>
-                    <p className="text-[11px] text-slate-500">Verificación de recurso</p>
-                  </div>
-                </div>
-                <button onClick={() => setResModal({ open: false, title: '', message: '', row: null })} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">✕</button>
-              </div>
-              <div className="px-4 py-3">
-                <p className="text-sm text-slate-700">{resModal.message}</p>
-              </div>
-              <div className="flex justify-end gap-2 border-t px-3 py-2.5">
-                {resModal.row && (
-                  <button
-                    onClick={() => { const r = resModal.row; setResModal({ open: false, title: '', message: '', row: null }); if (r) openEdit(r); }}
-                    className="inline-flex items-center rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-                  >
-                    Editar actividad
-                  </button>
-                )}
-                <button
-                  onClick={() => setResModal({ open: false, title: '', message: '', row: null })}
-                  className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de confirmación para eliminar */}
-      <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        message={confirmModal.message}
-        variant="danger"
-        confirmText="Eliminar"
-        cancelText="Cancelar"
-        onConfirm={confirmModal.onConfirm}
-        onCancel={() => setConfirmModal({ isOpen: false, row: null, message: '', onConfirm: null })}
-      />
-
-      {/* Modal de error */}
-      <ConfirmModal
-        isOpen={errorModal.isOpen}
-        message={errorModal.message}
-        variant="default"
-        confirmText="Aceptar"
-        cancelText={null}
-        onConfirm={() => setErrorModal({ isOpen: false, message: '' })}
-        onCancel={() => setErrorModal({ isOpen: false, message: '' })}
-      />
-    </section>
+        {/* Modal de error */}
+        <ConfirmModal
+          isOpen={errorModal.isOpen}
+          message={errorModal.message}
+          variant="default"
+          confirmText="Aceptar"
+          cancelText={null}
+          onConfirm={() => setErrorModal({ isOpen: false, message: '' })}
+          onCancel={() => setErrorModal({ isOpen: false, message: '' })}
+        />
+      </section>
+    </div>
   );
 }

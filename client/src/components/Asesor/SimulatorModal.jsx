@@ -309,13 +309,12 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
       aria-modal="true"
       role="dialog"
       aria-labelledby="sim-modal-title"
-      onMouseDown={(e) => {
-        if (!e.target.closest("[data-modal]")) onClose?.();
-      }}
+      onClick={onClose}
     >
       <div
         data-modal
         className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200/80 max-h-[85vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 flex-shrink-0">

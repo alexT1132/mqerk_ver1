@@ -6,10 +6,12 @@ import { getMiPerfil, getNotifications, getUnreadCount, markNotificationRead, ma
 import { buildStaticUrl } from "../../utils/url.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import logo from '../../assets/MQerK_logo.png';
+import { toast } from 'react-hot-toast';
 
 export default function Topbar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isInicio = location.pathname === '/asesor/inicio' || location.pathname === '/asesor/inicio/';
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [photoUrl, setPhotoUrl] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -352,7 +354,14 @@ export default function Topbar() {
 
           {/* Perfil con foto */}
           <button
-            onClick={() => navigate('/asesor/configuraciones')}
+            onClick={() => {
+              if (isInicio) {
+                toast.error("Por favor selecciona un curso primero", { id: 'select-course-req' });
+                return;
+              }
+              navigate('/asesor/configuraciones');
+            }}
+            style={{ cursor: isInicio ? 'not-allowed' : 'pointer', opacity: isInicio ? 0.8 : 1 }}
             aria-label="Perfil"
             className="relative rounded-full overflow-visible ring-2 ring-white/30 hover:ring-white/50 transition-all hover:scale-105 active:scale-95"
           >

@@ -98,7 +98,7 @@ export default function RegistroAsistencia() {
         }, 100);
         return;
       }
-      
+
       // Si no hay filtros configurados, establecer filtros por defecto para mostrar registros recientes
       const hasAnyFilter = filtros.desde || filtros.hasta || filtros.tipo || filtros.grupo || filtros.id_estudiante;
       if (!hasAnyFilter) {
@@ -123,14 +123,14 @@ export default function RegistroAsistencia() {
       cargarHistorial();
     }
   }, [activeTab, ultimaFechaGuardada]);
-  
+
   // Recargar historial cuando cambian los filtros (solo si estamos en la tab de historial)
   const prevFiltrosRef = React.useRef(JSON.stringify(filtros));
   useEffect(() => {
     if (activeTab === 'historial') {
       const filtrosActualesStr = JSON.stringify(filtros);
       const filtrosChanged = prevFiltrosRef.current !== filtrosActualesStr;
-      
+
       if (filtrosChanged) {
         prevFiltrosRef.current = filtrosActualesStr;
         // Solo cargar si hay al menos un filtro configurado
@@ -147,11 +147,11 @@ export default function RegistroAsistencia() {
     setError('');
     try {
       const response = await getAsistenciasPorAsesor(filtrosActuales);
-      
+
       // El backend devuelve { data: [...] } según el controlador
       // response.json() devuelve el objeto parseado, así que response ya es { data: [...] }
       const registros = Array.isArray(response?.data) ? response.data : [];
-      
+
       setHistorial(registros);
     } catch (e) {
       console.error('[RegistroAsistencia] Error al cargar historial:', e);
@@ -205,10 +205,10 @@ export default function RegistroAsistencia() {
       });
 
       setSuccess('Asistencias registradas correctamente');
-      
+
       // Guardar la fecha para que cuando se cambie a historial, se muestre automáticamente
       setUltimaFechaGuardada(fecha);
-      
+
       // Si estamos en la tab de historial, recargar automáticamente
       if (activeTab === 'historial') {
         // Actualizar filtros para mostrar la fecha recién guardada
@@ -222,7 +222,7 @@ export default function RegistroAsistencia() {
           cargarHistorial();
         }, 500);
       }
-      
+
       setTimeout(() => {
         setSuccess('');
       }, 3000);
@@ -320,7 +320,8 @@ export default function RegistroAsistencia() {
   const porcentajeAsistencia = totalRegistros > 0 ? ((totalPresentes / totalRegistros) * 100).toFixed(1) : 0;
 
   return (
-    <div className="min-h-screen bg-white p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen relative p-4 sm:p-6 lg:p-8">
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -337,7 +338,7 @@ export default function RegistroAsistencia() {
               </div>
               <div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-tight">
-                  <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.1', paddingBottom: '2px' }}>
+                  <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
                     Registro de Asistencia
                   </span>
                 </h1>
@@ -350,33 +351,30 @@ export default function RegistroAsistencia() {
           <div className="flex gap-2 border-b-2 border-slate-200">
             <button
               onClick={() => setActiveTab('registro')}
-              className={`px-6 py-4 font-bold transition-all duration-200 relative flex items-center gap-2 ${
-                activeTab === 'registro'
-                  ? 'text-violet-600 border-b-3 border-violet-600 bg-slate-50'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
+              className={`px-6 py-4 font-bold transition-all duration-200 relative flex items-center gap-2 ${activeTab === 'registro'
+                ? 'text-violet-600 border-b-3 border-violet-600 bg-slate-50'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
             >
               <Calendar className={`w-5 h-5 ${activeTab === 'registro' ? 'text-violet-600' : ''}`} />
               Registrar
             </button>
             <button
               onClick={() => setActiveTab('historial')}
-              className={`px-6 py-4 font-bold transition-all duration-200 relative flex items-center gap-2 ${
-                activeTab === 'historial'
-                  ? 'text-violet-600 border-b-3 border-violet-600 bg-slate-50'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
+              className={`px-6 py-4 font-bold transition-all duration-200 relative flex items-center gap-2 ${activeTab === 'historial'
+                ? 'text-violet-600 border-b-3 border-violet-600 bg-slate-50'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
             >
               <History className={`w-5 h-5 ${activeTab === 'historial' ? 'text-violet-600' : ''}`} />
               Historial
             </button>
             <button
               onClick={() => setActiveTab('estadisticas')}
-              className={`px-6 py-4 font-bold transition-all duration-200 relative flex items-center gap-2 ${
-                activeTab === 'estadisticas'
-                  ? 'text-violet-600 border-b-3 border-violet-600 bg-slate-50'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
+              className={`px-6 py-4 font-bold transition-all duration-200 relative flex items-center gap-2 ${activeTab === 'estadisticas'
+                ? 'text-violet-600 border-b-3 border-violet-600 bg-slate-50'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
             >
               <BarChart3 className={`w-5 h-5 ${activeTab === 'estadisticas' ? 'text-violet-600' : ''}`} />
               Estadísticas
@@ -991,11 +989,10 @@ function VistaEstadisticas({
                       <div className="flex items-center justify-center gap-3">
                         <div className="w-24 bg-slate-200 rounded-full h-2">
                           <div
-                            className={`h-2 rounded-full ${
-                              est.porcentaje >= 80 ? 'bg-emerald-600' :
-                              est.porcentaje >= 60 ? 'bg-amber-500' : 
-                              'bg-slate-500'
-                            }`}
+                            className={`h-2 rounded-full ${est.porcentaje >= 80 ? 'bg-emerald-600' :
+                              est.porcentaje >= 60 ? 'bg-amber-500' :
+                                'bg-slate-500'
+                              }`}
                             style={{ width: `${est.porcentaje}%` }}
                           ></div>
                         </div>

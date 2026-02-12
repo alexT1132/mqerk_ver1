@@ -8,35 +8,35 @@ const AREAS = [
     subtitle: "Competencias comunicativas y lingüísticas",
     icon: (<BookText className="w-6 h-6" />),
     colors: { from: "from-orange-500", to: "to-amber-600", tint: "bg-amber-50", ring: "ring-amber-100" },
-  to: "/asesor/actividades/modulo",
+    to: "/asesor/actividades/modulo",
   },
   {
     title: "Matemáticas y pensamiento analítico",
     subtitle: "Razonamiento lógico y matemático",
     icon: (<Calculator className="w-6 h-6" />),
     colors: { from: "from-blue-500", to: "to-indigo-600", tint: "bg-indigo-50", ring: "ring-indigo-100" },
-  to: "/asesor/actividades/modulo",
+    to: "/asesor/actividades/modulo",
   },
   {
     title: "Habilidades transversales",
     subtitle: "Competencias interpersonales y sociales",
     icon: (<Users className="w-6 h-6" />),
     colors: { from: "from-emerald-500", to: "to-teal-600", tint: "bg-emerald-50", ring: "ring-emerald-100" },
-  to: "/asesor/actividades/modulo",
+    to: "/asesor/actividades/modulo",
   },
   {
     title: "Lengua extranjera",
     subtitle: "Comunicación en idioma extranjero",
     icon: (<Languages className="w-6 h-6" />),
     colors: { from: "from-violet-500", to: "to-purple-600", tint: "bg-violet-50", ring: "ring-violet-100" },
-  to: "/asesor/actividades/modulo",
+    to: "/asesor/actividades/modulo",
   },
   {
     title: "Módulos específicos",
     subtitle: "Conocimientos especializados",
     icon: (<Layers className="w-6 h-6" />),
     colors: { from: "from-rose-500", to: "to-pink-600", tint: "bg-rose-50", ring: "ring-rose-100" },
-  to: "/asesor/actividades/modulos_especificos",
+    to: "/asesor/actividades/modulos_especificos",
   },
 ];
 function SectionBadge() {
@@ -75,7 +75,7 @@ function AreaCard({ title, subtitle, icon, colors, to: enlace }) {
   return (
     <article
       className={[
-        "group relative overflow-hidden rounded-3xl p-7 sm:p-8 shadow-lg",
+        "group relative flex flex-col h-full overflow-hidden rounded-3xl p-7 sm:p-8 shadow-lg",
         "bg-white border-2",
         ring,
         "hover:shadow-2xl",
@@ -84,11 +84,11 @@ function AreaCard({ title, subtitle, icon, colors, to: enlace }) {
     >
       {/* Tint de fondo con gradiente sutil */}
       <div className={`pointer-events-none absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br ${tint} opacity-50 group-hover:opacity-70 transition-opacity duration-300`} />
-      
+
       {/* Overlay sutil en hover */}
       <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/10 group-hover:to-transparent transition-all duration-300" />
 
-      <div className={`relative w-16 h-16 rounded-3xl grid place-items-center text-white shadow-xl ring-4 ring-white/50 group-hover:scale-110 transition-transform duration-300`}>
+      <div className={`relative w-16 h-16 rounded-3xl grid place-items-center text-white shadow-xl ring-4 ring-white/50 group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}>
         <div className={`w-16 h-16 absolute -z-10 blur-2xl opacity-60 bg-gradient-to-br ${from} ${to} rounded-3xl group-hover:opacity-80 transition-opacity duration-300`} />
         <div className={`w-16 h-16 grid place-items-center rounded-3xl bg-gradient-to-br ${from} ${to}`}>
           <div className="scale-125">
@@ -104,7 +104,7 @@ function AreaCard({ title, subtitle, icon, colors, to: enlace }) {
         {subtitle}
       </p>
 
-      <div className="mt-8 flex items-center">
+      <div className="mt-auto pt-8 flex items-center">
         <Link
           to={enlace}
           state={{ title, id_area: areaIdFromName(title) || null }}
@@ -120,16 +120,21 @@ function AreaCard({ title, subtitle, icon, colors, to: enlace }) {
 
 export default function AreasDeEstudio({ items = AREAS }) {
   return (
-    <section className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-6">
-      <div className="space-y-3 sm:space-y-4">
-        <SectionBadge />
+    <div className="min-h-screen relative w-full overflow-x-hidden">
+      {/* Fondo fijo independiente del scroll */}
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
 
-        <div className="mx-auto max-w-8xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
-          {items.map((a, i) => (
-            <AreaCard key={i} {...a} />
-          ))}
+      <section className="relative z-10 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-6">
+        <div className="space-y-3 sm:space-y-4">
+          <SectionBadge />
+
+          <div className="mx-auto max-w-8xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+            {items.map((a, i) => (
+              <AreaCard key={i} {...a} />
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

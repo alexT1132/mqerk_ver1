@@ -410,44 +410,47 @@ export default function ModulosEspecificos({
   };
 
   return (
-    <section className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-32">
-      <SectionBadge
-        title={header.title}
-        subtitle={header.subtitle}
-        onBack={() => (header?.backTo ? navigate(header.backTo) : navigate(-1))}
-        total={items.length}
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
-      />
+    <div className="min-h-screen relative">
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
+      <section className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-32">
+        <SectionBadge
+          title={header.title}
+          subtitle={header.subtitle}
+          onBack={() => (header?.backTo ? navigate(header.backTo) : navigate(-1))}
+          total={items.length}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+        />
 
-      <div className="mx-auto max-w-8xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 sm:gap-8">
-        {items.map((item, i) => {
-          const link = _buildAccessLink(item);
-          const { to, state } = normalizeToState(link);
-          const badgeCount = getBadgeCount(item);
+        <div className="mx-auto max-w-8xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 sm:gap-8">
+          {items.map((item, i) => {
+            const link = _buildAccessLink(item);
+            const { to, state } = normalizeToState(link);
+            const badgeCount = getBadgeCount(item);
 
-          return (
-            <AreaCard
-              key={i}
-              item={item}
-              to={to}
-              state={state}
-              badgeCount={badgeCount}
-              onOpenSolicitudes={() => openAreaSolicitudes(item)}
-            />
-          );
-        })}
-      </div>
+            return (
+              <AreaCard
+                key={i}
+                item={item}
+                to={to}
+                state={state}
+                badgeCount={badgeCount}
+                onOpenSolicitudes={() => openAreaSolicitudes(item)}
+              />
+            );
+          })}
+        </div>
 
-      <SolicitudesModal
-        open={openSolicitudes}
-        onClose={() => setOpenSolicitudes(false)}
-        areaId={selectedAreaId}
-        areaName={selectedAreaName}
-        areaType={areaType}
-        onRefreshCounts={refreshPendingCounts}
-        areaNamesMap={areaIdToName}
-      />
-    </section>
+        <SolicitudesModal
+          open={openSolicitudes}
+          onClose={() => setOpenSolicitudes(false)}
+          areaId={selectedAreaId}
+          areaName={selectedAreaName}
+          areaType={areaType}
+          onRefreshCounts={refreshPendingCounts}
+          areaNamesMap={areaIdToName}
+        />
+      </section>
+    </div>
   );
 }

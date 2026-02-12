@@ -1986,959 +1986,961 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
 
   return (
-    <div className="mx-auto max-w-8xl px-4 pb-8 pt-4 sm:pt-6 sm:px-6 lg:px-8">
-      {/* Header Premium Replicado */}
-      <SectionBadge
-        title={headerTitle}
-        subtitle="Gestiona y crea simuladores para tus estudiantes."
-        total={viewItems.length}
-        icon={(() => {
-          // Lógica para seleccionar icono basado en el título del área
-          const t = (areaTitle || '').toLowerCase();
-          if (t.includes('exactas')) return Atom;
-          if (t.includes('sociales')) return Users;
-          if (t.includes('humanidades') || t.includes('artes')) return Feather;
-          if (t.includes('salud') || t.includes('naturales') || t.includes('biología')) return Dna;
-          if (t.includes('ingeniería') || t.includes('tecnología')) return Cpu;
-          if (t.includes('económico') || t.includes('administrativas')) return TrendingUp;
-          if (t.includes('educación') || t.includes('deportes')) return Trophy;
-          if (t.includes('agropecuarias')) return Sprout;
-          if (t.includes('turismo')) return Map;
-          if (t.includes('unam') || t.includes('ipn') || t.includes('núcleo')) return Landmark;
-          if (t.includes('militar') || t.includes('naval')) return Ship;
-          if (t.includes('psicométrico') || t.includes('transversal')) return BrainCircuit;
-          return Icon; // Fallback al icono pasado por prop (PlaySquare por defecto)
-        })()}
-        onBack={() => navigate(-1)}
-      />
+    <div className="min-h-screen relative">
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
+      <div className="mx-auto max-w-8xl px-4 pb-8 pt-4 sm:pt-6 sm:px-6 lg:px-8">
+        {/* Header Premium Replicado */}
+        <SectionBadge
+          title={headerTitle}
+          subtitle="Gestiona y crea simuladores para tus estudiantes."
+          total={viewItems.length}
+          icon={(() => {
+            // Lógica para seleccionar icono basado en el título del área
+            const t = (areaTitle || '').toLowerCase();
+            if (t.includes('exactas')) return Atom;
+            if (t.includes('sociales')) return Users;
+            if (t.includes('humanidades') || t.includes('artes')) return Feather;
+            if (t.includes('salud') || t.includes('naturales') || t.includes('biología')) return Dna;
+            if (t.includes('ingeniería') || t.includes('tecnología')) return Cpu;
+            if (t.includes('económico') || t.includes('administrativas')) return TrendingUp;
+            if (t.includes('educación') || t.includes('deportes')) return Trophy;
+            if (t.includes('agropecuarias')) return Sprout;
+            if (t.includes('turismo')) return Map;
+            if (t.includes('unam') || t.includes('ipn') || t.includes('núcleo')) return Landmark;
+            if (t.includes('militar') || t.includes('naval')) return Ship;
+            if (t.includes('psicométrico') || t.includes('transversal')) return BrainCircuit;
+            return Icon; // Fallback al icono pasado por prop (PlaySquare por defecto)
+          })()}
+          onBack={() => navigate(-1)}
+        />
 
-      {/* Toolbar superior rediseñada */}
-      <div className="mb-6 rounded-2xl border-2 border-slate-200 bg-white/90 backdrop-blur-sm px-4 py-4 shadow-lg ring-2 ring-slate-100/50">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          {/* Lado izquierdo: acciones y filtros */}
-          <div className="flex flex-1 flex-wrap items-center gap-3">
-            <button
-              onClick={load}
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-              title="Refrescar"
-              aria-label="Refrescar"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Recargar
-            </button>
+        {/* Toolbar superior rediseñada */}
+        <div className="mb-6 rounded-2xl border-2 border-slate-200 bg-white/90 backdrop-blur-sm px-4 py-4 shadow-lg ring-2 ring-slate-100/50">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            {/* Lado izquierdo: acciones y filtros */}
+            <div className="flex flex-1 flex-wrap items-center gap-3">
+              <button
+                onClick={load}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                title="Refrescar"
+                aria-label="Refrescar"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Recargar
+              </button>
 
-            {/* Segmentado por estado */}
-            <div className="inline-flex items-center rounded-xl border-2 border-slate-200 bg-slate-50 p-1 shadow-sm">
-              {['all', 'Publicado', 'Borrador'].map(v => (
-                <button
-                  key={v}
-                  onClick={() => setStatusFilter(v)}
-                  className={[
-                    'px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200',
-                    statusFilter === v
-                      ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md scale-105'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-white'
-                  ].join(' ')}
-                >
-                  {v === 'all' ? 'Todos' : v}
-                </button>
-              ))}
-            </div>
-
-            {/* Búsqueda */}
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-violet-500" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar simulador..."
-                className="w-56 rounded-xl border-2 border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all duration-200 shadow-sm hover:shadow-md"
-              />
-            </div>
-
-            {/* Generación IA (depende del modo) */}
-            {areaId ? (
-              <div className="flex items-center gap-2 flex-wrap">
-                <label className="hidden sm:block text-xs text-slate-500 whitespace-nowrap">Preguntas</label>
-                <select
-                  value={iaQuickCount}
-                  onChange={(e) => setIaQuickCount(Number(e.target.value))}
-                  className="rounded-lg border-2 border-emerald-200 bg-white px-3 py-2 text-sm sm:text-base text-emerald-700 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-all min-w-[80px] sm:min-w-[100px]"
-                  disabled={loading}
-                  aria-label="Cantidad de preguntas IA"
-                >
-                  {COUNT_OPTIONS.map(n => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => setIaChoiceOpen(true)}
-                  disabled={loading || cooldownMs > 0}
-                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  {cooldownMs > 0 ? `Espera ${Math.ceil(cooldownMs / 1000)}s` : 'Genera con IA'}
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <div className="flex flex-col gap-1">
-                  <div className="relative">
-                    <ListFilter className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                    <input
-                      type="text"
-                      value={generalTopic}
-                      onChange={(e) => setGeneralTopic(e.target.value)}
-                      placeholder="Tema para IA (p. ej., Álgebra básica)"
-                      className="w-72 rounded-lg border border-emerald-200 bg-white pl-8 pr-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                      aria-label="Tema para IA"
-                      disabled={loading}
-                    />
-                  </div>
-                  {generalTopic.trim().length > 0 && generalTopic.trim().length < 10 && (
-                    <p className="text-xs text-amber-600 font-medium ml-1">
-                      {generalTopic.trim().length}/10 caracteres mínimos
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => setIaChoiceOpen(true)}
-                  disabled={loading || !generalTopic.trim() || generalTopic.trim().length < 10 || cooldownMs > 0}
-                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={generalTopic.trim().length < 10 ? 'Escribe al menos 10 caracteres para generar con IA' : 'Generar simulador con IA'}
-                >
-                  <Sparkles className="h-4 w-4" />
-                  {cooldownMs > 0 ? `Espera ${Math.ceil(cooldownMs / 1000)}s` : 'Genera con IA'}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Lado derecho: CTA */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:from-violet-700 hover:to-indigo-700 hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
-            >
-              <Plus className="h-5 w-5" />
-              Nuevo simulador
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Móvil: tarjetas */}
-      {debugInfo && (
-        <div className="mb-2 text-xs text-slate-400">Depuración: {debugInfo.fetched} elementos</div>
-      )}
-      {error && (
-        <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 whitespace-pre-line">{error}</div>
-      )}
-      {loading && viewItems.length === 0 && (
-        <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-500">Cargando…</div>
-      )}
-      <div className="grid gap-3 md:hidden">
-        {viewItems.map((item) => (
-          <MobileRow
-            key={item.id}
-            item={item}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onPublish={handlePublish}
-            onResultados={handleResultados}
-          />
-        ))}
-        {viewItems.length === 0 && !loading && (
-          <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500 shadow-sm">
-            Sin simuladores.
-          </div>
-        )}
-      </div>
-
-      {/* Desktop: tabla */}
-      <div className="hidden md:block">
-        <div className="overflow-hidden rounded-3xl border-2 border-slate-200 bg-white shadow-xl ring-2 ring-slate-100/50">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50">
-                <tr>
-                  <th
-                    scope="col"
-                    className="sticky left-0 z-20 bg-slate-50 px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[280px] border-r-2 border-slate-200"
+              {/* Segmentado por estado */}
+              <div className="inline-flex items-center rounded-xl border-2 border-slate-200 bg-slate-50 p-1 shadow-sm">
+                {['all', 'Publicado', 'Borrador'].map(v => (
+                  <button
+                    key={v}
+                    onClick={() => setStatusFilter(v)}
+                    className={[
+                      'px-4 py-2 text-sm rounded-lg font-semibold transition-all duration-200',
+                      statusFilter === v
+                        ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md scale-105'
+                        : 'text-slate-600 hover:text-slate-800 hover:bg-white'
+                    ].join(' ')}
                   >
-                    Simulador
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
-                    Tipo
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[100px]">
-                    Preguntas
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[100px]">
-                    Intentos
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
-                    Estado
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
-                    Actualizado
-                  </th>
-                  <th scope="col" className="px-6 py-4 min-w-[220px]"></th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-slate-200 bg-white">
-                {viewItems.map((item, idx) => (
-                  <tr
-                    key={item.id}
-                    className="bg-white hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200 group"
-                  >
-                    <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 px-6 py-4 border-r-2 border-slate-200">
-                      <div className="max-w-xs xl:max-w-md">
-                        <div className="font-semibold text-slate-900 truncate" title={item.name}>
-                          {item.name}
-                        </div>
-                        {item.instrucciones && item.instrucciones.trim() && (
-                          <div className="mt-1 text-xs text-slate-500 line-clamp-2">
-                            {item.instrucciones}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-700 font-medium text-sm">
-                      <span className="text-[13px] font-bold text-slate-600 uppercase">{item.type}</span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-violet-50 px-3 py-1.5 text-sm font-bold text-violet-700 ring-2 ring-violet-200 uppercase">
-                        {item.questions}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-indigo-50 px-3 py-1.5 text-sm font-bold text-indigo-700 ring-2 ring-indigo-200 uppercase">
-                        {item.attempts}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center whitespace-nowrap">
-                      {item.status === "Publicado" ? (
-                        <Badge type="success">Publicado</Badge>
-                      ) : (
-                        <Badge type="draft">Borrador</Badge>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-slate-600 text-sm font-medium">
-                      {item.updatedAt}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-1.5 flex-nowrap">
-                        <button
-                          onClick={() => handleView(item)}
-                          title="Vista previa"
-                          className="rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleResultados(item)}
-                          title="Resultados"
-                          className="rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-2 text-sm font-semibold text-amber-700 hover:from-amber-100 hover:to-orange-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-                        >
-                          <Trophy className="h-4 w-4 text-amber-500" />
-                        </button>
-                        {item.status === "Borrador" && (
-                          <button
-                            onClick={() => handlePublish(item)}
-                            title="Publicar"
-                            className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:from-emerald-100 hover:to-green-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-                          >
-                            <UploadCloud className="h-4 w-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleEdit(item)}
-                          title="Editar"
-                          className="rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item)}
-                          title="Eliminar"
-                          className="rounded-xl border-2 border-rose-300 bg-gradient-to-r from-rose-50 to-red-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:from-rose-100 hover:to-red-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                    {v === 'all' ? 'Todos' : v}
+                  </button>
                 ))}
-                {viewItems.length === 0 && !loading && (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-24 text-center">
-                      <div className="flex flex-col items-center justify-center gap-4">
-                        <div className="size-20 rounded-[2rem] bg-slate-50 flex items-center justify-center ring-8 ring-slate-100/50">
-                          <PlaySquare className="size-10 text-slate-300" />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-lg font-black text-slate-900">Sin simuladores registrados</p>
-                          <p className="text-sm text-slate-400 font-bold uppercase tracking-wider">Comienza creando uno nuevo para esta área</p>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                {loading && (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="size-8 rounded-full border-4 border-slate-100 border-t-indigo-600 animate-spin" />
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Cargando datos...</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <SimuladorModalGen
-        open={open}
-        onClose={() => {
-          setOpen(false);
-          setEditing(null);
-          setIaPreguntas(null);
-          setIaPrefill(null);
-        }}
-        onCreate={handleCreate}
-        onUpdate={handleUpdate}
-        mode={editing ? 'edit' : 'create'}
-        initialForm={editing ? (() => {
-          const formData = {
-            titulo: editing.titulo || editing.nombre || editing.name || '',
-            nombre: editing.nombre || editing.titulo || editing.name || '',
-            instrucciones: editing.instrucciones || editing.descripcion || '',
-            descripcion: editing.descripcion || editing.instrucciones || '',
-            fechaLimite: editing.fechaLimite || editing.fecha_limite || '',
-            publico: editing.publico ?? (editing.status === 'Publicado'),
-            horas: editing.horas ?? 0,
-            minutos: editing.minutos ?? 0,
-            grupos: Array.isArray(editing.grupos) ? editing.grupos : (editing.grupos ? [editing.grupos] : []),
-            areaId: editing.areaId !== undefined ? editing.areaId : null,
-            areaTitle: editing.areaTitle || null
-          };
-          // Log para debugging
-          console.log('[SimuladoresGen] initialForm para modal (modo edición):', {
-            id: editing.id,
-            titulo: formData.titulo,
-            nombre: formData.nombre,
-            instrucciones: formData.instrucciones,
-            descripcion: formData.descripcion,
-            fechaLimite: formData.fechaLimite,
-            horas: formData.horas,
-            minutos: formData.minutos,
-            grupos: formData.grupos,
-            gruposCount: formData.grupos.length,
-            editingGrupos: editing.grupos,
-            editingFechaLimite: editing.fechaLimite
-          });
-          return formData;
-        })() : (iaPrefill || null)}
-        onEditQuestions={editing ? () => {
-          // Navegar al builder después de guardar
-          const finalIdArea = editing.areaId !== undefined && editing.areaId !== null ? Number(editing.areaId) : (areaId || null);
-          const navState = finalIdArea ? {
-            simId: editing.id,
-            areaId: finalIdArea,
-            areaTitle: editing.areaTitle || areaTitle
-          } : { simId: editing.id };
-          navigate(`/asesor/quizt/builder?simId=${editing.id}`, { state: navState });
-        } : null}
-      />
-
-      {/* Modal: elección de IA (para vista de área y simuladores generales) */}
-      {
-        iaChoiceOpen && (
-          <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-center justify-center px-4 pt-24 pb-6">
-            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={() => { setIaChoiceOpen(false); setIaError(''); }} />
-            <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 overflow-hidden">
-              {/* Header */}
-              <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 p-1.5 shadow-md">
-                    <Sparkles className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-bold text-slate-900">Generar simulador con IA</h3>
-                    <p className="text-xs text-slate-600 mt-0.5">Configuración personalizada. Puedes editarlo después.</p>
-                  </div>
-                  <button
-                    onClick={() => { setIaChoiceOpen(false); setIaError(''); }}
-                    className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors flex-shrink-0"
-                    aria-label="Cerrar"
-                  >
-                    ✕
-                  </button>
-                </div>
               </div>
 
-              {/* Body con scroll */}
-              <div className="mqerk-hide-scrollbar flex-1 min-h-0 px-4 py-3 space-y-3 overflow-y-auto">
-                {/* Opciones de modo */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-2">Tipo de generación</label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => { setIaChoiceMode('general'); setIaError(''); }}
-                      className={["relative text-left rounded-lg border-2 p-2.5 transition-all",
-                        iaChoiceMode === 'general'
-                          ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                      ].join(' ')}
-                    >
-                      {iaChoiceMode === 'general' && (
-                        <div className="absolute top-1.5 right-1.5">
-                          <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center">
-                            <CheckCircle2 className="h-2.5 w-2.5 text-white" />
-                          </div>
-                        </div>
-                      )}
-                      <div className="text-sm font-semibold text-slate-800 mb-0.5">
-                        {areaId ? 'General del área' : 'General del tema'}
-                      </div>
-                      <div className="text-xs text-slate-600 leading-snug">
-                        {areaId
-                          ? `Preguntas variadas de "${areaTitle || 'esta área'}". Ideal para conocimientos generales.`
-                          : `Preguntas variadas sobre "${generalTopic || 'el tema'}". Ideal para conocimientos generales.`
-                        }
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setIaChoiceMode('temas'); setIaError(''); }}
-                      className={["relative text-left rounded-lg border-2 p-2.5 transition-all",
-                        iaChoiceMode === 'temas'
-                          ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                      ].join(' ')}
-                    >
-                      {iaChoiceMode === 'temas' && (
-                        <div className="absolute top-1.5 right-1.5">
-                          <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center">
-                            <CheckCircle2 className="h-2.5 w-2.5 text-white" />
-                          </div>
-                        </div>
-                      )}
-                      <div className="text-sm font-semibold text-slate-800 mb-0.5">Por temas específicos</div>
-                      <div className="text-xs text-slate-600 leading-snug">
-                        Enfocado en temas concretos. Ej: "sinónimos, ortografía". Distribución equitativa.
-                      </div>
-                    </button>
-                  </div>
-                </div>
+              {/* Búsqueda */}
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-violet-500" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar simulador..."
+                  className="w-56 rounded-xl border-2 border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all duration-200 shadow-sm hover:shadow-md"
+                />
+              </div>
 
-                {/* Input de temas (solo si modo = temas) */}
-                {iaChoiceMode === 'temas' && (
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-700">
-                        Temas específicos <span className="text-rose-500">*</span>
-                      </label>
-                      {iaChoiceTopics && (
-                        <span className="text-[10px] text-slate-500">
-                          {iaChoiceTopics.split(',').filter(t => t.trim()).length} tema{iaChoiceTopics.split(',').filter(t => t.trim()).length !== 1 ? 's' : ''}
-                        </span>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <input
-                        value={iaChoiceTopics}
-                        onChange={e => {
-                          const value = e.target.value;
-                          // Limpiar duplicados automáticamente
-                          const temas = value.split(',').map(s => s.trim()).filter(Boolean);
-                          const unique = [...new Set(temas)];
-                          setIaChoiceTopics(unique.join(', '));
-                          setIaError('');
-                        }}
-                        className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-xs focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-200 transition-colors"
-                        placeholder="Ej: sinónimos, ortografía, lectura"
-                      />
-                      {iaChoiceTopics && (
-                        <button
-                          type="button"
-                          onClick={() => setIaChoiceTopics('')}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[10px]"
-                          title="Limpiar"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                    <div className="mt-1.5 flex items-center justify-between">
-                      <div className="flex flex-wrap gap-1.5">
-                        {temasPlantillas.slice(0, 3).map((tema, idx) => {
-                          const current = iaChoiceTopics.split(',').map(s => s.trim()).filter(Boolean);
-                          const isAdded = current.includes(tema);
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => {
-                                if (!isAdded) {
-                                  setIaChoiceTopics([...current, tema].join(', '));
-                                  setIaError('');
-                                } else {
-                                  setIaChoiceTopics(current.filter(t => t !== tema).join(', '));
-                                }
-                              }}
-                              className={[
-                                "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
-                                isAdded
-                                  ? "border-emerald-300 bg-emerald-100 text-emerald-700"
-                                  : "border-slate-300 bg-white text-slate-600 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700"
-                              ].join(' ')}
-                            >
-                              {isAdded ? '✓' : '+'} {tema}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {iaChoiceTopics && (
-                        <button
-                          type="button"
-                          onClick={() => setIaChoiceTopics('')}
-                          className="text-[10px] text-slate-500 hover:text-rose-600 transition-colors"
-                        >
-                          Limpiar todo
-                        </button>
-                      )}
-                    </div>
-                    <p className="mt-1 text-[11px] text-slate-500">
-                      Separa con comas. Mínimo 1, máximo 5 recomendado.
-                    </p>
-                  </div>
-                )}
-
-                {/* Selector de nivel */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nivel de dificultad</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { value: 'básico', label: 'Básico', desc: 'Conceptos fundamentales' },
-                      { value: 'intermedio', label: 'Intermedio', desc: 'Aplicación' },
-                      { value: 'avanzado', label: 'Avanzado', desc: 'Análisis' }
-                    ].map((nivel) => {
-                      const isSelected = iaNivel === nivel.value;
-                      return (
-                        <button
-                          key={nivel.value}
-                          type="button"
-                          onClick={() => setIaNivel(nivel.value)}
-                          className={[
-                            "text-left rounded-lg border-2 p-2 transition-all",
-                            isSelected
-                              ? nivel.value === 'básico'
-                                ? 'border-blue-400 bg-blue-50 ring-1 ring-blue-200'
-                                : nivel.value === 'intermedio'
-                                  ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
-                                  : 'border-purple-400 bg-purple-50 ring-1 ring-purple-200'
-                              : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                          ].join(' ')}
-                        >
-                          <div className="text-xs font-semibold text-slate-800">{nivel.label}</div>
-                          <div className="text-[11px] text-slate-600 mt-0.5">{nivel.desc}</div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Selector de idioma */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Idioma de salida</label>
+              {/* Generación IA (depende del modo) */}
+              {areaId ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <label className="hidden sm:block text-xs text-slate-500 whitespace-nowrap">Preguntas</label>
                   <select
-                    value={iaIdioma}
-                    onChange={(e) => setIaIdioma(e.target.value)}
-                    className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2.5 text-sm sm:text-base font-semibold text-slate-700 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-200 transition-all"
+                    value={iaQuickCount}
+                    onChange={(e) => setIaQuickCount(Number(e.target.value))}
+                    className="rounded-lg border-2 border-emerald-200 bg-white px-3 py-2 text-sm sm:text-base text-emerald-700 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-all min-w-[80px] sm:min-w-[100px]"
+                    disabled={loading}
+                    aria-label="Cantidad de preguntas IA"
                   >
-                    <option value="auto">Auto (según área/tema)</option>
-                    <option value="es">Español (es-MX)</option>
-                    <option value="en">Inglés (en-US)</option>
-                    <option value="mix">Mixto (mitad ES, mitad EN)</option>
+                    {COUNT_OPTIONS.map(n => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
                   </select>
-                  <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">
-                    Consejo: si mezclas materias (ej. “matemáticas, español, inglés…”), usa “Español” o “Auto”. Para practicar inglés, elige “Inglés” o “Mixto”.
-                  </p>
-                </div>
-
-                {/* Distribución de tipos de preguntas */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Distribución de preguntas <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="space-y-3">
-                    {/* Opción múltiple */}
-                    <div className="flex items-center gap-3">
-                      <label className="text-xs text-slate-600 w-32 flex-shrink-0">Opción múltiple:</label>
-                      <div className="flex items-center gap-2 flex-1">
-                        <button
-                          type="button"
-                          onClick={() => setIaCountMultiple(Math.max(0, iaCountMultiple - 1))}
-                          className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                          disabled={iaCountMultiple <= 0}
-                        >
-                          −
-                        </button>
-                        <input
-                          type="number"
-                          min="0"
-                          max={MAX_IA}
-                          value={iaCountMultiple}
-                          onChange={(e) => {
-                            const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
-                            setIaCountMultiple(val);
-                            setIaError('');
-                          }}
-                          className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-                            if (total < MAX_IA) setIaCountMultiple(Math.min(MAX_IA, iaCountMultiple + 1));
-                          }}
-                          className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                          disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
-                        >
-                          +
-                        </button>
-                        <span className="text-[11px] text-slate-500">preguntas</span>
-                      </div>
-                    </div>
-
-                    {/* Verdadero/Falso */}
-                    <div className="flex items-center gap-3">
-                      <label className="text-xs text-slate-600 w-32 flex-shrink-0">Verdadero/Falso:</label>
-                      <div className="flex items-center gap-2 flex-1">
-                        <button
-                          type="button"
-                          onClick={() => setIaCountVerdaderoFalso(Math.max(0, iaCountVerdaderoFalso - 1))}
-                          className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                          disabled={iaCountVerdaderoFalso <= 0}
-                        >
-                          −
-                        </button>
-                        <input
-                          type="number"
-                          min="0"
-                          max={MAX_IA}
-                          value={iaCountVerdaderoFalso}
-                          onChange={(e) => {
-                            const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
-                            setIaCountVerdaderoFalso(val);
-                            setIaError('');
-                          }}
-                          className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-                            if (total < MAX_IA) setIaCountVerdaderoFalso(Math.min(MAX_IA, iaCountVerdaderoFalso + 1));
-                          }}
-                          className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                          disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
-                        >
-                          +
-                        </button>
-                        <span className="text-[11px] text-slate-500">preguntas</span>
-                      </div>
-                    </div>
-
-                    {/* Respuesta corta */}
-                    <div className="flex items-center gap-3">
-                      <label className="text-xs text-slate-600 w-32 flex-shrink-0">Respuesta corta:</label>
-                      <div className="flex items-center gap-2 flex-1">
-                        <button
-                          type="button"
-                          onClick={() => setIaCountCorta(Math.max(0, iaCountCorta - 1))}
-                          className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                          disabled={iaCountCorta <= 0}
-                        >
-                          −
-                        </button>
-                        <input
-                          type="number"
-                          min="0"
-                          max={MAX_IA}
-                          value={iaCountCorta}
-                          onChange={(e) => {
-                            const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
-                            setIaCountCorta(val);
-                            setIaError('');
-                          }}
-                          className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
-                            if (total < MAX_IA) setIaCountCorta(Math.min(MAX_IA, iaCountCorta + 1));
-                          }}
-                          className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
-                          disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
-                        >
-                          +
-                        </button>
-                        <span className="text-[11px] text-slate-500">preguntas</span>
-                      </div>
-                    </div>
-
-                    {/* Resumen total */}
-                    <div className="pt-2 border-t border-slate-200">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-slate-700">Total:</span>
-                        <span className="text-xs font-bold text-emerald-600">
-                          {iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Parámetros avanzados de configuración de IA */}
-                <div>
                   <button
-                    type="button"
-                    onClick={() => setIaShowAdvanced(!iaShowAdvanced)}
-                    className="w-full flex items-center justify-between text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 p-2 rounded-lg border border-slate-200 transition-colors"
+                    onClick={() => setIaChoiceOpen(true)}
+                    disabled={loading || cooldownMs > 0}
+                    className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
                   >
-                    <div className="flex items-center gap-1.5">
-                      <Brain className="h-3.5 w-3.5" />
-                      <span>Parámetros avanzados de IA</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {iaShowAdvanced ? (
-                        <ChevronUp className="h-3.5 w-3.5" />
-                      ) : (
-                        <ChevronDown className="h-3.5 w-3.5" />
-                      )}
-                    </div>
+                    <Sparkles className="h-4 w-4" />
+                    {cooldownMs > 0 ? `Espera ${Math.ceil(cooldownMs / 1000)}s` : 'Genera con IA'}
                   </button>
-
-                  {iaShowAdvanced && (
-                    <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-3 animate-in slide-in-from-top-2">
-                      {/* Temperatura / Creatividad */}
-                      <div className="text-xs">
-                        <div className="flex justify-between mb-1">
-                          <label className="font-semibold text-slate-700">Creatividad (Temperatura)</label>
-                          <span className="text-slate-500">{Number(iaTemperature).toFixed(1)}</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.1"
-                          value={iaTemperature}
-                          onChange={e => setIaTemperature(Number(e.target.value))}
-                          className="w-full accent-emerald-500"
-                        />
-                        <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                          <span>Preciso</span>
-                          <span>Creativo</span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">Top‑P</label>
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            min="0"
-                            max="1"
-                            step="0.05"
-                            value={iaTopP}
-                            onChange={(e) => setIaTopP(e.target.value)}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
-                            placeholder="(vacío)"
-                          />
-                          <p className="mt-1 text-[10px] text-slate-500">0–1 (vacío = default)</p>
-                        </div>
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">Top‑K</label>
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            min="1"
-                            step="1"
-                            value={iaTopK}
-                            onChange={(e) => setIaTopK(e.target.value)}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
-                            placeholder="(vacío)"
-                          />
-                          <p className="mt-1 text-[10px] text-slate-500">Entero (vacío = default)</p>
-                        </div>
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">Max tokens</label>
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            min="64"
-                            step="64"
-                            value={iaMaxTokens}
-                            onChange={(e) => setIaMaxTokens(e.target.value)}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
-                            placeholder="(vacío)"
-                          />
-                          <p className="mt-1 text-[10px] text-slate-500">Más alto = respuestas más largas</p>
-                        </div>
-                      </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-1">
+                    <div className="relative">
+                      <ListFilter className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                      <input
+                        type="text"
+                        value={generalTopic}
+                        onChange={(e) => setGeneralTopic(e.target.value)}
+                        placeholder="Tema para IA (p. ej., Álgebra básica)"
+                        className="w-72 rounded-lg border border-emerald-200 bg-white pl-8 pr-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                        aria-label="Tema para IA"
+                        disabled={loading}
+                      />
                     </div>
+                    {generalTopic.trim().length > 0 && generalTopic.trim().length < 10 && (
+                      <p className="text-xs text-amber-600 font-medium ml-1">
+                        {generalTopic.trim().length}/10 caracteres mínimos
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setIaChoiceOpen(true)}
+                    disabled={loading || !generalTopic.trim() || generalTopic.trim().length < 10 || cooldownMs > 0}
+                    className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={generalTopic.trim().length < 10 ? 'Escribe al menos 10 caracteres para generar con IA' : 'Generar simulador con IA'}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {cooldownMs > 0 ? `Espera ${Math.ceil(cooldownMs / 1000)}s` : 'Genera con IA'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Lado derecho: CTA */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:from-violet-700 hover:to-indigo-700 hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
+              >
+                <Plus className="h-5 w-5" />
+                Nuevo simulador
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Móvil: tarjetas */}
+        {debugInfo && (
+          <div className="mb-2 text-xs text-slate-400">Depuración: {debugInfo.fetched} elementos</div>
+        )}
+        {error && (
+          <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 whitespace-pre-line">{error}</div>
+        )}
+        {loading && viewItems.length === 0 && (
+          <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-500">Cargando…</div>
+        )}
+        <div className="grid gap-3 md:hidden">
+          {viewItems.map((item) => (
+            <MobileRow
+              key={item.id}
+              item={item}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onPublish={handlePublish}
+              onResultados={handleResultados}
+            />
+          ))}
+          {viewItems.length === 0 && !loading && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500 shadow-sm">
+              Sin simuladores.
+            </div>
+          )}
+        </div>
+
+        {/* Desktop: tabla */}
+        <div className="hidden md:block">
+          <div className="overflow-hidden rounded-3xl border-2 border-slate-200 bg-white shadow-xl ring-2 ring-slate-100/50">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="sticky left-0 z-20 bg-slate-50 px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[280px] border-r-2 border-slate-200"
+                    >
+                      Simulador
+                    </th>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
+                      Tipo
+                    </th>
+                    <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[100px]">
+                      Preguntas
+                    </th>
+                    <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[100px]">
+                      Intentos
+                    </th>
+                    <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
+                      Estado
+                    </th>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
+                      Actualizado
+                    </th>
+                    <th scope="col" className="px-6 py-4 min-w-[220px]"></th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {viewItems.map((item, idx) => (
+                    <tr
+                      key={item.id}
+                      className="bg-white hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200 group"
+                    >
+                      <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 px-6 py-4 border-r-2 border-slate-200">
+                        <div className="max-w-xs xl:max-w-md">
+                          <div className="font-semibold text-slate-900 truncate" title={item.name}>
+                            {item.name}
+                          </div>
+                          {item.instrucciones && item.instrucciones.trim() && (
+                            <div className="mt-1 text-xs text-slate-500 line-clamp-2">
+                              {item.instrucciones}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-700 font-medium text-sm">
+                        <span className="text-[13px] font-bold text-slate-600 uppercase">{item.type}</span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-violet-50 px-3 py-1.5 text-sm font-bold text-violet-700 ring-2 ring-violet-200 uppercase">
+                          {item.questions}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-indigo-50 px-3 py-1.5 text-sm font-bold text-indigo-700 ring-2 ring-indigo-200 uppercase">
+                          {item.attempts}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center whitespace-nowrap">
+                        {item.status === "Publicado" ? (
+                          <Badge type="success">Publicado</Badge>
+                        ) : (
+                          <Badge type="draft">Borrador</Badge>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600 text-sm font-medium">
+                        {item.updatedAt}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-1.5 flex-nowrap">
+                          <button
+                            onClick={() => handleView(item)}
+                            title="Vista previa"
+                            className="rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleResultados(item)}
+                            title="Resultados"
+                            className="rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-2 text-sm font-semibold text-amber-700 hover:from-amber-100 hover:to-orange-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                          >
+                            <Trophy className="h-4 w-4 text-amber-500" />
+                          </button>
+                          {item.status === "Borrador" && (
+                            <button
+                              onClick={() => handlePublish(item)}
+                              title="Publicar"
+                              className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:from-emerald-100 hover:to-green-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                            >
+                              <UploadCloud className="h-4 w-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleEdit(item)}
+                            title="Editar"
+                            className="rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item)}
+                            title="Eliminar"
+                            className="rounded-xl border-2 border-rose-300 bg-gradient-to-r from-rose-50 to-red-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:from-rose-100 hover:to-red-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {viewItems.length === 0 && !loading && (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-24 text-center">
+                        <div className="flex flex-col items-center justify-center gap-4">
+                          <div className="size-20 rounded-[2rem] bg-slate-50 flex items-center justify-center ring-8 ring-slate-100/50">
+                            <PlaySquare className="size-10 text-slate-300" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-lg font-black text-slate-900">Sin simuladores registrados</p>
+                            <p className="text-sm text-slate-400 font-bold uppercase tracking-wider">Comienza creando uno nuevo para esta área</p>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
                   )}
+                  {loading && (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="size-8 rounded-full border-4 border-slate-100 border-t-indigo-600 animate-spin" />
+                          <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Cargando datos...</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <SimuladorModalGen
+          open={open}
+          onClose={() => {
+            setOpen(false);
+            setEditing(null);
+            setIaPreguntas(null);
+            setIaPrefill(null);
+          }}
+          onCreate={handleCreate}
+          onUpdate={handleUpdate}
+          mode={editing ? 'edit' : 'create'}
+          initialForm={editing ? (() => {
+            const formData = {
+              titulo: editing.titulo || editing.nombre || editing.name || '',
+              nombre: editing.nombre || editing.titulo || editing.name || '',
+              instrucciones: editing.instrucciones || editing.descripcion || '',
+              descripcion: editing.descripcion || editing.instrucciones || '',
+              fechaLimite: editing.fechaLimite || editing.fecha_limite || '',
+              publico: editing.publico ?? (editing.status === 'Publicado'),
+              horas: editing.horas ?? 0,
+              minutos: editing.minutos ?? 0,
+              grupos: Array.isArray(editing.grupos) ? editing.grupos : (editing.grupos ? [editing.grupos] : []),
+              areaId: editing.areaId !== undefined ? editing.areaId : null,
+              areaTitle: editing.areaTitle || null
+            };
+            // Log para debugging
+            console.log('[SimuladoresGen] initialForm para modal (modo edición):', {
+              id: editing.id,
+              titulo: formData.titulo,
+              nombre: formData.nombre,
+              instrucciones: formData.instrucciones,
+              descripcion: formData.descripcion,
+              fechaLimite: formData.fechaLimite,
+              horas: formData.horas,
+              minutos: formData.minutos,
+              grupos: formData.grupos,
+              gruposCount: formData.grupos.length,
+              editingGrupos: editing.grupos,
+              editingFechaLimite: editing.fechaLimite
+            });
+            return formData;
+          })() : (iaPrefill || null)}
+          onEditQuestions={editing ? () => {
+            // Navegar al builder después de guardar
+            const finalIdArea = editing.areaId !== undefined && editing.areaId !== null ? Number(editing.areaId) : (areaId || null);
+            const navState = finalIdArea ? {
+              simId: editing.id,
+              areaId: finalIdArea,
+              areaTitle: editing.areaTitle || areaTitle
+            } : { simId: editing.id };
+            navigate(`/asesor/quizt/builder?simId=${editing.id}`, { state: navState });
+          } : null}
+        />
+
+        {/* Modal: elección de IA (para vista de área y simuladores generales) */}
+        {
+          iaChoiceOpen && (
+            <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-center justify-center px-4 pt-24 pb-6">
+              <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={() => { setIaChoiceOpen(false); setIaError(''); }} />
+              <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 overflow-hidden">
+                {/* Header */}
+                <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 p-1.5 shadow-md">
+                      <Sparkles className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-bold text-slate-900">Generar simulador con IA</h3>
+                      <p className="text-xs text-slate-600 mt-0.5">Configuración personalizada. Puedes editarlo después.</p>
+                    </div>
+                    <button
+                      onClick={() => { setIaChoiceOpen(false); setIaError(''); }}
+                      className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors flex-shrink-0"
+                      aria-label="Cerrar"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
 
-                {/* Mensaje de error */}
-                {iaError && (
-                  <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3 shadow-sm">
-                    <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-xs sm:text-sm text-amber-800 font-semibold mb-1 leading-relaxed whitespace-pre-line">{iaError}</p>
-                      {cooldownMs > 0 && (
-                        <div className="mt-2 flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-amber-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-amber-500 transition-all duration-1000 ease-linear"
-                              style={{ width: `${Math.min(100, (cooldownMs / 45000) * 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-[10px] font-bold text-amber-700 whitespace-nowrap">
-                            {Math.ceil(cooldownMs / 1000)}s
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Resumen de configuración */}
-                {showSummary && (
-                  <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 px-3 py-2.5">
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span className="text-xs font-semibold text-emerald-900">Resumen de configuración</span>
+                {/* Body con scroll */}
+                <div className="mqerk-hide-scrollbar flex-1 min-h-0 px-4 py-3 space-y-3 overflow-y-auto">
+                  {/* Opciones de modo */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-2">Tipo de generación</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => setShowSummary(false)}
-                        className="text-emerald-600 hover:text-emerald-800 text-[10px]"
+                        onClick={() => { setIaChoiceMode('general'); setIaError(''); }}
+                        className={["relative text-left rounded-lg border-2 p-2.5 transition-all",
+                          iaChoiceMode === 'general'
+                            ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                        ].join(' ')}
                       >
-                        Ocultar
+                        {iaChoiceMode === 'general' && (
+                          <div className="absolute top-1.5 right-1.5">
+                            <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center">
+                              <CheckCircle2 className="h-2.5 w-2.5 text-white" />
+                            </div>
+                          </div>
+                        )}
+                        <div className="text-sm font-semibold text-slate-800 mb-0.5">
+                          {areaId ? 'General del área' : 'General del tema'}
+                        </div>
+                        <div className="text-xs text-slate-600 leading-snug">
+                          {areaId
+                            ? `Preguntas variadas de "${areaTitle || 'esta área'}". Ideal para conocimientos generales.`
+                            : `Preguntas variadas sobre "${generalTopic || 'el tema'}". Ideal para conocimientos generales.`
+                          }
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setIaChoiceMode('temas'); setIaError(''); }}
+                        className={["relative text-left rounded-lg border-2 p-2.5 transition-all",
+                          iaChoiceMode === 'temas'
+                            ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                        ].join(' ')}
+                      >
+                        {iaChoiceMode === 'temas' && (
+                          <div className="absolute top-1.5 right-1.5">
+                            <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center">
+                              <CheckCircle2 className="h-2.5 w-2.5 text-white" />
+                            </div>
+                          </div>
+                        )}
+                        <div className="text-sm font-semibold text-slate-800 mb-0.5">Por temas específicos</div>
+                        <div className="text-xs text-slate-600 leading-snug">
+                          Enfocado en temas concretos. Ej: "sinónimos, ortografía". Distribución equitativa.
+                        </div>
                       </button>
                     </div>
-                    <div className="space-y-1 text-[11px] text-emerald-800">
-                      {!areaId && generalTopic && (
-                        <div className="flex items-start gap-2">
-                          <span className="font-medium">Tema:</span>
-                          <span className="flex-1">{generalTopic}</span>
+                  </div>
+
+                  {/* Input de temas (solo si modo = temas) */}
+                  {iaChoiceMode === 'temas' && (
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-semibold text-slate-700">
+                          Temas específicos <span className="text-rose-500">*</span>
+                        </label>
+                        {iaChoiceTopics && (
+                          <span className="text-[10px] text-slate-500">
+                            {iaChoiceTopics.split(',').filter(t => t.trim()).length} tema{iaChoiceTopics.split(',').filter(t => t.trim()).length !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <input
+                          value={iaChoiceTopics}
+                          onChange={e => {
+                            const value = e.target.value;
+                            // Limpiar duplicados automáticamente
+                            const temas = value.split(',').map(s => s.trim()).filter(Boolean);
+                            const unique = [...new Set(temas)];
+                            setIaChoiceTopics(unique.join(', '));
+                            setIaError('');
+                          }}
+                          className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-xs focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-200 transition-colors"
+                          placeholder="Ej: sinónimos, ortografía, lectura"
+                        />
+                        {iaChoiceTopics && (
+                          <button
+                            type="button"
+                            onClick={() => setIaChoiceTopics('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[10px]"
+                            title="Limpiar"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                      <div className="mt-1.5 flex items-center justify-between">
+                        <div className="flex flex-wrap gap-1.5">
+                          {temasPlantillas.slice(0, 3).map((tema, idx) => {
+                            const current = iaChoiceTopics.split(',').map(s => s.trim()).filter(Boolean);
+                            const isAdded = current.includes(tema);
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => {
+                                  if (!isAdded) {
+                                    setIaChoiceTopics([...current, tema].join(', '));
+                                    setIaError('');
+                                  } else {
+                                    setIaChoiceTopics(current.filter(t => t !== tema).join(', '));
+                                  }
+                                }}
+                                className={[
+                                  "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
+                                  isAdded
+                                    ? "border-emerald-300 bg-emerald-100 text-emerald-700"
+                                    : "border-slate-300 bg-white text-slate-600 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700"
+                                ].join(' ')}
+                              >
+                                {isAdded ? '✓' : '+'} {tema}
+                              </button>
+                            );
+                          })}
                         </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Modo:</span>
-                        <span>{iaChoiceMode === 'general' ? (areaId ? 'General del área' : 'General del tema') : 'Por temas específicos'}</span>
+                        {iaChoiceTopics && (
+                          <button
+                            type="button"
+                            onClick={() => setIaChoiceTopics('')}
+                            className="text-[10px] text-slate-500 hover:text-rose-600 transition-colors"
+                          >
+                            Limpiar todo
+                          </button>
+                        )}
                       </div>
-                      {iaChoiceMode === 'temas' && iaChoiceTopics && (
-                        <div className="flex items-start gap-2">
-                          <span className="font-medium">Temas:</span>
-                          <span className="flex-1">{iaChoiceTopics}</span>
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        Separa con comas. Mínimo 1, máximo 5 recomendado.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Selector de nivel */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nivel de dificultad</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { value: 'básico', label: 'Básico', desc: 'Conceptos fundamentales' },
+                        { value: 'intermedio', label: 'Intermedio', desc: 'Aplicación' },
+                        { value: 'avanzado', label: 'Avanzado', desc: 'Análisis' }
+                      ].map((nivel) => {
+                        const isSelected = iaNivel === nivel.value;
+                        return (
+                          <button
+                            key={nivel.value}
+                            type="button"
+                            onClick={() => setIaNivel(nivel.value)}
+                            className={[
+                              "text-left rounded-lg border-2 p-2 transition-all",
+                              isSelected
+                                ? nivel.value === 'básico'
+                                  ? 'border-blue-400 bg-blue-50 ring-1 ring-blue-200'
+                                  : nivel.value === 'intermedio'
+                                    ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
+                                    : 'border-purple-400 bg-purple-50 ring-1 ring-purple-200'
+                                : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                            ].join(' ')}
+                          >
+                            <div className="text-xs font-semibold text-slate-800">{nivel.label}</div>
+                            <div className="text-[11px] text-slate-600 mt-0.5">{nivel.desc}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Selector de idioma */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Idioma de salida</label>
+                    <select
+                      value={iaIdioma}
+                      onChange={(e) => setIaIdioma(e.target.value)}
+                      className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2.5 text-sm sm:text-base font-semibold text-slate-700 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-200 transition-all"
+                    >
+                      <option value="auto">Auto (según área/tema)</option>
+                      <option value="es">Español (es-MX)</option>
+                      <option value="en">Inglés (en-US)</option>
+                      <option value="mix">Mixto (mitad ES, mitad EN)</option>
+                    </select>
+                    <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">
+                      Consejo: si mezclas materias (ej. “matemáticas, español, inglés…”), usa “Español” o “Auto”. Para practicar inglés, elige “Inglés” o “Mixto”.
+                    </p>
+                  </div>
+
+                  {/* Distribución de tipos de preguntas */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Distribución de preguntas <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="space-y-3">
+                      {/* Opción múltiple */}
+                      <div className="flex items-center gap-3">
+                        <label className="text-xs text-slate-600 w-32 flex-shrink-0">Opción múltiple:</label>
+                        <div className="flex items-center gap-2 flex-1">
+                          <button
+                            type="button"
+                            onClick={() => setIaCountMultiple(Math.max(0, iaCountMultiple - 1))}
+                            className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
+                            disabled={iaCountMultiple <= 0}
+                          >
+                            −
+                          </button>
+                          <input
+                            type="number"
+                            min="0"
+                            max={MAX_IA}
+                            value={iaCountMultiple}
+                            onChange={(e) => {
+                              const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
+                              setIaCountMultiple(val);
+                              setIaError('');
+                            }}
+                            className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
+                              if (total < MAX_IA) setIaCountMultiple(Math.min(MAX_IA, iaCountMultiple + 1));
+                            }}
+                            className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
+                            disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
+                          >
+                            +
+                          </button>
+                          <span className="text-[11px] text-slate-500">preguntas</span>
                         </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Nivel:</span>
-                        <span className="capitalize">{iaNivel}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Idioma:</span>
-                        <span>
-                          {iaIdioma === 'auto' ? 'Auto' : iaIdioma === 'es' ? 'Español' : iaIdioma === 'en' ? 'Inglés' : 'Mixto'}
-                        </span>
+
+                      {/* Verdadero/Falso */}
+                      <div className="flex items-center gap-3">
+                        <label className="text-xs text-slate-600 w-32 flex-shrink-0">Verdadero/Falso:</label>
+                        <div className="flex items-center gap-2 flex-1">
+                          <button
+                            type="button"
+                            onClick={() => setIaCountVerdaderoFalso(Math.max(0, iaCountVerdaderoFalso - 1))}
+                            className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
+                            disabled={iaCountVerdaderoFalso <= 0}
+                          >
+                            −
+                          </button>
+                          <input
+                            type="number"
+                            min="0"
+                            max={MAX_IA}
+                            value={iaCountVerdaderoFalso}
+                            onChange={(e) => {
+                              const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
+                              setIaCountVerdaderoFalso(val);
+                              setIaError('');
+                            }}
+                            className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
+                              if (total < MAX_IA) setIaCountVerdaderoFalso(Math.min(MAX_IA, iaCountVerdaderoFalso + 1));
+                            }}
+                            className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
+                            disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
+                          >
+                            +
+                          </button>
+                          <span className="text-[11px] text-slate-500">preguntas</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Cantidad:</span>
-                        <span>{iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''} ({iaCountMultiple} múltiple, {iaCountVerdaderoFalso} V/F, {iaCountCorta} corta)</span>
+
+                      {/* Respuesta corta */}
+                      <div className="flex items-center gap-3">
+                        <label className="text-xs text-slate-600 w-32 flex-shrink-0">Respuesta corta:</label>
+                        <div className="flex items-center gap-2 flex-1">
+                          <button
+                            type="button"
+                            onClick={() => setIaCountCorta(Math.max(0, iaCountCorta - 1))}
+                            className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
+                            disabled={iaCountCorta <= 0}
+                          >
+                            −
+                          </button>
+                          <input
+                            type="number"
+                            min="0"
+                            max={MAX_IA}
+                            value={iaCountCorta}
+                            onChange={(e) => {
+                              const val = Math.max(0, Math.min(MAX_IA, Number(e.target.value) || 0));
+                              setIaCountCorta(val);
+                              setIaError('');
+                            }}
+                            className="w-16 rounded-lg border-2 border-slate-200 px-2 py-1 text-xs font-semibold text-center focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const total = iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta;
+                              if (total < MAX_IA) setIaCountCorta(Math.min(MAX_IA, iaCountCorta + 1));
+                            }}
+                            className="w-7 h-7 rounded-lg border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm font-bold"
+                            disabled={(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) >= MAX_IA}
+                          >
+                            +
+                          </button>
+                          <span className="text-[11px] text-slate-500">preguntas</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Área:</span>
-                        <span>{areaTitle || 'No especificada'}</span>
+
+                      {/* Resumen total */}
+                      <div className="pt-2 border-t border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-slate-700">Total:</span>
+                          <span className="text-xs font-bold text-emerald-600">
+                            {iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                )}
 
-                {/* Info adicional */}
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-[11px] text-slate-600 leading-relaxed flex-1">
-                      <strong className="text-slate-700">Nota:</strong> Puedes editar las preguntas después. Proceso: 10-30 segundos.
-                    </p>
+                  {/* Parámetros avanzados de configuración de IA */}
+                  <div>
                     <button
                       type="button"
-                      onClick={() => setShowSummary(!showSummary)}
-                      className="text-[10px] text-emerald-600 hover:text-emerald-700 font-medium whitespace-nowrap"
+                      onClick={() => setIaShowAdvanced(!iaShowAdvanced)}
+                      className="w-full flex items-center justify-between text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 p-2 rounded-lg border border-slate-200 transition-colors"
                     >
-                      {showSummary ? 'Ocultar' : 'Ver'} resumen
+                      <div className="flex items-center gap-1.5">
+                        <Brain className="h-3.5 w-3.5" />
+                        <span>Parámetros avanzados de IA</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {iaShowAdvanced ? (
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        ) : (
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        )}
+                      </div>
+                    </button>
+
+                    {iaShowAdvanced && (
+                      <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-3 animate-in slide-in-from-top-2">
+                        {/* Temperatura / Creatividad */}
+                        <div className="text-xs">
+                          <div className="flex justify-between mb-1">
+                            <label className="font-semibold text-slate-700">Creatividad (Temperatura)</label>
+                            <span className="text-slate-500">{Number(iaTemperature).toFixed(1)}</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            value={iaTemperature}
+                            onChange={e => setIaTemperature(Number(e.target.value))}
+                            className="w-full accent-emerald-500"
+                          />
+                          <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <span>Preciso</span>
+                            <span>Creativo</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                          <div>
+                            <label className="block font-semibold text-slate-700 mb-1">Top‑P</label>
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              min="0"
+                              max="1"
+                              step="0.05"
+                              value={iaTopP}
+                              onChange={(e) => setIaTopP(e.target.value)}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                              placeholder="(vacío)"
+                            />
+                            <p className="mt-1 text-[10px] text-slate-500">0–1 (vacío = default)</p>
+                          </div>
+                          <div>
+                            <label className="block font-semibold text-slate-700 mb-1">Top‑K</label>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min="1"
+                              step="1"
+                              value={iaTopK}
+                              onChange={(e) => setIaTopK(e.target.value)}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                              placeholder="(vacío)"
+                            />
+                            <p className="mt-1 text-[10px] text-slate-500">Entero (vacío = default)</p>
+                          </div>
+                          <div>
+                            <label className="block font-semibold text-slate-700 mb-1">Max tokens</label>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min="64"
+                              step="64"
+                              value={iaMaxTokens}
+                              onChange={(e) => setIaMaxTokens(e.target.value)}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+                              placeholder="(vacío)"
+                            />
+                            <p className="mt-1 text-[10px] text-slate-500">Más alto = respuestas más largas</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mensaje de error */}
+                  {iaError && (
+                    <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3 shadow-sm">
+                      <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-xs sm:text-sm text-amber-800 font-semibold mb-1 leading-relaxed whitespace-pre-line">{iaError}</p>
+                        {cooldownMs > 0 && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <div className="flex-1 h-1.5 bg-amber-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-amber-500 transition-all duration-1000 ease-linear"
+                                style={{ width: `${Math.min(100, (cooldownMs / 45000) * 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] font-bold text-amber-700 whitespace-nowrap">
+                              {Math.ceil(cooldownMs / 1000)}s
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Resumen de configuración */}
+                  {showSummary && (
+                    <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                      <div className="flex items-start justify-between mb-1.5">
+                        <span className="text-xs font-semibold text-emerald-900">Resumen de configuración</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowSummary(false)}
+                          className="text-emerald-600 hover:text-emerald-800 text-[10px]"
+                        >
+                          Ocultar
+                        </button>
+                      </div>
+                      <div className="space-y-1 text-[11px] text-emerald-800">
+                        {!areaId && generalTopic && (
+                          <div className="flex items-start gap-2">
+                            <span className="font-medium">Tema:</span>
+                            <span className="flex-1">{generalTopic}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Modo:</span>
+                          <span>{iaChoiceMode === 'general' ? (areaId ? 'General del área' : 'General del tema') : 'Por temas específicos'}</span>
+                        </div>
+                        {iaChoiceMode === 'temas' && iaChoiceTopics && (
+                          <div className="flex items-start gap-2">
+                            <span className="font-medium">Temas:</span>
+                            <span className="flex-1">{iaChoiceTopics}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Nivel:</span>
+                          <span className="capitalize">{iaNivel}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Idioma:</span>
+                          <span>
+                            {iaIdioma === 'auto' ? 'Auto' : iaIdioma === 'es' ? 'Español' : iaIdioma === 'en' ? 'Inglés' : 'Mixto'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Cantidad:</span>
+                          <span>{iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''} ({iaCountMultiple} múltiple, {iaCountVerdaderoFalso} V/F, {iaCountCorta} corta)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Área:</span>
+                          <span>{areaTitle || 'No especificada'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Info adicional */}
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-[11px] text-slate-600 leading-relaxed flex-1">
+                        <strong className="text-slate-700">Nota:</strong> Puedes editar las preguntas después. Proceso: 10-30 segundos.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowSummary(!showSummary)}
+                        className="text-[10px] text-emerald-600 hover:text-emerald-700 font-medium whitespace-nowrap"
+                      >
+                        {showSummary ? 'Ocultar' : 'Ver'} resumen
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer con botones - siempre visible */}
+                <div className="flex-shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 border-t border-slate-200 bg-slate-50">
+                  <div className="text-[11px] text-slate-500 flex items-center gap-2">
+                    {cooldownMs > 0 && (
+                      <span className="inline-flex items-center gap-1 text-amber-600">
+                        <AlertTriangle className="h-3 w-3" />
+                        Espera {Math.ceil(cooldownMs / 1000)}s
+                      </span>
+                    )}
+                    {!loading && !cooldownMs && (
+                      <span className="text-slate-400">
+                        Tiempo estimado: {(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) <= 10 ? '10-15s' : (iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) <= 30 ? '15-25s' : '25-35s'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => { setIaChoiceOpen(false); setIaError(''); setShowSummary(false); }}
+                      disabled={loading}
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await crearSimuladorConIAOpciones({ modo: iaChoiceMode, temasText: iaChoiceTopics });
+                      }}
+                      disabled={loading || cooldownMs > 0 || (!areaId && !generalTopic.trim()) || (iaChoiceMode === 'temas' && !iaChoiceTopics.trim()) || (iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) < 1}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 px-4 py-1.5 text-xs font-semibold text-white hover:from-emerald-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>Generando {iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''}...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-3.5 w-3.5" />
+                          {cooldownMs > 0 ? `Espera ${Math.ceil(cooldownMs / 1000)}s` : 'Generar'}
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
-              </div>
 
-              {/* Footer con botones - siempre visible */}
-              <div className="flex-shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 border-t border-slate-200 bg-slate-50">
-                <div className="text-[11px] text-slate-500 flex items-center gap-2">
-                  {cooldownMs > 0 && (
-                    <span className="inline-flex items-center gap-1 text-amber-600">
-                      <AlertTriangle className="h-3 w-3" />
-                      Espera {Math.ceil(cooldownMs / 1000)}s
-                    </span>
-                  )}
-                  {!loading && !cooldownMs && (
-                    <span className="text-slate-400">
-                      Tiempo estimado: {(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) <= 10 ? '10-15s' : (iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) <= 30 ? '15-25s' : '25-35s'}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => { setIaChoiceOpen(false); setIaError(''); setShowSummary(false); }}
-                    disabled={loading}
-                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={async () => {
-                      await crearSimuladorConIAOpciones({ modo: iaChoiceMode, temasText: iaChoiceTopics });
-                    }}
-                    disabled={loading || cooldownMs > 0 || (!areaId && !generalTopic.trim()) || (iaChoiceMode === 'temas' && !iaChoiceTopics.trim()) || (iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) < 1}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 px-4 py-1.5 text-xs font-semibold text-white hover:from-emerald-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        <span>Generando {iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta} pregunta{(iaCountMultiple + iaCountVerdaderoFalso + iaCountCorta) !== 1 ? 's' : ''}...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-3.5 w-3.5" />
-                        {cooldownMs > 0 ? `Espera ${Math.ceil(cooldownMs / 1000)}s` : 'Generar'}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* CSS local: ocultar barra de scroll manteniendo scroll */}
-              <style>{`
+                {/* CSS local: ocultar barra de scroll manteniendo scroll */}
+                <style>{`
               .mqerk-hide-scrollbar {
                 -ms-overflow-style: none; /* IE/Edge legacy */
                 scrollbar-width: none; /* Firefox */
@@ -2963,138 +2965,28 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                 }
               }
             `}</style>
-            </div>
-          </div>
-        )
-      }
-
-      {/* Modal de vista previa */}
-      {previewOpen && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg">
-                  <Eye className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Vista previa</h3>
-                  <p className="text-sm text-slate-600 mt-0.5">Previsualización del simulador</p>
-                </div>
               </div>
-              <button
-                onClick={() => setPreviewOpen(false)}
-                className="rounded-xl p-2 text-slate-500 hover:bg-white/80 hover:text-slate-700 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
             </div>
+          )
+        }
 
-            {/* Contenido con scroll */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 bg-slate-50/30">
-              {previewLoading && (
-                <div className="flex flex-col items-center justify-center py-20 gap-4">
-                  <div className="size-12 rounded-full border-4 border-slate-100 border-t-violet-600 animate-spin" />
-                  <p className="text-sm font-semibold text-slate-500">Cargando contenido...</p>
-                </div>
-              )}
-              {!previewLoading && previewSim && (
-                <div className="space-y-4">
-                  <header className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm">
-                    <h4 className="text-lg font-bold text-slate-900">
-                      {previewSim.simulador?.titulo || 'Simulador'}
-                    </h4>
-                    <div className="mt-2 flex items-center gap-3">
-                      <span className="inline-flex items-center px-2.5 py-1 text-xs leading-5 font-bold rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
-                        {Array.isArray(previewSim.preguntas) ? previewSim.preguntas.length : 0} Preguntas
-                      </span>
-                    </div>
-                  </header>
-
-                  <ol className="space-y-3">
-                    {previewSim.preguntas?.map((p, idx) => (
-                      <li key={p.id} className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-xs font-bold text-slate-500 uppercase">
-                            Pregunta {idx + 1}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-semibold">
-                            {p.tipo === 'opcion_multiple' ? 'Opción múltiple' : p.tipo === 'verdadero_falso' ? 'Verdadero/Falso' : 'Respuesta corta'} • {p.puntos || 1} pt{(p.puntos || 1) > 1 ? 's' : ''}
-                          </span>
-                        </div>
-
-                        <div className="text-sm font-semibold text-slate-900 leading-relaxed mb-3">
-                          <MathText text={p.enunciado || ''} />
-                        </div>
-
-                        {p.tipo === 'opcion_multiple' && (
-                          <ul className="grid gap-2">
-                            {p.opciones?.map((o) => (
-                              <li key={o.id} className={`flex items-center gap-2 rounded-lg border p-3 text-sm font-normal ${o.es_correcta ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-600'}`}>
-                                {o.es_correcta ? (
-                                  <div className="size-5 rounded-full flex-shrink-0 flex items-center justify-center bg-emerald-500">
-                                    <CheckCircle2 className="size-4 text-white" />
-                                  </div>
-                                ) : (
-                                  <div className="size-5 rounded-full flex-shrink-0 border-2 border-slate-300" />
-                                )}
-                                <MathText text={o.texto || '—'} />
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-
-                        {p.tipo === 'verdadero_falso' && (
-                          <div className="flex gap-3">
-                            {['Verdadero', 'Falso'].map(val => {
-                              const isCorrect = p.opciones?.find(x => x.es_correcta)?.texto === val;
-                              return (
-                                <div key={val} className={`flex-1 rounded-lg border p-3 text-center text-sm font-semibold ${isCorrect ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                                  {val} {isCorrect && '✓'}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {p.tipo === 'respuesta_corta' && (
-                          <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
-                            <span className="text-[10px] font-bold text-indigo-600 uppercase block mb-1">Respuesta correcta</span>
-                            <div className="text-sm font-medium text-indigo-800">
-                              <MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} />
-                            </div>
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Resultados modal */}
-      {
-        resultsOpen && createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col">
-              {/* Header mejorado */}
+        {/* Modal de vista previa */}
+        {previewOpen && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setPreviewOpen(false)}>
+            <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg">
-                    <span className="text-white font-bold text-lg">%</span>
+                    <Eye className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900">Resultados de la Simulación</h3>
-                    <p className="text-sm text-slate-600 mt-0.5">{resultsSimMeta?.titulo || 'Simulación'}</p>
+                    <h3 className="text-lg font-bold text-slate-900">Vista previa</h3>
+                    <p className="text-sm text-slate-600 mt-0.5">Previsualización del simulador</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => setResultsOpen(false)}
+                  onClick={() => setPreviewOpen(false)}
                   className="rounded-xl p-2 text-slate-500 hover:bg-white/80 hover:text-slate-700 transition-colors"
                 >
                   <X className="h-5 w-5" />
@@ -3103,167 +2995,278 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
               {/* Contenido con scroll */}
               <div className="flex-1 overflow-y-auto px-6 py-4 bg-slate-50/30">
-                {resultsLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="flex flex-col items-center gap-3">
-                      <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
-                      <p className="text-sm font-medium text-slate-600">Cargando resultados...</p>
-                    </div>
-                  </div>
-                ) : resultsRows.length ? (
-                  <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-slate-200/60">
-                        <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50">
-                          <tr>
-                            <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
-                              Estudiante
-                            </th>
-                            <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
-                              Grupo
-                            </th>
-                            <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
-                              Intentos
-                            </th>
-                            <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
-                              Puntaje Oficial
-                            </th>
-                            <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-700">
-                              Acción
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 bg-white">
-                          {resultsRows.map((r, idx) => (
-                            <tr
-                              key={r.id_estudiante}
-                              className={`hover:bg-indigo-50/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
-                            >
-                              <td className="px-5 py-4">
-                                <div className="font-semibold text-slate-900 text-sm">
-                                  {`${r.apellidos || ''} ${r.nombre || ''}`.trim() || 'Sin nombre'}
-                                </div>
-                              </td>
-                              <td className="px-5 py-4 text-center">
-                                <span className="inline-flex items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold text-sm">
-                                  {r.grupo || '—'}
-                                </span>
-                              </td>
-                              <td className="px-5 py-4 text-center">
-                                <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
-                                  {r.total_intentos || 0}
-                                </span>
-                              </td>
-                              <td className="px-5 py-4 text-center">
-                                {r.total_intentos > 0 ? (
-                                  <span className={`inline-flex items-center justify-center min-w-[4rem] px-4 py-2 rounded-xl font-bold text-sm shadow-sm ${(Number(r.oficial_puntaje || 0) >= 70)
-                                    ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white ring-2 ring-emerald-200'
-                                    : (Number(r.oficial_puntaje || 0) >= 50)
-                                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white ring-2 ring-amber-200'
-                                      : 'bg-gradient-to-r from-rose-500 to-red-600 text-white ring-2 ring-rose-200'
-                                    }`}>
-                                    {Number(r.oficial_puntaje || 0)}%
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-sm font-medium">
-                                    Sin intento
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-5 py-4 text-right">
-                                <button
-                                  disabled={r.total_intentos === 0}
-                                  onClick={() => openReview(r)}
-                                  className="inline-flex items-center gap-1.5 rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-4 py-2 text-xs font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 hover:border-indigo-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                                >
-                                  <Eye className="h-3.5 w-3.5" />
-                                  Ver detalle
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-16 px-4">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mb-4">
-                      <PlaySquare className="h-10 w-10 text-slate-400" />
-                    </div>
-                    <h4 className="text-lg font-semibold text-slate-700 mb-2">Sin resultados aún</h4>
-                    <p className="text-sm text-slate-500 text-center max-w-sm">
-                      Aún no hay estudiantes que hayan completado esta simulación.
-                    </p>
+                {previewLoading && (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <div className="size-12 rounded-full border-4 border-slate-100 border-t-violet-600 animate-spin" />
+                    <p className="text-sm font-semibold text-slate-500">Cargando contenido...</p>
                   </div>
                 )}
-              </div>
+                {!previewLoading && previewSim && (
+                  <div className="space-y-4">
+                    <header className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm">
+                      <h4 className="text-lg font-bold text-slate-900">
+                        {previewSim.simulador?.titulo || 'Simulador'}
+                      </h4>
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className="inline-flex items-center px-2.5 py-1 text-xs leading-5 font-bold rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
+                          {Array.isArray(previewSim.preguntas) ? previewSim.preguntas.length : 0} Preguntas
+                        </span>
+                      </div>
+                    </header>
 
-              {/* Footer mejorado */}
-              <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t border-slate-200/60">
-                <div className="text-sm text-slate-600">
-                  {resultsRows.length > 0 && (
-                    <span className="font-medium">
-                      {resultsRows.length} {resultsRows.length === 1 ? 'estudiante' : 'estudiantes'}
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => setResultsOpen(false)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-violet-700 transition-all hover:shadow-lg"
-                >
-                  Cerrar
-                </button>
+                    <ol className="space-y-3">
+                      {previewSim.preguntas?.map((p, idx) => (
+                        <li key={p.id} className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-bold text-slate-500 uppercase">
+                              Pregunta {idx + 1}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-semibold">
+                              {p.tipo === 'opcion_multiple' ? 'Opción múltiple' : p.tipo === 'verdadero_falso' ? 'Verdadero/Falso' : 'Respuesta corta'} • {p.puntos || 1} pt{(p.puntos || 1) > 1 ? 's' : ''}
+                            </span>
+                          </div>
+
+                          <div className="text-sm font-semibold text-slate-900 leading-relaxed mb-3">
+                            <MathText text={p.enunciado || ''} />
+                          </div>
+
+                          {p.tipo === 'opcion_multiple' && (
+                            <ul className="grid gap-2">
+                              {p.opciones?.map((o) => (
+                                <li key={o.id} className={`flex items-center gap-2 rounded-lg border p-3 text-sm font-normal ${o.es_correcta ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-600'}`}>
+                                  {o.es_correcta ? (
+                                    <div className="size-5 rounded-full flex-shrink-0 flex items-center justify-center bg-emerald-500">
+                                      <CheckCircle2 className="size-4 text-white" />
+                                    </div>
+                                  ) : (
+                                    <div className="size-5 rounded-full flex-shrink-0 border-2 border-slate-300" />
+                                  )}
+                                  <MathText text={o.texto || '—'} />
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          {p.tipo === 'verdadero_falso' && (
+                            <div className="flex gap-3">
+                              {['Verdadero', 'Falso'].map(val => {
+                                const isCorrect = p.opciones?.find(x => x.es_correcta)?.texto === val;
+                                return (
+                                  <div key={val} className={`flex-1 rounded-lg border p-3 text-center text-sm font-semibold ${isCorrect ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                                    {val} {isCorrect && '✓'}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {p.tipo === 'respuesta_corta' && (
+                            <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+                              <span className="text-[10px] font-bold text-indigo-600 uppercase block mb-1">Respuesta correcta</span>
+                              <div className="text-sm font-medium text-indigo-800">
+                                <MathText text={p.opciones?.find(x => x.es_correcta)?.texto || '—'} />
+                              </div>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
               </div>
             </div>
           </div>,
           document.body
-        )
-      }
+        )}
 
-      {/* Review modal - Usando componente reutilizable */}
-      <ReviewModal
-        open={reviewOpen}
-        onClose={() => setReviewOpen(false)}
-        tipo="simulacion"
-        idEvaluacion={resultsSimMeta?.id}
-        estudiante={reviewHeader.estudiante ? {
-          id: reviewHeader.estudiante.id,
-          nombre: reviewHeader.estudiante.nombre,
-          totalIntentos: reviewHeader.estudiante.totalIntentos
-        } : null}
-        titulo={reviewHeader.simulacion?.titulo}
-      />
+        {/* Resultados modal */}
+        {
+          resultsOpen && createPortal(
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+              <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col">
+                {/* Header mejorado */}
+                <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg">
+                      <span className="text-white font-bold text-lg">%</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">Resultados de la Simulación</h3>
+                      <p className="text-sm text-slate-600 mt-0.5">{resultsSimMeta?.titulo || 'Simulación'}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setResultsOpen(false)}
+                    className="rounded-xl p-2 text-slate-500 hover:bg-white/80 hover:text-slate-700 transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
 
-      {/* Modal de confirmación genérico */}
-      {
-        confirmModal.open && (
-          <ConfirmModal
-            isOpen={confirmModal.open}
-            onClose={() => setConfirmModal(prev => ({ ...prev, open: false }))}
-            onConfirm={confirmModal.onConfirm}
-            title={confirmModal.title}
-            message={confirmModal.message}
-            type={confirmModal.type}
-            confirmText={confirmModal.confirmText}
-            cancelText={confirmModal.cancelText}
-            loading={loading} // Reusing generic loading state if needed, or we could add specific loading state
-          />
-        )
-      }
+                {/* Contenido con scroll */}
+                <div className="flex-1 overflow-y-auto px-6 py-4 bg-slate-50/30">
+                  {resultsLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+                        <p className="text-sm font-medium text-slate-600">Cargando resultados...</p>
+                      </div>
+                    </div>
+                  ) : resultsRows.length ? (
+                    <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-slate-200/60">
+                          <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50">
+                            <tr>
+                              <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Estudiante
+                              </th>
+                              <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Grupo
+                              </th>
+                              <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Intentos
+                              </th>
+                              <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Puntaje Oficial
+                              </th>
+                              <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Acción
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 bg-white">
+                            {resultsRows.map((r, idx) => (
+                              <tr
+                                key={r.id_estudiante}
+                                className={`hover:bg-indigo-50/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                              >
+                                <td className="px-5 py-4">
+                                  <div className="font-semibold text-slate-900 text-sm">
+                                    {`${r.apellidos || ''} ${r.nombre || ''}`.trim() || 'Sin nombre'}
+                                  </div>
+                                </td>
+                                <td className="px-5 py-4 text-center">
+                                  <span className="inline-flex items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold text-sm">
+                                    {r.grupo || '—'}
+                                  </span>
+                                </td>
+                                <td className="px-5 py-4 text-center">
+                                  <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">
+                                    {r.total_intentos || 0}
+                                  </span>
+                                </td>
+                                <td className="px-5 py-4 text-center">
+                                  {r.total_intentos > 0 ? (
+                                    <span className={`inline-flex items-center justify-center min-w-[4rem] px-4 py-2 rounded-xl font-bold text-sm shadow-sm ${(Number(r.oficial_puntaje || 0) >= 70)
+                                      ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white ring-2 ring-emerald-200'
+                                      : (Number(r.oficial_puntaje || 0) >= 50)
+                                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white ring-2 ring-amber-200'
+                                        : 'bg-gradient-to-r from-rose-500 to-red-600 text-white ring-2 ring-rose-200'
+                                      }`}>
+                                      {Number(r.oficial_puntaje || 0)}%
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-sm font-medium">
+                                      Sin intento
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-5 py-4 text-right">
+                                  <button
+                                    disabled={r.total_intentos === 0}
+                                    onClick={() => openReview(r)}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-4 py-2 text-xs font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 hover:border-indigo-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                    Ver detalle
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-16 px-4">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mb-4">
+                        <PlaySquare className="h-10 w-10 text-slate-400" />
+                      </div>
+                      <h4 className="text-lg font-semibold text-slate-700 mb-2">Sin resultados aún</h4>
+                      <p className="text-sm text-slate-500 text-center max-w-sm">
+                        Aún no hay estudiantes que hayan completado esta simulación.
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-      {/* Modal de éxito */}
-      {
-        successModal.open && (
-          <SuccessModal
-            message={successModal.message}
-            count={successModal.count}
-            willRedirect={successModal.willRedirect}
-            onClose={() => setSuccessModal(prev => ({ ...prev, open: false }))}
-          />
-        )
-      }
-    </div >
+                {/* Footer mejorado */}
+                <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t border-slate-200/60">
+                  <div className="text-sm text-slate-600">
+                    {resultsRows.length > 0 && (
+                      <span className="font-medium">
+                        {resultsRows.length} {resultsRows.length === 1 ? 'estudiante' : 'estudiantes'}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setResultsOpen(false)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-violet-700 transition-all hover:shadow-lg"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        }
+
+        {/* Review modal - Usando componente reutilizable */}
+        <ReviewModal
+          open={reviewOpen}
+          onClose={() => setReviewOpen(false)}
+          tipo="simulacion"
+          idEvaluacion={resultsSimMeta?.id}
+          estudiante={reviewHeader.estudiante ? {
+            id: reviewHeader.estudiante.id,
+            nombre: reviewHeader.estudiante.nombre,
+            totalIntentos: reviewHeader.estudiante.totalIntentos
+          } : null}
+          titulo={reviewHeader.simulacion?.titulo}
+        />
+
+        {/* Modal de confirmación genérico */}
+        {
+          confirmModal.open && (
+            <ConfirmModal
+              isOpen={confirmModal.open}
+              onClose={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+              onConfirm={confirmModal.onConfirm}
+              title={confirmModal.title}
+              message={confirmModal.message}
+              type={confirmModal.type}
+              confirmText={confirmModal.confirmText}
+              cancelText={confirmModal.cancelText}
+              loading={loading} // Reusing generic loading state if needed, or we could add specific loading state
+            />
+          )
+        }
+
+        {/* Modal de éxito */}
+        {
+          successModal.open && (
+            <SuccessModal
+              message={successModal.message}
+              count={successModal.count}
+              willRedirect={successModal.willRedirect}
+              onClose={() => setSuccessModal(prev => ({ ...prev, open: false }))}
+            />
+          )
+        }
+      </div>
+    </div>
   );
 }
 

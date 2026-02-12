@@ -69,7 +69,7 @@ const Row = ({ icon: Icon, label, value, editing, name, type = "text", onChange,
       </li>
     );
   }
-  
+
   return (
     <li className="flex items-start gap-3 py-2 group">
       <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center text-white bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg group-hover:from-violet-600 group-hover:to-indigo-700 shadow-md ring-1 ring-violet-200 transition-all duration-200 group-hover:scale-110">
@@ -97,7 +97,7 @@ const StatPill = ({ value, label }) => (
 /* ------------------------ tarjeta de perfil ----------------------- */
 
 const ProfileCard = ({ user, stats = {}, onEdit, editing }) => {
-  const { cursos=0, estudiantes=0, certificados=0, generaciones=0 } = stats;
+  const { cursos = 0, estudiantes = 0, certificados = 0, generaciones = 0 } = stats;
 
   return (
     <aside className="rounded-3xl border-2 border-violet-200/70 bg-gradient-to-br from-violet-50/50 via-indigo-50/50 to-purple-50/50 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 ring-2 ring-violet-100/50">
@@ -138,11 +138,10 @@ const ProfileCard = ({ user, stats = {}, onEdit, editing }) => {
       <button
         onClick={onEdit}
         disabled={editing}
-        className={`mt-5 w-full rounded-2xl px-4 py-3.5 font-bold shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ring-2 ${
-          editing 
-            ? 'bg-slate-400 text-white cursor-not-allowed ring-slate-300' 
+        className={`mt-5 w-full rounded-2xl px-4 py-3.5 font-bold shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ring-2 ${editing
+            ? 'bg-slate-400 text-white cursor-not-allowed ring-slate-300'
             : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] ring-violet-200'
-        }`}
+          }`}
       >
         {editing ? (
           <>
@@ -171,7 +170,7 @@ export default function AsesorPerfil() {
   const [editing, setEditing] = useState(false);
   const [perfilData, setPerfilData] = useState(null);
   const [estudiantes, setEstudiantes] = useState([]);
-  
+
   // Formulario
   const [form, setForm] = useState({});
 
@@ -187,10 +186,10 @@ export default function AsesorPerfil() {
           getMisEstudiantes().catch(() => ({ data: null })),
         ]);
         if (!alive) return;
-        
+
         const data = perfilRes?.data?.data || null;
         setPerfilData(data);
-        
+
         // Inicializar formulario
         if (data) {
           setForm({
@@ -209,8 +208,8 @@ export default function AsesorPerfil() {
             titulo_academico: data.perfil?.titulo_academico ? "1" : "0",
             anio_graduacion: data.perfil?.anio_graduacion || "",
             experiencia_rango: data.perfil?.experiencia_rango || "",
-            areas_especializacion: Array.isArray(data.perfil?.areas_especializacion) 
-              ? data.perfil.areas_especializacion.join(', ') 
+            areas_especializacion: Array.isArray(data.perfil?.areas_especializacion)
+              ? data.perfil.areas_especializacion.join(', ')
               : (data.perfil?.areas_especializacion || ""),
             empresa: data.perfil?.empresa || "",
             ultimo_puesto: data.perfil?.ultimo_puesto || "",
@@ -222,7 +221,7 @@ export default function AsesorPerfil() {
             entidad_curp: data.perfil?.entidad_curp || "",
           });
         }
-        
+
         const list = estudiantesRes?.data?.data || estudiantesRes?.data?.estudiantes || [];
         setEstudiantes(Array.isArray(list) ? list : []);
       } catch (e) {
@@ -245,7 +244,7 @@ export default function AsesorPerfil() {
     setSaving(true);
     setError(null);
     setSuccess(null);
-    
+
     try {
       const payload = {
         nombres: form.nombres?.trim() || undefined,
@@ -263,7 +262,7 @@ export default function AsesorPerfil() {
         titulo_academico: form.titulo_academico === "1" ? true : (form.titulo_academico === "0" ? false : undefined),
         anio_graduacion: form.anio_graduacion ? Number(form.anio_graduacion) : undefined,
         experiencia_rango: form.experiencia_rango?.trim() || undefined,
-        areas_especializacion: form.areas_especializacion?.trim() 
+        areas_especializacion: form.areas_especializacion?.trim()
           ? form.areas_especializacion.split(',').map(s => s.trim()).filter(Boolean)
           : undefined,
         empresa: form.empresa?.trim() || undefined,
@@ -275,19 +274,19 @@ export default function AsesorPerfil() {
         curp: form.curp?.trim() || undefined,
         entidad_curp: form.entidad_curp?.trim() || undefined,
       };
-      
+
       // Eliminar campos undefined
       Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
-      
+
       const { data } = await updateMiPerfil(payload);
       setPerfilData(data?.data || perfilData);
       setEditing(false);
       setSuccess('Perfil actualizado correctamente');
-      
+
       // Recargar datos
       const { data: refreshData } = await getMiPerfil();
       setPerfilData(refreshData?.data || null);
-      
+
       setTimeout(() => setSuccess(null), 3000);
     } catch (e) {
       setError(e?.response?.data?.message || 'Error al guardar el perfil');
@@ -315,8 +314,8 @@ export default function AsesorPerfil() {
         titulo_academico: perfilData.perfil?.titulo_academico ? "1" : "0",
         anio_graduacion: perfilData.perfil?.anio_graduacion || "",
         experiencia_rango: perfilData.perfil?.experiencia_rango || "",
-        areas_especializacion: Array.isArray(perfilData.perfil?.areas_especializacion) 
-          ? perfilData.perfil.areas_especializacion.join(', ') 
+        areas_especializacion: Array.isArray(perfilData.perfil?.areas_especializacion)
+          ? perfilData.perfil.areas_especializacion.join(', ')
           : (perfilData.perfil?.areas_especializacion || ""),
         empresa: perfilData.perfil?.empresa || "",
         ultimo_puesto: perfilData.perfil?.ultimo_puesto || "",
@@ -362,21 +361,21 @@ export default function AsesorPerfil() {
   const fmt = (v) => (v == null || v === '' ? '—' : String(v));
   const fmtDate = (d) => {
     if (!d) return '—';
-    try { 
-      const dt = new Date(d); 
-      return isNaN(dt) ? String(d) : dt.toLocaleDateString('es-MX'); 
-    } catch { 
-      return String(d); 
+    try {
+      const dt = new Date(d);
+      return isNaN(dt) ? String(d) : dt.toLocaleDateString('es-MX');
+    } catch {
+      return String(d);
     }
   };
 
-  const userCard = { 
-    name: fullName, 
+  const userCard = {
+    name: fullName,
     role: (Array.isArray(perfilData?.perfil?.areas_especializacion) && perfilData.perfil.areas_especializacion.length > 0)
-      ? perfilData.perfil.areas_especializacion[0] 
-      : 'Asesor', 
-    since: (perfilData?.perfil?.created_at ? new Date(perfilData.perfil.created_at).getFullYear() : new Date().getFullYear()), 
-    avatar: avatarUrl 
+      ? perfilData.perfil.areas_especializacion[0]
+      : 'Asesor',
+    since: (perfilData?.perfil?.created_at ? new Date(perfilData.perfil.created_at).getFullYear() : new Date().getFullYear()),
+    avatar: avatarUrl
   };
 
   // Opciones para selects
@@ -422,7 +421,8 @@ export default function AsesorPerfil() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-white">
+    <div className="w-full min-h-screen relative">
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Header */}
         <div className="mb-8">
@@ -459,7 +459,7 @@ export default function AsesorPerfil() {
             </button>
           </div>
         )}
-        
+
         {success && (
           <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl text-green-700 flex items-center gap-3 shadow-md ring-2 ring-green-100">
             <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-md">
@@ -523,37 +523,37 @@ export default function AsesorPerfil() {
               <SectionCard title="Datos personales">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <ul>
-                    <Row icon={Mail} label="Correo electrónico" value={fmt(perfilData?.preregistro?.correo)} 
-                      editing={editing} name="correo" type="email" onChange={handleChange} 
+                    <Row icon={Mail} label="Correo electrónico" value={fmt(perfilData?.preregistro?.correo)}
+                      editing={editing} name="correo" type="email" onChange={handleChange}
                       placeholder="correo@ejemplo.com" />
-                    <Row icon={MapPin} label="Dirección" value={fmt(perfilData?.perfil?.direccion)} 
-                      editing={editing} name="direccion" onChange={handleChange} 
+                    <Row icon={MapPin} label="Dirección" value={fmt(perfilData?.perfil?.direccion)}
+                      editing={editing} name="direccion" onChange={handleChange}
                       placeholder="Calle y número" />
-                    <Row icon={Users2} label="Municipio" value={fmt(perfilData?.perfil?.municipio)} 
-                      editing={editing} name="municipio" onChange={handleChange} 
+                    <Row icon={Users2} label="Municipio" value={fmt(perfilData?.perfil?.municipio)}
+                      editing={editing} name="municipio" onChange={handleChange}
                       placeholder="Nombre del municipio" />
-                    <Row icon={Phone} label="Número de teléfono" value={fmt(perfilData?.preregistro?.telefono)} 
-                      editing={editing} name="telefono" type="tel" onChange={handleChange} 
+                    <Row icon={Phone} label="Número de teléfono" value={fmt(perfilData?.preregistro?.telefono)}
+                      editing={editing} name="telefono" type="tel" onChange={handleChange}
                       placeholder="55 1234 5678" />
-                    <Row icon={CalendarDays} label="Fecha de nacimiento" 
-                      value={fmtDate(perfilData?.perfil?.nacimiento)} 
+                    <Row icon={CalendarDays} label="Fecha de nacimiento"
+                      value={fmtDate(perfilData?.perfil?.nacimiento)}
                       editing={editing} name="nacimiento" type="date" onChange={handleChange} />
                   </ul>
                   <ul>
-                    <Row icon={User2} label="Nombres" value={fmt(perfilData?.preregistro?.nombres)} 
-                      editing={editing} name="nombres" onChange={handleChange} 
+                    <Row icon={User2} label="Nombres" value={fmt(perfilData?.preregistro?.nombres)}
+                      editing={editing} name="nombres" onChange={handleChange}
                       placeholder="Nombres" />
-                    <Row icon={User2} label="Apellidos" value={fmt(perfilData?.preregistro?.apellidos)} 
-                      editing={editing} name="apellidos" onChange={handleChange} 
+                    <Row icon={User2} label="Apellidos" value={fmt(perfilData?.preregistro?.apellidos)}
+                      editing={editing} name="apellidos" onChange={handleChange}
                       placeholder="Apellidos" />
-                    <Row icon={Flag} label="Nacionalidad" value={fmt(perfilData?.perfil?.nacionalidad)} 
-                      editing={editing} name="nacionalidad" onChange={handleChange} 
+                    <Row icon={Flag} label="Nacionalidad" value={fmt(perfilData?.perfil?.nacionalidad)}
+                      editing={editing} name="nacionalidad" onChange={handleChange}
                       placeholder="Mexicana" />
-                    <Row icon={User2} label="Género" value={fmt(perfilData?.perfil?.genero)} 
-                      editing={editing} name="genero" onChange={handleChange} 
+                    <Row icon={User2} label="Género" value={fmt(perfilData?.perfil?.genero)}
+                      editing={editing} name="genero" onChange={handleChange}
                       options={generoOptions} />
-                    <Row icon={BadgeCheck} label="RFC" value={fmt(perfilData?.perfil?.rfc)} 
-                      editing={editing} name="rfc" onChange={handleChange} 
+                    <Row icon={BadgeCheck} label="RFC" value={fmt(perfilData?.perfil?.rfc)}
+                      editing={editing} name="rfc" onChange={handleChange}
                       placeholder="RFC123456789" />
                   </ul>
                 </div>
@@ -562,21 +562,21 @@ export default function AsesorPerfil() {
               {/* Datos académicos */}
               <SectionCard title="Datos académicos">
                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                  <Row icon={GraduationCap} label="Nivel máximo de estudios" 
-                    value={fmt(perfilData?.perfil?.nivel_estudios)} 
-                    editing={editing} name="nivel_estudios" onChange={handleChange} 
+                  <Row icon={GraduationCap} label="Nivel máximo de estudios"
+                    value={fmt(perfilData?.perfil?.nivel_estudios)}
+                    editing={editing} name="nivel_estudios" onChange={handleChange}
                     options={nivelEstudiosOptions} />
-                  <Row icon={BookOpenCheck} label="Título académico" 
-                    value={perfilData?.perfil?.titulo_academico ? "Sí" : "No"} 
-                    editing={editing} name="titulo_academico" onChange={handleChange} 
+                  <Row icon={BookOpenCheck} label="Título académico"
+                    value={perfilData?.perfil?.titulo_academico ? "Sí" : "No"}
+                    editing={editing} name="titulo_academico" onChange={handleChange}
                     options={[{ value: "1", label: "Sí" }, { value: "0", label: "No" }]} />
-                  <Row icon={School} label="Institución educativa" 
-                    value={fmt(perfilData?.perfil?.institucion)} 
-                    editing={editing} name="institucion" onChange={handleChange} 
+                  <Row icon={School} label="Institución educativa"
+                    value={fmt(perfilData?.perfil?.institucion)}
+                    editing={editing} name="institucion" onChange={handleChange}
                     placeholder="Nombre de la institución" />
-                  <Row icon={CalendarDays} label="Año de graduación" 
-                    value={fmt(perfilData?.perfil?.anio_graduacion)} 
-                    editing={editing} name="anio_graduacion" type="number" onChange={handleChange} 
+                  <Row icon={CalendarDays} label="Año de graduación"
+                    value={fmt(perfilData?.perfil?.anio_graduacion)}
+                    editing={editing} name="anio_graduacion" type="number" onChange={handleChange}
                     placeholder="2020" />
                 </ul>
               </SectionCard>
@@ -584,33 +584,33 @@ export default function AsesorPerfil() {
               {/* Datos profesionales */}
               <SectionCard title="Datos profesionales">
                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                  <Row icon={BriefcaseBusiness} label="Experiencia laboral" 
-                    value={fmt(perfilData?.perfil?.experiencia_rango)} 
-                    editing={editing} name="experiencia_rango" onChange={handleChange} 
+                  <Row icon={BriefcaseBusiness} label="Experiencia laboral"
+                    value={fmt(perfilData?.perfil?.experiencia_rango)}
+                    editing={editing} name="experiencia_rango" onChange={handleChange}
                     options={experienciaOptions} />
-                  <Row icon={Brain} label="Áreas de especialización" 
-                    value={fmt(Array.isArray(perfilData?.perfil?.areas_especializacion) 
-                      ? perfilData.perfil.areas_especializacion.join(', ') 
-                      : perfilData?.perfil?.areas_especializacion)} 
-                    editing={editing} name="areas_especializacion" onChange={handleChange} 
+                  <Row icon={Brain} label="Áreas de especialización"
+                    value={fmt(Array.isArray(perfilData?.perfil?.areas_especializacion)
+                      ? perfilData.perfil.areas_especializacion.join(', ')
+                      : perfilData?.perfil?.areas_especializacion)}
+                    editing={editing} name="areas_especializacion" onChange={handleChange}
                     placeholder="Matemáticas, Física (separar con comas)" />
-                  <Row icon={School} label="Institución actual" 
-                    value={fmt(perfilData?.perfil?.empresa || 'MQerKAcademy')} 
-                    editing={editing} name="empresa" onChange={handleChange} 
+                  <Row icon={School} label="Institución actual"
+                    value={fmt(perfilData?.perfil?.empresa || 'MQerKAcademy')}
+                    editing={editing} name="empresa" onChange={handleChange}
                     placeholder="Nombre de la institución" />
-                  <Row icon={User2} label="Puesto actual" 
-                    value={fmt(perfilData?.perfil?.ultimo_puesto || 'Asesor')} 
-                    editing={editing} name="ultimo_puesto" onChange={handleChange} 
+                  <Row icon={User2} label="Puesto actual"
+                    value={fmt(perfilData?.perfil?.ultimo_puesto || 'Asesor')}
+                    editing={editing} name="ultimo_puesto" onChange={handleChange}
                     placeholder="Asesor, Profesor, etc." />
-                  <Row icon={Users2} label="Función" 
-                    value={fmt(perfilData?.perfil?.funciones || 'Asesorar y entrenar')} 
-                    editing={editing} name="funciones" type="textarea" onChange={handleChange} 
+                  <Row icon={Users2} label="Función"
+                    value={fmt(perfilData?.perfil?.funciones || 'Asesorar y entrenar')}
+                    editing={editing} name="funciones" type="textarea" onChange={handleChange}
                     placeholder="Descripción de tus funciones" />
-                  <Row icon={Boxes} label="Plataformas EDTECH" 
-                    value={fmt(Array.isArray(perfilData?.perfil?.plataformas) 
-                      ? perfilData.perfil.plataformas.join(', ') 
-                      : perfilData?.perfil?.plataformas)} 
-                    editing={editing} name="plataformas" onChange={handleChange} 
+                  <Row icon={Boxes} label="Plataformas EDTECH"
+                    value={fmt(Array.isArray(perfilData?.perfil?.plataformas)
+                      ? perfilData.perfil.plataformas.join(', ')
+                      : perfilData?.perfil?.plataformas)}
+                    editing={editing} name="plataformas" onChange={handleChange}
                     placeholder="Google Classroom, Moodle (separar con comas)" />
                 </ul>
               </SectionCard>

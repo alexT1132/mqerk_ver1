@@ -28,15 +28,15 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
           ✓
         </span>
       )}
-      
+
       {/* Imagen o icono de respaldo */}
       <div className={[
         "relative flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 rounded-2xl overflow-hidden transition-all duration-300",
         selected ? "ring-4 ring-emerald-400/50 shadow-lg" : "ring-2 ring-slate-200 group-hover:ring-violet-300 group-hover:shadow-md"
       ].join(" ")}>
         {!imageError && image ? (
-          <img 
-            src={image} 
+          <img
+            src={image}
             alt={title}
             onError={() => setImageError(true)}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
@@ -44,13 +44,13 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
         ) : (
           <div className={[
             "h-full w-full flex items-center justify-center transition-all duration-300",
-            selected 
-              ? "bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg" 
+            selected
+              ? "bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg"
               : "bg-gradient-to-br from-violet-500 to-indigo-600 group-hover:from-violet-600 group-hover:to-indigo-700"
           ].join(" ")}>
-            <GraduationCap 
-              size={32} 
-              className="text-white transition-transform duration-300 group-hover:scale-110" 
+            <GraduationCap
+              size={32}
+              className="text-white transition-transform duration-300 group-hover:scale-110"
             />
           </div>
         )}
@@ -58,8 +58,8 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
 
       <h3 className={[
         "text-sm font-extrabold text-center transition-colors leading-tight",
-        selected 
-          ? "text-emerald-700" 
+        selected
+          ? "text-emerald-700"
           : "text-slate-800 group-hover:text-violet-600"
       ].join(" ")}>
         {title}
@@ -132,7 +132,7 @@ export default function MisCursos() {
 
   const handleSelect = (title) => {
     setSelected(title);
-    try { localStorage.setItem("cursoSeleccionado", title); } catch {}
+    try { localStorage.setItem("cursoSeleccionado", title); } catch { }
   };
 
   // Sincronizar con cambios en localStorage
@@ -146,7 +146,8 @@ export default function MisCursos() {
 
 
   return (
-    <div className="w-full min-h-screen bg-transparent">
+    <div className="w-full min-h-screen relative">
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Header siempre visible */}
         <div className="mb-8">
@@ -156,7 +157,7 @@ export default function MisCursos() {
             </div>
             <div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-tight">
-                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.1', paddingBottom: '2px' }}>
+                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
                   Mis Cursos
                 </span>
               </h1>
@@ -221,7 +222,7 @@ export default function MisCursos() {
             {estudiantes.length > 0 && (
               <div className="mt-6 mx-auto max-w-md p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl shadow-sm ring-2 ring-amber-100">
                 <p className="text-sm text-amber-800 font-medium">
-                  <strong className="font-extrabold">Nota:</strong> Tienes {estudiantes.length} {estudiantes.length === 1 ? 'estudiante' : 'estudiantes'} asignado{estudiantes.length > 1 ? 's' : ''}, 
+                  <strong className="font-extrabold">Nota:</strong> Tienes {estudiantes.length} {estudiantes.length === 1 ? 'estudiante' : 'estudiantes'} asignado{estudiantes.length > 1 ? 's' : ''},
                   pero {estudiantes.length === 1 ? 'no tiene' : 'no tienen'} curso asignado aún.
                 </p>
               </div>

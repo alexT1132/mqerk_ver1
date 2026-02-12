@@ -4,7 +4,7 @@ import Topbar from "../../components/Asesor/Topbar";
 import SidebarIconOnly from "../../components/Asesor/Sidebar";
 import MobileSidebar from "../../components/Asesor/MobileSidebar";
 import { getMisEstudiantes } from "../../api/asesores.js";
-import { Eye, Loader2, Users } from "lucide-react";
+import { Eye, Loader2, Users, MessageSquare } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function Layout({ embedded = false }) {
@@ -77,10 +77,12 @@ export default function Layout({ embedded = false }) {
   const columns = useMemo(
     () => [
       { key: "folio", label: "Folio", render: (e) => e.folio_formateado || e.folio || "—" },
-      { key: "nombreCompleto", label: "Nombre", render: (e) => {
-        const parts = [e.nombres || e.nombre, e.apellidos || e.apellido].filter(Boolean);
-        return parts.length ? parts.join(' ') : '—';
-      } },
+      {
+        key: "nombreCompleto", label: "Nombre", render: (e) => {
+          const parts = [e.nombres || e.nombre, e.apellidos || e.apellido].filter(Boolean);
+          return parts.length ? parts.join(' ') : '—';
+        }
+      },
       { key: "grupo", label: "Grupo", render: (e) => e.grupo || "—" },
       { key: "curso", label: "Curso", render: (e) => e.curso || e.carrera || "—" },
       { key: "plan", label: "Plan", render: (e) => e.plan || e.plan_estudio || "—" },
@@ -152,7 +154,7 @@ export default function Layout({ embedded = false }) {
     // filtro por fecha
     let from = null, to = null;
     if (dateFrom) { const d = new Date(dateFrom); if (!isNaN(d)) from = d; }
-    if (dateTo) { const d = new Date(dateTo); if (!isNaN(d)) { d.setHours(23,59,59,999); to = d; } }
+    if (dateTo) { const d = new Date(dateTo); if (!isNaN(d)) { d.setHours(23, 59, 59, 999); to = d; } }
     if (from || to) {
       list = list.filter((e) => {
         const d = getFecha(e);
@@ -173,13 +175,20 @@ export default function Layout({ embedded = false }) {
         <div className="relative overflow-hidden rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 shadow-xl ring-2 ring-slate-100/50 px-5 sm:px-7 py-5 sm:py-6">
           <div className="pointer-events-none absolute -left-10 -top-14 h-64 w-64 rounded-full bg-violet-200/50 blur-3xl" />
           <div className="pointer-events-none absolute -right-10 -bottom-14 h-64 w-64 rounded-full bg-indigo-200/50 blur-3xl" />
-          <div className="relative z-10">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 mb-2">
-              Feedback de alumnos
-            </h1>
-            <p className="text-sm sm:text-base text-slate-600 font-medium">
-              Selecciona un alumno asignado para revisar sus entregas y dejar notas.
-            </p>
+          <div className="relative z-10 flex items-center gap-5">
+            <div className="hidden sm:flex p-4 rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 shadow-xl ring-4 ring-violet-200">
+              <MessageSquare className="size-8 sm:size-10 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-2">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 inline-block pb-1" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
+                  Feedback de alumnos
+                </span>
+              </h1>
+              <p className="text-sm sm:text-base text-slate-600 font-medium">
+                Selecciona un alumno asignado para revisar sus entregas y dejar notas.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -204,7 +213,7 @@ export default function Layout({ embedded = false }) {
             <input
               type="text"
               value={search}
-              onChange={(e)=> setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por folio o nombre"
               className="flex-1 px-4 py-2.5 text-sm rounded-xl border-2 border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all shadow-sm hover:shadow-md"
             />
@@ -212,14 +221,14 @@ export default function Layout({ embedded = false }) {
               <input
                 type="date"
                 value={dateFrom}
-                onChange={(e)=> setDateFrom(e.target.value)}
+                onChange={(e) => setDateFrom(e.target.value)}
                 className="flex-1 min-w-0 px-3 py-2.5 text-sm rounded-xl border-2 border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all shadow-sm hover:shadow-md"
                 title="Desde"
               />
               <input
                 type="date"
                 value={dateTo}
-                onChange={(e)=> setDateTo(e.target.value)}
+                onChange={(e) => setDateTo(e.target.value)}
                 className="flex-1 min-w-0 px-3 py-2.5 text-sm rounded-xl border-2 border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all shadow-sm hover:shadow-md"
                 title="Hasta"
               />
@@ -248,11 +257,10 @@ export default function Layout({ embedded = false }) {
                 <button
                   key={g}
                   onClick={() => setSelectedGroup(g)}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border-2 transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-                    selectedGroup === g
-                      ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-600 shadow-lg ring-2 ring-violet-300'
-                      : 'bg-white text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400 shadow-sm hover:shadow-md'
-                  }`}
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border-2 transition-all duration-200 transform hover:scale-105 active:scale-95 ${selectedGroup === g
+                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-600 shadow-lg ring-2 ring-violet-300'
+                    : 'bg-white text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400 shadow-sm hover:shadow-md'
+                    }`}
                   aria-pressed={selectedGroup === g}
                 >
                   {g}
@@ -307,8 +315,8 @@ export default function Layout({ embedded = false }) {
                   </tr>
                 ) : (
                   estudiantesFiltrados.map((e, idx) => (
-                    <tr 
-                      key={e.id} 
+                    <tr
+                      key={e.id}
                       className="hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200 border-b border-slate-200 bg-white"
                     >
                       {columns.map((c) => (

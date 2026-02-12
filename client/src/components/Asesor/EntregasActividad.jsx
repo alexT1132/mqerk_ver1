@@ -1,16 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  listEntregasActividad, 
-  calificarEntrega, 
-  listArchivosEntrega, 
-  getActividad, 
+import {
+  listEntregasActividad,
+  calificarEntrega,
+  listArchivosEntrega,
+  getActividad,
   getEstudiantesAsignadosActividad,
   extenderFechaLimiteGrupo,
   extenderFechaLimiteEstudiante,
   permitirEditarDespuesCalificada
 } from '../../api/actividades.js';
-import { ArrowLeft, FileText, Save, Loader2, Clock, Users, User, Edit, X, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { ArrowLeft, FileText, Save, Loader2, Clock, Users, User, Edit, X, CheckCircle, AlertCircle, Info, ClipboardList } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 
@@ -97,8 +97,8 @@ export default function EntregasActividad() {
         const merged = assignedStudents.map(s => {
           const ent = lastByStudent.get(String(s.id));
           // Convertir calificación de escala 0-100 (BD) a escala 0-10 (UI)
-          const calificacion = ent?.calificacion !== null && ent?.calificacion !== undefined 
-            ? ent.calificacion / 10 
+          const calificacion = ent?.calificacion !== null && ent?.calificacion !== undefined
+            ? ent.calificacion / 10
             : null;
           return {
             id: ent?.id ?? `s-${s.id}`,
@@ -155,10 +155,10 @@ export default function EntregasActividad() {
   };
 
   const showConfirm = (message, title, onConfirm, onCancel = null) => {
-    setConfirmModal({ 
-      show: true, 
-      message, 
-      title, 
+    setConfirmModal({
+      show: true,
+      message,
+      title,
       onConfirm: () => {
         setConfirmModal({ show: false, message: '', title: '', onConfirm: null, onCancel: null });
         if (onConfirm) onConfirm();
@@ -289,462 +289,494 @@ export default function EntregasActividad() {
     return 'bg-amber-50 text-amber-700 ring-amber-200'; // pendiente
   };
 
-  const Badge = ({ className='', children }) => (
+  const Badge = ({ className = '', children }) => (
     <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${className}`}>{children}</span>
   );
 
   return (
-  <div className="mx-auto max-w-[95rem] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {/* Header mejorado */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => navigate(-1)} 
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              <ArrowLeft className="w-4 h-4" /> Volver
-            </button>
-            <div className="h-6 w-px bg-slate-200" />
-            {areaTitle && (
-              <div>
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Área</p>
-                <p className="text-sm font-semibold text-slate-700">{areaTitle}</p>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowExtendGrupo(true)}
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-all"
-            >
-              <Users className="w-4 h-4" /> Extender por grupo
-            </button>
-            <button
-              onClick={() => setShowExtendEstudiante(true)}
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-200 bg-purple-50 px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-100 hover:border-purple-300 transition-all"
-            >
-              <User className="w-4 h-4" /> Extender por estudiante
-            </button>
-          </div>
-        </div>
-        
-        <div className="relative overflow-hidden rounded-2xl border-2 border-slate-200 bg-gradient-to-r from-indigo-50 via-violet-50 to-pink-50 p-6 sm:p-8 shadow-lg">
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-200/30 rounded-full blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-violet-200/30 rounded-full blur-3xl" />
-          <div className="relative z-10">
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-              Entregas de la actividad
-            </h1>
-            <p className="text-sm sm:text-base text-slate-600 mb-6">Revisa, califica y agrega comentarios a las entregas de los estudiantes.</p>
-            <div className="flex flex-wrap gap-3">
-              <div className="rounded-xl border-2 border-slate-200 bg-white/80 backdrop-blur-sm px-4 py-3 shadow-sm">
-                <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Asignados</div>
-                <div className="text-2xl font-bold text-slate-900">{totalAsignados}</div>
-              </div>
-              <div className="rounded-xl border-2 border-indigo-200 bg-indigo-50/80 backdrop-blur-sm px-4 py-3 shadow-sm">
-                <div className="text-xs font-medium text-indigo-600 uppercase tracking-wide mb-1">Entregadas</div>
-                <div className="text-2xl font-bold text-indigo-700">{totalEntregadas}</div>
-              </div>
-              <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50/80 backdrop-blur-sm px-4 py-3 shadow-sm">
-                <div className="text-xs font-medium text-emerald-600 uppercase tracking-wide mb-1">Revisadas</div>
-                <div className="text-2xl font-bold text-emerald-700">{totalRevisadas}</div>
-              </div>
+    <div className="min-h-screen relative w-full overflow-x-hidden">
+      {/* Fondo fijo independiente del scroll */}
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
+
+      <div className="relative z-10 mx-auto max-w-[95rem] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header mejorado */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >
+                <ArrowLeft className="w-4 h-4" /> Volver
+              </button>
+              <div className="h-6 w-px bg-slate-200" />
+              {areaTitle && (
+                <div>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Área</p>
+                  <p className="text-sm font-semibold text-slate-700">{areaTitle}</p>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowExtendGrupo(true)}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-all"
+              >
+                <Users className="w-4 h-4" /> Extender por grupo
+              </button>
+              <button
+                onClick={() => setShowExtendEstudiante(true)}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-200 bg-purple-50 px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-100 hover:border-purple-300 transition-all"
+              >
+                <User className="w-4 h-4" /> Extender por estudiante
+              </button>
             </div>
           </div>
-        </div>
-      </div>
 
-      {error && (
-        <div className="mb-4 rounded-xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-4 py-3 flex items-start gap-3 shadow-sm">
-          <span className="text-rose-600 font-bold">⚠</span>
-          <p className="text-sm font-medium text-rose-800">{error}</p>
-        </div>
-      )}
-
-      <div className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-xl">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-slate-50 supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
-              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Estudiante</th>
-              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Estado</th>
-              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Entregado el</th>
-              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Archivo(s)</th>
-              <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Calificación</th>
-              <th className="px-6 py-4 text-right text-slate-600 text-xs font-bold uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && Array.from({ length: 6 }).map((_, i) => (
-              <tr key={`sk-${i}`} className="border-b border-slate-100 last:border-0">
-                <td className="px-6 py-4"><div className="h-5 w-48 bg-slate-200/70 rounded-lg animate-pulse"/></td>
-                <td className="px-6 py-4"><div className="h-7 w-24 bg-slate-200/70 rounded-full animate-pulse"/></td>
-                <td className="px-6 py-4"><div className="h-4 w-36 bg-slate-200/70 rounded-lg animate-pulse"/></td>
-                <td className="px-6 py-4"><div className="h-10 w-32 bg-slate-200/70 rounded-xl animate-pulse"/></td>
-                <td className="px-6 py-4"><div className="h-10 w-80 bg-slate-200/70 rounded-xl animate-pulse"/></td>
-                <td className="px-6 py-4"><div className="h-10 w-28 ml-auto bg-slate-200/70 rounded-xl animate-pulse"/></td>
-              </tr>
-            ))}
-            {!loading && rows.map(r => (
-              <tr key={r.id} className="border-b border-slate-100 last:border-0 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/30 transition-all duration-200 group">
-                <td className="px-6 py-4">
-                  <span className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">{r.estudiante_nombre || r.id_estudiante}</span>
-                </td>
-                <td className="px-6 py-4">
-                  <Badge className={badgeEstado(r.estado)}>
-                    {(r.estado || 'pendiente').replace('_',' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  </Badge>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
-                    <span className="text-sm font-medium text-slate-700">{formatDateTime(r.entregada_at)}</span>
+          <div className="relative overflow-hidden rounded-2xl border-2 border-slate-200 bg-gradient-to-r from-indigo-50 via-violet-50 to-pink-50 p-6 sm:p-8 shadow-lg">
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-200/30 rounded-full blur-3xl" />
+            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-violet-200/30 rounded-full blur-3xl" />
+            <div className="relative z-10 flex flex-col lg:flex-row gap-6 items-start lg:items-center">
+              <div className="hidden sm:flex p-4 rounded-3xl bg-white/40 backdrop-blur-md shadow-xl ring-1 ring-white/50">
+                <ClipboardList className="w-10 h-10 text-indigo-700" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="sm:hidden p-2 rounded-xl bg-white/40 backdrop-blur-md shadow-lg ring-1 ring-white/50">
+                    <ClipboardList className="w-6 h-6 text-indigo-700" />
                   </div>
-                </td>
-                <td className="px-6 py-4">
-                  {r.entrega_id ? (
-                    <button 
-                      onClick={() => openFiles(r.entrega_id)}
-                      className="inline-flex items-center gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
-                    >
-                      <FileText className="w-4 h-4" /> 
-                      Ver archivo{fileCounts[r.entrega_id] !== undefined ? ` (${fileCounts[r.entrega_id]})` : ''}
-                    </button>
-                  ) : (
-                    <span className="text-slate-400 font-medium">—</span>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min={0}
-                        max={10}
-                        step={0.1}
-                        placeholder="Calificación"
-                        className="w-24 rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                        value={grading[r.id]?.calificacion ?? (r.calificacion !== null && r.calificacion !== undefined ? String(r.calificacion) : '')}
-                        onChange={(e) => setGrading(prev => ({ ...prev, [r.id]: { ...prev[r.id], calificacion: e.target.value } }))}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">/10</span>
-                    </div>
-                    <div className="flex-1 min-w-[200px]">
-                      <input
-                        type="text"
-                        placeholder="Escribe comentarios aquí..."
-                        className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                        value={grading[r.id]?.comentarios ?? ''}
-                        onChange={(e) => setGrading(prev => ({ ...prev, [r.id]: { ...prev[r.id], comentarios: e.target.value } }))}
-                      />
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex flex-col items-end gap-2">
-                    <button
-                      onClick={() => onGrade(r.entrega_id || r.id)}
-                      disabled={!r.entrega_id || savingId === (r.entrega_id || r.id)}
-                      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all transform hover:scale-105 active:scale-95
-                        ${r.entrega_id 
-                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl' 
-                          : 'bg-slate-200 text-slate-500 cursor-not-allowed hover:scale-100'
-                        }
-                        ${savingId === (r.entrega_id || r.id) ? 'opacity-90' : ''}`}
-                    >
-                      {savingId === (r.entrega_id || r.id) ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4" />
-                      )}
-                      {r.estado === 'revisada' && r.calificacion ? 'Actualizar calificación' : 'Guardar calificación'}
-                    </button>
-                    {r.entrega_id && r.estado === 'revisada' && r.calificacion && (
-                      <button
-                        onClick={() => handlePermitirEditar(r.entrega_id, true)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-all"
-                        title="Permitir que el estudiante edite su entrega después de calificada"
-                      >
-                        <Edit className="w-3 h-3" /> Permitir edición al estudiante
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {!loading && rows.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-6 py-12 text-center">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
-                      <FileText className="w-8 h-8 text-slate-400" />
+                  <h1 className="text-2xl sm:text-3xl font-bold">
+                    <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent inline-block pb-1" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
+                      Entregas de la actividad
+                    </span>
+                  </h1>
+                </div>
+                <p className="text-sm sm:text-base text-slate-600 mb-6 max-w-2xl">Revisa, califica y agrega comentarios a las entregas de los estudiantes de manera eficiente.</p>
+                <div className="flex flex-wrap gap-3">
+                  <div className="rounded-xl border-2 border-slate-200 bg-white/80 backdrop-blur-sm px-4 py-3 shadow-sm flex items-center gap-3">
+                    <div className="p-1.5 rounded-lg bg-slate-100 text-slate-600">
+                      <Users className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-base font-semibold text-slate-700">No hay entregas</p>
-                      <p className="text-sm text-slate-500 mt-1">Los estudiantes aún no han entregado esta actividad</p>
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wide">Asignados</div>
+                      <div className="text-xl font-extrabold text-slate-900 leading-none">{totalAsignados}</div>
                     </div>
                   </div>
-                </td>
+                  <div className="rounded-xl border-2 border-indigo-200 bg-indigo-50/80 backdrop-blur-sm px-4 py-3 shadow-sm flex items-center gap-3">
+                    <div className="p-1.5 rounded-lg bg-indigo-100 text-indigo-600">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-indigo-600 uppercase tracking-wide">Entregadas</div>
+                      <div className="text-xl font-extrabold text-indigo-700 leading-none">{totalEntregadas}</div>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50/80 backdrop-blur-sm px-4 py-3 shadow-sm flex items-center gap-3">
+                    <div className="p-1.5 rounded-lg bg-emerald-100 text-emerald-600">
+                      <CheckCircle className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Revisadas</div>
+                      <div className="text-xl font-extrabold text-emerald-700 leading-none">{totalRevisadas}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mb-4 rounded-xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-4 py-3 flex items-start gap-3 shadow-sm">
+            <span className="text-rose-600 font-bold">⚠</span>
+            <p className="text-sm font-medium text-rose-800">{error}</p>
+          </div>
+        )}
+
+        <div className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-xl">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-slate-50 supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
+                <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Estudiante</th>
+                <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Estado</th>
+                <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Entregado el</th>
+                <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Archivo(s)</th>
+                <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Calificación</th>
+                <th className="px-6 py-4 text-right text-slate-600 text-xs font-bold uppercase tracking-wider">Acciones</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {loading && Array.from({ length: 6 }).map((_, i) => (
+                <tr key={`sk-${i}`} className="border-b border-slate-100 last:border-0">
+                  <td className="px-6 py-4"><div className="h-5 w-48 bg-slate-200/70 rounded-lg animate-pulse" /></td>
+                  <td className="px-6 py-4"><div className="h-7 w-24 bg-slate-200/70 rounded-full animate-pulse" /></td>
+                  <td className="px-6 py-4"><div className="h-4 w-36 bg-slate-200/70 rounded-lg animate-pulse" /></td>
+                  <td className="px-6 py-4"><div className="h-10 w-32 bg-slate-200/70 rounded-xl animate-pulse" /></td>
+                  <td className="px-6 py-4"><div className="h-10 w-80 bg-slate-200/70 rounded-xl animate-pulse" /></td>
+                  <td className="px-6 py-4"><div className="h-10 w-28 ml-auto bg-slate-200/70 rounded-xl animate-pulse" /></td>
+                </tr>
+              ))}
+              {!loading && rows.map(r => (
+                <tr key={r.id} className="border-b border-slate-100 last:border-0 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/30 transition-all duration-200 group">
+                  <td className="px-6 py-4">
+                    <span className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">{r.estudiante_nombre || r.id_estudiante}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <Badge className={badgeEstado(r.estado)}>
+                      {(r.estado || 'pendiente').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                      <span className="text-sm font-medium text-slate-700">{formatDateTime(r.entregada_at)}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    {r.entrega_id ? (
+                      <button
+                        onClick={() => openFiles(r.entrega_id)}
+                        className="inline-flex items-center gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Ver archivo{fileCounts[r.entrega_id] !== undefined ? ` (${fileCounts[r.entrega_id]})` : ''}
+                      </button>
+                    ) : (
+                      <span className="text-slate-400 font-medium">—</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={0}
+                          max={10}
+                          step={0.1}
+                          placeholder="Calificación"
+                          className="w-24 rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                          value={grading[r.id]?.calificacion ?? (r.calificacion !== null && r.calificacion !== undefined ? String(r.calificacion) : '')}
+                          onChange={(e) => setGrading(prev => ({ ...prev, [r.id]: { ...prev[r.id], calificacion: e.target.value } }))}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">/10</span>
+                      </div>
+                      <div className="flex-1 min-w-[200px]">
+                        <input
+                          type="text"
+                          placeholder="Escribe comentarios aquí..."
+                          className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                          value={grading[r.id]?.comentarios ?? ''}
+                          onChange={(e) => setGrading(prev => ({ ...prev, [r.id]: { ...prev[r.id], comentarios: e.target.value } }))}
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex flex-col items-end gap-2">
+                      <button
+                        onClick={() => onGrade(r.entrega_id || r.id)}
+                        disabled={!r.entrega_id || savingId === (r.entrega_id || r.id)}
+                        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all transform hover:scale-105 active:scale-95
+                        ${r.entrega_id
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl'
+                            : 'bg-slate-200 text-slate-500 cursor-not-allowed hover:scale-100'
+                          }
+                        ${savingId === (r.entrega_id || r.id) ? 'opacity-90' : ''}`}
+                      >
+                        {savingId === (r.entrega_id || r.id) ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Save className="w-4 h-4" />
+                        )}
+                        {r.estado === 'revisada' && r.calificacion ? 'Actualizar calificación' : 'Guardar calificación'}
+                      </button>
+                      {r.entrega_id && r.estado === 'revisada' && r.calificacion && (
+                        <button
+                          onClick={() => handlePermitirEditar(r.entrega_id, true)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-all"
+                          title="Permitir que el estudiante edite su entrega después de calificada"
+                        >
+                          <Edit className="w-3 h-3" /> Permitir edición al estudiante
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {!loading && rows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                        <FileText className="w-8 h-8 text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="text-base font-semibold text-slate-700">No hay entregas</p>
+                        <p className="text-sm text-slate-500 mt-1">Los estudiantes aún no han entregado esta actividad</p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-      {/* Modal extender fecha por grupo */}
-      {showExtendGrupo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-slate-900">Extender fecha límite por grupo</h3>
-              <button onClick={() => setShowExtendGrupo(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Grupo</label>
-                <input
-                  type="text"
-                  value={extendData.grupo}
-                  onChange={(e) => setExtendData(prev => ({ ...prev, grupo: e.target.value }))}
-                  placeholder="Ej: m1, v2, s1"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nueva fecha límite</label>
-                <input
-                  type="datetime-local"
-                  value={extendData.nueva_fecha_limite}
-                  onChange={(e) => setExtendData(prev => ({ ...prev, nueva_fecha_limite: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Notas (opcional)</label>
-                <textarea
-                  value={extendData.notas}
-                  onChange={(e) => setExtendData(prev => ({ ...prev, notas: e.target.value }))}
-                  placeholder="Razón de la extensión..."
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  rows={3}
-                />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => setShowExtendGrupo(false)}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
-                >
-                  Cancelar
+        {/* Modal extender fecha por grupo */}
+        {showExtendGrupo && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-900">Extender fecha límite por grupo</h3>
+                <button onClick={() => setShowExtendGrupo(false)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
                 </button>
-                <button
-                  onClick={handleExtendGrupo}
-                  disabled={extending}
-                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {extending ? 'Extendiendo...' : 'Extender'}
-                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Grupo</label>
+                  <input
+                    type="text"
+                    value={extendData.grupo}
+                    onChange={(e) => setExtendData(prev => ({ ...prev, grupo: e.target.value }))}
+                    placeholder="Ej: m1, v2, s1"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Nueva fecha límite</label>
+                  <input
+                    type="datetime-local"
+                    value={extendData.nueva_fecha_limite}
+                    onChange={(e) => setExtendData(prev => ({ ...prev, nueva_fecha_limite: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Notas (opcional)</label>
+                  <textarea
+                    value={extendData.notas}
+                    onChange={(e) => setExtendData(prev => ({ ...prev, notas: e.target.value }))}
+                    placeholder="Razón de la extensión..."
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setShowExtendGrupo(false)}
+                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleExtendGrupo}
+                    disabled={extending}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {extending ? 'Extendiendo...' : 'Extender'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Modal extender fecha por estudiante */}
-      {showExtendEstudiante && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-slate-900">Extender fecha límite por estudiante</h3>
-              <button onClick={() => setShowExtendEstudiante(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Estudiante</label>
-                <select
-                  value={extendData.id_estudiante || ''}
-                  onChange={(e) => setExtendData(prev => ({ ...prev, id_estudiante: e.target.value ? Number(e.target.value) : null }))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                >
-                  <option value="">Selecciona un estudiante</option>
-                  {rows.map(r => (
-                    <option key={r.id_estudiante} value={r.id_estudiante}>
-                      {r.estudiante_nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nueva fecha límite</label>
-                <input
-                  type="datetime-local"
-                  value={extendData.nueva_fecha_limite}
-                  onChange={(e) => setExtendData(prev => ({ ...prev, nueva_fecha_limite: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Notas (opcional)</label>
-                <textarea
-                  value={extendData.notas}
-                  onChange={(e) => setExtendData(prev => ({ ...prev, notas: e.target.value }))}
-                  placeholder="Razón de la extensión..."
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  rows={3}
-                />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => setShowExtendEstudiante(false)}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
-                >
-                  Cancelar
+        {/* Modal extender fecha por estudiante */}
+        {showExtendEstudiante && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-900">Extender fecha límite por estudiante</h3>
+                <button onClick={() => setShowExtendEstudiante(false)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
                 </button>
-                <button
-                  onClick={handleExtendEstudiante}
-                  disabled={extending}
-                  className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
-                >
-                  {extending ? 'Extendiendo...' : 'Extender'}
-                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Estudiante</label>
+                  <select
+                    value={extendData.id_estudiante || ''}
+                    onChange={(e) => setExtendData(prev => ({ ...prev, id_estudiante: e.target.value ? Number(e.target.value) : null }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  >
+                    <option value="">Selecciona un estudiante</option>
+                    {rows.map(r => (
+                      <option key={r.id_estudiante} value={r.id_estudiante}>
+                        {r.estudiante_nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Nueva fecha límite</label>
+                  <input
+                    type="datetime-local"
+                    value={extendData.nueva_fecha_limite}
+                    onChange={(e) => setExtendData(prev => ({ ...prev, nueva_fecha_limite: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Notas (opcional)</label>
+                  <textarea
+                    value={extendData.notas}
+                    onChange={(e) => setExtendData(prev => ({ ...prev, notas: e.target.value }))}
+                    placeholder="Razón de la extensión..."
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setShowExtendEstudiante(false)}
+                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleExtendEstudiante}
+                    disabled={extending}
+                    className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    {extending ? 'Extendiendo...' : 'Extender'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Modal de notificación personalizado */}
-      {notification.show && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
-          <div 
-            className={`
+        {/* Modal de notificación personalizado */}
+        {notification.show && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
+            <div
+              className={`
               relative max-w-md w-full rounded-2xl shadow-2xl transform transition-all duration-300 pointer-events-auto
               ${notification.show ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}
-              ${notification.type === 'success' 
-                ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200' 
-                : notification.type === 'error'
-                ? 'bg-gradient-to-br from-rose-50 to-red-50 border-2 border-rose-200'
-                : 'bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200'
-              }
+              ${notification.type === 'success'
+                  ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200'
+                  : notification.type === 'error'
+                    ? 'bg-gradient-to-br from-rose-50 to-red-50 border-2 border-rose-200'
+                    : 'bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200'
+                }
             `}
-          >
-            <div className="p-6">
-              <div className="flex items-start gap-4">
-                <div className={`
+            >
+              <div className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className={`
                   flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center
-                  ${notification.type === 'success' 
-                    ? 'bg-emerald-100 text-emerald-600' 
-                    : notification.type === 'error'
-                    ? 'bg-rose-100 text-rose-600'
-                    : 'bg-indigo-100 text-indigo-600'
-                  }
+                  ${notification.type === 'success'
+                      ? 'bg-emerald-100 text-emerald-600'
+                      : notification.type === 'error'
+                        ? 'bg-rose-100 text-rose-600'
+                        : 'bg-indigo-100 text-indigo-600'
+                    }
                 `}>
-                  {notification.type === 'success' ? (
-                    <CheckCircle className="w-6 h-6" />
-                  ) : notification.type === 'error' ? (
-                    <AlertCircle className="w-6 h-6" />
-                  ) : (
-                    <Info className="w-6 h-6" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  {notification.title && (
-                    <h3 className={`
+                    {notification.type === 'success' ? (
+                      <CheckCircle className="w-6 h-6" />
+                    ) : notification.type === 'error' ? (
+                      <AlertCircle className="w-6 h-6" />
+                    ) : (
+                      <Info className="w-6 h-6" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {notification.title && (
+                      <h3 className={`
                       text-lg font-bold mb-1
-                      ${notification.type === 'success' 
-                        ? 'text-emerald-900' 
-                        : notification.type === 'error'
-                        ? 'text-rose-900'
-                        : 'text-indigo-900'
-                      }
+                      ${notification.type === 'success'
+                          ? 'text-emerald-900'
+                          : notification.type === 'error'
+                            ? 'text-rose-900'
+                            : 'text-indigo-900'
+                        }
                     `}>
-                      {notification.title}
-                    </h3>
-                  )}
-                  <p className={`
+                        {notification.title}
+                      </h3>
+                    )}
+                    <p className={`
                     text-sm
-                    ${notification.type === 'success' 
-                      ? 'text-emerald-700' 
-                      : notification.type === 'error'
-                      ? 'text-rose-700'
-                      : 'text-indigo-700'
-                    }
+                    ${notification.type === 'success'
+                        ? 'text-emerald-700'
+                        : notification.type === 'error'
+                          ? 'text-rose-700'
+                          : 'text-indigo-700'
+                      }
                   `}>
-                    {notification.message}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setNotification({ show: false, type: 'success', message: '', title: '' })}
-                  className={`
+                      {notification.message}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setNotification({ show: false, type: 'success', message: '', title: '' })}
+                    className={`
                     flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors
-                    ${notification.type === 'success' 
-                      ? 'text-emerald-600 hover:bg-emerald-100' 
-                      : notification.type === 'error'
-                      ? 'text-rose-600 hover:bg-rose-100'
-                      : 'text-indigo-600 hover:bg-indigo-100'
-                    }
+                    ${notification.type === 'success'
+                        ? 'text-emerald-600 hover:bg-emerald-100'
+                        : notification.type === 'error'
+                          ? 'text-rose-600 hover:bg-rose-100'
+                          : 'text-indigo-600 hover:bg-indigo-100'
+                      }
                   `}
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-            {/* Barra de progreso animada */}
-            <div className={`
+              {/* Barra de progreso animada */}
+              <div className={`
               h-1 rounded-b-2xl transition-all duration-4000
-              ${notification.type === 'success' 
-                ? 'bg-emerald-500' 
-                : notification.type === 'error'
-                ? 'bg-rose-500'
-                : 'bg-indigo-500'
-              }
+              ${notification.type === 'success'
+                  ? 'bg-emerald-500'
+                  : notification.type === 'error'
+                    ? 'bg-rose-500'
+                    : 'bg-indigo-500'
+                }
             `} style={{ width: notification.show ? '100%' : '0%' }} />
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Modal de confirmación personalizado */}
-      {confirmModal.show && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div 
-            className="relative max-w-md w-full rounded-2xl shadow-2xl transform transition-all duration-300 bg-white border-2 border-slate-200"
-          >
-            <div className="p-6">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600 flex items-center justify-center">
-                  <AlertCircle className="w-6 h-6" />
+        {/* Modal de confirmación personalizado */}
+        {confirmModal.show && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div
+              className="relative max-w-md w-full rounded-2xl shadow-2xl transform transition-all duration-300 bg-white border-2 border-slate-200"
+            >
+              <div className="p-6">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600 flex items-center justify-center">
+                    <AlertCircle className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {confirmModal.title && (
+                      <h3 className="text-lg font-bold text-slate-900 mb-2">
+                        {confirmModal.title}
+                      </h3>
+                    )}
+                    <p className="text-sm text-slate-700">
+                      {confirmModal.message}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  {confirmModal.title && (
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">
-                      {confirmModal.title}
-                    </h3>
-                  )}
-                  <p className="text-sm text-slate-700">
-                    {confirmModal.message}
-                  </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={confirmModal.onCancel || (() => setConfirmModal({ show: false, message: '', title: '', onConfirm: null, onCancel: null }))}
+                    className="px-5 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 hover:border-slate-400 transition-all transform hover:scale-105 active:scale-95"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={confirmModal.onConfirm}
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
+                  >
+                    Aceptar
+                  </button>
                 </div>
-              </div>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={confirmModal.onCancel || (() => setConfirmModal({ show: false, message: '', title: '', onConfirm: null, onCancel: null }))}
-                  className="px-5 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 hover:border-slate-400 transition-all transform hover:scale-105 active:scale-95"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={confirmModal.onConfirm}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
-                >
-                  Aceptar
-                </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

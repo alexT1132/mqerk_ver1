@@ -429,7 +429,8 @@ export default function DocumentCenter() {
 
   return (
     <>
-      <div className="w-full mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
+      <div className="w-full mx-auto px-4 sm:px-6 py-6 sm:py-10 relative">
         {/* Encabezado general */}
         <TitleBar icon={FileUp} text="Documentación" />
 

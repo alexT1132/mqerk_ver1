@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from "react-dom";
 import { Modal, FormulaEditModal, PlaceholderModal } from './MathPalette.jsx';
 import InlineMath from './InlineMath.jsx';
 import { useCooldown } from './useCooldown';
@@ -173,19 +174,24 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <>
-      {/* Overlay con centrado vertical forzado para monitores 1080p */}
-      <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-19 pb-6">
+      {/* Overlay centrado correctamente */}
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+        onClick={handleClose}
+      >
 
         {/* Contenedor principal  */}
-        <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl ring-4 ring-violet-200/30 border-2 border-violet-200/50 
-                        max-h-[480px] h-auto flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div
+          className="w-full max-w-lg rounded-2xl bg-white shadow-xl max-h-[90vh] h-auto flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
 
           {/* Header */}
-          <div className="flex items-center justify-between border-b-2 border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 p-4 sm:p-5 flex-shrink-0">
+          <div className="flex items-center justify-between border-b border-slate-100 bg-white p-4 sm:p-5 flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/50">
+              <div className="p-2 rounded-lg bg-violet-600 text-white shadow-md">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
@@ -223,7 +229,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
                     }}
                     onKeyPress={handleKeyPress}
                     placeholder="Ej: Fórmula cuadrática, Teorema de Pitágoras, Integral de x..."
-                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-3 pr-28 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-200/50 transition-all duration-200 resize-none hover:border-violet-300 bg-slate-50 focus:bg-white h-16 sm:h-20 md:h-24 shadow-inner"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-28 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 transition-all duration-200 resize-none bg-slate-50 focus:bg-white h-16 sm:h-20 md:h-24"
                     style={{ whiteSpace: 'pre-wrap' }}
                     disabled={loading}
                     autoFocus
@@ -233,7 +239,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
                   <button
                     onClick={() => handleGenerate()}
                     disabled={loading || !query.trim() || isCooldownActive}
-                    className="absolute right-2 bottom-2 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 py-2 text-xs font-bold text-white hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-violet-300/50 transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2 ring-2 ring-violet-200/50 z-10"
+                    className="absolute right-2 bottom-2 rounded-lg bg-violet-600 px-4 py-2 text-xs font-bold text-white hover:bg-violet-700 shadow-md transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 z-10"
                   >
                     {loading ? (
                       <>
@@ -279,10 +285,10 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
 
               {/* RESULTADO GENERADO */}
               {generatedFormula && (
-                <div className="group relative rounded-3xl border-2 border-violet-400 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 p-1 shadow-xl shadow-violet-200/50 ring-4 ring-violet-200/30 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+                <div className="group relative rounded-2xl border border-slate-200 bg-slate-50/50 shadow-sm overflow-hidden animate-in fade-in zoom-in-95 duration-300">
 
                   {/* Header de la tarjeta */}
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-violet-200/50 bg-white/40 backdrop-blur-sm rounded-t-[1.3rem]">
+                  <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-white">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                       <p className="text-[10px] font-extrabold text-violet-700 uppercase tracking-widest">Resultado</p>
@@ -310,7 +316,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
 
                   <div className="p-4 sm:p-5">
                     {/* Visualización de la Fórmula */}
-                    <div className="bg-white rounded-2xl p-6 border-2 border-violet-200/50 min-h-[80px] flex items-center justify-center shadow-inner mb-4">
+                    <div className="bg-white rounded-xl p-6 border border-slate-200 min-h-[80px] flex items-center justify-center mb-4">
                       <div className={`w-full text-center ${generatedFormula.length > 150 ? 'text-base' : generatedFormula.length > 80 ? 'text-lg' : 'text-2xl'} text-slate-900`}>
                         <div className="overflow-x-auto w-full [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
                           <InlineMath math={generatedFormula} display={generatedFormula.length > 50 || generatedFormula.includes('\\frac') || generatedFormula.includes('\\int')} />
@@ -327,31 +333,33 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
                     )}
 
                     {/* BARRA DE ACCIONES */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 border-t border-slate-100 pt-3 mt-3">
                       {/* Botón Regenerar */}
                       <button
                         onClick={handleRegenerate}
                         disabled={loading || isCooldownActive}
-                        className="col-span-1 rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-600 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50 transition-all active:scale-95 disabled:opacity-50"
+                        className="col-span-1 flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all disabled:opacity-50"
+                        title="Generar otra variante"
                       >
-                        🔄 Regenerar
+                        <span>🔄</span> <span className="truncate">Regenerar</span>
                       </button>
 
                       {/* Botón Editar */}
                       <button
                         onClick={handleOpenEdit}
-                        className="col-span-1 rounded-xl border-2 border-indigo-200 bg-indigo-50 px-3 py-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-all active:scale-95"
+                        className="col-span-1 flex items-center justify-center gap-1.5 rounded-lg border border-indigo-100 bg-indigo-50 px-2 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 hover:border-indigo-200 transition-all"
+                        title="Editar manualmente"
                       >
-                        ✏️ Editar
+                        <span>✏️</span> <span className="truncate">Editar</span>
                       </button>
 
                       {/* Botón Insertar */}
                       <button
                         onClick={handleInsert}
-                        className="col-span-2 rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-800 shadow-lg shadow-slate-300/50 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                        className="col-span-2 flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-800 shadow-sm transition-all active:scale-95"
                       >
-                        <span>Insertar Fórmula</span>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span>Insertar</span>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                         </svg>
                       </button>
@@ -363,7 +371,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
               {/* Sugerencias Rápidas */}
               {!generatedFormula && !loading && (
                 <div className="space-y-4 animate-in fade-in duration-500 delay-100">
-                  <div className="rounded-2xl border-2 border-violet-100 bg-white/60 p-5 shadow-sm">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-5">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-lg">💡</span>
                       <p className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">
@@ -436,6 +444,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
         formula={generatedFormula ? (generatedFormula.startsWith('$') ? generatedFormula : `$${generatedFormula}$`) : ''}
         onSave={handleEditModalSave}
       />
-    </>
+    </>,
+    document.body
   );
 }

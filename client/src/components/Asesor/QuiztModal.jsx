@@ -254,14 +254,13 @@ export default function QuiztModal({ open, onClose, onCreate, areaTitle, areaId,
       aria-modal="true"
       role="dialog"
       aria-labelledby="sim-modal-title"
-      onMouseDown={(e) => {
-        if (!e.target.closest("[data-modal]")) onClose?.();
-      }}
+      onClick={onClose}
     >
       {/* Content: max-height para pantallas con poca altura */}
       <div
         data-modal
         className={`relative w-full ${contentMaxW} rounded-2xl bg-white shadow-2xl border border-slate-200/80 max-h-[85vh] overflow-hidden flex flex-col`}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b px-4 py-2.5 bg-gradient-to-r from-violet-50 to-indigo-50">

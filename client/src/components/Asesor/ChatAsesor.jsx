@@ -500,7 +500,8 @@ const ChatAsesor = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-slate-50/50 p-4 font-sans text-slate-600 sm:h-[calc(100vh-1rem)]">
+        <div className="flex flex-col h-full relative p-4 font-sans text-slate-600 sm:h-[calc(100vh-1rem)] overflow-hidden">
+            <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
 
             {/* MODALES Y STATUS */}
             {compressing && (

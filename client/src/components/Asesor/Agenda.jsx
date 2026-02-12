@@ -1411,213 +1411,218 @@ export default function AgendaDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-8 sm:mb-10">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-4 rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 shadow-xl ring-4 ring-violet-200">
-              <CalendarIcon className="size-8 sm:size-10 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-normal text-slate-900">
-                <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent inline-block pb-4">
-                  Agenda y Calendario
-                </span>
-              </h1>
-              <p className="text-slate-600 text-sm sm:text-base font-medium">
-                Organiza tus actividades y mantén al día a tus estudiantes
-              </p>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen relative w-full overflow-x-hidden">
+      {/* Fondo fijo independiente del scroll */}
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
 
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600">
-            {error}
-          </div>
-        )}
-
-        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
-          {/* Calendario */}
-          <section className="space-y-4">
-            <Calendar
-              monthDate={monthDate}
-              setMonthDate={setMonthDate}
-              events={events}
-              onCreate={openCreate}
-              onDayClick={(date, dayEvents) => {
-                setDayDetails({
-                  open: true,
-                  date: date,
-                  events: dayEvents || []
-                });
-              }}
-            />
-            <Legend />
-          </section>
-
-          {/* Eventos */}
-          <section className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                  Recordatorios
-                </h2>
-                {upcomingEvents.length > 0 && (
-                  <span className="inline-flex items-center justify-center bg-violet-100 text-violet-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-violet-200">
-                    {upcomingEvents.length} pendientes
+      <div className="relative z-10 min-h-screen">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {/* Header */}
+          <div className="mb-8 sm:mb-10">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-4 rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 shadow-xl ring-4 ring-violet-200">
+                <CalendarIcon className="size-8 sm:size-10 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-normal text-slate-900">
+                  <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent inline-block pb-4">
+                    Agenda y Calendario
                   </span>
-                )}
+                </h1>
+                <p className="text-slate-600 text-sm sm:text-base font-medium">
+                  Organiza tus actividades y mantén al día a tus estudiantes
+                </p>
               </div>
             </div>
+          </div>
 
-            {/* Filtros y búsqueda */}
-            <div className="space-y-3">
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
-                  <Search className="size-4" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Buscar recordatorios..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-14 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 outline-none transition-all shadow-sm hover:shadow-md font-medium"
-                />
-              </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
-                  <Filter className="size-4" />
-                </div>
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-200 focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 outline-none transition-all bg-white shadow-sm hover:shadow-md font-medium"
-                >
-                  <option value="all">Todas las categorías</option>
-                  {Object.entries(CATEGORIES).map(([key, value]) => (
-                    <option key={key} value={key}>
-                      {value.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600">
+              {error}
             </div>
+          )}
 
-            {/* Lista de eventos con Scroll */}
-            <div className="rounded-2xl border-2 border-slate-200 bg-white shadow-lg overflow-hidden">
-              <div className="max-h-[380px] overflow-y-auto custom-scrollbar px-1">
-                {filteredEvents.length === 0 ? (
-                  <div className="p-10 text-center">
-                    <div className="inline-flex p-4 rounded-3xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-xl ring-4 ring-violet-200 mb-4">
-                      <CalendarIcon className="size-12" />
-                    </div>
-                    <p className="text-slate-600 font-bold text-lg mb-2">
-                      {searchQuery || filterCategory !== "all"
-                        ? "No se encontraron recordatorios"
-                        : "No hay recordatorios personales"}
-                    </p>
-                    {!searchQuery && filterCategory === "all" && (
-                      <button
-                        onClick={() => openCreate(toISO(new Date()))}
-                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white text-sm px-5 py-3 font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-100 ring-2 ring-violet-200 hover:ring-violet-300"
-                      >
-                        <Plus className="size-5" />
-                        Crear primer recordatorio
-                      </button>
-                    )}
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+            {/* Calendario */}
+            <section className="space-y-4">
+              <Calendar
+                monthDate={monthDate}
+                setMonthDate={setMonthDate}
+                events={events}
+                onCreate={openCreate}
+                onDayClick={(date, dayEvents) => {
+                  setDayDetails({
+                    open: true,
+                    date: date,
+                    events: dayEvents || []
+                  });
+                }}
+              />
+              <Legend />
+            </section>
+
+            {/* Eventos */}
+            <section className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                    Recordatorios
+                  </h2>
+                  {upcomingEvents.length > 0 && (
+                    <span className="inline-flex items-center justify-center bg-violet-100 text-violet-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-violet-200">
+                      {upcomingEvents.length} pendientes
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Filtros y búsqueda */}
+              <div className="space-y-3">
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
+                    <Search className="size-4" />
                   </div>
-                ) : (
-                  filteredEvents.map((ev) => (
-                    <EventItem
-                      key={ev.id}
-                      ev={ev}
-                      onEdit={openEdit}
-                      onDelete={handleDelete}
-                      onToggleCompleted={handleToggleCompleted}
-                      onViewDetails={handleViewDetails}
-                    />
-                  ))
-                )}
+                  <input
+                    type="text"
+                    placeholder="Buscar recordatorios..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-14 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 outline-none transition-all shadow-sm hover:shadow-md font-medium"
+                  />
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
+                    <Filter className="size-4" />
+                  </div>
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-200 focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 outline-none transition-all bg-white shadow-sm hover:shadow-md font-medium"
+                  >
+                    <option value="all">Todas las categorías</option>
+                    {Object.entries(CATEGORIES).map(([key, value]) => (
+                      <option key={key} value={key}>
+                        {value.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
-          </section>
+
+              {/* Lista de eventos con Scroll */}
+              <div className="rounded-2xl border-2 border-slate-200 bg-white shadow-lg overflow-hidden">
+                <div className="max-h-[380px] overflow-y-auto custom-scrollbar px-1">
+                  {filteredEvents.length === 0 ? (
+                    <div className="p-10 text-center">
+                      <div className="inline-flex p-4 rounded-3xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-xl ring-4 ring-violet-200 mb-4">
+                        <CalendarIcon className="size-12" />
+                      </div>
+                      <p className="text-slate-600 font-bold text-lg mb-2">
+                        {searchQuery || filterCategory !== "all"
+                          ? "No se encontraron recordatorios"
+                          : "No hay recordatorios personales"}
+                      </p>
+                      {!searchQuery && filterCategory === "all" && (
+                        <button
+                          onClick={() => openCreate(toISO(new Date()))}
+                          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white text-sm px-5 py-3 font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-100 ring-2 ring-violet-200 hover:ring-violet-300"
+                        >
+                          <Plus className="size-5" />
+                          Crear primer recordatorio
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    filteredEvents.map((ev) => (
+                      <EventItem
+                        key={ev.id}
+                        ev={ev}
+                        onEdit={openEdit}
+                        onDelete={handleDelete}
+                        onToggleCompleted={handleToggleCompleted}
+                        onViewDetails={handleViewDetails}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
+
+        {/* MODAL: Detalles del Día */}
+        <DayDetailsModal
+          open={dayDetails.open}
+          onClose={() => setDayDetails({ open: false, date: null, events: [] })}
+          date={dayDetails.date}
+          events={dayDetails.events}
+          onCreateNew={() => {
+            const d = dayDetails.date;
+            setDayDetails({ open: false, date: null, events: [] });
+            openCreate(d);
+          }}
+          onViewEvent={(ev) => {
+            setDayDetails({ open: false, date: null, events: [] });
+            handleViewDetails(ev);
+          }}
+        />
+
+        {/* MODAL */}
+        <ReminderModal
+          open={openModal}
+          onClose={() => {
+            setOpenModal(false);
+            setEventToEdit(null);
+          }}
+          onSave={handleSave}
+          defaultDate={modalDate}
+          eventToEdit={eventToEdit}
+          grupos={grupos}
+          estudiantes={estudiantes}
+          onLoadEstudiantes={async (grupo) => {
+            if (estudiantesPorGrupo[grupo]) {
+              return estudiantesPorGrupo[grupo];
+            }
+            try {
+              const response = await getMisEstudiantes({ grupo });
+              const loaded = response.data?.data || [];
+              setEstudiantesPorGrupo(prev => ({ ...prev, [grupo]: loaded }));
+              return loaded;
+            } catch (err) {
+              console.error("Error cargando estudiantes:", err);
+              return [];
+            }
+          }}
+        />
+
+        {/* MODAL DE CONFIRMACIÓN */}
+        <ConfirmModal
+          open={confirmModal.open}
+          onClose={() => setConfirmModal({ open: false, eventId: null })}
+          onConfirm={confirmDelete}
+          title="Eliminar recordatorio"
+          message="¿Estás seguro de que deseas eliminar este recordatorio? Esta acción no se puede deshacer."
+        />
+
+        {/* MODAL DE NOTIFICACIÓN */}
+        <NotificationModal
+          open={notificationModal.open}
+          onClose={() => setNotificationModal({ open: false, type: "success", title: "", message: "" })}
+          type={notificationModal.type}
+          title={notificationModal.title}
+          message={notificationModal.message}
+        />
+
+        {/* MODAL DE DETALLES */}
+        <ReminderDetailsModal
+          open={detailsModal.open}
+          onClose={() => setDetailsModal({ open: false, reminder: null })}
+          reminder={detailsModal.reminder}
+          onEdit={openEdit}
+          onDelete={handleDelete}
+          onToggleCompleted={handleToggleCompleted}
+        />
       </div>
-
-      {/* MODAL: Detalles del Día */}
-      <DayDetailsModal
-        open={dayDetails.open}
-        onClose={() => setDayDetails({ open: false, date: null, events: [] })}
-        date={dayDetails.date}
-        events={dayDetails.events}
-        onCreateNew={() => {
-          const d = dayDetails.date;
-          setDayDetails({ open: false, date: null, events: [] });
-          openCreate(d);
-        }}
-        onViewEvent={(ev) => {
-          setDayDetails({ open: false, date: null, events: [] });
-          handleViewDetails(ev);
-        }}
-      />
-
-      {/* MODAL */}
-      <ReminderModal
-        open={openModal}
-        onClose={() => {
-          setOpenModal(false);
-          setEventToEdit(null);
-        }}
-        onSave={handleSave}
-        defaultDate={modalDate}
-        eventToEdit={eventToEdit}
-        grupos={grupos}
-        estudiantes={estudiantes}
-        onLoadEstudiantes={async (grupo) => {
-          if (estudiantesPorGrupo[grupo]) {
-            return estudiantesPorGrupo[grupo];
-          }
-          try {
-            const response = await getMisEstudiantes({ grupo });
-            const loaded = response.data?.data || [];
-            setEstudiantesPorGrupo(prev => ({ ...prev, [grupo]: loaded }));
-            return loaded;
-          } catch (err) {
-            console.error("Error cargando estudiantes:", err);
-            return [];
-          }
-        }}
-      />
-
-      {/* MODAL DE CONFIRMACIÓN */}
-      <ConfirmModal
-        open={confirmModal.open}
-        onClose={() => setConfirmModal({ open: false, eventId: null })}
-        onConfirm={confirmDelete}
-        title="Eliminar recordatorio"
-        message="¿Estás seguro de que deseas eliminar este recordatorio? Esta acción no se puede deshacer."
-      />
-
-      {/* MODAL DE NOTIFICACIÓN */}
-      <NotificationModal
-        open={notificationModal.open}
-        onClose={() => setNotificationModal({ open: false, type: "success", title: "", message: "" })}
-        type={notificationModal.type}
-        title={notificationModal.title}
-        message={notificationModal.message}
-      />
-
-      {/* MODAL DE DETALLES */}
-      <ReminderDetailsModal
-        open={detailsModal.open}
-        onClose={() => setDetailsModal({ open: false, reminder: null })}
-        reminder={detailsModal.reminder}
-        onEdit={openEdit}
-        onDelete={handleDelete}
-        onToggleCompleted={handleToggleCompleted}
-      />
     </div>
   );
 }
