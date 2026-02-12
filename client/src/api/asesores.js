@@ -34,6 +34,7 @@ export const deleteReminderPersonal = (id) => axios.delete(`/asesores/reminders/
 // Recordatorios para estudiantes
 export const createReminderForStudents = (data) => axios.post('/asesores/reminders/students', data);
 export const listRemindersForStudents = () => axios.get('/asesores/reminders/students');
+export const deleteReminderForStudents = (id) => axios.delete(`/asesores/reminders/students/${id}`);
 
 // Pagos del asesor
 export const getMisPagos = (params) => axios.get('/asesores/mis-pagos', { params });

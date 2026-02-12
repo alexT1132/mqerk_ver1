@@ -8,6 +8,7 @@ import {
   deleteReminderPersonal,
   createReminderForStudents,
   listRemindersForStudents,
+  deleteReminderForStudents,
 } from "../../api/asesores.js";
 import { getMisEstudiantes } from "../../api/asesores.js";
 
@@ -112,29 +113,39 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
     }
   }, [open, defaultDate, eventToEdit]);
 
-  // Cargar estudiantes cuando se selecciona un grupo
+  // Cargar estudiantes cuando se selecciona un grupo o mostrar todos
   useEffect(() => {
-    if (type === "estudiantes" && targetType === "estudiante" && selectedGrupo && onLoadEstudiantes) {
-      setLoadingEstudiantes(true);
-      onLoadEstudiantes(selectedGrupo)
-        .then(loaded => {
-          const filtrados = (loaded || []).filter(e => e.grupo === selectedGrupo);
-          setEstudiantesFiltrados(filtrados);
-        })
-        .catch(err => {
-          console.error("Error cargando estudiantes:", err);
-          setEstudiantesFiltrados([]);
-        })
-        .finally(() => {
-          setLoadingEstudiantes(false);
-        });
-    } else if (type === "estudiantes" && selectedGrupo && estudiantes) {
-      // Usar estudiantes ya cargados
-      const filtrados = estudiantes.filter(e => e.grupo === selectedGrupo);
-      setEstudiantesFiltrados(filtrados);
+    if (type !== "estudiantes") {
+      setEstudiantesFiltrados([]);
+      return;
+    }
+
+    if (targetType === "estudiante") {
+      if (selectedGrupo) {
+        if (onLoadEstudiantes) {
+          setLoadingEstudiantes(true);
+          onLoadEstudiantes(selectedGrupo)
+            .then(loaded => {
+              setEstudiantesFiltrados(loaded || []);
+            })
+            .catch(err => {
+              console.error("Error cargando estudiantes:", err);
+              setEstudiantesFiltrados([]);
+            })
+            .finally(() => {
+              setLoadingEstudiantes(false);
+            });
+        } else {
+          setEstudiantesFiltrados(estudiantes.filter(e => e.grupo === selectedGrupo));
+        }
+      } else {
+        // Mostrar TODOS los estudiantes si no hay grupo seleccionado
+        setEstudiantesFiltrados(estudiantes || []);
+      }
     } else {
       setEstudiantesFiltrados([]);
     }
+
     if (targetType === "grupo") {
       setSelectedEstudiantes([]);
     }
@@ -198,21 +209,21 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
       {/* modal - Más amplio y responsive */}
-      <div className="relative w-full max-w-md sm:max-w-lg md:max-w-2xl rounded-3xl overflow-hidden shadow-2xl bg-white z-[101] flex flex-col border-2 border-slate-200 ring-4 ring-violet-100 max-h-[90vh]">
-        {/* header compacto */}
-        <div className="px-4 py-3 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shrink-0 shadow-lg">
+      <div className="relative w-full max-w-md sm:max-w-lg md:max-w-2xl rounded-2xl overflow-hidden shadow-2xl bg-white z-[101] flex flex-col border border-slate-200 max-h-[90vh]">
+        {/* header - Más sobrio */}
+        <div className="px-5 py-4 bg-slate-900 text-white shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-white/20 ring-2 ring-white/30">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/10 border border-white/20">
                 <CalendarIcon className="size-5" />
               </div>
-              <h3 className="font-extrabold text-base">
+              <h3 className="font-bold text-lg">
                 {eventToEdit ? "Editar Recordatorio" : "Crear Recordatorio"}
               </h3>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-white/20 transition-all duration-200 hover:scale-110 active:scale-95 ring-2 ring-white/20 hover:ring-white/40"
+              className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200 active:scale-95 text-white/70 hover:text-white"
               aria-label="Cerrar"
             >
               <X className="size-5" />
@@ -221,9 +232,9 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
         </div>
 
         {/* body compacto - Altura fija con scroll */}
-        <div className="px-3 py-2 space-y-2 overflow-y-auto flex-1 min-h-0 text-sm">
+        <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1 min-h-0 text-sm">
           {error && (
-            <div className="flex items-center gap-2 text-sm text-red-700 bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-xl px-4 py-2.5 font-bold shadow-md ring-2 ring-red-100">
+            <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 font-semibold shadow-sm">
               <AlertCircle className="size-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -235,30 +246,30 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
               <label className="text-sm font-bold text-slate-700 mb-1 block">
                 Tipo <span className="text-red-500">*</span>
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
                   onClick={() => setType("personal")}
-                  className={`p-3 rounded-xl border-2 transition-all duration-200 transform hover:scale-105 active:scale-100 ${type === "personal"
-                    ? "border-violet-500 bg-gradient-to-br from-violet-50 to-indigo-50 text-violet-700 shadow-md ring-2 ring-violet-200"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:shadow-sm"
+                  className={`p-4 rounded-xl border transition-all duration-200 ${type === "personal"
+                    ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                     }`}
                 >
-                  <User className="size-4 mx-auto mb-1" />
-                  <div className="font-extrabold text-xs">Personal</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Solo para ti</div>
+                  <User className="size-5 mx-auto mb-2" />
+                  <div className="font-bold text-sm">Personal</div>
+                  <div className="text-[10px] opacity-70">Para uso propio</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setType("estudiantes")}
-                  className={`p-3 rounded-xl border-2 transition-all duration-200 transform hover:scale-105 active:scale-100 ${type === "estudiantes"
-                    ? "border-violet-500 bg-gradient-to-br from-violet-50 to-indigo-50 text-violet-700 shadow-md ring-2 ring-violet-200"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:shadow-sm"
+                  className={`p-4 rounded-xl border transition-all duration-200 ${type === "estudiantes"
+                    ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                     }`}
                 >
-                  <Users className="size-4 mx-auto mb-1" />
-                  <div className="font-extrabold text-xs">Estudiantes</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Grupo o individual</div>
+                  <Users className="size-5 mx-auto mb-2" />
+                  <div className="font-bold text-sm">Estudiantes</div>
+                  <div className="text-[10px] opacity-70">Grupal o individual</div>
                 </button>
               </div>
             </div>
@@ -272,7 +283,7 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
             <input
               type="text"
               placeholder="Ej. Entrega de proyecto"
-              className="w-full text-sm rounded-xl border-2 border-slate-200 px-4 py-2.5 outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all shadow-sm hover:shadow-md font-medium"
+              className="w-full text-sm rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -283,7 +294,7 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
             <textarea
               rows={2}
               placeholder="Detalles del recordatorio…"
-              className="w-full text-sm rounded-xl border-2 border-slate-200 px-4 py-2.5 outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 resize-none transition-all shadow-sm hover:shadow-md font-medium"
+              className="w-full text-sm rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none transition-all font-medium"
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
             />
@@ -296,7 +307,7 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
               </label>
               <input
                 type="date"
-                className="w-full text-sm rounded-xl border-2 border-slate-200 px-4 py-2.5 outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all shadow-sm hover:shadow-md font-medium"
+                className="w-full text-sm rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
@@ -305,7 +316,7 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
               <label className="text-sm font-bold text-slate-700 mb-1 block">Hora</label>
               <input
                 type="time"
-                className="w-full text-sm rounded-xl border-2 border-slate-200 px-4 py-2.5 outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all shadow-sm hover:shadow-md font-medium"
+                className="w-full text-sm rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
               />
@@ -315,7 +326,7 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
           <div>
             <label className="text-xs font-medium text-slate-700 mb-0.5 block">Categoría</label>
             <select
-              className="w-full text-sm rounded-xl border-2 border-slate-200 px-4 py-2.5 outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all bg-white shadow-sm hover:shadow-md font-medium"
+              className="w-full text-sm rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white font-medium"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             >
@@ -336,9 +347,9 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
                   type="button"
                   onClick={() => setPriority(p.key)}
                   className={[
-                    "relative w-8 h-8 rounded-full ring-2 transition-all duration-200 hover:scale-110 active:scale-95 shadow-md hover:shadow-lg",
+                    "relative w-8 h-8 rounded-full border transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm",
                     p.bg,
-                    priority === p.key ? `${p.ring} scale-110 ring-4` : "ring-transparent hover:ring-slate-300"
+                    priority === p.key ? "ring-2 ring-indigo-500 border-white" : "border-transparent"
                   ].join(" ")}
                   title={p.name}
                   aria-label={p.name}
@@ -360,28 +371,28 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
                 <label className="text-xs font-medium text-slate-700 mb-0.5 block">
                   Asignar a <span className="text-red-500">*</span>
                 </label>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setTargetType("grupo")}
-                    className={`p-3 rounded-xl border-2 transition-all duration-200 transform hover:scale-105 active:scale-100 ${targetType === "grupo"
-                      ? "border-violet-500 bg-gradient-to-br from-violet-50 to-indigo-50 text-violet-700 shadow-md ring-2 ring-violet-200"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:shadow-sm"
+                    className={`p-3 rounded-xl border transition-all duration-200 ${targetType === "grupo"
+                      ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                       }`}
                   >
-                    <div className="font-extrabold text-xs">Grupo completo</div>
-                    <div className="text-[10px] text-slate-500 font-medium">Todos los estudiantes</div>
+                    <div className="font-bold text-sm">Grupo completo</div>
+                    <div className="text-[10px] opacity-70">Todos los estudiantes</div>
                   </button>
                   <button
                     type="button"
                     onClick={() => setTargetType("estudiante")}
-                    className={`p-3 rounded-xl border-2 transition-all duration-200 transform hover:scale-105 active:scale-100 ${targetType === "estudiante"
-                      ? "border-violet-500 bg-gradient-to-br from-violet-50 to-indigo-50 text-violet-700 shadow-md ring-2 ring-violet-200"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:shadow-sm"
+                    className={`p-3 rounded-xl border transition-all duration-200 ${targetType === "estudiante"
+                      ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                       }`}
                   >
-                    <div className="font-extrabold text-xs">Específico(s)</div>
-                    <div className="text-[10px] text-slate-500 font-medium">Seleccionar uno o más</div>
+                    <div className="font-bold text-sm">Específico(s)</div>
+                    <div className="text-[10px] opacity-70">Seleccionar uno o más</div>
                   </button>
                 </div>
               </div>
@@ -392,7 +403,7 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
                     Grupo <span className="text-red-500">*</span>
                   </label>
                   <select
-                    className="w-full text-sm rounded-xl border-2 border-slate-200 px-4 py-2.5 outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all bg-white shadow-sm hover:shadow-md font-medium"
+                    className="w-full text-sm rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white font-medium"
                     value={selectedGrupo}
                     onChange={(e) => setSelectedGrupo(e.target.value)}
                   >
@@ -405,101 +416,100 @@ function ReminderModal({ open, onClose, onSave, defaultDate, eventToEdit, grupos
               )}
 
               {targetType === "estudiante" && (
-                <div className="space-y-1.5">
+                <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-medium text-slate-700 mb-0.5 block">
-                      Grupo <span className="text-red-500">*</span>
+                    <label className="text-[11px] font-semibold text-slate-500 mb-1 block">
+                      Filtrar por Grupo (opcional)
                     </label>
                     <select
-                      className="w-full text-sm rounded-lg border-2 border-slate-200 px-2.5 py-1 outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all bg-white"
+                      className="w-full text-sm rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white font-medium"
                       value={selectedGrupo}
                       onChange={(e) => {
                         setSelectedGrupo(e.target.value);
-                        setSelectedEstudiantes([]);
                       }}
                     >
-                      <option value="">Selecciona un grupo</option>
+                      <option value="">Todos los grupos / estudiantes</option>
                       {grupos.map(g => (
                         <option key={g} value={g}>{g}</option>
                       ))}
                     </select>
                   </div>
-                  {selectedGrupo && (
-                    <div>
-                      <label className="text-xs font-medium text-slate-700 mb-0.5 block">
-                        Estudiante(s) <span className="text-red-500">*</span>
-                      </label>
-                      <div className="max-h-20 sm:max-h-24 overflow-y-auto border-2 border-slate-200 rounded-lg p-1 space-y-1">
-                        {loadingEstudiantes ? (
-                          <div className="flex items-center justify-center p-2">
-                            <Loader2 className="size-4 animate-spin text-violet-600" />
-                          </div>
-                        ) : estudiantesFiltrados.length === 0 ? (
-                          <div className="text-center text-slate-500 text-xs py-2">
-                            No hay estudiantes en este grupo
-                          </div>
-                        ) : (
-                          estudiantesFiltrados.map(est => (
-                            <label
-                              key={est.id}
-                              className="flex items-center gap-1.5 p-1 rounded-md hover:bg-slate-50 cursor-pointer"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selectedEstudiantes.includes(est.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedEstudiantes([...selectedEstudiantes, est.id]);
-                                  } else {
-                                    setSelectedEstudiantes(selectedEstudiantes.filter(id => id !== est.id));
-                                  }
-                                }}
-                                className="rounded border-slate-300 text-violet-600 focus:ring-violet-500"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium text-xs text-slate-900 truncate">
-                                  {est.nombres || est.nombre} {est.apellidos || est.apellido}
-                                </div>
-                                <div className="text-[10px] text-slate-500 truncate">
-                                  {est.folio_formateado || est.folio || ""}
-                                </div>
-                              </div>
-                            </label>
-                          ))
-                        )}
-                      </div>
-                      {selectedEstudiantes.length > 0 && (
-                        <div className="mt-0.5 text-[10px] text-slate-600">
-                          {selectedEstudiantes.length} estudiante(s) seleccionado(s)
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-500 mb-1 block">
+                      Seleccionar Estudiante(s) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl p-2 space-y-1 bg-slate-50/50">
+                      {loadingEstudiantes ? (
+                        <div className="flex items-center justify-center py-6">
+                          <Loader2 className="size-5 animate-spin text-indigo-600" />
                         </div>
+                      ) : estudiantesFiltrados.length === 0 ? (
+                        <div className="text-center text-slate-500 text-xs py-6 font-medium">
+                          No se encontraron estudiantes
+                        </div>
+                      ) : (
+                        estudiantesFiltrados.map(est => (
+                          <label
+                            key={est.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer ${selectedEstudiantes.includes(est.id)
+                              ? "bg-indigo-50 border-indigo-200 shadow-sm"
+                              : "bg-white border-transparent hover:border-slate-200"}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedEstudiantes.includes(est.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedEstudiantes([...selectedEstudiantes, est.id]);
+                                } else {
+                                  setSelectedEstudiantes(selectedEstudiantes.filter(id => id !== est.id));
+                                }
+                              }}
+                              className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-sm text-slate-900 truncate uppercase tracking-tight">
+                                {est.nombres || est.nombre} {est.apellidos || est.apellido}
+                              </div>
+                              <div className="text-[10px] text-slate-500 font-bold">
+                                {est.folio_formateado || est.folio || ""} {est.grupo ? `• GRUPO ${est.grupo}` : ""}
+                              </div>
+                            </div>
+                          </label>
+                        ))
                       )}
                     </div>
-                  )}
+                    {selectedEstudiantes.length > 0 && (
+                      <div className="mt-2 text-xs font-bold text-indigo-600 flex items-center gap-1.5 px-1">
+                        <CheckCircle2 className="size-3.5" />
+                        {selectedEstudiantes.length} estudiante(s) seleccionado(s)
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* footer compacto */}
-        <div className="px-4 py-3 flex items-center justify-end gap-3 bg-gradient-to-b from-slate-50 to-white border-t-2 border-slate-200 shrink-0">
+        <div className="px-6 py-4 flex items-center justify-end gap-3 bg-slate-50 border-t border-slate-200 shrink-0">
           <button
             onClick={onClose}
             disabled={saving}
-            className="rounded-xl border-2 border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-white hover:border-slate-400 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-100"
+            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm text-slate-600 hover:bg-white hover:border-slate-300 transition-all font-bold disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={save}
             disabled={saving}
-            className="rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white px-5 py-2.5 text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transform hover:scale-105 active:scale-100 ring-2 ring-violet-200 hover:ring-violet-300"
+            className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 text-sm font-bold shadow-lg transition-all duration-200 disabled:opacity-50 flex items-center gap-2 active:scale-95"
           >
             {saving ? (
               <>
-                <Loader2 className="size-3.5 animate-spin" />
-                <span className="hidden sm:inline">Guardando...</span>
-                <span className="sm:hidden">...</span>
+                <Loader2 className="size-4 animate-spin" />
+                <span>Guardando...</span>
               </>
             ) : (
               eventToEdit ? "Actualizar" : "Guardar"
@@ -580,7 +590,7 @@ function EventItem({ ev, onEdit, onDelete, onToggleCompleted, onViewDetails }) {
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            {onToggleCompleted && (
+            {onToggleCompleted && ev.type !== 'estudiantes' && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -590,8 +600,9 @@ function EventItem({ ev, onEdit, onDelete, onToggleCompleted, onViewDetails }) {
                   ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-500 hover:text-white"
                   : "bg-white text-slate-400 hover:bg-emerald-500 hover:text-white border-slate-100"
                   }`}
+                title={isCompleted ? "Marcar como pendiente" : "Marcar como realizado"}
               >
-                <CheckCircle2 className="size-3" />
+                <CheckCircle2 className="size-4" />
               </button>
             )}
             {onEdit && (
@@ -641,10 +652,10 @@ function Legend() {
         className="w-full flex items-center justify-between group focus:outline-none"
       >
         <div className="flex items-center gap-3">
-          <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-sm ring-1 ring-violet-200">
+          <div className="p-1.5 rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
             <Tag className="size-4" />
           </div>
-          <span className="font-extrabold text-sm bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+          <span className="font-bold text-sm text-slate-700">
             Leyenda de Eventos
           </span>
         </div>
@@ -684,13 +695,13 @@ function DayDetailsModal({ open, onClose, date, events, onCreateNew, onViewEvent
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200 border-2 border-slate-200 ring-4 ring-slate-100/50">
-        <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-4 text-white flex items-center justify-between shrink-0">
+      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200 border border-slate-200">
+        <div className="bg-slate-900 p-5 text-white flex items-center justify-between shrink-0">
           <div>
-            <h3 className="font-bold text-lg capitalize">{displayDate}</h3>
-            <p className="text-violet-100 text-xs font-medium">{events.length} evento{events.length !== 1 ? 's' : ''}</p>
+            <h3 className="font-bold text-lg capitalize tracking-tight">{displayDate}</h3>
+            <p className="text-slate-400 text-xs font-medium">{events.length} evento{events.length !== 1 ? 's' : ''}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/20 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white">
             <X className="size-5" />
           </button>
         </div>
@@ -725,10 +736,10 @@ function DayDetailsModal({ open, onClose, date, events, onCreateNew, onViewEvent
           )}
         </div>
 
-        <div className="p-3 border-t border-slate-100 bg-slate-50 shrink-0">
+        <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0">
           <button
             onClick={onCreateNew}
-            className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+            className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95"
           >
             <Plus className="size-4" /> Agregar evento aquí
           </button>
@@ -763,12 +774,12 @@ function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
   const dayLabel = ["L", "M", "X", "J", "V", "S", "D"];
 
   return (
-    <div className="rounded-3xl border-2 border-slate-200 bg-white shadow-xl ring-2 ring-slate-100/50 overflow-hidden">
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
       {/* header */}
-      <div className="flex items-center justify-between px-5 sm:px-6 py-5 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg">
+      <div className="flex items-center justify-between px-5 sm:px-6 py-5 bg-slate-900 text-white shadow-md">
         <button
           onClick={() => go(-1)}
-          className="p-2.5 rounded-xl hover:bg-white/20 transition-all duration-200 hover:scale-110 active:scale-95 ring-2 ring-white/20 hover:ring-white/40"
+          className="p-2.5 rounded-xl hover:bg-white/10 transition-all duration-200 active:scale-95 text-slate-400 hover:text-white border border-white/10"
           aria-label="Mes anterior"
         >
           <ChevronLeft className="size-5" />
@@ -779,7 +790,7 @@ function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
         </div>
         <button
           onClick={() => go(1)}
-          className="p-2.5 rounded-xl hover:bg-white/20 transition-all duration-200 hover:scale-110 active:scale-95 ring-2 ring-white/20 hover:ring-white/40"
+          className="p-2.5 rounded-xl hover:bg-white/10 transition-all duration-200 active:scale-95 text-slate-400 hover:text-white border border-white/10"
           aria-label="Mes siguiente"
         >
           <ChevronRight className="size-5" />
@@ -787,9 +798,9 @@ function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
       </div>
 
       {/* labels */}
-      <div className="grid grid-cols-7 text-center text-xs font-extrabold text-slate-700 px-2 sm:px-3 py-4 bg-gradient-to-b from-slate-50 to-white border-b-2 border-slate-200">
+      <div className="grid grid-cols-7 text-center text-[10px] font-bold text-slate-400 px-2 sm:px-3 py-3 bg-slate-50 border-b border-slate-200">
         {dayLabel.map((d) => (
-          <div key={d} className="py-1 tracking-wider">
+          <div key={d} className="py-1 tracking-widest uppercase">
             {d}
           </div>
         ))}
@@ -816,13 +827,13 @@ function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
                   onCreate(iso);
                 }
               }}
-              className={`relative bg-white h-12 sm:h-14 p-1 hover:bg-slate-50 transition-all duration-200 cursor-pointer border-r-2 border-b-2 border-slate-200 ${today ? "ring-2 ring-violet-500 ring-inset bg-violet-50/10" : ""
+              className={`relative bg-white h-12 sm:h-16 p-1 hover:bg-slate-50 transition-all duration-200 cursor-pointer border-r border-b border-slate-100 ${today ? "bg-indigo-50/30" : ""
                 } ${isPast ? "opacity-60" : ""}`}
             >
               <div
                 className={`text-xs font-bold w-7 h-7 grid place-items-center rounded-full transition-all duration-200 ${today
-                  ? "bg-violet-600 text-white shadow-md"
-                  : "text-slate-700 hover:bg-slate-100"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100"
                   }`}
               >
                 {date.getDate()}
@@ -854,10 +865,10 @@ function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
       </div>
 
       {/* footer */}
-      <div className="p-4 bg-gradient-to-b from-slate-50 to-white border-t-2 border-slate-200">
+      <div className="p-4 bg-slate-50 border-t border-slate-200">
         <button
           onClick={() => onCreate?.(toISO(new Date()))}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm px-4 py-2.5 font-bold shadow-md hover:shadow-lg transition-all duration-200 active:scale-95"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm px-4 py-2.5 font-bold shadow-sm transition-all duration-200 active:scale-95"
         >
           <Plus className="size-4" />
           Nuevo recordatorio
@@ -875,18 +886,20 @@ function ConfirmModal({ open, onClose, onConfirm, title, message }) {
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-3xl shadow-2xl border-2 border-slate-200 p-6 max-w-md w-full z-[201] ring-4 ring-violet-100">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="p-3 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg ring-2 ring-rose-200">
-            <AlertCircle className="size-6" />
+      <div className="relative bg-white rounded-2xl shadow-xl border border-slate-200 p-6 max-w-sm w-full z-[201]">
+        <div className="flex flex-col items-center text-center gap-4 mb-6">
+          <div className="p-3 rounded-full bg-rose-50 text-rose-600 border border-rose-100">
+            <AlertCircle className="size-8" />
           </div>
-          <h3 className="text-xl font-extrabold text-slate-900">{title}</h3>
+          <div>
+            <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+            <p className="mt-2 text-slate-500 text-sm font-medium">{message}</p>
+          </div>
         </div>
-        <p className="text-slate-600 mb-6 font-medium">{message}</p>
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 hover:bg-slate-50 font-bold transition-all duration-200 hover:scale-105 active:scale-100"
+            className="w-full px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold transition-all duration-200"
           >
             Cancelar
           </button>
@@ -895,7 +908,7 @@ function ConfirmModal({ open, onClose, onConfirm, title, message }) {
               onConfirm();
               onClose();
             }}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-100 ring-2 ring-rose-200 hover:ring-rose-300"
+            className="w-full px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold shadow-md transition-all duration-200 active:scale-95"
           >
             Eliminar
           </button>
@@ -912,28 +925,28 @@ function NotificationModal({ open, onClose, type, title, message }) {
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-3xl shadow-2xl border-2 border-slate-200 p-6 max-w-md w-full z-[201] ring-4 ring-violet-100">
-        <div className="flex items-center gap-4 mb-4">
-          <div className={`p-3 rounded-2xl text-white shadow-lg ring-2 ${isError
-            ? "bg-gradient-to-br from-rose-500 to-red-600 ring-rose-200"
-            : "bg-gradient-to-br from-emerald-500 to-teal-600 ring-emerald-200"
+      <div className="relative bg-white rounded-2xl shadow-xl border border-slate-200 p-6 max-w-sm w-full z-[201]">
+        <div className="flex flex-col items-center text-center gap-4 mb-6">
+          <div className={`p-3 rounded-full border ${isError
+            ? "bg-rose-50 text-rose-600 border-rose-100"
+            : "bg-emerald-50 text-emerald-600 border-emerald-100"
             }`}>
-            {isError ? <AlertCircle className="size-6" /> : <CheckCircle2 className="size-6" />}
+            {isError ? <AlertCircle className="size-8" /> : <CheckCircle2 className="size-8" />}
           </div>
-          <h3 className="text-xl font-extrabold text-slate-900">{title}</h3>
+          <div>
+            <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+            <p className="mt-2 text-slate-500 text-sm font-medium">{message}</p>
+          </div>
         </div>
-        <p className="text-slate-600 mb-6 font-medium">{message}</p>
-        <div className="flex items-center justify-end">
-          <button
-            onClick={onClose}
-            className={`px-5 py-2.5 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-100 ring-2 ${isError
-              ? "bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white ring-rose-200 hover:ring-rose-300"
-              : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white ring-emerald-200 hover:ring-emerald-300"
-              }`}
-          >
-            Cerrar
-          </button>
-        </div>
+        <button
+          onClick={onClose}
+          className={`w-full px-5 py-2.5 rounded-xl font-semibold shadow-md transition-all duration-200 active:scale-95 ${isError
+            ? "bg-rose-600 hover:bg-rose-700 text-white"
+            : "bg-emerald-600 hover:bg-emerald-700 text-white"
+            }`}
+        >
+          Cerrar
+        </button>
       </div>
     </div>,
     document.body
@@ -975,9 +988,9 @@ function ReminderDetailsModal({ open, onClose, reminder, onEdit, onDelete, onTog
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-3xl shadow-2xl border-2 border-slate-200 max-w-md sm:max-w-lg md:max-w-2xl w-full z-[201] ring-4 ring-violet-100 max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="px-5 sm:px-6 py-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shrink-0">
+      <div className="relative bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md sm:max-w-lg md:max-w-2xl w-full z-[201] max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header - Sobrio */}
+        <div className="px-5 sm:px-6 py-4 bg-slate-900 text-white shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-white/20 ring-2 ring-white/30">
@@ -1025,7 +1038,7 @@ function ReminderDetailsModal({ open, onClose, reminder, onEdit, onDelete, onTog
             {reminder.description && (
               <div>
                 <div className="text-sm text-slate-500 font-medium mb-2">Descripción</div>
-                <p className="text-base text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
+                <p className="text-base text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 rounded-xl p-4 border border-slate-200">
                   {reminder.description}
                 </p>
               </div>
@@ -1071,7 +1084,7 @@ function ReminderDetailsModal({ open, onClose, reminder, onEdit, onDelete, onTog
         </div>
 
         {/* Footer con acciones */}
-        <div className="px-5 sm:px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-t-2 border-slate-200 shrink-0 flex items-center justify-between gap-3 flex-wrap">
+        <div className="px-5 sm:px-6 py-4 bg-slate-50 border-t border-slate-200 shrink-0 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             {onToggleCompleted && (
               <button
@@ -1079,13 +1092,13 @@ function ReminderDetailsModal({ open, onClose, reminder, onEdit, onDelete, onTog
                   onToggleCompleted(reminder.id, !isCompleted);
                   onClose();
                 }}
-                className={`px-4 py-2.5 rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-100 ring-2 ${isCompleted
-                  ? "bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white ring-amber-200 hover:ring-amber-300"
-                  : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white ring-emerald-200 hover:ring-emerald-300"
+                className={`px-4 py-2.5 rounded-xl font-bold shadow-md transition-all duration-200 active:scale-95 ${isCompleted
+                  ? "bg-amber-500 hover:bg-amber-600 text-white"
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
                   }`}
               >
                 <CheckCircle2 className="size-4 inline mr-2" />
-                {isCompleted ? "Marcar como Pendiente" : "Marcar como Realizado"}
+                {isCompleted ? "Pendiente" : "Realizado"}
               </button>
             )}
             {onEdit && !isCompleted && (
@@ -1094,7 +1107,7 @@ function ReminderDetailsModal({ open, onClose, reminder, onEdit, onDelete, onTog
                   onEdit(reminder);
                   onClose();
                 }}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white font-bold shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-100 ring-2 ring-violet-200 hover:ring-violet-300"
+                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md transition-all duration-200 active:scale-95"
               >
                 <Edit2 className="size-4 inline mr-2" />
                 Editar
@@ -1108,7 +1121,7 @@ function ReminderDetailsModal({ open, onClose, reminder, onEdit, onDelete, onTog
                   onDelete(reminder.id);
                   onClose();
                 }}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-bold shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-100 ring-2 ring-rose-200 hover:ring-rose-300"
+                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-md transition-all duration-200 active:scale-95"
               >
                 <Trash2 className="size-4 inline mr-2" />
                 Eliminar
@@ -1116,7 +1129,7 @@ function ReminderDetailsModal({ open, onClose, reminder, onEdit, onDelete, onTog
             )}
             <button
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 hover:bg-slate-50 font-bold transition-all duration-200 transform hover:scale-105 active:scale-100"
+              className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-white font-bold transition-all duration-200 active:scale-95"
             >
               Cerrar
             </button>
@@ -1156,27 +1169,27 @@ export default function AgendaDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Cargar recordatorios personales
+  // Cargar recordatorios (personales y para estudiantes)
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
       setError(null);
       try {
-        const [personalRes, estudiantesRes] = await Promise.all([
+        const [personalRes, studentsRes, estudiantesRes] = await Promise.all([
           listRemindersPersonal().catch(() => ({ data: { data: [] } })),
+          listRemindersForStudents().catch(() => ({ data: { data: [] } })),
           getMisEstudiantes().catch(() => ({ data: { data: [], grupos_asesor: [] } })),
         ]);
 
         if (!alive) return;
 
+        // Procesar eventos personales
         const personalEvents = (personalRes.data?.data || []).map(e => {
-          // Normalizar fecha para evitar problemas de zona horaria
           let normalizedDate = e.date;
           if (normalizedDate && normalizedDate.includes('T')) {
             normalizedDate = normalizedDate.split('T')[0];
           }
-
           return {
             ...e,
             date: normalizedDate,
@@ -1185,11 +1198,37 @@ export default function AgendaDashboard() {
           };
         });
 
+        // Procesar eventos para estudiantes
+        const studentRemindersRaw = (studentsRes.data?.data || []).map(e => {
+          let normalizedDate = e.date;
+          if (normalizedDate && normalizedDate.includes('T')) {
+            normalizedDate = normalizedDate.split('T')[0];
+          }
+          return {
+            ...e,
+            date: normalizedDate,
+            type: "estudiantes",
+            completed: false
+          };
+        });
+
+        // Agrupar recordatorios de estudiantes para no repetir en la agenda del asesor
+        const studentMap = new Map();
+        studentRemindersRaw.forEach(r => {
+          const key = `${r.title}-${r.date}-${r.description || ''}`;
+          if (!studentMap.has(key)) {
+            studentMap.set(key, { ...r, isMultiple: true });
+          }
+        });
+
+        const studentEvents = Array.from(studentMap.values());
+
+        // Actualizar estados auxiliares
         const gruposList = estudiantesRes.data?.grupos_asesor || [];
         setGrupos(Array.isArray(gruposList) ? gruposList : []);
         setEstudiantes(estudiantesRes.data?.data || []);
 
-        setEvents(personalEvents);
+        setEvents([...personalEvents, ...studentEvents]);
       } catch (e) {
         console.error("Error cargando recordatorios:", e);
         setError(e?.response?.data?.message || "Error al cargar los recordatorios");
@@ -1270,21 +1309,36 @@ export default function AgendaDashboard() {
       } else {
         // Para estudiantes
         await createReminderForStudents(data);
-        // Recargar eventos personales (los de estudiantes no se muestran aquí)
-        const response = await listRemindersPersonal();
-        const personalEvents = (response.data?.data || []).map(e => {
+        // Recargar TODO para tener la lista actualizada (personales y estudiantes)
+        const [pRes, sRes] = await Promise.all([
+          listRemindersPersonal(),
+          listRemindersForStudents()
+        ]);
+
+        const pEvs = (pRes.data?.data || []).map(e => {
           let normalizedDate = e.date;
           if (normalizedDate && normalizedDate.includes('T')) {
             normalizedDate = normalizedDate.split('T')[0];
           }
-          return {
-            ...e,
-            date: normalizedDate,
-            type: "personal",
-            completed: e.completed === 1 || e.completed === true,
-          };
+          return { ...e, date: normalizedDate, type: "personal", completed: e.completed === 1 || e.completed === true };
         });
-        setEvents(personalEvents);
+
+        const sRemRaw = (sRes.data?.data || []).map(e => {
+          let normalizedDate = e.date;
+          if (normalizedDate && normalizedDate.includes('T')) {
+            normalizedDate = normalizedDate.split('T')[0];
+          }
+          return { ...e, date: normalizedDate, type: "estudiantes", completed: false };
+        });
+
+        const sMap = new Map();
+        sRemRaw.forEach(r => {
+          const key = `${r.title}-${r.date}-${r.description || ''}`;
+          if (!sMap.has(key)) sMap.set(key, { ...r, isMultiple: true });
+        });
+
+        const sEvs = Array.from(sMap.values());
+        setEvents([...pEvs, ...sEvs]);
       }
       setOpenModal(false);
       setEventToEdit(null);
@@ -1294,6 +1348,13 @@ export default function AgendaDashboard() {
   };
 
   const handleToggleCompleted = async (id, completed) => {
+    // Buscar el evento para saber su tipo
+    const event = events.find(e => e.id === id);
+    if (!event || event.type === 'estudiantes') {
+      // Los de estudiantes no se completan desde aquí (cada estudiante lo hace)
+      return;
+    }
+
     try {
       await updateReminderPersonal(id, { completed });
       setEvents(prev => prev.map(e => e.id === id ? { ...e, completed } : e));
@@ -1319,10 +1380,33 @@ export default function AgendaDashboard() {
 
   const confirmDelete = async () => {
     if (!confirmModal.eventId) return;
+    const event = events.find(e => e.id === confirmModal.eventId);
+    if (!event) return;
 
     try {
-      await deleteReminderPersonal(confirmModal.eventId);
-      setEvents(prev => prev.filter(e => e.id !== confirmModal.eventId));
+      if (event.type === 'estudiantes') {
+        await deleteReminderForStudents(confirmModal.eventId);
+      } else {
+        await deleteReminderPersonal(confirmModal.eventId);
+      }
+
+      // Recargar para limpiar posibles duplicados del mismo broadcast
+      const [pRes, sRes] = await Promise.all([
+        listRemindersPersonal().catch(() => ({ data: { data: [] } })),
+        listRemindersForStudents().catch(() => ({ data: { data: [] } }))
+      ]);
+
+      const pEvs = (pRes.data?.data || []).map(e => ({ ...e, type: "personal", completed: e.completed === 1 || e.completed === true }));
+      const sRemRaw = (sRes.data?.data || []).map(e => ({ ...e, type: "estudiantes", completed: false }));
+
+      const sMap = new Map();
+      sRemRaw.forEach(r => {
+        const key = `${r.title}-${r.date}-${r.description || ''}`;
+        if (!sMap.has(key)) sMap.set(key, { ...r, isMultiple: true });
+      });
+
+      setEvents([...pEvs, ...Array.from(sMap.values())]);
+
       setNotificationModal({
         open: true,
         type: "success",

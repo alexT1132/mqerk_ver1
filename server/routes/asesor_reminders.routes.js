@@ -6,7 +6,8 @@ import {
   updatePersonal,
   deletePersonal,
   createForStudents,
-  listForStudents
+  listForStudents,
+  deleteForStudents
 } from '../controllers/asesor_reminders.controller.js';
 
 const router = Router();
@@ -20,6 +21,7 @@ router.delete('/asesores/reminders/personal/:id', authREquired, deletePersonal);
 // Recordatorios para estudiantes
 router.post('/asesores/reminders/students', authREquired, createForStudents);
 router.get('/asesores/reminders/students', authREquired, listForStudents);
+router.delete('/asesores/reminders/students/:id', authREquired, deleteForStudents);
 
 export default router;
 
