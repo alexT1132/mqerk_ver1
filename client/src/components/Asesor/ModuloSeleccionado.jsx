@@ -8,7 +8,8 @@ import {
   CheckCircle2,
   CircleDashed,
   PlaySquare,
-  Sparkles
+  Sparkles,
+  UploadCloud
 } from "lucide-react";
 
 /* ------------------- helpers ------------------- */
@@ -72,6 +73,15 @@ function MobileRow({ item, onView, onEdit, onDelete }) {
           <Eye className="mr-2 h-4 w-4" />
           Ver
         </button>
+        {item.status === "Borrador" && (
+          <button
+            onClick={() => onPublish(item)}
+            className="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+          >
+            <UploadCloud className="mr-2 h-4 w-4" />
+            Publicar
+          </button>
+        )}
         <button
           onClick={() => onEdit(item)}
           className="inline-flex items-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
@@ -102,6 +112,13 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "MODULO SE
   /* handlers */
   const handleCreate = () => navigate("/simuladores/nuevo");
   const handleView = (item) => navigate(`/simuladores/${item.id}`);
+  const handlePublish = (item) => {
+    if (window.confirm(`¿Publicar simulador "${item.name}"? Esto lo hará visible para los alumnos.`)) {
+      console.log("Publicar:", item.id);
+      // Aquí llamada a API: await updateSimulacion(item.id, { publico: true })
+    }
+  };
+
   const handleEdit = (item) => navigate(`/simuladores/${item.id}/editar`);
   const handleDelete = (item) => {
     // aquí confirm + llamada a API
@@ -164,6 +181,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "MODULO SE
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onPublish={handlePublish}
             />
           ))}
           {data.length === 0 && (
@@ -178,45 +196,47 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "MODULO SE
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50/60">
+                <thead className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
                   <tr>
                     <th
                       scope="col"
-                      className="sticky left-0 z-10 bg-slate-50/60 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      className="sticky left-0 z-10 bg-indigo-600 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[200px]"
                     >
                       Simulador
                     </th>
                     <th
                       scope="col"
-                      className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]"
                     >
                       Tipo
                     </th>
                     <th
                       scope="col"
-                      className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[95px]"
                     >
                       Preguntas
                     </th>
                     <th
                       scope="col"
-                      className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[95px]"
                     >
                       Intentos
                     </th>
                     <th
                       scope="col"
-                      className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[110px]"
                     >
                       Estado
                     </th>
                     <th
                       scope="col"
-                      className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[120px]"
                     >
                       Actualizado
                     </th>
-                    <th scope="col" className="px-5 py-3"></th>
+                    <th scope="col" className="px-4 py-3 min-w-[150px]">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
 
@@ -224,47 +244,64 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "MODULO SE
                   {data.map((item, idx) => (
                     <tr
                       key={item.id}
-                      className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/30"}
+                      className="bg-white hover:bg-slate-50/50 transition-colors duration-150 border-b border-slate-100 last:border-0"
                     >
-                      <td className="sticky left-0 z-10 bg-inherit px-5 py-4">
-                        <div className="max-w-xs truncate font-medium text-slate-900">
+                      <td className="sticky left-0 z-10 bg-inherit px-4 py-3 border-r border-slate-100">
+                        <div className="max-w-[180px] lg:max-w-xs xl:max-w-md truncate font-bold text-slate-900 text-sm">
                           {item.name}
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-slate-700">{item.type}</td>
-                      <td className="px-5 py-4 text-slate-700">
-                        {item.questions}
+                      <td className="px-4 py-3 text-slate-500 text-[11px] font-bold uppercase">{item.type}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center justify-center min-w-[2rem] rounded-md bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs font-bold text-slate-600 uppercase">
+                          {item.questions}
+                        </span>
                       </td>
-                      <td className="px-5 py-4 text-slate-700">
-                        {item.attempts}
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center justify-center min-w-[2rem] rounded-md bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs font-bold text-slate-600 uppercase">
+                          {item.attempts}
+                        </span>
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="px-4 py-3">
                         {item.status === "Publicado" ? (
-                          <Badge type="success">Publicado</Badge>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-[10px] font-bold text-emerald-600 uppercase tracking-wider border border-emerald-100">
+                            Publicado
+                          </span>
                         ) : (
-                          <Badge type="draft">Borrador</Badge>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-[10px] font-bold text-amber-600 uppercase tracking-wider border border-amber-100">
+                            Borrador
+                          </span>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-slate-700">
+                      <td className="px-4 py-3 text-slate-500 text-[11px] font-medium">
                         {item.updatedAt}
                       </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => handleView(item)}
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            className="p-1.5 rounded-md border border-slate-100 bg-white text-sky-600 hover:bg-sky-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
+                          {item.status === "Borrador" && (
+                            <button
+                              onClick={() => handlePublish(item)}
+                              title="Publicar"
+                              className="p-1.5 rounded-md border border-slate-100 bg-white text-emerald-600 hover:bg-emerald-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
+                            >
+                              <UploadCloud className="h-4 w-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleEdit(item)}
-                            className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+                            className="p-1.5 rounded-md border border-slate-100 bg-white text-indigo-600 hover:bg-indigo-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(item)}
-                            className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-100"
+                            className="p-1.5 rounded-md border border-slate-100 bg-white text-rose-600 hover:bg-rose-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>

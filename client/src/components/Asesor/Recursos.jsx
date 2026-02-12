@@ -114,6 +114,9 @@ export default function Recursos() {
   const [successMessage, setSuccessMessage] = useState('');
   const [linkModal, setLinkModal] = useState({ isOpen: false, title: '', description: '', linkUrl: '', tags: [] });
   const [newLinkTag, setNewLinkTag] = useState('');
+  // Nuevo estado para modal de archivos
+  const [fileModal, setFileModal] = useState({ isOpen: false, title: '', description: '', file: null, tags: [] });
+  const [newFileTag, setNewFileTag] = useState('');
 
   // Cargar recursos según el tab activo
   useEffect(() => {
@@ -144,7 +147,7 @@ export default function Recursos() {
 
   // Bloquear scroll del body cuando hay modales abiertas
   useEffect(() => {
-    if (preview || linkModal.isOpen) {
+    if (preview || linkModal.isOpen || fileModal.isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -152,7 +155,7 @@ export default function Recursos() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [preview, linkModal.isOpen]);
+  }, [preview, linkModal.isOpen, fileModal.isOpen]);
 
   // Filtrar recursos
   const filtered = useMemo(() => {
@@ -193,8 +196,20 @@ export default function Recursos() {
     }
   };
 
-  // Subir archivo
-  const handleUpload = async (e) => {
+  // Abrir modal de archivo
+  const openFileModal = () => {
+    setFileModal({ isOpen: true, title: '', description: '', file: null, tags: [] });
+    setNewFileTag('');
+  };
+
+  // Cerrar modal de archivo
+  const closeFileModal = () => {
+    setFileModal({ isOpen: false, title: '', description: '', file: null, tags: [] });
+    setNewFileTag('');
+  };
+
+  // Seleccionar archivo en el modal
+  const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -206,22 +221,57 @@ export default function Recursos() {
       return;
     }
 
+    setFileModal(prev => ({
+      ...prev,
+      file,
+      title: prev.title || file.name.replace(/\.[^/.]+$/, '') // Usar nombre de archivo si no hay título
+    }));
+  };
+
+  // Agregar tag al modal de archivo
+  const addFileTag = () => {
+    if (!newFileTag.trim()) return;
+    const tag = newFileTag.trim();
+    if (fileModal.tags.includes(tag)) return;
+    setFileModal(prev => ({ ...prev, tags: [...prev.tags, tag] }));
+    setNewFileTag('');
+  };
+
+  // Eliminar tag del modal de archivo
+  const removeFileTag = (tag) => {
+    setFileModal(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
+  };
+
+  // Subir archivo (Submit del modal)
+  const handleFileSubmit = async () => {
+    if (!fileModal.file) {
+      setError('Debes seleccionar un archivo');
+      return;
+    }
+    if (!fileModal.title.trim()) {
+      setError('El título es obligatorio');
+      return;
+    }
+    if (fileModal.tags.length < 3) {
+      setError('Debes agregar al menos 3 etiquetas');
+      return;
+    }
+
     setUploading(true);
     setError(null);
     setSuccessMessage('');
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('title', file.name.replace(/\.[^/.]+$/, ''));
-      formData.append('description', '');
-      formData.append('tags', JSON.stringify([]));
+      formData.append('file', fileModal.file);
+      formData.append('title', fileModal.title.trim());
+      formData.append('description', fileModal.description.trim() || '');
+      formData.append('tags', JSON.stringify(fileModal.tags));
       formData.append('resource_type', 'file');
 
       // Solo se puede subir en "Mis Recursos" (asesor)
       if (activeTab !== 'asesor') {
         setError('Solo puedes subir archivos en "Mis Recursos"');
-        e.target.value = '';
         setUploading(false);
         return;
       }
@@ -229,10 +279,8 @@ export default function Recursos() {
       const response = await createRecurso(formData);
 
       setResources(prev => [response.data.data, ...prev]);
-      setSuccessMessage(`Archivo "${file.name}" subido correctamente`);
-
-      // Reset input
-      e.target.value = '';
+      setSuccessMessage(`Archivo "${fileModal.file.name}" subido correctamente`);
+      closeFileModal();
 
       // Ocultar mensaje de éxito después de 3 segundos
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -277,6 +325,10 @@ export default function Recursos() {
     }
     if (!linkModal.linkUrl.trim()) {
       setError('La URL es obligatoria');
+      return;
+    }
+    if (linkModal.tags.length < 3) {
+      setError('Debes agregar al menos 3 etiquetas');
       return;
     }
 
@@ -453,6 +505,11 @@ export default function Recursos() {
         return;
       }
 
+      if (editForm.tags.length < 3) {
+        setError('Debes agregar al menos 3 etiquetas');
+        return;
+      }
+
       await updateRecurso(id, {
         title: editForm.title.trim(),
         description: editForm.description.trim() || null,
@@ -552,20 +609,13 @@ export default function Recursos() {
               {/* Solo mostrar botones de subir en "Mis Recursos" */}
               {activeTab === 'asesor' && (
                 <>
-                  <label className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer">
-                    {uploading ? (
-                      <>
-                        <Loader2 className="size-5 animate-spin" />
-                        <span>Subiendo...</span>
-                      </>
-                    ) : (
-                      <>
-                        <UploadCloud className="size-5" />
-                        <span>Subir archivo</span>
-                      </>
-                    )}
-                    <input type="file" onChange={handleUpload} className="hidden" disabled={uploading} />
-                  </label>
+                  <button
+                    onClick={openFileModal}
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                  >
+                    <UploadCloud className="size-5" />
+                    <span>Subir archivo</span>
+                  </button>
                   <button
                     onClick={openLinkModal}
                     disabled={uploading}
@@ -1055,6 +1105,135 @@ export default function Recursos() {
             onConfirm={confirmModal.onConfirm}
             onCancel={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => { }, variant: 'default' })}
           />
+
+          {/* Modal para subir archivo */}
+          {fileModal.isOpen && createPortal(
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeFileModal} />
+              <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <UploadCloud className="size-5 text-white" />
+                    </div>
+                    <h3 className="font-bold text-lg">Subir archivo</h3>
+                  </div>
+                  <button
+                    onClick={closeFileModal}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  >
+                    <X className="size-5" />
+                  </button>
+                </div>
+
+                <div className="p-6 overflow-y-auto custom-scrollbar space-y-4">
+                  {/* Selección de archivo */}
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Archivo <span className="text-red-500">*</span></label>
+                    <div className="relative group">
+                      <input
+                        type="file"
+                        onChange={handleFileSelect}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        disabled={uploading}
+                      />
+                      <div className={`w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition-all ${fileModal.file
+                        ? 'border-violet-400 bg-violet-50 text-violet-700'
+                        : 'border-slate-300 bg-slate-50 text-slate-500 group-hover:border-violet-400 group-hover:bg-slate-100'
+                        }`}>
+                        {fileModal.file ? (
+                          <>
+                            <File className="size-8 mb-2" />
+                            <span className="font-medium text-sm text-center break-all">{fileModal.file.name}</span>
+                            <span className="text-xs mt-1">{(fileModal.file.size / (1024 * 1024)).toFixed(2)} MB</span>
+                            <span className="text-xs mt-2 text-violet-600 font-bold">Clic para cambiar</span>
+                          </>
+                        ) : (
+                          <>
+                            <UploadCloud className="size-8 mb-2" />
+                            <span className="font-medium text-sm">Arrastra o selecciona un archivo</span>
+                            <span className="text-xs mt-1">Máx. 100MB</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Título */}
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Título <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={fileModal.title}
+                      onChange={(e) => setFileModal(prev => ({ ...prev, title: e.target.value }))}
+                      className="w-full px-4 py-2 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none transition-all font-medium"
+                      placeholder="Ej. Guía de estudio matemáticas"
+                    />
+                  </div>
+
+                  {/* Descripción */}
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Descripción</label>
+                    <textarea
+                      value={fileModal.description}
+                      onChange={(e) => setFileModal(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full px-4 py-2 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none transition-all font-medium resize-none"
+                      placeholder="Describe brevemente el contenido del archivo..."
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Etiquetas */}
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Etiquetas</label>
+                    <div className="flex gap-2 mb-2 flex-wrap">
+                      {fileModal.tags.map(tag => (
+                        <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-violet-100 text-violet-700 text-xs font-bold shadow-sm border border-violet-200">
+                          {tag}
+                          <button onClick={() => removeFileTag(tag)} className="hover:text-violet-900"><X className="size-3" /></button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newFileTag}
+                        onChange={(e) => setNewFileTag(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addFileTag()}
+                        className="flex-1 px-4 py-2 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none transition-all font-medium text-sm"
+                        placeholder="Agregar etiqueta (Enter)"
+                      />
+                      <button
+                        onClick={addFileTag}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-colors"
+                      >
+                        <Plus className="size-5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                  <button
+                    onClick={closeFileModal}
+                    className="px-5 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-100 transition-colors"
+                    disabled={uploading}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleFileSubmit}
+                    disabled={uploading || !fileModal.file || !fileModal.title.trim()}
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold shadow-lg hover:shadow-xl hover:translate-y-[-1px] active:translate-y-[0px] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {uploading ? <Loader2 className="size-5 animate-spin" /> : <UploadCloud className="size-5" />}
+                    {uploading ? 'Subiendo...' : 'Subir archivo'}
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
 
           {/* Modal de agregar enlace */}
           {linkModal.isOpen && createPortal(

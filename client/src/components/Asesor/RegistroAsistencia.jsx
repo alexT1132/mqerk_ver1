@@ -580,42 +580,42 @@ function VistaRegistro({
       </div>
 
       {/* Tabla de estudiantes */}
-      <div className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl ring-2 ring-slate-100/50 overflow-hidden mb-6">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
+            <thead className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide">Estudiante</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wide">Grupo</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wide">Asistencia</th>
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide">Observaciones</th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[200px]">Estudiante</th>
+                <th className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[80px]">Grupo</th>
+                <th className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[120px]">Asistencia</th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider min-w-[200px]">Observaciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y-2 divide-slate-200">
+            <tbody className="divide-y divide-slate-100">
               {estudiantes.map((estudiante) => {
                 const nombreCompleto = `${estudiante.nombres || estudiante.nombre || ''} ${estudiante.apellidos || ''}`.trim() || estudiante.email || `Estudiante ${estudiante.id}`;
                 const asistencia = asistencias[estudiante.id] || { asistio: true, observaciones: '' };
 
                 return (
-                  <tr key={estudiante.id} className="hover:bg-gradient-to-r hover:from-violet-50/30 hover:to-indigo-50/30 transition-all duration-200">
-                    <td className="px-6 py-5 whitespace-nowrap border-r-2 border-slate-200">
+                  <tr key={estudiante.id} className="hover:bg-slate-50/50 transition-colors duration-150">
+                    <td className="px-4 py-3 whitespace-nowrap border-r border-slate-100">
                       <div className="text-sm font-bold text-slate-900">{nombreCompleto}</div>
                       {estudiante.email && (
-                        <div className="text-xs text-slate-500 font-medium">{estudiante.email}</div>
+                        <div className="text-[11px] text-slate-500 font-medium">{estudiante.email}</div>
                       )}
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-center border-r-2 border-slate-200">
-                      <span className="px-3 py-1 text-xs font-semibold bg-violet-100 text-violet-700 rounded-full">
+                    <td className="px-4 py-3 whitespace-nowrap text-center border-r border-slate-100">
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600 rounded-md border border-slate-200 uppercase">
                         {estudiante.grupo || 'N/A'}
                       </span>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-center border-r-2 border-slate-200">
-                      <div className="flex items-center justify-center gap-3">
+                    <td className="px-4 py-3 whitespace-nowrap text-center border-r border-slate-100">
+                      <div className="flex items-center justify-center gap-4">
                         <button
                           onClick={() => handleAsistenciaChange(estudiante.id, true)}
-                          className={`p-2.5 rounded-lg transition-all ${asistencia.asistio
-                            ? 'bg-emerald-600 text-white shadow-md'
-                            : 'bg-slate-200 text-slate-400 hover:bg-slate-300'
+                          className={`p-1.5 rounded-md transition-all ${asistencia.asistio
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-sm scale-110'
+                            : 'bg-white text-slate-300 border border-slate-100 hover:bg-slate-50'
                             }`}
                           title="Presente"
                         >
@@ -623,9 +623,9 @@ function VistaRegistro({
                         </button>
                         <button
                           onClick={() => handleAsistenciaChange(estudiante.id, false)}
-                          className={`p-2.5 rounded-lg transition-all ${!asistencia.asistio
-                            ? 'bg-slate-600 text-white shadow-md'
-                            : 'bg-slate-200 text-slate-400 hover:bg-slate-300'
+                          className={`p-1.5 rounded-md transition-all ${!asistencia.asistio
+                            ? 'bg-rose-50 text-rose-600 border border-rose-200 shadow-sm scale-110'
+                            : 'bg-white text-slate-300 border border-slate-100 hover:bg-slate-50'
                             }`}
                           title="Ausente"
                         >
@@ -633,13 +633,13 @@ function VistaRegistro({
                         </button>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-4 py-3">
                       <input
                         type="text"
                         value={asistencia.observaciones || ''}
                         onChange={(e) => handleObservacionesChange(estudiante.id, e.target.value)}
                         placeholder="Observaciones (opcional)"
-                        className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 text-sm transition-all shadow-sm hover:shadow-md font-medium"
+                        className="w-full px-3 py-1.5 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-xs transition-all placeholder:text-slate-400 font-medium bg-slate-50/30"
                       />
                     </td>
                   </tr>
@@ -765,22 +765,22 @@ function VistaHistorial({
         </div>
       </div>
 
-      {/* Tabla de historial */}
-      <div className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl ring-2 ring-slate-100/50 overflow-hidden">
+      {/* Tabla Historial */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[400px]">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
+            <thead className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide">Fecha</th>
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide">Estudiante</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wide">Grupo</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wide">Tipo</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wide">Estado</th>
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide">Observaciones</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wide">Acciones</th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[120px]">Fecha</th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[180px]">Estudiante</th>
+                <th className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[80px]">Grupo</th>
+                <th className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]">Tipo</th>
+                <th className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]">Estado</th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[200px]">Observaciones</th>
+                <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider min-w-[100px]">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y-2 divide-slate-200">
+            <tbody className="divide-y divide-slate-100">
               {loadingHistorial ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center">
@@ -804,8 +804,8 @@ function VistaHistorial({
                 </tr>
               ) : (
                 historial.map((registro) => (
-                  <tr key={registro.id} className="hover:bg-gradient-to-r hover:from-violet-50/30 hover:to-indigo-50/30 transition-all duration-200">
-                    <td className="px-6 py-5 whitespace-nowrap border-r-2 border-slate-200">
+                  <tr key={registro.id} className="hover:bg-slate-50/50 transition-colors duration-150 group">
+                    <td className="px-4 py-3 whitespace-nowrap border-r border-slate-100">
                       <div className="text-sm font-bold text-slate-900">
                         {new Date(registro.fecha).toLocaleDateString('es-MX', {
                           year: 'numeric',
@@ -814,41 +814,39 @@ function VistaHistorial({
                         })}
                       </div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap border-r-2 border-slate-200">
-                      <div className="text-sm font-extrabold text-slate-900">
+                    <td className="px-4 py-3 whitespace-nowrap border-r border-slate-100">
+                      <div className="text-sm font-bold text-slate-900">
                         {`${registro.estudiante_nombre || ''} ${registro.estudiante_apellidos || ''}`.trim()}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center border-r-2 border-slate-200">
-                      <span className="px-3 py-1 text-xs font-semibold bg-violet-100 text-violet-700 rounded-full">
+                    <td className="px-4 py-3 whitespace-nowrap text-center border-r border-slate-100">
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600 rounded-md border border-slate-200 uppercase">
                         {registro.estudiante_grupo || 'N/A'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center border-r-2 border-slate-200">
-                      <span className="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-700 rounded-full capitalize">
+                    <td className="px-4 py-3 whitespace-nowrap text-center border-r border-slate-100">
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-500 rounded-md uppercase">
                         {registro.tipo}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center border-r-2 border-slate-200">
+                    <td className="px-4 py-3 whitespace-nowrap text-center border-r border-slate-100">
                       {registro.asistio ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700 rounded-full">
-                          <CheckCircle className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 uppercase">
                           Presente
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-slate-200 text-slate-700 rounded-full">
-                          <XCircle className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-500 rounded-full border border-slate-200 uppercase">
                           Ausente
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-5 border-r-2 border-slate-200">
-                      <div className="text-sm text-slate-600 font-medium">{registro.observaciones || '—'}</div>
+                    <td className="px-4 py-3 border-r border-slate-100">
+                      <div className="text-[11px] text-slate-600 font-medium truncate max-w-[150px]" title={registro.observaciones}>{registro.observaciones || '—'}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-4 py-3 whitespace-nowrap text-center">
                       <button
                         onClick={() => handleEliminarAsistencia(registro.id)}
-                        className="p-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 transition-colors"
+                        className="p-1.5 rounded-md border border-slate-100 bg-white text-rose-600 hover:bg-rose-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
                         title="Eliminar"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -890,113 +888,110 @@ function VistaEstadisticas({
   return (
     <>
       {/* Resumen general */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl ring-2 ring-slate-100/50 p-6 hover:shadow-2xl transition-all duration-200 hover:-translate-y-1">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm font-extrabold text-slate-600">Total Registros</div>
-            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md ring-2 ring-blue-200">
-              <Calendar className="w-5 h-5" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Registros</div>
+            <div className="p-1.5 rounded-md bg-slate-50 text-indigo-600 border border-indigo-100">
+              <Calendar className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-4xl font-extrabold text-slate-900">{totalRegistros}</div>
+          <div className="text-2xl font-bold text-slate-900">{totalRegistros}</div>
         </div>
 
-        <div className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl ring-2 ring-slate-100/50 p-6 hover:shadow-2xl transition-all duration-200 hover:-translate-y-1">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm font-extrabold text-slate-600">Presentes</div>
-            <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md ring-2 ring-emerald-200">
-              <CheckCircle className="w-5 h-5" />
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Presentes</div>
+            <div className="p-1.5 rounded-md bg-slate-50 text-emerald-600 border border-emerald-100">
+              <CheckCircle className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-4xl font-extrabold text-emerald-600">{totalPresentes}</div>
+          <div className="text-2xl font-bold text-emerald-600">{totalPresentes}</div>
         </div>
 
-        <div className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl ring-2 ring-slate-100/50 p-6 hover:shadow-2xl transition-all duration-200 hover:-translate-y-1">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm font-extrabold text-slate-600">Ausentes</div>
-            <div className="p-2 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-md ring-2 ring-rose-200">
-              <XCircle className="w-5 h-5" />
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ausentes</div>
+            <div className="p-1.5 rounded-md bg-slate-50 text-rose-600 border border-rose-100">
+              <XCircle className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-4xl font-extrabold text-rose-600">{totalAusentes}</div>
+          <div className="text-2xl font-bold text-rose-600">{totalAusentes}</div>
         </div>
 
-        <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl shadow-lg p-6 text-white hover:shadow-xl transition-all duration-200">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm font-semibold opacity-90">% Asistencia</div>
-            <div className="p-2 rounded-lg bg-white/20">
-              <BarChart3 className="w-5 h-5" />
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">% Asistencia</div>
+            <div className="p-1.5 rounded-md bg-indigo-600 text-white shadow-sm">
+              <BarChart3 className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-bold">{porcentajeAsistencia}%</div>
+          <div className="text-2xl font-bold text-slate-900">{porcentajeAsistencia}%</div>
         </div>
       </div>
 
       {/* Estadísticas por estudiante */}
-      <div className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl ring-2 ring-slate-100/50 p-6 sm:p-7">
-        <h3 className="text-xl font-extrabold text-slate-900 mb-5 flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200">
-            <BarChart3 className="w-5 h-5" />
-          </div>
-          Estadísticas por Estudiante
-        </h3>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-indigo-600" />
+            Estadísticas por Estudiante
+          </h3>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
+            <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide">Estudiante</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wide">Grupo</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wide">Total</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wide">Presentes</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wide">Ausentes</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wide">% Asistencia</th>
+                <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Estudiante</th>
+                <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-slate-500">Grupo</th>
+                <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-slate-500">Total</th>
+                <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-slate-500">Presentes</th>
+                <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-slate-500">Ausentes</th>
+                <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-slate-500">% Asistencia</th>
               </tr>
             </thead>
-            <tbody className="divide-y-2 divide-slate-200">
+            <tbody className="divide-y divide-slate-100 bg-white">
               {estadisticasPorEstudiante.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="p-4 rounded-3xl bg-gradient-to-br from-slate-400 to-slate-500 text-white shadow-xl ring-4 ring-slate-200">
-                        <BarChart3 className="w-12 h-12" />
-                      </div>
-                      <p className="text-slate-600 font-bold text-lg">No hay datos suficientes</p>
-                      <p className="text-sm text-slate-500 font-medium">Registra asistencias para ver estadísticas</p>
+                  <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center gap-2">
+                      <BarChart3 className="w-10 h-10 opacity-20" />
+                      <p className="font-bold text-sm">Sin datos</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 estadisticasPorEstudiante.map((est) => (
-                  <tr key={est.id} className="hover:bg-gradient-to-r hover:from-violet-50/30 hover:to-indigo-50/30 transition-all duration-200">
-                    <td className="px-6 py-5 whitespace-nowrap border-r-2 border-slate-200">
-                      <div className="text-sm font-extrabold text-slate-900">{est.nombre}</div>
+                  <tr key={est.id} className="hover:bg-slate-50/50 transition-colors duration-150">
+                    <td className="px-4 py-3 whitespace-nowrap border-r border-slate-100">
+                      <div className="text-sm font-bold text-slate-900">{est.nombre}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center border-r-2 border-slate-200">
-                      <span className="px-3 py-1 text-xs font-semibold bg-violet-100 text-violet-700 rounded-full">
+                    <td className="px-4 py-3 whitespace-nowrap text-center border-r border-slate-100">
+                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-slate-50 text-indigo-600 rounded-md border border-indigo-100">
                         {est.grupo || 'N/A'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center border-r-2 border-slate-200">
-                      <div className="text-sm font-semibold text-slate-900">{est.total}</div>
+                    <td className="px-4 py-3 whitespace-nowrap text-center border-r border-slate-100">
+                      <div className="text-sm font-bold text-slate-900">{est.total}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center border-r-2 border-slate-200">
-                      <div className="text-sm font-semibold text-emerald-600">{est.presentes}</div>
+                    <td className="px-4 py-3 whitespace-nowrap text-center border-r border-slate-100">
+                      <div className="text-sm font-bold text-emerald-600">{est.presentes}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center border-r-2 border-slate-200">
-                      <div className="text-sm font-semibold text-slate-600">{est.ausentes}</div>
+                    <td className="px-4 py-3 whitespace-nowrap text-center border-r border-slate-100">
+                      <div className="text-sm font-bold text-slate-400">{est.ausentes}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center gap-3">
-                        <div className="w-24 bg-slate-200 rounded-full h-2">
+                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-20 bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-100">
                           <div
-                            className={`h-2 rounded-full ${est.porcentaje >= 80 ? 'bg-emerald-600' :
+                            className={`h-full transition-all duration-500 ${est.porcentaje >= 80 ? 'bg-emerald-500' :
                               est.porcentaje >= 60 ? 'bg-amber-500' :
-                                'bg-slate-500'
+                                'bg-rose-500'
                               }`}
                             style={{ width: `${est.porcentaje}%` }}
                           ></div>
                         </div>
-                        <span className="text-sm font-semibold text-slate-900 min-w-[3rem]">{est.porcentaje}%</span>
+                        <span className="text-[11px] font-bold text-slate-900 min-w-[2.5rem]">{est.porcentaje}%</span>
                       </div>
                     </td>
                   </tr>

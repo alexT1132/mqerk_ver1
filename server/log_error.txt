@@ -1,0 +1,98 @@
+[2026-02-12T19:06:13.634Z] [INFO] [Quiz.jsx] Creando quiz con IA
+{
+  "titulo": "Español y redacción indirecta (IA · 5 p)",
+  "cantidadPreguntas": 5,
+  "preguntas": [
+    {
+      "type": "multiple",
+      "text": "Selecciona la opción que completa correctamente la...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "En la oración \"La postura del orador era inamovibl...",
+      "optionsCount": 4
+    },
+    {
+      "type": "multiple",
+      "text": "En la oración \"El atleta corrió rápidamente hacia ...",
+      "optionsCount": 4
+    },
+    {
+      "type": "tf",
+      "text": "Lee el siguiente fragmento: \"El calentamiento glob...",
+      "optionsCount": 0
+    },
+    {
+      "type": "short",
+      "text": "Corrige la siguiente frase para eliminar la redund...",
+      "optionsCount": 0
+    }
+  ]
+}
+[2026-02-12T19:06:14.028Z] [INFO] [Quiz.jsx] Quiz creado
+{
+  "id": 2,
+  "titulo": "Español y redacción indirecta (IA · 5 p)",
+  "respuesta": {
+    "data": {
+      "id": 2,
+      "titulo": "Español y redacción indirecta (IA · 5 p)",
+      "descripcion": "Quiz generado con IA sobre: Español y redacción indirecta. Nivel: intermedio.",
+      "id_area": 1,
+      "materia": "Español y redacción indirecta",
+      "puntos_max": 100,
+      "peso_calificacion": "0.00",
+      "fecha_limite": null,
+      "grupos": "[\"V1\"]",
+      "max_intentos": null,
+      "requiere_revision": 0,
+      "activo": 1,
+      "publicado": 0,
+      "creado_por": 21,
+      "time_limit_min": 60,
+      "passing_score": null,
+      "shuffle_questions": 1,
+      "visible_desde": null,
+      "visible_hasta": null,
+      "imagen_portada": null,
+      "recursos_json": null,
+      "created_at": "2026-02-12T19:06:13.000Z",
+      "updated_at": null
+    }
+  }
+}
+[2026-02-12T19:06:14.055Z] [INFO] [Quiz.jsx] Verificación de preguntas guardadas
+{
+  "quizId": 2,
+  "cantidadEsperada": 5,
+  "cantidadGuardada": 5,
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "Selecciona la opción que completa correctamente la..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "En la oración \"La postura del orador era inamovibl..."
+    },
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "En la oración \"El atleta corrió rápidamente hacia ..."
+    },
+    {
+      "tipo": "verdadero_falso",
+      "enunciado": "Lee el siguiente fragmento: \"El calentamiento glob..."
+    },
+    {
+      "tipo": "respuesta_corta",
+      "enunciado": "Corrige la siguiente frase para eliminar la redund..."
+    }
+  ]
+}
+[2026-02-12T19:06:14.057Z] [INFO] [Quiz.jsx] Quiz creado con IA exitosamente
+{
+  "quizId": 2,
+  "titulo": "Español y redacción indirecta (IA · 5 p)",
+  "cantidadPreguntas": 5
+}

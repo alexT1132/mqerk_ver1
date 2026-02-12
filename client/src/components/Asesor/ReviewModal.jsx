@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Eye, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { getQuizIntentoReview } from '../../api/quizzes';
 import { getSimulacionIntentoReview } from '../../api/simulaciones';
@@ -181,11 +182,9 @@ export default function ReviewModal({
   );
   const respuestasCortas = preguntas.filter(p => p.tipo === 'respuesta_corta');
 
-  return (
-
-    //aqui es donde se ajusta el margen d ela distancia
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4 pt-24 sm:pt-18">
-      <div className="w-full max-w-4xl max-h-[75vh] sm:max-h-[80vh] rounded-xl sm:rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col mt-8 sm:mt-0">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-2 sm:p-4">
+      <div className="w-full max-w-4xl max-h-[90vh] rounded-2xl sm:rounded-3xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60 flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
@@ -197,7 +196,7 @@ export default function ReviewModal({
                 {titulo || (tipo === 'quiz' ? 'Quiz' : 'Simulación')}
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 mt-0.5 truncate">
-                {estudiante?.nombre || 'Alumno'}
+                {estudiante?.nombre || 'Alumno'} • {preguntas.length} {preguntas.length === 1 ? 'pregunta' : 'preguntas'}
               </p>
             </div>
             {estudiante?.totalIntentos > 1 && (
@@ -238,14 +237,12 @@ export default function ReviewModal({
           ) : reviewData && Array.isArray(preguntas) && preguntas.length > 0 ? (
             <div className="space-y-4 sm:space-y-5">
               {/* Analizador de fallos repetidos */}
-              {estudiante?.totalIntentos >= 2 && (
-                <AnalizadorFallosRepetidos
-                  tipo={tipo}
-                  id={idEvaluacion}
-                  idEstudiante={estudiante?.id}
-                  totalIntentos={estudiante?.totalIntentos}
-                />
-              )}
+              <AnalizadorFallosRepetidos
+                tipo={tipo}
+                id={idEvaluacion}
+                idEstudiante={estudiante?.id}
+                totalIntentos={estudiante?.totalIntentos}
+              />
 
               {/* Preguntas de opción múltiple */}
               {preguntasOpcionMultiple.length > 0 && (
@@ -261,8 +258,8 @@ export default function ReviewModal({
                       <div
                         key={p.id || idx}
                         className={`rounded-lg sm:rounded-xl border-2 p-3 sm:p-4 shadow-sm transition-all hover:shadow-md ${corr
-                            ? 'bg-gradient-to-br from-emerald-50/50 to-green-50/30 border-emerald-200'
-                            : 'bg-gradient-to-br from-rose-50/50 to-red-50/30 border-rose-200'
+                          ? 'bg-gradient-to-br from-emerald-50/50 to-green-50/30 border-emerald-200'
+                          : 'bg-gradient-to-br from-rose-50/50 to-red-50/30 border-rose-200'
                           }`}
                       >
                         <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2 sm:mb-3">
@@ -272,8 +269,8 @@ export default function ReviewModal({
                                 {p.orden || (idx + 1)}
                               </span>
                               <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold border-2 ${corr
-                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                                  : 'bg-rose-100 text-rose-800 border-rose-300'
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                : 'bg-rose-100 text-rose-800 border-rose-300'
                                 }`}>
                                 {corr ? '✓ Correcta' : '✗ Incorrecta'}
                               </span>
@@ -402,23 +399,8 @@ export default function ReviewModal({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t border-slate-200/60 flex-shrink-0">
-          <div className="text-xs sm:text-sm text-slate-600">
-            {reviewData && Array.isArray(preguntas) && preguntas.length > 0 && (
-              <span className="font-medium">
-                {preguntas.length} pregunta{preguntas.length !== 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-violet-700 transition-all hover:shadow-lg"
-          >
-            Cerrar
-          </button>
-        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getMisPagos } from "../../api/asesores.js";
-import { Loader2, Calendar, DollarSign, Clock, CheckCircle2, XCircle, AlertCircle, CreditCard } from "lucide-react";
+import { Loader2, Calendar, DollarSign, Clock, CheckCircle2, XCircle, AlertCircle, CreditCard, ChevronDown, Check } from "lucide-react";
 
 /* ---------- Constantes ---------- */
 const YEARS = Array.from({ length: 6 }, (_, i) => 2024 + i);
@@ -8,6 +8,8 @@ const MONTHS = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
+
+const TODOS_VALUE = "TODOS";
 
 // Formatear dinero
 const fmtMoney = (n) =>
@@ -90,6 +92,67 @@ function WeekChip({ w, active, onClick, count }) {
   );
 }
 
+
+/* ---------- Componente Select Personalizado (Limitado a 5 items) ---------- */
+function CustomSelect({ value, options, onChange, icon: Icon }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Cerrar al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (isOpen && !e.target.closest('.custom-select-container')) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const selectedOption = options.find(o => o.value === value) || options[0];
+
+  return (
+    <div className="relative custom-select-container w-full">
+      {/* Botón activador */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full flex items-center justify-between bg-white border-2 rounded-xl px-4 py-3 text-left transition-all ${isOpen ? 'border-violet-500 ring-2 ring-violet-200' : 'border-slate-200 hover:border-violet-300'
+          }`}
+      >
+        <div className="flex items-center gap-3 overflow-hidden">
+          {Icon && <Icon className="size-5 text-violet-500 shrink-0" />}
+          <span className="font-bold text-slate-700 truncate block">
+            {selectedOption?.label || value}
+          </span>
+        </div>
+        <ChevronDown className={`size-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {/* Lista de opciones */}
+      {isOpen && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+          {/* MAX-HEIGHT ajustado para mostrar aprox 5 elementos (5 * 44px = ~220px) */}
+          <div className="max-h-[220px] overflow-y-auto custom-scrollbar">
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  onChange(opt.value);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-4 py-3 text-sm font-semibold hover:bg-violet-50 transition-colors flex items-center justify-between ${value === opt.value ? 'bg-violet-50 text-violet-700' : 'text-slate-600'
+                  }`}
+              >
+                {opt.label}
+                {value === opt.value && <Check className="size-4 text-violet-600" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Pagos() {
   const [pagos, setPagos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -101,17 +164,23 @@ export default function Pagos() {
   const [week, setWeek] = useState(1);
 
   const monthIndex = MONTHS.indexOf(month);
-  const weeksInMonth = useMemo(() => getWeeksInMonth(year, monthIndex), [year, monthIndex]);
+  const weeksInMonth = useMemo(() => {
+    if (year === TODOS_VALUE || month === TODOS_VALUE) return 0;
+    return getWeeksInMonth(year, monthIndex);
+  }, [year, monthIndex]);
 
-  // Cargar pagos del mes completo (sin filtrar por semana)
+  // Cargar pagos
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
       setError(null);
       try {
-        // Cargar todos los pagos del mes (sin especificar semana)
-        const { data } = await getMisPagos({ year, month });
+        const params = {};
+        if (year !== TODOS_VALUE) params.year = year;
+        if (month !== TODOS_VALUE) params.month = month;
+
+        const { data } = await getMisPagos(params);
         if (!alive) return;
         setPagos(data?.data || []);
       } catch (e) {
@@ -126,6 +195,11 @@ export default function Pagos() {
 
   // Agrupar pagos por semana para mostrar el contador
   const pagosPorSemana = useMemo(() => {
+    // Si estamos viendo todo, no agrupamos por semana
+    if (year === TODOS_VALUE || month === TODOS_VALUE) {
+      return {};
+    }
+
     if (!year || monthIndex === -1 || !pagos.length) {
       const result = {};
       for (let w = 1; w <= weeksInMonth; w++) {
@@ -216,11 +290,12 @@ export default function Pagos() {
     return result;
   }, [pagos, year, monthIndex, weeksInMonth]);
 
-  // Filtrar pagos por semana seleccionada
+  // Filtrar pagos por semana seleccionada (o devolver todos si es modo TODOS)
   const rows = useMemo(() => {
+    if (year === TODOS_VALUE || month === TODOS_VALUE) return pagos;
     if (!week || week < 1 || week > weeksInMonth) return [];
     return pagosPorSemana[week] || [];
-  }, [pagosPorSemana, week, weeksInMonth]);
+  }, [pagos, pagosPorSemana, week, weeksInMonth, year, month]);
 
   // Calcular estadísticas
   const stats = useMemo(() => {
@@ -278,56 +353,56 @@ export default function Pagos() {
         <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg ring-2 ring-slate-100/50 p-5 sm:p-6 mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-center gap-3 flex-1">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200">
-                <Calendar className="size-5" />
-              </div>
-              <select
+              <CustomSelect
                 value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-                className="px-4 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all shadow-sm hover:shadow-md"
-              >
-                {YEARS.map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
+                options={[
+                  { value: TODOS_VALUE, label: 'Todos los años' },
+                  ...YEARS.map(y => ({ value: y, label: String(y) }))
+                ]}
+                onChange={setYear}
+                icon={Calendar}
+              />
 
-              <select
+              <CustomSelect
                 value={month}
-                onChange={(e) => setMonth(e.target.value)}
-                className="px-4 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all shadow-sm hover:shadow-md"
-              >
-                {MONTHS.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+                options={[
+                  { value: TODOS_VALUE, label: 'Todos los meses' },
+                  ...MONTHS.map(m => ({ value: m, label: m }))
+                ]}
+                onChange={setMonth}
+                icon={Calendar}
+              />
             </div>
 
             <div className="px-5 py-3 bg-gradient-to-r from-violet-500 to-indigo-600 text-white rounded-xl font-bold text-sm shadow-md ring-2 ring-violet-200">
-              {pagos.length} {pagos.length === 1 ? 'pago encontrado' : 'pagos encontrados'} en {month} {year}
+              {pagos.length} {pagos.length === 1 ? 'pago encontrado' : 'pagos encontrados'}
+              {year !== TODOS_VALUE && month !== TODOS_VALUE && ` en ${month} ${year}`}
             </div>
           </div>
         </div>
 
-        {/* Botones de semanas */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200">
-              <Calendar className="size-5" />
+        {/* Botones de semanas - Solo mostrar si NO estamos en modo TODOS */}
+        {year !== TODOS_VALUE && month !== TODOS_VALUE && (
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200">
+                <Calendar className="size-5" />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-800">Selecciona la semana:</h3>
             </div>
-            <h3 className="text-lg font-extrabold text-slate-800">Selecciona la semana:</h3>
+            <div className="flex flex-wrap gap-3">
+              {Array.from({ length: weeksInMonth }, (_, i) => i + 1).map((w) => (
+                <WeekChip
+                  key={w}
+                  w={w}
+                  active={w === week}
+                  onClick={() => setWeek(w)}
+                  count={pagosPorSemana[w]?.length || 0}
+                />
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3">
-            {Array.from({ length: weeksInMonth }, (_, i) => i + 1).map((w) => (
-              <WeekChip
-                key={w}
-                w={w}
-                active={w === week}
-                onClick={() => setWeek(w)}
-                count={pagosPorSemana[w]?.length || 0}
-              />
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* Estadísticas */}
         {!loading && rows.length > 0 && (
@@ -389,7 +464,7 @@ export default function Pagos() {
         )}
 
         {/* Tabla */}
-        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-xl ring-2 ring-slate-100/50 overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             {loading ? (
               <div className="flex items-center justify-center py-16">
@@ -401,7 +476,10 @@ export default function Pagos() {
                   <DollarSign className="size-16" />
                 </div>
                 <p className="text-slate-600 font-bold text-lg mb-2">
-                  No hay pagos para {week ? `la semana ${week} de` : ''} {month} {year}
+                  {(year === TODOS_VALUE || month === TODOS_VALUE)
+                    ? 'No hay pagos registrados'
+                    : `No hay pagos para ${week ? `la semana ${week} de` : ''} ${month} ${year}`
+                  }
                 </p>
                 <p className="text-sm text-slate-500 font-medium mb-4">
                   Los pagos aparecerán aquí cuando estén registrados
@@ -412,57 +490,57 @@ export default function Pagos() {
               </div>
             ) : (
               <table className="min-w-[1000px] w-full text-left">
-                <thead className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
+                <thead className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
                   <tr>
-                    <th className="px-5 py-4 font-bold text-xs uppercase tracking-widest border-r-2 border-white/20">ID_Pago</th>
-                    <th className="px-5 py-4 font-bold text-xs uppercase tracking-widest border-r-2 border-white/20">Tipo de servicio</th>
-                    <th className="px-5 py-4 font-bold text-xs uppercase tracking-widest border-r-2 border-white/20">Monto base</th>
-                    <th className="px-5 py-4 font-bold text-xs uppercase tracking-widest border-r-2 border-white/20">Horas trabajadas</th>
-                    <th className="px-5 py-4 font-bold text-xs uppercase tracking-widest border-r-2 border-white/20">Honorarios / Comisión</th>
-                    <th className="px-5 py-4 font-bold text-xs uppercase tracking-widest border-r-2 border-white/20">Ingreso final</th>
-                    <th className="px-5 py-4 font-bold text-xs uppercase tracking-widest border-r-2 border-white/20">Fecha de pago</th>
-                    <th className="px-5 py-4 font-bold text-xs uppercase tracking-widest border-r-2 border-white/20">Método de pago</th>
-                    <th className="px-5 py-4 font-bold text-xs uppercase tracking-widest border-r-2 border-white/20">Nota</th>
-                    <th className="px-5 py-4 font-bold text-xs uppercase tracking-widest">Status</th>
+                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[100px]">ID_Pago</th>
+                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[150px]">Tipo de servicio</th>
+                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[110px]">Monto base</th>
+                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[100px]">Horas</th>
+                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[140px]">Hon. / Comis.</th>
+                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[120px]">Ingreso final</th>
+                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[120px]">Fecha de pago</th>
+                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[120px]">Método</th>
+                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[100px]">Nota</th>
+                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider min-w-[100px]">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y-2 divide-slate-200 bg-white">
+                <tbody className="divide-y divide-slate-100 bg-white">
                   {rows.map((r, i) => (
                     <tr
                       key={r.id}
-                      className="hover:bg-gradient-to-r hover:from-violet-50/30 hover:to-indigo-50/30 transition-all duration-200"
+                      className="hover:bg-slate-50/50 transition-colors duration-150"
                     >
-                      <td className="px-5 py-4 whitespace-nowrap border-r-2 border-slate-200">
+                      <td className="px-4 py-3 whitespace-nowrap border-r border-slate-100">
                         <span className="font-bold text-slate-900">{r.id_pago}</span>
                       </td>
-                      <td className="px-5 py-4 border-r-2 border-slate-200">
-                        <span className="inline-flex items-center px-3 py-1 rounded-xl bg-violet-100 text-violet-700 text-sm font-semibold border-2 border-violet-200">
+                      <td className="px-4 py-3 border-r border-slate-100">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-50 text-indigo-600 text-xs font-bold border border-indigo-100 uppercase">
                           {getTipoNombre(r.tipo_servicio)}
                         </span>
                         {r.servicio_detalle && (
-                          <div className="text-xs text-slate-500 mt-1 font-medium">{r.servicio_detalle}</div>
+                          <div className="text-[10px] text-slate-500 mt-1 font-medium">{r.servicio_detalle}</div>
                         )}
                       </td>
-                      <td className="px-5 py-4 whitespace-nowrap border-r-2 border-slate-200">
+                      <td className="px-4 py-3 whitespace-nowrap border-r border-slate-100">
                         <span className="text-slate-700 font-semibold">{r.monto_base ? fmtMoney(r.monto_base) : "-"}</span>
                       </td>
-                      <td className="px-5 py-4 whitespace-nowrap border-r-2 border-slate-200">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold border-2 border-slate-200">
-                          <Clock className="size-4" />
+                      <td className="px-4 py-3 whitespace-nowrap border-r border-slate-100">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200 uppercase">
+                          <Clock className="size-3" />
                           {r.horas_trabajadas ? `${r.horas_trabajadas}h` : "-"}
                         </span>
                       </td>
-                      <td className="px-5 py-4 whitespace-nowrap border-r-2 border-slate-200">
+                      <td className="px-4 py-3 whitespace-nowrap border-r border-slate-100">
                         <span className="text-slate-700 font-bold">
                           {r.honorarios_comision ? fmtMoney(r.honorarios_comision) : "-"}
                         </span>
                       </td>
-                      <td className="px-5 py-4 whitespace-nowrap border-r-2 border-slate-200">
-                        <span className="text-lg font-extrabold text-emerald-700">
+                      <td className="px-4 py-3 whitespace-nowrap border-r border-slate-100">
+                        <span className="text-base font-bold text-emerald-600">
                           {fmtMoney(r.ingreso_final)}
                         </span>
                       </td>
-                      <td className="px-5 py-4 whitespace-nowrap border-r-2 border-slate-200">
+                      <td className="px-4 py-3 whitespace-nowrap border-r border-slate-100">
                         <span className="text-slate-700 font-medium">
                           {r.fecha_pago ? new Date(r.fecha_pago).toLocaleDateString('es-ES', {
                             day: 'numeric',
@@ -471,18 +549,18 @@ export default function Pagos() {
                           }) : "-"}
                         </span>
                       </td>
-                      <td className="px-5 py-4 whitespace-nowrap border-r-2 border-slate-200">
+                      <td className="px-4 py-3 whitespace-nowrap border-r border-slate-100">
                         <span className="text-slate-700 font-medium">{r.metodo_pago || "-"}</span>
                       </td>
-                      <td className="px-5 py-4 max-w-xs border-r-2 border-slate-200">
-                        <span className="text-slate-600 text-sm truncate block font-medium" title={r.nota || ""}>
+                      <td className="px-4 py-3 max-w-xs border-r border-slate-100">
+                        <span className="text-slate-600 text-[11px] truncate block font-medium" title={r.nota || ""}>
                           {r.nota || "-"}
                         </span>
                       </td>
-                      <td className="px-5 py-4 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={[
-                            "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold border-2 shadow-sm",
+                            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold border capitalize",
                             getStatusColor(r.status)
                           ].join(" ")}
                         >

@@ -9,7 +9,7 @@ export const AREA_NAME_TO_ID = {
 };
 
 // Helper para normalizar strings (minúsculas + sin acentos): mejora el mapeo por nombre
-const normalize = (s='') => s
+const normalize = (s = '') => s
   .toString()
   .normalize('NFD')
   .replace(/\p{Diacritic}+/gu, '')
@@ -17,7 +17,7 @@ const normalize = (s='') => s
   .trim();
 
 const AREA_NAME_TO_ID_NORMALIZED = Object.fromEntries(
-  Object.entries(AREA_NAME_TO_ID).map(([k,v]) => [normalize(k), v])
+  Object.entries(AREA_NAME_TO_ID).map(([k, v]) => [normalize(k), v])
 );
 
 export function areaIdFromName(name) {
@@ -88,9 +88,10 @@ export async function listArchivosEntrega(entregaId) {
   return body; // { data: [...] }
 }
 
-export async function createActividad({ titulo, fecha_limite, grupos, id_area, recursosFiles = [], imagenFile = null, materia } = {}) {
+export async function createActividad({ titulo, descripcion, fecha_limite, grupos, id_area, recursosFiles = [], imagenFile = null, materia } = {}) {
   const fd = new FormData();
   fd.set('titulo', titulo);
+  if (descripcion) fd.set('descripcion', descripcion);
   if (fecha_limite) fd.set('fecha_limite', fecha_limite);
   if (Array.isArray(grupos) && grupos.length) fd.set('grupos', JSON.stringify(grupos));
   if (id_area) fd.set('id_area', String(id_area));

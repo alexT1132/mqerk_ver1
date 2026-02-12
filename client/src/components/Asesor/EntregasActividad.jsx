@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   listEntregasActividad,
@@ -393,16 +394,16 @@ export default function EntregasActividad() {
           </div>
         )}
 
-        <div className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-xl">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-slate-50 supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
-                <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Estudiante</th>
-                <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Estado</th>
-                <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Entregado el</th>
-                <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Archivo(s)</th>
-                <th className="px-6 py-4 text-slate-600 text-xs font-bold uppercase tracking-wider">Calificación</th>
-                <th className="px-6 py-4 text-right text-slate-600 text-xs font-bold uppercase tracking-wider">Acciones</th>
+            <thead className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
+              <tr>
+                <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[160px]">Estudiante</th>
+                <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]">Estado</th>
+                <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[120px]">Entregado el</th>
+                <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[120px]">Archivo(s)</th>
+                <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[300px]">Calificación</th>
+                <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider min-w-[140px]">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -417,82 +418,77 @@ export default function EntregasActividad() {
                 </tr>
               ))}
               {!loading && rows.map(r => (
-                <tr key={r.id} className="border-b border-slate-100 last:border-0 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/30 transition-all duration-200 group">
-                  <td className="px-6 py-4">
-                    <span className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">{r.estudiante_nombre || r.id_estudiante}</span>
+                <tr key={r.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors duration-150 group">
+                  <td className="px-4 py-3">
+                    <span className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors text-sm">{r.estudiante_nombre || r.id_estudiante}</span>
                   </td>
-                  <td className="px-6 py-4">
-                    <Badge className={badgeEstado(r.estado)}>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeEstado(r.estado)}`}>
                       {(r.estado || 'pendiente').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    </Badge>
+                    </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
-                      <span className="text-sm font-medium text-slate-700">{formatDateTime(r.entregada_at)}</span>
+                  <td className="px-4 py-3">
+                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">
+                      <span className="text-[11px] font-bold text-slate-700">{formatDateTime(r.entregada_at)}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     {r.entrega_id ? (
                       <button
                         onClick={() => openFiles(r.entrega_id)}
-                        className="inline-flex items-center gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
+                        className="inline-flex items-center gap-2 rounded-md border border-slate-100 bg-white px-2 py-1 text-[11px] font-bold text-indigo-600 hover:bg-indigo-50 hover:shadow-sm transition-all duration-200 hover:scale-105 active:scale-95"
                       >
-                        <FileText className="w-4 h-4" />
+                        <FileText className="w-3.5 h-3.5" />
                         Ver archivo{fileCounts[r.entrega_id] !== undefined ? ` (${fileCounts[r.entrega_id]})` : ''}
                       </button>
                     ) : (
-                      <span className="text-slate-400 font-medium">—</span>
+                      <span className="text-slate-300 font-medium text-xs">—</span>
                     )}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <div className="relative">
-                        <input
-                          type="number"
-                          min={0}
-                          max={10}
-                          step={0.1}
-                          placeholder="Calificación"
-                          className="w-24 rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                          value={grading[r.id]?.calificacion ?? (r.calificacion !== null && r.calificacion !== undefined ? String(r.calificacion) : '')}
-                          onChange={(e) => setGrading(prev => ({ ...prev, [r.id]: { ...prev[r.id], calificacion: e.target.value } }))}
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">/10</span>
-                      </div>
-                      <div className="flex-1 min-w-[200px]">
-                        <input
-                          type="text"
-                          placeholder="Escribe comentarios aquí..."
-                          className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                          value={grading[r.id]?.comentarios ?? ''}
-                          onChange={(e) => setGrading(prev => ({ ...prev, [r.id]: { ...prev[r.id], comentarios: e.target.value } }))}
-                        />
-                      </div>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2 flex-nowrap">
+                      <input
+                        type="number"
+                        min={0}
+                        max={10}
+                        step={0.1}
+                        placeholder="Cal."
+                        className="w-14 rounded-md border border-slate-200 bg-slate-50/30 px-2 py-1 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                        value={grading[r.id]?.calificacion ?? (r.calificacion !== null && r.calificacion !== undefined ? String(r.calificacion) : '')}
+                        onChange={(e) => setGrading(prev => ({ ...prev, [r.id]: { ...prev[r.id], calificacion: e.target.value } }))}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Comentarios..."
+                        className="flex-1 min-w-0 rounded-md border border-slate-200 bg-slate-50/30 px-2 py-1 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                        value={grading[r.id]?.comentarios ?? ''}
+                        onChange={(e) => setGrading(prev => ({ ...prev, [r.id]: { ...prev[r.id], comentarios: e.target.value } }))}
+                      />
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex flex-col items-end gap-2">
+                  <td className="px-4 py-4 text-right">
+                    <div className="flex flex-col items-end gap-1">
                       <button
                         onClick={() => onGrade(r.entrega_id || r.id)}
                         disabled={!r.entrega_id || savingId === (r.entrega_id || r.id)}
-                        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all transform hover:scale-105 active:scale-95
+                        className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-bold uppercase transition-all duration-200 hover:scale-105 active:scale-95
                         ${r.entrega_id
-                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl'
-                            : 'bg-slate-200 text-slate-500 cursor-not-allowed hover:scale-100'
+                            ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700'
+                            : 'bg-slate-50 text-slate-400 border border-slate-200 cursor-not-allowed'
                           }
                         ${savingId === (r.entrega_id || r.id) ? 'opacity-90' : ''}`}
                       >
                         {savingId === (r.entrega_id || r.id) ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
-                          <Save className="w-4 h-4" />
+                          <Save className="w-3.5 h-3.5" />
                         )}
-                        {r.estado === 'revisada' && r.calificacion ? 'Actualizar calificación' : 'Guardar calificación'}
+                        {r.estado === 'revisada' && r.calificacion ? 'Actualizar' : 'Guardar'}
                       </button>
                       {r.entrega_id && r.estado === 'revisada' && r.calificacion && (
                         <button
                           onClick={() => handlePermitirEditar(r.entrega_id, true)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-all"
+                          className="inline-flex items-center gap-1 rounded-md border border-slate-100 bg-white px-2 py-1 text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 hover:shadow-sm transition-all duration-200 hover:scale-105 active:scale-95 uppercase"
                           title="Permitir que el estudiante edite su entrega después de calificada"
                         >
                           <Edit className="w-3 h-3" /> Permitir edición al estudiante
@@ -522,82 +518,83 @@ export default function EntregasActividad() {
         </div>
 
         {/* Modal extender fecha por grupo */}
-        {showExtendGrupo && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900">Extender fecha límite por grupo</h3>
-                <button onClick={() => setShowExtendGrupo(false)} className="text-slate-400 hover:text-slate-600">
-                  <X className="w-5 h-5" />
+        {showExtendGrupo && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50">
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="text-sm font-bold text-slate-800">Extender fecha límite por grupo</h3>
+                <button onClick={() => setShowExtendGrupo(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="space-y-4">
+              <div className="p-4 space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Grupo</label>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Grupo</label>
                   <input
                     type="text"
                     value={extendData.grupo}
                     onChange={(e) => setExtendData(prev => ({ ...prev, grupo: e.target.value }))}
                     placeholder="Ej: m1, v2, s1"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Nueva fecha límite</label>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Nueva fecha límite</label>
                   <input
                     type="datetime-local"
                     value={extendData.nueva_fecha_limite}
                     onChange={(e) => setExtendData(prev => ({ ...prev, nueva_fecha_limite: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Notas (opcional)</label>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Notas (opcional)</label>
                   <textarea
                     value={extendData.notas}
                     onChange={(e) => setExtendData(prev => ({ ...prev, notas: e.target.value }))}
                     placeholder="Razón de la extensión..."
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    rows={3}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"
+                    rows={2}
                   />
                 </div>
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => setShowExtendGrupo(false)}
-                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleExtendGrupo}
-                    disabled={extending}
-                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
-                  >
-                    {extending ? 'Extendiendo...' : 'Extender'}
-                  </button>
-                </div>
+              </div>
+              <div className="flex gap-2 justify-end px-4 py-3 border-t border-slate-100 bg-slate-50">
+                <button
+                  onClick={() => setShowExtendGrupo(false)}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-white hover:border-slate-300 transition-all shadow-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleExtendGrupo}
+                  disabled={extending}
+                  className="px-3 py-1.5 rounded-lg bg-indigo-600 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50 shadow-md transition-all hover:shadow-lg active:scale-95"
+                >
+                  {extending ? '...' : 'Extender'}
+                </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Modal extender fecha por estudiante */}
-        {showExtendEstudiante && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900">Extender fecha límite por estudiante</h3>
-                <button onClick={() => setShowExtendEstudiante(false)} className="text-slate-400 hover:text-slate-600">
-                  <X className="w-5 h-5" />
+        {showExtendEstudiante && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50">
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="text-sm font-bold text-slate-800">Extender fecha límite por estudiante</h3>
+                <button onClick={() => setShowExtendEstudiante(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="space-y-4">
+              <div className="p-4 space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Estudiante</label>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Estudiante</label>
                   <select
                     value={extendData.id_estudiante || ''}
                     onChange={(e) => setExtendData(prev => ({ ...prev, id_estudiante: e.target.value ? Number(e.target.value) : null }))}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                   >
                     <option value="">Selecciona un estudiante</option>
                     {rows.map(r => (
@@ -608,47 +605,48 @@ export default function EntregasActividad() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Nueva fecha límite</label>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Nueva fecha límite</label>
                   <input
                     type="datetime-local"
                     value={extendData.nueva_fecha_limite}
                     onChange={(e) => setExtendData(prev => ({ ...prev, nueva_fecha_limite: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Notas (opcional)</label>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Notas (opcional)</label>
                   <textarea
                     value={extendData.notas}
                     onChange={(e) => setExtendData(prev => ({ ...prev, notas: e.target.value }))}
                     placeholder="Razón de la extensión..."
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    rows={3}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"
+                    rows={2}
                   />
                 </div>
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => setShowExtendEstudiante(false)}
-                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleExtendEstudiante}
-                    disabled={extending}
-                    className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
-                  >
-                    {extending ? 'Extendiendo...' : 'Extender'}
-                  </button>
-                </div>
+              </div>
+              <div className="flex gap-2 justify-end px-4 py-3 border-t border-slate-100 bg-slate-50">
+                <button
+                  onClick={() => setShowExtendEstudiante(false)}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-white hover:border-slate-300 transition-all shadow-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleExtendEstudiante}
+                  disabled={extending}
+                  className="px-3 py-1.5 rounded-lg bg-purple-600 text-xs font-bold text-white hover:bg-purple-700 disabled:opacity-50 shadow-md transition-all hover:shadow-lg active:scale-95"
+                >
+                  {extending ? '...' : 'Extender'}
+                </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Modal de notificación personalizado */}
-        {notification.show && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
+        {notification.show && createPortal(
+          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 pointer-events-none">
             <div
               className={`
               relative max-w-md w-full rounded-2xl shadow-2xl transform transition-all duration-300 pointer-events-auto
@@ -733,12 +731,13 @@ export default function EntregasActividad() {
                 }
             `} style={{ width: notification.show ? '100%' : '0%' }} />
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Modal de confirmación personalizado */}
-        {confirmModal.show && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        {confirmModal.show && createPortal(
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <div
               className="relative max-w-md w-full rounded-2xl shadow-2xl transform transition-all duration-300 bg-white border-2 border-slate-200"
             >
@@ -774,7 +773,8 @@ export default function EntregasActividad() {
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>

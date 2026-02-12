@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { listActividades as apiListActividades, createActividad as apiCreateActividad, updateActividad as apiUpdateActividad, areaIdFromName, listEntregasActividad } from "../../api/actividades.js";
 import { listAreas } from "../../api/areas.js";
@@ -41,6 +42,7 @@ function NewActivityModal({ open, onClose, onSave }) {
   const GROUPS = asesorGroups.length > 0 ? asesorGroups : ["m1", "m2", "m3", "v1", "v2", "v3", "s1", "s2"]; // Fallback si no hay grupos asignados
 
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [group, setGroup] = useState(GROUPS[0]);
   const [due, setDue] = useState("");
   const [pdfName, setPdfName] = useState("");
@@ -50,7 +52,7 @@ function NewActivityModal({ open, onClose, onSave }) {
   const fileInputRef = useRef(null);
 
   React.useEffect(() => {
-    if (open) { setTitle(""); setGroup(GROUPS[0]); setDue(""); setPdfName(""); setPdfUrl(""); setErr(""); }
+    if (open) { setTitle(""); setDescription(""); setGroup(GROUPS[0]); setDue(""); setPdfName(""); setPdfUrl(""); setErr(""); }
   }, [open]);
 
   const triggerFile = () => fileInputRef.current?.click();
@@ -70,6 +72,7 @@ function NewActivityModal({ open, onClose, onSave }) {
     onSave({
       id: crypto.randomUUID(),
       title: title.trim(),
+      description: description.trim(),
       group,
       pdfUrl,
       pdfFile, // devolver el file real para el API
@@ -81,118 +84,130 @@ function NewActivityModal({ open, onClose, onSave }) {
   };
 
   if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999]">
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-md" onClick={onClose} />
       <div className="absolute inset-0 grid place-items-center p-4">
         <div className="w-full max-w-lg rounded-2xl overflow-hidden bg-white shadow-2xl ring-1 ring-slate-200 transform transition-all">
-          <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <Plus className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold">Nueva actividad</h3>
-                  <p className="text-xs text-white/80">Completa los campos para crear la actividad</p>
-                </div>
+          <div className="px-4 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Plus className="w-4 h-4" />
               </div>
-              <button
-                onClick={onClose}
-                className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div>
+                <h3 className="text-sm font-bold">Nueva actividad</h3>
+                <p className="text-[10px] text-white/80">Ingresa los detalles</p>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+          <div className="px-4 py-4 space-y-3 max-h-[70vh] overflow-y-auto">
             {err && (
-              <div className="rounded-xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-4 py-3 flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm font-medium text-rose-800">{err}</p>
+              <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs font-medium text-rose-800">{err}</p>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 Actividad <span className="text-rose-500">*</span>
               </label>
               <input
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 placeholder="Ej. Entregar reporte semanal"
                 value={title} onChange={(e) => setTitle(e.target.value)}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Grupo</label>
-              <select
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                value={group} onChange={(e) => setGroup(e.target.value)}
-              >
-                {GROUPS.map(g => <option key={g} value={g}>Grupo {g.toUpperCase()}</option>)}
-              </select>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Descripción
+              </label>
+              <textarea
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none"
+                placeholder="Instrucciones, detalles o notas adicionales..."
+                rows={3}
+                value={description} onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Grupo</label>
+                <select
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  value={group} onChange={(e) => setGroup(e.target.value)}
+                >
+                  {GROUPS.map(g => <option key={g} value={g}>Grupo {g.toUpperCase()}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Fecha límite <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  value={due} onChange={(e) => setDue(e.target.value)}
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Recurso (PDF)</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Recurso (PDF)</label>
               <div className="space-y-2">
                 <button
                   type="button"
                   onClick={triggerFile}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:border-slate-400 transition-all"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 hover:border-slate-400 transition-all"
                 >
-                  <FileText className="w-5 h-5" />
+                  <FileText className="w-4 h-4" />
                   {pdfName ? 'Reemplazar PDF' : 'Cargar archivo PDF'}
                 </button>
                 {pdfName ? (
-                  <div className="flex items-center justify-between rounded-xl border-2 border-emerald-200 bg-emerald-50 px-4 py-3">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <FileText className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                      <span className="text-sm font-medium text-slate-700 truncate" title={pdfName}>{pdfName}</span>
+                  <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <span className="text-xs font-medium text-slate-700 truncate" title={pdfName}>{pdfName}</span>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <a href={pdfUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">Ver</a>
-                      <button onClick={clearFile} className="text-sm font-medium text-rose-600 hover:text-rose-700">Quitar</button>
+                      <a href={pdfUrl} target="_blank" rel="noreferrer" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline">Ver</a>
+                      <button onClick={clearFile} className="text-xs font-bold text-rose-600 hover:text-rose-700">Quitar</button>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 text-center">Ningún archivo seleccionado</p>
+                  <p className="text-[10px] text-slate-400 text-center">Ningún archivo seleccionado</p>
                 )}
               </div>
               <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={onFileChange} />
             </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Fecha límite <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="date"
-                min={new Date().toISOString().split('T')[0]}
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                value={due} onChange={(e) => setDue(e.target.value)}
-              />
-            </div>
           </div>
-          <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 border-t border-slate-200 flex items-center justify-end gap-3">
+          <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
             <button
               onClick={onClose}
-              className="rounded-xl border-2 border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
             >
               Cancelar
             </button>
             <button
               onClick={save}
-              className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-5 py-2.5 text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+              className="rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-3 py-1.5 text-xs font-bold shadow-md hover:shadow-lg transition-all transform active:scale-95"
             >
               Guardar actividad
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -203,6 +218,7 @@ function EditActivityModal({ open, onClose, row, onSave }) {
   const GROUPS = asesorGroups.length > 0 ? asesorGroups : ["m1", "m2", "m3", "v1", "v2", "v3", "s1", "s2"]; // Fallback si no hay grupos asignados
 
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [group, setGroup] = useState(GROUPS[0]);
   const [due, setDue] = useState("");
   const [pdfName, setPdfName] = useState("");
@@ -214,6 +230,7 @@ function EditActivityModal({ open, onClose, row, onSave }) {
   useEffect(() => {
     if (open && row) {
       setTitle(row.title || "");
+      setDescription(row.description || "");
       setGroup(row.group || GROUPS[0]);
       setDue(row.due || "");
       setPdfName("");
@@ -241,6 +258,7 @@ function EditActivityModal({ open, onClose, row, onSave }) {
     const payload = {
       id: row.id,
       title: title.trim(),
+      description: description.trim(),
       group,
       due,
       pdfFile,
@@ -250,70 +268,94 @@ function EditActivityModal({ open, onClose, row, onSave }) {
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999]">
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-md" onClick={onClose} />
       <div className="absolute inset-0 grid place-items-center p-4">
         <div className="w-full max-w-lg rounded-2xl overflow-hidden bg-white shadow-2xl ring-1 ring-slate-200 transform transition-all">
-          <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <Pencil className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold">Editar actividad</h3>
-                  <p className="text-xs text-white/80">Modifica los campos necesarios</p>
-                </div>
+          <div className="px-4 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Pencil className="w-4 h-4" />
               </div>
-              <button
-                onClick={onClose}
-                className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div>
+                <h3 className="text-sm font-bold">Editar actividad</h3>
+                <p className="text-[10px] text-white/80">Modifica los campos necesarios</p>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+          <div className="px-4 py-4 space-y-3 max-h-[70vh] overflow-y-auto">
             {err && (
-              <div className="rounded-xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-4 py-3 flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm font-medium text-rose-800">{err}</p>
+              <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs font-medium text-rose-800">{err}</p>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 Actividad <span className="text-rose-500">*</span>
               </label>
               <input
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 placeholder="Ej. Entregar reporte semanal"
                 value={title} onChange={(e) => setTitle(e.target.value)}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Grupo</label>
-              <select
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                value={group} onChange={(e) => setGroup(e.target.value)}
-              >
-                {GROUPS.map(g => <option key={g} value={g}>Grupo {g.toUpperCase()}</option>)}
-              </select>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Descripción
+              </label>
+              <textarea
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none"
+                placeholder="Instrucciones, detalles o notas adicionales..."
+                rows={3}
+                value={description} onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Grupo</label>
+                <select
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  value={group} onChange={(e) => setGroup(e.target.value)}
+                >
+                  {GROUPS.map(g => <option key={g} value={g}>Grupo {g.toUpperCase()}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Fecha límite <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  value={due} onChange={(e) => setDue(e.target.value)}
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Recurso (PDF)</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Recurso (PDF)</label>
               <div className="space-y-2">
                 {row?.pdfUrl && !pdfFile && (
-                  <div className="rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3">
+                  <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-indigo-600" />
-                        <span className="text-sm font-medium text-slate-700">Recurso actual</span>
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <FileText className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                        <span className="text-xs font-medium text-slate-700 truncate">Recurso actual</span>
                       </div>
-                      <a href={row.pdfUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">
+                      <a href={row.pdfUrl} target="_blank" rel="noreferrer" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline flex-shrink-0">
                         Ver PDF
                       </a>
                     </div>
@@ -322,56 +364,47 @@ function EditActivityModal({ open, onClose, row, onSave }) {
                 <button
                   type="button"
                   onClick={triggerFile}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:border-slate-400 transition-all"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 hover:border-slate-400 transition-all"
                 >
-                  <FileText className="w-5 h-5" />
+                  <FileText className="w-4 h-4" />
                   {pdfFile ? 'Reemplazar PDF' : 'Subir/Reemplazar PDF'}
                 </button>
                 {pdfName ? (
-                  <div className="flex items-center justify-between rounded-xl border-2 border-emerald-200 bg-emerald-50 px-4 py-3">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <FileText className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                      <span className="text-sm font-medium text-slate-700 truncate" title={pdfName}>{pdfName}</span>
+                  <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <span className="text-xs font-medium text-slate-700 truncate" title={pdfName}>{pdfName}</span>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <a href={pdfUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">Ver</a>
-                      <button onClick={clearFile} className="text-sm font-medium text-rose-600 hover:text-rose-700">Quitar</button>
+                      <a href={pdfUrl} target="_blank" rel="noreferrer" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline">Ver</a>
+                      <button onClick={clearFile} className="text-xs font-bold text-rose-600 hover:text-rose-700">Quitar</button>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 text-center">{row?.pdfUrl ? 'Usando recurso actual' : 'Ningún archivo seleccionado'}</p>
+                  <p className="text-[10px] text-slate-400 text-center">{row?.pdfUrl ? 'Usando recurso actual' : 'Ningún archivo seleccionado'}</p>
                 )}
               </div>
               <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={onFileChange} />
             </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Fecha límite</label>
-              <input
-                type="date"
-                min={new Date().toISOString().split('T')[0]}
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                value={due} onChange={(e) => setDue(e.target.value)}
-              />
-            </div>
           </div>
-          <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 border-t border-slate-200 flex items-center justify-end gap-3">
+          <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
             <button
               onClick={onClose}
-              className="rounded-xl border-2 border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
             >
               Cancelar
             </button>
             <button
               onClick={save}
-              className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-5 py-2.5 text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+              className="rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-3 py-1.5 text-xs font-bold shadow-md hover:shadow-lg transition-all transform active:scale-95"
             >
               Guardar cambios
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -483,6 +516,7 @@ export default function ActivitiesTable({
         const mapped = (Array.isArray(acts) ? acts : []).map(a => ({
           id: a.id,
           title: a.titulo || `Actividad ${a.id}`,
+          description: a.descripcion || '',
           pdfUrl: Array.isArray(a.recursos_json) && a.recursos_json[0]?.archivo ? a.recursos_json[0].archivo : '',
           due: a.fecha_limite || '',
           delivered: false,
@@ -584,6 +618,7 @@ export default function ActivitiesTable({
       const recursos = r.pdfFile ? [r.pdfFile] : [];
       const created = await apiCreateActividad({
         titulo: r.title,
+        descripcion: r.description,
         fecha_limite: r.due,
         grupos,
         id_area,
@@ -594,6 +629,7 @@ export default function ActivitiesTable({
       const row = {
         id: act.id ?? r.id,
         title: act.titulo || r.title,
+        description: act.descripcion || r.description,
         pdfUrl: (Array.isArray(act.recursos_json) && act.recursos_json[0]?.archivo) || r.pdfUrl,
         due: act.fecha_limite || r.due,
         delivered: false,
@@ -610,10 +646,10 @@ export default function ActivitiesTable({
 
   const openEdit = (row) => { setEditRow(row); setEditOpen(true); };
   const saveEdit = async (payload) => {
-    const { id, title, group, due, pdfFile } = payload;
+    const { id, title, description, group, due, pdfFile } = payload;
     try {
       setLoading(true);
-      const data = { titulo: title };
+      const data = { titulo: title, descripcion: description };
       if (due) data.fecha_limite = due;
       if (group) data.grupos = [group];
       const resp = await apiUpdateActividad(id, data, { nuevosRecursos: pdfFile ? [pdfFile] : [] });
@@ -621,6 +657,7 @@ export default function ActivitiesTable({
       setRows(prev => prev.map(r => r.id === id ? {
         ...r,
         title: updated.titulo || title || r.title,
+        description: updated.descripcion || description || r.description,
         due: updated.fecha_limite || due || r.due,
         group: Array.isArray(updated.grupos) && updated.grupos[0] ? updated.grupos[0] : (group || r.group),
         pdfUrl: (Array.isArray(updated.recursos_json) && updated.recursos_json[0]?.archivo) || r.pdfUrl,
@@ -777,42 +814,58 @@ export default function ActivitiesTable({
               <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Total</div>
               <div className="text-3xl font-extrabold text-slate-900">{data.length}</div>
             </div>
-            <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 via-emerald-100/50 to-white p-5 shadow-lg ring-2 ring-emerald-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
               <div className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-2">Entregadas</div>
-              <div className="text-3xl font-extrabold text-emerald-700">{summaryCounts.entregadas}</div>
+              <div className="text-3xl font-bold text-slate-900">{summaryCounts.entregadas}</div>
             </div>
-            <div className="rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-amber-100/50 to-white p-5 shadow-lg ring-2 ring-amber-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
               <div className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-2">Pendientes</div>
-              <div className="text-3xl font-extrabold text-amber-700">{summaryCounts.pendientes}</div>
+              <div className="text-3xl font-bold text-slate-900">{summaryCounts.pendientes}</div>
             </div>
-            <div className="rounded-2xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 via-indigo-100/50 to-white p-5 shadow-lg ring-2 ring-indigo-100/50 hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
               <div className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">Con recurso</div>
-              <div className="text-3xl font-extrabold text-indigo-700">{data.filter(r => r.pdfUrl).length}</div>
+              <div className="text-3xl font-bold text-slate-900">{data.filter(r => r.pdfUrl).length}</div>
             </div>
           </div>
         </div>
 
         {/* Tabla desktop */}
-        <div className="hidden md:block overflow-hidden rounded-3xl border-2 border-slate-200 bg-white shadow-xl ring-2 ring-slate-100/50">
-          <table className="w-full text-sm">
-            <thead className="text-left">
-              <tr className="border-b-2 border-slate-200 bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 supports-[backdrop-filter]:sticky supports-[backdrop-filter]:top-0">
-                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">No.</th>
-                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Actividad</th>
-                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Recurso</th>
-                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Fecha límite</th>
-                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Estado</th>
-                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Calificación</th>
-                <th className="px-6 py-5 text-slate-700 text-xs font-extrabold uppercase tracking-widest">Visualizar</th>
-                <th className="px-6 py-5 text-right text-slate-700 text-xs font-extrabold uppercase tracking-widest">Acciones</th>
+        <div className="hidden md:block overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
+              <tr>
+                <th scope="col" className="sticky left-0 z-20 bg-indigo-600 px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 w-[50px]">
+                  #
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[220px]">
+                  Actividad
+                </th>
+                <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[80px]">
+                  Recurso
+                </th>
+                <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[110px]">
+                  Fecha límite
+                </th>
+                <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[110px]">
+                  Estado
+                </th>
+                <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]">
+                  Calificación
+                </th>
+                <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[80px]">
+                  Visualizar
+                </th>
+                <th scope="col" className="px-4 py-3 min-w-[150px]">
+                  Acciones
+                </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-200 bg-white">
               {loading && (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`skeleton-${i}`} className="border-b border-slate-100 last:border-0">
                     <td className="px-6 py-4"><div className="h-4 w-8 bg-slate-200/70 rounded-lg animate-pulse" /></td>
-                    <td className="px-6 py-4"><div className="h-5 w-48 bg-slate-200/70 rounded-lg animate-pulse" /></td>
+                    <td className="px-6 py-4"><div className="h-4 w-48 bg-slate-200/70 rounded-lg animate-pulse" /></td>
                     <td className="px-6 py-4"><div className="h-10 w-10 bg-slate-200/70 rounded-xl animate-pulse" /></td>
                     <td className="px-6 py-4"><div className="h-9 w-28 bg-slate-200/70 rounded-lg animate-pulse" /></td>
                     <td className="px-6 py-4"><div className="h-7 w-24 bg-slate-200/70 rounded-full animate-pulse" /></td>
@@ -823,71 +876,102 @@ export default function ActivitiesTable({
                 ))
               )}
               {!loading && data.map((r, idx) => (
-                <tr key={r.id} className="border-b border-slate-200 last:border-0 bg-white hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200 group">
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-bold text-slate-500">#{idx + 1}</span>
-                    </div>
+                <tr key={r.id} className="bg-white hover:bg-slate-50/50 transition-colors duration-150 group border-b border-slate-100 last:border-0">
+                  <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 px-4 py-3 border-r border-slate-200 text-center">
+                    <span className="font-mono text-[11px] font-bold text-slate-400">#{idx + 1}</span>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-slate-900 group-hover:text-violet-700 transition-colors text-sm">{r.title}</div>
+                  <td className="px-4 py-3 border-r border-slate-200">
+                    <div className="max-w-[200px] lg:max-w-xs xl:max-w-md">
+                      <div className="font-bold text-slate-900 truncate text-sm mb-0.5" title={r.title}>
+                        {r.title}
                       </div>
+                      {r.description && (
+                        <div className="mb-1 text-[11px] text-slate-500 line-clamp-2 leading-tight">
+                          {r.description}
+                        </div>
+                      )}
                       {r.group && (
-                        <Badge className={`${badgeGroup} shrink-0`}>{r.group.toUpperCase()}</Badge>
+                        <div className="text-[10px] font-medium text-slate-400">
+                          Asignado al grupo: <span className="font-bold text-indigo-600">{r.group.toUpperCase()}</span>
+                        </div>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-5">
-                    <IconButton onClick={() => openPdf(r)} label="Abrir PDF" disabled={!r.pdfUrl} variant={r.pdfUrl ? "primary" : "default"}>
-                      <FileText className="w-5 h-5" />
-                    </IconButton>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => openPdf(r)}
+                      disabled={!r.pdfUrl}
+                      className={`p-1.5 rounded-md border border-slate-200 bg-white transition-all duration-200 hover:scale-110 active:scale-95 inline-flex items-center justify-center
+                        ${r.pdfUrl ? 'text-indigo-600 hover:bg-indigo-50 hover:shadow-sm hover:border-indigo-200' : 'text-slate-300 cursor-not-allowed bg-slate-50'}
+                      `}
+                      title={r.pdfUrl ? "Ver PDF adjunto" : "Sin recurso"}
+                    >
+                      <FileText className="w-4 h-4" />
+                    </button>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 ring-1 ring-blue-100">
-                      <CalendarDays className="w-4 h-4 text-indigo-600" />
-                      <span className="font-bold text-slate-700 text-sm">{formatDate(r.due)}</span>
+                  <td className="px-4 py-3 text-center whitespace-nowrap">
+                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">
+                      <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="font-bold text-slate-600 text-[11px]">{formatDate(r.due)}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-4 py-3 text-center whitespace-nowrap">
                     {(() => {
                       const st = getEstadoActividad(r.id);
                       return (
-                        <Badge className={badgeEstadoActividad(st.key)}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeEstadoActividad(st.key)}`}>
                           {st.label}
-                        </Badge>
+                        </span>
                       );
                     })()}
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-4 py-3 text-center">
                     {activityStats?.[r.id]?.promedio10 !== undefined ? (
-                      <div className={`inline-flex items-center justify-center px-3 py-2 rounded-xl font-bold text-sm ring-2 ${activityStats[r.id].promedio10 < 6
-                        ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white ring-rose-300 shadow-md'
-                        : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white ring-emerald-300 shadow-md'
+                      <div className={`inline-flex items-center justify-center px-2.5 py-1 rounded-md font-bold text-xs border ${activityStats[r.id].promedio10 < 6
+                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         }`}>
-                        {Number(activityStats[r.id].promedio10).toFixed(1)}/10
+                        {Number(activityStats[r.id].promedio10).toFixed(1)}
+                        <span className="text-[9px] ml-0.5 opacity-70">/10</span>
                       </div>
                     ) : (
-                      <span className="text-slate-400 font-medium">—</span>
+                      <span className="inline-flex items-center justify-center min-w-[2rem] rounded-md bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs font-bold text-slate-400">
+                        —
+                      </span>
                     )}
                   </td>
-                  <td className="px-6 py-5">
-                    <IconButton onClick={() => goToEntregas(r)} label="Visualizar entregas" variant="primary">
-                      <Eye className="w-5 h-5" />
-                    </IconButton>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => goToEntregas(r)}
+                      title="Ver entregas"
+                      className="p-1.5 rounded-md border border-slate-100 bg-white text-sky-600 hover:bg-sky-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex justify-end gap-2">
-                      <IconButton onClick={() => onSaveRow(r)} label="Guardar" variant="primary">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1.5 flex-nowrap">
+                      <button
+                        onClick={() => onSaveRow(r)}
+                        title="Guardar cambios rápidos"
+                        className="p-1.5 rounded-md border border-slate-100 bg-white text-emerald-600 hover:bg-emerald-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
+                      >
                         <Save className="w-4 h-4" />
-                      </IconButton>
-                      <IconButton onClick={() => openEdit(r)} label="Editar">
+                      </button>
+                      <button
+                        onClick={() => openEdit(r)}
+                        title="Editar"
+                        className="p-1.5 rounded-md border border-slate-100 bg-white text-indigo-600 hover:bg-indigo-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
+                      >
                         <Pencil className="w-4 h-4" />
-                      </IconButton>
-                      <IconButton onClick={() => onDelete(r)} label="Eliminar" variant="danger">
+                      </button>
+                      <button
+                        onClick={() => onDelete(r)}
+                        title="Eliminar"
+                        className="p-1.5 rounded-md border border-slate-100 bg-white text-rose-600 hover:bg-rose-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
+                      >
                         <Trash2 className="w-4 h-4" />
-                      </IconButton>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -1016,9 +1100,9 @@ export default function ActivitiesTable({
         <EditActivityModal open={editOpen} onClose={() => { setEditOpen(false); setEditRow(null); }} row={editRow} onSave={saveEdit} />
 
         {/* Modal: Recurso no disponible */}
-        {resModal.open && (
-          <div className="fixed inset-0 z-50">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setResModal({ open: false, title: '', message: '', row: null })} />
+        {resModal.open && createPortal(
+          <div className="fixed inset-0 z-[9999]">
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={() => setResModal({ open: false, title: '', message: '', row: null })} />
             <div className="absolute inset-0 grid place-items-center p-4">
               <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200">
                 <div className="flex items-start justify-between gap-3 border-b bg-gradient-to-r from-amber-50 to-rose-50 px-4 py-3">
@@ -1054,7 +1138,8 @@ export default function ActivitiesTable({
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Modal de confirmación para eliminar */}

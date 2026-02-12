@@ -10,12 +10,12 @@ const GEMINI_CONFIG = {
   // Todas las peticiones deben ir a través del proxy del servidor
   // La API key solo existe en el servidor (server/.env)
   apiKey: '', // ⚠️ NO USAR - Solo para referencia, el proxy maneja la autenticación
-  proxyEndpoint: '/api/ai/gemini/generate',
+  proxyEndpoint: '/api/ai/groq/generate', // ✅ Cambiado a Groq/Llama
   // Permite override del modelo vía variable de entorno
-  model: (import.meta.env?.VITE_GEMINI_MODEL || 'gemini-2.5-flash'),
+  model: (import.meta.env?.VITE_GEMINI_MODEL || 'llama-3.3-70b-versatile'),
   temperature: 0.7,
-  maxTokens: 1500, // permitir respuestas más ricas
-  timeout: 30000
+  maxTokens: 4000, // permitir respuestas más ricas
+  timeout: 60000 // 60 segundos
 };
 
 // ===================== utilidades internas =====================
@@ -44,7 +44,7 @@ const buildCacheKey = (datos) => {
 };
 // Rate limiter simple por ventana (evita golpear la API)
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 min
-const RATE_LIMIT_MAX_CALLS = 3; // máx 3 llamadas/min por pestaña
+const RATE_LIMIT_MAX_CALLS = 10; // Aumentar límite para evitar cuellos de botella
 let callTimestamps = [];
 
 const asegurarRateLimit = async () => {
@@ -145,10 +145,10 @@ export const generarAnalisisConGemini = async (datosAnalisis, opciones = {}) => 
   try {
     console.log('🚀 Iniciando análisis con Gemini API');
     console.log('📊 Datos recibidos:', datosAnalisis);
-    
+
     // Intentar cache primero (solo si no se fuerza la regeneración)
     const cacheKey = buildCacheKey(datosAnalisis || {});
-    
+
     // Si se fuerza la regeneración, limpiar el cache primero
     if (opciones.forceRegenerate) {
       console.log('🔄 Forzando regeneración - limpiando cache');
@@ -193,19 +193,19 @@ export const generarAnalisisConGemini = async (datosAnalisis, opciones = {}) => 
       safetySettings: [
         {
           category: "HARM_CATEGORY_HARASSMENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          threshold: "BLOCK_ONLY_HIGH"
         },
         {
           category: "HARM_CATEGORY_HATE_SPEECH",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          threshold: "BLOCK_ONLY_HIGH"
         },
         {
           category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          threshold: "BLOCK_ONLY_HIGH"
         },
         {
           category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          threshold: "BLOCK_ONLY_HIGH"
         }
       ]
     };
@@ -277,7 +277,7 @@ export const generarAnalisisConGemini = async (datosAnalisis, opciones = {}) => 
     // Procesar respuesta de Gemini
     // Cuando se usa response_mime_type: 'application/json', la respuesta puede venir como JSON directo
     let analisisTexto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
+
     // Si la respuesta viene como JSON estructurado (cuando se usa response_mime_type)
     // Intentar parsear directamente primero
     let resultado = null;
@@ -292,7 +292,7 @@ export const generarAnalisisConGemini = async (datosAnalisis, opciones = {}) => 
         // Continuar con el procesamiento normal
       }
     }
-    
+
     // Si no se pudo parsear directamente, usar el procesador normal
     if (!resultado) {
       console.log('📝 Texto de análisis recibido:', analisisTexto.substring(0, 200) + '...');
@@ -303,7 +303,7 @@ export const generarAnalisisConGemini = async (datosAnalisis, opciones = {}) => 
         resultado = procesarRespuestaGemini(analisisTexto);
       }
     }
-    
+
     console.log(`✅ Análisis procesado exitosamente (${resultado?.esFallback ? 'fallback' : 'IA'})`, resultado);
 
     // Transformar a formato simplificado esperado por el componente
@@ -904,7 +904,7 @@ const obtenerEnfoqueEspecializadoArea = (area) => {
 const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
   const original = String(respuestaTexto || '');
   console.log('🔧 Usando procesador especializado para análisis del asesor');
-  
+
   // Si falla, usar reparación ultra-agresiva específica para arrays
   const repararJsonAsesor = (texto) => {
     let resultado = '';
@@ -914,12 +914,12 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
     let depthArray = 0;
     let depthObjeto = 0;
     let i = 0;
-    
+
     while (i < texto.length) {
       const char = texto[i];
       const siguiente = i + 1 < texto.length ? texto[i + 1] : null;
       const siguiente2 = i + 2 < texto.length ? texto[i + 2] : null;
-      
+
       // Manejar escape
       if (escape) {
         resultado += char;
@@ -927,14 +927,14 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
         i++;
         continue;
       }
-      
+
       if (char === '\\') {
         resultado += char;
         escape = true;
         i++;
         continue;
       }
-      
+
       // Si estamos dentro de un string
       if (dentroString) {
         // Si encontramos una comilla
@@ -945,7 +945,7 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
           while (j < texto.length && (texto[j] === ' ' || texto[j] === '\n' || texto[j] === '\r' || texto[j] === '\t')) {
             j++;
           }
-          
+
           if (j >= texto.length) {
             // Fin del texto - cierre válido
             resultado += char;
@@ -953,9 +953,9 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
             i++;
             continue;
           }
-          
+
           const siguienteNoEspacio = texto[j];
-          
+
           // Si estamos dentro de un array y el siguiente es ',' o ']', es cierre válido
           if (dentroArray && (siguienteNoEspacio === ',' || siguienteNoEspacio === ']')) {
             resultado += char;
@@ -963,7 +963,7 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
             i++;
             continue;
           }
-          
+
           // Si el siguiente es ',' o '}' o ']' o ':', es cierre válido
           if (siguienteNoEspacio === ',' || siguienteNoEspacio === '}' || siguienteNoEspacio === ']' || siguienteNoEspacio === ':') {
             resultado += char;
@@ -971,7 +971,7 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
             i++;
             continue;
           }
-          
+
           // Si hay un patrón de nueva clave JSON después (ej: "key":)
           const patronClave = texto.slice(j, Math.min(j + 10, texto.length)).match(/^\s*"[^"]*"\s*:/);
           if (patronClave) {
@@ -980,13 +980,13 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
             i++;
             continue;
           }
-          
+
           // En cualquier otro caso, es una comilla dentro del string - ESCAPARLA
           resultado += '\\"';
           i++;
           continue;
         }
-        
+
         // Escapar caracteres problemáticos dentro de strings
         if (char === '\n') {
           resultado += '\\n';
@@ -1002,7 +1002,7 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
         i++;
         continue;
       }
-      
+
       // Fuera de strings
       if (char === '"') {
         resultado += char;
@@ -1010,7 +1010,7 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
         i++;
         continue;
       }
-      
+
       if (char === '[') {
         depthArray++;
         dentroArray = true;
@@ -1018,7 +1018,7 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
         i++;
         continue;
       }
-      
+
       if (char === ']') {
         depthArray--;
         if (depthArray === 0) dentroArray = false;
@@ -1026,30 +1026,30 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
         i++;
         continue;
       }
-      
+
       if (char === '{') {
         depthObjeto++;
         resultado += char;
         i++;
         continue;
       }
-      
+
       if (char === '}') {
         depthObjeto--;
         resultado += char;
         i++;
         continue;
       }
-      
+
       resultado += char;
       i++;
     }
-    
+
     // Cerrar string si quedó abierto
     if (dentroString) {
       resultado += '"';
     }
-    
+
     // Balancear estructura
     while (depthArray > 0) {
       resultado += ']';
@@ -1059,10 +1059,10 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
       resultado += '}';
       depthObjeto--;
     }
-    
+
     return resultado;
   };
-  
+
   // Extraer JSON crudo
   const extraerJsonCrudo = (txt) => {
     let t = String(txt || '').trim();
@@ -1091,19 +1091,19 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
     if (lastClose > firstBrace) return t.slice(firstBrace, lastClose + 1).trim();
     return t.trim();
   };
-  
+
   const sanearBasico = (t) => t
     .replace(/^\uFEFF/, '')
     .replace(/[\u0000-\u001F]+/g, ' ')
     .replace(/[""]/g, '"')
     .replace(/['']/g, "'")
     .trim();
-  
+
   const quitarComasColgantes = (t) => t.replace(/,\s*(\}|\])/g, '$1');
-  
+
   // Intentar múltiples estrategias
   const jsonCrudo = extraerJsonCrudo(original);
-  
+
   // Intento 1: Reparación especializada para asesor
   try {
     let reparado = repararJsonAsesor(jsonCrudo);
@@ -1113,7 +1113,7 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
   } catch (e1) {
     console.warn('⚠️ Intento 1 (reparación especializada) falló:', e1.message);
   }
-  
+
   // Intento 2: Reparación especializada + balanceo
   try {
     let reparado = repararJsonAsesor(jsonCrudo);
@@ -1130,7 +1130,7 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
   } catch (e2) {
     console.warn('⚠️ Intento 2 (reparación + balanceo) falló:', e2.message);
   }
-  
+
   // Si todo falla, intentar parseo directo con reparación básica
   try {
     let ultimoIntento = repararJsonAsesor(jsonCrudo);
@@ -1159,8 +1159,8 @@ const procesarRespuestaGeminiAsesor = (respuestaTexto) => {
 const procesarRespuestaGemini = (respuestaTexto) => {
   const original = String(respuestaTexto || '');
   const logFail = (err, intento, muestra) => {
-    try { 
-      console.warn(`Gemini JSON parse intento ${intento} falló:`, err?.message); 
+    try {
+      console.warn(`Gemini JSON parse intento ${intento} falló:`, err?.message);
       if (err?.message && err.message.includes('position')) {
         const posMatch = err.message.match(/position (\d+)/);
         if (posMatch && muestra) {
@@ -1178,7 +1178,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
       if (muestra && muestra.length < 1000) {
         console.debug('⮑ muestra completa:', muestra);
       }
-    } catch (e) { 
+    } catch (e) {
       console.error('Error en logFail:', e);
     }
   };
@@ -1536,7 +1536,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
 
       while (pos < i.length) {
         const char = i[pos];
-        
+
         if (escape) {
           resultadoI += char;
           escape = false;
@@ -1610,7 +1610,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
           .replace(/\t/g, '\\t');
         return `${key}: "${valueEscaped}"`;
       });
-      
+
       j = quitarComasColgantes(sanearBasico(j));
       j = autoBalance(j);
       return validarEstructuraAnalisis(JSON.parse(j));
@@ -1654,16 +1654,16 @@ const procesarRespuestaGemini = (respuestaTexto) => {
           // Si encontramos una comilla, verificar si es el cierre del string o una comilla dentro del string
           if (char === '"') {
             // Verificar si el siguiente carácter es válido para cerrar un string JSON
-            const esCierreValido = siguiente === null || 
-                                   siguiente === ',' || 
-                                   siguiente === '}' || 
-                                   siguiente === ']' || 
-                                   siguiente === ':' ||
-                                   siguiente === ' ' ||
-                                   siguiente === '\n' ||
-                                   siguiente === '\r' ||
-                                   siguiente === '\t';
-            
+            const esCierreValido = siguiente === null ||
+              siguiente === ',' ||
+              siguiente === '}' ||
+              siguiente === ']' ||
+              siguiente === ':' ||
+              siguiente === ' ' ||
+              siguiente === '\n' ||
+              siguiente === '\r' ||
+              siguiente === '\t';
+
             // Si no es un cierre válido, probablemente es una comilla dentro del string sin escapar
             if (!esCierreValido && siguiente !== '"' && siguiente !== '\\') {
               // Escapar esta comilla
@@ -1754,7 +1754,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
     try {
       // Intento L: Reparación ultra-agresiva usando regex para encontrar y reparar comillas problemáticas
       let l = extraerJsonCrudo(s);
-      
+
       // Estrategia: encontrar todos los strings JSON y reparar comillas sin escapar dentro de ellos
       // Patrón: "key": "value" donde value puede extenderse hasta encontrar una comilla seguida de : o , o } o ]
       let resultadoL = '';
@@ -1762,26 +1762,26 @@ const procesarRespuestaGemini = (respuestaTexto) => {
       let dentroString = false;
       let escape = false;
       let inicioString = -1;
-      
+
       while (i < l.length) {
         const char = l[i];
         const siguiente = i + 1 < l.length ? l[i + 1] : null;
         const siguiente2 = i + 2 < l.length ? l[i + 2] : null;
-        
+
         if (escape) {
           resultadoL += char;
           escape = false;
           i++;
           continue;
         }
-        
+
         if (char === '\\') {
           resultadoL += char;
           escape = true;
           i++;
           continue;
         }
-        
+
         if (char === '"') {
           if (!dentroString) {
             // Inicio de string
@@ -1800,14 +1800,14 @@ const procesarRespuestaGemini = (respuestaTexto) => {
             }
             if (j < l.length) {
               const siguienteNoEspacio = l[j];
-              esCierreValido = siguienteNoEspacio === ',' || 
-                              siguienteNoEspacio === '}' || 
-                              siguienteNoEspacio === ']' || 
-                              siguienteNoEspacio === ':';
+              esCierreValido = siguienteNoEspacio === ',' ||
+                siguienteNoEspacio === '}' ||
+                siguienteNoEspacio === ']' ||
+                siguienteNoEspacio === ':';
             } else {
               esCierreValido = true; // Fin del texto
             }
-            
+
             if (esCierreValido) {
               // Es un cierre válido
               resultadoL += char;
@@ -1823,7 +1823,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
             }
           }
         }
-        
+
         if (dentroString) {
           // Escapar caracteres problemáticos
           if (char === '\n') {
@@ -1840,15 +1840,15 @@ const procesarRespuestaGemini = (respuestaTexto) => {
         } else {
           resultadoL += char;
         }
-        
+
         i++;
       }
-      
+
       // Cerrar string si quedó abierto
       if (dentroString) {
         resultadoL += '"';
       }
-      
+
       resultadoL = quitarComasColgantes(sanearBasico(resultadoL));
       resultadoL = autoBalance(resultadoL);
       return validarEstructuraAnalisis(JSON.parse(resultadoL));
@@ -1858,20 +1858,20 @@ const procesarRespuestaGemini = (respuestaTexto) => {
       // Intento M: Reparación ultra-agresiva - reemplazar todas las comillas problemáticas dentro de strings
       // Estrategia: identificar strings JSON y escapar TODAS las comillas dentro de ellos
       let m = extraerJsonCrudo(s);
-      
+
       // Primero, identificar todos los strings JSON usando un parser más inteligente
       let resultadoM = '';
       let dentroString = false;
       let escape = false;
       let i = 0;
       let stack = []; // Para rastrear la estructura
-      
+
       while (i < m.length) {
         const char = m[i];
         const siguiente = i + 1 < m.length ? m[i + 1] : null;
         const siguiente2 = i + 2 < m.length ? m[i + 2] : null;
         const anterior = i > 0 ? m[i - 1] : null;
-        
+
         // Manejar escape
         if (escape) {
           resultadoM += char;
@@ -1879,14 +1879,14 @@ const procesarRespuestaGemini = (respuestaTexto) => {
           i++;
           continue;
         }
-        
+
         if (char === '\\') {
           resultadoM += char;
           escape = true;
           i++;
           continue;
         }
-        
+
         // Si estamos dentro de un string
         if (dentroString) {
           // Si encontramos una comilla
@@ -1897,7 +1897,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
             while (j < m.length && (m[j] === ' ' || m[j] === '\n' || m[j] === '\r' || m[j] === '\t')) {
               j++;
             }
-            
+
             if (j >= m.length) {
               // Fin del texto - es cierre válido
               resultadoM += char;
@@ -1905,20 +1905,20 @@ const procesarRespuestaGemini = (respuestaTexto) => {
               i++;
               continue;
             }
-            
+
             const siguienteNoEspacio = m[j];
-            
+
             // Verificar si hay un patrón de clave JSON después (ej: "key":)
             const patronClave = m.slice(j, Math.min(j + 20, m.length)).match(/^\s*"[^"]*"\s*:/);
-            
+
             // Verificar si el siguiente carácter no-espacio es un delimitador válido
-            const esDelimitadorValido = siguienteNoEspacio === ',' || 
-                                      siguienteNoEspacio === '}' || 
-                                      siguienteNoEspacio === ']';
-            
+            const esDelimitadorValido = siguienteNoEspacio === ',' ||
+              siguienteNoEspacio === '}' ||
+              siguienteNoEspacio === ']';
+
             // Verificar si hay un patrón "key": después (indica nueva propiedad)
             const esNuevaPropiedad = patronClave !== null;
-            
+
             // Si es delimitador válido o nueva propiedad, es cierre válido
             if (esDelimitadorValido || esNuevaPropiedad) {
               // Es un cierre válido
@@ -1943,14 +1943,14 @@ const procesarRespuestaGemini = (respuestaTexto) => {
                   continue;
                 }
               }
-              
+
               // En cualquier otro caso, es una comilla dentro del string sin escapar - ESCAPARLA
               resultadoM += '\\"';
               i++;
               continue;
             }
           }
-          
+
           // Escapar caracteres problemáticos dentro de strings
           if (char === '\n') {
             resultadoM += '\\n';
@@ -1966,7 +1966,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
           i++;
           continue;
         }
-        
+
         // Fuera de strings
         if (char === '"') {
           resultadoM += char;
@@ -1974,7 +1974,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
           i++;
           continue;
         }
-        
+
         // Manejar estructura JSON
         if (char === '{') {
           stack.push('{');
@@ -1982,7 +1982,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
           i++;
           continue;
         }
-        
+
         if (char === '}') {
           if (stack.length > 0 && stack[stack.length - 1] === '{') {
             stack.pop();
@@ -1991,14 +1991,14 @@ const procesarRespuestaGemini = (respuestaTexto) => {
           i++;
           continue;
         }
-        
+
         if (char === '[') {
           stack.push('[');
           resultadoM += char;
           i++;
           continue;
         }
-        
+
         if (char === ']') {
           if (stack.length > 0 && stack[stack.length - 1] === '[') {
             stack.pop();
@@ -2007,23 +2007,23 @@ const procesarRespuestaGemini = (respuestaTexto) => {
           i++;
           continue;
         }
-        
+
         resultadoM += char;
         i++;
       }
-      
+
       // Cerrar string si quedó abierto
       if (dentroString) {
         resultadoM += '"';
       }
-      
+
       // Balancear estructura
       while (stack.length > 0) {
         const top = stack.pop();
         if (top === '{') resultadoM += '}';
         if (top === '[') resultadoM += ']';
       }
-      
+
       resultadoM = quitarComasColgantes(sanearBasico(resultadoM));
       resultadoM = autoBalance(resultadoM);
       return validarEstructuraAnalisis(JSON.parse(resultadoM));
@@ -2042,7 +2042,7 @@ const procesarRespuestaGemini = (respuestaTexto) => {
 
     const resumen = extraerCampo('resumen') || extraerCampo('analisisGeneral')?.match(/"resumen"\s*:\s*"([^"]*)"/i)?.[1] || 'Análisis generado';
     const diagnostico = extraerCampo('diagnosticoPrincipal') || extraerCampo('diagnostico') || '';
-    
+
     // Extraer recomendaciones
     const recomendacionesMatch = original.match(/"recomendacionesPersonalizadas"\s*:\s*\[(.*?)\]/is);
     const recomendaciones = [];
@@ -2566,7 +2566,7 @@ Intento ${int.numero || idx + 1}:
 - Puntaje: ${int.puntaje?.toFixed(1) || 0}%
 - Correctas: ${int.correctas || 0} / ${int.totalPreguntas || 0}
 - Incorrectas: ${int.incorrectas || 0}
-${idx > 0 ? `- Comparación con intento anterior: ${(int.puntaje - (intentos[idx-1]?.puntaje || 0)).toFixed(1)}% ${int.puntaje > (intentos[idx-1]?.puntaje || 0) ? '↑ Mejoró' : int.puntaje < (intentos[idx-1]?.puntaje || 0) ? '↓ Empeoró' : '→ Sin cambio'}` : ''}
+${idx > 0 ? `- Comparación con intento anterior: ${(int.puntaje - (intentos[idx - 1]?.puntaje || 0)).toFixed(1)}% ${int.puntaje > (intentos[idx - 1]?.puntaje || 0) ? '↑ Mejoró' : int.puntaje < (intentos[idx - 1]?.puntaje || 0) ? '↓ Empeoró' : '→ Sin cambio'}` : ''}
 `).join('') : 'No hay datos de intentos disponibles'}
 
 PREGUNTAS PROBLEMÁTICAS DETALLADAS:

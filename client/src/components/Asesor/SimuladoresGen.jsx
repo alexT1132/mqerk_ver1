@@ -2021,11 +2021,12 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
             <div className="flex flex-1 flex-wrap items-center gap-3">
               <button
                 onClick={load}
-                className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md disabled:opacity-50"
                 title="Refrescar"
                 aria-label="Refrescar"
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
                 Recargar
               </button>
 
@@ -2160,33 +2161,35 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
         {/* Desktop: tabla */}
         <div className="hidden md:block">
-          <div className="overflow-hidden rounded-3xl border-2 border-slate-200 bg-white shadow-xl ring-2 ring-slate-100/50">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50">
+                <thead className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
                   <tr>
                     <th
                       scope="col"
-                      className="sticky left-0 z-20 bg-slate-50 px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[280px] border-r-2 border-slate-200"
+                      className="sticky left-0 z-20 bg-indigo-600 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[220px]"
                     >
                       Simulador
                     </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
+                    <th scope="col" className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]">
                       Tipo
                     </th>
-                    <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[100px]">
+                    <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[95px]">
                       Preguntas
                     </th>
-                    <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[100px]">
+                    <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[90px]">
                       Intentos
                     </th>
-                    <th scope="col" className="px-6 py-4 text-center text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
+                    <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[110px]">
                       Estado
                     </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-widest text-slate-700 min-w-[120px]">
+                    <th scope="col" className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]">
                       Actualizado
                     </th>
-                    <th scope="col" className="px-6 py-4 min-w-[220px]"></th>
+                    <th scope="col" className="px-4 py-3 min-w-[190px]">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
 
@@ -2194,64 +2197,64 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                   {viewItems.map((item, idx) => (
                     <tr
                       key={item.id}
-                      className="bg-white hover:bg-gradient-to-r hover:from-violet-50/30 hover:via-indigo-50/30 hover:to-purple-50/30 transition-all duration-200 group"
+                      className="bg-white hover:bg-slate-50/50 transition-colors duration-150 group border-b border-slate-100 last:border-0"
                     >
-                      <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 px-6 py-4 border-r-2 border-slate-200">
-                        <div className="max-w-xs xl:max-w-md">
-                          <div className="font-semibold text-slate-900 truncate" title={item.name}>
+                      <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 px-4 py-3 border-r border-slate-200">
+                        <div className="max-w-[200px] lg:max-w-xs xl:max-w-md">
+                          <div className="font-semibold text-slate-900 truncate text-sm" title={item.name}>
                             {item.name}
                           </div>
                           {item.instrucciones && item.instrucciones.trim() && (
-                            <div className="mt-1 text-xs text-slate-500 line-clamp-2">
+                            <div className="mt-1 text-[11px] text-slate-500 line-clamp-1">
                               {item.instrucciones}
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-slate-700 font-medium text-sm">
-                        <span className="text-[13px] font-bold text-slate-600 uppercase">{item.type}</span>
+                      <td className="px-4 py-3 text-slate-600 font-medium text-xs">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase">{item.type}</span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-violet-50 px-3 py-1.5 text-sm font-bold text-violet-700 ring-2 ring-violet-200 uppercase">
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center justify-center min-w-[2rem] rounded-md bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs font-bold text-slate-600 uppercase">
                           {item.questions}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center justify-center min-w-[2.5rem] rounded-lg bg-indigo-50 px-3 py-1.5 text-sm font-bold text-indigo-700 ring-2 ring-indigo-200 uppercase">
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center justify-center min-w-[2rem] rounded-md bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs font-bold text-slate-600 uppercase">
                           {item.attempts}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center whitespace-nowrap">
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
                         {item.status === "Publicado" ? (
                           <Badge type="success">Publicado</Badge>
                         ) : (
                           <Badge type="draft">Borrador</Badge>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-slate-600 text-sm font-medium">
+                      <td className="px-4 py-3 text-slate-500 text-[11px] font-medium">
                         {item.updatedAt}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1.5 flex-nowrap">
                           <button
                             onClick={() => handleView(item)}
                             title="Vista previa"
-                            className="rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                            className="p-1.5 rounded-md border border-slate-100 bg-white text-sky-600 hover:bg-sky-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleResultados(item)}
                             title="Resultados"
-                            className="rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-2 text-sm font-semibold text-amber-700 hover:from-amber-100 hover:to-orange-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                            className="p-1.5 rounded-md border border-slate-100 bg-white text-amber-600 hover:bg-amber-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
                           >
-                            <Trophy className="h-4 w-4 text-amber-500" />
+                            <Trophy className="h-4 w-4" />
                           </button>
                           {item.status === "Borrador" && (
                             <button
                               onClick={() => handlePublish(item)}
                               title="Publicar"
-                              className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:from-emerald-100 hover:to-green-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                              className="p-1.5 rounded-md border border-slate-100 bg-white text-emerald-600 hover:bg-emerald-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
                             >
                               <UploadCloud className="h-4 w-4" />
                             </button>
@@ -2259,14 +2262,14 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                           <button
                             onClick={() => handleEdit(item)}
                             title="Editar"
-                            className="rounded-xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 to-violet-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:from-indigo-100 hover:to-violet-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                            className="p-1.5 rounded-md border border-slate-100 bg-white text-indigo-600 hover:bg-indigo-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(item)}
                             title="Eliminar"
-                            className="rounded-xl border-2 border-rose-300 bg-gradient-to-r from-rose-50 to-red-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:from-rose-100 hover:to-red-100 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                            className="p-1.5 rounded-md border border-slate-100 bg-white text-rose-600 hover:bg-rose-50 hover:shadow-sm transition-all duration-200 hover:scale-110 active:scale-95"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -2276,14 +2279,19 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                   ))}
                   {viewItems.length === 0 && !loading && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-24 text-center">
-                        <div className="flex flex-col items-center justify-center gap-4">
-                          <div className="size-20 rounded-[2rem] bg-slate-50 flex items-center justify-center ring-8 ring-slate-100/50">
-                            <PlaySquare className="size-10 text-slate-300" />
+                      <td colSpan={7} className="px-6 py-20 text-center">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 ring-4 ring-violet-200 flex items-center justify-center shadow-lg">
+                            <PlaySquare className="w-10 h-10 text-violet-600" />
                           </div>
-                          <div className="space-y-1">
-                            <p className="text-lg font-black text-slate-900">Sin simuladores registrados</p>
-                            <p className="text-sm text-slate-400 font-bold uppercase tracking-wider">Comienza creando uno nuevo para esta área</p>
+                          <div className="space-y-2">
+                            <p className="text-lg font-bold text-slate-700">No hay simuladores</p>
+                            <p className="text-sm text-slate-500">
+                              Crea tu primer simulador con el botón
+                              <span className="mx-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1.5 font-bold text-white shadow-md">
+                                Nuevo simulador
+                              </span>
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -2360,8 +2368,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
 
         {/* Modal: elección de IA (para vista de área y simuladores generales) */}
         {
-          iaChoiceOpen && (
-            <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-center justify-center px-4 pt-24 pb-6">
+          iaChoiceOpen && createPortal(
+            <div className="mqerk-sim-ia-overlay fixed inset-0 z-[9999] flex items-center justify-center p-4">
               <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={() => { setIaChoiceOpen(false); setIaError(''); }} />
               <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 overflow-hidden">
                 {/* Header */}
@@ -2966,14 +2974,15 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               }
             `}</style>
               </div>
-            </div>
+            </div>,
+            document.body
           )
         }
 
         {/* Modal de vista previa */}
         {previewOpen && createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setPreviewOpen(false)}>
-            <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" onClick={() => setPreviewOpen(false)}>
+            <div className="w-full max-w-4xl max-h-[90vh] rounded-3xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
                 <div className="flex items-center gap-3">
@@ -2982,7 +2991,9 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">Vista previa</h3>
-                    <p className="text-sm text-slate-600 mt-0.5">Previsualización del simulador</p>
+                    <p className="text-sm text-slate-600 mt-0.5">
+                      {previewSim?.preguntas?.length || 0} {(previewSim?.preguntas?.length === 1) ? 'pregunta' : 'preguntas'}
+                    </p>
                   </div>
                 </div>
                 <button
@@ -3007,11 +3018,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                       <h4 className="text-lg font-bold text-slate-900">
                         {previewSim.simulador?.titulo || 'Simulador'}
                       </h4>
-                      <div className="mt-2 flex items-center gap-3">
-                        <span className="inline-flex items-center px-2.5 py-1 text-xs leading-5 font-bold rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
-                          {Array.isArray(previewSim.preguntas) ? previewSim.preguntas.length : 0} Preguntas
-                        </span>
-                      </div>
+                      {/* Removed the old count span here */}
                     </header>
 
                     <ol className="space-y-3">
@@ -3082,8 +3089,8 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         {/* Resultados modal */}
         {
           resultsOpen && createPortal(
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-              <div className="w-full max-w-4xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+              <div className="w-full max-w-4xl max-h-[90vh] rounded-3xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
                 {/* Header mejorado */}
                 <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60">
                   <div className="flex items-center gap-3">
@@ -3091,8 +3098,10 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                       <span className="text-white font-bold text-lg">%</span>
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-slate-900">Resultados de la Simulación</h3>
-                      <p className="text-sm text-slate-600 mt-0.5">{resultsSimMeta?.titulo || 'Simulación'}</p>
+                      <h3 className="text-lg font-bold text-slate-900">Resultados del Simulador</h3>
+                      <p className="text-sm text-slate-600 mt-0.5">
+                        {resultsSimMeta?.titulo || 'Simulador'} • {resultsRows.length} {resultsRows.length === 1 ? 'estudiante' : 'estudiantes'}
+                      </p>
                     </div>
                   </div>
                   <button
@@ -3199,23 +3208,6 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                       </p>
                     </div>
                   )}
-                </div>
-
-                {/* Footer mejorado */}
-                <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t border-slate-200/60">
-                  <div className="text-sm text-slate-600">
-                    {resultsRows.length > 0 && (
-                      <span className="font-medium">
-                        {resultsRows.length} {resultsRows.length === 1 ? 'estudiante' : 'estudiantes'}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setResultsOpen(false)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-violet-700 transition-all hover:shadow-lg"
-                  >
-                    Cerrar
-                  </button>
                 </div>
               </div>
             </div>,

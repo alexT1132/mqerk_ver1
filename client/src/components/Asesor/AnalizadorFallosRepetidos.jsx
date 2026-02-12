@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, BookOpen, Users, MessageCircle, TrendingDown, Sparkles, Brain, X, ExternalLink } from 'lucide-react';
 import { getQuizIntentoReview, getQuizAnalytics } from '../../api/quizzes';
 import { getSimulacionIntentoReview } from '../../api/simulaciones';
@@ -135,7 +136,7 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
   const [mostrarModalAnalisis, setMostrarModalAnalisis] = useState(false); // Controlar modal de análisis completo
 
   useEffect(() => {
-    if (!id || !idEstudiante || !totalIntentos || totalIntentos < 2) {
+    if (!id || !idEstudiante || !totalIntentos) {
       setLoading(false);
       return;
     }
@@ -172,7 +173,7 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
 
         if (intentosData.length < 2) {
           setLoading(false);
-          return; // Necesitamos al menos 2 intentos para analizar
+          // No retornamos, dejamos que el render maneje el mensaje de "pocos intentos"
         }
 
         // Analizar fallos repetidos
@@ -856,7 +857,20 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
   }
 
   if (!analisis || analisis.preguntasProblematicas.length === 0) {
-    return null; // No hay problemas detectados
+    if (totalIntentos < 2) {
+      return (
+        <div className="rounded-xl border border-indigo-100 bg-indigo-50/30 p-4 mb-5">
+          <div className="flex items-center gap-3 text-indigo-700">
+            <Sparkles className="h-5 w-5 animate-pulse" />
+            <div className="flex-1">
+              <p className="text-sm font-bold">Analizador Inteligente Preparado</p>
+              <p className="text-xs text-indigo-600 mt-0.5">Cuando el estudiante realice más de un intento, aquí aparecerá un análisis automático de sus fallos repetidos para ayudarte a asesorarlo mejor.</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
   }
 
   const { preguntasProblematicas, estadisticas } = analisis;
@@ -1214,10 +1228,9 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
         </div>
       )}
 
-      {/* Modal de Análisis Completo */}
-      {mostrarModalAnalisis && analisisIACompleto && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4 pt-16 sm:pt-4">
-          <div className="w-full max-w-4xl max-h-[75vh] sm:max-h-[80vh] rounded-xl sm:rounded-2xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col mt-4 sm:mt-0">
+      {mostrarModalAnalisis && analisisIACompleto && createPortal(
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-2 sm:p-4">
+          <div className="w-full max-w-4xl max-h-[90vh] rounded-2xl sm:rounded-3xl bg-white shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             {/* Header de la modal - Mismo estilo que quiz y simuladores */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border-b border-slate-200/60 flex-shrink-0">
               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -1273,8 +1286,8 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
                     <div>
                       <p className="text-xs sm:text-sm font-semibold text-blue-800 mb-1">Nivel de Urgencia:</p>
                       <span className={`inline-block px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${analisisIACompleto.analisisGeneral.nivelUrgencia === 'Alta' ? 'bg-red-100 text-red-800' :
-                          analisisIACompleto.analisisGeneral.nivelUrgencia === 'Media' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
+                        analisisIACompleto.analisisGeneral.nivelUrgencia === 'Media' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-green-100 text-green-800'
                         }`}>
                         {analisisIACompleto.analisisGeneral.nivelUrgencia}
                       </span>
@@ -1568,7 +1581,8 @@ export default function AnalizadorFallosRepetidos({ tipo, id, idEstudiante, tota
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
